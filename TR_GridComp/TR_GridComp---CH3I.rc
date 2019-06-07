@@ -1,0 +1,62 @@
+#
+# Resource file for Methyl Iodide tracer
+#
+
+# SHOULD THE TRACER SOURCE BE ADDED FIRST, OR THE SINK APPLIED FIRST
+# ---------------------------
+  first_phase: sink
+
+# SOURCE - MODE:  constant  |  file2d  |  file3d  |  model_field  |  maintain_mixing_ratio
+# ---------------------------
+  src_mode: file2d
+  src_add: TRUE
+# --- Specify SRC_2D_CH3I in TR_ExtData.rc
+# --- BE SURE TO DEFINE mw
+  mw: 141.935
+# NOTE: Scale to desired value, and make UNITS = kg/m2/sec
+# in this case, the field consists of 1.0 in every gridbox;
+#    1molecule/cm2/sec -> kg/m2/sec
+# (12.011 + 1.008*3 + 126.9)*10000/(6.022e23 *1000)
+# SCALING FACTOR in ExtData: 2.35694e-21
+
+# SOURCE - Horizontal coverage: all  |  lat_zone  |  latlon_box
+# ---------------------------
+  src_horiz: all
+
+# SOURCE - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere
+# ---------------------------
+  src_vert: surface
+
+# SOURCE - Constraints
+# ---------------------------
+  surface_constraint_count: 2
+
+# Region file is required if any constraints refer to regions; assumptions:
+#  field name = 'REGION_MASK'
+#  index 0 = water
+#  indices 1,2,...,32 = land
+#  lowres_filename: ExtData/g5chem/sfc/RADON.region_mask.x144_y91.2001.nc
+# regions_filename: ExtData/g5chem/sfc/RADON.region_mask.x540_y361.2001.nc
+  regions_ExtData_entry: TR_regionMask
+
+  surf_con1_mode: scale
+  surf_con1_regions: WATER
+  surf_con1_expr: '1.0 - FRACI'   # if the expression includes spaces, then put quotes around it
+
+  surf_con2_mode: set
+  surf_con2_regions: LAND
+  surf_con2_expr: 0.0
+
+# SINK - MODE:  constant  |  efolding  |  halflife  |  none
+# ---------------------------
+  snk_mode: efolding
+  snk_period: 5 days
+
+
+# SINK - Horizontal coverage:  all  |  lat_zone  |  latlon_box
+# ---------------------------
+  snk_horiz: all
+
+# SINK - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere
+# ---------------------------
+  snk_vert: all

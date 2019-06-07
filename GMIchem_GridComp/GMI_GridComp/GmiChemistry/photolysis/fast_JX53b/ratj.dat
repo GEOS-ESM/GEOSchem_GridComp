@@ -1,0 +1,93 @@
+# PHOTOLYSIS REACTIONS - MASTER RATEFILE - Paul Brown, Oliver Wild & David Rowley
+# Centre for Atmospheric Science, Cambridge, U.K.  Release date:  22 November 1993
+# SCCS version information: @(#)photol.d	1.2 5/11/94
+#
+#
+# Modified to match GMI Combined Strat_Trop setkin files.
+#                                       -Jules Kouatchou [2005/02/23]
+#
+#
+# Harvard species             Products - UCI notation                              UCI xsec
+# ===============           ===============================                        ========
+323 5 O2         PHOTON      O         O                    0.00E+00  0.00    100.0  O2
+324 5 O3         PHOTON     O2         O(3P)                0.00E+00  0.00    100.0  O3
+325 5 O3         PHOTON     O2         O(1D)                0.00E+00  0.00    100.0  O3(1D)
+326 6 HO2        PHOTON     OH         O(3P)                0.00E+00  0.00      0.0  HO2
+327 7 H2O        PHOTON     H          OH                   0.00E+00  0.00      0.0  H2O
+328 6 NO         PHOTON     N          O(3P)                0.00E+00  0.00    100.0  NO
+329 6 N2O        PHOTON     N2         O(1D)                0.00E+00  0.00    100.0  N2O
+330 6 NO2        PHOTON     NO         O(3P)                0.00E+00  0.00    100.0  NO2
+331 7 H2O2       PHOTON     OH         OH                   0.00E+00  0.00    100.0  H2O2
+332 8 MP         PHOTON     HCHO       OH         HO2       0.00E+00  0.00    100.0  CH3OOH
+333 9 CH2O       PHOTON     CO         HO2        HO2       0.00E+00  0.00    100.0  H2COa
+334 0 CH2O       PHOTON     CO         H2                   0.00E+00  0.00    100.0  H2COb
+335 1 HNO3       PHOTON     OH         NO2                  0.00E+00  0.00    100.0  HNO3
+336 2 HNO2       PHOTON     OH         NO                   0.00E+00  0.00    100.0  HNO2
+337 3 HNO4       PHOTON     OH         NO3                  0.00E+00  0.00     33.3  HNO4
+338 6 NO3        PHOTON     NO2        O(3P)                0.00E+00  0.00     88.6  NO3
+339 5 NO3        PHOTON     NO         O2                   0.00E+00  0.00     11.4  NO3
+340 8 N2O5       PHOTON     NO3        NO2                  0.00E+00  0.00    100.0  N2O5
+341 7 N2O5       PHOTON     NO3        NO         O(3P)     0.00E+00  0.00      0.0  N2O5
+342 4 HNO4       PHOTON     HO2        NO2                  0.00E+00  0.00     66.7  HNO4
+343 1 Cl2        PHOTON     2Cl                             0.00E+00  0.00    100.0  Cl2
+344 1 OClO       PHOTON     ClO        O                    0.00E+00  0.00    100.0  OClO
+345 1 Cl2O2      PHOTON     2Cl        O2                   0.00E+00  0.00    100.0  Cl2O2
+346 1 HOCl       PHOTON     Cl         OH                   0.00E+00  0.00    100.0  HOCl
+347 1 ClONO2     PHOTON     Cl         NO3                  0.00E+00  0.00    100.0  ClNO3a
+348 1 ClONO2     PHOTON     ClO        NO2                  0.00E+00  0.00    100.0  ClNO3b
+349 1 BrCl       PHOTON     Br         Cl                   0.00E+00  0.00    100.0  BrCl
+350 1 BrO        PHOTON     Br         O                    0.00E+00  0.00    100.0  BrO
+351 1 HOBr       PHOTON     Br         OH                   0.00E+00  0.00    100.0  HOBr
+352 1 BrONO2     PHOTON     Br         NO3                  0.00E+00  0.00    100.0  BrNO3
+353 1 BrONO2     PHOTON     BrO        NO2                  0.00E+00  0.00      0.0  BrNO3
+354 0 CH3Cl      PHOTON     CH3O2      Cl                   0.00E+00  0.00    100.0  CH3Cl
+355 0 CCl4       PHOTON     4Cl                             0.00E+00  0.00    100.0  CCl4
+356 0 CH3CCl3    PHOTON     3Cl                             0.00E+00  0.00    100.0  CH3CCl3
+357 0 CFCl3      PHOTON     3Cl                             0.00E+00  0.00    100.0  CFCl3
+358 0 CF2Cl2     PHOTON     2Cl                             0.00E+00  0.00    100.0  CF2Cl2
+359 0 CFC113     PHOTON     3Cl                             0.00E+00  0.00    100.0  F113
+360 0 CFC114     PHOTON     2Cl                             0.00E+00  0.00    100.0  F114
+361 0 CFC115     PHOTON      Cl                             0.00E+00  0.00    100.0  F115
+362 0 HCFC141b   PHOTON     2Cl                             0.00E+00  0.00    100.0  F141b
+363 0 HCFC142b   PHOTON      Cl                             0.00E+00  0.00    100.0  F142b
+364 0 CH3Br      PHOTON     CH3O2      Br                   0.00E+00  0.00    100.0  CH3Br
+365 0 CF3Br      PHOTON                Br                   0.00E+00  0.00    100.0  H1301
+366 0 CF2Br2     PHOTON               2Br                   0.00E+00  0.00    100.0  H1211
+367 0 H2402      PHOTON               2Br                   0.00E+00  0.00    100.0  H2402
+368 0 CF2ClBr    PHOTON      Cl        Br                   0.00E+00  0.00    100.0  H1211
+369 0 ALD2       PHOTON     MeOO       HO2        CO        0.00E+00  0.00    100.0  ActAld
+370 9 ALD2       PHOTON     CH4        CO                   0.00E+00  0.00      0.0  ActAld
+371 1 PAN        PHOTON     MeCO3      NO2                  0.00E+00  0.00    100.0  PAN
+372 2 RCHO       PHOTON     EtO2       HO2        CO        0.00E+00  0.00    100.0  EAld
+373 3 ACET       PHOTON     MeCO3      MeOO                 0.00E+00  0.00    100.0  C3H6O 
+374 4 MEK        PHOTON     MeCO3      EtOO                 0.00E+00  0.00    100.0  MEKeto
+375 6 GLYC       PHOTON     HCHO       HO2        CO        0.00E+00  0.00    100.0  GlyAld
+376 7 GLYX       PHOTON     H2         CO                   0.00E+00  0.00    100.0  Glyxlb
+377 8 GLYX       PHOTON     CO         HO2                  0.00E+00  0.00    100.0  Glyxla
+378 9 GLYX       PHOTON     HCHO       CO                   0.00E+00  0.00    100.0  Glyxlb
+379 0 MGLY       PHOTON     MeCO3      CO         HO2       0.00E+00  0.00    100.0  MGlyxl
+380 1 MGLY       PHOTON     Acet       CO                   0.00E+00  0.00      0.0  MGlyxl
+381 2 MVK        PHOTON     PRPE       CO                   0.00E+00  0.00     60.0  MeVK 
+382 3 MVK        PHOTON     MeCO3      HCHO       CO  HO2   0.00E+00  0.00      0.0  MeVK 
+383 4 MVK        PHOTON     MeOO       MAO3                 0.00E+00  0.00     40.0  MeVK 
+384 5 MACR       PHOTON     MAO3       HO2                  0.00E+00  0.00      0.0  MeAcr
+385 6 MACR       PHOTON     CO  HO2  MGLY  HO2  MeCO3  HCHO 0.00E+00  0.00    100.0  MeAcr
+386 7 HAC        PHOTON     MeCO3      HCHO       HO2       0.00E+00  0.00    100.0  C3H6O
+387 5 INPN       PHOTON     OH         HO2        RCHO NO2  0.00E+00  0.00    100.0  CH3OOH
+388 6 PRPN       PHOTON     OH         HO2        RCHO NO2  0.00E+00  0.00    100.0  CH3OOH
+389 8 ETP        PHOTON     OH         HO2        Acet      0.00E+00  0.00    100.0  CH3OOH
+390 9 RA3P       PHOTON     OH         HO2        RCHO      0.00E+00  0.00    100.0  CH3OOH
+391 0 RB3P       PHOTON     OH         HO2        RCHO      0.00E+00  0.00    100.0  CH3OOH
+392 1 R4P        PHOTON     OH         HO2        RCHO      0.00E+00  0.00    100.0  CH3OOH
+393 7 PP         PHOTON     OH         HO2        RCHO      0.00E+00  0.00    100.0  CH3OOH
+394 2 RP         PHOTON     OH         HO2        Acet      0.00E+00  0.00    100.0  CH3OOH
+395 8 GP         PHOTON     OH         HO2        RCHO      0.00E+00  0.00    100.0  CH3OOH
+396 0 RIP        PHOTON     OH HO2 CH2O MVK MACR RIO1 IALD  0.00E+00  0.00    100.0  CH3OOH
+397 1 IAP        PHOTON     OH HO2  CO  H2  HAC  GLYC  MGLY 0.00E+00  0.00    100.0  CH3OOH
+398 2 ISNP       PHOTON     OH         HO2        RCHO NO2  0.00E+00  0.00    100.0  CH3OOH
+399 3 VRP        PHOTON     OH  HO2  CH2O  MCO3  GLYC  MGLY 0.00E+00  0.00    100.0  CH3OOH
+400 4 MRP        PHOTON     OH  HO2  MGLY  HAC  CO  CH2O    0.00E+00  0.00    100.0  CH3OOH
+401 5 MAOP       PHOTON     OH         HO2        RCHO      0.00E+00  0.00    100.0  CH3OOH
+402 3 R4N2       PHOTON     NO2 MeCOMe MEK MO2 HO2 ALD2 ... 0.00E+00  0.00    100.0  CH3NO3
+403 4 MAP        PHOTON     OH         MO2                  0.00E+00  0.00    100.0  CH3OOH
+19999                                                       0.00E-00  0.00      0.0

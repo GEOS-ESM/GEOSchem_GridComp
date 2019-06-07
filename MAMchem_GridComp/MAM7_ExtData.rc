@@ -1,0 +1,45 @@
+#
+# Sample resource file exemplifying the specification of an interface to
+# boundary conditions, emissions and other external files. This resource
+# file is meant to be read by the MAPL_ExtData Grid Component.
+#
+
+PrimaryExports%%
+# -------------|-------|-------|--------|----------------------|--------|--------|-------------|----------|
+#  Import      |       |       | Regrid |        Refresh       | OffSet | Scale  | Variable On |   File   |
+#  Name        | Units | Clim  | Method |     Time Template    | Factor | Factor |     File    | Template |
+# -------------|-------|-------|--------|----------------------|--------|--------|-------------|----------|
+
+# BC emissions
+BC_EMIS_FIRE           'kg m-2 s-1'         N        Y     %y4-%m2-%d2T12:00:00Z   0.0      1.0     biomass      ExtData/PIESA/sfc/QFED/v2.4r6/Y%y4/M%m2/qfed2.emis_bc.005.%y4%m2%d2.nc4
+BC_EMIS_BIOFUEL        'kg m-2 s-1'         N        Y               0             0.0      1.0     antebc1      ExtData/PIESA/sfc/AeroCom.noship_BC_src.sfc.x360_y181_t44.19780703_12z_20210703_12z.nc
+BC_EMIS_FOSSILFUEL     'kg m-2 s-1'         N        Y               0             0.0      1.0     antebc2      /dev/null
+BC_EMIS_SHIP           'kg m-2 s-1'         N        Y               0             0.0      1.0     bc_ship      ExtData/MERRA2/sfc/edgar-v41.emis_bc.navigation.x360_y181_t47.19750703T12z_20210703T00z.nc4
+BC_AIRCRAFT_LTO        'kg m-2 s-1'         Y        Y               0             0.0      1.0     bc_aviation  /home/adarmeno/fvInput/PIESA/sfc/HTAP/v2.2/htap-v2.2.emis_bc.aviation_lto.x3600_y1800_t12.2010.nc4
+BC_AIRCRAFT_CDS        'kg m-2 s-1'         Y        Y               0             0.0      1.0     bc_aviation  /home/adarmeno/fvInput/PIESA/sfc/HTAP/v2.2/htap-v2.2.emis_bc.aviation_cds.x3600_y1800_t12.2010.nc4
+BC_AIRCRAFT_CRS        'kg m-2 s-1'         Y        Y               0             0.0      1.0     bc_aviation  /home/adarmeno/fvInput/PIESA/sfc/HTAP/v2.2/htap-v2.2.emis_bc.aviation_crs.x3600_y1800_t12.2010.nc4
+
+# OC emissions
+OC_EMIS_FIRE           'kg m-2 s-1'         N        Y     %y4-%m2-%d2T12:00:00Z   0.0      1.0     biomass      ExtData/PIESA/sfc/QFED/v2.4r6/Y%y4/M%m2/qfed2.emis_oc.005.%y4%m2%d2.nc4
+OC_EMIS_BIOFUEL        'kg m-2 s-1'         N        Y               0             0.0      1.0     anteoc1      ExtData/PIESA/sfc/AeroCom.noship_OC_src.sfc.x360_y181_t44.19780703_12z_20210703_12z.nc
+OC_EMIS_FOSSILFUEL     'kg m-2 s-1'         N        Y               0             0.0      1.0     anteoc2      /dev/null
+OC_EMIS_SHIP           'kg m-2 s-1'         N        Y               0             0.0      1.0     oc_ship      ExtData/MERRA2/sfc/edgar-v41.emis_oc.navigation.x360_y181_t47.19750703T12z_20210703T00z.nc4
+OC_AIRCRAFT_LTO        'kg m-2 s-1'         Y        Y               0             0.0      1.0     oc_aviation  ExtData/PIESA/sfc/HTAP/v2.2/htap-v2.2.emis_oc.aviation_lto.x3600_y1800_t12.2010.nc4
+OC_AIRCRAFT_CDS        'kg m-2 s-1'         Y        Y               0             0.0      1.0     oc_aviation  ExtData/PIESA/sfc/HTAP/v2.2/htap-v2.2.emis_oc.aviation_cds.x3600_y1800_t12.2010.nc4
+OC_AIRCRAFT_CRS        'kg m-2 s-1'         Y        Y               0             0.0      1.0     oc_aviation  ExtData/PIESA/sfc/HTAP/v2.2/htap-v2.2.emis_oc.aviation_crs.x3600_y1800_t12.2010.nc4
+
+# SO4 emissions
+SO4_EMIS_SHIP          'kg m-2 s-1'         N        Y               0             0.0      1.0     so4_ship     ExtData/MERRA2/sfc/edgar-v41.emis_so4.navigation.x360_y181_t47.19750703T12z_20210703T00z.nc4
+
+# Dust source function
+GINOUX_DU              '1'                  Y        N               -             0.0      1.0     du_src       ExtData/PIESA/sfc/gocart.dust_source.v5a.x1152_y721.nc
+%%
+
+DerivedExports%%
+# ---------|---------|--------------------------------------------|
+#  Export  | Primary |_________________ Mask _____________________|
+#  Name    |  Name   |    Name    |           Expression          |    
+# ---------|---------|------------|-------------------------------|
+# ---------|---------|------------|-------------------------------|
+%%
+

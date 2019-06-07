@@ -1,0 +1,458 @@
+#
+# This the CARMA Grid Component Registry. 
+# We use a single registry to define the particular instantiation
+# of CARMA, as well as to define Import, Internal, and Export
+# states
+#
+# !REVISION HISTORY:
+#  16Aug2006  da Silva   First Version
+#   1Feb2007  Kouatchou  Population of specs
+#  29Mar2007  Nielsen    Name validation, inclusion for GEOS-5
+#  18Nov2009  Colarco    First Crack
+#  23Nov2009  Colarco    Add Control elements to registry
+#
+# -----------------------------------------------------------------
+
+# CARMA dimensioning parameters
+NBIN:      22
+NGROUP:    4
+NELEM:     4 
+NSOLUTE:   0 
+NGAS:      2 
+NWAVE:     0 
+
+# PARTICLES
+# ---------
+# GROUPS: Define the aerosol groups (must be at least NGROUP entries)
+# GROUPNAME = name
+# RMRAT     = ratio of mass of bin i+1 to bin i
+# RMIN      = central radius [cm] of smallest bin
+# ISHAPE    = shape type: 1 (Sphere), 2 (Hexagon), 3 (Cylinder)
+# ESHAPE    = aspect ratio of particle: 1.0 (spherical)
+#             if CYLINDER, << 1 for disks, >> 1 for needles
+# FSCAV     = convective scavenging efficiency (fraction km-1) -- deprecated
+# IRHSWELL  = humidifcation type for fall/optics: 0 (I_NO_SWELLING), 1 (I_FITZGERALD), 
+#                                                 2 (I_GERBER), 3 (I_WTPCT_H2SO4)
+# IRHSWCOMP = composition swelling flag
+GROUPNAME: sulfate         dust       seasalt    smoke
+RMRAT:     3.7515201       2.2587828  2.2587828  2.2587828
+RMIN:      2.6686863e-8    5.e-06     5.e-06     5.e-06
+ISHAPE:    1               1          1          1
+ESHAPE:    1.              1.         1.         1.
+FSCAV:     0.4             0.4        0.4        0.4
+IRHSWELL:  3               0          2          0
+IRHSWCOMP: 0               0          12         0
+
+# ELEMENTS: Define the aerosol elements (must be at least NELEM entries)
+# IGROUP       = group (above) the element maps to
+# RHOP         = elements density [g cm-3]
+# ELEMNAME     = name of element
+# ITYPE        = element type: 1 (I_INVOLATILE), 2 (I_VOLATILE), 3 (I_COREMASS)
+#                              4 (I_VOLCORE), 5 (I_CORE2MOM)
+# ICOMPOSITION = 
+IGROUP:       1       2       3      4
+RHOP:         1.923   2.65    2.20   1.35
+ELEMNAME:     pc      pc      pc     pc
+ITYPE:        2       1       1      1
+ICOMPOSITION: 0       1       2      3
+
+# GASES
+# -----
+# Define the gas properties (must be at least NGAS entries)
+# GASNAME  = name
+# IGCOMP   = gas composition: 1 (I_GCOMP_H2O), 2 (I_GCOMP_H2SO4), 3 (I_GCOMP_SO2)
+# IGVAPREQ = vapor pressure equation: 1 (I_VAPRTN_H2O_BUCK1981), 2 (I_VAPRTN_H2O_MURPHY2005)
+#                                     3 (I_VAPRTN_H2O_GOFF1946), 4 (I_VAPRTN_H2SO4_AYERS1980)
+GASNAME:      H2O     H2SO4
+IGCOMP:       1       2
+IGVAPREQ:     2       4
+
+
+# Microphysical process control
+# Logical (0 or 1)
+DO_COAG:     1 
+DO_GROW:     1 
+DO_SUBSTEP:  1 
+DO_THERMO:   1 
+DO_VDIFF:    0 
+DO_VTRAN:    1 
+DO_FIXEDINIT:1
+
+# Substepping and vfall (configured for sulfate case for now)
+VF_CONST:    0.
+MINSUBSTEPS: 1
+MAXSUBSTEPS: 32
+MAXRETRIES:  16
+CONMAX:      0.1
+
+# Species specific parameters (input files, size distribution, other conditions)
+# DUST
+# Point-wise dust source
+point_emissions_srcfilen_dust: /dev/null
+dust_emissions_fudgefactor: 2.e-4
+
+# SEA SALT
+seasalt_emissions_fudgefactor: 1.4
+
+# BLACK CARBON
+
+# SMOKE
+organic_matter_to_organic_carbon_ratio: 1.8
+fraction_terpene_to_organic_carbon:     0.1
+
+#SULFATE
+
+# Point-wise sulfate source
+point_emissions_srcfilen_sulfate: /dev/null
+
+# Mie Table Information
+  n_channels: 4
+  n_moments:  0
+  r_channels: 4.7e-7 5.5e-7 6.7e-7 8.7e-7
+  DU_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_DU.v15.nbin=22.nc
+  SS_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SS.v3_3.nbin=22.nc
+  BC_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SU.v1.nbin=22.nc
+  SM_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SM.v1.nbin=22.nc
+  SU_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SU.v6.nbin=22.nc
+
+# The following code is the initial registry
+  COMP_NAME: CARMA
+
+# Only change the Registry version when major structural changes
+# occurs, not changes in content
+# --------------------------------------------------------------
+  MAPL_REGISTRY_VERSION: 1.00
+
+#				------------
+#				Import State
+#				------------
+
+<ImportSpec name="CARMA", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,long_name">
+# -------------------|-------------|-----|---|----|---|---|-----|------|--------------------------
+#  Short	     |  	   |	 | V |Item|Intervl| Sub | Def  |	Long
+#  Name 	     |   Units     | Dim |Loc|Type| R | A |Tiles| ault |	Name
+# -------------------|-------------|-----|---|----|---|---|-----|------|--------------------------
+  ZLE                | m           | xyz | E |    |   |   |     |      | Layer interface geopot height
+  PLE                | Pa          | xyz | E |    |   |   |     |      | Layer interface pressure
+  Q                  | kg kg-1     | xyz | C |    |   |   |     |      | Specific Humidity
+  RH2                | 1           | xyz | C |    |   |   |     |      | Relative Humidity after Moist
+  T                  | K           | xyz | C |    |   |   |     |      | Air Temperature (from Dynamics)
+  AIRDENS            | kg m-3      | xyz | C |    |   |   |     |      | Air density 
+  USTAR              | m s-1       | xy  |   |    |   |   |     |      | Friction Speed
+  U10M               | m s-1       | xy  |   |    |   |   |     |      | E/W 10-meter wind speed 
+  V10M               | m s-1       | xy  |   |    |   |   |     |      | N/S 10-meter wind speed 
+  ZPBL               | m           | xy  |   |    |   |   |     |      | PBL Height
+  Z0H                | m           | xy  |   |    |   |   |     |      | Roughness Length for Heat
+  SH                 | W m-2       | xy  |   |    |   |   |     |      | Sensible Heat Flux
+  NCN_PRCP           | kg m-2 s-1  | xy  |   |    |   |   |     |      | Non-convective Precipitation
+  CN_PRCP            | kg m-2 s-1  | xy  |   |    |   |   |     |      | Surface Conv. rain flux needed by land
+  LWI                | 1           | xy  |   |    |   |   |     |      | Land Ocean Ice Mask
+  FROCEAN            | 1           | xy  |   |    |   |   |     |      | Ocean fraction 
+  FRLAKE             | 1           | xy  |   |    |   |   |     |      | Lake fraction
+  FRLAND             | 1           | xy  |   |    |   |   |     |      | Land fraction
+  FRACI              | 1           | xy  |   |    |   |   |     |      | Ice  fraction
+  WET1               | 1           | xy  |   |    |   |   |     |      | Surface Soil Wetness
+  AREA               | m2          | xy  |   |    |   |   |     |      | agrid_cell_area
+  CNV_MFD            | kg m-2 s-1  | xyz | C |    |   |   |     |      | detraining_mass_flux
+  CNV_MFC            | kg m-2 s-1  | xyz | E |    |   |   |     |      | cumulative_mass_flux
+  CNV_QC             | kg kg-1     | xyz | C |    |   |   |     |      | grid_mean_convective_condensate
+  U                  | m s-1       | xyz | C |    |   |   |     |      | Eastward (E/W) wind
+  V                  | m s-1       | xyz | C |    |   |   |     |      | Northward (N/S) wind
+  PFI_LSAN           | kg m-2 s-1  | xyz | E |    |   |   |     |      | 3D flux of ice nonconvective precipitation
+  PFL_LSAN           | kg m-2 s-1  | xyz | E |    |   |   |     |      | 3D flux of liquid nonconvective precipitation
+# Aerosol source functions
+  CARMA_DU_SRC       | 1           | xy  |   |    |   |   |     |      | dust source efficiency
+  CARMA_SM_BIOMASS   | 1           | xy  |   |    |   |   |     |      | smoke biomass burning
+  CARMA_SM_BIOFUEL   | 1           | xy  |   |    |   |   |     |      | smoke biofuel
+  CARMA_SM_ANTEOC1   | 1           | xy  |   |    |   |   |     |      | smoke anthro (1)
+  CARMA_SM_ANTEOC2   | 1           | xy  |   |    |   |   |     |      | smoke anthro (2)
+  CARMA_SM_SHIP      | 1           | xy  |   |    |   |   |     |      | smoke ship
+  CARMA_OC_TERPENE   | kg m-2 s-1  | xy  |   |    |   |   |     |      | monoterpene emissions
+  pSOA_ANTHRO_VOC    | kg m-3 s-1  | xyz | C |    |   |   |     |      | SOA production anthropogenic VOC
+  pSOA_BIOB_VOC      | kg m-3 s-1  | xyz | C |    |   |   |     |      | SOA production biomass burning VOC
+  PSO4TOT            | kg m-2 s-1  | xyz | C |    |   |   |     |      | so4- production from chemistry
+# -------------------|-------------|-----|---|----|---|---|-----|------|--------------------------
+</ImportSpec>
+
+#				--------------
+#				Internal State
+#				--------------
+
+#
+# Note: 1) For friendlies, use "D" for dynamics, "T" for turbulence and "C" for convection; leave blank otherwise
+#	2) If quantity requires no restart, put an 'x' in the No Rst column
+#       3) RO = Alkoxy radical, RO2 = Organic peroxy radical
+
+<InternalSpec name="CARMA", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,norestart,halowidth,friendlyto,long_name">
+# --------------|------------|-----|---|----|---|---|-----|------|----|----|---------|---------------------------------
+#  Short	|	     |     | V |Item|Intervl| Sub | Def  | No | Ha | Friends |  	  Long
+#  Name 	|   Units    | Dim |Loc|Type| R | A |Tiles| ault | Rst| lo |	     |  	  Name
+# --------------|------------|-----|---|----|---|---|-----|------|----|----|---------|---------------------------------
+# --------------|------------|-----|---|----|---|---|-----|------|----|----|---------|---------------------------------
+</InternalSpec>
+
+
+#				------------
+#				Export State
+#				------------
+
+<ExportSpec name="CARMA", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,long_name">
+# ------------------|-------------|-----|---|----|---|---|-----|------|--------------------------
+#  Short            |             |     | V |Item|Intervl| Sub | Def  |       Long
+#  Name             |   Units     | Dim |Loc|Type| R | A |Tiles| ault |       Name
+# ------------------|-------------|-----|---|----|---|---|-----|------|--------------------------
+  CARMA_DUEM        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Dust emission flux
+  CARMA_DUDP        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Dust deposition flux
+  CARMA_DUSD        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Dust sedimentation flux
+  CARMA_DUWT        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Dust wet-deposition flux
+  CARMA_DUSV        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Dust convective scavenging flux
+  CARMA_DUCMASS     | kg m-2      | xy  |   |    |   |   |     |      | Dust column burden
+  CARMA_DUSMASS     | kg m-3      | xy  |   |    |   |   |     |      | Dust surface mass concentration
+  CARMA_DUEXTTAU    | 1           | xy  |   |    |   |   |     |      | Dust 550-nm extinction AOT
+  CARMA_DUSCATAU    | 1           | xy  |   |    |   |   |     |      | Dust 550-nm scattering AOT
+  CARMA_DUANGSTR    | 1           | xy  |   |    |   |   |     |      | Dust 470-870 nm Angstrom parameter
+  CARMA_DUFLUXU     | kg m-1 s-1  | xy  |   |    |   |   |     |      | Dust column u-wind mass flux
+  CARMA_DUFLUXV     | kg m-1 s-1  | xy  |   |    |   |   |     |      | Dust column v-wind mass flux
+  CARMA_DUMASS      | kg kg-1     | xyz | C |    |   |   |     |      | Dust Mass Mixing Ratio 
+  CARMA_DUCONC      | kg m-3      | xyz | C |    |   |   |     |      | Dust Mass Concentration
+  CARMA_DUSAREA     | m-2 m-3     | xyz | C |    |   |   |     |      | Dust Total Surace Area Density
+  CARMA_DUNUMD      | m-3         | xyz | C |    |   |   |     |      | Dust Total Number Density
+  CARMA_DUREFF      | m           | xyz | C |    |   |   |     |      | Dust Particle Effective Radius 
+  CARMA_MXDUEM      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Dust emission flux
+  CARMA_MXDUDP      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Dust deposition flux
+  CARMA_MXDUSD      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Dust sedimentation flux
+  CARMA_MXDUWT      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Dust wet-deposition flux
+  CARMA_MXDUSV      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Dust convective scavenging flux
+  CARMA_MXDUCMASS   | kg m-2      | xy  |   |    |   |   |     |      | Mixed Dust column burden
+  CARMA_MXDUSMASS   | kg m-3      | xy  |   |    |   |   |     |      | Mixed Dust surface mass concentration
+  CARMA_MXDUEXTTAU  | 1           | xy  |   |    |   |   |     |      | Mixed Dust 550-nm extinction AOT
+  CARMA_MXDUSCATAU  | 1           | xy  |   |    |   |   |     |      | Mixed Dust 550-nm scattering AOT
+  CARMA_MXDUANGSTR  | 1           | xy  |   |    |   |   |     |      | Mixed Dust 470-870 nm Angstrom parameter
+  CARMA_MXDUFLUXU   | kg m-1 s-1  | xy  |   |    |   |   |     |      | Mixed Dust column u-wind mass flux
+  CARMA_MXDUFLUXV   | kg m-1 s-1  | xy  |   |    |   |   |     |      | Mixed Dust column v-wind mass flux
+  CARMA_MXDUMASS    | kg kg-1     | xyz | C |    |   |   |     |      | Mixed Dust Mass Mixing Ratio 
+  CARMA_MXDUCONC    | kg m-3      | xyz | C |    |   |   |     |      | Mixed Dust Mass Concentration
+  CARMA_ASHEM       | kg m-2 s-1  | xy  |   |    |   |   |     |      | Ash emission flux
+  CARMA_ASHDP       | kg m-2 s-1  | xy  |   |    |   |   |     |      | Ash deposition flux
+  CARMA_ASHSD       | kg m-2 s-1  | xy  |   |    |   |   |     |      | Ash sedimentation flux
+  CARMA_ASHWT       | kg m-2 s-1  | xy  |   |    |   |   |     |      | Ash wet-deposition flux
+  CARMA_ASHSV       | kg m-2 s-1  | xy  |   |    |   |   |     |      | Ash convective scavenging flux
+  CARMA_ASHCMASS    | kg m-2      | xy  |   |    |   |   |     |      | Ash column burden
+  CARMA_ASHSMASS    | kg m-3      | xy  |   |    |   |   |     |      | Ash surface mass concentration
+  CARMA_ASHEXTTAU   | 1           | xy  |   |    |   |   |     |      | Ash 550-nm extinction AOT
+  CARMA_ASHSCATAU   | 1           | xy  |   |    |   |   |     |      | Ash 550-nm scattering AOT
+  CARMA_ASHANGSTR   | 1           | xy  |   |    |   |   |     |      | Ash 470-870 nm Angstrom parameter
+  CARMA_ASHFLUXU    | kg m-1 s-1  | xy  |   |    |   |   |     |      | Ash column u-wind mass flux
+  CARMA_ASHFLUXV    | kg m-1 s-1  | xy  |   |    |   |   |     |      | Ash column v-wind mass flux
+  CARMA_ASHMASS     | kg kg-1     | xyz | C |    |   |   |     |      | Ash Mass Mixing Ratio 
+  CARMA_ASHCONC     | kg m-3      | xyz | C |    |   |   |     |      | Ash Mass Concentration
+  CARMA_MXASHEM     | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Ash emission flux
+  CARMA_MXASHDP     | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Ash deposition flux
+  CARMA_MXASHSD     | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Ash sedimentation flux
+  CARMA_MXASHWT     | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Ash wet-deposition flux
+  CARMA_MXASHSV     | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Ash convective scavenging flux
+  CARMA_MXASHCMASS  | kg m-2      | xy  |   |    |   |   |     |      | Mixed Ash column burden
+  CARMA_MXASHSMASS  | kg m-3      | xy  |   |    |   |   |     |      | Mixed Ash surface mass concentration
+  CARMA_MXASHEXTTAU | 1           | xy  |   |    |   |   |     |      | Mixed Ash 550-nm extinction AOT
+  CARMA_MXASHSCATAU | 1           | xy  |   |    |   |   |     |      | Mixed Ash 550-nm scattering AOT
+  CARMA_MXASHANGSTR | 1           | xy  |   |    |   |   |     |      | Mixed Ash 470-870 nm Angstrom parameter
+  CARMA_MXASHFLUXU  | kg m-1 s-1  | xy  |   |    |   |   |     |      | Mixed Ash column u-wind mass flux
+  CARMA_MXASHFLUXV  | kg m-1 s-1  | xy  |   |    |   |   |     |      | Mixed Ash column v-wind mass flux
+  CARMA_MXASHMASS   | kg kg-1     | xyz | C |    |   |   |     |      | Mixed Ash Mass Mixing Ratio 
+  CARMA_MXASHCONC   | kg m-3      | xyz | C |    |   |   |     |      | Mixed Ash Mass Concentration
+  CARMA_SSEM        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Seasalt emission flux
+  CARMA_SSDP        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Seasalt deposition flux
+  CARMA_SSSD        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Seasalt sedimentation flux
+  CARMA_SSWT        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Seasalt wet-deposition flux
+  CARMA_SSSV        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Seasalt convective scavenging flux
+  CARMA_SSCMASS     | kg m-2      | xy  |   |    |   |   |     |      | Seasalt column burden
+  CARMA_SSSMASS     | kg m-3      | xy  |   |    |   |   |     |      | Seasalt surface mass concentration
+  CARMA_SSEXTTAU    | 1           | xy  |   |    |   |   |     |      | Seasalt 550-nm extinction AOT
+  CARMA_SSSCATAU    | 1           | xy  |   |    |   |   |     |      | Seasalt 550-nm scattering AOT
+  CARMA_SSANGSTR    | 1           | xy  |   |    |   |   |     |      | Seasalt 470-870 nm Angstrom parameter
+  CARMA_SSFLUXU     | kg m-1 s-1  | xy  |   |    |   |   |     |      | Seasalt column u-wind mass flux
+  CARMA_SSFLUXV     | kg m-1 s-1  | xy  |   |    |   |   |     |      | Seasalt column v-wind mass flux
+  CARMA_SSMASS      | kg kg-1     | xyz | C |    |   |   |     |      | Seasalt Mass Mixing Ratio 
+  CARMA_SSCONC      | kg m-3      | xyz | C |    |   |   |     |      | Seasalt Mass Concentration
+  CARMA_SSSAREA     | m-2 m-3     | xyz | C |    |   |   |     |      | Seasalt Total Surace Area Density
+  CARMA_SSNUMD      | m-3         | xyz | C |    |   |   |     |      | Seasalt Total Number Density
+  CARMA_SSREFF      | m           | xyz | C |    |   |   |     |      | Seasalt Particle Effective Radius 
+  CARMA_MXSSEM      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Seasalt emission flux
+  CARMA_MXSSDP      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Seasalt deposition flux
+  CARMA_MXSSSD      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Seasalt sedimentation flux
+  CARMA_MXSSWT      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Seasalt wet-deposition flux
+  CARMA_MXSSSV      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Seasalt convective scavenging flux
+  CARMA_MXSSCMASS   | kg m-2      | xy  |   |    |   |   |     |      | Mixed Seasalt column burden
+  CARMA_MXSSSMASS   | kg m-3      | xy  |   |    |   |   |     |      | Mixed Seasalt surface mass concentration
+  CARMA_MXSSEXTTAU  | 1           | xy  |   |    |   |   |     |      | Mixed Seasalt 550-nm extinction AOT
+  CARMA_MXSSSCATAU  | 1           | xy  |   |    |   |   |     |      | Mixed Seasalt 550-nm scattering AOT
+  CARMA_MXSSANGSTR  | 1           | xy  |   |    |   |   |     |      | Mixed Seasalt 470-870 nm Angstrom parameter
+  CARMA_MXSSFLUXU   | kg m-1 s-1  | xy  |   |    |   |   |     |      | Mixed Seasalt column u-wind mass flux
+  CARMA_MXSSFLUXV   | kg m-1 s-1  | xy  |   |    |   |   |     |      | Mixed Seasalt column v-wind mass flux
+  CARMA_MXSSMASS    | kg kg-1     | xyz | C |    |   |   |     |      | Mixed Seasalt Mass Mixing Ratio 
+  CARMA_MXSSCONC    | kg m-3      | xyz | C |    |   |   |     |      | Mixed Seasalt Mass Concentration
+  CARMA_SUDP        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Sulfate deposition flux
+  CARMA_SUSD        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Sulfate sedimentation flux
+  CARMA_SUWT        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Sulfate wet-deposition flux
+  CARMA_SUSV        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Sulfate convective scavenging flux
+  CARMA_SUCMASS     | kg m-2      | xy  |   |    |   |   |     |      | Sulfate column burden
+  CARMA_SUSMASS     | kg m-3      | xy  |   |    |   |   |     |      | Sulfate surface mass concentration
+  CARMA_SUEXTTAU    | 1           | xy  |   |    |   |   |     |      | Sulfate 550-nm extinction AOT
+  CARMA_SUSCATAU    | 1           | xy  |   |    |   |   |     |      | Sulfate 550-nm scattering AOT
+  CARMA_SUANGSTR    | 1           | xy  |   |    |   |   |     |      | Sulfate 470-870 nm Angstrom parameter
+  CARMA_SUFLUXU     | kg m-1 s-1  | xy  |   |    |   |   |     |      | Sulfate column u-wind mass flux
+  CARMA_SUFLUXV     | kg m-1 s-1  | xy  |   |    |   |   |     |      | Sulfate column v-wind mass flux
+  CARMA_SUMASS      | kg kg-1     | xyz | C |    |   |   |     |      | Sulfate Mass Mixing Ratio 
+  CARMA_SUCONC      | kg m-3      | xyz | C |    |   |   |     |      | Sulfate Mass Concentration
+  CARMA_SUNUC       | m-3 s-1     | xyz | C |    |   |   |     |      | Sulfate Total Nucleation Rate
+  CARMA_SUSAREA     | m-2 m-3     | xyz | C |    |   |   |     |      | Sulfate Total Surace Area Density
+  CARMA_SUSAREAv    | m-2 m-3     | xyz | C |    |   |   |     |      | Sulfate Total Surace Area Density (zeroed volcanic)
+  CARMA_SUNUMD      | m-3         | xyz | C |    |   |   |     |      | Sulfate Total Number Density
+  CARMA_SUREFF      | m           | xyz | C |    |   |   |     |      | Sulfate Particle Effective Radius 
+  CARMA_H2SO4CMASS  | kg m-2      | xy  |   |    |   |   |     |      | Sulfuric Acid vapor column burden
+  CARMA_MXSAREA     | m-2 m-3     | xyz | C |    |   |   |     |      | Mixed Group Total Surace Area Density
+  CARMA_MXNUMD      | m-3         | xyz | C |    |   |   |     |      | Mixed Group Total Number Density
+  CARMA_MXREFF      | m           | xyz | C |    |   |   |     |      | Mixed Group Particle Effective Radius 
+  CARMA_MXSUDP      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Sulfate deposition flux
+  CARMA_MXSUSD      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Sulfate sedimentation flux
+  CARMA_MXSUWT      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Sulfate wet-deposition flux
+  CARMA_MXSUSV      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Sulfate convective scavenging flux
+  CARMA_MXSUCMASS   | kg m-2      | xy  |   |    |   |   |     |      | Mixed Sulfate column burden
+  CARMA_MXSUSMASS   | kg m-3      | xy  |   |    |   |   |     |      | Mixed Sulfate surface mass concentration
+  CARMA_MXSUEXTTAU  | 1           | xy  |   |    |   |   |     |      | Mixed Sulfate 550-nm extinction AOT
+  CARMA_MXSUSCATAU  | 1           | xy  |   |    |   |   |     |      | Mixed Sulfate 550-nm scattering AOT
+  CARMA_MXSUANGSTR  | 1           | xy  |   |    |   |   |     |      | Mixed Sulfate 470-870 nm Angstrom parameter
+  CARMA_MXSUFLUXU   | kg m-1 s-1  | xy  |   |    |   |   |     |      | Mixed Sulfate column u-wind mass flux
+  CARMA_MXSUFLUXV   | kg m-1 s-1  | xy  |   |    |   |   |     |      | Mixed Sulfate column v-wind mass flux
+  CARMA_MXSUMASS    | kg kg-1     | xyz | C |    |   |   |     |      | Mixed Sulfate Mass Mixing Ratio 
+  CARMA_MXSUCONC    | kg m-3      | xyz | C |    |   |   |     |      | Mixed Sulfate Mass Concentration
+  CARMA_SMEM        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Smoke emission flux
+  CARMA_SMDP        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Smoke deposition flux
+  CARMA_SMSD        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Smoke sedimentation flux
+  CARMA_SMWT        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Smoke wet-deposition flux
+  CARMA_SMSV        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Smoke convective scavenging flux
+  CARMA_SMCMASS     | kg m-2      | xy  |   |    |   |   |     |      | Smoke column burden
+  CARMA_SMSMASS     | kg m-3      | xy  |   |    |   |   |     |      | Smoke surface mass concentration
+  CARMA_SMEXTTAU    | 1           | xy  |   |    |   |   |     |      | Smoke 550-nm extinction AOT
+  CARMA_SMSCATAU    | 1           | xy  |   |    |   |   |     |      | Smoke 550-nm scattering AOT
+  CARMA_SMANGSTR    | 1           | xy  |   |    |   |   |     |      | Smoke 470-870 nm Angstrom parameter
+  CARMA_SMFLUXU     | kg m-1 s-1  | xy  |   |    |   |   |     |      | Smoke column u-wind mass flux
+  CARMA_SMFLUXV     | kg m-1 s-1  | xy  |   |    |   |   |     |      | Smoke column v-wind mass flux
+  CARMA_SMMASS      | kg kg-1     | xyz | C |    |   |   |     |      | Smoke Mass Mixing Ratio 
+  CARMA_SMCONC      | kg m-3      | xyz | C |    |   |   |     |      | Smoke Mass Concentration
+  CARMA_SMSAREA     | m-2 m-3     | xyz | C |    |   |   |     |      | Smoke Total Surace Area Density
+  CARMA_SMNUMD      | m-3         | xyz | C |    |   |   |     |      | Smoke Total Number Density
+  CARMA_SMREFF      | m           | xyz | C |    |   |   |     |      | Smoke Particle Effective Radius 
+  CARMA_MXSMEM      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Smoke emission flux
+  CARMA_MXSMDP      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Smoke deposition flux
+  CARMA_MXSMSD      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Smoke sedimentation flux
+  CARMA_MXSMWT      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Smoke wet-deposition flux
+  CARMA_MXSMSV      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Smoke convective scavenging flux
+  CARMA_MXSMCMASS   | kg m-2      | xy  |   |    |   |   |     |      | Mixed Smoke column burden
+  CARMA_MXSMSMASS   | kg m-3      | xy  |   |    |   |   |     |      | Mixed Smoke surface mass concentration
+  CARMA_MXSMEXTTAU  | 1           | xy  |   |    |   |   |     |      | Mixed Smoke 550-nm extinction AOT
+  CARMA_MXSMSCATAU  | 1           | xy  |   |    |   |   |     |      | Mixed Smoke 550-nm scattering AOT
+  CARMA_MXSMANGSTR  | 1           | xy  |   |    |   |   |     |      | Mixed Smoke 470-870 nm Angstrom parameter
+  CARMA_MXSMFLUXU   | kg m-1 s-1  | xy  |   |    |   |   |     |      | Mixed Smoke column u-wind mass flux
+  CARMA_MXSMFLUXV   | kg m-1 s-1  | xy  |   |    |   |   |     |      | Mixed Smoke column v-wind mass flux
+  CARMA_MXSMMASS    | kg kg-1     | xyz | C |    |   |   |     |      | Mixed Smoke Mass Mixing Ratio 
+  CARMA_MXSMCONC    | kg m-3      | xyz | C |    |   |   |     |      | Mixed Smoke Mass Concentration
+  CARMA_BCEM        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Black Carbon emission flux
+  CARMA_BCDP        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Black Carbon deposition flux
+  CARMA_BCSD        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Black Carbon sedimentation flux
+  CARMA_BCWT        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Black Carbon wet-deposition flux
+  CARMA_BCSV        | kg m-2 s-1  | xy  |   |    |   |   |     |      | Black Carbon convective scavenging flux
+  CARMA_BCCMASS     | kg m-2      | xy  |   |    |   |   |     |      | Black Carbon column burden
+  CARMA_BCSMASS     | kg m-3      | xy  |   |    |   |   |     |      | Black Carbon surface mass concentration
+  CARMA_BCEXTTAU    | 1           | xy  |   |    |   |   |     |      | Black Carbon 550-nm extinction AOT
+  CARMA_BCSCATAU    | 1           | xy  |   |    |   |   |     |      | Black Carbon 550-nm scattering AOT
+  CARMA_BCANGSTR    | 1           | xy  |   |    |   |   |     |      | Black Carbon 470-870 nm Angstrom parameter
+  CARMA_BCFLUXU     | kg m-1 s-1  | xy  |   |    |   |   |     |      | Black Carbon column u-wind mass flux
+  CARMA_BCFLUXV     | kg m-1 s-1  | xy  |   |    |   |   |     |      | Black Carbon column v-wind mass flux
+  CARMA_BCMASS      | kg kg-1     | xyz | C |    |   |   |     |      | Black Carbon Mass Mixing Ratio 
+  CARMA_BCCONC      | kg m-3      | xyz | C |    |   |   |     |      | Black Carbon Mass Concentration
+  CARMA_MXBCEM      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Black Carbon emission flux
+  CARMA_MXBCDP      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Black Carbon deposition flux
+  CARMA_MXBCSD      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Black Carbon sedimentation flux
+  CARMA_MXBCWT      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Black Carbon wet-deposition flux
+  CARMA_MXBCSV      | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Black Carbon convective scavenging flux
+  CARMA_MXBCCMASS   | kg m-2      | xy  |   |    |   |   |     |      | Mixed Black Carbon column burden
+  CARMA_MXBCSMASS   | kg m-3      | xy  |   |    |   |   |     |      | Mixed Black Carbon surface mass concentration
+  CARMA_MXBCEXTTAU  | 1           | xy  |   |    |   |   |     |      | Mixed Black Carbon 550-nm extinction AOT
+  CARMA_MXBCSCATAU  | 1           | xy  |   |    |   |   |     |      | Mixed Black Carbon 550-nm scattering AOT
+  CARMA_MXBCANGSTR  | 1           | xy  |   |    |   |   |     |      | Mixed Black Carbon 470-870 nm Angstrom parameter
+  CARMA_MXBCFLUXU   | kg m-1 s-1  | xy  |   |    |   |   |     |      | Mixed Black Carbon column u-wind mass flux
+  CARMA_MXBCFLUXV   | kg m-1 s-1  | xy  |   |    |   |   |     |      | Mixed Black Carbon column v-wind mass flux
+  CARMA_MXBCMASS    | kg kg-1     | xyz | C |    |   |   |     |      | Mixed Black Carbon Mass Mixing Ratio 
+  CARMA_MXBCCONC    | kg m-3      | xyz | C |    |   |   |     |      | Mixed Black Carbon Mass Concentration
+  CARMA_TOTEXTTAU   | 1           | xy  |   |    |   |   |     |      | Total 550-nm extinction AOT
+  CARMA_TOTSCATAU   | 1           | xy  |   |    |   |   |     |      | Total 550-nm scattering AOT
+  CARMA_TOTANGSTR   | 1           | xy  |   |    |   |   |     |      | Total 470-870 nm Angstrom parameter
+  CARMA_DUEXTCOEF   | m-1         | xyz | C |    |   |   |     |      | Dust 550 nm extinction coefficient
+  CARMA_DUSCACOEF   | m-1         | xyz | C |    |   |   |     |      | Dust 550 nm scattering coefficient
+  CARMA_BCEXTCOEF   | m-1         | xyz | C |    |   |   |     |      | Black Carbon 550 nm extinction coefficient
+  CARMA_BCSCACOEF   | m-1         | xyz | C |    |   |   |     |      | Black Carbon 550 nm scattering coefficient
+  CARMA_SSEXTCOEF   | m-1         | xyz | C |    |   |   |     |      | Seasalt 550 nm extinction coefficient
+  CARMA_SSSCACOEF   | m-1         | xyz | C |    |   |   |     |      | Seasalt 550 nm scattering coefficient
+  CARMA_SMEXTCOEF   | m-1         | xyz | C |    |   |   |     |      | Smoke 550 nm extinction coefficient
+  CARMA_SMSCACOEF   | m-1         | xyz | C |    |   |   |     |      | Smoke 550 nm scattering coefficient
+  CARMA_SUEXTCOEF   | m-1         | xyz | C |    |   |   |     |      | Sulfate 550 nm extinction coefficient
+  CARMA_SUSCACOEF   | m-1         | xyz | C |    |   |   |     |      | Sulfate 550 nm scattering coefficient
+  CARMA_ASHEXTCOEF  | m-1         | xyz | C |    |   |   |     |      | Ash 550 nm extinction coefficient
+  CARMA_ASHSCACOEF  | m-1         | xyz | C |    |   |   |     |      | Ash 550 nm scattering coefficient
+  CARMA_SUBSTEPS    | 1           | xy  |   |    |   |   |     |      | CARMA substeps
+  CARMA_RETRIES     | 1           | xy  |   |    |   |   |     |      | CARMA retries
+  CARMA_ZSUBSTEPS   | 1           | xyz | C |    |   |   |     |      | CARMA substeps per grid box
+  CARMA_SATH2SO4    | 1           | xyz | C |    |   |   |     |      | H2SO4 supersaturation
+  CARMA_SUVF001     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 001
+  CARMA_SUVF002     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 002
+  CARMA_SUVF003     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 003
+  CARMA_SUVF004     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 004
+  CARMA_SUVF005     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 005
+  CARMA_SUVF006     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 006
+  CARMA_SUVF007     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 007
+  CARMA_SUVF008     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 008
+  CARMA_SUVF009     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 009
+  CARMA_SUVF010     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 010
+  CARMA_SUVF011     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 011
+  CARMA_SUVF012     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 012
+  CARMA_SUVF013     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 013
+  CARMA_SUVF014     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 014
+  CARMA_SUVF015     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 015
+  CARMA_SUVF016     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 016
+  CARMA_SUVF017     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 017
+  CARMA_SUVF018     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 018
+  CARMA_SUVF019     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 019
+  CARMA_SUVF020     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 020
+  CARMA_SUVF021     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 021
+  CARMA_SUVF022     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 022
+  CARMA_SUVF023     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 023
+  CARMA_SUVF024     | m s-1       | xyz | E |    |   |   |     |      | SU group vfall bin 024
+  CARMA_MXVF001     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 001
+  CARMA_MXVF002     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 002
+  CARMA_MXVF003     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 003
+  CARMA_MXVF004     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 004
+  CARMA_MXVF005     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 005
+  CARMA_MXVF006     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 006
+  CARMA_MXVF007     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 007
+  CARMA_MXVF008     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 008
+  CARMA_MXVF009     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 009
+  CARMA_MXVF010     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 010
+  CARMA_MXVF011     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 011
+  CARMA_MXVF012     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 012
+  CARMA_MXVF013     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 013
+  CARMA_MXVF014     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 014
+  CARMA_MXVF015     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 015
+  CARMA_MXVF016     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 016
+  CARMA_MXVF017     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 017
+  CARMA_MXVF018     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 018
+  CARMA_MXVF019     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 019
+  CARMA_MXVF020     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 020
+  CARMA_MXVF021     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 021
+  CARMA_MXVF022     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 022
+  CARMA_MXVF023     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 023
+  CARMA_MXVF024     | m s-1       | xyz | E |    |   |   |     |      | MX group vfall bin 024
+# ------------------|-------------|-----|---|----|---|---|-----|------|--------------------------
+</ExportSpec>
+
+

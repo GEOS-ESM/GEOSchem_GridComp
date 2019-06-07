@@ -1,0 +1,42 @@
+2015-11-19  Anton Darmenov  <anton.s.darmenov@nasa.gov>
+    * tag asd-Heracles-UNSTABLE-MAM+ACI-a3: changed the interface 
+    of modal_aero_amicphys_intr() to return the column-integrated
+    tendencies due to gas-aerosol-exchange/condensation, rename,
+    nucleation and coagulation
+
+    * added automatically generated exports of the column-integrated 
+    tendencies due to microphysics process; need a better way of mapping 
+    the diagnostics from the modal_aero_amicphys_intr() to the exported
+    fields
+
+    * added MAM7_ExtData.rc and GEOSachem_ExtData.rc
+
+    * added the code and scripts that generate the mie-optics LUTs 
+    in the 'optics' subdirectory
+
+    * upstream edits from Heracles-UNSTABLE
+
+
+2015-11-12  Anton Darmenov  <anton.s.darmenov@nasa.gov>
+    * tag asd-Heracles-UNSTABLE-MAM+ACI-a2: do not use code from the 
+    ./CAM directory; 
+
+    * the old implementations of the coagulation, 
+    nucleation and gas-aerosol-exchange parameterizations 
+    in MAML_CoagulationMod.F90 and MAM_CoagulationMod.F90, 
+    MAML_NucleationMod.F90 and MAM_NucleationMod.F90, 
+    MAML_GasAerosolExchangeMod.F90 and MAM_GasAerosolExchangeMod.F90 are not
+    needed anymore because these processes are now done in 
+    the modal_aero_amicphys_intr() subroutine
+
+    * synced with upstream edits from Heracles-UNSTABLE (radiation, moist, etc)
+
+
+2015-10-30  Anton Darmenov  <anton.s.darmenov@nasa.gov>
+
+    * tag asd-Heracles-UNSTABLE-MAM+ACI-a1: adapted improvements updates to 
+    MAM and MOSAIC from PNNL and cherrypicked files from CESM to GEOS-5; export
+    AERO_ACI state with a method to calculate volume-averaged aerosol 
+    activation properties; the tag passes the regression test.
+
+

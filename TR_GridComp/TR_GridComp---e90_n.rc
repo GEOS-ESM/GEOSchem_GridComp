@@ -1,0 +1,37 @@
+#
+# Resource file for Constant emission Northern Hemisphere 90 day tracer
+#
+
+# SHOULD THE TRACER SOURCE BE ADDED FIRST, OR THE SINK APPLIED FIRST
+# ---------------------------
+  first_phase: sink
+
+# SOURCE - MODE:  constant  |  file2d  |  file3d  |  model_field  |  maintain_mixing_ratio
+# ---------------------------
+  src_mode: maintain_mixing_ratio
+  src_value: 100 ppbv
+  src_add: TRUE
+
+# SOURCE - Horizontal coverage: all  |  lat_zone  |  latlon_box
+# ---------------------------
+  src_horiz: lat_zone
+  src_lats: 40 91
+
+# SOURCE - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere
+# ---------------------------
+  src_vert: surface
+
+
+# SINK - MODE:  constant  |  efolding  |  halflife  |  none
+# ---------------------------
+  snk_mode: efolding
+  snk_period: 90 days
+
+# SINK - Horizontal coverage:  all  |  lat_zone  |  latlon_box
+# ---------------------------
+  snk_horiz: all
+
+# SINK - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere
+# ---------------------------
+  snk_vert: all
+

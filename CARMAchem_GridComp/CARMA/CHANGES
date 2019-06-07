@@ -1,0 +1,417 @@
+carma PRC 10/17/2007
+- add SSFALLTEST to Makefile for offline/SLOD Seasalt falltest
+  passing rh and rhFlag from SLOD through.
+- Also changed sense of FALLTEST a little by letting model compute
+  own fall velocity and then output bin 15 (vf ~ 1 cm/s) to falltest.txt
+
+carma PRC 10/9/2007
+- added hooks to pass relative humidity (assumed scaled 0 - 1) from
+  hostmodel through to CARMA; check value of rhFlag and in setupvf
+  adjust the fall velocity as though we deal with either
+  Fitzgerald (rhFlag = 1) or Gerber (rhFlag = 2) parameterization
+  for swelling of seasalt aerosols.  If rhFlag = 0, do nothing.
+
+carma PRC 10/4/2007
+- first crack at merging with GEOS, initial commit to sourcemotel
+- mv SLOD_GridComp.F90 -> SLOD.F90
+- mv SLOD_GridCompCoupler.F90 -> SLOD_Coupler.F90
+- mv SLOD_GridComp.h -> SLOD.h
+- mv carma_main.F90 -> carma_main_mod.F90
+- mv Chem_Mod.F90 -> SLOD_ChemMod.F90, used only in SLOD
+- make carma_main_mod a module, included in SLOD_Coupler
+
+carma_0r30 PRC 8/22/2007
+- extensive comments to SLOD and some rearrangement, add SLOD_GridComp.h
+- add carma_bins.F90, which extracts the bin creation from setupbins
+- change how size bins set up in SLOD, carma_create, and setupbins to use
+  carma_bins
+
+carma_0r29 PRC 8/21/2007
+- Add the SLODfluxout to the SLOD and put some code in SLOD_GridCompCoupler
+  to compute output fluxes.
+- Note: this may be an outstanding problem, there is an error in how the
+  radii are provided in the SLOD vs. how defined in CARMA, so small
+  error in how fluxes, e.g., are reported.
+
+carma_0r28 PRC 8/16/2007
+- I want to pass r/rlow/rup or rmin/rmrat from host model
+
+carma_0r27 JAS 8/15/2007
+- Changed COAGTEST output to mimic FALLTEST output
+- Added IDL readers (read_falltest.pro and read_coagtest.pro) for the output
+  from these tests
+- Added IDL readers to make tar in Makefile
+- Added cvsnotes.txt to make tar in Makefile
+- rm carma.p and *.out in make clean in Makefile
+- rm falltest.txt and coagtest.txt in make clean in Makefile
+
+carma_0r26 PRC/JAS 8/15/2007
+- generalize code so it works in g95/ifort/gfortran by 
+  (i) making locally generated arrays defined allocatable or by passed dimension
+  (ii) changing output filenames for, e.g., LUNORAD, etc.
+  (iii) fixing order of precedence in calculation of coagpe in coagp.F90
+- also correct float underflow by checking pc against FEW_PC in coagp & coagl
+- fix bounds error on printing of "re" in setupvf
+- fix bounds error in metric-ization of dkx & dky ... this is significant
+  as it differs from CARMA_2.2 ... dkx and dky now have NZ levels (not NZP1)
+- remove old FALLTEST (using CARMA definition of sigma levels)
+- rename FALLTESThost tag to FALLTEST
+- move i/o for FALLTEST to SLOD, consistent with COAGTEST
+- now internal to CARMA:
+  (i) FALLTEST sets ifall = 1 and fixed fall velocity of 0.01 m s-1
+  (ii) COAGTEST sets do_vtran false, do_coag true, and picks a fixed
+       coagulation kernel
+
+carma_0r25 PRC/JAS 8/15/2007
+- intermediary tag
+
+carma_0r24 JAS 8/10/2007
+
+- Trying to check in new code and tag it properly.
+- Here's a new comment that I'm going to commit and then try to move
+  tag carma_0r24 to contain this new comment
+
+JAS 8/10/2007
+
+I'm having problems tagging and committing.  These comments in this file
+are what I think I'm doing.  They do not reflect what CVS is doing to the
+$#?! code.  I guess it's all user error in the end, so some day the CHANGES
+file will hopefully represent the code accurately.
+
+carma_0r22 JAS 8/10/2007
+
+- Remove hacks on cvert_tbnd and cvert_bbnd in vertical
+
+carma_0r21 JAS 8/9/2007
+
+- Added -DCOAGTEST to Makefile.  This runs coagulation of initiallly mono-
+  disperse aerosol as presented in Figure 2 of:
+
+    Jacobson et al., Atmospheric Environment 28, 1327-1338, 1994
+
+- This test generates an output file called coagtest.txt.  The four columns
+  contain the time in seconds, the particle radii in meters, the number
+  concentration (m**-3), and dN/dlogD (m**-3).  Comparison to Jacobson's
+  figure is a little difficult because we do not know exactly what his
+  bin edges are for the calculation of the various particle size
+  distributions.  If you put 10**12 m**-3 in the first bin of r = 3 nm
+  (d = 6 nm), then you get roughly the same size distribution given in the
+  paper for volume ratio spacing of 2, which is slightly more diffusive than
+  the analytical expression by Smoluchowski.  I say the distribution is
+  roughly the same because it's rather difficult to figure out where a bin
+  diameter goes exactly on a log axis.
+
+  Here are some numbers for comparison at t = 12 h.
+
+  r = 3.0 nm, N = 5.67e9 m**-3, dN/dlogD = 5.75e10 m**-3
+      3.8         8.35e9                   8.47e10
+      4.8         1.31e10                  1.33e11
+      6.0         1.72e10                  1.74e11
+      7.6         1.63e10                  1.66e11
+     12.0         2.74e9                   2.78e10
+     15.1         3.43e8                   3.48e9     
+     19.0         1.71e7                   1.74e8 
+     24.0         3.42e5                   3.47e6 (roughly the x-int in Fig. 2)
+
+- SLOD_GridComp: add dr to calc dN/dlogD for coag test
+                 add endtime, ntime for coag test
+                 add ibun to refer to bin inside of chem bundle
+                 change r(1,1) to 50 nm for fun
+                 change bin mixing ratios in vertical test to be ~ 1 ppm
+                  (instead of 1 kg / m**3)
+                 commented output of levels, altitudes, and number
+                  concentrations
+                 added all sorts of code to do the coag test and write
+                  out coagtest.txt
+                 added output of initial and final mixing ratios of
+                  particle bins
+- init: set default value of do_coag to true 
+        set all switches appropriately if doing the coag test
+- initaer: removed legacy comments
+           added comment about NZ and top and coordinates; should talk to Pete
+             about the sense of fluxes that he mentions below in 0r20
+- setupaer: switch to const coag kernels if doing the coag test
+- vertical: moved comments from CPP directives to elminate warning messages
+              during compile
+
+carma_0r20 PRC 8/8/2007
+- modify vertical, vertadv, versol routines:
+  in versol:   change sense of fluxes so that ftop always goes with level NZ
+               and fbot always goes with level 1 (regardless of I_SIG or I_CART)
+  in vertical: impose definition of cvert_Xbnd /= 0
+  in vertadv:  add discontinuity test
+               as a hack, don't like linear assumptions in edge layers so
+               impose vertadvu(d) = vtrans as appropriate for 1,2 & NZ-1, NZ
+- modify initatm for have data statements in g_ll_sig for 28, 32, and 72
+  layer models, selected now if not doing hostmodel and km is one of those
+- modify initaer initial particle distribution for not doing hostmodel
+- modify init to have default timestep of 1800 sec. and set aerosols to have
+  I_FIXED_CONC boundary condition
+- add diagnostic tests for -DFALLTEST & -DFALLTESThost to Makefile and
+  carma_main.F90, SLOD_GridCompCoupler.F90, SLOD_GridComp
+
+
+carma_0r19 PRC 8/2/2007
+- fix a nagging precision problem in vertadv
+- begin to implement -DFALLTEST definition in Makefile and beyond
+
+carma_0r18 PRC 8/1/2007
+- something went wrong in the merge and I had to re-add JAS code
+  added on his branch (coagl.F90 etc)
+- light editing
+
+carma_0r17 PRC/JAS 8/1/2007
+- merge carma_0r15_branch with carma_0r16
+- coag is implemented, long live coag!
+
+carma 0r16 PRC 6/28/2007
+- some bug fixes in carma_types_mod, initatm
+- correct sense of fall velocity in sigma coordinates
+- add comments to versol
+- add cvsnotes.txt document to cheat some notes
+
+carma_0r15_branch JAS 7/30/2007
+
+- Removed temporary code used for coag testing
+
+carma_0r15_branch JAS 7/27/2007
+
+- Redid coag test of Jacobson et al 1994.  Distribution matches.
+- Conserves mass, too
+
+carma_0r15_branch JAS 7/20/2007
+
+- switched to single precision
+- started setting up coag test to compare to Jacobsen et al.
+- started passing n (the hostmodel time index) in case it's necessary.
+- calling init every step, so that atm and particle grid get assigned
+  correctly.  Ugh!
+- fixed weirdness in setupckern.  first time through it ran fine, but on
+  subsequent runs, the data would not reload into the local arrays.  Thus,
+  when the data were rescaled to the model units, this rescaling happened
+  again and again each time, causing data_e to take a log of a negative
+  number and data_r to keep shrinking.  Now, there are two copies of these
+  local arrays: orig_e and orig_r and data_e and data_r.  The orig_*
+  versions never get modified, so the the scaled data_* versions are correct.
+
+carma_0r15_branch JAS 7/20/2007
+- fixed qa => q_array mapping in SLOD_GridCompCoupler
+  qa( nbeg...nend ) => q_array( ibin, ielem )
+    use this for the index conversion: 
+               nbeg + ( ielem - 1 ) * NBIN + ibin - 1 )
+- changed some key vars to all caps, e.g. NX, NY, NZ
+
+carma_0r15_branch JAS 7/20/2007
+
+- Coagulation works qualitatively.  Stiil need quantitative check.
+- Added prestep and smallconc
+- Modifed the following files:
+Makefile:
+- added prestep and smallconc
+SLOD_GridComp:
+- changed dtime and initial mass mixing ratios for coag test
+carma_main:
+- converted pc to #/m3 for jasofil.p
+coagl:
+- added local LUNOJAS for writing to jasofil.p
+csolve:
+- extra line, so I removed the change
+init:
+- use dtime from hostmodel if do_hostmodel
+microslow:
+- added local LUNOJAS
+- removed/changed excessive !
+newstate:
+- added local LUNOJAS
+step:
+- uncomment call prestep
+
+!--
+
+carma_0r15_branch JAS 7/10/2007
+
+- NSOLUTE should be known by CARMA only; hardwiring for now in carma_main 
+- Not passing q from SLOD anymore; will make it inside CARMA for coag test
+- comment do_vtran = .true. in init
+
+
+carma_0r15_branch JAS 7/10/2007
+
+- Moved around some argument lists for readability in:
+   SLOD_GridComp.F90
+   SLOD_GridCompCoupler.F90
+   carma_main.F90
+
+
+carma_0r15_branch JAS 7/9/2007
+- SLOD_GridComp.F90
+  SLOD_GridCompCoupler.F90
+  carma_main.F90
+  - SLOD now handles multiple elements so I can start testing coag
+  - SLOD does not need to know about NSOLUTE
+  - Argument lists changed to reflect these changes
+
+
+carma_0r15_branch JAS 6/29/2007
+- Makefile:
+  - commented #CPPFLAGS= -DDEBUG
+  - added subroutine setupckern.F90  
+  - added subroutine setupcoag.F90
+- SLOD_GridComp.F90:
+  - commented debug output
+- carma_globaer.h and carma_types_mod:
+  - rearranged code order in carma_types_mod.F90 and carma_globaer.h to more
+    accurately reflect order of vars in legacy globaer.h.  Sorry, Pete.  This
+    seems like a lot of work and change for nothing, but I was going nuts
+    using the legacy globaer.h as a template when adding new stuff.
+- carma_types_mod.F90:
+  - changed type carmakernel to carmakerneltype
+  - changed rmu and thcond to be type carmakerneltype so that these properties
+    can have horizontal variability just like vf.
+  - added ckernel and pkernel as vars of type carmakerneltype
+- initatm.F90:
+  - changed rmu and thcond to point at correct column of carmakerneltype
+    in three of the many possible atmospheres (g_cart_cart, g_cart_sig, and
+    g_ll_sig)   
+  - corrected horizontal metrics for g_ll_cart and made a comment
+- setupaer.F90:
+  - change icoag so that all coag kernels would be calculated
+  - add comment explaining some icoag funkiness
+  - add calls to setupckern and setupcoag
+- setupvf.F90:
+  - update to reflect new declaration of rmu
+  - add some comments to document equations
+  - clean up literal constants and parentheses
+- added microslow.F90, coagl.F90, coagp.F90, and csolve.F90
+- code builds and runs
+- need to test it
+
+
+carma 0r15 PRC 6/12/2007
+- implemented a way to request host model to transfer meteorology
+  to CARMA; SLOD passes parameters as optional arguments to call
+  carma_main and optional logical "do_hostmodel"; carma_main passes
+  to carma_create which does some light checking of optional arguments
+  for consistency.  Currently, SLOD does not pass grid type igridv or
+  igridh, which are hard set in call to carma_create if doing hostmodel,
+  setup as if for sig/LL run
+- modified initatm to accept the do_hostmodel in setting grids.  Currently
+  only the g_cart_cart, g_cart_sig, and g_ll_sig methods implemented.
+  Others require map projection code but are less likely to find use.
+- the host model calling fixes the meteorology, but is currently not
+  really set up for gases and particles.  You need to know something
+  about the particle properties (rmass, specifically) to map q to pc
+  and this would need to be consistent with CARMA.  At the moment, if
+  I want the host model to pass q I need also to pass r and rhop, but
+  I don't (a) turn off reinitialization of pc in initaer and (b) don't
+  enforce r and rhop consistency in CARMA setup routines.  Same would
+  go for gc.
+- A note about the vertical grid.  For sigma vertical I have forced/changed
+  the sense of sigma from the original carma implementation.  Instead of
+   sigma = (p - ptop) / (psurf-ptop)
+  I use
+   sigma = p / psurf
+  As a practical matter I'm not sure how much this matters for hostmodel
+  calls, but the former way enforced sigma = 0 at the model top, which
+  mucked up with the logarithmic definition of the mid-point pressure.
+  Furthermore, I turn off the call to hydrostat.  I suspect that the
+  temperature profile I pass from the host model is simply not in balance
+  in this coordinate system, but first efforts to check that screw up
+  the temperature profile.  A couple of questions: what is hydrostat
+  really doing? what is the ptc really mean?
+
+carma_0r14 PRC 5/30/2007
+- note I skip 0r13 to piss JAS off
+- bug fix in vaporp
+- bug fix to apply metrics in initatm
+
+carma_0r12 PRC 5/24/2007
+- implement initaer & initgas (vaporp, supersat)
+- completes initnew except for coag and growth kernels in setupaer
+- other notes from 0r10 still stand...
+   o need to clean up the type definition so things are in order with
+     comments and make sense
+   o need to clean up carma_globaer.h in much the same way
+   o pointer definitions in carma_globaer.h should be initialized to point
+     at null()
+
+
+carma_0r11 PRC 5/23/2007
+- implement JAS kernel type in carma_types_mod.  My implementation is
+  somewhat different than JAS wanted.  Here each relevant is a type
+  carmakernel and you allocate data2d, data3d, etc., as neccessary for
+  the particular variable
+- use the carmakernel type for vf, bpm, and re, and so implement in
+  setupvf and vertical
+- reverted vertical, versol, vertdif, vertadv to all require the carma
+  object.  This changes the passed arguments
+- update some units information
+- other notes from 0r10 still stand...
+   o need to clean up the type definition so things are in order with
+     comments and make sense
+   o need to clean up carma_globaer.h in much the same way
+   o pointer definitions in carma_globaer.h should be initialized to point
+     at null()
+
+
+carma_0r10 PRC 5/22/2007
+- Things to do at this point:
+   o implement Jamie's kernel ideas
+   o need to clean up the type definition so things are in order with
+     comments and make sense
+   o need to clean up carma_globaer.h in much the same way
+   o pointer definitions in carma_globaer.h should be initialized to point
+     at null()
+   o note that variables dimensions NXYZ have been reconfigured NX,NY,NZ
+   o revisit versol, vertadv, and vertdiff to pass the object instead of
+     extraneous garbage
+- introduce setupaer routine, much of definitions and all calls are commented
+  out for now
+- add to secondary model variable block in type and globaer
+
+carma_0r9 PRC 5/21/2007
+- init now calls through to initatm/g_cart_cart
+- mods in some places to consistency in type def, etc.
+
+carma_0r8 PRC 5/21/2007
+- I introduce prtsep and setuperr routines
+- Turn on call to init.F90
+- Make CARMA_SlodGridComp consistent with example problem set up in CARMA 2.2
+  e.g., NGROUP, NELEM, etc.
+- init overwrites logical definitions in carma_create (in the future, this will
+  want to be changed to initialize from a resource file)
+- now will generate carma.p output file; pipe all other outputs to /dev/null
+- not yet implemented next levels of init or outprt routines
+
+carma_0r7 PRC 5/18/2007
+- move hard settings (for now) into carma_create; these will be things eventually
+  specified in a resource file from the host model (e.g., do_vtran, mapping arrays)
+- introduce model options & control section of globaer, which defines most
+  of growth/coag arrays and lots of logical flags
+- change sense of associations in carma_globaer to be pointers to carma object
+
+carma_0r6 PRC 5/14/2007
+- more clean up of type
+- introduce vertdif routine back in
+- plug everything in and activate step/newstate
+- introduce some flags into type (e.g., do_vtran) and initialize in carma_globaer.h
+
+carma_0r5 PRC 5/14/2007
+- clean up carma_globaer.h definition
+- clean up codes/error handling in carma_types_mod
+- get the vertical routines updated to handle carma object
+
+carma_0r4 PRC 5/11/2007
+- mods to pass q into carma_main, create & destroy pc, rhoa, etc. in carma type
+- introduce SINGLE/DEBUG CPP flags into Makefile and code parts
+
+carma_0r3 PRC 5/11/2007
+- mods to SLOD_GridCompCoupler and carma_main to pass t, rhoa, delp, q variables
+
+carma_0r2 PRC 5/11/2007
+- mods to work on SLOD
+- SLOD calls CARMA like a column model
+
+carma_0r1 JAS 05/10/2007
+-Initial check-in of CARMAGEOS
+

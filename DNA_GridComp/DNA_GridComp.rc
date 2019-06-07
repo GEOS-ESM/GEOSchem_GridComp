@@ -1,0 +1,14 @@
+#
+# Resource file for the GEOS DNA grid component.
+#
+# REVISION HISTORY: 
+#     22 September 2015    A. Darmenov    Initial version   
+#--------------------------------------------------------------------
+
+verbose: .True.
+
+number_of_bands: 19
+
+exinction_field_template:  'AEROSOL_EXT_BAND'
+scattering_field_template: 'AEROSOL_SCA_BAND'
+asymmetry_field_template:  'AEROSOL_ASY_BAND'

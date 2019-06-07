@@ -1,0 +1,37 @@
+#
+# Resource file for Stratosphere source 25 day tracer
+#
+
+# SHOULD THE TRACER SOURCE BE ADDED FIRST, OR THE SINK APPLIED FIRST
+# ---------------------------
+  first_phase: sink
+
+# SOURCE - MODE:  constant  |  file2d  |  file3d  |  model_field  |  maintain_mixing_ratio
+# ---------------------------
+  src_mode: constant
+  src_value: 200 ppbv
+  src_add: false
+
+# SOURCE - Horizontal coverage: all  |  lat_zone  |  latlon_box
+# ---------------------------
+  src_horiz: all
+
+# SOURCE - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere
+# ---------------------------
+  src_vert: pressures
+  src_pressures: 0 80
+
+
+# SINK - MODE:  constant  |  efolding  |  halflife  |  none
+# ---------------------------
+  snk_mode: efolding
+  snk_period: 25 days
+
+# SINK - Horizontal coverage:  all  |  lat_zone  |  latlon_box
+# ---------------------------
+  snk_horiz: all
+
+# SINK - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere
+# ---------------------------
+  snk_vert: troposphere
+

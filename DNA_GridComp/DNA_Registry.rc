@@ -1,0 +1,59 @@
+#
+# This the GEOS DNA Grid Component Registry. It defines Import,
+# Internal and Export states for this component.
+#
+# !REVISION HISTORY:
+#  22 September 2014    Darmenov, A.    Initial Version
+#
+# -----------------------------------------------------------------
+
+COMP_NAME: DNA
+
+# Only change the Registry version when major structural changes
+# occurs, not changes in content
+# --------------------------------------------------------------
+  MAPL_REGISTRY_VERSION: 1.00  
+
+#                               ------------
+#                               Import State
+#                               ------------
+
+<ImportSpec name="DNA", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,long_name">
+# ----------------------|------------|-----|---|----|---|---|-----|------|--------------------------
+# Short                 |            |     | V |Item|Intervl| Sub | Def  | Long
+# Name                  |   Units    | Dim |Loc|Type| R | A |Tiles| ault | Name
+# ----------------------|------------|-----|---|----|---|---|-----|------|--------------------------
+#
+# ----------------------|------------|-----|---|----|---|---|-----|------|--------------------------
+</ImportSpec>
+
+#                               ------------
+#                               Export State
+#                               ------------
+
+<ExportSpec name="DNA", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,long_name">
+# ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
+# Short                 |               |     | V |Item|Intervl| Sub | Long
+# Name                  |   Units       | Dim |Loc|Type| R | A |Tiles| Name
+# ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
+#
+# ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
+</ExportSpec>
+
+#                               --------------
+#                               Internal State
+#                               --------------
+
+#
+# Note: 1) For friendlies, use "D" for dynamics, "T" for turbulence and "C" for convection, or "S" for self (add to EXPORT state); leave blank otherwise
+#       2) If quantity requires no restart, put an 'x' in the No Rst column
+
+<InternalSpec name="DNA", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,norestart,halowidth,friendlyto,long_name">
+# ----------------------|------------|-----|---|----|---|---|-----|------|----|----|---------|------
+#  Short                |            |     | V |Item|Intervl| Sub | Def  | No | Ha | Friends | Long
+#  Name                 |   Units    | Dim |Loc|Type| R | A |Tiles| ault | Rst| lo |         | Name
+# ----------------------|------------|-----|---|----|---|---|-----|------|----|----|---------|------
+#
+# ----------------------|------------|-----|---|----|---|---|-----|------|----|----|---------|------
+</InternalSpec>
+

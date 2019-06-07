@@ -1,0 +1,64 @@
+#EQUATIONS { gas phase reactions used in the sulfur scheme}
+<G1>   DMS + OH  = SO2                   : 1.2d-11 * exp(-260.0d0 / temp);
+<G2>   DMS + OH  = 0.75 SO2 + 0.25 MSA   : k_DMS_OH(c_O2, temp);
+<G3>   DMS + NO3 = SO2                   : 1.9d-13 * exp( 520.0d0 / temp);
+<G4>   SO2 + OH  = H2SO4                 : k_SO2_OH(c_air, temp);
+<G5>   NH3 + OH  = H2O                   : 1.7d-12 * exp(-710.0d0 / temp);
+
+#INLINE F90_GLOBAL
+real(dp) :: c_O2
+real(dp) :: c_air
+#ENDINLINE
+
+
+
+#INLINE F90_RATES
+real(dp) function k_DMS_OH(c_O2, T)
+    ! 
+    ! reaction rate for OH addition pathway:
+    ! DMS + OH = 0.75SO2 + 0.25MSA
+    !
+
+    implicit none
+
+    ! inputs 
+    real(dp), intent(in) :: c_O2
+    real(dp), intent(in) :: T
+
+    ! local
+
+    ! rate
+    !k_DMS_OH = c_O2 * 1.7d-42 * exp(7810_dp/T) / &
+    !           (1_dp + c_O2 * 5.5d-31 * exp(7460_dp/T))
+
+    k_DMS_OH = c_O2 * 1.7d-11 * exp(7810_dp/T) / &
+               (1.0d31 + c_O2 * 5.5d0 * exp(7460_dp/T))
+
+end function k_DMS_OH
+
+
+real(dp) function k_SO2_OH(c_air, T)
+    !
+    ! reaction rate for:
+    ! SO2 + OH  = H2SO4
+    !
+
+    implicit none
+
+    ! inputs
+    real(dp), intent(in) :: c_air
+    real(dp), intent(in) :: T
+
+    ! local
+    real(dp) :: k_0, k_inf
+ 
+    ! rate
+    k_0   = 3.0d-31 * (300_dp/T)**3.3
+    k_inf = 1.5d-12
+
+    k_SO2_OH = ((k_0 * c_air) / (1.0_dp + k_0 * c_air / k_inf)) * & 
+                0.6_dp**(1.0_dp / (1.0_dp + (log10(k_0 * c_air / k_inf))**2))
+
+end function k_SO2_OH
+#ENDINLINE
+

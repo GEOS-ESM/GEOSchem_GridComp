@@ -1,0 +1,84 @@
+GEOSCHEMchem ChangeLog
+2017-04-18 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_4_p3_JEN_GCC-v11-02
+        * Updates from Christoph Keller for GEOS-Chem Version 11-02.
+
+2017-03-27 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_4_p3_JEN_GCC-v11
+        * Export mass mixing ratios.
+
+2017-03-02 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_4_p3_JEN_GCC-v11
+        * GEOS-Chem Version 11 from Christoph Keller, including UCX.
+
+2017-02-16 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_4_p3_JEN_GCC-v10
+        * GEOSCHEMchem GC from Heracles-5_2_p1_JEN_GCC plus updates to HEMCO_Config.rc, HEMCO_Diagn.rc, and 
+          GEOSCHEMchem_ExtData.rc for running GEOS-Chem Version 10 in Heracles-5_4_p3.
+
+2016-11-13 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_4_p3_JEN_GCC
+        * Several updates across GEOS-Chem to begin implementing Version 11.
+	* New KPP/Tropchem directory.
+
+2016-03-22 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_2_p1_JEN_GCC
+        * Accommodate abscence of CNV_FRC in Heracles-4_3.
+	* Error trap to prevent CORR1 or Z0OBK from being zero in drydep_mod.F (C. Keller, 3/15/16).
+        * Bug fix to make sure that dry deposition velocities are written to diagnostics in mixing_mod.F90 (C. Keller, 3/15/16).
+	* Matt pushed the M2R12K-3_0_GCC tags on git and CVS to include these changes.
+
+2016-03-10 <jon.e.nielsen@nasa.gov> Tag: Heracles-4_3_JEN_GCC
+        * Updates running in the first c720 test run g5nr-chem-b1 borrowed from the git repo on 9 Mar 2016:
+	  git clone -b M2R12K-3_0_GCC /discover/swdev/adasilva/bridge/GEOSagcm
+
+2015-12-08 <jon.e.nielsen@nasa.gov> Tag: Heracles-4_3_JEN_GCC
+        * Includes updates that passed time and layout regression testing in M2R12K-3_0_GCC. With the exception of 
+          RESTART = MAPL_RestartSkip and perhaps a few RC file settings, this tag duplicates what is scoped for the
+          G5NR-chem run as of the above date.  More specifically:
+	  git clone -b M2R12K-3_0_GCC /discover/swdev/adasilva/bridge/GEOSagcm
+
+2015-12-01 <jon.e.nielsen@nasa.gov> Tag: Heracles-4_3_JEN_GCC
+        * Updates received from Christoph Keller, Harvard U., now running CH4.
+
+2015-11-06 <jon.e.nielsen@nasa.gov> Tag: Heracles-4_3_JEN_GCC
+        * Updates received from Christoph Keller, Harvard U., including AERO State.
+	* Update hcox_megan_mod.F90 so the time regression also works if GEOSCHEMCHEM_DT /= HEARTBEAT_DT.
+	* GEOSCHEMchem_GridCompMod.F90 now checks AGCM.rc for the name of the GCC restart file and whether 
+          that file exists or not.
+
+2015-07-24 <jon.e.nielsen@nasa.gov> Tag: Heracles-4_0_JEN_GCC
+        * Updates received from Christoph Keller, Harvard U., including tendencies in GeosCore.
+
+2015-07-06 <jon.e.nielsen@nasa.gov> Tag: Heracles-4_0_JEN_GCC
+        * Updates received from Christoph Keller, Harvard U., complete as of Monday 6 July 2015.
+
+2015-04-13 <jon.e.nielsen@nasa.gov> Tag: Heracles-UNSTABLE_JEN_GCC
+        * Updates received from Christoph Keller, Harvard U.
+	* gc_column now contains only the SRC_DIRS listed in the GEOSCHEMchem GNUmakefile.
+	* Found name conflict with jsparse.F90 in GMIchem.  The latter replaced with
+          gsparseGMI.F90. 
+
+2014-06-18 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_0_BETA10_GCC
+        * Updates received from Michael Long, Harvard U.
+	* Fixes physproc, etc., adds WETSCAV, runs on FV d72, not on FV3 c180.
+
+2014-05-28 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_0_BETA10_GCC
+        * Updates received from Michael Long, Harvard U.
+	* Runs at d72, but M. Long indicates errors at physproc level, etc.
+
+2014-03-26 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_0_BETA10_GCC
+        * Updates received from Michael Long, Harvard U.
+	* Upgrade to ESMF-5
+
+2013-04-15 <jon.e.nielsen@nasa.gov> Tag: Ganymed-2_1_p1_GCC-m2
+        * Updates received from R. Yantosca, Harvard U.
+        * Remove a lot of duplicate memory and pass derived-type objects to more 
+          GEOS-Chem routines.
+        * Standardized M. Long's KPP tolerance fix in GeosCore/chemistry_mod.F, which is
+	  wrapped in a #if defined( DEVEL ) tag.
+        * Modified the input.geos.rc file so that it will now pick the KPP solver instead 
+	  of SMVGEAR solver.  This should let the model run without encountering any 
+	  precision errors.  Available via a Git pull from the master branch:
+	  
+             git pull /home/adasilva/silo/git-repo/GEOSagcm  master
+
+2013-04-11 <jon.e.nielsen@nasa.gov> Tag: Ganymed-2_1_p1_GCC-m1
+        * Switch KPP solver following M. Long's and R. Yantosca's directions.
+	* First running version, integrated ten days. No validation, except TTO looks 
+          reasonable.
+        * Known problem with Br2.

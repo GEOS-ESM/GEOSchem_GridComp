@@ -1,0 +1,30 @@
+#INCLUDE kpp_achem_gas.spc
+#INCLUDE kpp_achem_gas.eqn
+
+#CHECK S; N;
+
+#LOOKATALL
+#MONITOR NO3; OH; DMS; MSA; SO2; H2SO4; NH3;
+
+#INITVALUES
+    DMS   = 1.0e6;
+    NH3   = 2.0e7;
+
+    NO3   = 3.0e6;
+    OH    = 5.0e6;
+
+    MSA   = 0.0;
+    SO2   = 1.0e7;
+
+    H2SO4 = 0.0;
+
+#INLINE F90_INIT
+    temp  = 270.0
+
+    c_O2  = 0.5e19
+    c_air = 2.0e19
+
+    dt     = 1800.0              ! seconds
+    tstart = 0.0
+    tend   = tstart + 1800
+#ENDINLINE

@@ -1,0 +1,259 @@
+#
+# This the GEOS-Chem Grid Component Registry. It defines Import,
+# Internal and Export states for this component as well as
+# any 
+#
+# !REVISION HISTORY:
+#  16Aug2006  da Silva  First Version
+#  12Aug2009  Enari & Figueroa First Version (CPTEC Physics)
+#   7Dec2009  R. Yantosca - updated import state specifications
+#
+# -----------------------------------------------------------------
+
+COMP_NAME: MAMchem
+
+# Only change the Registry version when major structural changes
+# occurs, not changes in content
+# --------------------------------------------------------------
+  MAPL_REGISTRY_VERSION: 1.00  
+
+#                               ------------
+#                               Import State
+#                               ------------
+
+<ImportSpec name="MAM", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,long_name">
+# ---------------------------------------------------------------------------------------------------
+#                     |               |     | V |Item|Intervl| Sub | Def  | 
+# Short Name          | Units         | Dim |Loc|Type| R | A |Tiles| ault | Long Name
+# --------------------|---------------|-----|---|----|---|---|-----|------|--------------------------   
+  SH                  | W/m2          | xy  |   |    |   |   |     |      | Sensible heat flux
+  Z0H                 | m             | xy  |   |    |   |   |     |      | Surface roughness for heat
+  LAI                 | 1             | xy  |   |    |   |   |     |      | Leaf area index
+  LWI                 | 1             | xy  |   |    |   |   |     |      | Land-water-ice flags
+  ZPBL                | m             | xy  |   |    |   |   |     |      | PBL depth 
+  FRLAND              | 1             | xy  |   |    |   |   |     |      | Land fraction 
+  FRLAKE              | 1             | xy  |   |    |   |   |     |      | Lake fraction
+  FROCEAN             | 1             | xy  |   |    |   |   |     |      | Ocean fraction
+  FRACI               | 1             | xy  |   |    |   |   |     |      | Ice fraction
+  TS                  | K             | xy  |   |    |   |   |     |      | Surface skin temperature
+  CN_PRCP             | kg m-2 s-1    | xy  |   |    |   |   |     |      | Conv precip at the ground 
+  NCN_PRCP            | kg m-2 s-1    | xy  |   |    |   |   |     |      | Non-convective precipitation
+  TROPP               | Pa            | xy  |   |    |   |   |     |      | Tropopause pressure 
+  USTAR               | m s-1         | xy  |   |    |   |   |     |      | Surface (friction) velocity scale
+  U10M                | m s-1         | xy  |   |    |   |   |     |      | E/W 10-meter wind speed 
+  V10M                | m s-1         | xy  |   |    |   |   |     |      | N/S 10-meter wind speed 
+  U10N                | m s-1         | xy  |   |    |   |   |     |      | Equivalent neutral 10-meter eastward wind speed 
+  V10N                | m s-1         | xy  |   |    |   |   |     |      | Equivalent neutral 10-meter northward wind speed
+  WET1                | 1             | xy  |   |    |   |   |     |      | Surface Soil Wetness
+  FCLD                | 1             | xyz | C |    |   |   |     |      | Cloud fraction 
+  RH2                 | 1             | xyz | C |    |   |   |     |      | Relative humidity 
+  Q                   | kg kg-1       | xyz | C |    |   |   |     |      | Specific Humidity
+  T                   | K             | xyz | C |    |   |   |     |      | Air Temperature (from Dynamics)
+  AIRDENS             | kg m-3        | xyz | C |    |   |   |     |      | Air density 
+  PFL_LSAN            | kg m-2 s-1    | xyz | E |    |   |   |     |      | 3D_flux_of_liquid_nonconvective_precipitation
+  PFI_LSAN            | kg m-2 s-1    | xyz | E |    |   |   |     |      | 3D flux of ice nonconvective precipitation
+  CNV_MFC             | kg m-2 s-1    | xyz | E |    |   |   |     |      | Cumulative mass flux
+  CNV_MFD             | kg m-2 s-1    | xyz | C |    |   |   |     |      | Detraining mass flux
+  DELP                | Pa            | xyz | C |    |   |   |     |      | Pressure thickness
+  PLE                 | Pa            | xyz | E |    |   |   |     |      | Edge pressure
+  ZLE                 | m             | xyz | E |    |   |   |     |      | Edge heights
+# PL                  | Pa            | xyz | C |    |   |   |     |      | Mid-level pressure
+# ZL                  | m             | xyz | C |    |   |   |     |      | Mid-layer heights
+  U                   | m s-1         | xyz | C |    |   |   |     |      | Eastward (E/W) wind
+  V                   | m s-1         | xyz | C |    |   |   |     |      | Northward (N/S) wind
+# ------------------------------------------------------------------------------------------------
+  SO2                 | mol mol-1     | xyz | C |    |   |   |     |      | Sulfur dioxide (SO2 gas)
+  H2SO4               | mol mol-1     | xyz | C |    |   |   |     |      | Sulfuric acid (H2SO4 gas)
+  NH3                 | mol mol-1     | xyz | C |    |   |   |     |      | Ammonia (NH3 gas)
+  SOA_GAS             | mol mol-1     | xyz | C |    |   |   |     |      | Secondary Organic Aerosols (SOA gas)
+# 
+  pSO4_aq             | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Production rate of sulfate (SO4) in aqueous phase
+  pNH4_aq             | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Production rate of ammonium (NH4) in aqueous phase
+# 
+  DDT_DMS_gas         | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Dimethyl sulfide (DMS gas) tendency due to gas phase chemistry
+  DDT_MSA_gas         | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Methanesulfonic acid (MSA gas) tendency due to gas phase chemistry
+  DDT_SO2_gas         | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Sulfur dioxide (SO2 gas) tendency due to gas phase chemistry
+  DDT_H2SO4_gas       | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Sulfuric acid (H2SO4 gas) tendency due to gas phase chemistry
+  DDT_NH3_gas         | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Ammonia (NH3 gas) tendency due to gas phase chemistry
+  DDT_SOA_GAS_gas     | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Secondary Organic Aerosols (SOA gas) tendency due to gas phase chemistry
+  _DMS_gas            | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Dimethyl sulfide (DMS) before gas phase chemistry
+  _MSA_gas            | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Methanesulfonic acid (MSA) befoe gas phase chemistry
+  _SO2_gas            | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Sulfur dioxide (SO2) before gas phase chemistry
+  _H2SO4_gas          | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Sulfuric acid (H2SO4 gas) before gas phase chemistry
+  _NH3_gas            | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Ammonia (NH3) before gas phase chemistry
+  _SOA_GAS_gas        | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Secondary Organic Aerosols (SOA gas) before gas phase chemistry
+#
+  DDT_DMS_aq          | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Dimethyl sulfide (DMS gas) tendency due to aqueous phase chemistry
+  DDT_MSA_aq          | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Methanesulfonic acid (MSA gas) tendency due to aqueous phase chemistry
+  DDT_SO2_aq          | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Sulfur dioxide (SO2 gas) tendency due to aqueous phase chemistry
+  DDT_H2SO4_aq        | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Sulfuric acid (H2SO4 gas) tendency due to aqueous phase chemistry
+  DDT_NH3_aq          | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Ammonia (NH3 gas) tendency due to aqueous phase chemistry
+  DDT_SOA_GAS_aq      | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Secondary Organic Aerosols (SOA gas) tendency due to aqueous phase chemistry
+  _DMS_aq             | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Dimethyl sulfide (DMS gas) before aqueous phase chemistry
+  _MSA_aq             | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Methanesulfonic acid (MSA gas) before aqueous phase chemistry
+  _SO2_aq             | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Sulfur dioxide (SO2 gas) before aqueous phase chemistry
+  _H2SO4_aq           | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Sulfuric acid (H2SO4 gas) before aqueous phase chemistry
+  _NH3_aq             | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Ammonia (NH3 gas) tendency before aqueous phase chemistry
+  _SOA_GAS_aq         | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Secondary Organic Aerosols (SOA gas) before aqueous phase chemistry
+# ------------------------------------------------------------------------------------------------
+  BC_EMIS_FIRE        | kg m-2 s-1    | xy  |   |    |   |   |     |      | BC emissions - biomass burning
+  BC_EMIS_BIOFUEL     | kg m-2 s-1    | xy  |   |    |   |   |     |      | BC emissions - biofuel
+  BC_EMIS_FOSSILFUEL  | kg m-2 s-1    | xy  |   |    |   |   |     |      | BC emissions - fossil fuels
+  BC_EMIS_SHIP        | kg m-2 s-1    | xy  |   |    |   |   |     |      | BC emissions - ships
+# ------------------------------------------------------------------------------------------------
+  OC_EMIS_FIRE        | kg m-2 s-1    | xy  |   |    |   |   |     |      | OC emissions - biomass burning
+  OC_EMIS_BIOFUEL     | kg m-2 s-1    | xy  |   |    |   |   |     |      | OC emissions - biofuel
+  OC_EMIS_FOSSILFUEL  | kg m-2 s-1    | xy  |   |    |   |   |     |      | OC emissions - fossil fuels
+  OC_EMIS_SHIP        | kg m-2 s-1    | xy  |   |    |   |   |     |      | OC emissions - ships
+# ------------------------------------------------------------------------------------------------ 
+  SO4_EMIS_SHIP       | kg m-2 s-1    | xy  |   |    |   |   |     |      | SO4 emissions - ships
+# ------------------------------------------------------------------------------------------------
+  GINOUX_DU           | 1             | xy  |   |    |   |   |     |      | Ginoux dust source
+# ------------------------------------------------------------------------------------------------ 
+</ImportSpec>
+
+#                               ------------
+#                               Export State
+#                               ------------
+
+<ExportSpec name="MAM", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,long_name">
+#
+# ------------------------------------------------------------------------------------------------
+#                            DIAGNOSTIC QUANTITIES
+# --------------------|------------|-----|---|----|---|---|-----|---------------------------------
+# Short               |            |     | V |Item|Intervl| Sub |          Long
+# Name                |   Units    | Dim |Loc|Type| R | A |Tiles|          Name
+# --------------------|------------|-----|---|----|---|---|-----|---------------------------------
+#
+#                                    --- Seasalt ---
+#
+  SSMASS              | kg kg-1    | xyz | C |    |   |   |     | Sea Salt Mass Mixing Ratio
+  SSMASS25            | kg kg-1    | xyz | C |    |   |   |     | Sea Salt Mass Mixing Ratio - PM 2.5 
+  SSCONC              | kg m-3     | xyz | C |    |   |   |     | Sea Salt Mass Concentration
+  SSSMASS             | kg m-3     | xy  |   |    |   |   |     | Sea Salt Surface Mass Concentration
+  SSCMASS             | kg m-2     | xy  |   |    |   |   |     | Sea Salt Column Mass Density
+  SSSMASS25           | kg m-3     | xy  |   |    |   |   |     | Sea Salt Surface Mass Concentration - PM 2.5
+  SSCMASS25           | kg m-2     | xy  |   |    |   |   |     | Sea Salt Column Mass Density - PM 2.5
+  SSEMAIT             | kg m-2 s-1 | xy  |   |    |   |   |     | Sea Salt Emission Aitken mode
+  SSEMACC             | kg m-2 s-1 | xy  |   |    |   |   |     | Sea Salt Emission Accumulation mode
+  SSEMFSS             | kg m-2 s-1 | xy  |   |    |   |   |     | Sea Salt Emission Fine Seasalt mode
+  SSEMCSS             | kg m-2 s-1 | xy  |   |    |   |   |     | Sea Salt Emission Coarse Seasalt mode
+  DP_SS_AIT           | kg m-2 s-1 | xy  |   |    |   |   |     | Sea Salt Dry Deposition Aitken mode
+  DP_SS_ACC           | kg m-2 s-1 | xy  |   |    |   |   |     | Sea Salt Dry Deposition Accumulation mode
+  DP_SS_FSS           | kg m-2 s-1 | xy  |   |    |   |   |     | Sea Salt Dry Deposition Fine Seasalt mode
+  DP_SS_CSS           | kg m-2 s-1 | xy  |   |    |   |   |     | Sea Salt Dry Deposition Coarse Seasalt mode
+  SSFLUXU             | kg m-1 s-1 | xy  |   |    |   |   |     | Sea Salt column u-wind mass flux
+  SSFLUXV             | kg m-1 s-1 | xy  |   |    |   |   |     | Sea Salt column v-wind mass flux
+  DUMASS              | kg kg-1    | xyz | C |    |   |   |     | Dust Mass Mixing Ratio 
+  DUMASS25            | kg kg-1    | xyz | C |    |   |   |     | Dust Mass Mixing Ratio - PM 2.5 
+  DUCONC              | kg m-3     | xyz | C |    |   |   |     | Dust Mass Concentration
+  DUSMASS             | kg m-3     | xy  |   |    |   |   |     | Dust Surface Mass Concentration
+  DUCMASS             | kg m-2     | xy  |   |    |   |   |     | Dust Column Mass Density
+  DUSMASS25           | kg m-3     | xy  |   |    |   |   |     | Dust Surface Mass Concentration - PM 2.5
+  DUCMASS25           | kg m-2     | xy  |   |    |   |   |     | Dust Column Mass Density - PM 2.5
+  DUEMFDU             | kg m-2 s-1 | xy  |   |    |   |   |     | Dust Emission Fine Dust mode
+  DUEMCDU             | kg m-2 s-1 | xy  |   |    |   |   |     | Dust Emission Coarse Dust mode
+  DP_DU_FDU           | kg m-2 s-1 | xy  |   |    |   |   |     | Dust Dry Deposition Fine Seasalt mode
+  DP_DU_CDU           | kg m-2 s-1 | xy  |   |    |   |   |     | Dust Dry Deposition Coarse Seasalt mode
+  DUFLUXU             | kg m-1 s-1 | xy  |   |    |   |   |     | Dust column u-wind mass flux
+  DUFLUXV             | kg m-1 s-1 | xy  |   |    |   |   |     | Dust column v-wind mass flux
+  DP_SU_AIT           | kg m-2 s-1 | xy  |   |    |   |   |     | Sulfate Sedimentation Aitken mode
+  DP_SU_ACC           | kg m-2 s-1 | xy  |   |    |   |   |     | Sulfate Sedimentation Accumulation mode
+  DP_SU_FSS           | kg m-2 s-1 | xy  |   |    |   |   |     | Sulfate Sedimentation Fine Seasalt mode
+  DP_SU_FDU           | kg m-2 s-1 | xy  |   |    |   |   |     | Sulfate Sedimentation Fine Dust mode
+  DP_SU_CSS           | kg m-2 s-1 | xy  |   |    |   |   |     | Sulfate Sedimentation Coarse Seasalt mode
+  DP_SU_CDU           | kg m-2 s-1 | xy  |   |    |   |   |     | Sulfate Sedimentation Coarse Dust mode
+  DP_AMM_AIT          | kg m-2 s-1 | xy  |   |    |   |   |     | Ammonium Sedimentation Aitken mode
+  DP_AMM_ACC          | kg m-2 s-1 | xy  |   |    |   |   |     | Ammonium Sedimentation Accumulation mode
+  DP_AMM_FSS          | kg m-2 s-1 | xy  |   |    |   |   |     | Ammonium Sedimentation Fine Seasalt mode
+  DP_AMM_FDU          | kg m-2 s-1 | xy  |   |    |   |   |     | Ammonium Sedimentation Fine Dust mode
+  DP_AMM_CSS          | kg m-2 s-1 | xy  |   |    |   |   |     | Ammonium Sedimentation Coarse Seasalt mode
+  DP_AMM_CDU          | kg m-2 s-1 | xy  |   |    |   |   |     | Ammonium Sedimentation Coarse Dust mode
+  DP_SOA_AIT          | kg m-2 s-1 | xy  |   |    |   |   |     | SOA Sedimentation Aitken mode
+  DP_SOA_ACC          | kg m-2 s-1 | xy  |   |    |   |   |     | SOA Sedimentation Accumulation mode
+  POMEMPCM            | kg m-2 s-1 | xy  |   |    |   |   |     | POM Emission Primary Carbon mode
+  DP_POM_ACC          | kg m-2 s-1 | xy  |   |    |   |   |     | POM Sedimentation Accumulation mode
+  DP_POM_PCM          | kg m-2 s-1 | xy  |   |    |   |   |     | POM Sedimentation Primary Carbon mode
+  BCEMPCM             | kg m-2 s-1 | xy  |   |    |   |   |     | Black Carbon Emission Primary Carbon mode
+  DP_BC_ACC           | kg m-2 s-1 | xy  |   |    |   |   |     | Black Carbon Sedimentation Accumulation mode
+  DP_BC_PCM           | kg m-2 s-1 | xy  |   |    |   |   |     | Black Carbon Sedimentation Primary Carbon mode
+  SUEMACC             | kg m-2 s-1 | xy  |   |    |   |   |     | SO4 Emission Accumulation mode
+#                     |            |     |   |    |   |   |     |
+  AITCMASS            | kg m-2     | xy  |   |    |   |   |     | Column Mass Density Aitken mode
+  ACCCMASS            | kg m-2     | xy  |   |    |   |   |     | Column Mass Density Accumulation mode
+  PCMCMASS            | kg m-2     | xy  |   |    |   |   |     | Column Mass Density Primary Carbon mode
+  FSSCMASS            | kg m-2     | xy  |   |    |   |   |     | Column Mass Density Fine Seasalt mode
+  CSSCMASS            | kg m-2     | xy  |   |    |   |   |     | Column Mass Density Coarse Seasalt mode
+  FDUCMASS            | kg m-2     | xy  |   |    |   |   |     | Column Mass Density Fine Dust mode
+  CDUCMASS            | kg m-2     | xy  |   |    |   |   |     | Column Mass Density Coarse Dust mode
+# optics
+  TOTEXTTAU           | 1          | xy  |   |    |   |   |     | Aerosol Optical Thickness
+  TOTSCATAU           | 1          | xy  |   |    |   |   |     | Aerosol Scattering Optical Thickness
+  AITEXTTAU           | 1          | xy  |   |    |   |   |     | Aerosol Optical Thickness Aitken mode
+  AITSCATAU           | 1          | xy  |   |    |   |   |     | Scattering Optical Thickness Aitken mode
+  ACCEXTTAU           | 1          | xy  |   |    |   |   |     | Aerosol Optical Thickness Accumulation mode 
+  ACCSCATAU           | 1          | xy  |   |    |   |   |     | Aerosol Scattering Optical Thickness Accumulation mode
+  PCMEXTTAU           | 1          | xy  |   |    |   |   |     | Aerosol Optical Thickness Primary Carbon mode
+  PCMSCATAU           | 1          | xy  |   |    |   |   |     | Aerosol Scattering Optical Thickness Primary Carbon mode
+  FSSEXTTAU           | 1          | xy  |   |    |   |   |     | Aerosol Optical Thickness Fine Seasalt mode
+  FSSSCATAU           | 1          | xy  |   |    |   |   |     | Aerosol Scattering Optical Thickness Fine Seasalt mode
+  CSSEXTTAU           | 1          | xy  |   |    |   |   |     | Aerosol Optical Thickness Coarse Seasalt mode
+  CSSSCATAU           | 1          | xy  |   |    |   |   |     | Aerosol Scattering Optical Thickness Coarse Seasalt mode
+  FDUEXTTAU           | 1          | xy  |   |    |   |   |     | Aerosol Optical Thickness Fine Dust mode
+  FDUSCATAU           | 1          | xy  |   |    |   |   |     | Aerosol Scattering Optical Thickness Fine Dust mode
+  CDUEXTTAU           | 1          | xy  |   |    |   |   |     | Aerosol Optical Thickness Coarse Dust mode 
+  CDUSCATAU           | 1          | xy  |   |    |   |   |     | Aerosol Scattering Optical Thickness Coarse Dust mode
+# surface
+  SFC_NUM_AIT         | m-3        | xy  |   |    |   |   |     | Number of particles in Aitken mode in the surface model layer
+  SFC_WTR_AIT         | kg m-3     | xy  |   |    |   |   |     | Aerosol water in Aitken mode in the surface model layer
+  SFC_DGN_DRY_AIT     | m          | xy  |   |    |   |   |     | Dry size of Aitken mode number size distribution in the surface model layer
+  SFC_DGN_WET_AIT     | m          | xy  |   |    |   |   |     | Wet size of Aitken mode number size distribution in the surface model layer
+# 
+  SFC_NUM_ACC         | m-3        | xy  |   |    |   |   |     | Number of particles in Accumulation mode in the surface model layer
+  SFC_WTR_ACC         | kg m-3     | xy  |   |    |   |   |     | Aerosol water in Accumulation mode in the surface model layer
+  SFC_DGN_DRY_ACC     | m          | xy  |   |    |   |   |     | Dry size of Accumulation mode number size distribution in the surface model layer
+  SFC_DGN_WET_ACC     | m          | xy  |   |    |   |   |     | Wet size of Accumulation mode number size distribution in the surface model layer
+# 
+  SFC_NUM_PCM         | m-3        | xy  |   |    |   |   |     | Number of particles in Primary Carbon mode in the surface model layer
+  SFC_WTR_PCM         | kg m-3     | xy  |   |    |   |   |     | Aerosol water in Primary Carbon mode in the surface model layer
+  SFC_DGN_DRY_PCM     | m          | xy  |   |    |   |   |     | Dry size of Primary Carbon mode number size distribution in the surface model layer
+  SFC_DGN_WET_PCM     | m          | xy  |   |    |   |   |     | Wet size of Primary Carbon mode number size distribution in the surface model layer
+#
+  SFC_NUM_FSS         | m-3        | xy  |   |    |   |   |     | Number of particles in Fine Sea Salt mode in the surface model layer
+  SFC_WTR_FSS         | kg m-3     | xy  |   |    |   |   |     | Aerosol water in Fine Sea Salt mode in the surface model layer
+  SFC_DGN_DRY_FSS     | m          | xy  |   |    |   |   |     | Dry size of Fine Sea Salt mode number size distribution in the surface model layer
+  SFC_DGN_WET_FSS     | m          | xy  |   |    |   |   |     | Wet size of Fine Sea Salt mode number size distribution in the surface model layer
+#
+  SFC_NUM_FDU         | m-3        | xy  |   |    |   |   |     | Number of particles in Fine Dust mode in the surface model layer
+  SFC_WTR_FDU         | kg m-3     | xy  |   |    |   |   |     | Aerosol water in Fine Dust mode in the surface model layer
+  SFC_DGN_DRY_FDU     | m          | xy  |   |    |   |   |     | Dry size of Fine Dust mode number size distribution in the surface model layer
+  SFC_DGN_WET_FDU     | m          | xy  |   |    |   |   |     | Wet size of Fine Dust mode number size distribution in the surface model layer
+# 
+  SFC_NUM_CSS         | m-3        | xy  |   |    |   |   |     | Number of particles in Coarse Sea Salt mode in the surface model layer
+  SFC_WTR_CSS         | kg m-3     | xy  |   |    |   |   |     | Aerosol water in Coarse Sea Salt mode in the surface model layer
+  SFC_DGN_DRY_CSS     | m          | xy  |   |    |   |   |     | Dry size of Coarse Sea Salt mode number size distribution in the surface model layer
+  SFC_DGN_WET_CSS     | m          | xy  |   |    |   |   |     | Wet size of Coarse Sea Salt mode number size distribution in the surface model layer
+#
+  SFC_NUM_CDU         | m-3        | xy  |   |    |   |   |     | Number of particles in Coarse Dust mode in the surface model layer
+  SFC_WTR_CDU         | kg m-3     | xy  |   |    |   |   |     | Aerosol water in Coarse Dust mode in the surface model layer
+  SFC_DGN_DRY_CDU     | m          | xy  |   |    |   |   |     | Dry size of Coarse Dust mode number size distribution in the surface model layer
+  SFC_DGN_WET_CDU     | m          | xy  |   |    |   |   |     | Wet size of Coarse Dust mode number size distribution in the surface model layer
+# --------------------|------------|-----|---|----|---|---|-----|---------------------------------
+</ExportSpec>
+
+#                               --------------
+#                               Internal State
+#                               --------------
+
+#
+# Note: 1) For friendlies, use "D" for dynamics, "T" for turbulence and "C" for convection, or "S" for self to add to EXPORT state; leave blank otherwise
+#       2) If quantity requires no restart, put an 'x' in the No Rst column
+
+<InternalSpec name="MAM", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,norestart,halowidth,friendlyto,long_name">
+# -------------|------------|-----|---|----|---|---|-----|------|----|----|---------|---------------------------------
+#  Short       |            |     | V |Item|Intervl| Sub | Def  | No | Ha | Friends |            Long
+#  Name        |   Units    | Dim |Loc|Type| R | A |Tiles| ault | Rst| lo |         |            Name
+# -------------|------------|-----|---|----|---|---|-----|------|----|----|---------|---------------------------------
+# -------------|------------|-----|---|----|---|---|-----|------|----|----|---------|---------------------------------
+</InternalSpec>
+

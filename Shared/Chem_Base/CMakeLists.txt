@@ -1,0 +1,39 @@
+esma_set_this ()
+
+set (srcs
+  Chem_RegistryMod.F90
+  Chem_ArrayMod.F90
+  Chem_BundleMod.F90
+  Chem_Mod.F90
+  Chem_InitMod.F90
+  Chem_MieTableMod.F90
+  Chem_MieMod.F90
+  Chem_AodMod.F90
+  Chem_SimpleBundleMod.F90
+  )
+esma_add_library(${this} SRCS ${srcs} DEPENDENCIES GMAO_mpeu MAPL_Base GMAO_gfio_r4)
+target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
+target_compile_definitions (${this} PRIVATE GEOS5)
+
+include (UseF2Py)
+include_directories (${esma_include}/${this})
+add_f2py_module(MieObs_ SOURCES MieObs_py.F90 
+   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+   INCLUDEDIRS ${CMAKE_CURRENT_BINARY_DIR} ${include_${this}} )
+add_dependencies(MieObs_ ${this})
+
+foreach (exe Chem_Aod.x Chem_Aod3d.x ctl_crst.x Chem_BundleToG5rs.x reff_calculator.xx ext_calculator.xx)
+  get_filename_component (basename ${exe} NAME_WE) # base file name
+  add_executable (${exe} ${basename}.F90)
+  target_link_libraries(${exe} ${this} ${OpenMP_Fortran_LIBRARIES})
+  # Do not know how to propagate the flags for OpenMP link step from lower libraries.
+  set_target_properties(${exe} PROPERTIES LINK_FLAGS "${OpenMP_Fortran_FLAGS}")
+endforeach ()
+
+# Copy RC files to build tree
+file (GLOB_RECURSE rc_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.rc)
+foreach(rc_file ${rc_files})
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${rc_file} ${esma_etc}/${rc_file} COPYONLY)
+endforeach()
+
+

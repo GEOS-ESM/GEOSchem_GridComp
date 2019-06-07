@@ -1,0 +1,40 @@
+#
+# Resource file for CO_from_CH4  (CO from CH4 oxidation)
+#
+
+# SHOULD THE TRACER SOURCE BE ADDED FIRST, OR THE SINK APPLIED FIRST
+# ---------------------------
+  first_phase: sink
+
+# SOURCE - MODE:  constant  |  file2d  |  file3d  |  model_field  |  maintain_mixing_ratio
+# ---------------------------
+  src_mode: constant
+  src_add: TRUE
+# add a uniform amount each timestep
+# 0.86 * 1760 * (1.d0 - e^(-dt/(8.5*days_in_year*86400)))
+# 0.86 * 1760 * (1.d0 - exp(900/(8.5*366*86400)))
+#  src_value: 1513 ppbv
+  src_value: 0.00506802965 ppbv
+
+# SOURCE - Horizontal coverage: all  |  lat_zone  |  latlon_box
+# ---------------------------
+  src_horiz: all
+
+# SOURCE - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere
+# ---------------------------
+  src_vert: all
+
+
+# SINK - MODE:  constant  |  efolding  |  halflife  |  none
+# ---------------------------
+  snk_mode: efolding
+  snk_period: 50 days
+
+# SINK - Horizontal coverage:  all  |  lat_zone  |  latlon_box
+# ---------------------------
+  snk_horiz: all
+
+# SINK - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere
+# ---------------------------
+  snk_vert: all
+

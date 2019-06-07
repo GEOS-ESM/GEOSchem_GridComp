@@ -1,0 +1,47 @@
+#
+# Resource file for CO Rest of Africa 50 day tracer
+# This tracer uses a version of the HTAP2 regional mask file
+#
+
+# SHOULD THE TRACER SOURCE BE ADDED FIRST, OR THE SINK APPLIED FIRST
+# ---------------------------
+  first_phase: sink
+
+# SOURCE - MODE:  constant  |  file2d  |  file3d  |  model_field  |  maintain_mixing_ratio
+# ---------------------------
+  src_mode: file2d
+  src_add: TRUE
+# --- Specify SRC_2D_CO_RAF in TR_ExtData.rc
+# --- ASSUME UNITS: kg / m2 / sec
+# --- BE SURE TO DEFINE mw
+  mw: 28.01
+
+# SOURCE - Horizontal coverage: all  |  lat_zone  |  latlon_box
+# ---------------------------
+  src_horiz: all
+
+# SOURCE - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere
+# ---------------------------
+  src_vert: surface
+
+  surface_constraint_count: 1
+  surf_con1_mode: mask
+  surf_con1_regions: 10
+
+# Region file is required if any constraints refer to regions
+  regions_ExtData_entry: HTAP2_REGION_MASK_COASTAL_MOD
+
+
+# SINK - MODE:  constant  |  efolding  |  halflife  |  none
+# ---------------------------
+  snk_mode: efolding
+  snk_period: 50 days
+
+# SINK - Horizontal coverage:  all  |  lat_zone  |  latlon_box
+# ---------------------------
+  snk_horiz: all
+
+# SINK - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere
+# ---------------------------
+  snk_vert: all
+

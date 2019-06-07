@@ -1,0 +1,226 @@
+#
+# This the GEOS-Chem Grid Component Registry. It defines Import,
+# Internal and Export states for this component as well as
+# any 
+#
+# !REVISION HISTORY:
+#  16Aug2006  da Silva  First Version
+#  12Aug2009  Enari & Figueroa First Version (CPTEC Physics)
+#   7Dec2009  R. Yantosca - updated import state specifications
+#
+# -----------------------------------------------------------------
+
+COMP_NAME: MATRIXchem
+
+# Only change the Registry version when major structural changes
+# occurs, not changes in content
+# --------------------------------------------------------------
+  MAPL_REGISTRY_VERSION: 1.00  
+
+
+#                               ------------
+#                               Import State
+#                               ------------
+
+<ImportSpec name="MATRIX", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,long_name">
+# -----------------------------------------------------------------------------------------------------
+#                       |               |     | V |Item|Intervl| Sub | Def  | 
+# Short Name            | Units         | Dim |Loc|Type| R | A |Tiles| ault | Long Name
+# ----------------------|---------------|-----|---|----|---|---|-----|------|--------------------------
+  SH                    | W/m2          | xy  |   |    |   |   |     |      | Sensible heat flux
+  Z0H                   | m             | xy  |   |    |   |   |     |      | Surface roughness for heat
+  LAI                   | 1             | xy  |   |    |   |   |     |      | Leaf area index
+  LWI                   | 1             | xy  |   |    |   |   |     |      | Land-water-ice flags
+  ZPBL                  | m             | xy  |   |    |   |   |     |      | PBL depth 
+  FRLAND                | 1             | xy  |   |    |   |   |     |      | Land fraction 
+  FRLAKE                | 1             | xy  |   |    |   |   |     |      | Lake fraction
+  FRACI                 | 1             | xy  |   |    |   |   |     |      | Ice  fraction
+# CN_PRCP               | kg m-2 s-1    | xy  |   |    |   |   |     |      | Conv precip at the ground 
+# NCN_PRCP              | kg m-2 s-1    | xy  |   |    |   |   |     |      | Non-convective precipitation
+  TROPP                 | Pa            | xy  |   |    |   |   |     |      | Tropopause pressure 
+  USTAR                 | m s-1         | xy  |   |    |   |   |     |      | Surface (friction) velocity scale
+  U10M                  | m s-1         | xy  |   |    |   |   |     |      | E/W 10-meter wind speed 
+  V10M                  | m s-1         | xy  |   |    |   |   |     |      | N/S 10-meter wind speed 
+  U10N                  | m s-1         | xy  |   |    |   |   |     |      | Equivalent neutral 10-meter eastward wind speed 
+  V10N                  | m s-1         | xy  |   |    |   |   |     |      | Equivalent neutral 10-meter northward wind speed
+  WET1                  | 1             | xy  |   |    |   |   |     |      | Surface Soil Wetness
+  FCLD                  | 1             | xyz | C |    |   |   |     |      | Cloud fraction 
+  RH2                   | 1             | xyz | C |    |   |   |     |      | Relative humidity 
+  Q                     | kg kg-1       | xyz | C |    |   |   |     |      | Specific Humidity
+  T                     | K             | xyz | C |    |   |   |     |      | Air Temperature (from Dynamics)
+  AIRDENS               | kg m-3        | xyz | C |    |   |   |     |      | Air density 
+  DQDT                  | kg kg-1 s-1   | xyz | C |    |   |   |     |      | Q tendency - moist physics
+# CNV_QC                | kg kg-1       | xyz | C |    |   |   |     |      | Grid mean convective condensate
+# CNV_MFC               | kg m-2 s-1    | xyz | E |    |   |   |     |      | Cumulative mass flux
+# CNV_MFD               | kg m-2 s-1    | xyz | C |    |   |   |     |      | Detraining mass flux
+  DELP                  | Pa            | xyz | C |    |   |   |     |      | Pressure thickness
+  PLE                   | Pa            | xyz | E |    |   |   |     |      | Edge pressure
+  ZLE                   | m             | xyz | E |    |   |   |     |      | Edge heights
+# PL                    | Pa            | xyz | C |    |   |   |     |      | Mid-level pressure
+# ZL                    | m             | xyz | C |    |   |   |     |      | Mid-layer heights
+  U                     | m s-1         | xyz | C |    |   |   |     |      | Eastward (E/W) wind
+  V                     | m s-1         | xyz | C |    |   |   |     |      | Northward (N/S) wind
+# ------------------------------------------------------------------------------------------------
+  SO2                   | mol mol-1     | xyz | C |    |   |   |     |      | Sulfur dioxide (SO2 gas)
+  H2SO4                 | mol mol-1     | xyz | C |    |   |   |     |      | Sulfuric acid (H2SO4 gas)
+  NH3                   | mol mol-1     | xyz | C |    |   |   |     |      | Ammonia (NH3 gas)
+  SOA_GAS               | mol mol-1     | xyz | C |    |   |   |     |      | Secondary Organic Aerosols (SOA gas)
+  pSO4_aq               | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Production rate of sulfate (SO4) in aqueous phase
+  pNH4_aq               | mol mol-1 s-1 | xyz | C |    |   |   |     |      | Production rate of ammonium (NH4) in aqueous phase
+# ------------------------------------------------------------------------------------------------
+  SO2_EMIS_FIRES        | kg m-2 s-1    | xy  |   |    |   |   |     |      | SO2 emissions from biomass burning
+  SO2_EMIS_NONENERGY    | kg m-2 s-1    | xy  |   |    |   |   |     |      | SO2 emissions from non-energy sectors
+  SO2_EMIS_ENERGY       | kg m-2 s-1    | xy  |   |    |   |   |     |      | SO2 emissions from energy sector
+  SO2_EMIS_SHIPPING     | kg m-2 s-1    | xy  |   |    |   |   |     |      | SO2 emissions from shipping sector
+  SO2_EMIS_AVIATION_LTO | kg m-2 s-1    | xy  |   |    |   |   |     |      | SO2 emissions from aviation (LTO layer)
+  SO2_EMIS_AVIATION_CDS | kg m-2 s-1    | xy  |   |    |   |   |     |      | SO2 emissions from aviation (CDS layer)
+  SO2_EMIS_AVIATION_CRS | kg m-2 s-1    | xy  |   |    |   |   |     |      | SO2 emissions from aviation (CRS layer)
+# ------------------------------------------------------------------------------------------------
+  BC_EMIS_FIRE          | kg m-2 s-1    | xy  |   |    |   |   |     |      | BC emissions - biomass burning
+  BC_EMIS_BIOFUEL       | kg m-2 s-1    | xy  |   |    |   |   |     |      | BC emissions - biofuel
+  BC_EMIS_FOSSILFUEL    | kg m-2 s-1    | xy  |   |    |   |   |     |      | BC emissions - fossil fuels
+  BC_EMIS_SHIP          | kg m-2 s-1    | xy  |   |    |   |   |     |      | BC emissions - ships
+# ------------------------------------------------------------------------------------------------
+  OC_EMIS_FIRE          | kg m-2 s-1    | xy  |   |    |   |   |     |      | OC emissions - biomass burning
+  OC_EMIS_BIOFUEL       | kg m-2 s-1    | xy  |   |    |   |   |     |      | OC emissions - biofuel
+  OC_EMIS_FOSSILFUEL    | kg m-2 s-1    | xy  |   |    |   |   |     |      | OC emissions - fossil fuels
+  OC_EMIS_SHIP          | kg m-2 s-1    | xy  |   |    |   |   |     |      | OC emissions - ships
+# ------------------------------------------------------------------------------------------------ 
+  SO4_EMIS_SHIP         | kg m-2 s-1    | xy  |   |    |   |   |     |      | SO4 emissions - ships
+# ------------------------------------------------------------------------------------------------
+  GINOUX_DU             | 1             | xy  |   |    |   |   |     |      | Ginoux dust source
+# ------------------------------------------------------------------------------------------------ 
+</ImportSpec>
+
+#                               ------------
+#                               Export State
+#                               ------------
+
+<ExportSpec name="MATRIX", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,long_name">
+#
+# ------------------------------------------------------------------------------------------------
+#                            DIAGNOSTIC QUANTITIES
+# --------------------|------------|-----|---|----|---|---|-----|---------------------------------
+# Short               |            |     | V |Item|Intervl| Sub |          Long
+# Name                |   Units    | Dim |Loc|Type| R | A |Tiles|          Name
+# --------------------|------------|-----|---|----|---|---|-----|---------------------------------
+TOTAL_SU              | ug m-3     | xyz | C |    |   |   |     |
+TOTAL_DU              | ug m-3     | xyz | C |    |   |   |     |
+TOTAL_SS              | ug m-3     | xyz | C |    |   |   |     |
+TOTAL_OC              | ug m-3     | xyz | C |    |   |   |     |
+TOTAL_BC              | ug m-3     | xyz | C |    |   |   |     |
+#
+EMISS_SSA             | ug m-3     | xy  | C |    |   |   |     | aitken seasalt emissions 
+EMISS_SSC             | ug m-3     | xy  | C |    |   |   |     | coarse seasalt emissions
+EMISS_SS              | ug m-3     | xy  | C |    |   |   |     | seasalt emissions 
+#
+EMISS_DUF             | ug m-3     | xy  | C |    |   |   |     | fine dust emissions
+EMISS_DUC             | ug m-3     | xy  | C |    |   |   |     | coarse dust emissions
+EMISS_DU              | ug m-3     | xy  | C |    |   |   |     | dust emissions
+# --------------------|------------|-----|---|----|---|---|-----|---------------------------------
+</ExportSpec>
+
+#                               --------------
+#                               Internal State
+#                               --------------
+
+#
+# Note: 1) For friendlies, use "D" for dynamics, "T" for turbulence and "C" for convection, or "S" for self to add to EXPORT state; leave blank otherwise
+#       2) If quantity requires no restart, put an 'x' in the No Rst column
+
+<InternalSpec name="MATRIX", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,norestart,halowidth,friendlyto,long_name">
+# -------------------|------------|-----|---|----|---|---|-----|------|----|----|---------|---------------------------------
+#  Short             |            |     | V |Item|Intervl| Sub | Def  | No | Ha | Friends |            Long
+#  Name              |   Units    | Dim |Loc|Type| R | A |Tiles| ault | Rst| lo |         |            Name
+# -------------------|------------|-----|---|----|---|---|-----|------|----|----|---------|---------------------------------
+#                    |            |     |   |    |   |   |     |      |    |    |         | AKK: sulfate Aitken mode
+   N_AKK             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  | 
+   M_AKK_SU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+#                    |            |     |   |    |   |   |     |      |    |    |         | ACC: sulfate accumulation mode
+   N_ACC             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  | 
+   M_ACC_SU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+#                    |            |     |   |    |   |   |     |      |    |    |         | DD1: dust accumulation mode (<= 5% inorg.)
+   N_DD1             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_DD1_DU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_DD1_SU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+#                    |            |     |   |    |   |   |     |      |    |    |         | DS1: dust accumulation mode ( > 5% inorg.)
+   N_DS1             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_DS1_DU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_DS1_SU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+#                    |            |     |   |    |   |   |     |      |    |    |         | DD1: dust coarse mode (<= 5% inorg.)
+   N_DD2             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_DD2_DU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_DD2_SU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+#                    |            |     |   |    |   |   |     |      |    |    |         | DS2: dust coarse mode ( > 5% inorg.)
+   N_DS2             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_DS2_DU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_DS2_SU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+#                    |            |     |   |    |   |   |     |      |    |    |         | SSA: sea salt accumulation mode
+   M_SSA_SS          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_SSA_SU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   N_SSA             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+#                    |            |     |   |    |   |   |     |      |    |    |         | SSC: sea salt coarse mode
+   M_SSC_SS          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_SSC_SU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   N_SSC             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+#                    |            |     |   |    |   |   |     |      |    |    |         | OCC: OC
+   N_OCC             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  | 
+   M_OCC_OC          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_OCC_SU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+#                    |            |     |   |    |   |   |     |      |    |    |         | BC1: BC (<= 5% inorg.)
+   N_BC1             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_BC1_BC          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_BC1_SU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |  
+#                    |            |     |   |    |   |   |     |      |    |    |         | BC2: BC (5-20% inorg.)
+   N_BC2             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_BC2_BC          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_BC2_SU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+#                    |            |     |   |    |   |   |     |      |    |    |         | BC3: BC (>20%  inorg.)
+   N_BC3             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_BC3_BC          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_BC3_SU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+#                    |            |     |   |    |   |   |     |      |    |    |         | DBC: BC-mineral dust
+   N_DBC             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_DBC_DU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_DBC_BC          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_DBC_SU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+#                    |            |     |   |    |   |   |     |      |    |    |         | BOC: BC-OC 
+   N_BOC             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_BOC_BC          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_BOC_OC          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_BOC_SU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+#                    |            |     |   |    |   |   |     |      |    |    |         | BC-sulfate
+   N_BCS             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_BCS_BC          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_BCS_SU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  | 
+#                    |            |     |   |    |   |   |     |      |    |    |         | MXX: mixed
+   N_MXX             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_MXX_BC          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_MXX_OC          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_MXX_DU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  | 
+   M_MXX_SS          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_MXX_SU          |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+#                    |            |     |   |    |   |   |     |      |    |    |         | total
+   M_NH4             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_NO3             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+   M_H2O             |            | xyz | C |    |   |   |     |      |    |    |  D:T:C  |
+#                    |            |     |   |    |   |   |     |      |    |    |         | size
+DGN_AKK              | m          | xyz | C |    |   |   |     |      | x  |    |    S    | diameter of AKK
+DGN_ACC              | m          | xyz | C |    |   |   |     |      | x  |    |    S    | diameter of ACC
+DGN_DD1              | m          | xyz | C |    |   |   |     |      | x  |    |    S    | diameter of DD1
+DGN_DS1              | m          | xyz | C |    |   |   |     |      | x  |    |    S    | diameter of DS1
+DGN_DD2              | m          | xyz | C |    |   |   |     |      | x  |    |    S    | diameter of 
+DGN_DS2              | m          | xyz | C |    |   |   |     |      | x  |    |    S    | diameter of AKK
+DGN_SSA              | m          | xyz | C |    |   |   |     |      | x  |    |    S    | diameter of AKK
+DGN_SSC              | m          | xyz | C |    |   |   |     |      | x  |    |    S    | diameter of AKK
+DGN_OCC              | m          | xyz | C |    |   |   |     |      | x  |    |    S    | diameter of AKK
+DGN_BC1              | m          | xyz | C |    |   |   |     |      | x  |    |    S    | diameter of AKK
+DGN_BC2              | m          | xyz | C |    |   |   |     |      | x  |    |    S    | diameter of AKK
+DGN_BC3              | m          | xyz | C |    |   |   |     |      | x  |    |    S    | diameter of AKK
+DGN_DBC              | m          | xyz | C |    |   |   |     |      | x  |    |    S    | diameter of AKK
+DGN_BOC              | m          | xyz | C |    |   |   |     |      | x  |    |    S    | diameter of AKK
+DGN_BCS              | m          | xyz | C |    |   |   |     |      | x  |    |    S    | diameter of AKK
+DGN_MXX              | m          | xyz | C |    |   |   |     |      | x  |    |    S    | diameter of AKK
+# -------------------|------------|-----|---|----|---|---|-----|------|----|----|---------|   
+</InternalSpec>
+

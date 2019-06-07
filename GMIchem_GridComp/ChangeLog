@@ -1,0 +1,269 @@
+GMIchem ChangeLog
+2019-03-07 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_MERGE_11
+        * Split the GMI Run routine into Run1 and Run2.
+	* Old Single-Phase mode can still be used, but 2-Phase is the default.
+
+2018-11-29 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_MERGE_8
+        * New chemical mechanism with OCS; removed GCO3, GP, GPAN, MVN2
+
+2017-04-05 <jon.e.nielsen@nasa.gov> Tag: Icarus-1_0_JEN_GMI
+        * Use runDt to compute chemical tendencies. Divisor gmiDt generates error when
+          GMICHEM_DT > RUN_DT and HISTORY collection mode is 'time-averaged'.
+
+2017-01-06 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_3_p3_JEN_GMI-r1
+        * Added Mike Manyin's CCMI_REF-C1 and CCMI_REF-C2 updates.
+	* Increased N_ = 751 in parm_MIE_fastJX65.h to accomodate at least 132 layers.
+        * Replaced km with NVEGTYPE-2 in GmiEmiss_ and GmiDepos_GridCompClassMod.F90 calls to 
+          Decode_Land_Types and Decode_XLAI, also for running more than 72 layers.
+
+2016-09-27 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_3_JEN_GMI-v2
+	* Includes GOCART::SO4v in optical depth calculation.
+	* Added exports for BoxHeight, AIRMASS, NATSAD, ICESAD.
+	* Clarified units for QJ, QQJ, QQK, NUMDENS.
+	* Added HCl limiter 5 ppbv. Increased condensed HNO3 limit to 25 ppbv.
+	* Emission scenarios revised as recommended by Luke Oman.
+
+2016-07-14 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_3_JEN_GMI
+	* Correct some fractional photolysis rates in setkin_smv2.h.  From M. Manyin.
+
+2016-06-22 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_2_p1_JEN_GMI
+        * Fixed long-standing pressure center/edge issue in FastJX 6.5 implementation
+	* Updated strat/trop mechanism to JPL 2010 reaction rates
+
+2016-06-13 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_2_p1_CTM
+        * GmiEmiss: Merge M. Manyin's VegLai promotion to Chem_Shared with
+          tdt correction in Monitor_T2M.
+
+2016-04-08 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_1_JEN_GMI_p01
+        * Rename some emissions imports to resolve ExtData conficts with GOCART
+	* Initialize rc in GMI_GridCompMod.F90
+
+2016-03-24 <michael.manyin@nasa.gov> Tag: GEOSagcm_MeM_TR (branch of Heracles-5_1)
+        * Remove obsolete emiss_infile_name and emiss_var_name.
+        * Replace Using_Daily_Emissions and Daily_Emission_Species with Diurnal_Emission_Species
+	* Emissions can now include 3D and 2D (optionally diurnal) fields
+
+2016-02-03 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_1_JEN_GMI
+        * Reset default numberNOperFlash to 1.50E+26 in GMI_GridComp.rc.
+
+2016-01-07 <jon.e.nielsen@nasa.gov> Tag: Heracles-4_3_JEN_GMI_p01
+        * New GMI_GridComp.rc option: Climatological emissions datasets
+          are kg m^{-2} s^{-1} when clim_emiss_by_area: T.
+
+2015-12-09 <jon.e.nielsen@nasa.gov> Tag: Heracles-4_3_JEN_GMI_p01
+        * Correct bug in processing and age-off of T2M15d.
+
+2015-09-22 <jon.e.nielsen@nasa.gov> Tag: Heracles-4_3_JEN_GMI
+        * Implement Michael Manyin's revision for handling land-type-fractions.
+
+2015-06-11 <jon.e.nielsen@nasa.gov> Tag: Heracles-3_MERRA2-DD_JEN
+        * Now using AERO state when GMICHEM is the AERO_PROVIDER.
+
+2015-06-02 <jon.e.nielsen@nasa.gov> Tag: Heracles-3_MERRA2-DD_JEN
+        * Now using ExtData.rc instead of Chem_UtilMPread.
+
+2015-04-13 <jon.e.nielsen@nasa.gov> Tag: Heracles-UNSTABLE_JEN_GCC
+        * jsparse.F90 replaced with jsparseGMI.F90 to avoid name conflict with GEOSCHEMchem.
+
+2015-04-01 <jon.e.nielsen@nasa.gov> Tag: Heracles-1_0_UNSTABLE_JEN_m2
+        * Import DELP from CHEMENV.
+        * Update to REPLAY detection.
+        * forc_bc_start_num is now the year number for option 2.
+
+2015-02-04 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_1_JEN_GMI
+        * In GmiSAD_GridCompClassMod.F90, opt out of testing HNO3COND when bootstrapping 
+          gmichem_import_rst.
+
+2015-01-07 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_1_JEN_GMI
+        * Detect REPLAY to avoid "double counting" when accumulating 15-day time-average T2M.
+	* Enable time-dependent GHG and ODS (forc_bc_opt: 2) to accomodate year boundaries
+          without modifying forc_bc_start_num in GMI_GridComp.rc.  See GmiUpdateForcingBC_mod.F90
+          for details.
+
+2014-06-16 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_0_BETA11_JEN_GMI
+        * Implement more efficient memory use when computing species tendencies.
+
+2014-06-12 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_0_BETA11_JEN_GMI
+        * Replaced ESMF_Bundles with ALLOCATED array for computing species tendencies.
+
+2014-04-25 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_0_BETA11_JEN
+        * Updates for threadsafe from J. Kouatchou.
+
+2013-12-04 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_0_BETA5_GMI
+        * Now using setkin_lchem.h in place of setkin_chem_mech.txt in gmi_acg.pl
+          following advice of S. Steenrod that the txt file may become obsolete.
+        * Default setting of pr_qqjk is now F (off) to save memory.
+
+2013-09-10 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_0_UNSTABLE_JEN
+        * Implement RUNALARM and GMICHEM_DT.
+	* Add amplification/suppression factor for J(NO), default 1.00, recommended by
+          Michael Prather and Luke Oman. Reduce to 0.60 if upper stratospheric NOx has a 
+          high bias.
+        * Reduce lightning NO amplification factor to 0.80 in GMI_GridComp.rc for 5TG/yr, 
+          recommended by Luke Oman.
+
+2013-08-14 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_0_UNSTABLE_JEN
+        * Generalize FUNCTION speciesReg_for_CCM for handling more than 123 species in 
+          the GMIchem internal state.
+
+2013-07-23 <jon.e.nielsen@nasa.gov> Tag: Ganymed-3_0_p1_GMI
+        * Add monthly high-resolution (1/4-degree) CH4 emissions from L. Ott.
+
+2013-06-20 <jon.e.nielsen@nasa.gov> Tag: Ganymed-3_0_p1_GMI
+        * Updates for handling FieldBundles under ESMF-5
+        * gmi_acg.pl generates transported species names listing
+
+2013-05-24 <jon.e.nielsen@nasa.gov> Tag: Ganymed-2_1_p3_GMI-m2
+        * Enable use of EDGAR emission file names with general or specific qualifiers;
+          %y4 or 2008, for example.
+
+2013-05-08 <jon.e.nielsen@nasa.gov> Tag: Ganymed-2_1_p3_GMI-m2
+        * Add monthly NO and CO fossil-fuel emissions to daily emissions updates.
+
+2013-05-03 <jon.e.nielsen@nasa.gov> Tag: Ganymed-2_1_p3_GMI-m2
+        * Enable application of diurnal cycle to daily biomass burning emissions.
+        * Allow strat_trop_aerosol as a permitted mechanism identifier (chem_mecha).
+
+2013-04-05 <jon.e.nielsen@nasa.gov> Tag: Ganymed-2_1_p3_GMI-m1
+        * Update method used to query units of EM_* export states.
+	* Add capability to read daily emission inventory files.
+	* Generalize upper pressure limit for application of PSC routines, and
+          terminate execution if HNO3COND exceeds a given concentration.
+	* Add const_opt = 0, which allows for disabling the fixed concentration species.
+	
+2013-01-24 <jon.e.nielsen@nasa.gov> Tag: Ganymed-2_0_JEN-m1
+        * kgNOx3D from GmiEmissionLightningMod.F90 changed from kg N m^{-3} s^{-1}
+          to kg NO m^{-3} s^{-1}. Purpose is to allow comarison to GMI NO_lgt through
+          export EM_LGTNO. 
+
+2012-12-11 <jon.e.nielsen@nasa.gov> Tag: Ganymed-2_0_UNSTABLE_JEN-m1
+        * Added profiling timers. 
+
+2012-11-28 <jon.e.nielsen@nasa.gov> Tag: Ganymed-2_0_UNSTABLE
+        * Eliminated compiler warning "Global name too long" for three strings: 
+          GridCompClassMod, GmiPhotolysisRateConstants, and num_qj_o3_to_2oh.
+        * OX_TEND in mol mol^{-1} s^{-1}.
+
+2012-09-11 <jon.e.nielsen@nasa.gov> Tag: Ganymed-1_0_JEN-preRelease
+        * Allow user to specify a (usually tropical) latitude zone in which condense.F90 
+          is not run. The range is -NoPSCZone < lat < NoPSCZone, in degrees.
+
+2012-08-21 <jon.e.nielsen@nasa.gov> Tag: Ganymed-1_0_UNSTABLE_JEN-m4
+        * gmi_acg.pl: Generalized the method of scanning tokens from internal state 
+          registry for extracting specie units and friendlies.
+        * To avoid MAPL_UNDEFs in the imported TROPP, now saving the most recent
+          valid tropopause pressures in w_c%qa(iT2M)%data3d(:,:,km), and no longer
+          invoking Chem_UtilTroppFixer.
+
+2012-08-15 <jon.e.nielsen@nasa.gov> Tag: Ganymed-1_0_UNSTABLE_JEN-m4
+        * Enable volume mixing ratio tendency as a unit for GMI's diagnostic
+          emissions export states whose names begin with EM_.  Included is the name
+          change to EM_LGTNO for both prescribed and parameterized lightning NO.
+        * MOIST and TURB tendencies added to gmi_acg.pl.  Note: PHYSICS myName
+          changed to iName for IM and IT pointers.
+
+2012-08-10 <jon.e.nielsen@nasa.gov> Tag: Ganymed-1_0_UNSTABLE_JEN-m4
+        * Export states for total ozone (GMITO3) and tropospheric total ozone (GMITTO3).
+        * Emission species (Soot, NO, CO, ... , CH4) export states to KM levels.
+
+2012-07-23 <jon.e.nielsen@nasa.gov> Tag: Ganymed-1_0_UNSTABLE_JEN-m4
+        * Set do_smv_reord = F in GMI_GridComp.rc for performance.
+        * Explicitly set soil_pulse = 0 in InitializeEmission to avoid floating error that
+          first appeared in 2.5x2 Ganymed runs, but in neither 1.25x1 nor 540x90!
+
+2012-05-25 <jon.e.nielsen@nasa.gov> Tag: Ganymed-1_0_UNSTABLE_JEN-m3
+        * Brought Fortuna-2_5_b1_JEN species tendencies due to PHYSICS and SUPERDYNAMICS
+          into the GNUmakefile and the gmi_acg.pl.
+
+2012-05-24 <jon.e.nielsen@nasa.gov> Tag: Ganymed-1_0_UNSTABLE_JEN-m2
+        * KBLOOP parameters in smv2chem_par.h set to 32 for performance on Westmere nodes.
+
+2012-04-24 <jon.e.nielsen@nasa.gov> Tag: Ganymed-1_0_UNSTABLE_JEN-m1
+        * Removed obsolete code in GmiChemistry and GmiEmission to help compilation.
+        * GMI_GridComp.rc file definitions to ExtData.
+
+2012-03-07 <jon.e.nielsen@nasa.gov> Tag: Ganymed-1_0_UNSTABLE_JEN
+        * First GMIchem runs using FV-cubed.
+	* Incorporated J. Kouatchou's seven GridComp class modules, with modifications,
+          at the GMI level. 
+	* Grid information passed to the GridComp classes from ESMF Grid at the
+          GMIchem level, rather than using w_c%grid.
+        * Chemical tendencies now handled with ESMF bundles, which associated changes
+          to the automatic code generator, gmi_acg.pl.  Export state names now are like
+          CH4_GMIINC. Species tendencies due to PHYSICS and SUPERDYNAMICS not yet included.
+        * Fast JX version 6.5 added to GmiChemistry photolysis for future use. fixed_const
+          changed to one time level and fixed_const_timpyr eliminated.
+	* Parameterized lightning-generated NO is included.
+
+2012-02-16 <jon.e.nielsen@nasa.gov> Tag: Fortuna-2_5_b1_JEN
+        * Moved GMI chemical increments (tendencies) to BUNDLE, which eliminates
+	  need for DQGMI_GetPointer___.h and DQGMI_FillPointer___.h files.
+	* Added functionality in AGCM and PHYSICS to compute and export the
+	  increments (tendencies) due to SUPERDYNAMICS (advection) and physical
+	  processes (chemistry excepted).
+	* Modified gmi_acg.pl to generate two include files (each) for AGCM and
+	  PHYSICS that enable the respective increments to be calculated only 
+	  for the GMI species friendly to DYNAMICS (Q4AGE through HNO3COND), 
+	  without touching the first 7 FIELDS in the TRADV bundle.
+	* Removed the independent calculation of H2OCOND mixing ratio in condense.F90
+          to enforce uniformity with QCTOT, which is imported from MOIST.
+        * Fill export state for SAD ice effective radius (REFFICE).
+	* Changed age of air to AOADAYS, and now uses same algorithm as PCHEM.
+	* Parameterized lightning flash rates imported from MOIST, and lightning-generated
+          NO is provided by GmiEmission/lightning/GmiEmissionLightning_mod.F90
+
+2011-12-13 <jon.e.nielsen@nasa.gov> HEAD
+        * Update StratChem to (1) JPL 2011 and (2) disallow any changes
+          to H2O and H2OCOND based on internal microphysics (SUBROUTINEs
+	  pscs and sediment).
+
+2011-09-21 <jon.e.nielsen@nasa.gov> Tag: Hypatia-1_0_UNSTABLE_JEN
+        * Generalized the connectivities between GMICHEM and GOCART 
+	  to support those cases in which fewer than all five GOCART 
+	  dust/aerosol classes are being imported to GMICHEM. Also allows
+	  GMICHEM to be run in tandem with, for example, GOCART::Rn.
+	* Updates to gmi_acg.pl for units and for filling DD and WD export 
+	  states.
+	* SC: Fill export O3.
+
+2011-07-06 <jon.e.nielsen@nasa.gov>
+        * GMICHEM: New functionality added to gmi_acg.pl that adds export states
+	  for species tendencies due to chemistry. Compiled and tested in 
+	  Fortuna-2_4_BETA2 and put on HEAD.  Pushed tag: Fortuna-2_4_BETA2_JEN.
+
+2011-05-25 <jon.e.nielsen@nasa.gov>
+        * GMICHEM: New functionality added to gmi_acg.pl that adds export states
+	  for reaction rates constants and rates generated by chem_update.F90.   
+	  Compiled and tested in Fortuna-2_4_BETA2 and put on HEAD.
+
+2011-04-29 <jon.e.nielsen@nasa.gov>
+        * GMICHEM: New gmi_acg.pl, along with mapl_acg.pl, are run in a three-
+          step process to generate code fragments for declaring and getting
+          pointers and filling some export states.  Scavenging and deposition
+          export specs have been added for several species, in addition to HBr 
+          (see entry immediately below).  Tested in Fortuna-2_4_BETA1 and 
+          compiled in BETA_2, and put on HEAD.
+
+2011-04-12 <jon.e.nielsen@nasa.gov>
+        * GOCART: CO and CO2 rc changes from 2011-03-18 propagated to CMIP and PIESA.
+	* GMICHEM: Inserted Henry's Law constants for HBr in setkin_depos.h.
+
+2011-03-30 <jon.e.nielsen@nasa.gov> STRATCHEM updates:
+        * Import A-grid cell area from DYN, making SUBROUTINE setmcor obsolete.
+	* Added capability to set lightning NOx source magnitude in SC_GridComp.rc.
+	* Maximum solar zenith angle for daylight computations now parsed from 
+          SC_GridComp.rc.  Code and tables work up to 94 degrees.
+        * Added Chapman functions to meso_phot.F.
+	* Grab new xtab file from Randy Kawa that fixes NO3 photolysis rate.
+	* Use h2oc from SUBROUTINE pscs instead of QCTOT when sedimenting NAT.
+        * Merged and compiled with Fortuna-2_4_UNSTABLE and put on HEAD.
+
+2011-03-18 <jon.e.nielsen@nasa.gov>
+        * Removed the GEOS-4 references in CO2.
+        * Rewrote the PBL partitioning for biomass burning emissions in
+	  both CO and CO2, using ZLE (instead of pressure) to get layer 
+	  depths and compare with ZPBL.  Not zero diff.
+	* Moved CO emission amplification factors ff, bf, bb to RC file.
+        * Merged with Fortuna-2_4_BETA1 and put on HEAD.
+
+

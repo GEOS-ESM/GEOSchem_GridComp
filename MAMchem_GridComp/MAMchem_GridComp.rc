@@ -1,0 +1,102 @@
+# -----------------------------------------------
+# Resource file for the MAMchem Gridded Component
+# -----------------------------------------------
+
+verbose: .FALSE.
+
+# MAM scheme - MAM7(default)
+# --------------------------
+scheme: MAM7
+
+
+# Aerosol processes
+#------------------
+dry_removal: yes
+wet_removal: yes
+coagulation: yes
+nucleation:  yes
+
+
+# Prognostics emissions parameters (resolution: a, b, c, d, e, f)
+# ---------------------------------------------------------------
+seasalt_femis: 0.875   1.1  0.875  0.875  0.875 0.612
+dust_femis:    0.2     0.46 0.08   0.08   0.08  0.067
+
+
+# Ratio of POM emissions to primary OC emissions
+# ----------------------------------------------
+pom_oc_ratio: 1.4
+
+
+#  Heights of aviation LTO, CDS and CRS layers, 'm'
+# -------------------------------------------------
+aviation_vertical_layers: 0.0 100.0 9.0e3 10.0e3
+
+
+# Convective scavenging parameters
+# --------------------------------
+f_conv_scav_ait: 0.5    # aitken mode 
+f_conv_scav_acc: 0.4    # accumulation mode
+f_conv_scav_pcm: 0.1    # primary carbon mode
+f_conv_scav_fss: 0.4    # fine seasalt mode
+f_conv_scav_css: 0.5    # coarse seasalt mode 
+f_conv_scav_fdu: 0.3    # fine dust mode
+f_conv_scav_cdu: 0.2    # coarse dust mode
+
+
+# Large scale wet removal efficiency
+# ----------------------------------
+f_wet_ait: 1.0          # aitken mode
+f_wet_acc: 1.0          # accumulation mode
+f_wet_pcm: 1.0          # primary carbon mode
+f_wet_fss: 1.0          # fine seasalt mode
+f_wet_css: 1.0          # coarse seasalt mode 
+f_wet_fdu: 0.5          # fine dust mode
+f_wet_cdu: 0.5          # coarse dust mode
+
+
+# Monochromatic Mie lookup tables
+# -------------------------------
+narrowband_optics_ait: /home/adarmeno/tmp/MAM7-OpticsTables/_optics_MAM7_AIT.v0.3-rc1.nc4
+narrowband_optics_acc: /home/adarmeno/tmp/MAM7-OpticsTables/_optics_MAM7_ACC.v0.3-rc1.nc4
+narrowband_optics_pcm: /home/adarmeno/tmp/MAM7-OpticsTables/_optics_MAM7_PCM.v0.3-rc1.nc4
+narrowband_optics_fss: /home/adarmeno/tmp/MAM7-OpticsTables/_optics_MAM7_FSS.v0.3-rc1.nc4
+narrowband_optics_css: /home/adarmeno/tmp/MAM7-OpticsTables/_optics_MAM7_CSS.v0.3-rc1.nc4
+narrowband_optics_fdu: /home/adarmeno/tmp/MAM7-OpticsTables/_optics_MAM7_FDU.v0.3-rc1.nc4
+narrowband_optics_cdu: /home/adarmeno/tmp/MAM7-OpticsTables/_optics_MAM7_CDU.v0.3-rc1.nc4
+
+
+# Broadband Mie lookup tables
+# ---------------------------
+broadband_optics_ait: /home/adarmeno/tmp/MAM7-OpticsTables/_opticsBands_MAM7_AIT.v0.3-rc1.nc4
+broadband_optics_acc: /home/adarmeno/tmp/MAM7-OpticsTables/_opticsBands_MAM7_ACC.v0.3-rc1.nc4
+broadband_optics_pcm: /home/adarmeno/tmp/MAM7-OpticsTables/_opticsBands_MAM7_PCM.v0.3-rc1.nc4
+broadband_optics_fss: /home/adarmeno/tmp/MAM7-OpticsTables/_opticsBands_MAM7_FSS.v0.3-rc1.nc4
+broadband_optics_css: /home/adarmeno/tmp/MAM7-OpticsTables/_opticsBands_MAM7_CSS.v0.3-rc1.nc4
+broadband_optics_fdu: /home/adarmeno/tmp/MAM7-OpticsTables/_opticsBands_MAM7_FDU.v0.3-rc1.nc4
+broadband_optics_cdu: /home/adarmeno/tmp/MAM7-OpticsTables/_opticsBands_MAM7_CDU.v0.3-rc1.nc4
+
+
+PRIMARY_AEROSOL_EMISSIONS:
+    EMISSIONS_FIRE
+    EMISSIONS_BIOFUEL
+    EMISSIONS_FOSSILFUEL
+    EMISSIONS_SHIP
+::
+
+EMISSIONS_FIRE:
+# mode  species  weight(by mass)   sigma    Dgn(um)
+# -------------------------------------------------
+  PCM   BC      1.0                1.8      0.080
+  PCM   POM     1.0                1.8      0.080
+  AIT   SU      0.025              1.8      0.080
+::
+
+EMISSIONS_BIOFUEL:
+# mode  species  weight(by mass)   sigma    Dgn(um)
+# -------------------------------------------------
+  PCM   BC      1.0                1.8      0.080
+  PCM   POM     1.0                1.8      0.080
+  AIT   SU      0.025              1.8      0.080
+::
+

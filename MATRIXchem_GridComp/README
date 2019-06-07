@@ -1,0 +1,20 @@
+MATRIXchem README
+
+
+* Importing/tracking code from GISS/MATRIX
+
+  - Change file extensions to *.F and *.F90
+
+  - Use 'GISS' as the name of the vendor branch, e.g., 
+    GISS ModelE MATRIX-V2_032015 was imported using the following 
+    steps
+
+        $ cd matrix-v2_032015      # directory containing the original MATRIX code, but
+                                   # with Fortran files having *.F or *.F90 extensions
+
+        $ cvs -nq import -m "asd: import of GISS ModelE/MATRIX (v2-032015)" \
+              esma/src/Components/MATRIXchem_GridComp/microphysics \
+              GISS \
+              GISS_MATRIX_V2_032015
+
+

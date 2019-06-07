@@ -1,0 +1,21 @@
+PrimaryExports%%
+
+# DUST
+CARMA_DU_SRC NA N Y - none none du_src ExtData/PIESA/sfc/gocart.dust_source.v5a.x1152_y721.nc
+
+# SMOKE
+CARMA_SM_BIOMASS NA  N Y %y4-%m2-%d2t12:00:00 none none biomass ExtData/PIESA/sfc/QFED/v2.4r6/Y%y4/M%m2/qfed2.emis_oc.005.%y4%m2%d2.nc4
+CARMA_SM_BIOFUEL NA  Y Y %y4-%m2-%d2t12:00:00 none none biofuel /dev/null
+CARMA_SM_ANTEOC1 NA  Y Y %y4-%m2-%d2t12:00:00 none none anteoc1 ExtData/AeroCom/sfc/AeroCom.noship_OC_src.sfc.x360_y181_t44.19780703_12z_20210703_12z.nc
+CARMA_SM_ANTEOC2 NA  Y Y %y4-%m2-%d2t12:00:00 none none anteoc2 /dev/null
+CARMA_SM_SHIP    NA  Y Y %y4-%m2-%d2t12:00:00 none none oc_ship ExtData/MERRA2/sfc/edgar-v41.emis_oc.navigation.x360_y181_t47.19750703T12z_20210703T00z.nc4
+CARMA_OC_TERPENE NA Y Y %y4-%m2-%d2t12:00:00 none none terpene ExtData/PIESA/sfc/geia.terpene_biogenic.x144_y91_t12.1971.nc
+pSOA_ANTHRO_VOC  NA Y Y %y4-%m2-%d2t12:00:00 none none biofuel /dev/null
+pSOA_BIOB_VOC    NA Y Y %y4-%m2-%d2t12:00:00 none none biofuel /dev/null
+
+
+
+# SULFATE PRODUCTION
+PSO4TOT NA Y Y %y4-%m2-%d2t12:00:00 none none pso4tot /dev/null
+
+%%

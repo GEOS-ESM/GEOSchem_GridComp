@@ -1,0 +1,16 @@
+#===============================================================
+# Resource file for the Harvard-NASA emissions component (HEMCO) 
+#===============================================================
+
+        #############################
+        # Number of instances?
+        #############################
+
+HEMCO_Instances: 1
+
+        ###############################
+        # Configuration files for every
+        # instance 
+        ###############################
+
+HEMCO_CONFIG--001: HEMCOgocart_Config.rc

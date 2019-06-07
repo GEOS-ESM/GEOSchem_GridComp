@@ -1,0 +1,53 @@
+TR_GridComp ChangeLog
+
+2019-04-29 <michael.manyin@nasa.gov>, Tag: Icarus-3_2_p9_MEM_MERGE_13
+        * Added start-source tracers (Be7s, Be10s, Pb210s)
+        * Added CO tracers based on CMIP6 emissions and using HTAP2 regional map
+        * Added PRtend diagnostic
+        * Reverted to GMI deposition and Moist convection, while GOCART routines are being finalized
+
+2019-04-10 <michael.manyin@nasa.gov>, Tag: Icarus-3_2_p9_MEM_MERGE_12
+        * Allow 'kg kg-1' native units
+        * Option to use GOCART routines for Wet and Dry Deposition and Convection
+        * Decay is now handled better, so that one tracer can serve as the source for multiple others
+        * Surface constraints now allow for masking
+        * New tendency diagnostics for: emissions, settling, deposition, convection
+
+2017-04-06 <michael.manyin@nasa.gov>, HEAD, compatible w/ tag Icarus-1_0
+        * Changed Rn222 from slightly soluble to non-soluble, on advice from Hongyu Liu
+
+2017-04-04 <michael.manyin@nasa.gov>, HEAD, compatible w/ tag Icarus-1_0
+        * Moved GMI include files to Chem_Shared
+        * Simplified Dry Deposition code; also corrected an indexing bug
+        * Corrected mw values for Be7 and Be10
+        * Non-zero diff for: Be7, Be10, Pb210
+
+2017-01-06 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_3_p3_JEN_GMI-r1
+        * TR_GridCompMod.F90: Replaced k%km with NVEGTYPE-2 in calls to Decode_Land_Types and Decode_XLAI for
+          running on more than 72 layers. The update was applied to revision 1.17 and put on TR_Dev_Branch.
+
+2016-12-27 <michael.manyin@nasa.gov>, HEAD, compatible w/ tag Heracles-5_4p3
+        * Added first implementation of Chemical Loss sink in TR
+        * Added tracer resource file TR_GridComp---stOX.rc
+
+2016-12-12 <michael.manyin@nasa.gov>, HEAD, compatible w/ tag Heracles-5_4p3
+        * Added tracer definitions such as TR_GridComp---CO_50_ea.rc, TR_GridComp---e90_n.rc, TR_GridComp---nh_5
+
+2016-06-03 <michael.manyin@nasa.gov>, Tag: Heracles-4_3_MeM_CCMI (branch of Heracles-4_3)
+        * Converted TR to use ExtData Masks for Regions.
+
+2016-05-12 <michael.manyin@nasa.gov>, Tag: GEOSagcm_MeM_TR (branch of Heracles-5_1)
+        * Converted TR to use ExtData for file2d and file3d tracer sources.
+
+2016-03-09 <michael.manyin@nasa.gov>, Tag: GEOSagcm_MeM_TR (branch of Heracles-5_1)
+        * Added Matt's R8->R4 conversion of MAPL_CommsAllReduceSum output, to satisfy regression.
+
+2016-01-05 <jon.e.nielsen@nasa.gov>, Tag: Heracles-UNSTABLE
+        * Ben Auer replaced ArrayScatter and Gather with MAPL_CommsAllReduceSum.
+          This is non-zero-diff change.
+        * Michael Manyin's "minor changes" to eliminate GOTOs, etc.
+
+2015-01-26 <michael.manyin@nasa.gov>, Tag: GEOSagcm_G41_TRv4
+        * Initial implementation of TR Passive Tracers, including Age-of-Air,
+          Sulfur Hexafluoride, Radon/Lead, Beryllium, and Methyl Iodide.
+

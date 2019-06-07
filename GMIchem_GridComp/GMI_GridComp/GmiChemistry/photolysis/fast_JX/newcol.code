@@ -1,0 +1,2220 @@
+!---(pphot.f)-------generic CTM shell from UCIrvine (p-code 5.0, 7/04)
+!
+!---------Oliver Wild (7/99,troposphere), Huisheng Bian (8/02,stratosphere)
+!---------PPHOT calculates photolysis rates with the Fast-J2 scheme
+!---------subroutines:  inphot, photoj, Fast-J2 schemes...
+!
+!---------       updated MP 7/04 to fast-JX
+!---------              make pseudo-spherical scattering for all wvl
+!---------              correct J(O3P) and add new press dep J's
+!--------- Modified for GMI, Amidu Oloso (9/04)
+!-----------------------------------------------------------------------
+!
+      subroutine inphot(JXbundle, rootProc,cross_section_file, rate_file,  &
+     &                     T_O3_climatology_file, n_qj_O3_2OH)
+
+!-----------------------------------------------------------------------
+!  Routine to initialise photolysis rate data, called directly from the
+!  cinit routine in ASAD. Currently use it to read the JPL spectral data
+!  and standard O3 and T profiles and to set the appropriate reaction index.
+!-----------------------------------------------------------------------
+!
+!     iph       Channel number for reading all data files
+!     rad       Radius of Earth (cm)
+!     zzht      Effective scale height above top of atmosphere (cm)
+!     dtaumax   Maximum opt.depth above which a new level should be inserted
+!     dtausub   No. of opt.depths at top of cloud requiring subdivision
+!     dsubdiv   Number of additional levels to add at top of cloud
+!     szamax    Solar zenith angle cut-off, above which to skip calculation
+!
+!-----------------------------------------------------------------------
+!
+!#      include "fast_JX_cmn_h.h"
+!#      include "fast_JX_jv_cmn.h"
+
+      logical,            intent(in) :: rootProc
+      character (len=128),intent(in) :: cross_section_file ! Added for GMI {AOO, 10/04}
+      character (len=128),intent(in) :: rate_file ! Added for GMI {AOO, 10/04}
+      character (len=128),intent(in) :: T_O3_climatology_file ! Added for GMI {AOO, 10/04}
+      integer, intent(out) :: n_qj_O3_2OH ! Added for GMI {AOO, 8/04}
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+
+!      character (len=128) :: filnam
+      integer iph
+!
+! Use channel 8 to read files at the moment
+!      iph=8
+!
+! Defaults & constants
+      JXbundle%RAD = 6375.d5
+      JXbundle%ZZHT = 5.d5
+!
+! Calculate new levels if tau exceeds DTAUMAX
+      JXbundle%dtaumax = 1.d0
+! Add dsubdiv additional levels in first dtausub of cloud
+      JXbundle%dtausub = 1.0d0
+      JXbundle%dsubdiv = 10.d0
+!
+! Maximum Zenith Angle  (98 degrees at 63 km; 99 degrees at 80 km)
+      JXbundle%szamax = 98.0d0
+!
+! Read in labels of photolysis rates required
+      call Rd_Js (JXbundle, iph, rate_file, n_qj_O3_2OH)
+!
+! Read in JPL spectral data set
+      call Rd_Tjpl (JXbundle, rootProc, iph, cross_section_file)
+!
+! Read in T & O3 climatology
+      call Rd_Prof (JXbundle, iph, T_O3_climatology_file)
+!
+! Select Aerosol/Cloud types to be used
+      call SET_AER(JXbundle)
+!
+      return
+      end subroutine inphot
+
+      subroutine rd_Js(JXbundle, nj1,namfil, n_qj_O3_2OH)
+!-----------------------------------------------------------------------
+!  Reread the ratj.d file to map photolysis rate to reaction
+!  Read in quantum yield 'jfacta' and fastj2 label 'jlabel'
+!-----------------------------------------------------------------------
+!
+!     jfacta    Quantum yield (or multiplication factor) for photolysis
+!     jlabel    Reference label identifying appropriate J-value to use
+!     ipr       Photolysis reaction counter - should total 'jppj'
+!
+!-----------------------------------------------------------------------
+
+!#      include "fast_JX_cmn_h.h"
+!#      include "fast_JX_jv_cmn.h"
+!
+      integer nj1, ipr
+      integer :: n_qj_O3_2OH ! Added for GMI {AOO, 8/04}
+!c    integer i     ! Only used for diagnostics {AOO, 8/04}
+!c    character*6  namfil
+      character (len=128) :: namfil
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+      character*120 cline
+!
+! Reread the ratj.d file to map photolysis rate to reaction
+!                     Read in quantum yield jfacta and fastj2 label jlabel
+      ipr=0
+      n_qj_O3_2OH = 0
+!      open(nj1,file=namfil,status='old',form='formatted')
+      call AsciiOpenRead (nj1,namfil)
+ 10   read(nj1,'(a)',err=20) cline
+      if(cline(2:5).eq.'9999') then
+         go to 20
+      elseif(cline(1:1).eq.'#') then
+         go to 10
+      elseif(cline(5:5).eq.'$') then
+         go to 10
+      else
+         ipr=ipr+1
+         read(cline(79:83),'(f5.1)') JXbundle%jfacta(ipr)
+         read(cline(86:92),'(a7)')   JXbundle%jlabel(ipr)
+         JXbundle%jfacta(ipr)=JXbundle%jfacta(ipr)/100.d0
+         if ( JXbundle%jlabel(ipr) == "O3_1dOH" ) then   ! Added for GMI {AOO, 8/04}
+           JXbundle%jlabel(ipr) = "O3(1D)"               ! Catch O3 -> O1d for later
+           n_qj_O3_2OH = ipr               ! Correction to provide
+         endif                                  ! Effective J for O3 -> 2OH.
+         if ( JXbundle%jlabel(ipr) == "C3H6O" ) then ! Added for GMI {AOO, 8/04}
+            JXbundle%jlabel(ipr) = "C3H6Ot"          ! Added for GMI {AOO, 8/04}
+         endif                              ! Added for GMI {AOO, 8/04}
+         go to 10
+      endif
+ 20   close(nj1)
+      if(ipr.ne.JXbundle%jppj) then
+         write(6,1000) ipr,JXbundle%jppj
+         STOP "Fast_JX"
+      endif
+!
+ 1000 format(' Error: ',i3,' photolysis labels but ',i3,' reactions')
+      return
+
+      end subroutine rd_Js
+
+
+      subroutine photo(JXbundle, zpj,timej)
+!-----------------------------------------------------------------------
+!----jv_trop.f:  new FAST J/J2-Value code, troposphere only (mjprather 6/96)
+!----     uses special wavelength quadrature spectral data (j2_spec.dat)
+!---      that includes only 289 nm - 800 nm  (later a single 205 nm add-on)
+!---      uses special compact Mie code based on Feautrier/Auer/Prather vers.
+!-----------------------------------------------------------------------
+!
+!     zpj      External array providing J-values to main CTM code
+!     timej    Offset in hours from start of timestep to time J-values
+!              required for - take as half timestep for mid-step Js.
+!     solf     Solar distance factor, for scaling; normally given by:
+!                      1.0-(0.034*cos(real(iday-186)*2.0*pi/365.))
+!
+!----------basic common blocks:-----------------------------------------
+!#      include "fast_JX_cmn_h.h"
+!#      include "fast_JX_cmn_t.h"
+!#      include "fast_JX_jv_cmn.h"
+#      include "gmi_phys_constants.h"
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+      real*8 zpj(JXbundle%jpnl,JXbundle%jppj),timej,solf
+      integer i,j,K
+!-----------------------------------------------------------------------
+!
+      do i=1,JXbundle%jpnl
+        do j=1,JXbundle%jppj
+          JXbundle%zj(i,j)=0.D0
+          zpj(i,j)=0.D0
+        enddo
+      enddo
+!
+!---Calculate new solar zenith angle
+      call SOLAR2(JXbundle, timej)
+      if(JXbundle%SZA.gt.JXbundle%szamax) go to 10
+!
+!---Set up profiles on model levels
+      call SET_PROF(JXbundle)
+!
+!---Print out atmosphere
+!AOO      call PRTATM(3)
+!
+!-----------------------------------------------------------------------
+      call JVALUE(JXbundle)
+!-----------------------------------------------------------------------
+!---Print solar flux terms
+
+!aoo      write(6,'(a5,18i9)')   ' bin:',(K, K=JXbundle%NW1,JXbundle%NW2)
+!aoo      write(6,'(a5,18f9.2)') ' wvl:',(WL(K), K=JXbundle%NW1,JXbundle%NW2)
+!aoo      do J=JPNL,1,-1
+!aoo      write(6,'(i3,2x,18f9.6)') J, (FFF(K,J)/FL(K),K=JXbundle%NW1,JXbundle%NW2)
+!aoo      enddo
+
+!
+!---Include variation in distance to sun
+      solf=1.d0-(0.034d0*cos(dble(JXbundle%iday-186)*2.d0*GMI_PI/365.d0))
+!aoo      solf=1.d0
+!-----------------------------------------------------------------------
+      call JRATET(JXbundle, solf)
+!-----------------------------------------------------------------------
+!
+!  "zj" updated in JRATET - pass this back to ASAD as "zpj"
+      do i=1,JXbundle%jpnl
+        do j=1,JXbundle%jppj
+          zpj(i,j)= JXbundle%zj(i,j)
+        enddo
+      enddo
+!c      write(6,'(2(1x,i2),10(1pe10.3))') nslon,nslat,(JXbundle%zj(i,1),i=1,jpnl)
+!
+!---Output selected values
+  10  if((.not.ldeg45.and.JXbundle%nslon.eq.37.and.JXbundle%nslat.eq.36).or.  &
+     &         (ldeg45.and.JXbundle%nslon.eq.19.and.JXbundle%nslat.eq.18)) then
+        i=min(JXbundle%jppj,8)
+!        write(6,1000) iday, tau+timej, sza, jlabel(i), zpj(1,i)
+      endif
+!
+      return
+ 1000 format(' Photolysis on day ',i4,' at ',f4.1,' hrs: SZA = ',f7.3,  &
+     &               ' J',a7,'= ',1pE10.3)
+      end subroutine photo
+
+
+      subroutine set_prof (JXbundle)
+!-----------------------------------------------------------------------
+!  Routine to set up atmospheric profiles required by Fast-J2 using a
+!  doubled version of the level scheme used in the CTM. First pressure
+!  and z* altitude are defined, then O3 and T are taken from the supplied
+!  climatology and integrated to the CTM levels (may be overwritten with
+!  values directly from the CTM, if desired) and then black carbon and
+!  aerosol profiles are constructed.
+!                                                     Oliver (04/07/99)
+!
+! HISTORY
+!   March 4, 2005 - Jules Kouatchou
+!      Added the include file "gmi_AerDust_const.h" and "setkin_par.h".
+!      Modified the section on "Add Aerosol Column".
+!-----------------------------------------------------------------------
+!
+!     pj       Pressure at boundaries of model levels (hPa)
+!     z        Altitude of boundaries of model levels (cm)
+!     odcol    Optical depth at each model level
+!     masfac   Conversion factor for pressure to column density
+!
+!     TJ       Temperature profile on model grid
+!     DM       Air column for each model level (molecules.cm-2)
+!     DO3      Ozone column for each model level (molecules.cm-2)
+!     DBC      Mass of Black Carbon at each model level (g.cm-3)  !  .....!
+!     PSTD     Approximate pressures of levels for supplied climatology
+!
+!-----------------------------------------------------------------------
+#     include "gmi_AerDust_const.h"
+#     include "setkin_par.h"
+!#      include "fast_JX_cmn_h.h"
+!#      include "fast_JX_cmn_w.h"
+!#      include "fast_JX_cmn_t.h"
+!#      include "fast_JX_jv_cmn.h"
+
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+
+      integer i, k, l, m, N
+      real*8  odcol(JXbundle%lpar),dlogp,f0,t0,b0,pb,pc,xc,masfac,scaleh
+      real*8  pstd(52),oref2(51),tref2(51),bref2(51)
+
+!  Set up cloud and surface properties
+      call CLDSRF(JXbundle, odcol)
+!
+!  Set up pressure levels for O3/T climatology - assume that value
+!  given for each 2 km z* level applies from 1 km below to 1 km above,
+!  so select pressures at these boundaries. Surface level values at
+!  1000 mb are assumed to extend down to the actual P(nslon,nslat).
+!
+      pstd(1) = max(JXbundle%pj(1),1000.d0)
+      pstd(2) = 1000.d0*10.d0**(-1.d0/16.d0)
+      dlogp = 10.d0**(-2.d0/16.d0)
+      do i=3,51
+        pstd(i) = pstd(i-1)*dlogp
+      enddo
+      pstd(52) = 0.d0
+!
+!  Mass factor - delta-Pressure (mbars) to delta-Column (molecules.cm-2)
+      masfac=100.d0*6.022d+23/(28.97d0*9.8d0*10.d0)
+!
+!  Select appropriate monthly and latitudinal profiles
+      m = max(1,min(12,JXbundle%month))
+      l = max(1,min(18,(int(JXbundle%ydgrd(JXbundle%nslat))+99)/10))
+!
+
+!  Temporary arrays for climatology data
+      do i=1,51
+!AOO use T and O3 from model        oref2(i)=oref(i,l,m)
+!AOO use T and O3 from model       tref2(i)=tref(i,l,m)
+         if (.not. JXbundle%do_model_clima) then
+            oref2(i)=JXbundle%oref(i,l,m)
+            tref2(i)=JXbundle%tref(i,l,m)
+         endif
+         bref2(i)=JXbundle%bref(i)
+      enddo
+!
+!  Apportion O3 and T on supplied climatology z* levels onto CTM levels
+!  with mass (pressure) weighting, assuming constant mixing ratio and
+!  temperature half a layer on either side of the point supplied.
+!
+
+      do i = 1,JXbundle%NB
+!AOO use T and O3 from model        F0 = 0.d0
+!AOO use T and O3 from model        T0 = 0.d0
+         if (.not. JXbundle%do_model_clima) then
+            F0 = 0.d0
+            T0 = 0.d0
+         endif
+        B0 = 0.d0
+        do k = 1,51
+          PC = min(JXbundle%pj(i),pstd(k))
+          PB = max(JXbundle%pj(i+1),pstd(k+1))
+          if(PC.gt.PB) then
+            XC = (PC-PB)/(JXbundle%pj(i)-JXbundle%pj(i+1))
+!AOO use T and O3 from model            F0 = F0 + oref2(k)*XC
+!AOO use T and O3 from model            T0 = T0 + tref2(k)*XC
+            if (.not. JXbundle%do_model_clima) then
+               F0 = F0 + oref2(k)*XC
+               T0 = T0 + tref2(k)*XC
+            endif
+            B0 = B0 + bref2(k)*XC
+          endif
+        enddo
+!AOO use T and O3 from model        TJ(i) = T0
+!AOO use T and O3 from model        DO3(i)= F0*1.d-6
+        if (.not. JXbundle%do_model_clima) then
+           JXbundle%TJ(i) = T0
+           JXbundle%DO3(i)= F0*1.d-6
+        endif
+        JXbundle%DBC(i)= B0
+      enddo
+!
+!  Insert model values here to replace or supplement climatology.
+!  Note that CTM temperature is always used in x-section calculations
+!  (see JRATET); TJ is used in actinic flux calculation only.
+
+!      do I = 1,NB
+!        write(6,*) I,PJ(I),TJ(I),DO3(I)
+!      enddo
+
+!
+      if (JXbundle%do_model_clima) then
+         do i=1,JXbundle%lpar
+!AOO set in fast_JX_control     DO3(i) = my_ozone(i)        ! Mole fraction Mixing Ratio
+            JXbundle%TJ(i)  = JXbundle%T(JXbundle%nslon,JXbundle%nslat,I)   ! Kelvin
+         enddo
+         JXbundle%DO3(JXbundle%lpar+1) = JXbundle%DO3(JXbundle%lpar)  ! Above top of model (or use climatology)
+         JXbundle%TJ(JXbundle%lpar+1)  = JXbundle%T(JXbundle%nslon,JXbundle%nslat,JXbundle%lpar)   ! Above top of model (or use climatology)
+!         DO3(lpar+1) = my_ozone*exp()  ! Above top of model (or use climatology)
+!         TJ(lpar+1)  = my_temp(lpar)   ! Above top of model (or use climatology)
+      end if
+!
+!
+!  Calculate effective altitudes using scale height at each level
+      JXbundle%z(1) = 0.d0
+      do i=1,JXbundle%lpar
+        scaleh=1.3806d-19*masfac*JXbundle%TJ(i)
+        JXbundle%z(i+1) = JXbundle%z(i)-(log(JXbundle%pj(i+1)/JXbundle%pj(i))*scaleh)
+      enddo
+!
+!  Add Aerosol Column - include aerosol types here. Currently use soot
+!  water and ice; assume black carbon x-section of 10 m2/g, independent
+!  of wavelength; assume limiting temperature for ice of -40 deg C.
+!
+!!!!
+!Beg: Bryan & Jules
+!!!!
+      do i=1,JXbundle%lpar
+        JXbundle%AER(1,i) = JXbundle%DBC(i)*10.d0*(JXbundle%z(i+1)-JXbundle%z(i))
+
+         ! Turn off uniform black carbon profile (rvm, bmy, 2/27/02)
+         JXbundle%AER(1,I) = 0D0
+
+        if(JXbundle%T(JXbundle%nslon,JXbundle%nslat,I).gt.233.d0) then
+          JXbundle%AER(2,i) = odcol(i)
+          JXbundle%AER(3,i) = 0.d0
+        else
+          JXbundle%AER(2,i) = 0.d0
+          JXbundle%AER(3,i) = odcol(i)
+        endif
+
+         ! Also add in aerosol optical depth columns (rvm, bmy, 9/30/00)
+         DO N = 1, NSADdust
+            JXbundle%AER(3+N,I) = JXbundle%OPTDUST(I,N)
+         ENDDO
+
+         ! Also add in other aerosol optical depth columns (rvm, bmy, 2/27/02)
+         DO N = 1, NSADaer*NRH_b
+            JXbundle%AER(3+N+NSADdust,I) = JXbundle%OPTAER(I,N)
+         ENDDO
+
+      enddo
+
+      do k=1,MX
+        JXbundle%AER(k,JXbundle%lpar+1) = 0.d0
+      enddo
+!!!!
+!End: Bryan & Jules
+!!!!
+!
+!  Calculate column quantities for Fast-J2
+      do i=1,JXbundle%NB
+        JXbundle%DM(i)  = (JXbundle%PJ(i)-JXbundle%PJ(i+1))*masfac
+        JXbundle%DO3(i) = JXbundle%DO3(i)*JXbundle%DM(i)
+      enddo
+!
+      return
+      end subroutine set_prof
+
+
+      subroutine CLDSRF(JXbundle, odcol)
+!-----------------------------------------------------------------------
+!  Routine to set cloud and surface properties
+!-----------------------------------------------------------------------
+!     rflect   Surface albedo (Lambertian)
+!     odmax    Maximum allowed optical depth, above which they are scaled
+!     odcol    Optical depth at each model level
+!     odsum    Column optical depth
+!     nlbatm   Level of lower photolysis boundary - usually surface
+!-----------------------------------------------------------------------
+#     include "gmi_AerDust_const.h"
+#     include "setkin_par.h"
+!#     include "fast_JX_cmn_h.h"
+!#     include "fast_JX_cmn_t.h"
+!#     include "fast_JX_cmn_w.h"
+!#     include "fast_JX_jv_cmn.h"
+      integer i, j, k
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+      real*8  odcol(JXbundle%lpar), odsum, odmax, odtot
+
+!
+! Default lower photolysis boundary as bottom of level 1
+      JXbundle%nlbatm = 1
+!
+! Set surface albedo
+      JXbundle%RFLECT = dble(JXbundle%SA(JXbundle%nslon,JXbundle%nslat))
+      JXbundle%RFLECT = max(0.d0,min(1.d0,JXbundle%RFLECT))
+!
+! Zero aerosol column
+      do k=1,MX
+        do i=1,JXbundle%NB
+          JXbundle%AER(k,i) = 0.d0
+        enddo
+      enddo
+!
+! Scale optical depths as appropriate - limit column to 'odmax'
+      odmax = 200.0d0
+      odsum =   0.0d0
+!        print *, "HERE HERE HERE ", odsum, lpar
+      do i=1,JXbundle%lpar
+!        odcol(i) = dble(OD(nslon,nslat,i))
+        odcol(i) = JXbundle%OD(JXbundle%nslon,JXbundle%nslat,i)
+        odsum    = odsum + odcol(i)
+      enddo
+      if(odsum.gt.odmax) then
+        odsum = odmax/odsum
+        do i=1,JXbundle%lpar
+          odcol(i) = odcol(i)*odsum
+        enddo
+        odsum = odmax
+      endif
+!
+!  Use clear-sky conditions
+!      do i=1,jpnl
+!        odcol(i)=0.d0
+!      enddo
+!
+! Set sub-division switch if appropriate
+      odtot=0.d0
+      JXbundle%jadsub(JXbundle%nb)=0
+      JXbundle%jadsub(JXbundle%nb-1)=0
+      do i=JXbundle%nb-1,1,-1
+        k=2*i
+        JXbundle%jadsub(k)=0
+        JXbundle%jadsub(k-1)=0
+        odtot=odtot+odcol(i)
+        if(odcol(i).gt.0.d0.and.JXbundle%dtausub.gt.0.d0) then
+          if(odtot.le.JXbundle%dtausub) then
+            JXbundle%jadsub(k)=1
+            JXbundle%jadsub(k-1)=1
+          elseif(odtot.gt.JXbundle%dtausub) then
+            JXbundle%jadsub(k)=1
+            JXbundle%jadsub(k-1)=0
+            do j=1,2*(i-1)
+              JXbundle%jadsub(j)=0
+            enddo
+            go to 20
+          endif
+        endif
+      enddo
+ 20   continue
+!
+      return
+      end subroutine CLDSRF
+
+
+      subroutine solar2(JXbundle, timej)
+!-----------------------------------------------------------------------
+!  Routine to set up SZA for given lat, lon and time
+!-----------------------------------------------------------------------
+!     timej    Offset in hours from start of timestep to time J-values
+!              required for - take as half timestep for mid-step Js.
+!-----------------------------------------------------------------------
+!#      include "fast_JX_cmn_h.h"
+!#      include "fast_JX_cmn_t.h"
+!#      include "fast_JX_jv_cmn.h"
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+
+      real*8 pi, pi180, loct, timej
+      real*8 sindec, soldek, cosdec, sinlat, sollat, coslat, cosz
+!
+      pi=3.141592653589793D0
+      pi180=pi/180.d0
+!      sindec=0.3978d0*sin(0.9863d0*(dble(iday)-80.d0)*pi180)
+!      soldek=asin(sindec)
+!      cosdec=cos(soldek)
+!      sinlat=sin(ygrd(nslat))
+!      sollat=asin(sinlat)
+!      coslat=cos(sollat)
+!!
+!      loct = (((tau+timej)*15.d0)-180.d0)*pi180 + xgrd(nslon)
+!      cosz = cosdec*coslat*cos(loct) + sindec*sinlat
+!      sza  = acos(cosz)/pi180
+
+      JXbundle%U0 = cos(JXbundle%SZA*pi180)
+!
+      return
+      end subroutine solar2
+
+
+      subroutine rd_prof(JXbundle, nj2,namfil)
+!-----------------------------------------------------------------------
+!  Routine to input T and O3 reference profiles
+!-----------------------------------------------------------------------
+!#      include "fast_JX_cmn_h.h"
+!#      include "fast_JX_jv_cmn.h"
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+
+      integer ia, i, m, l, lat, mon, ntlats, ntmons, n216, nj2
+      real*8  ofac,ofak
+!c      character*11 namfil
+      character (len=128) :: namfil
+!
+!c      open(NJ2,file=namfil)
+      call AsciiOpenRead (NJ2, namfil)
+      read(NJ2,'(A)') JXbundle%TITLE0
+!      write(6,'(1X,A)') JXbundle%TITLE0
+      read(NJ2,'(2I5)') NTLATS,NTMONS
+!      write(6,1000) NTLATS,NTMONS
+      N216 = MIN0(216, NTLATS*NTMONS)
+      do IA=1,N216
+        read(NJ2,'(1X,I3,3X,I2)') LAT, MON
+        M = MIN(12, MAX(1, MON))
+        L = MIN(18, MAX(1, (LAT+95)/10))
+        read(NJ2,'(3X,11F7.1)') (JXbundle%TREF(I,L,M), I=1,41)
+        read(NJ2,'(3X,11F7.4)') (JXbundle%OREF(I,L,M), I=1,31)
+      enddo
+      close(NJ2)
+!
+!  Extend climatology to 100 km
+      ofac=exp(-2.d5/JXbundle%ZZHT)
+      do i=32,51
+        ofak=ofac**(i-31)
+        do m=1,ntmons
+          do l=1,ntlats
+            JXbundle%oref(i,l,m)=JXbundle%oref(31,l,m)*ofak
+          enddo
+        enddo
+      enddo
+      do l=1,ntlats
+        do m=1,ntmons
+          do i=42,51
+            JXbundle%tref(i,l,m)=JXbundle%tref(41,l,m)
+          enddo
+        enddo
+      enddo
+!
+
+      return
+! 1000 format(1x,'Data: ',i3,' Lats x ',i2,' Months')
+      end subroutine rd_prof
+
+
+      subroutine set_aer(JXbundle)
+!-----------------------------------------------------------------------
+!  Set aerosol/cloud types and define black carbon profile
+!-----------------------------------------------------------------------
+!     MX       Number of different types of aerosol to be considered
+!     MIEDX    Index of aerosol types in j2_spec.dat - hardwire in here
+!
+! HISTORY
+!   January 5, 2004 - Jules Kouatchou
+!   Added more values to the array MIEDX (index 4 to 35)
+!
+!-----------------------------------------------------------------------
+!#      include "fast_JX_cmn_h.h"
+!#      include "fast_JX_jv_cmn.h"
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+
+      integer i
+!
+!  Initialise aerosol index
+      do i=1,MX
+        JXbundle%MIEDX(i) = 0
+      enddo
+!
+!  Select Aerosol/Cloud types to be used - define types here
+      JXbundle%MIEDX(1) =  3    !  Black carbon absorber
+      JXbundle%MIEDX(2) = 10    !  Water Cloud (Deirmenjian 8 micron)
+      JXbundle%MIEDX(3) = 14    !  Irregular Ice Cloud (Mishchenko)
+!!!!
+!Beg: Bryan & Jules
+!!!!
+      JXbundle%MIEDX(4)  = 15   !  Mineral Dust  .15 micron    (rvm, 9/30/00)
+      JXbundle%MIEDX(5)  = 16   !  Mineral Dust  .25 micron    (rvm, 9/30/00)
+      JXbundle%MIEDX(6)  = 17   !  Mineral Dust  .4  micron    (rvm, 9/30/00)
+      JXbundle%MIEDX(7)  = 18   !  Mineral Dust  .8  micron    (rvm, 9/30/00)
+      JXbundle%MIEDX(8)  = 19   !  Mineral Dust 1.5  micron    (rvm, 9/30/00)
+      JXbundle%MIEDX(9)  = 20   !  Mineral Dust 2.5  micron    (rvm, 9/30/00)
+      JXbundle%MIEDX(10) = 21   !  Mineral Dust 4.0  micron    (rvm, 9/30/00)
+      JXbundle%MIEDX(11) = 22   !  Tropospheric Sulfate, RH=0  (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(12) = 23   !  Tropospheric Sulfate, RH=50 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(13) = 24   !  Tropospheric Sulfate, RH=70 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(14) = 25   !  Tropospheric Sulfate, RH=80 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(15) = 26   !  Tropospheric Sulfate, RH=90 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(16) = 29   !  Black Carbon,         RH=0  (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(17) = 30   !  Black Carbon,         RH=50 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(18) = 31   !  Black Carbon,         RH=70 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(19) = 32   !  Black Carbon,         RH=80 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(20) = 33   !  Black Carbon,         RH=90 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(21) = 36   !  Organic Carbon,       RH=0  (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(22) = 37   !  Organic Carbon,       RH=50 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(23) = 38   !  Organic Carbon,       RH=70 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(24) = 39   !  Organic Carbon,       RH=80 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(25) = 40   !  Organic Carbon,       RH=90 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(26) = 43   !  Sea Salt (accum),     RH=0  (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(27) = 44   !  Sea Salt (accum),     RH=50 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(28) = 45   !  Sea Salt (accum),     RH=70 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(29) = 46   !  Sea Salt (accum),     RH=80 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(30) = 47   !  Sea Salt (accum),     RH=90 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(31) = 50   !  Sea Salt (coarse),    RH=0  (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(32) = 51   !  Sea Salt (coarse),    RH=50 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(33) = 52   !  Sea Salt (coarse),    RH=70 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(34) = 53   !  Sea Salt (coarse),    RH=80 (rvm, bmy, 2/27/02)
+      JXbundle%MIEDX(35) = 54   !  Sea Salt (coarse),    RH=90 (rvm, bmy, 2/27/02)
+!!!!
+!End: Bryan & Jules
+!!!!
+!
+!  Ensure all 'MX' types are valid selections
+      do i=1,MX
+!        write(6,1000) JXbundle%MIEDX(i),JXbundle%TITLEA(JXbundle%MIEDX(i))
+        if(JXbundle%MIEDX(i).gt.JXbundle%NAA.or.JXbundle%MIEDX(i).le.0) then
+!          write(6,1200) JXbundle%MIEDX(i),JXbundle%NAA
+          STOP "Fast_JX"
+        endif
+      enddo
+!
+! Approximate Black Carbon up to 10 km; surface 200 ng/m3  (Liousse et al)
+! Scale: 1 ng/m3 = 1.0d-15 g/cm3 (1.0d-11 g/m2/cm as BREF is in cm))
+!
+! Simple place-holder profile
+      do i=1,51
+        JXbundle%BREF(i)=10.d0*1.0d-11
+        if(i.gt.6) JXbundle%BREF(i)=0.d0
+      enddo
+!
+      return
+ 1000 format('Using Aerosol type: ',i2,1x,a)
+ 1200 format('Aerosol type ',i1,' unsuitable; supplied values must be ',  &
+     &       'between 1 and ',i1)
+      end subroutine set_aer
+
+
+      subroutine JRATET(JXbundle, SOLF)
+!-----------------------------------------------------------------------
+!  Calculate and print J-values. Note that the loop in this routine
+!  only covers the jpnl levels actually needed by the CTM.
+!-----------------------------------------------------------------------
+!
+!     FFF    Actinic flux at each level for each wavelength bin
+!     QQQ    Cross sections for species (read in in RD_TJPL)
+!     SOLF   Solar distance factor, for scaling; normally given by:
+!                      1.0-(0.034*cos(real(iday-186)*2.0*pi/365.))
+!                      Assumes aphelion day 186, perihelion day 3.
+!     TQQ    Temperatures at which QQQ cross sections supplied
+!
+!-----------------------------------------------------------------------
+#     include "gmi_AerDust_const.h"
+#     include "setkin_par.h"
+!#      include "fast_JX_cmn_h.h"
+!#      include "fast_JX_cmn_t.h"
+!#      include "fast_JX_cmn_w.h"
+!#      include "fast_JX_jv_cmn.h"
+!#     include "gmi_phys_constants.h"
+
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+
+      integer i, j, k
+      real*8 qo2tot, qo3tot, qo31d, qo33p, qqqt
+!AOO      real*8 xseco2, xseco3, xsec1d, solf, tfact
+      real*8 solf, tfact, PP, DD
+      real*8 VACET_trop,VACET_stra, FRACT
+!
+      do I=1,JXbundle%jpnl
+       PP = (JXbundle%PJ(I)+JXbundle%PJ(I+1))*0.5d0
+       if (I.eq.1) PP = JXbundle%PJ(1)
+       DD = 7.24e18*PP/JXbundle%T(JXbundle%nslon,JXbundle%nslat,I)
+       JXbundle%VALJ(1) = 0.d0
+       JXbundle%VALJ(2) = 0.d0
+       JXbundle%VALJ(3) = 0.d0
+       do K=JXbundle%NW1,JXbundle%NW2                       ! Using model 'T's here
+         QO2TOT= XSECO2(JXbundle, K,dble(JXbundle%T(JXbundle%nslon,JXbundle%nslat,I)))
+         JXbundle%VALJ(1) = JXbundle%VALJ(1) + QO2TOT*JXbundle%FFF(K,I)
+         QO3TOT= XSECO3(JXbundle, K,dble(JXbundle%T(JXbundle%nslon,JXbundle%nslat,I)))
+         QO31D = XSEC1D(JXbundle, K,dble(JXbundle%T(JXbundle%nslon,JXbundle%nslat,I)))*QO3TOT
+!cc
+!cc ***NB*** original fast-J/2 code had VALJ(2) as J[O3 -> O(3P)+O2]
+!cc         which is different from std pratmo code - fixed 7/04 MP
+!cc         QO33P = QO3TOT - QO31D
+         JXbundle%VALJ(2) = JXbundle%VALJ(2) + QO3TOT*JXbundle%FFF(K,I)
+         JXbundle%VALJ(3) = JXbundle%VALJ(3) + QO31D*JXbundle%FFF(K,I)
+       enddo
+       JXbundle%VALJ(2) = JXbundle%VALJ(2) - JXbundle%VALJ(3)   !AOO for GMI per the above comment
+
+!------Calculate remaining J-values with T-dep X-sections
+       do J=4,JXbundle%NJVAL
+         JXbundle%VALJ(J) = 0.d0
+         TFACT = 0.d0
+         if(JXbundle%TQQ(2,J).gt.JXbundle%TQQ(1,J)) TFACT = max(0.d0,min(1.d0,  &
+     &        (JXbundle%T(JXbundle%nslon,JXbundle%nslat,I)-JXbundle%TQQ(1,J))/(JXbundle%TQQ(2,J)-JXbundle%TQQ(1,J)) ))
+         do K=JXbundle%NW1,JXbundle%NW2
+           QQQT = JXbundle%QQQ(K,1,J-3) + (JXbundle%QQQ(K,2,J-3) - JXbundle%QQQ(K,1,J-3))*TFACT
+             JXbundle%VALJ(J) = JXbundle%VALJ(J) + QQQT*JXbundle%FFF(K,I)
+         enddo
+         if(J.eq.JXbundle%ncat_acetone_trop)VACET_trop =JXbundle%VALJ(J)  ! Added for GMI {AOO 8/04}
+         if(J.eq.JXbundle%ncat_acetone_stra)VACET_stra =JXbundle%VALJ(J)  ! Added for GMI {AOO 8/04}
+         if(J.eq.JXbundle%ncat_met_vinyl_ketone)JXbundle%VALJ(J)=JXbundle%VALJ(J)/(1.0+1.67e-19*DD)  ! Added for GMI {AOO 8/04}
+         if(J.eq.JXbundle%ncat_met_ethyl_ketone)JXbundle%VALJ(J)=JXbundle%VALJ(J)/(1.0+0.80e-19*DD)  ! Added for GMI {AOO 8/04}
+         if(J.eq.JXbundle%ncat_methyl_glyoxal)JXbundle%VALJ(J)  =JXbundle%VALJ(J)/(1.0+1.66e-19*DD)  ! Added for GMI {AOO 8/04}
+       enddo
+!---last 2 J's need density-adjusted quantum yields:
+!---NB acetone(C3H6O) uses 0.3 & 1.0 atm J's to interpolate from 0.1 to 1.0 atm
+!cc         FRACT = min(1.0, max(0.0, 19.4014-log10(DM(J)) ))
+!cc         VC3H6O(J) = VACET1(J) + (VACET3(J)-VACET1(J))*FRACT*1.9125
+       FRACT = min(1.0, max(0.0, 19.4014-log10(DD) ))
+       JXbundle%VALJ(JXbundle%ncat_acetone_trop)=VACET_trop +  &
+     &              (VACET_stra - VACET_trop)*FRACT*1.9125
+!---methylvinylketone J1 calculated for zero density, scale by [M]
+!cc         VMEVK(J)  = VMEVK1(J)/(1.0 + 1.67e-19*DM(J))
+!---
+       do j=1,JXbundle%jppj
+         JXbundle%zj(i,j)=JXbundle%VALJ(JXbundle%jind(j))*JXbundle%jfacta(j)*SOLF
+       enddo
+!         print *, "HERE HERE 1 ", VALJ
+!c       write(6,'(I5,1P,7E10.3/(5X,7E10.3))') I, (VALJ(J), J=1,JXbundle%NJVAL)
+!       write(6,'(I5,1P,4E10.3)') I, VALJ(2),VALJ(3),VALJ(25),VALJ(27)
+      enddo
+      return
+      end subroutine JRATET
+
+
+      subroutine RD_TJPL(JXbundle, rootProc,NJ1,NAMFIL)
+!-----------------------------------------------------------------------
+!  Read in wavelength bins, solar fluxes, Rayleigh parameters, temperature-
+!  dependent cross sections and Rayleigh/aerosol scattering phase functions
+!  with temperature dependences. Current data originates from JPL'97
+!-----------------------------------------------------------------------
+!
+!     NAMFIL   Name of spectral data file (j2_spec.dat) >> j2 for fast-J2
+!     NJ1      Channel number for reading data file
+!     NJVAL    Number of species to calculate J-values for
+!     NWWW     Number of wavelength bins, from NW1:NW2
+!     WBIN     Boundaries of wavelength bins
+!     WL       Centres of wavelength bins - 'effective wavelength'
+!     FL       Solar flux incident on top of atmosphere (cm-2.s-1)
+!     QRAYL    Rayleigh parameters (effective cross-section) (cm2)
+!     QBC      Black Carbon absorption extinct. (specific cross-sect.) (m2/g)
+!     QO2      O2 cross-sections
+!     QO3      O3 cross-sections
+!     Q1D      O3 => O(1D) quantum yield
+!     TQQ      Temperature for supplied cross sections
+!     QQQ      Supplied cross sections in each wavelength bin (cm2)
+!     NAA      Number of categories for scattering phase functions
+!     QAA      Aerosol scattering phase functions
+!     NK       Number of wavelengths at which functions supplied (set as 4)
+!     WAA      Wavelengths for the NK supplied phase functions
+!     PAA      Phase function: first 8 terms of expansion
+!     RAA      Effective radius associated with aerosol type
+!     SSA      Single scattering albedo
+!
+!     npdep    Number of pressure dependencies
+!     zpdep    Pressure dependencies by wavelength bin
+!     jpdep    Index of cross sections requiring pressure dependence
+!     lpdep    Label for pressure dependence
+!
+!-----------------------------------------------------------------------
+!#      include "fast_JX_cmn_h.h"
+!#      include "fast_JX_jv_cmn.h"
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+
+      logical, intent(in) :: rootProc
+      integer i, j, k, iw, nk, nqqq, nwww, nj1
+!AOO      character*7  lpdep(3)
+!c      character*11 NAMFIL
+      character (len=128) namfil
+      do J=1,NS
+        do K=1,3
+          JXbundle%TQQ(K,J) = 0.d0
+        enddo
+      enddo
+!-------------spectral data---------------------------------------------
+!c      open(NJ1, FILE=NAMFIL)
+      call AsciiOpenRead (NJ1, NAMFIL)
+      read(NJ1,'(A)') JXbundle%TITLE0
+!      write(6,'(1X,A)') JXbundle%TITLE0
+      read(NJ1,'(10X,14I5)') JXbundle%NJVAL,NWWW,JXbundle%NW1,JXbundle%NW2
+      if(JXbundle%NJVAL.gt.NS) then
+!        write(6,300) JXbundle%NJVAL,NS
+        STOP "Fast_JX"
+      endif
+!------------NQQQ = no. additional J-values from X-sects (O2,O3P,O3D+NQQQ)
+      NQQQ = JXbundle%NJVAL-3
+!      read(NJ1,102) (WBIN(IW),IW=1,NWWW)
+!      read(NJ1,102) (WBIN(IW+1),IW=1,NWWW)
+      read(NJ1,102) (JXbundle%WL(IW),IW=1,NWWW)
+      read(NJ1,102) (JXbundle%FL(IW),IW=1,NWWW)
+      read(NJ1,102) (JXbundle%QRAYL(IW),IW=1,NWWW)
+      read(NJ1,102) (JXbundle%QBC(IW),IW=1,NWWW)   !  From Loiusse et al. [JGR, 1996]
+!
+!---Read O2 X-sects, O3 X-sects, O3=>O(1D) quant yields (each at 3 temps)
+      do K=1,3
+        read(NJ1,103) JXbundle%TITLEJ(K,1),JXbundle%TQQ(K,1), (JXbundle%QO2(IW,K),IW=1,NWWW)
+      enddo
+      do K=1,3
+        read(NJ1,103) JXbundle%TITLEJ(K,2),JXbundle%TQQ(K,2), (JXbundle%QO3(IW,K),IW=1,NWWW)
+      enddo
+      do K=1,3
+        read(NJ1,103) JXbundle%TITLEJ(K,3),JXbundle%TQQ(K,3), (JXbundle%Q1D(IW,K),IW=1,NWWW)
+      enddo
+!aoo      do K=1,3
+!aoo        write(6,200) JXbundle%titlej(1,k),(tqq(i,k),i=1,3)
+!aoo      enddo
+!
+!---Read remaining species:  X-sections at 2 T's
+      do J=1,NQQQ
+        read(NJ1,103) JXbundle%TITLEJ(1,J+3),JXbundle%TQQ(1,J+3),(JXbundle%QQQ(IW,1,J),IW=1,NWWW)
+        read(NJ1,103) JXbundle%TITLEJ(2,J+3),JXbundle%TQQ(2,J+3),(JXbundle%QQQ(IW,2,J),IW=1,NWWW)
+        if(JXbundle%titlej(1,j+3).eq."C3H6Ot") JXbundle%ncat_acetone_trop  = J+3  ! Added for GMI to catch trop acetone {AOO, 8/04}
+        if(JXbundle%titlej(1,j+3).eq."C3H6Os") JXbundle%ncat_acetone_stra     = J+3  ! Added for GMI to catch strat acetone {AOO, 8/04}
+        if(JXbundle%titlej(1,j+3).eq."MeVK")  JXbundle%ncat_met_vinyl_ketone  = J+3  ! Added for GMI to catch  methylvinylketone {AOO, 8/04}
+        if(JXbundle%titlej(1,j+3).eq."MEKeto") JXbundle%ncat_met_ethyl_ketone = J+3  ! Added for GMI to catch methylethylketone {AOO, 8/04}
+        if(JXbundle%titlej(1,j+3).eq."MGlyxl") JXbundle%ncat_methyl_glyoxal   = J+3  ! Added for GMI to catch methy glyoxal  {AOO, 8/04}
+!aoo        write(6,200) JXbundle%titlej(1,j+3),(tqq(i,j+3),i=1,2)
+      enddo
+
+      read(NJ1,'(A)') JXbundle%TITLE0
+!
+!      JXbundle%npdep=0
+!---Pressure dependencies - see utils/pdep if required
+!      read(NJ1,104) JXbundle%npdep
+!      do k=1,JXbundle%npdep
+!        read(NJ1,105) lpdep(k),(zpdep(iw,k),iw=1,nwww)
+!        write(6,201)  lpdep(k),(zpdep(iw,k),iw=1,nwww)
+!      enddo
+!      read(NJ1,'(A)') JXbundle%TITLE0
+!
+!---Read aerosol phase functions:
+      read(NJ1,'(A10,I5,/)') JXbundle%TITLE0,JXbundle%NAA
+      if(JXbundle%NAA.gt.NP) then
+!        write(6,350) JXbundle%NAA
+        STOP "Fast_JX"
+      endif
+      NK=4        ! Fix number of wavelengths at 4
+      do j=1,JXbundle%NAA
+        read(NJ1,110) JXbundle%TITLEA(j)
+        do k=1,NK
+          read(NJ1,*) JXbundle%WAA(k,j),JXbundle%QAA(k,j),JXbundle%RAA(k,j),JXbundle%SSA(k,j),  &
+     &                                             (JXbundle%PAA(i,k,j),i=1,8)
+        enddo
+      enddo
+!
+!aoo      write(6,*) 'Aerosol phase functions & wavelengths'
+!aoo      do J=1,JXbundle%NAA
+!aoo        write(6,'(1x,A8,I2,A,9F8.1)')
+!aoo     $                   JXbundle%TITLEA(J),J,'  wavel=',(WAA(K,J),K=1,NK)
+!aoo        write(6,'(9x,I2,A,9F8.4)') J,'  Qext =',(QAA(K,J),K=1,NK)
+!aoo      enddo
+!
+!---Zero index arrays
+      do j=1,JXbundle%jppj
+        JXbundle%jind(j)=0
+      enddo
+!AOO      do j=1,JXbundle%NJVAL
+!AOO        JXbundle%jpdep(j)=0
+!AOO      enddo
+
+!
+!---Set mapping index
+      do j=1,JXbundle%NJVAL
+        do k=1,JXbundle%jppj
+          if(JXbundle%jlabel(k).eq.JXbundle%titlej(1,j)) JXbundle%jind(k)=j
+        enddo
+!AOO        do k=1,JXbundle%npdep
+!AOO          if(lpdep(k).eq.JXbundle%titlej(1,j)) JXbundle%jpdep(j)=k
+!AOO        enddo
+      enddo
+      do k=1,JXbundle%jppj
+        if(JXbundle%jfacta(k).eq.0.d0 .AND. rootProc)  &
+     &             write(6,*) 'RD_TJPL: Not using photolysis reaction ',k
+        if(JXbundle%jind(k).eq.0) then
+          if(JXbundle%jfacta(k).eq.0.d0) then
+            JXbundle%jind(k)=1
+          else
+            write(6,*) 'RD_TJPL: Which J-rate for photolysis reaction ',k,' ?'
+            STOP "Fast_JX"
+          endif
+        endif
+      enddo
+!
+!--------
+  101 FORMAT(8E10.3)
+  102 FORMAT((10X,6E10.3)/(10X,6E10.3)/(10X,6E10.3))
+  103 FORMAT(A7,F3.0,6E10.3/(10X,6E10.3)/(10X,6E10.3))
+! 103 FORMAT(A7,F3.0,7E10.3/(10X,7E10.3))
+  104 FORMAT(13x,i2)
+  105 FORMAT(A7,3x,7E10.3)
+  110 format(3x,a20)
+  200 format(1x,' x-sect:',a10,3(3x,f6.2))
+  201 format(1x,' pr.dep:',a10,7(1pE10.3))
+  300 format(' Number of x-sections supplied to Fast-J2: ',i3,/,  &
+     &       ' Maximum number allowed (NS) only set to: ',i3,  &
+     &       ' - increase in fast_JX_jv_cmn.h')
+  350 format(' Too many phase functions supplied; increase NP to ',i2)
+  400 format(' Not using Herzberg bin')
+      close(NJ1)
+      return
+      end subroutine RD_TJPL
+
+
+      subroutine PRTATM(JXbundle, N)
+!-----------------------------------------------------------------------
+!  Print out the atmosphere and calculate appropriate columns
+!     N=1    Print out column totals only
+!     N=2    Print out full columns
+!     N=3    Print out full columns and climatology
+!-----------------------------------------------------------------------
+!#      include "fast_JX_cmn_h.h"
+!#      include "fast_JX_cmn_t.h"
+!#      include "fast_JX_jv_cmn.h"
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+
+      integer n, i, k, l, m
+      real*8 COLO3(JXbundle%NB),COLO2(JXbundle%NB),COLAX(MX,JXbundle%NB),ZKM,ZSTAR,PJC
+      real*8 climat(9),masfac,dlogp
+      if(N.eq.0) return
+!---Calculate columns, for diagnostic output only:
+      COLO3(JXbundle%NB) = JXbundle%DO3(JXbundle%NB)
+      COLO2(JXbundle%NB) = JXbundle%DM(JXbundle%NB)*0.20948d0
+      do K=1,MX
+        COLAX(K,JXbundle%NB) = JXbundle%AER(K,JXbundle%NB)
+      enddo
+      do I=JXbundle%NB-1,1,-1
+        COLO3(i) = COLO3(i+1)+JXbundle%DO3(i)
+        COLO2(i) = COLO2(i+1)+JXbundle%DM(i)*0.20948d0
+        do K=1,MX
+          COLAX(k,i) = COLAX(k,i+1)+JXbundle%AER(k,i)
+        enddo
+      enddo
+      write(6,1200) ' Tau=',JXbundle%tau,'  SZA=',JXbundle%sza
+      write(6,1200) ' O3-column(DU)=',COLO3(1)/2.687d16,  &
+     &              '  column aerosol @1000nm=',(COLAX(K,1),K=1,MX)
+!---Print out atmosphere
+      if(N.gt.1) then
+        write(6,1000) (' AER-X ','col-AER',k=1,mx)
+        do I=JXbundle%NB,1,-1
+          PJC = JXbundle%PJ(I)
+          ZKM =1.d-5*JXbundle%Z(I)
+          ZSTAR = 16.d0*DLOG10(1000.d0/PJC)
+          write(6,1100) I,ZKM,ZSTAR,JXbundle%DM(I),JXbundle%DO3(I),1.d6*JXbundle%DO3(I)/JXbundle%DM(I),  &
+     &         JXbundle%TJ(I),PJC,COLO3(I),COLO2(I),(JXbundle%AER(K,I),COLAX(K,I),K=1,MX)
+        enddo
+      endif
+!
+!---Print out climatology
+      if(N.gt.2) then
+        do i=1,9
+          climat(i)=0.d0
+        enddo
+        m = max(1,min(12,JXbundle%month))
+        l = max(1,min(18,(int(JXbundle%ydgrd(JXbundle%nslat))+99)/10))
+        masfac=100.d0*6.022d+23/(28.97d0*9.8d0*10.d0)
+        write(6,*) 'Specified Climatology'
+        write(6,1000)
+        do i=51,1,-1
+          dlogp=10.d0**(-1.d0/16.d0)
+          PJC = 1000.d0*dlogp**(2*i-2)
+          climat(1) = 16.d0*DLOG10(1000.D0/PJC)
+          climat(2) = climat(1)
+          climat(3) = PJC*(1.d0/dlogp-dlogp)*masfac
+          if(i.eq.1) climat(3)=PJC*(1.d0-dlogp)*masfac
+          climat(4)=climat(3)*JXbundle%oref(i,l,m)*1.d-6
+          climat(5)=JXbundle%oref(i,l,m)
+          climat(6)=JXbundle%tref(i,l,m)
+          climat(7)=PJC
+          climat(8)=climat(8)+climat(4)
+          climat(9)=climat(9)+climat(3)*0.20948d0
+          write(6,1100) I,(climat(k),k=1,9)
+        enddo
+        write(6,1200) ' O3-column(DU)=',climat(8)/2.687d16
+      endif
+      return
+ 1000 format(5X,'Zkm',3X,'Z*',8X,'M',8X,'O3',6X,'f-O3',5X,'T',7X,'P',6x,  &
+     &    'col-O3',3X,'col-O2',2X,10(a7,2x))
+ 1100 format(1X,I2,0P,2F6.2,1P,2E10.3,0P,F7.3,F8.2,F10.4,1P,10E9.2)
+ 1200 format(A,F8.1,A,10(1pE10.3))
+      end subroutine PRTATM
+
+      subroutine JVALUE(JXbundle)
+!-----------------------------------------------------------------------
+!  Calculate the actinic flux at each level for the current SZA value.
+!        quit when SZA > 98.0 deg ==> tangent height = 63 km
+!             or         99.                           80 km
+!-----------------------------------------------------------------------
+!
+!     AVGF   Attenuation of beam at each level for each wavelength
+!     FFF    Actinic flux at each desired level
+!     WAVE   Effective wavelength of each wavelength bin
+!     XQO2   Absorption cross-section of O2
+!     XQO3   Absorption cross-section of O3
+!
+!-----------------------------------------------------------------------
+#     include "gmi_AerDust_const.h"
+#     include "setkin_par.h"
+!#      include "fast_JX_cmn_h.h"
+!#      include "fast_JX_cmn_t.h"
+!#      include "fast_JX_cmn_w.h"
+!#      include "fast_JX_jv_cmn.h"
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+
+      integer j, k
+
+!AOO      real*8  wave, xseco3, xseco2
+      real*8  wave
+      real*8  AVGF(JXbundle%lpar),XQO3(JXbundle%NB),XQO2(JXbundle%NB)
+!
+      do J=1,JXbundle%jpnl
+        do K=JXbundle%NW1,JXbundle%NW2
+          JXbundle%FFF(K,J) = 0.d0
+        enddo
+      enddo
+!
+!---SZA check
+!      write(6,1000) SZA, JXbundle%RFLECT, (OD(nslon,nslat,j),j=1,JXbundle%lpar)
+      if(JXbundle%SZA.gt.JXbundle%szamax) GOTO 99
+!
+!---Calculate spherical weighting functions
+      call SPHERE(JXbundle)
+
+!---Loop over all wavelength bins
+      do K=JXbundle%NW1,JXbundle%NW2
+        WAVE = JXbundle%WL(K)
+        do J=1,JXbundle%NB
+          XQO3(J) = XSECO3(JXbundle, K,dble(JXbundle%TJ(J)))
+        enddo
+        do J=1,JXbundle%NB
+          XQO2(J) = XSECO2(JXbundle, K,dble(JXbundle%TJ(J)))
+        enddo
+!-----------------------------------------
+        call OPMIE(JXbundle, K,WAVE,XQO2,XQO3,AVGF)
+!-----------------------------------------
+        do J=1,JXbundle%jpnl
+          JXbundle%FFF(K,J) = JXbundle%FFF(K,J) + JXbundle%FL(K)*AVGF(J)
+        enddo
+      enddo
+!
+   99 continue
+!c 1000 format('  SZA=',f6.1,' Reflectvty=',f6.3,' OD=',10(1pe10.3))
+      return
+      end subroutine JVALUE
+
+      FUNCTION XSECO3(JXbundle, K,TTT)
+!-----------------------------------------------------------------------
+!  Cross-sections for O3 for all processes interpolated across 3 temps
+!-----------------------------------------------------------------------
+!#      include "fast_JX_cmn_h.h"
+!#      include "fast_JX_jv_cmn.h"
+      TYPE(t_fastJXbundle) :: JXbundle
+      integer k
+!AOO      real*8 ttt, flint, xseco3
+      real*8 ttt, xseco3
+      XSECO3  =  &
+     &  FLINT(TTT,JXbundle%TQQ(1,2),JXbundle%TQQ(2,2),JXbundle%TQQ(3,2),JXbundle%QO3(K,1),JXbundle%QO3(K,2),JXbundle%QO3(K,3))
+      return
+      end FUNCTION XSECO3
+
+      FUNCTION XSEC1D(JXbundle, K,TTT)
+!-----------------------------------------------------------------------
+!  Quantum yields for O3 --> O2 + O(1D) interpolated across 3 temps
+!-----------------------------------------------------------------------
+!#      include "fast_JX_cmn_h.h"
+!#      include "fast_JX_jv_cmn.h"
+      TYPE(t_fastJXbundle) :: JXbundle
+      integer k
+!AOO      real*8 ttt, flint, xsec1d
+      real*8 ttt, xsec1d
+      XSEC1D =  &
+     &  FLINT(TTT,JXbundle%TQQ(1,3),JXbundle%TQQ(2,3),JXbundle%TQQ(3,3),JXbundle%Q1D(K,1),JXbundle%Q1D(K,2),JXbundle%Q1D(K,3))
+      return
+      end FUNCTION XSEC1D
+
+      FUNCTION XSECO2(JXbundle, K,TTT)
+!-----------------------------------------------------------------------
+!  Cross-sections for O2 interpolated across 3 temps; No S_R Bands yet!
+!-----------------------------------------------------------------------
+!#      include "fast_JX_cmn_h.h"
+!#      include "fast_JX_jv_cmn.h"
+      TYPE(t_fastJXbundle) :: JXbundle
+      integer k
+!AOO      real*8 ttt, flint, xseco2
+      real*8 ttt, xseco2
+      XSECO2 =  &
+     &  FLINT(TTT,JXbundle%TQQ(1,1),JXbundle%TQQ(2,1),JXbundle%TQQ(3,1),JXbundle%QO2(K,1),JXbundle%QO2(K,2),JXbundle%QO2(K,3))
+      return
+      end FUNCTION XSECO2
+
+      REAL*8 FUNCTION FLINT (TINT,T1,T2,T3,F1,F2,F3)
+!-----------------------------------------------------------------------
+!  Three-point linear interpolation function
+!-----------------------------------------------------------------------
+      real*8 TINT,T1,T2,T3,F1,F2,F3
+      IF (TINT .LE. T2)  THEN
+        IF (TINT .LE. T1)  THEN
+          FLINT  = F1
+        ELSE
+          FLINT = F1 + (F2 - F1)*(TINT -T1)/(T2 -T1)
+        ENDIF
+      ELSE
+        IF (TINT .GE. T3)  THEN
+          FLINT  = F3
+        ELSE
+          FLINT = F2 + (F3 - F2)*(TINT -T2)/(T3 -T2)
+        ENDIF
+      ENDIF
+      return
+      end FUNCTION FLINT
+
+      subroutine SPHERE(JXbundle)
+!-----------------------------------------------------------------------
+!  Calculation of spherical geometry; derive tangent heights, slant path
+!  lengths and air mass factor for each layer. Not called when
+!  SZA > 98 degrees.  Beyond 90 degrees, include treatment of emergent
+!  beam (where tangent height is below altitude J-value desired at).
+!-----------------------------------------------------------------------
+!
+!     GMU     MU, cos(solar zenith angle)
+!     RZ      Distance from centre of Earth to each point (cm)
+!     RQ      Square of radius ratios
+!     TANHT   Tangent height for the current SZA
+!     XL      Slant path between points
+!     AMF     Air mass factor for slab between level and level above
+!
+!-----------------------------------------------------------------------
+!#      include "fast_JX_cmn_h.h"
+!#      include "fast_JX_jv_cmn.h"
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+
+      integer i, j, k, ii
+      real*8 airmas, gmu, xmu1, xmu2, xl, diff
+      REAL*8 Ux,H,RZ(JXbundle%NB),RQ(JXbundle%NB),ZBYR
+!
+!  Inlined air mass factor function for top of atmosphere
+      AIRMAS(Ux,H) = (1.0d0+H)/SQRT(Ux*Ux+2.0d0*H*(1.0d0-  &
+     &         0.6817d0*EXP(-57.3d0*ABS(Ux)/SQRT(1.0d0+5500.d0*H))/  &
+     &                                             (1.0d0+0.625d0*H)))
+!
+      GMU = JXbundle%U0
+      RZ(1)=JXbundle%RAD+JXbundle%Z(1)
+      ZBYR = JXbundle%ZZHT/JXbundle%RAD
+      DO 2 II=2,JXbundle%NB
+        RZ(II) = JXbundle%RAD + JXbundle%Z(II)
+        RQ(II-1) = (RZ(II-1)/RZ(II))**2
+    2 CONTINUE
+      IF (GMU.LT.0.0D0) THEN
+        JXbundle%TANHT = RZ(JXbundle%nlbatm)/DSQRT(1.0D0-GMU**2)
+      ELSE
+        JXbundle%TANHT = RZ(JXbundle%nlbatm)
+      ENDIF
+!
+!  Go up from the surface calculating the slant paths between each level
+!  and the level above, and deriving the appropriate Air Mass Factor
+      DO 16 J=1,JXbundle%NB
+        DO K=1,JXbundle%NB
+          JXbundle%AMF(K,J)=0.D0
+        ENDDO
+!
+!  Air Mass Factors all zero if below the tangent height
+        IF (RZ(J).LT.JXbundle%TANHT) GOTO 16
+!  Ascend from layer J calculating AMFs
+        XMU1=ABS(GMU)
+        DO 12 I=J,JXbundle%lpar
+          XMU2=DSQRT(1.0D0-RQ(I)*(1.0D0-XMU1**2))
+          XL=RZ(I+1)*XMU2-RZ(I)*XMU1
+          JXbundle%AMF(I,J)=XL/(RZ(I+1)-RZ(I))
+          XMU1=XMU2
+   12   CONTINUE
+!  Use function and scale height to provide AMF above top of model
+        JXbundle%AMF(JXbundle%NB,J)=AIRMAS(XMU1,ZBYR)
+!
+!  Twilight case - Emergent Beam
+        IF (GMU.GE.0.0D0) GOTO 16
+        XMU1=ABS(GMU)
+!  Descend from layer J
+        DO 14 II=J-1,1,-1
+          DIFF=RZ(II+1)*DSQRT(1.0D0-XMU1**2)-RZ(II)
+          if(II.eq.1) DIFF=max(DIFF,0.d0)   ! filter
+!  Tangent height below current level - beam passes through twice
+          IF (DIFF.LT.0.0D0) THEN
+            XMU2=DSQRT(1.0D0-(1.0D0-XMU1**2)/RQ(II))
+            XL=ABS(RZ(II+1)*XMU1-RZ(II)*XMU2)
+            JXbundle%AMF(II,J)=2.d0*XL/(RZ(II+1)-RZ(II))
+            XMU1=XMU2
+!  Lowest level intersected by emergent beam
+          ELSE
+            XL=RZ(II+1)*XMU1*2.0D0
+!            WTING=DIFF/(RZ(II+1)-RZ(II))
+!            AMF(II,J)=(1.0D0-WTING)*2.D0**XL/(RZ(II+1)-RZ(II))
+            JXbundle%AMF(II,J)=XL/(RZ(II+1)-RZ(II))
+            GOTO 16
+          ENDIF
+   14   CONTINUE
+!
+   16 CONTINUE
+      RETURN
+      END subroutine SPHERE
+
+
+      subroutine OPMIE(JXbundle, KW,WAVEL,XQO2,XQO3,FMEAN )
+
+      implicit none
+!-----------------------------------------------------------------------
+!  NEW Mie code for J's, only uses 8-term expansion, 4-Gauss pts
+!  Currently allow up to NP aerosol phase functions (at all altitudes) to
+!  be associated with optical depth AER(1:NC) = aerosol opt.depth @ 1000 nm
+!
+!  Pick Mie-wavelength with phase function and Qext:
+!
+!  01 RAYLE = Rayleigh phase
+!  02 ISOTR = isotropic
+!  03 ABSRB = fully absorbing 'soot', wavelength indep.
+!  04 S_Bkg = backgrnd stratospheric sulfate (n=1.46,log-norm:r=.09um/sigma=.6)
+!  05 S_Vol = volcanic stratospheric sulfate (n=1.46,log-norm:r=.08um/sigma=.8)
+!  06 W_H01 = water haze (H1/Deirm.) (n=1.335, gamma:  r-mode=0.1um /alpha=2)
+!  07 W_H04 = water haze (H1/Deirm.) (n=1.335, gamma:  r-mode=0.4um /alpha=2)
+!  08 W_C02 = water cloud (C1/Deirm.) (n=1.335, gamma:  r-mode=2.0um /alpha=6)
+!  09 W_C04 = water cloud (C1/Deirm.) (n=1.335, gamma:  r-mode=4.0um /alpha=6)
+!  10 W_C08 = water cloud (C1/Deirm.) (n=1.335, gamma:  r-mode=8.0um /alpha=6)
+!  11 W_C13 = water cloud (C1/Deirm.) (n=1.335, gamma:  r-mode=13.3um /alpha=6)
+!  12 W_L06 = water cloud (Lacis) (n=1.335, r-mode=5.5um / alpha=11/3)
+!  13 Ice-H = hexagonal ice cloud (Mishchenko)
+!  14 Ice-I = irregular ice cloud (Mishchenko)
+!
+!  Choice of aerosol index MIEDX is made in SET_AER; optical depths are
+!  apportioned to the AER array in SET_PROF
+!
+!-----------------------------------------------------------------------
+!  FUNCTION RAYLAY(WAVE)---RAYLEIGH CROSS-SECTION for wave > 170 nm
+!       WSQI = 1.E6/(WAVE*WAVE)
+!       REFRM1 = 1.0E-6*(64.328+29498.1/(146.-WSQI)+255.4/(41.-WSQI))
+!       RAYLAY = 5.40E-21*(REFRM1*WSQI)**2
+!-----------------------------------------------------------------------
+!
+!     DTAUX    Local optical depth of each CTM level
+!     PIRAY    Contribution of Rayleigh scattering to extinction
+!     PIAER    Contribution of Aerosol scattering to extinction
+!     TTAU     Optical depth of air vertically above each point (to top of atm)
+!     FTAU     Attenuation of solar beam
+!     POMEGA   Scattering phase function
+!     FMEAN    Mean actinic flux at desired levels
+!
+!-----------------------------------------------------------------------
+!#      include "fast_JX_cmn_h.h"
+!#      include "fast_JX_jv_cmn.h"
+!#      include "fast_JX_jv_mie.h"
+
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+
+      integer jndlev(JXbundle%lpar),jaddlv(JXbundle%nc),jaddto(JXbundle%nc+1)
+      integer KW,km,i,j,k,l,ix,j1
+      real*8 QXMIE(MX),XLAER(MX),SSALB(MX)
+      real*8 xlo2,xlo3,xlray,xltau,zk,taudn,tauup,zk2
+      real*8 WAVEL,XQO2(JXbundle%NB),XQO3(JXbundle%NB),FMEAN(JXbundle%lpar),POMEGAJ(2*M__,JXbundle%NC+1)
+      real*8 DTAUX(JXbundle%NB),PIRAY(JXbundle%NB),PIAER(MX,JXbundle%NB),TTAU(JXbundle%NC+1),FTAU(JXbundle%NC+1)
+      real*8 ftaulog,dttau,dpomega(2*M__)
+      real*8 ftaulog2,dttau2,dpomega2(2*M__)
+!
+!---Pick nearest Mie wavelength, no interpolation--------------
+                              KM=1  ! use 300 nm aerosol properties for <355 nm
+      if( WAVEL .gt. 355.d0 ) KM=2  ! use 400 nm prop for 355-500 nm
+      if( WAVEL .gt. 500.d0 ) KM=3
+!     if( WAVEL .gt. 800.d0 ) KM=4  !drop the 1000 nm wavelength
+!
+!---For Mie code scale extinction at 1000 nm to wavelength WAVEL (QXMIE)
+      do I=1,MX
+        QXMIE(I) = JXbundle%QAA(KM,JXbundle%MIEDX(I))/JXbundle%QAA(4,JXbundle%MIEDX(I))
+        SSALB(I) = JXbundle%SSA(KM,JXbundle%MIEDX(I))
+      enddo
+!
+!---Reinitialize arrays
+      do j=1,JXbundle%nc+1
+        ttau(j)=0.d0
+        ftau(j)=0.d0
+      enddo
+!
+!---Set up total optical depth over each CTM level, DTAUX
+      J1 = JXbundle%NLBATM
+      do J=J1,JXbundle%NB
+        XLO3=JXbundle%DO3(J)*XQO3(J)
+        XLO2=JXbundle%DM(J)*XQO2(J)*0.20948d0
+        XLRAY=JXbundle%DM(J)*JXbundle%QRAYL(KW)
+
+!xxx  Have dropped fast-J2 formlation for full scattering
+!cc     if (WAVEL.le.291.d0) then
+!cc        XLRAY=XLRAY * 0.57
+!cc   endif
+
+!  Zero absorption for testing purposes
+!        call NOABS(XLO3,XLO2,XLRAY,AER(1,j),RFLECT)
+        do I=1,MX
+          XLAER(I)=JXbundle%AER(I,J)*QXMIE(I)
+        enddo
+
+!  Total optical depth from all elements
+        DTAUX(J)=XLO3+XLO2+XLRAY
+        do I=1,MX
+          DTAUX(J)=DTAUX(J)+XLAER(I)
+        enddo
+!  Fractional extinction for Rayleigh scattering and each aerosol type
+        PIRAY(J)=XLRAY/DTAUX(J)
+        do I=1,MX
+          PIAER(I,J)=SSALB(I)*XLAER(I)/DTAUX(J)
+        enddo
+      enddo
+!
+!---Calculate attenuated incident beam EXP(-TTAU/U0) and flux on surface
+      do J=J1,JXbundle%NB
+        if(JXbundle%AMF(J,J).gt.0.0D0) then
+          XLTAU=0.0D0
+          do I=1,JXbundle%NB
+            XLTAU=XLTAU + DTAUX(I)*JXbundle%AMF(I,J)
+          enddo
+!AOO          if(XLTAU.gt.76.d0) then   ! zero out flux at 1e-33
+          if(XLTAU.gt.450.d0) then   ! zero out flux at 1e-33
+            FTAU(j)=0.d0
+          else
+            FTAU(J)=DEXP(-XLTAU)
+          endif
+        else
+          FTAU(J)=0.0D0
+        endif
+      enddo
+
+!xxx  Have dropped fast-J2 formlation for full scattering
+!cc---in UV region, use pseudo-Rayleigh absorption instead of scattering
+!cc      if (WAVEL.le.291.d0) then  !<<<<need to find endif
+!cc      do j=1,lpar
+!cc       if (j.lt.J1) then
+!cc       FMEAN(J) = 0.d0
+!cc       else
+!cc       FMEAN(J) = sqrt(FTAU(J)*FTAU(J+1))
+!cc       endif
+!cc      enddo
+!cc         return
+!cc      else
+!
+!---in visible region, consider scattering
+!---Define the scattering phase fn. with mix of Rayleigh(1) & Mie(MIEDX)
+!   No. of quadrature pts fixed at 4 (M__), expansion of phase fn @ 8
+      JXbundle%N = M__
+      JXbundle%MFIT = 2*M__
+      do j=j1,JXbundle%NB
+        do i=1,JXbundle%MFIT
+          pomegaj(i,j) = PIRAY(J)*JXbundle%PAA(I,KM,1)
+          do k=1,MX
+            pomegaj(i,j) = pomegaj(i,j) + PIAER(K,J)*JXbundle%PAA(I,KM,JXbundle%MIEDX(K))
+          enddo
+        enddo
+      enddo
+!
+!------------------------------------------------------------------------
+!  Take optical properties on CTM layers and convert to a photolysis
+!  level grid corresponding to layer centres and boundaries. This is
+!  required so that J-values can be calculated for the centre of CTM
+!  layers; the index of these layers is kept in the jndlev array.
+!------------------------------------------------------------------------
+!
+!  Set lower boundary and levels to calculate J-values at
+      J1=2*J1-1
+      do j=1,JXbundle%lpar
+        jndlev(j)=2*j
+      enddo
+!
+!  Calculate column optical depths above each level, TTAU
+      TTAU(JXbundle%NC+1)=0.0D0
+      do J=JXbundle%NC,J1,-1
+        I=(J+1)/2
+        TTAU(J)=TTAU(J+1) + 0.5d0*DTAUX(I)
+
+!xxx---NEW, fast-JX fix, add scattering and spherical to fast-J2 (<291nm)
+!---How to allow for large total TAUs in UV (<291 nm) and
+!---   avoid adding more layers:
+         if (TTAU(J) .gt. 50.d0  .and. WAVEL .lt. 292.d0) then
+              jaddlv(j) = 0
+         else
+              jaddlv(j)=int(0.5d0*DTAUX(I)/JXbundle%dtaumax)
+         endif
+
+!---check on insertion of added points :  jaddlv()
+!      write(6,'(f8.1,2i4,1p,2e10.3,i10)')
+!     &   WAVEL,J,I,DTAUX(I),TTAU(J),jaddlv(J)
+
+!  Subdivide cloud-top levels if required
+        if(JXbundle%jadsub(j).gt.0) then
+          JXbundle%jadsub(j)=min(jaddlv(j)+1,nint(JXbundle%dtausub))*(nint(JXbundle%dsubdiv)-1)
+          jaddlv(j)=jaddlv(j)+JXbundle%jadsub(j)
+        endif
+      enddo
+!
+!---reflect flux from surface.
+! NOTE: Apply U) to the diffuse UV/Vis albedo (ALBVF) from GEOS-5 
+!
+      if(JXbundle%U0.gt.0.D0) then
+        JXbundle%ZFLUX = JXbundle%U0*FTAU(J1)*JXbundle%RFLECT/(1.d0+JXbundle%RFLECT)
+      else
+        JXbundle%ZFLUX = 0.d0
+      endif
+!
+!  Calculate attenuated beam, FTAU, level boundaries then level centres
+      FTAU(JXbundle%NC+1)=1.0D0
+      do J=JXbundle%NC-1,J1,-2
+        I=(J+1)/2
+        FTAU(J)=FTAU(I)
+      enddo
+      do J=JXbundle%NC,J1,-2
+        FTAU(J)=sqrt(FTAU(J+1)*FTAU(J-1))
+      enddo
+!
+!  Calculate scattering properties, level centres then level boundaries
+!  using an inverse interpolation to give correctly-weighted values
+      do j=JXbundle%NC,J1,-2
+        do i=1,JXbundle%MFIT
+          pomegaj(i,j) = pomegaj(i,j/2)
+        enddo
+      enddo
+      do j=J1+2,JXbundle%nc,2
+        taudn = ttau(j-1)-ttau(j)
+        tauup = ttau(j)-ttau(j+1)
+        do i=1,JXbundle%MFIT
+          pomegaj(i,j) = (pomegaj(i,j-1)*taudn +  &
+     &                    pomegaj(i,j+1)*tauup) / (taudn+tauup)
+        enddo
+      enddo
+!  Define lower and upper boundaries
+      do i=1,JXbundle%MFIT
+        pomegaj(i,J1)   = pomegaj(i,J1+1)
+        pomegaj(i,JXbundle%nc+1) = pomegaj(i,JXbundle%nc)
+      enddo
+!
+!------------------------------------------------------------------------
+!  Calculate cumulative total and define levels we want J-values at.
+!  Sum upwards for levels, and then downwards for Mie code readjustments.
+!
+!     jaddlv(i)   Number of new levels to add between (i) and (i+1)
+!     jaddto(i)   Total number of new levels to add to and above level (i)
+!     jndlev(j)   Level needed for J-value for CTM layer (j)
+!
+!------------------------------------------------------------------------
+!
+!  Reinitialize level arrays
+      do j=1,JXbundle%nc+1
+        jaddto(j)=0
+      enddo
+!
+      jaddto(J1)=jaddlv(J1)
+      do j=J1+1,JXbundle%nc
+        jaddto(j)=jaddto(j-1)+jaddlv(j)
+      enddo
+
+!---check on added pints and tau-grid
+!      do J=J1,JXbundle%NC
+!        write(6,'(4i8,f10.4,1pe10.3)') J,jaddto(J),JXbundle%NC,NL,ttau(J),ftau(J)
+!      enddo
+
+      if((jaddto(JXbundle%nc)+JXbundle%nc).gt.nl) then
+         write(6,1500)  jaddto(JXbundle%nc)+JXbundle%nc, 'NL',NL
+         STOP "Fast_JX"
+      endif
+!      write(6,1300) jndlev
+!      write(6,1300) jaddto
+      do i=1,JXbundle%lpar
+        jndlev(i)=jndlev(i)+jaddto(jndlev(i)-1)
+      enddo
+      jaddto(JXbundle%nc)=jaddlv(JXbundle%nc)
+      do j=JXbundle%nc-1,J1,-1
+        jaddto(j)=jaddto(j+1)+jaddlv(j)
+      enddo
+!      write(6,1300) jndlev
+!      write(6,1300) jaddto
+!
+!---------------------SET UP FOR MIE CODE-------------------------------
+!
+!  Transpose the ascending TTAU grid to a descending ZTAU grid.
+!  Double the resolution - TTAU points become the odd points on the
+!  ZTAU grid, even points needed for asymm phase fn soln, contain 'h'.
+!  Odd point added at top of grid for unattenuated beam   (Z='inf')
+!
+!        Surface:   TTAU(1)   now use ZTAU(2*NC+1)
+!        Top:       TTAU(NC)  now use ZTAU(3)
+!        Infinity:            now use ZTAU(1)
+!
+!  Mie scattering code only used from surface to level NC
+!------------------------------------------------------------------------
+!
+!  Initialise all Fast-J2 optical property arrays
+      do k=1,N__
+        do i=1,JXbundle%MFIT
+          JXbundle%pomega(i,k) = 0.d0
+        enddo
+        JXbundle%ztau(k) = 0.d0
+        JXbundle%fz(k)   = 0.d0
+      enddo
+!
+!  Ascend through atmosphere transposing grid and adding extra points
+      do j=J1,JXbundle%nc+1
+        k = 2*(JXbundle%nc+1-j)+2*jaddto(j)+1
+        JXbundle%ztau(k)= ttau(j)
+        JXbundle%fz(k)  = ftau(j)
+        do i=1,JXbundle%MFIT
+          JXbundle%pomega(i,k) = pomegaj(i,j)
+        enddo
+      enddo
+!
+!  Check profiles if desired
+!      ND = 2*(NC+jaddto(J1)-J1)  + 3
+!      if(kw.eq.1) call CH_PROF
+!
+!------------------------------------------------------------------------
+!    Insert new levels, working downwards from the top of the atmosphere
+!  to the surface (down in 'j', up in 'k'). This allows ztau and pomega
+!  to be incremented linearly (in a +ve sense), and the flux fz to be
+!  attenuated top-down (avoiding problems where lower level fluxes are
+!  zero).
+!
+!    zk        fractional increment in level
+!    dttau     change in ttau per increment    (linear, positive)
+!    dpomega   change in pomega per increment  (linear)
+!    ftaulog   change in ftau per increment    (exponential, normally < 1)
+!
+!------------------------------------------------------------------------
+!
+      do j=JXbundle%nc,J1,-1
+          zk = 0.5d0/(1.d0+dble(jaddlv(j)-JXbundle%jadsub(j)))
+          dttau = (ttau(j)-ttau(j+1))*zk
+          do i=1,JXbundle%MFIT
+            dpomega(i) = (pomegaj(i,j)-pomegaj(i,j+1))*zk
+          enddo
+!  Filter attenuation factor - set minimum at 1.0d-05
+          if(ftau(j+1).eq.0.d0) then
+            ftaulog=0.d0
+          else
+            ftaulog = ftau(j)/ftau(j+1)
+            if(ftaulog.lt.1.d-150) then
+              ftaulog=1.0d-05
+            else
+              ftaulog=exp(log(ftaulog)*zk)
+            endif
+          endif
+          k = 2*(JXbundle%nc-j+jaddto(j)-jaddlv(j))+1   !  k at level j+1
+          l = 0
+!  Additional subdivision of first level if required
+          if(JXbundle%jadsub(j).ne.0) then
+            l=JXbundle%jadsub(j)/nint(JXbundle%dsubdiv-1)
+            zk2=1.d0/JXbundle%dsubdiv
+            dttau2=dttau*zk2
+            ftaulog2=ftaulog**zk2
+            do i=1,JXbundle%MFIT
+              dpomega2(i)=dpomega(i)*zk2
+            enddo
+            do ix=1,2*(JXbundle%jadsub(j)+l)
+              JXbundle%ztau(k+1) = JXbundle%ztau(k) + dttau2
+              JXbundle%fz(k+1) = JXbundle%fz(k)*ftaulog2
+              do i=1,JXbundle%MFIT
+                JXbundle%pomega(i,k+1) = JXbundle%pomega(i,k) + dpomega2(i)
+              enddo
+              k = k+1
+            enddo
+          endif
+          l = 2*(jaddlv(j)-JXbundle%jadsub(j)-l)+1
+!
+!  Add values at all intermediate levels
+          do ix=1,l
+            JXbundle%ztau(k+1) = JXbundle%ztau(k) + dttau
+            JXbundle%fz(k+1) = JXbundle%fz(k)*ftaulog
+            do i=1,JXbundle%MFIT
+              JXbundle%pomega(i,k+1) = JXbundle%pomega(i,k) + dpomega(i)
+            enddo
+            k = k+1
+          enddo
+!
+!  Alternate method to attenuate fluxes, fz, using 2nd-order finite
+!  difference scheme - just need to comment in section below
+!          ix = 2*(jaddlv(j)-JXbundle%jadsub(j))+1
+!          if(l.le.0) then
+!            l=k-ix-1
+!          else
+!            l=k-ix
+!          endif
+!          call efold(ftau(j+1),ftau(j),ix+1,fz(l))
+!          if(JXbundle%jadsub(j).ne.0) then
+!            k = 2*(JXbundle%nc-j+jaddto(j)-jaddlv(j))+1 !  k at level j+1
+!            ix=2*(JXbundle%jadsub(j)+(JXbundle%jadsub(j)/nint(JXbundle%dsubdiv-1)))
+!            call efold(ftau(j+1),fz(k+ix),ix,fz(k))
+!          endif
+!
+      enddo
+!
+!---Update total number of levels and check doesn't exceed N__
+      JXbundle%ND = 2*(JXbundle%NC+jaddto(J1)-J1)  + 3
+      if(JXbundle%ND .gt. N__) then
+        write(6,1500) JXbundle%ND, 'N__',N__
+        STOP "Fast_JX"
+      endif
+!
+!---Add boundary/ground layer to ensure no negative J's caused by
+!---too large a TTAU-step in the 2nd-order lower b.c.
+      JXbundle%ZTAU(JXbundle%ND+1) = JXbundle%ZTAU(JXbundle%ND)*1.000005d0
+      JXbundle%ZTAU(JXbundle%ND+2) = JXbundle%ZTAU(JXbundle%ND)*1.000010d0
+      zk=max(abs(JXbundle%U0),0.01d0)
+      zk=dexp(-JXbundle%ZTAU(JXbundle%ND)*5.d-6/zk)
+      JXbundle%FZ(JXbundle%ND+1) = JXbundle%FZ(JXbundle%ND)*zk
+      JXbundle%FZ(JXbundle%ND+2) = JXbundle%FZ(JXbundle%ND+1)*zk
+      do I=1,JXbundle%MFIT
+        JXbundle%POMEGA(I,JXbundle%ND+1)   = JXbundle%POMEGA(I,JXbundle%ND)
+        JXbundle%POMEGA(I,JXbundle%ND+2)   = JXbundle%POMEGA(I,JXbundle%ND)
+      enddo
+      JXbundle%ND = JXbundle%ND+2
+!
+      JXbundle%ZU0 = JXbundle%U0
+      JXbundle%ZREFL = JXbundle%RFLECT
+!
+!-----------------------------------------
+      call MIESCT (JXbundle)
+!-----------------------------------------
+!  Accumulate attenuation for selected levels
+      l=2*(JXbundle%NC+jaddto(J1))+3
+      do j=1,JXbundle%lpar
+        k=l-(2*jndlev(j))
+        if(k.gt.JXbundle%ND-2) then
+          FMEAN(j) = 0.d0
+        else
+          FMEAN(j) = JXbundle%FJ(k)
+        endif
+      enddo
+!
+!xxx      endif      ! fast-J2 endif
+!
+      return
+ 1000 format(1x,i3,3(2x,1pe10.4),1x,i3)
+ 1300 format(1x,50(i3))
+ 1500 format(' Too many levels in photolysis code: need ',i3,' but ',a,  &
+     &       ' dimensioned as ',i3)
+      end subroutine OPMIE
+
+
+      subroutine EFOLD (F0, F1, N, F)
+!-----------------------------------------------------------------------
+!---  calculate the e-fold between two boundaries, given the value
+!---     at both boundaries F0(x=0) = top, F1(x=1) = bottom.
+!---  presume that F(x) proportional to exp[-A*x] for x=0 to x=1
+!---          d2F/dx2 = A*A*F  and thus expect F1 = F0 * exp[-A]
+!---           alternatively, could define A = ln[F0/F1]
+!---  let X = A*x, d2F/dX2 = F
+!---  assume equal spacing (not necessary, but makes this easier)
+!---      with N-1 intermediate points (and N layers of thickness dX = A/N)
+!---
+!---  2nd-order finite difference:  (F(i-1) - 2F(i) + F(i+1)) / dX*dX = F(i)
+!---      let D = 1 / dX*dX:
+!
+!  1  |   1        0        0        0        0        0   |    | F0 |
+!     |                                                    |    | 0  |
+!  2  |  -D      2D+1      -D        0        0        0   |    | 0  |
+!     |                                                    |    | 0  |
+!  3  |   0       -D      2D+1      -D        0        0   |    | 0  |
+!     |                                                    |    | 0  |
+!     |   0        0       -D      2D+1      -D        0   |    | 0  |
+!     |                                                    |    | 0  |
+!  N  |   0        0        0       -D      2D+1      -D   |    | 0  |
+!     |                                                    |    | 0  |
+! N+1 |   0        0        0        0        0        1   |    | F1 |
+!
+!-----------------------------------------------------------------------
+!  Advantage of scheme over simple attenuation factor: conserves total
+!  number of photons - very useful when using scheme for heating rates.
+!  Disadvantage: although reproduces e-folds very well for small flux
+!  differences, starts to drift off when many orders of magnitude are
+!  involved.
+!-----------------------------------------------------------------------
+      implicit none
+      real*8 F0,F1,F(250)  !F(N+1)
+      integer N
+      integer I
+      real*8 A,DX,D,DSQ,DDP1, B(101),R(101)
+!
+      if(F0.eq.0.d0) then
+        do I=1,N
+          F(I)=0.d0
+        enddo
+        return
+      elseif(F1.eq.0.d0) then
+        A = DLOG(F0/1.d-250)
+      else
+        A = DLOG(F0/F1)
+      endif
+!
+      DX = float(N)/A
+      D = DX*DX
+      DSQ = D*D
+      DDP1 = D+D+1.d0
+!
+      B(2) = DDP1
+      R(2) = +D*F0
+      do I=3,N
+        B(I) = DDP1 - DSQ/B(I-1)
+        R(I) = +D*R(I-1)/B(I-1)
+      enddo
+      F(N+1) = F1
+      do I=N,2,-1
+        F(I) = (R(I) + D*F(I+1))/B(I)
+      enddo
+      F(1) = F0
+      return
+      end subroutine EFOLD
+
+
+      subroutine CH_PROF(JXbundle)
+!-----------------------------------------------------------------------
+!  Check profiles to be passed to MIESCT
+!-----------------------------------------------------------------------
+      implicit none
+!#      include "fast_JX_jv_mie.h"
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+
+      integer i,j
+      write(6,1100) 'lev','ztau','fz  ','JXbundle%pomega( )'
+      do i=1,JXbundle%ND
+        if(JXbundle%ztau(i).ne.0.d0) then
+          write(6,1200) i,JXbundle%ztau(i),JXbundle%fz(i),(JXbundle%pomega(j,i),j=1,8)
+        endif
+      enddo
+      return
+ 1100 format(1x,a3,4(a9,2x))
+ 1200 format(1x,i3,11(1x,1pe9.3))
+      end subroutine CH_PROF
+
+
+      subroutine MIESCT(JXbundle)
+!-----------------------------------------------------------------------
+!   This is an adaption of the Prather radiative transfer code, (mjp, 10/95)
+!     Prather, 1974, Astrophys. J. 192, 787-792.
+!         Sol'n of inhomogeneous Rayleigh scattering atmosphere.
+!         (original Rayleigh w/ polarization)
+!     Cochran and Trafton, 1978, Ap.J., 219, 756-762.
+!         Raman scattering in the atmospheres of the major planets.
+!         (first use of anisotropic code)
+!     Jacob, Gottlieb and Prather, 1989, J.Geophys.Res., 94, 12975-13002.
+!         Chemistry of a polluted cloudy boundary layer,
+!         (documentation of extension to anisotropic scattering)
+!
+!    takes atmospheric structure and source terms from std J-code
+!    ALSO limited to 4 Gauss points, only calculates mean field!
+!
+!   mean rad. field ONLY (M=1)
+!   initialize variables FIXED/UNUSED in this special version:
+!   FTOP = 1.0 = astrophysical flux (unit of pi) at SZA, -ZU0, use for scaling
+!   FBOT = 0.0 = external isotropic flux on lower boundary
+!   SISOTP = 0.0 = Specific Intensity of isotropic radiation incident from top
+!
+!   subroutineS:  MIESCT              needs 'jv_mie.cmn'
+!                 BLKSLV              needs 'jv_mie.cmn'
+!                 GEN (ID)            needs 'jv_mie.cmn'
+!                 LEGND0 (X,PL,N)
+!                 MATIN4 (A)
+!                 GAUSSP (N,XPT,XWT)
+!-----------------------------------------------------------------------
+      IMPLICIT NONE
+!#      include "fast_JX_jv_mie.h"
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+
+      integer i, id, im
+      real*8  cmeq1
+!-----------------------------------------------------------------------
+!---fix scattering to 4 Gauss pts = 8-stream
+      call GAUSSP (JXbundle%N,JXbundle%EMU,JXbundle%WT)
+!---solve eqn of R.T. only for first-order M=1
+!     ZFLUX = (ZU0*FZ(ND)*ZREFL+FBOT)/(1.0d0+ZREFL)
+
+! NOTE: U0 to the diffuse UV/Vis albedo (ALBVF) from GEOS-5 
+!----------------------------------------------------------
+      JXbundle%ZFLUX = (JXbundle%ZU0*JXbundle%FZ(JXbundle%ND)*JXbundle%ZREFL)/(1.0d0+JXbundle%ZREFL)
+
+      JXbundle%M=1
+      DO I=1,JXbundle%N
+        call LEGND0 (JXbundle%EMU(I),JXbundle%PM0,JXbundle%MFIT)
+        DO IM=JXbundle%M,JXbundle%MFIT
+          JXbundle%PM(I,IM) = JXbundle%PM0(IM)
+        ENDDO
+      ENDDO
+!
+      CMEQ1 = 0.25D0
+      call LEGND0 (-JXbundle%ZU0,JXbundle%PM0,JXbundle%MFIT)
+      DO IM=JXbundle%M,JXbundle%MFIT
+        JXbundle%PM0(IM) = CMEQ1*JXbundle%PM0(IM)
+      ENDDO
+!
+      call BLKSLV(JXbundle)
+!
+      DO ID=1,JXbundle%ND,2
+        JXbundle%FJ(ID) = 4.0d0*JXbundle%FJ(ID) + JXbundle%FZ(ID)
+      ENDDO
+
+      RETURN
+      END subroutine MIESCT
+
+      subroutine BLKSLV(JXbundle)
+!-----------------------------------------------------------------------
+!  Solves the block tri-diagonal system:
+!               A(I)*X(I-1) + B(I)*X(I) + C(I)*X(I+1) = H(I)
+!-----------------------------------------------------------------------
+      IMPLICIT NONE
+!#      include "fast_JX_jv_mie.h"
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+
+      integer i, j, k, id
+      real*8  sum
+!-----------UPPER BOUNDARY ID=1
+      call GEN(JXbundle, 1)
+      call MATIN4 (JXbundle%B)
+      DO I=1,JXbundle%N
+         JXbundle%RR(I,1) = 0.0d0
+        DO J=1,JXbundle%N
+          SUM = 0.0d0
+         DO K=1,JXbundle%N
+          SUM = SUM - JXbundle%B(I,K)*JXbundle%CC(K,J)
+         ENDDO
+         JXbundle%DD(I,J,1) = SUM
+         JXbundle%RR(I,1) = JXbundle%RR(I,1) + JXbundle%B(I,J)*JXbundle%H(J)
+        ENDDO
+      ENDDO
+!----------CONTINUE THROUGH ALL DEPTH POINTS ID=2 TO ID=ND-1
+      DO ID=2,JXbundle%ND-1
+        call GEN(JXbundle, ID)
+        DO I=1,JXbundle%N
+          DO J=1,JXbundle%N
+          JXbundle%B(I,J) = JXbundle%B(I,J) + JXbundle%A(I)*JXbundle%DD(I,J,ID-1)
+          ENDDO
+          JXbundle%H(I) = JXbundle%H(I) - JXbundle%A(I)*JXbundle%RR(I,ID-1)
+        ENDDO
+        call MATIN4 (JXbundle%B)
+        DO I=1,JXbundle%N
+          JXbundle%RR(I,ID) = 0.0d0
+          DO J=1,JXbundle%N
+          JXbundle%RR(I,ID) = JXbundle%RR(I,ID) + JXbundle%B(I,J)*JXbundle%H(J)
+          JXbundle%DD(I,J,ID) = - JXbundle%B(I,J)*JXbundle%C1(J)
+          ENDDO
+        ENDDO
+      ENDDO
+!---------FINAL DEPTH POINT: ND
+      call GEN(JXbundle, JXbundle%ND)
+      DO I=1,JXbundle%N
+        DO J=1,JXbundle%N
+          SUM = 0.0d0
+          DO K=1,JXbundle%N
+          SUM = SUM + JXbundle%AA(I,K)*JXbundle%DD(K,J,JXbundle%ND-1)
+          ENDDO
+        JXbundle%B(I,J) = JXbundle%B(I,J) + SUM
+        JXbundle%H(I) = JXbundle%H(I) - JXbundle%AA(I,J)*JXbundle%RR(J,JXbundle%ND-1)
+        ENDDO
+      ENDDO
+      call MATIN4 (JXbundle%B)
+      DO I=1,JXbundle%N
+        JXbundle%RR(I,JXbundle%ND) = 0.0d0
+        DO J=1,JXbundle%N
+        JXbundle%RR(I,JXbundle%ND) = JXbundle%RR(I,JXbundle%ND) + JXbundle%B(I,J)*JXbundle%H(J)
+        ENDDO
+      ENDDO
+!-----------BACK SOLUTION
+      DO ID=JXbundle%ND-1,1,-1
+       DO I=1,JXbundle%N
+        DO J=1,JXbundle%N
+         JXbundle%RR(I,ID) = JXbundle%RR(I,ID) + JXbundle%DD(I,J,ID)*JXbundle%RR(J,ID+1)
+        ENDDO
+       ENDDO
+      ENDDO
+!----------MEAN J & H
+      DO ID=1,JXbundle%ND,2
+        JXbundle%FJ(ID) = 0.0d0
+       DO I=1,JXbundle%N
+        JXbundle%FJ(ID) = JXbundle%FJ(ID) + JXbundle%RR(I,ID)*JXbundle%WT(I)
+       ENDDO
+      ENDDO
+      DO ID=2,JXbundle%ND,2
+        JXbundle%FJ(ID) = 0.0d0
+       DO I=1,JXbundle%N
+        JXbundle%FJ(ID) = JXbundle%FJ(ID) + JXbundle%RR(I,ID)*JXbundle%WT(I)*JXbundle%EMU(I)
+       ENDDO
+      ENDDO
+! Output fluxes for testing purposes
+!      call CH_FLUX
+!
+      RETURN
+      END subroutine BLKSLV
+
+
+      subroutine CH_FLUX(JXbundle)
+!-----------------------------------------------------------------------
+!  Diagnostic routine to check fluxes at each level - makes most sense
+!  when running a conservative atmosphere (zero out absorption in
+!  OPMIE by calling the NOABS routine below)
+!-----------------------------------------------------------------------
+      IMPLICIT NONE
+!#      include "fast_JX_jv_mie.h"
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+
+      integer I,ID
+      real*8 FJCHEK(N__),FZMEAN
+!
+!  Odd (h) levels held as actinic flux, so recalculate irradiances
+      DO ID=1,JXbundle%ND,2
+        FJCHEK(ID) = 0.0d0
+       DO I=1,JXbundle%N
+        FJCHEK(ID) = FJCHEK(ID) + JXbundle%RR(I,ID)*JXbundle%WT(I)*JXbundle%EMU(i)
+       ENDDO
+      ENDDO
+!
+!  Even (j) levels are already held as irradiances
+      DO ID=2,JXbundle%ND,2
+       DO I=1,JXbundle%N
+        FJCHEK(ID) = JXbundle%FJ(ID)
+       ENDDO
+      ENDDO
+!
+!  Output Downward and Upward fluxes down through atmosphere
+      WRITE(6,1200)
+      DO ID=2,JXbundle%ND,2
+        FZMEAN=sqrt(JXbundle%FZ(ID)*JXbundle%FZ(ID-1))
+        WRITE(6,1000) ID, JXbundle%ZU0*FZMEAN-2.0*(FJCHEK(id)-FJCHEK(id-1)),  &
+     &                               2.0*(FJCHEK(id)+FJCHEK(id-1)),  &
+     &                               2.0*(FJCHEK(id)+FJCHEK(id-1))/  &
+     &                   (JXbundle%ZU0*FZMEAN-2.0*(FJCHEK(id)-FJCHEK(id-1)))
+      ENDDO
+      RETURN
+ 1000 FORMAT(1x,i3,1p,2E12.4,1x,0p,f9.4)
+ 1200 FORMAT(1x,'Lev',3x,'Downward',4x,'Upward',7x,'Ratio')
+      END subroutine CH_FLUX
+
+      subroutine NOABS(XLO3,XLO2,XLRAY,BCAER,RFLECT)
+!-----------------------------------------------------------------------
+!  Zero out absorption terms to check scattering code. Leave a little
+!  Rayleigh to provide a minimal optical depth, and set surface albedo
+!  to unity.
+!-----------------------------------------------------------------------
+      IMPLICIT NONE
+      real*8 XLO3,XLO2,XLRAY,BCAER,RFLECT
+      XLO3=0.d0
+      XLO2=0.d0
+      XLRAY=XLRAY*1.d-10
+      BCAER=0.d0
+      RFLECT=1.d0
+      RETURN
+      END subroutine NOABS
+
+
+      subroutine GEN(JXbundle, ID)
+!-----------------------------------------------------------------------
+!  Generates coefficient matrices for the block tri-diagonal system:
+!               A(I)*X(I-1) + B(I)*X(I) + C(I)*X(I+1) = H(I)
+!-----------------------------------------------------------------------
+      IMPLICIT NONE
+!#      include "fast_JX_jv_mie.h"
+      TYPE(t_fastJXbundle), intent(inOut) :: JXbundle
+
+      integer id, id0, id1, im, i, j, k, mstart
+      real*8  sum0, sum1, sum2, sum3
+      real*8  deltau, d1, d2, surfac
+!---------------------------------------------
+      IF(ID.EQ.1 .OR. ID.EQ.JXbundle%ND) THEN
+!---------calculate generic 2nd-order terms for boundaries
+       ID0 = ID
+       ID1 = ID+1
+       IF(ID.GE.JXbundle%ND) ID1 = ID-1
+       DO 10 I=1,JXbundle%N
+          SUM0 = 0.0d0
+          SUM1 = 0.0d0
+          SUM2 = 0.0d0
+          SUM3 = 0.0d0
+        DO IM=JXbundle%M,JXbundle%MFIT,2
+          SUM0 = SUM0 + JXbundle%POMEGA(IM,ID0)*JXbundle%PM(I,IM)*JXbundle%PM0(IM)
+          SUM2 = SUM2 + JXbundle%POMEGA(IM,ID1)*JXbundle%PM(I,IM)*JXbundle%PM0(IM)
+        ENDDO
+        DO IM=JXbundle%M+1,JXbundle%MFIT,2
+          SUM1 = SUM1 + JXbundle%POMEGA(IM,ID0)*JXbundle%PM(I,IM)*JXbundle%PM0(IM)
+          SUM3 = SUM3 + JXbundle%POMEGA(IM,ID1)*JXbundle%PM(I,IM)*JXbundle%PM0(IM)
+        ENDDO
+         JXbundle%H(I) = 0.5d0*(SUM0*JXbundle%FZ(ID0) + SUM2*JXbundle%FZ(ID1))
+         JXbundle%A(I) = 0.5d0*(SUM1*JXbundle%FZ(ID0) + SUM3*JXbundle%FZ(ID1))
+        DO J=1,I
+          SUM0 = 0.0d0
+          SUM1 = 0.0d0
+          SUM2 = 0.0d0
+          SUM3 = 0.0d0
+         DO IM=JXbundle%M,JXbundle%MFIT,2
+          SUM0 = SUM0 + JXbundle%POMEGA(IM,ID0)*JXbundle%PM(I,IM)*JXbundle%PM(J,IM)
+          SUM2 = SUM2 + JXbundle%POMEGA(IM,ID1)*JXbundle%PM(I,IM)*JXbundle%PM(J,IM)
+         ENDDO
+         DO IM=JXbundle%M+1,JXbundle%MFIT,2
+          SUM1 = SUM1 + JXbundle%POMEGA(IM,ID0)*JXbundle%PM(I,IM)*JXbundle%PM(J,IM)
+          SUM3 = SUM3 + JXbundle%POMEGA(IM,ID1)*JXbundle%PM(I,IM)*JXbundle%PM(J,IM)
+         ENDDO
+         JXbundle%S(I,J) = - SUM2*JXbundle%WT(J)
+         JXbundle%S(J,I) = - SUM2*JXbundle%WT(I)
+         JXbundle%W(I,J) = - SUM1*JXbundle%WT(J)
+         JXbundle%W(J,I) = - SUM1*JXbundle%WT(I)
+         JXbundle%U1(I,J) = - SUM3*JXbundle%WT(J)
+         JXbundle%U1(J,I) = - SUM3*JXbundle%WT(I)
+          SUM0 = 0.5d0*(SUM0 + SUM2)
+         JXbundle%B(I,J) = - SUM0*JXbundle%WT(J)
+         JXbundle%B(J,I) = - SUM0*JXbundle%WT(I)
+        ENDDO
+         JXbundle%S(I,I) = JXbundle%S(I,I) + 1.0d0
+         JXbundle%W(I,I) = JXbundle%W(I,I) + 1.0d0
+         JXbundle%U1(I,I) = JXbundle%U1(I,I) + 1.0d0
+         JXbundle%B(I,I) = JXbundle%B(I,I) + 1.0d0
+   10  CONTINUE
+       DO I=1,JXbundle%N
+         SUM0 = 0.0d0
+        DO J=1,JXbundle%N
+         SUM0 = SUM0 + JXbundle%S(I,J)*JXbundle%A(J)/JXbundle%EMU(J)
+        ENDDO
+        JXbundle%C1(I) = SUM0
+       ENDDO
+       DO I=1,JXbundle%N
+        DO J=1,JXbundle%N
+          SUM0 = 0.0d0
+          SUM2 = 0.0d0
+         DO K=1,JXbundle%N
+          SUM0 = SUM0 + JXbundle%S(J,K)*JXbundle%W(K,I)/JXbundle%EMU(K)
+          SUM2 = SUM2 + JXbundle%S(J,K)*JXbundle%U1(K,I)/JXbundle%EMU(K)
+         ENDDO
+         JXbundle%A(J) = SUM0
+         JXbundle%V1(J) = SUM2
+        ENDDO
+        DO J=1,JXbundle%N
+         JXbundle%W(J,I) = JXbundle%A(J)
+         JXbundle%U1(J,I) = JXbundle%V1(J)
+        ENDDO
+       ENDDO
+       IF (ID.EQ.1) THEN
+!-------------upper boundary, 2nd-order, C-matrix is full (CC)
+        DELTAU = JXbundle%ZTAU(2) - JXbundle%ZTAU(1)
+        D2 = 0.25d0*DELTAU
+        DO I=1,JXbundle%N
+          D1 = JXbundle%EMU(I)/DELTAU
+          DO J=1,JXbundle%N
+           JXbundle%B(I,J) = JXbundle%B(I,J) + D2*JXbundle%W(I,J)
+           JXbundle%CC(I,J) = D2*JXbundle%U1(I,J)
+          ENDDO
+          JXbundle%B(I,I) = JXbundle%B(I,I) + D1
+          JXbundle%CC(I,I) = JXbundle%CC(I,I) - D1
+!         H(I) = JXbundle%H(I) + 2.0d0*D2*JXbundle%C1(I) + D1*SISOTP
+          JXbundle%H(I) = JXbundle%H(I) + 2.0d0*D2*JXbundle%C1(I)
+          JXbundle%A(I) = 0.0d0
+        ENDDO
+       ELSE
+!-------------lower boundary, 2nd-order, A-matrix is full (AA)
+        DELTAU = JXbundle%ZTAU(JXbundle%ND) - JXbundle%ZTAU(JXbundle%ND-1)
+        D2 = 0.25d0*DELTAU
+        SURFAC = 4.0d0*JXbundle%ZREFL/(1.0d0 + JXbundle%ZREFL)
+        DO I=1,JXbundle%N
+          D1 = JXbundle%EMU(I)/DELTAU
+          JXbundle%H(I) = JXbundle%H(I) - 2.0d0*D2*JXbundle%C1(I)
+           SUM0 = 0.0d0
+          DO J=1,JXbundle%N
+           SUM0 = SUM0 + JXbundle%W(I,J)
+          ENDDO
+           SUM0 = D1 + D2*SUM0
+           SUM1 = SURFAC*SUM0
+          DO J=1,JXbundle%N
+           JXbundle%B(I,J) = JXbundle%B(I,J) + D2*JXbundle%W(I,J) - SUM1*JXbundle%EMU(J)*JXbundle%WT(J)
+          ENDDO
+          JXbundle%B(I,I) = JXbundle%B(I,I) + D1
+          JXbundle%H(I) = JXbundle%H(I) + SUM0*JXbundle%ZFLUX
+          DO J=1,JXbundle%N
+           JXbundle%AA(I,J) = - D2*JXbundle%U1(I,J)
+          ENDDO
+           JXbundle%AA(I,I) = JXbundle%AA(I,I) + D1
+           JXbundle%C1(I) = 0.0d0
+        ENDDO
+       ENDIF
+!------------intermediate points:  can be even or odd, A & C diagonal
+      ELSE
+        DELTAU = JXbundle%ZTAU(ID+1) - JXbundle%ZTAU(ID-1)
+        MSTART = JXbundle%M + MOD(ID+1,2)
+        DO I=1,JXbundle%N
+          JXbundle%A(I) = JXbundle%EMU(I)/DELTAU
+          JXbundle%C1(I) = -JXbundle%A(I)
+           SUM0 = 0.0d0
+          DO IM=MSTART,JXbundle%MFIT,2
+           SUM0 = SUM0 + JXbundle%POMEGA(IM,ID)*JXbundle%PM(I,IM)*JXbundle%PM0(IM)
+          ENDDO
+          JXbundle%H(I) = SUM0*JXbundle%FZ(ID)
+          DO J=1,I
+            SUM0 = 0.0d0
+           DO IM=MSTART,JXbundle%MFIT,2
+            SUM0 = SUM0 + JXbundle%POMEGA(IM,ID)*JXbundle%PM(I,IM)*JXbundle%PM(J,IM)
+           ENDDO
+            JXbundle%B(I,J) =  - SUM0*JXbundle%WT(J)
+            JXbundle%B(J,I) =  - SUM0*JXbundle%WT(I)
+          ENDDO
+          JXbundle%B(I,I) = JXbundle%B(I,I) + 1.0d0
+        ENDDO
+      ENDIF
+      RETURN
+      END subroutine GEN
+
+      subroutine LEGND0 (X,PL,N)
+!---Calculates ORDINARY LEGENDRE fns of X (real)
+!---   from P[0] = PL(1) = 1,  P[1] = X, .... P[N-1] = PL(N)
+      IMPLICIT NONE
+      INTEGER N,I
+      REAL*8 X,PL(N),DEN
+!---Always does PL(2) = P[1]
+        PL(1) = 1.D0
+        PL(2) = X
+        DO I=3,N
+         DEN = (I-1)
+         PL(I) = PL(I-1)*X*(2.d0-1.D0/DEN) - PL(I-2)*(1.d0-1.D0/DEN)
+        ENDDO
+      RETURN
+      END subroutine LEGND0
+
+      subroutine MATIN4 (A)
+!-----------------------------------------------------------------------
+!  invert 4x4 matrix A(4,4) in place with L-U decomposition (mjp, old...)
+!-----------------------------------------------------------------------
+      IMPLICIT NONE
+      REAL*8 A(4,4)
+!---SETUP L AND U
+      A(2,1) = A(2,1)/A(1,1)
+      A(2,2) = A(2,2)-A(2,1)*A(1,2)
+      A(2,3) = A(2,3)-A(2,1)*A(1,3)
+      A(2,4) = A(2,4)-A(2,1)*A(1,4)
+      A(3,1) = A(3,1)/A(1,1)
+      A(3,2) = (A(3,2)-A(3,1)*A(1,2))/A(2,2)
+      A(3,3) = A(3,3)-A(3,1)*A(1,3)-A(3,2)*A(2,3)
+      A(3,4) = A(3,4)-A(3,1)*A(1,4)-A(3,2)*A(2,4)
+      A(4,1) = A(4,1)/A(1,1)
+      A(4,2) = (A(4,2)-A(4,1)*A(1,2))/A(2,2)
+      A(4,3) = (A(4,3)-A(4,1)*A(1,3)-A(4,2)*A(2,3))/A(3,3)
+      A(4,4) = A(4,4)-A(4,1)*A(1,4)-A(4,2)*A(2,4)-A(4,3)*A(3,4)
+!---INVERT L
+      A(4,3) = -A(4,3)
+      A(4,2) = -A(4,2)-A(4,3)*A(3,2)
+      A(4,1) = -A(4,1)-A(4,2)*A(2,1)-A(4,3)*A(3,1)
+      A(3,2) = -A(3,2)
+      A(3,1) = -A(3,1)-A(3,2)*A(2,1)
+      A(2,1) = -A(2,1)
+!---INVERT U
+      A(4,4) = 1.D0/A(4,4)
+      A(3,4) = -A(3,4)*A(4,4)/A(3,3)
+      A(3,3) = 1.D0/A(3,3)
+      A(2,4) = -(A(2,3)*A(3,4)+A(2,4)*A(4,4))/A(2,2)
+      A(2,3) = -A(2,3)*A(3,3)/A(2,2)
+      A(2,2) = 1.D0/A(2,2)
+      A(1,4) = -(A(1,2)*A(2,4)+A(1,3)*A(3,4)+A(1,4)*A(4,4))/A(1,1)
+      A(1,3) = -(A(1,2)*A(2,3)+A(1,3)*A(3,3))/A(1,1)
+      A(1,2) = -A(1,2)*A(2,2)/A(1,1)
+      A(1,1) = 1.D0/A(1,1)
+!---MULTIPLY (U-INVERSE)*(L-INVERSE)
+      A(1,1) = A(1,1)+A(1,2)*A(2,1)+A(1,3)*A(3,1)+A(1,4)*A(4,1)
+      A(1,2) = A(1,2)+A(1,3)*A(3,2)+A(1,4)*A(4,2)
+      A(1,3) = A(1,3)+A(1,4)*A(4,3)
+      A(2,1) = A(2,2)*A(2,1)+A(2,3)*A(3,1)+A(2,4)*A(4,1)
+      A(2,2) = A(2,2)+A(2,3)*A(3,2)+A(2,4)*A(4,2)
+      A(2,3) = A(2,3)+A(2,4)*A(4,3)
+      A(3,1) = A(3,3)*A(3,1)+A(3,4)*A(4,1)
+      A(3,2) = A(3,3)*A(3,2)+A(3,4)*A(4,2)
+      A(3,3) = A(3,3)+A(3,4)*A(4,3)
+      A(4,1) = A(4,4)*A(4,1)
+      A(4,2) = A(4,4)*A(4,2)
+      A(4,3) = A(4,4)*A(4,3)
+      RETURN
+      END subroutine MATIN4
+
+      subroutine GAUSSP (N,XPT,XWT)
+!-----------------------------------------------------------------------
+!  Loads in pre-set Gauss points for 4 angles from 0 to +1 in cos(theta)=mu
+!-----------------------------------------------------------------------
+      IMPLICIT NONE
+      INTEGER N,I
+      REAL*8  XPT(N),XWT(N)
+      REAL*8 GPT4(4),GWT4(4)
+      DATA GPT4/.06943184420297D0,.33000947820757D0,.66999052179243D0,  &
+     &          .93056815579703D0/
+      DATA GWT4/.17392742256873D0,.32607257743127D0,.32607257743127D0,  &
+     &          .17392742256873D0/
+      N = 4
+      DO I=1,N
+        XPT(I) = GPT4(I)
+        XWT(I) = GWT4(I)
+      ENDDO
+      RETURN
+      END subroutine GAUSSP

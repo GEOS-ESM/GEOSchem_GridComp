@@ -1,0 +1,217 @@
+#
+# This the GEOS-5 SulfateChem Grid Component Registry. It defines Import,
+# Internal and Export states for this component.
+#
+# !REVISION HISTORY:
+#  30Jul2010  Darmenov, A.  First Version
+#
+# -----------------------------------------------------------------
+
+COMP_NAME: GEOS_AChem
+
+# Only change the Registry version when major structural changes
+# occurs, not changes in content
+# --------------------------------------------------------------
+  MAPL_REGISTRY_VERSION: 1.00  
+
+#                               ------------
+#                               Import State
+#                               ------------
+
+<ImportSpec name="GEOS_AChem", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,long_name">
+# ----------------------|------------|-----|---|----|---|---|-----|------|--------------------------
+# Short                 |            |     | V |Item|Intervl| Sub | Def  | Long
+# Name                  |   Units    | Dim |Loc|Type| R | A |Tiles| ault | Name
+# ----------------------|------------|-----|---|----|---|---|-----|------|--------------------------
+  AREA                  | m2         | xy  |   |    |   |   |     |      | Cell area
+  AIRDENS               | kg m-3     | xyz | C |    |   |   |     |      | Air density
+  T                     | K          | xyz | C |    |   |   |     |      | Air Temperature (from Dynamics)
+  DELP                  | Pa         | xyz | C |    |   |   |     |      | Pressure Thickness
+  PLE                   | Pa         | xyz | E |    |   |   |     |      | Edge pressure
+  ZLE                   | m          | xyz | E |    |   |   |     |      | Edge heights
+  RH2                   | 1          | xyz | C |    |   |   |     |      | Relative humidity after moist
+  Q                     | kg kg-1    | xyz | C |    |   |   |     |      | Specific humidity
+  QLTOT                 | kg kg-1    | xyz | C |    |   |   |     |      | Mass fraction of cloud liquid water
+  QCTOT                 | kg kg-1    | xyz | C |    |   |   |     |      | Mass fraction of total cloud water
+  FCLD                  | 1          | xyz | C |    |   |   |     |      | Cloud fraction for radiation
+  QL                    | kg kg-1    | xyz | C |    |   |   |     |      | Cloud liquid for radiation
+  TROPP                 | Pa         | xy  |   |    |   |   |     |      | Tropopause pressure based on blended estimate
+  TS                    | K          | xy  |   |    |   |   |     |      | Surface skin temperature
+  U10N                  | m s-1      | xy  |   |    |   |   |     |      | Equivalent neutral 10 meter eastward wind
+  V10N                  | m s-1      | xy  |   |    |   |   |     |      | Equivalent neutral 10 meter northward wind
+  FROCEAN               | 1          | xy  |   |    |   |   |     |      | Fraction of ocean 
+  FRLAND                | 1          | xy  |   |    |   |   |     |      | Fraction of land
+  FRLAKE                | 1          | xy  |   |    |   |   |     |      | Fraction of lake
+  FRLANDICE             | 1          | xy  |   |    |   |   |     |      | Fraction of land ice
+  LWI                   | 1          | xy  |   |    |   |   |     |      | Land-water-ice flags
+  USTAR                 | m s-1      | xy  |   |    |   |   |     |      | Surface (friction) velocity scale
+  SH                    | W/m2       | xy  |   |    |   |   |     |      | Sensible heat flux
+  Z0H                   | m          | xy  |   |    |   |   |     |      | Surface roughness for heat
+  ZPBL                  | m          | xy  |   |    |   |   |     |      | Height of PBL
+# ----------------------|------------|-----|---|----|---|---|-----|------|--------------------------
+  OH                    | mol mol-1  | xyz | C |    |   |   |     |      | Hydroxyl radical (OH)
+  NO3                   | mol mol-1  | xyz | C |    |   |   |     |      | Nitrogen trixide (NO3)
+  H2O2                  | mol mol-1  | xyz | C |    |   |   |     |      | Hydrogen peroxide (H2O2)
+  O3                    | kg kg-1    | xyz | C |    |   |   |     |      | Ozone (mass mixing ratio)
+# ---------------------|------------|-----|---|----|---|---|-----|------|--------------------------
+#  OHSTRAT              | mol mol-1  | xyz | C |    |   |   |     |      | Hydroxyl radical 
+#  O3P                  | mol mol-1  | xyz | C |    |   |   |     |      | O triplet P
+#  OCS_JRATE            | s-1        | xyz | C |    |   |   |     |      | OCS photolysis rates
+# ----------------------|------------|-----|---|----|---|---|-----|------|--------------------------
+  DMS_CONC_OCEAN        | nmol L-1-1 | xy  |   |    |   |   |     |      | Surface seawater concentration of DMS
+# ----------------------|------------|-----|---|----|---|---|-----|------|--------------------------
+  SO2_EMIS_FIRES        | kg m-2 s-1 | xy  |   |    |   |   |     |      | SO2 emissions from biomass burning
+  SO2_EMIS_NONENERGY    | kg m-2 s-1 | xy  |   |    |   |   |     |      | SO2 emissions from non-energy sectors
+  SO2_EMIS_ENERGY       | kg m-2 s-1 | xy  |   |    |   |   |     |      | SO2 emissions from energy sector
+  SO2_EMIS_SHIPPING     | kg m-2 s-1 | xy  |   |    |   |   |     |      | SO2 emissions from shipping sector
+  SO2_EMIS_AIRCRAFT_LTO | kg m-2 s-1 | xy  |   |    |   |   |     |      | SO2 emissions from aviation (LTO layer)
+  SO2_EMIS_AIRCRAFT_CDS | kg m-2 s-1 | xy  |   |    |   |   |     |      | SO2 emissions from aviation (CDS layer)
+  SO2_EMIS_AIRCRAFT_CRS | kg m-2 s-1 | xy  |   |    |   |   |     |      | SO2 emissions from aviation (CRS layer)
+# ----------------------|------------|-----|---|----|---|---|-----|------|--------------------------
+  NH3_EMIS              | kg m-2 s-1 | xy  |   |    |   |   |     |      | NH3 emissions - all sectors excluding biomass burning
+  NH3_EMIS_FIRE         | kg m-2 s-1 | xy  |   |    |   |   |     |      | NH3 emissions - biomass burning
+# ----------------------|------------|-----|---|----|---|---|-----|------|--------------------------
+  SOAG_EMIS             | m-2 s-1    | xy  |   |    |   |   |     |      | SOA(gas) surface emissions
+# ----------------------|------------|-----|---|----|---|---|-----|------|--------------------------
+  CO_BIOMASS            | kg m-2 s-1 | xy  |   |    |   |   |     |      | CO Biomass Burning Emissions
+  CO_BF                 | kg m-2 s-1 | xy  |   |    |   |   |     |      | CO Biofuel Emissions
+  CO_FS                 | kg m-2 s-1 | xy  |   |    |   |   |     |      | CO Fossil Fuel Emissions
+# ----------------------|------------|-----|---|----|---|---|-----|------|--------------------------
+</ImportSpec>
+
+#                               ------------
+#                               Export State
+#                               ------------
+
+<ExportSpec name="GEOS_AChem", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,long_name">
+# ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
+# Short                 |               |     | V |Item|Intervl| Sub | Long
+# Name                  |   Units       | Dim |Loc|Type| R | A |Tiles| Name
+# ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
+  OH                    | mol mol-1     | xyz | C |    |   |   |     | OH with imposed diurnal cycle
+  NO3                   | mol mol-1     | xyz | C |    |   |   |     | NO3 with imposed diurnal cycle
+# ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
+  EMIS_S_DMS            | kg m-2 s-1    | xy  |   |    |   |   |     | DMS emissions in kg-S m-2 s-1
+  EMIS_S_SO2            | kg m-2 s-1    | xy  |   |    |   |   |     | SO2 emissions in kg-S m-2 s-1
+  EMIS_DMS              | kg m-2 s-1    | xy  |   |    |   |   |     | DMS emissions
+  EMIS_SO2              | kg m-2 s-1    | xy  |   |    |   |   |     | SO2 emissions from biomass burning and anthropogenic sources
+  EMIS_SO2_EXV          | kg m-2 s-1    | xy  |   |    |   |   |     | SO2 emissions from explosive volcanoes
+  EMIS_SO2_NXV          | kg m-2 s-1    | xy  |   |    |   |   |     | SO2 emissions from non-explosive volcanoes
+  EMIS_SO2_VOLC         | kg m-2 s-1    | xy  |   |    |   |   |     | SO2 emissions from explosive and non-explosive volcanoes
+# ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
+  SFC_CONC_DMS          | m-3           | xy  |   |    |   |   |     | Near-surface concentration of DMS in molecules-DMS m-3
+  SFC_CONC_MSA          | m-3           | xy  |   |    |   |   |     | Near-surface concentration of MSA in molecules-MSA m-3
+  SFC_CONC_SO2          | m-3           | xy  |   |    |   |   |     | Near-surface concentration of SO2 in molecules-SO2 m-3
+  SFC_CONC_H2SO4        | m-3           | xy  |   |    |   |   |     | Near-surface concentration of H2SO4 in molecules-H2SO4 m-3
+  SFC_CONC_NH3          | m-3           | xy  |   |    |   |   |     | Near-surface concentration of NH3 in molecules-NH3 m-3
+  SFC_CONC_SOAG         | m-3           | xy  |   |    |   |   |     | Near-surface concentration of SOA(gas) in molecules-SOA m-3
+# ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
+  CONC_DMS              | m-3           | xyz | C |    |   |   |     | Concentration of DMS in molecules-DMS m-3
+  CONC_MSA              | m-3           | xyz | C |    |   |   |     | Concentration of MSA in molecules-MSA m-3
+  CONC_SO2              | m-3           | xyz | C |    |   |   |     | Concentration of SO2 in molecules-SO2 m-3
+  CONC_H2SO4            | m-3           | xyz | C |    |   |   |     | Concentration of H2SO4 in molecules-H2SO4 m-3
+  CONC_NH3              | m-3           | xyz | C |    |   |   |     | Concentration of NH3 in molecules-NH3 m-3
+  CONC_SOAG             | m-3           | xyz | C |    |   |   |     | Concentration of SOA(gas) in molecules-SOA m-3
+# ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
+  CMD_S_DMS             | kg m-2        | xy  |   |    |   |   |     | Column mass density of DMS in kg-S m-2
+  CMD_S_MSA             | kg m-2        | xy  |   |    |   |   |     | Column mass density of MSA in kg-S m-2
+  CMD_S_SO2             | kg m-2        | xy  |   |    |   |   |     | Column mass density of SO2 in kg-S m-2
+  CMD_S_H2SO4           | kg m-2        | xy  |   |    |   |   |     | Column mass density of H2SO4 in kg-S m-2
+  CMD_S_GAS             | kg m-2        | xy  |   |    |   |   |     | Column mass density of sulfur in gas phase in kg-S m-2
+#
+  CMD_N_NH3             | kg m-2        | xy  |   |    |   |   |     | Column mass density of NH3 in kg-N m-2             
+  CMD_N_GAS             | kg m-2        | xy  |   |    |   |   |     | Column mass density of nitrogen in kg-N m-2
+#
+  CMD_DMS               | kg m-2        | xy  |   |    |   |   |     | Column mass density of DMS
+  CMD_MSA               | kg m-2        | xy  |   |    |   |   |     | Column mass density of MSA
+  CMD_SO2               | kg m-2        | xy  |   |    |   |   |     | Column mass density of SO2
+  CMD_H2SO4             | kg m-2        | xy  |   |    |   |   |     | Column mass density of H2SO4
+  CMD_NH3               | kg m-2        | xy  |   |    |   |   |     | Column mass density of NH3
+  CMD_SOAG              | kg m-2        | xy  |   |    |   |   |     | Column mass density of SOA(gas)
+# ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
+  DRY_DEP_SO2           | kg m-2 s-1    | xy  |   |    |   |   |     | Dry deposition flux of sulfur dioxide (SO2)
+  DRY_DEP_H2SO4         | kg m-2 s-1    | xy  |   |    |   |   |     | Dry deposition flux of sulfuric acid, (H2SO4 gas)
+  DRY_DEP_DMS           | kg m-2 s-1    | xy  |   |    |   |   |     | Dry deposition flux of DMS
+  DRY_DEP_MSA           | kg m-2 s-1    | xy  |   |    |   |   |     | Dry deposition flux of MSA
+  DRY_DEP_NH3           | kg m-2 s-1    | xy  |   |    |   |   |     | Dry deposition flux of NH3
+  DRY_DEP_SOAG          | kg m-2 s-1    | xy  |   |    |   |   |     | Dry deposition flux of SOA(gas)
+# ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
+  DDT_DMS_gas           | mol mol-1 s-1 | xyz | C |    |   |   |     | Dimethyl sulfide (DMS) tendency due to gas phase chemistry
+  DDT_MSA_gas           | mol mol-1 s-1 | xyz | C |    |   |   |     | Methanesulfonic acid (MSA) tendency due to gas phase chemistry
+  DDT_SO2_gas           | mol mol-1 s-1 | xyz | C |    |   |   |     | Sulfur dioxide (SO2) tendency due to gas phase chemistry
+  DDT_H2SO4_gas         | mol mol-1 s-1 | xyz | C |    |   |   |     | Sulfuric acid (H2SO4 gas) tendency due to gas phase chemistry
+  DDT_NH3_gas           | mol mol-1 s-1 | xyz | C |    |   |   |     | Ammonia (NH3) tendency due to gas phase chemistry
+  DDT_SOAG_gas          | mol mol-1 s-1 | xyz | C |    |   |   |     | Secondary Organic Aerosols (SOA gas) tendency due to gas phase chemistry
+  _DMS_gas              | mol mol-1 s-1 | xyz | C |    |   |   |     | Dimethyl sulfide (DMS) before gas phase chemistry
+  _MSA_gas              | mol mol-1 s-1 | xyz | C |    |   |   |     | Methanesulfonic acid (MSA) befoe gas phase chemistry
+  _SO2_gas              | mol mol-1 s-1 | xyz | C |    |   |   |     | Sulfur dioxide (SO2) before gas phase chemistry
+  _H2SO4_gas            | mol mol-1 s-1 | xyz | C |    |   |   |     | Sulfuric acid (H2SO4 gas) before gas phase chemistry
+  _NH3_gas              | mol mol-1 s-1 | xyz | C |    |   |   |     | Ammonia (NH3) before gas phase chemistry
+  _SOAG_gas             | mol mol-1 s-1 | xyz | C |    |   |   |     | Secondary Organic Aerosols (SOA gas) before gas phase chemistry
+# ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
+  CPL_DMS_gas           | kg m-2 s-1    | xy  |   |    |   |   |     | Column integrated tendency of dimethyl sulfide (DMS) due to gas phase chemistry
+  CPL_MSA_gas           | kg m-2 s-1    | xy  |   |    |   |   |     | Column integrated tendency of methanesulfonic acid (MSA) due to gas phase chemistry
+  CPL_SO2_gas           | kg m-2 s-1    | xy  |   |    |   |   |     | Column integrated tendency of sulfur dioxide (SO2) due to gas phase chemistry
+  CPL_H2SO4_gas         | kg m-2 s-1    | xy  |   |    |   |   |     | Column integrated tendency of sulfuric acid (H2SO4 gas) due to gas phase chemistry
+  CPL_NH3_gas           | kg m-2 s-1    | xy  |   |    |   |   |     | Column integrated tendency of ammonia (NH3) due to gas phase chemistry
+  CPL_SOAG_gas          | kg m-2 s-1    | xy  |   |    |   |   |     | Column integrated tendency of Secondary Organic Aerosols (SOA gas) due to gas phase chemistry
+#
+  CPL_S_DMS_gas         | kg m-2 s-1    | xy  |   |    |   |   |     | Column integrated tendency of dimethyl sulfide (DMS) due to gas phase chemistry
+  CPL_S_MSA_gas         | kg m-2 s-1    | xy  |   |    |   |   |     | Column integrated tendency of methanesulfonic acid (MSA) due to gas phase chemistry
+  CPL_S_SO2_gas         | kg m-2 s-1    | xy  |   |    |   |   |     | Column integrated tendency of sulfur dioxide (SO2) due to gas phase chemistry
+  CPL_S_H2SO4_gas       | kg m-2 s-1    | xy  |   |    |   |   |     | Column integrated tendency of sulfuric acid (H2SO4 gas) due to gas phase chemistry
+  CPL_S_gas             | kg m-2 s-1    | xy  |   |    |   |   |     | Column integrated tendency of total sulfur due to gas phase chemistry
+  CPL_N_NH3_gas         | kg m-2 s-1    | xy  |   |    |   |   |     | Column integrated tendency of ammonia (NH3) due to gas phase chemistry
+  CPL_N_gas             | kg m-2 s-1    | xy  |   |    |   |   |     | Column integrated tendency of total nitrogen due to gas phase chemistry
+# ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
+  DDT_DMS_aq            | mol mol-1 s-1 | xyz | C |    |   |   |     | Dimethyl sulfide (DMS gas) tendency due to aqueous phase chemistry
+  DDT_MSA_aq            | mol mol-1 s-1 | xyz | C |    |   |   |     | Methanesulfonic acid (MSA gas) tendency due to aqueous phase chemistry
+  DDT_SO2_aq            | mol mol-1 s-1 | xyz | C |    |   |   |     | Sulfur dioxide (SO2 gas) tendency due to aqueous phase chemistry
+  DDT_H2SO4_aq          | mol mol-1 s-1 | xyz | C |    |   |   |     | Sulfuric acid (H2SO4 gas) tendency due to aqueous phase chemistry
+  DDT_NH3_aq            | mol mol-1 s-1 | xyz | C |    |   |   |     | Ammonia (NH3 gas) tendency due to aqueous phase chemistry
+  DDT_SOAG_aq           | mol mol-1 s-1 | xyz | C |    |   |   |     | Secondary Organic Aerosols (SOA gas) tendency due to aqueous phase chemistry
+  _DMS_aq               | mol mol-1 s-1 | xyz | C |    |   |   |     | Dimethyl sulfide (DMS gas) before aqueous phase chemistry
+  _MSA_aq               | mol mol-1 s-1 | xyz | C |    |   |   |     | Methanesulfonic acid (MSA gas) before aqueous phase chemistry
+  _SO2_aq               | mol mol-1 s-1 | xyz | C |    |   |   |     | Sulfur dioxide (SO2 gas) before aqueous phase chemistry
+  _H2SO4_aq             | mol mol-1 s-1 | xyz | C |    |   |   |     | Sulfuric acid (H2SO4 gas) before aqueous phase chemistry
+  _NH3_aq               | mol mol-1 s-1 | xyz | C |    |   |   |     | Ammonia (NH3 gas) tendency before aqueous phase chemistry
+  _SOAG_aq              | mol mol-1 s-1 | xyz | C |    |   |   |     | Secondary Organic Aerosols (SOA gas) before aqueous phase chemistry
+# --------------------------------------------------------------------------------------------------
+  pSO4_aq               | kg kg-1 s-1   | xyz | C |    |   |   |     | production rate of sulfate in aqueous phase
+  pNH4_aq               | kg kg-1 s-1   | xyz | C |    |   |   |     | production rate of ammonium in aqueous phase
+  pSO4_aq_SO2           | kg kg-1 s-1   | xyz | C |    |   |   |     | production rate of sulfate from sulfur dioxide (SO2) in aqueous phase
+  pSO4_aq_H2SO4         | kg kg-1 s-1   | xyz | C |    |   |   |     | production rate of sulfate from irreversible uptake of sulfuric acid vapor (H2SO4) in aqueous phase
+  pNH4_aq_NH3           | kg kg-1 s-1   | xyz | C |    |   |   |     | production rate of ammonium from dissociation of ammonia (NH3) in aqueous phase
+# ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
+  pSOA_ANTHRO_VOC       | kg m-3 s-1    | xyz | C |    |   |   |     | Production of SOA from Anthropogenic + Biofuel Burning VOC
+  pSOA_ANTHRO_VOC_MMRday| kg m-3 d-1    | xyz | C |    |   |   |     | Production of SOA from Anthropogenic + Biofuel Burning VOC
+  pSOA_BIOB_VOC         | kg m-3 s-1    | xyz | C |    |   |   |     | Production of SOA from Biomass Burning VOC
+  pSOA_BIOB_VOC_MMRday  | kg m-3 d-1    | xyz | C |    |   |   |     | Production of SOA from Biomass Burning VOC
+# ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
+  pSO2_OCS              | kg kg-1 s-1   | xyz | C |    |   |   |     | Production of SO2 from OCS
+  pSO2_OCS_OH           | kg kg-1 s-1   | xyz | C |    |   |   |     | Production of SO2 from OCS+OH
+  pSO2_OCS_O3p          | kg kg-1 s-1   | xyz | C |    |   |   |     | Production of SO2 from OCS+O3p
+  pSO2_OCS_jOCS         | kg kg-1 s-1   | xyz | C |    |   |   |     | Production of SO2 from OCS photolysis
+  lOCS                  | cm-3 s-1      | xyz | C |    |   |   |     | Loss rate of OCS (molec cm-3 s-1)
+  lOCS_OH               | cm-3 s-1      | xyz | C |    |   |   |     | Loss rate of OCS from OCS+OH(molec cm-3 s-1)
+  lOCS_O3p              | cm-3 s-1      | xyz | C |    |   |   |     | Loss rate of OCS from OCS+O3p(molec cm-3 s-1)
+  lOCS_jOCS             | cm-3 s-1      | xyz | C |    |   |   |     | Loss rate of OCS from photolysis (molec cm-3 s-1)
+  pScl_OCS              | kg m-2        | xy  |   |    |   |   |     | Production of SO2 from OCS (column integrated)
+</ExportSpec>
+
+#                               --------------
+#                               Internal State
+#                               --------------
+
+#
+# Note: 1) For friendlies, use "D" for dynamics, "T" for turbulence and "C" for convection, or "S" for self (add to EXPORT state); leave blank otherwise
+#       2) If quantity requires no restart, put an 'x' in the No Rst column
+
+<InternalSpec name="GEOS_AChem", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,norestart,halowidth,friendlyto,long_name">
+# ----------------------|------------|-----|---|----|---|---|-----|------|----|----|---------|------
+#  Short                |            |     | V |Item|Intervl| Sub | Def  | No | Ha | Friends | Long
+#  Name                 |   Units    | Dim |Loc|Type| R | A |Tiles| ault | Rst| lo |         | Name
+# ----------------------|------------|-----|---|----|---|---|-----|------|----|----|---------|------
+# ----------------------|------------|-----|---|----|---|---|-----|------|----|----|---------|------
+</InternalSpec>
+

@@ -1,0 +1,241 @@
+--------------------------------------------------------------
+The Fast-JX Photolysis Scheme as Implemented in the UCI CTM
+--------------------------------------------------------------
+
+  The Fast-JX scheme consists of the following files:
+
+         [pphot.f]       Photolysis code as used in the CTM
+                         >>>this is supplied here as newcol.f file<<<
+         jv_cmn.h        Parameters and common blocks - 'include' file
+         jv_mie.h        Mie scattering common blocks - 'include' file
+         jv_atms.dat     Temperature and ozone profiles
+         jv_spec.dat     Wavelengths, cross-sections, phase functions
+
+         ratj.d          List of photolysis reactions (example)
+                        (part of the ASAD chemistry scheme, not part
+                         of Fast-J2, but included for completeness)
+
+
+  Brief description of what's happening:
+
+   inphot    Routine to initialise photolysis data, called once from
+             model (or chemistry) set-up routine. Reads in reactions
+             to consider, keeping the quantum yield for the reaction
+             and the reaction label (used to identify the X-sections
+             in jv_spec.dat); the chemical parameters are read in
+             again elsewhere in the chemistry code.
+             Also reads in spectral data and the T and O3 fields, which
+             can be overwritten with model T and O3 profiles if desired.
+             (18 lats, 12 months, 21/31 1-km levels)
+             Sets the maximum d(tau) for the Mie code (greater than
+             unity leads to drift from solution, less leads to too many
+             extra levels) and maximum zenith angle for top of atmosphere.
+
+   photoj    Main photolysis routine called every chemical timestep.
+             J-values output profile-at-a-time as level x reaction array
+             jpnl = number of levels for chemistry  (No. CTM levels)
+             jppj = number of photolysis reactions
+             nslat/nslon = lat. and long. indices of current profile
+
+   ctm_adj   Sets up pressures (P) and opt.depths (OD) for scheme,
+             sets surface albedo (RFLECT)
+
+   solar2    Sets up Zenith angle
+
+   rd_prof   Reads T and O3 profiles and sets mean Black Carbon profile
+
+   int_prof  Interpolate profiles onto appropriate levels
+
+   jratet    Calculate J-values (the final routine)
+
+   rd_tjpl   Read in spectral data (ex-JPL sources) from jv_spec.dat
+             and map to photolysis reactions required.
+
+   prtatm    Output routine (not called by default) for debugging, etc.
+
+   jvalue    Calculate the actinic flux at each level for the current SZA
+             Calls scattering code
+
+   sphere    Calculation of spherical geometry
+
+   opmie     Mie code - sets up the appropriate levels for the Mie
+             scattering code (inserting levels where d(tau) is greater
+             than dtaumax), and the profiles for ZTAU, FZ and POMEGA
+
+   miesct    Mie scattering code (plus following subroutines)
+
+
+
+CTM INPUTS:
+
+The CTM provides the pressure profile (surface pressure, P, together with
+eta values for the level boundaries), the temperature profile T (for 
+X-sections but currently not for O3/density profile), the optical depth 
+profile OD (depth for each model level), the surface albedo SA and the 
+temporal and spatial details (tau, iday, nslat, nslon). These are passed
+into the code with the included header file 'cmn_h.f' (main header),
+'cmn_w.f' (P,SA,OD from wind files) and 'cmn_t.f' (tropospheric chemistry).
+These includes should be replaced with the appropriate commons from
+the model used. See 'further details' below.
+
+
+
+CAVEATS:
+
+1)  Currently we're using fixed profiles of T and O3, and a single step
+  profile for black carbon (in 'rd_prof').  Eventually we may want to use
+  model-calculated values, but fixed profiles make a better place to start.
+
+2)  The default phase function for cloud water assumes 8-micron droplets
+  (aerosol type 10), with ice (aerosol type 14) below a threshold
+  temperature. External mixtures of different aerosol types are
+  fine - alter the set_aer routine to define the aerosol data
+  available, and set up the appropriate masses of optical depths in
+  set_prof.
+
+3)  Where optical depth over a level exceeds dtaumax (usually 1.0), a
+  new level is inserted for the scattering code. Fast-J2 works in Tau-
+  space; ZTAU and POMEGA are interpolated linearly, FZ log-interpolated.
+  Large optical depths generate many new levels! Reducing dtaumax
+  to 0.1 improves accuracy, but degrades performance.
+
+4)  Optical depths are taken from the met data for each level/timestep.
+  Current GISS runs truncate opt. depth at 100 for any individual level.
+  To prevent the number of levels getting out of hand, we truncate the
+  total column optical depth at 200 or 150, scaling to this where necessary.
+  This makes very little absolute difference to J-values in most cases.
+  The column truncation value is 'odmax', hardwired into ctm_adj. If this
+  number is increased, then it may be necessary to increase the 'N__'
+  value in jv_mie.h
+
+5)  O2 photolysis is neglected in the troposphere, but the section in
+  the code is left in place to allow it to be reintroduced if anyone
+  is interested in focussing on the tropical upper troposphere.
+  [This has now been added - 8/8/2000]
+
+6)  The annual variation in the distance to the sun, SOLF, is not used
+  by default, but can be added as the argument to the call to JRATET.
+
+7)  The main photolysis routine, photoj, should be called whenever
+  J-values are required - the argument 'timej' is an offset time in hours
+  between the time of the call (TAU, hours GMT) and the time the J-values
+  are required - typically half the timestep length in order to give the 
+  mid-point J-values over the timestep. (J-values are output in the
+  'zpj' array dimensioned by level and species)
+
+
+
+                       FURTHER DETAILS
+
+The following are a list of
+
+Include Files
+--------------
+
+  cmn_t.f     Trop. chem.      nslon, nslat
+
+  cmn_w.f     Wind fields      P, T, OD, SA
+
+  cmn_h.f     Header file      tau, iday, xgrd, ygrd, ydgrd  (etc)
+
+
+- Our chemistry code does one column at a time, and photolysis is called from
+  within the chemistry - nslon, nslat are the i,j values for the current
+  column. Set them before every call to Fast-J2, and put the following in
+  the include file:           (you can then remove the cmn_t.f includes)
+
+      integer nslat, nslon
+      common/currentcol/ nslat, nslon
+
+- Surface pressure (P), temperature (T), optical depth (OD) and surface 
+  albedo (SA) are all taken from the met. data., which we have a separate 
+  include file for; if these are all provided in your main include file,
+  then the cmn_w.f includes can be removed, too.
+
+- Everything else is taken from cmn_h.f - this can safely be replaced with
+  your own CTM include file. ipar, jpar and lpar (the number of latitudes,
+  longitudes and levels) are passed here.
+
+
+jlabel
+------
+
+When you're implementing the code, you might want to make one or two
+changes to the 'inphot' routine, the first in the pphot.f file. This is
+the photolysis initialisation routine, where you need to map the
+appropriate cross-sections to the photolysis reactions (plus specified
+fractions or constant quantum yields if desired). The way I've done it
+fits with my chemistry - alter it to suit yours, but the key is to label
+each of your reactions ('jlabel') with the 7-character cross-section label
+given in the main 'jv_spec.dat' data file. The mapping is then done in the
+RD_TJPL routine.
+
+
+jfacta
+------
+
+"jfacta" isn't a true quantum yield (which would need to be wavelength-
+dependent in most cases). It's simply a multiplication factor for
+the cross-section. For example, CH3OOH has two photolysis channels,
+and assuming you want to take 50% by each route, jfacta should be 50
+for both of them. Alternatively, it can be used as a scaling factor;
+if you want to assume the photolysis rate of C2H5OOH is 20% greater
+than that of CH3OOH, the C2H5OOH photolysis route can be labelled with
+jlabel='MeOOH' and jfacta='120.0'.
+
+True quantum yields are wavelength-dependent, and are not all treated 
+correctly here:  exceptions: O3 --> O(1D) + O2, ClONO2, CH2O, ....
+
+'ActAld' is now acetaldehyde
+
+
+jppj/jpnl
+---------
+
+'jppj' is the number of photolysis reactions to be considered (ie. 3 in
+the example 'ratj.d'). 'jpnl' is the number of model levels to
+do chemistry/photolysis at, and should be less than or equal to the
+number of CTM model levels.
+
+Note that most of the CPU time required by the code goes into solving
+the radiative transfer equations - calculating photolysis rates for
+100 species takes little more time than calculating one.
+
+
+P
+-
+
+Fast-J/J2/JX requires pressures at the bottom and centre of each model level
+(pj(j-1) and p(j) respectively in the ctm_adj routine). In the GISS II'
+framework, pressure of level boundaries is calculated using the expression
+"ETAA(i) + ETAB(i)*P", where P is the surface pressure, and ETAA and ETAB
+are fractions (using sigma levels, '(1-sigma)*top_pressure' and 'sigma' 
+respectively, using pressure levels 'pressure' and  'zero' respectively).
+The  pressure column 'pj' internal to Fast-J2 requires pressure in mbars.
+
+
+xgrd/ygrd/ydgrd
+---------------
+  
+XGRD are the longitudes of grid box centres expressed in radians
+YGRD are the latitudes of grid box centres expressed in radians
+YDGRD are the latitudes of grid box centres expressed in degrees
+
+
+
+NOTES:
+
+Sorry about the mixed cases in the code - the original code was all in
+upper case, but most new additions are in lower case. These historical
+differences may aid understanding!
+
+If you spot any errors/bugs, let us know.
+
+If you have problems implementing the code, try the 'standalone' code
+first to work out what's going on. However, this code doesn't have many
+features of the main code (including bug fixes!), so it's not advisable
+to try implementing this version.
+
+
+                                               Oliver  (13 May 99)
+                                               Prather (Jul 04)

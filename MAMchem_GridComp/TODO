@@ -1,0 +1,39 @@
+(A) 2015-11-09  Add MAM_ExtData.rc + dito for GEOSachem
+
+(A) 2015-11-09  Decorate MAM fields with prefix MAM or MAM7|MAM3 depending on the selected scheme
+
+(A) 2015-10-30  Enable diagnostics from the CAM code + add these fields to the export spec
+
+(A) 2015-10-30  Update the parameterization of in and below cloud wet scavenging 
+                of aerosols from precip
+
+(A) 2015-10-30  Two phase run method + revisit gas and aqueous chemistry sequence
+
+(B) 2015-11-09  Revert to using CESM code for nucleation
+
+(B) 2015-11-09  Revert to using CESM code for dry and wet sizes
+
+(B) 2015-10-30  Number of vertical levels is hardcoded to 72 in modal_aero_amicphys.F90, 
+                this needs to be changed to set the number of vertical levels at runtime.
+
+(B) 2015-10-30  Refactor modal_aero_calcsize.F90
+                + use 'fldcw => qc'
+                + enable modal_aero_calcsize_diag() and call it before the AOT and other diagnostics
+
+(B) 2015-10-30  Refactor modal_aero_wateruptake.F90
+                + enable modal_aero_wateruptake_dr()
+                + discard MAML_SizeMod.F90 and MAM_SizeMod.F90?
+
+(B) 2015-10-30  Refactor modal_aero_initialize_data.F90 
+                + enable 'call modal_aero_bcscavcoef_init'
+                + is this the correct way: 'tot_spec = imozart+gas_pcnst-2'
+
+(C) 2015-10-30  Include shr_kind_mod.F90
+                + there two such files in GEOS-5, is it safe to add the CAM's version?
+
+(D) 2015-10-30  Add new directory 'optics' or 'mie' and move the optics LUTs code in it.
+                + validate the LUTs
+
+(D) 2015-10-30  Check if the offline extinction calculator works
+
+(E) 2015-10-30  Optics - treatment of non-spherical particles

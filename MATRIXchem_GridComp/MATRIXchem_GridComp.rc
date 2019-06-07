@@ -1,0 +1,17 @@
+#
+# Resource file for the MATRIXchem Grid Component.
+#
+#    13 Mar 2015 - A. Darmenov - GEOS-5/MATRIX
+#    06 Oct 2009 - P. Le Sager - Initial
+#    06 Dec 2009 - da Silva    - onverted from NAMELIST to ESMF Config
+#--------------------------------------------------------------------
+
+verbose: .FALSE.
+
+
+# Prognostics emissions parameters (resolution: a, b, c, d, e, f)
+# ---------------------------------------------------------------
+f_emissions_seasalt: 0.875   1.1  0.875  0.875  0.612  0.612
+f_emissions_dust:    0.2     0.46 0.08   0.08   0.08   0.067
+
+

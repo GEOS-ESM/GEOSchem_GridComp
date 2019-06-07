@@ -1,0 +1,670 @@
+AeroChem ChangeLog
+2018-07-17 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_MERGE_3-r1
+    * In StratChem turn off surface fluxes for CFC-11, etc by default
+    * Renamed StratChem SF6 to SF6B in several Chem Registries
+
+2018-07-06 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_MERGE_3
+    * In StratChem use JPL 2015 rates, and added eccentricity
+    * In StratChem renamed SF6 to SF6B, to eliminate naming conflict
+    * In StratChem made a few Br species unfriendly to MOIST since they 
+      are passed to the ChemShared convection routine.
+
+2018-02-27 <michael.manyin@nasa.gov> Tag: Icarus-1_0_p2_MEM_SC-r3
+    * Fixed definition of AIRDENS_DRY and renamed it AIRDENS_DRYP. (B. Weir)
+    * Corrected eqn of numDens in StratChem.
+    * Comment out parameterized scavenging of HBr in StratChem, now
+      handled in convection and wet-removal routines in ChemShared.
+
+2017-01-06 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_3_p3_JEN_GMI-r1
+    * Added Mike Manyin's rc files for CCMI_REF-C1 and CCMI_REF-C2 scenarios
+      to BC, DU, OC, and SU, including updates to the respective GNUmakefiles.
+    * CFC_GridComp.rc now defaults to SC.J_20_12_79_72_200_38.nc4, which updates 
+      photorates to JPL 2010, which are also in the 132-layer version of the file.
+
+2016-08-08 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_3-b2
+    * Added ESMF state based aerosol-cloud coupling interface (AERO_ACI)
+    * Renamed the loaded in CHEM G.C. SetServices methods.
+    * Renamed GEOSAchem G.C. to Achem G.C.; Applied 'ACHEM::' namespace 
+      construct to the names of fields from the internal state.
+    * Updated the core aerosol microphysics with configuration for MAM4; 
+      applied the SOA patch from Zheng.
+    * Upstream edits from Heracles-UNSTABLE
+
+2016-07-20 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_3-b1
+    * Added HEMCO (merged Heracles-5_3 with Aerochem-Heracles-5_2-b3-HEMCO)
+    * Upstream edits from Heracles-UNSTABLE
+
+2016-06-17 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_2-b9
+    * Speedup fixes for ConvectionMod.F90 and NI_GridCompMod.F90; these
+      edits are zero-diff and are based on Matt's mat-H53-NISpeed tag.
+
+2016-06-03 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_2-b8
+    * Updated cloudnew.F90 GEOS_MoistGridComp.F90 to Heracles-5_2;
+      this effecively makes this tag to be based on Heracles-5_2;
+      next GEOS_MoistGridComp.F90 was updated to Andrea's 1-moment mods
+      related to the conv/large scale partitiong (tag b_AMM_H521MOPS_move2d)
+  
+2016-05-27 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_2-b7
+    * GOCART: Initially this tag had the edits related to the modified 
+      temperature dependence of the wet removal efficiency factors that 
+      used a linear ramp rather than a step function. The edits were in
+      SU_GridCompMod.F90, ConvectionMod.F90 and WetRemovalMod.F90 
+      (see asd-wet_dep-temperature_ramp tag). However, the results from 
+      a test run showed noticeable changes in the AOD, so these edits 
+      were reverted in CVS and in this tag until another more 'cleaner' 
+      test is done to assess the impact of these edits.
+    * Added new GOCART exports - total reconstructed PM and PM2.5.
+    * Upstream edits from Heracles-UNSTABLE.
+
+2016-05-27 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_2
+    * Based on Heracles-5_2.
+    * Upstream edits.
+
+2016-05-06 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_2-b6
+    * Updated nitrate mie tables to v2.5.
+    * Corrected the dimensions spec of the LTO, CDS and CRS aviation 
+      emissions in the ExtData.rc files.
+    * GEOSachem and MAM - read the HTAP aviation emissions from fvInput.
+    * Updated GMI to Heracles-UNSTABLE.
+    * Upstream edits from Heracles-UNSTABLE.
+
+2016-04-17 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_2-b5
+    * Revert to using PFL_LSAN and PFI_LSAN instead of DQRL which is still 
+      not properly filled in the single-moment cloud microphysics.
+    * Upstream edits from Heracles-UNSTABLE.
+
+2016-04-08 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_2-b4
+    * Turned on the Marring correction for dust grav settling velocity.
+    * Set dust in-cloud scavenging efficiency factors to 0.3.
+    * Updated the global sea salt emission factors for 0.5 degrees 
+      and finer resolutions.
+    * Set the fraction of NH3 and NH4a tracers scavenged in cold (T < 258K) 
+      convective cloud updrafts to 0.
+    * Set the fraction of dust scavenged by large-scale rainout 
+      at T < 258K (snow) to 0.
+    * Set the HNO3 read from the monthly files to 0.20*GMI_NH3
+    * Fixed DQRL in cloudnew.F90 - moved the calculation of DQRL to a 'later' 
+      point in the code where the values of the terms it depends on are 
+      properly filled.
+    * Upstream edits from Heracles-UNSTABLE.
+
+2016-03-15 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_2-b3
+    * Updated OPS setup to use HTAP-v2.2 emissions and ocean DMS from
+      Lana et al., 2011.
+    * Corrected refresh time templates in the nitrate ExtData RC files.
+
+2016-03-15 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_2-b2
+    * Replaced CNV_QC (which contrary to the description in the export 
+      spec is NOT convective condensate) with the sum of water and ice
+      mass fractions of convective cloud (QLCN + QICN)
+    * Fixed large scale wet removal when the model is run with the 
+      2-moment cloud microphysics: replaced PFL_LSAN and PFI_LSAN with 
+      DQRL (which is filled by the single- and two-moment cloud microphysics)
+    * HNO3 from GMI was scaled down by an additional factor of 2.5. This results
+      in HNO3 wich is equal to 0.17*HNO3_GMI.
+    * Updated volcanic emissions to v7.
+    * Apply (rather than omitting) emissions from volcanoes that are 
+      below the 'surface' model layer.
+    * Upstream edits from Heracles-UNSTABLE.
+
+2016-02-26 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_2-b1
+    * Enabled nitrate aerosol in all GOCART setups.
+    * Updated NH3 emissions from fires to QFED (HFED-v1.0 does not
+      include NH3 emissions so in the MERRA2 setup for years 1996-2000 
+      for now we rely on QFED climatology); the anthropogenic NH3 
+      emissions are from EDGAR-v4.2.
+    * HNO3 from GMI was scaled by a factor of ~0.4 based on the comparison 
+      with CASTNET.
+    * Changed sea salt gamma factor from 0.2 to 0.1.
+    * Modified washout for gas tracers.
+    * Increased deposition velocity of sea salt aerosol over land.
+    * Implemented new functionality in the gogo.x utility to modify 
+      the CO2 in a binary GOCART restart file by adding uniform value 
+      specified by the user.
+    * Upstream edits from Heracles-UNSTABLE.
+
+2016-02-18 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_1-b5
+    * Enabled nitrate aerosol in the Chem_MieRegistry.rc files.
+    * Nullify pointers to the AOD LUTs and set AOD LUTs only in the INIT 
+      methods of the GOCART aerosol types.
+    * Upstream edits from Heracles-UNSTABLE.
+
+2016-02-10 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_1-b4
+    * Mods to accept new wet deposition scheme for GOCART/CARMA.
+    * Upstream edits from Heracles-UNSTABLE.
+
+2016-02-10 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_1-b3
+    * Added aerosol nitrate in GAAS.
+    * Protection against numerical issues in the nitrate driver 
+      triggered at very low temperatures.
+    * Corrected the time templates in the NI ExtData resource file.
+    * Correct error in timing of H2O2 recycling in the sulfate chem 
+      driver.
+
+2016-01-21 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_1-b2
+    * Added aerosol nitrate to the radiatively active aerosol types.
+
+2016-01-21 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-5_1-b1
+    * This tag is based on Heracles-5_1.
+    * GOCART/NI and nitrate optics.
+    * DNA G.C.
+    * Edits for ExtData aware GOCART.
+    * Removed entries in the full, volcanic, etc. resource files 
+      that are handled by the ExtData GC.
+    * OCS and stratospheric sulfate.
+    * Updates for MAM7 and GEOSachem.
+
+2015-06-18 <anton.s.darmenov@nasa.gov> Tag: AeroChem-Heracles-4_0-b1
+	* This tag is based on the current Heracles-UNSTABLE which will soon 
+      be released as Heracles-4_0.
+    * Dust optics was updated to v-15.3
+    * Added MATRIXChem G.C.
+    * Updates for MAM7 and GEOSachem
+
+2014-11-19 <jon.e.nielsen@nasa.gov>, Tag: Heracles-1_0_UNSTABLE_JEN
+        * Rn: Correct emission to number density conversion constant.
+
+2014-09-23 <jon.e.nielsen@nasa.gov>, Tag: Heracles-1_0_UNSTABLE_JEN
+        * ChemEnv: Add calculation of dry-air density, AIRDENS_DRY, and import to GOCART
+        * CH4: Add exports for CH4 dry-air mole fraction.
+
+2014-09-03 <anton.s.darmenov@nasa.gov> , Tag AeroChem-Fortuna-2_5-b18-m1
+	* This tag is based on MERRAero 'AeroChem-Fortuna-2_5-b18' tag.
+	* It includes additional diagnostics in IRRAD needed to calculate longwave ADRE - these 
+	  edits are from the 'prc+AeroChem-Fortuna-2_5-b18-IR_only' tag.
+	* Mie tables for dust are updated to v15_3.
+	* pyobs failed to build with the gcc and SIVO-PyD using the g5_modules 
+	  in 'AeroChem-Fortuna-2_5-b18'. Following Matt's recommendation these were 
+	  changed to 'other/comp/gcc-4.6.3-sp1' and 'other/SIVO-PyD/spd_1.6.0_gcc-4.6.3-sp1'
+
+2014-06-27 <jon.e.nielsen@nasa.gov>, Tag: Ganymed-4_0_BETA11_JEN
+        * CFC: Add export state for the CFC-12 photorate. In CFC_Registry.rc, units for
+          CFC12SLS and CFC12TLS are m^{-3}s^{-1}.
+
+2014-03-14 <anton.s.darmenov@nasa.gov> , Tag asd-Ganymed-4_0_BETA10-a1
+	* Synced asd-Ganymed-4_0_BETA9-a2 with upstream edits from Ganymed-4_0_BETA10.
+
+2014-03-12 <anton.s.darmenov@nasa.gov> , Tag asd-Ganymed-4_0_BETA9-a2
+	* Merged edits from asd-Ganymed-4_0_BETA8-a1 with Ganymed-4_0_BETA9.
+	* Updated volcanic emissions to version 4.
+	* Dust optical tables were updated to version 14.2
+
+2014-02-06 <anton.s.darmenov@nasa.gov> , Tag asd-Ganymed-4_0_BETA8-a1
+	* Changes implemented by Pete:
+    1) Support for multiple instances of BC. BC_GridComp.rc 
+    is changed to specify regional tags, and introduce BC_GridComp---full.rc 
+    as analog to SU_GridComp—full.rc.  This change required updates as well to 
+    GOCART_GridCompMod.F90 and Aero_GridCompMod.F90 to support handling of 
+    optics for multiple BC instances. GOCART variable name checking was 
+    more specific so that only the 'full' instances of BC and OC are put 
+    in Aero bundle for radiation (and only SO4 and SO4v for sulfate). 
+    Presumes full tracer names are OC(BC)PHILIC/PHOBIC.
+    2) Updated SU_GridCompMod.F90 to permit volcanic data tables to include 
+    also start time and end time for eruption emissions (required update to 
+    SulfateChemDriverMod.F90). Also made change to add diagnostic calculation of 
+    aerosol surface area (for StratChem). Finally, name handling for multiple 
+    instances was improved so that volcanic instance (volc) is treated uniquely 
+    whereas all other tags (which would nominally be regional/emission specific) 
+    are given same names as tropospheric (full) tag. This is needed for 
+    radiation diagnostics in module. Also made a small change in Chem_MieMod.F90 
+    to accommodate more robust handling of multiple SU instance naming.
+    3) Updated CARMA to latest, including coupling to GOCART SU as source of 
+    gas H2SO4. Most changes relevant to sulfate simulation.
+
+    This tag as well as the base tag Ganymed-4_0_BETA8 include setling of OC, BC and
+    SU aerosols.
+
+2014-02-04 <anton.s.darmenov@nasa.gov> , Tag asd-G4U-RRTMG-AeroState-r2
+	* Mods for AERO state - work in progress. This is an intermediate tag 
+	  based on Matt's 'Ganymed-4_0_UNSTABLE-RRTMGPU-withPGIedits'. 
+	  The new Aero state code is run alongside the existing Aero bundle 
+	  code for testing peroses.
+	  The tag is zero-diff to Matt's tag if the Aero state is passive in 
+	  in solar.
+
+2013-11-04 <jon.e.nielsen@nasa.gov>, Tag: Ganymed-4_0_UNSTABLE_JEN-m1
+	* GOCART::CH4: Zenith angle range test.
+	* GOCART::O3: Updates for NetCDF parallel I/O.
+
+2013-08-09 <anton.s.darmenov@nasa.gov> , Tag asd-Ganymed-4_0_UNSTABLE-MERRA2-a6
+	* Mods for NR and MERRA2 in Ganymed-4_0_UNSTABLE.
+	  GOCART: Changed paths of NR (asd-Ganymed-4_0_UNSTABLE-MERRA2-a4) and 
+	  MERRA2 (asd-Ganymed-4_0_UNSTABLE-MERRA2-a5) external files to standard 
+	  locations in fvInput; Fixed reading of Edgar-4.x non-climatological files;
+	  Updated fire emissions to QFED-2.4-r6.
+	  GEOS-GCM: synced with Ganymed-4_0_UNSTABLE
+
+2013-07-31 <jon.e.nielsen@nasa.gov>, Tag: Ganymed-4_0_UNSTABLE_JEN
+	* CO2_GridComp: Anton's asd-Ganymed-4_0_UNSTABLE-MERRA2-a3, which includes the
+	  CMS emissions option merged with multiple instantiation.
+
+2013-07-26 <anton.s.darmenov@nasa.gov> , Tag asd-Ganymed-4_0_UNSTABLE-MERRA2-a2
+	* Mods for NR and MERRA2 in Ganymed-4_0_UNSTABLE.
+	  GOCART: Added resource files for MERRA2; Updated oxidants and emissions;
+	  Turned off CMS emissions in CMIP, OPS, PIESA; Added optional argument
+	  units in Chem_UtilMPread().
+
+2013-03-29 <anton.s.darmenov@nasa.gov> , Tag AeroChem-Ganymed-2_1-b2
+	* Updated system to Ganymed-2_1_p5
+	  NOTE: Total corrected precipitation is now exported from Surface.
+
+2013-03-14 <anton.s.darmenov@nasa.gov> , Tag AeroChem-Ganymed-2_1-b1
+	* Updated system to Ganymed-2_1_p3
+
+2013-02-06 <anton.s.darmenov@nasa.gov> , Tag AeroChem-Ganymed-1_0-b4
+	* Updated system to Ganymed-1_0_p7
+
+2013-03-06 <jon.e.nielsen@nasa.gov>, TRUNK
+	* CO2_GridComp reconstructed for multiple instantiation.
+
+2013-02-06 <anton.s.darmenov@nasa.gov> , Tag AeroChem-Ganymed-1_0-b3
+	* Wholesale revisions for cubed-sphere (merged AeroChem-Ganymed-1_0-b2 
+	  with Ganymed-1_0_p5)
+	* GOCART: Revert parameterization of dust emissions to the 'standard'
+	  GOCART scheme (pre AeroChem-Fortuna-2_5-b25); Merge in PRC's middle
+	  of the month restarts mods; Updated SU to AeroChem-Ganymed-1_0_p5-b2+prc;
+	* StratChem: Updated to AeroChem-Ganymed-1_0_p5-b2+prc
+
+2013-01-30 <jon.e.nielsen@nasa.gov>, Tag Ganymed-2_1_p1_JEN
+	* CHEM: Multiple RATS_PROVIDERs.  For example, GOCART::OX for
+	  ozone and PCHEM for the others.
+	* GOCART::CH4: Added photolysis.
+	* GOCART::O3: Wholesale revisions for cubed-sphere, added deposition.
+
+2012-01-25 <anton.s.darmenov@nasa.gov> , Tag AeroChem-Ganymed-1_0-b2
+	* GOCART: Dust emissions are computed using friction velocity; 
+	  Modified the threshold velocity soil moisture correction term; 
+	  Increased the LAI threshold for dust emissions shut-off to 0.7.;
+	  Safeguards to avoid float point exception in 
+	  SulfateChemDriverMod.F90::szangle().
+
+2012-11-30 <anton.s.darmenov@nasa.gov> , Tag AeroChem-Ganymed-1_0-b1
+	* Merged GEOSadas-5_9_1_p2_UNSTABLE with AeroChem-Fortuna-2_5-b25.
+	  GOCART: Updated biomass burning emissions under PIESA to
+	  QFED-2.4.r1; Updated dust optics to v11_2.
+
+2012-11-29 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b25
+	* GOCART: Exploit new dust source function, updates to
+	  DU_GridCompMod.F90 and DU_GridComp.rc.  Also changes in
+	  Chem_Shared/DustEmissionMod.F90.  Introduce a new source
+	  computing function that takes as input wind and an input
+	  threshold speed.  Permits calling with different thresholds
+	  depending on source.  Also update Chem_SettlingMod.F90 to use a
+	  new explicit advection algorithm.
+
+2012-10-25 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b24
+	* CARMA: Add a hook to take volcanic SO4 produced from GOCART
+	  SO4volc tracer and import to CARMA as H2SO4 vapor
+
+2012-07-16 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b23
+	* CARMA: add in sulfate optics to radiative forcing code; modify
+	  sulfate initial particle size distribution
+
+2012-07-13 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b22
+	* CARMA: add in sulfate optical thickness diagnostic
+
+2012-06-29 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b21
+	* GOCART: update optics tables for dust to v10_2 table; capture
+	  bug fix Eric found in CO/CO2 BB injection heights
+
+2012-06-05 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b20
+	* GOCART: capture some fixes in SulfateChemDriverMod.F90 for
+	  regression tests and volcanic emission handling; also update
+	  resource files for ops checkout
+
+2012-04-25 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b19
+	* CARMA: fix initialization of old gas mmr; setup ut_CARMA.F90
+
+2012-04-24 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b18
+	* GOCART: back off the scaling for QFED BB emissions-> new scale
+	  factor = 1.0
+	* CARMA: fix makefile for compiling unit tester
+
+2012-04-19 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b17
+	* Remove MAM code base because it requires update of MAPL_Base
+	  that is apparently broken
+	* CARMA: diagnostics for sulfate species, add non-advected
+	  tracers, setup sulfate program for 10 Tg S yr-1 H2SO4
+	  injection in the tropics
+
+2012-04-18 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b16
+	* CHEM: Added ability to export modeled or observed precipitation
+	* CARMA: Updates for sulfate aerosol modeling
+
+2012-04-12 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b15
+	* GOCART: change sulfate oxidants (note scaling of OH in
+	  SulfateChemModule) and DMS and dust source files under PIESA
+
+2012-04-12 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b14
+	* GOCART: update default optics tables (especially increase mass
+	  extinction efficiency for SU)
+	* CARMA: updates for clear sky calculations
+
+2012-04-12 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b13
+	* GOCART: update seasalt emission and dust emission routines for
+	  generality and compatibility with MAM; correct in cloud H2O2
+	  removal in SO2 oxidation and add flexibility for reading
+	  A2_ACCMIP sulfate emissions; add depolarization ratio
+	  calculation to optical tables and calculators
+	* MAM: add MAM codebase
+	* CARMA: clean up code
+
+2012-03-22 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b12
+	* GOCART: Implement new SST correction for sea salt emissions 
+	  (turned on by default); turn off convective removal in LS wet
+	  inside SU; reset H2O2 scavenging in LS wet; start putting hooks
+	  in for using other variables for LS wet (partially implemented
+	  for SU); also fix longitude  bug with embedded data table
+	  database for volcanic SO2 emissions
+	* CARMA: Implement new SST correction for sea salt emissions
+
+2012-03-05 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b11
+	* StratChem: Update StratChem per JEN/LDO to Fortuna-2_5_b1_JEN
+	* Updated GEOSgwd_GridComp to Fortuna-2_5_b1_JEN and included
+	  change to AGCM.rc.tmpl to help with polar vortex breakup over
+	  Antarctica
+	* GOCART: add to SU_GridComp*rc the particle radius and an RH flag
+	  suitable for doing sulfate settling (see also changes to
+	  Chem_SettlingMod.F90
+	
+2012-03-02 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b10
+	* GOCART: Change SO2 so it is not scavenged in ConvectionMod.F90
+
+2012-02-16 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b9
+	* CARMA: Add binwise column integrated mass loading for dust
+	* GOCART: Add resolution dependent tuning factors for DU and SS emissions
+
+2012-02-10 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b8
+	* adjust tuning factors of DU, SS, turn off SST correction in SS
+	  registry
+	* increase BB tuning under QFED emissions for BC, OC, SU (top
+	  level and PIESA only, not CMIP); increase by 25%
+	* add diagnostics to CARMA
+	* change default dust optics to v5 tables
+
+2012-01-24 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b7
+	* bring aerosol code back to TRUNK
+	* tune up dust emissions, sea salt
+	* update to recent changes in GMICHEM (2011-12-27 notes)
+	  including changes to GEOS_MoistGridComp.F90 and
+	  GEOS_PhysicsGridComp.F90
+
+2012-01-19 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b6
+	* b5 was intermediary where we introduced the made the GOCART
+	  aerosols unfriendly to MOIST and used the offline convective
+	  scavenging code to do both convective mixing and scavenging.
+	  This is applied for all aerosols DU/BC/SS/SU/OC under GOCART.
+	* b6 maintains this but also changes the name of the offline
+	  scavenging module to be more consistent with other stuff
+	  under Chem_Shared.
+	* b6 also brings major changes under the hood to CARMA
+	* TO DO: tune GOCART aerosols for new scavengin
+	         bring BC/OC/SS/DU/SU code back to trunk (on branch for now)
+	         update to recent changes in GMI (requires new restart for
+	         moist)
+
+2012-01-05 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b4
+	* Fix a bug in ras.F90 where boundary layer aerosol was no scavenged
+
+2011-12-27 <jon.e.nielsen@nasa.gov> HEAD
+        * GMICHEM: Enable lightning NO production based on flash rates imported
+          from MOIST (LFR).
+
+2011-12-16 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b3
+	* Add regional masking capability for sulfate code
+	* Update StratChem to head
+
+2011-12-13 <jon.e.nielsen@nasa.gov> HEAD
+        * Update StratChem to (1) JPL 2011 and (2) disallow any changes
+          to H2O and H2OCOND based on internal microphysics (SUBROUTINEs
+	  pscs and sediment).
+
+2011-11-09 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b2
+	* Update sea salt emission scaling factor for 2.5 tag
+	* Update GMI Code and GEOS_ChemGridComp.F90 to JEN latest
+
+2011-10-20 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_5-b1
+	* Update Aerosol codes to Fortuna-2_5 ops tag:
+	  GEOSadas-5_7_2_p3_UNSTABLE
+	* Sea salt emissions code changes: not presently exercising, but
+	  including hooks for various emission efficiency factors based on
+	  Fan and Toon (2011).  Also, changed sense of SeasaltEmission
+	  routines in Chem_Shared
+	* CARMA code now passes an AERO and AERO_DP bundle.  AERO
+	  bundle tested and available for radiation.  Note: you must fit
+	  the CARMA aerosols into a structure similar to GOCART to get
+	  optical tables read correctly. This includes filling
+	  Chem_MieRegistry.rc with correct number of tracers and names
+	  (e.g., doing_DU = YES and provide CARMA type names).  NOTE
+	  ALSO: there are numbers hard coded in radiation (see
+	  MAX_NUM_RADIUS in GEOS_SolarGridComp.F90 and
+	  GEOS_IrradGridComp.F90 and the associated sorad.F90 and
+	  irrad.F90.  These numbers need adjustment for a larger number of
+	  size bins.
+	* Bump up dust and seasalt emission scaling factors to account for
+	  lower surface wind speeds in Fortuna-2_5 based tag
+
+2011-09-21 <jon.e.nielsen@nasa.gov> Tag: Hypatia-1_0_UNSTABLE_JEN
+        * Generalized the connectivities between GMICHEM and GOCART 
+	  to support those cases in which fewer than all five GOCART 
+	  dust/aerosol classes are being imported to GMICHEM. Also allows
+	  GMICHEM to be run in tandem with, for example, GOCART::Rn.
+	* Updates to gmi_acg.pl for units and for filling DD and WD export 
+	  states.
+	* SC: Fill export O3.
+
+2011-09-06 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_4-b7
+	* Include changes below
+	* Fix bug in SulfateChemDriverMod.F90 in applying diurnal
+	  BB emissions to SO2
+
+2011-09-01 <anton.s.darmenov@nasa.gov>
+	* Correction of seasalt emissions based on SST values following
+      Jaegle et al., 2011
+
+2011-08-31 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_4-b7
+	* fix in GOCART_GridCompMod.F90 to allow GOCART to run w/out
+	  requiring aerosols
+	* CARMA: updates to particle heating codes
+
+2011-07-19 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_4-b6
+	* fix error in "fnum" in SS_GridComp.rc
+	* fix error in Compute_Diags for BC/OC/SU
+	* modify the dust emission factor in DU_GridComp.rc
+	* update QFED locations for SU/BC/OC/CO/CO2
+	* update SulfateChemDriverMod to permit reading new 1x anthro emissions
+	* many updates to CARMA re: black carbon, optics, heating code
+	* Additions to HISTORY.rc for diagnostics
+
+2011-07-06 <jon.e.nielsen@nasa.gov>
+        * GMICHEM: New functionality added to gmi_acg.pl that adds export states
+	  for species tendencies due to chemistry. Compiled and tested in 
+	  Fortuna-2_4_BETA2 and put on HEAD.  Pushed tag: Fortuna-2_4_BETA2_JEN.
+
+2011-05-25 <jon.e.nielsen@nasa.gov>
+        * GMICHEM: New functionality added to gmi_acg.pl that adds export states
+	  for reaction rates constants and rates generated by chem_update.F90.   
+	  Compiled and tested in Fortuna-2_4_BETA2 and put on HEAD.
+
+2011-04-29 <jon.e.nielsen@nasa.gov>
+        * GMICHEM: New gmi_acg.pl, along with mapl_acg.pl, are run in a three-
+          step process to generate code fragments for declaring and getting
+          pointers and filling some export states.  Scavenging and deposition
+          export specs have been added for several species, in addition to HBr 
+          (see entry immediately below).  Tested in Fortuna-2_4_BETA1 and 
+          compiled in BETA_2, and put on HEAD.
+
+2011-04-12 <jon.e.nielsen@nasa.gov>
+        * GOCART: CO and CO2 rc changes from 2011-03-18 propagated to CMIP and PIESA.
+	* GMICHEM: Inserted Henry's Law constants for HBr in setkin_depos.h.
+
+2011-03-30 <jon.e.nielsen@nasa.gov> STRATCHEM updates:
+        * Import A-grid cell area from DYN, making SUBROUTINE setmcor obsolete.
+	* Added capability to set lightning NOx source magnitude in SC_GridComp.rc.
+	* Maximum solar zenith angle for daylight computations now parsed from 
+          SC_GridComp.rc.  Code and tables work up to 94 degrees.
+        * Added Chapman functions to meso_phot.F.
+	* Grab new xtab file from Randy Kawa that fixes NO3 photolysis rate.
+	* Use h2oc from SUBROUTINE pscs instead of QCTOT when sedimenting NAT.
+        * Merged and compiled with Fortuna-2_4_UNSTABLE and put on HEAD.
+
+2011-03-18 <jon.e.nielsen@nasa.gov>
+        * Removed the GEOS-4 references in CO2.
+        * Rewrote the PBL partitioning for biomass burning emissions in
+	  both CO and CO2, using ZLE (instead of pressure) to get layer 
+	  depths and compare with ZPBL.  Not zero diff.
+	* Moved CO emission amplification factors ff, bf, bb to RC file.
+        * Merged with Fortuna-2_4_BETA1 and put on HEAD.
+
+2011-03-11 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_4-b3
+	* merge to Fortuna-2_4_BETA1
+
+2011-03-08 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_4-b2
+        * update SU volcanic emissions
+        * tweak SS resource file particle sizes and emission
+          efficiency
+        * change SS optical lookup tables to v3
+
+2011-03-09 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_3-b10
+        * bring in changes from AeroChem-Fortuna-2_4-b2
+
+2011-02-25 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_3-b8
+        * fixed bug BC/OC_GridCompMod.F90 that was removing hydrophobic
+          BC/OC in wet deposition
+        * turned GAAS off by default in GEOS_ChemGridComp.rc
+        * turned off AOT calculation in post-processing scripts
+        * modified diagnostic names in SU (and HISTORY) to be all
+          upper case
+        * modified AGCM resource to have diurnal BB emissions on
+
+2011-02-19 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_3-b7
+        * Introduced scaling factors in SS_GridComp.rc (and code)
+          to scale sea salt emissions
+        * Scale sea salt emissions to 0.5 x calculated emissions
+          to reduce sea salt loading
+        * Change dust wet removal and convective scavenging efficiency
+          to be like that of hydrophilic aerosol; based on results of
+          Nowottnick et al. 2011 for TC4 study
+        * Bug fix in GOCART unit tester and GNUmakefile
+        * Updates to CARMA from SVN (introduces dry dep)
+        * Add CARMA unit tester
+        * Note: Arlindo adds broken H2O_GridComp to prior tag; I remove
+          it from this tag because it fails to compile; resorts to stubs
+
+2010-12-09 <arlindo.dasilva@nasa.gov>, Tag AeroChem-Fortuna-2_3-b4
+	* Introduced GAAS_GridComp, the Aerosol Assimilation component.
+	  This version reads in gridded AOD analysis with averaging
+	  kernel.
+	* GEOS_ChemEnvGridComp: now exports "DELP". This really should
+	  come from Dynamics.
+	* MAPL_Base: introduced MAPL_SimpleBundle
+	* Chem_Base: introduced Chem_SimpleBundle (extension of 
+	  MAPL_SimpleBundle); replaced Chem_AodMod with a newer version
+	  based on the MAPL_SimpleBundle.
+	
+2010-11-30 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_3-b3
+	* Added metadata for cloud-aerosol interaction to GOCART
+	  DU/BC/OC/SU/SS contributed by P. Colarco, D. Barahona; made
+	  associated modification to Chem_RegistryMod.F90
+	* Updated CARMAchem_GridComp to NCAR/SVN codebase; changes to
+	  coupler and utility modules to accomodate; updated
+	  SmokeEmissionMod.F90; contributions by P. Colarco, J.A. Smith
+	* GOCART resource files currently using QFED emissions
+		
+2010-11-30 <anton.s.darmenovo@nasa.gov>
+	* Bug fixes to extinction and scattering coefficients: the total
+	  extinction and scattering coefficients of SS, DU, SU, OC and BC
+	  were not summed over the bins.
+
+2010-11-23 <anton.s.darmenovo@nasa.gov>
+	* Maring correction to dust settling velocity. The correction
+	  is not applied by default. It can be enabled by setting the
+	  maringFlag in DU_GridComp.rc to an integer different than 0.
+
+2010-11-19 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_3-r2-b1
+	* GOCART_GridCompMod: merge to TRUNK, remove CARMA service 
+	  component reference
+	* CARMAchem_GridComp: move to latest version of core code
+	  based on NCAR SVN repository; restructured relative to older
+	* GOCART: Update BC/DU/OC/SS/SU components to include metadata
+	  from registry files needed in aerosol indirect effect
+	* Chem_Base/Chem_RegistryMod.F90: Merged to TRUNK to incorporate
+	  metadata needed from GOCART for aerosol indirect effect; removed
+	  references to AutoChem and CARMA components from module and
+	  associated Chem_Registry.rc files
+	
+2010-11-18 <arlindo.dasilva@nasa.gov>, Tag AeroChem-Fortuna-2_3-r2
+	* Bug fixes contributed by A. Darmenov, J. E. Nielsen & L. Ott.
+	* Chem_Base/Chem_Registry.rc: added missing doing_CH4 resource;
+	  similar changes in CMIP and PIESA rc files.
+	* CO_GridComp: fixed biogenic emission bug; emissions were being
+	  scaled twice and sometimes uninitialized leading to
+ 	  non-reproducibility. GNUmakefile brought to trunk and rc file
+	  modified to refer to proper CH4.
+
+2010-11-12 <arlindo.dasilva@nasa.gov>, Tag AeroChem-Fortuna-2_3-r1
+	* Introducing OPS, PIESA and CMIP specific resource files
+	* Switching to QFED-v2 biomass burning emissions for OPS and PIESA
+	* Synchronized with Fortuna-2.3 UNSTABLE as of today
+	* CH4 component now included (off by default)
+	* CARMA is also included (off by default)
+	* GMI includes recent updates by Eric Nielsen (off by default)
+	* CO_GridCompMod: fixed bug in CMIP style emissions/resource filename handling
+	* Chem_Shared: introduced SulfateChemDriverMod.F90 to replace
+	  chemistry in GOCART/SU component
+        * Emissions: handling of emissions in SulfateChemDriverMod.F90
+	  assumes emission files are cyclic
+        * FvDyCore: implemented blending method for intermittent replay
+        * Chem_UtilMod.F90: implement bug fix to check vertical level orientation
+	  of 3d input files
+	
+2010-04-15 <anton.s.darmenovo@nasa.gov>, Tag asd-piesa-Fortuna-2_1_p2-m17-AR5
+	* Adds new GOCART diagnostics required by the CMIP5/AR5 
+	  experimental protocol.
+	* Fixes SO4MASS units in SU_Registry.rc
+
+2010-04-15 <peter.r.colarco@nasa.gov>, Tag AeroChem-Fortuna-2_1-m3
+	* GOCART on creation of the chem bundle w_c change sense of w_c%rh
+	  to be assumed scaled 0 - 1.  In components making Chem_MieQuery
+	  calls removed the division of w_c%rh by 100, so now the code
+	  uniformly expects rh scaled 0 - 1.
+	
+2010-04-13 <arlindo.dasilva@nasa.gov>, Tag AeroChem-Fortuna-2_1-m3
+	* Fixed problem with O3/OX in radiation
+	* Temporarily removed AERO_PROVIDER/RATS_PROVIDER from
+	  GEOS_ChemGridComp.rc because of ANALYSIS_OX_PROVIDER
+	  issue
+	
+2010-03-22 <arlindo.dasilva@nasa.gov>, Tag AeroChem-Fortuna-2_1-m2
+	* Adds CARMAchem and GEOSCHEMchem components at the GEOSchem_GridComp
+	  level; the old CARMA under GOCART is now orphanded
+	* Adds GEOS_ChemGridComp.rc resource file; here is where
+	  AERO_PROVIDER/RATS_PROVIDER is now specified; it also
+	  have hooks for enabling each child component.
+	* Adds diurnal cycle for biomass burning emissions in GOCART.
+	* Initial implementation of GOCART/GMI coupling; this will be
+	  revised later to include the EXTERNAL_CHEMISTRY bundle as
+	  an import to GOCART.
+	* CHEMISTRY now exports an standard set of RATS
+	  which is then connected at the Physics level; StratChem/GMI
+	  tracer variable names no longer qualified by the component name
+	  (e.g., it is now "CO" instead of "GMI::CO"); GOCART variables
+	  still qualified with GOCART:: (to be fixed in the next release).
+	  
+	
+2007-07-11 <arlindo.dasilva@nasa.gov>, Tag gAdas-1_5beta10p14-c1
+	* DU_GridCompMod.F90: fixed bin-averaged DU_Mass export variable
+	which was not being computed (output was all zeros)
+	* SS_GridCompMod.F90: ditto
+	* SS_Registry.rc: changed "Dust" to "Seasalt"
+
+2007-06-29 <arlindo.dasilva@nasa.gov>, Tag gAdas-1_5beta10p12-c1
+	* GEOS_ChemEnvGridComp.F90: added non-convective precip (NCN_PRCP)
+	as an export, eliminated debris imports and exports (FRLAND, FRICE,
+	FROCEAN and EPV)
+	* GEOS_ChemGridComp.F90: made connection for NCN_PRECP
+	* GOCART_GridCompMod.F90: now imports NCN_PRCP
+	* ??_GridCompMod.F90 where ?? stands for DU, SS, SU, BC and OC -
+	now uses NCN_PRCP directly; fixed bug which was overwriting the
+	TPREC pointer and causing a corrupted diagnostic.
+	

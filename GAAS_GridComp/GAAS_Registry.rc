@@ -1,0 +1,98 @@
+#
+# This the GEOS-5 Aerosol Analysis System (GAAS) Grid Component Registry. It defines Import,
+# Internal and Export states for this component.
+#
+# !REVISION HISTORY:
+#  30Nov2010  da Silva  First Version
+#
+# -----------------------------------------------------------------
+
+COMP_NAME: GAAS
+
+# Only change the Registry version when major structural changes
+# occurs, not changes in content
+# --------------------------------------------------------------
+  MAPL_REGISTRY_VERSION: 1.00  
+
+#                               ------------
+#                               Import State
+#                               ------------
+
+<ImportSpec name="GAAS", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,long_name">
+# ---------|------------|-----|---|----|---|---|-----|------|--------------------------
+#  Short   |            |     | V |Item|Intervl| Sub | Def  |        Long
+#  Name    |   Units    | Dim |Loc|Type| R | A |Tiles| ault |        Name
+# ---------|------------|-----|---|----|---|---|-----|------|--------------------------   
+   DELP    |    Pa      | xyz | C |    |   |   |     |      | Pressure Thickness
+    RH2    |     1      | xyz | C |    |   |   |     |      | Relative Humidity 
+#
+   du001   |  kg/kg     | xyz | C |    |   |   |     |      | Dust Mixing Ratio Bin 1
+   du002   |  kg/kg     | xyz | C |    |   |   |     |      | Dust Mixing Ratio Bin 2
+   du003   |  kg/kg     | xyz | C |    |   |   |     |      | Dust Mixing Ratio Bin 3
+   du004   |  kg/kg     | xyz | C |    |   |   |     |      | Dust Mixing Ratio Bin 4
+   du005   |  kg/kg     | xyz | C |    |   |   |     |      | Dust Mixing Ratio Bin 5
+#
+   ss001   |  kg/kg     | xyz | C |    |   |   |     |      | Sea Salt Mixing Ratio Bin 1
+   ss002   |  kg/kg     | xyz | C |    |   |   |     |      | Sea Salt Mixing Ratio Bin 2
+   ss003   |  kg/kg     | xyz | C |    |   |   |     |      | Sea Salt Mixing Ratio Bin 3
+   ss004   |  kg/kg     | xyz | C |    |   |   |     |      | Sea Salt Mixing Ratio Bin 4
+   ss005   |  kg/kg     | xyz | C |    |   |   |     |      | Sea Salt Mixing Ratio Bin 5
+#
+   ni001   |  kg/kg     | xyz | C |    |   |   |     |      | Nitrate Mixing Ratio Bin 1
+   ni002   |  kg/kg     | xyz | C |    |   |   |     |      | Nitrate Mixing Ratio Bin 3
+   ni003   |  kg/kg     | xyz | C |    |   |   |     |      | Nitrate Mixing Ratio Bin 4
+#
+    SO4    |  kg/kg     | xyz | C |    |   |   |     |      | SO4 Mixing Ratio
+#
+  OCphobic |  kg/kg     | xyz | C |    |   |   |     |      | Hydrophobic Organic Carbon Mixing Ratio 
+  OCphilic |  kg/kg     | xyz | C |    |   |   |     |      | Hydrophilic Organic Carbon Mixing Ratio 
+  BCphobic |  kg/kg     | xyz | C |    |   |   |     |      | Hydrophobic Black Carbon Mixing Ratio 
+  BCphilic |  kg/kg     | xyz | C |    |   |   |     |      | Hydrophilic Black Carbon Mixing Ratio 
+# ---------|------------|-----|---|----|---|---|-----|------|--------------------------
+</ImportSpec>
+
+#                               ------------
+#                               Export State
+#                               ------------
+
+<ExportSpec name="GAAS", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,long_name">
+# ---------|------------|-----|---|----|---|---|-----|---------------------------------
+#  Short   |            |     | V |Item|Intervl| Sub |          Long
+#  Name    |   Units    | Dim |Loc|Type| R | A |Tiles|          Name
+# ---------|------------|-----|---|----|---|---|-----|---------------------------------
+  AODANA   |     1      | xy  | C |    |   |   |     | Aerosol Optical Depth Analysis
+  AODINC   |     1      | xy  | C |    |   |   |     | Aerosol Optical Depth Analysis Increment
+#
+  DUANA    |  kg/kg     | xyz | C |    |   |   |     | Dust Mixing Ratio Analysis
+  SSANA    |  kg/kg     | xyz | C |    |   |   |     | Sea-salt Mixing Ratio Analysis
+  NIANA    |  kg/kg     | xyz | C |    |   |   |     | Nitrate Mixing Ratio Analysis
+  SUANA    |  kg/kg     | xyz | C |    |   |   |     | Sulfate Mixing Ratio Analysis
+  BCANA    |  kg/kg     | xyz | C |    |   |   |     | Black Carbon Mixing Ratio Analysis
+  OCANA    |  kg/kg     | xyz | C |    |   |   |     | Organic Carbon Mixing Ratio Analysis
+#
+  DUINC    |  kg/kg     | xyz | C |    |   |   |     | Dust Mixing Ratio Analysis Increments
+  SSINC    |  kg/kg     | xyz | C |    |   |   |     | Sea-salt Mixing Ratio Analysis Increments
+  NIINC    |  kg/kg     | xyz | C |    |   |   |     | Nitrate Mixing Ratio Analysis Increments
+  SUINC    |  kg/kg     | xyz | C |    |   |   |     | Sulfate Mixing Ratio Analysis Increments
+  BCINC    |  kg/kg     | xyz | C |    |   |   |     | Black Carbon Mixing Ratio Analysis Increments
+  OCINC    |  kg/kg     | xyz | C |    |   |   |     | Organic Carbon Mixing Ratio Analysis Increments
+# ---------|------------|-----|---|----|---|---|-----|---------------------------------
+</ExportSpec>
+
+#                               --------------
+#                               Internal State
+#                               --------------
+
+#
+# Note: 1) For friendlies, use "D" for dynamics, "T" for turbulence and "C" for convection; leave blank otherwise
+#       2) If quantity requires no restart, put an 'x' in the No Rst column
+
+#InternalSpec name="GAAS", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,norestart,halowidth,friendlyto,long_name">
+# -------------|------------|-----|---|----|---|---|-----|------|----|----|---------|---------------------------------
+#  Short       |            |     | V |Item|Intervl| Sub | Def  | No | Ha | Friends |            Long
+#  Name        |   Units    | Dim |Loc|Type| R | A |Tiles| ault | Rst| lo |         |            Name
+# -------------|------------|-----|---|----|---|---|-----|------|----|----|---------|---------------------------------
+# -------------|------------|-----|---|----|---|---|-----|------|----|----|---------|---------------------------------
+#/InternalSpec>
+
+

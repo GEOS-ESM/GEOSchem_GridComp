@@ -1,0 +1,43 @@
+#
+# Resource file for the GEOS aerosol chemistry grid component.
+#
+#   15 Aug 2012  A. Darmenov   
+#--------------------------------------------------------------------
+
+verbose: .True.
+
+gas_chemistry:      .True.
+aqueous_chemistry:  .True.
+
+
+# OCS chemistry and boundary conditions
+# -------------------------------------
+ocs_chemistry:   .False.
+ocs_surface_vmr: 510.0e-12   # 'mol/mol'
+
+# VOC chemistry and boundary conditions
+# -------------------------------------
+voc_chemistry:          .FALSE. 
+voc_BiomassBurnFactor:  0.013   # 'g/g CO'
+voc_AnthroFactor:       0.069   # 'g/g CO'
+voc_MW:                 0.150 # 'kg/mol'
+soa_MW:                 0.161 # 'kg/mol'
+
+# Fix for reading offline oxidant files quirk
+# -------------------------------------------
+flip_oxidant_fields: .False.
+
+
+# Maximum allowed time step for integrating aqueous phase chemistry kinematics
+# ----------------------------------------------------------------------------
+aqueous_chemistry_solver_max_dt: 60
+
+
+# Heights of aviation LTO, CDS and CRS layers, 'm'
+# ------------------------------------------------
+aviation_vertical_layers: 0.0 100.0 9.0e3 10.0e3
+
+
+# Volcanic emissions
+# ------------------
+volcanoes: ExtData/PIESA/sfc/volcanic_v7/so2_volcanic_emissions_Carns.%y4%m2%d2.rc

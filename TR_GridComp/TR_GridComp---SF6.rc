@@ -1,0 +1,32 @@
+#
+# Resource file for Sulfur Hexafluoride tracer
+#
+
+# SHOULD THE TRACER SOURCE BE ADDED FIRST, OR THE SINK APPLIED FIRST
+# ---------------------------
+  first_phase: source
+
+# SOURCE - MODE:  constant  |  file2d  |  file3d  |  model_field  |  maintain_mixing_ratio
+# ---------------------------
+  src_mode: file2d
+  src_add: TRUE
+# --- Specify SRC_2D_SF6 in TR_ExtData.rc
+# be sure to define mw
+# --- ASSUME UNITS: kg / m2 / sec
+
+# SOURCE - Horizontal coverage: all  |  lat_zone  |  latlon_box
+# ---------------------------
+  src_horiz: all
+
+# SOURCE - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere
+# ---------------------------
+  src_vert: surface
+
+
+# SINK - MODE:  constant  |  efolding  |  halflife  |  none
+# ---------------------------
+  snk_mode: none
+
+
+# NOTE: must provide mw for wet dep, dry dep, and src=[decay_of_another_species | file2d | maintain_mixing_ratio]
+  mw: 146.05

@@ -1,0 +1,85 @@
+#
+# Resource file defining LDE parameters and file names
+#
+
+#                    ------------------
+#                    Dynamic Parameters
+#                    ------------------
+
+
+ExpId: a0008
+
+Layout_Nx: 4
+Layout_Ny: 6
+
+CoresPerNode: 12 # System Dependent!!!!!
+
+# Lat/Lon
+# -------
+#  IM_World: 576
+#  JM_World: 361
+
+# Cubed-sphere: C180
+# ------------------
+  IM_World: 180
+  JM_World: 1080
+
+LM_World: 72
+CM_World: 1
+
+top_vertical_layer: 36 # k = 36, p ~ 72 hPa
+
+nymd: 20080630
+nhms: 120000
+
+verbose: .TRUE.
+
+single_channel:  550.  # Single channel to analyze
+
+
+#                    -------------------
+#                    File Name Templates
+#                    -------------------
+
+aer_bkg_filename: /home/adasilva/silo/LDE/dR_Fortuna-2-4-b4.inst3d_aer_v.20080630_1200z.nc4
+aod_bkg_filename: /home/adasilva/silo/LDE/dR_Fortuna-2-4-b4.aod_f.sfc.20080630_1200z.nc4
+aod_inc_filename: /home/adasilva/silo/LDE/dR_Fortuna-2-4-b4.aod_d.sfc.20080630_1200z.nc4
+
+aer_ana_filename: ./aer_a.nc4
+
+aerbias_internal_restart:     aerbias_internal_restart.nc
+aerbias_internal_checkpoint:  aerbias_internal_checkpoint.nc
+
+aodbias_internal_restart:     aodbias_internal_restart.nc
+aodbias_internal_checkpoint:  aodbias_internal_checkpoint.nc
+
+#
+# We assume the analysis increment file (aod_d) are in log(AOD+eps), while the
+#  AOD background file (aod_f) is in plain AOD.
+# Regardless of whether the AOD analysis was performed in log-transform space or not,
+# this resource constrols whether AOD or log(AOD+eps) is used to generate the ensembles.
+#
+# Because of Log(AOD+eps) is non-linear as a function of q, it may be better to perform
+#  this operation using plain AOD.
+#
+perform_lde_in_aod_variable: .TRUE.
+
+eps_for_log_transform_aod: 0.01
+
+#                      --------------
+#                      LDE Parameters
+#                      --------------
+
+#number_of_ensemble_members: 300
+number_of_ensemble_members: 100
+#stencil_radius_in_km: 1500.
+stencil_radius_in_km: 1000.
+aod_weight_delta: 0.5
+
+lde_debug_filename: aod_lde.nc   # for debugging only
+
+
+
+
+
+

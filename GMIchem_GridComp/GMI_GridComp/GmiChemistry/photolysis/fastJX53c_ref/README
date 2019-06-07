@@ -1,0 +1,3 @@
+This directory contains the latest version of FastJX53.c.
+It is the reference for FastJX53.c because only an "interface" to
+the GMI code was implemented.

@@ -1,0 +1,17 @@
+#MODEL        kpp_achem_gas
+
+#LANGUAGE     Fortran90
+#DOUBLE       on
+
+#DRIVER       general
+#INTFILE      kpp_lsode
+#JACOBIAN     SPARSE_LU_ROW
+#FUNCTION     AGGREGATE
+
+#REORDER      on
+#DUMMYINDEX   on
+#HESSIAN      on
+#STOICMAT     on
+#EQNTAGS      off
+#MEX          on
+

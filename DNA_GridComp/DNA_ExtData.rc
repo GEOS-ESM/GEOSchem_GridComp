@@ -1,0 +1,92 @@
+#
+# Sample resource file exemplifying the specification of an interface to
+# boundary conditions, emissions and other external files. This resource
+# file is meant to be read by the MAPL_ExtData Grid Component.
+#
+
+PrimaryExports%%
+# -------------|-------|-------|--------|----------------------|--------|--------|-------------|----------|
+#  Import      |       |       | Regrid |        Refresh       | OffSet | Scale  | Variable On |   File   |
+#  Name        | Units | Clim  | Method |     Time Template    | Factor | Factor |     File    | Template |
+# -------------|-------|-------|--------|----------------------|--------|--------|-------------|----------|
+AEROSOL_EXT_BAND01   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel001
+AEROSOL_SSA_BAND01   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel001 
+AEROSOL_ASY_BAND01   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel001
+#
+AEROSOL_EXT_BAND02   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel002 
+AEROSOL_SSA_BAND02   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel002
+AEROSOL_ASY_BAND02   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel002
+#
+AEROSOL_EXT_BAND03   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel003
+AEROSOL_SSA_BAND03   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel003
+AEROSOL_ASY_BAND03   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel003
+#
+AEROSOL_EXT_BAND04   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel004
+AEROSOL_SSA_BAND04   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel004
+AEROSOL_ASY_BAND04   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel004
+#
+AEROSOL_EXT_BAND05   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel005
+AEROSOL_SSA_BAND05   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel005
+AEROSOL_ASY_BAND05   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel005
+#
+AEROSOL_EXT_BAND06   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel006
+AEROSOL_SSA_BAND06   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel006
+AEROSOL_ASY_BAND06   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel006
+#
+AEROSOL_EXT_BAND07   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel007
+AEROSOL_SSA_BAND07   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel007
+AEROSOL_ASY_BAND07   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel007
+#
+AEROSOL_EXT_BAND08   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel008
+AEROSOL_SSA_BAND08   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel008
+AEROSOL_ASY_BAND08   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel008
+#
+AEROSOL_EXT_BAND09   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel009
+AEROSOL_SSA_BAND09   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel009
+AEROSOL_ASY_BAND09   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel009
+#
+AEROSOL_EXT_BAND10   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel010
+AEROSOL_SSA_BAND10   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel010
+AEROSOL_ASY_BAND10   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel010
+#
+AEROSOL_EXT_BAND11   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel011
+AEROSOL_SSA_BAND11   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel011
+AEROSOL_ASY_BAND11   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel011
+#
+AEROSOL_EXT_BAND12   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel012
+AEROSOL_SSA_BAND12   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel012
+AEROSOL_ASY_BAND12   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel012
+#
+AEROSOL_EXT_BAND13   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel013
+AEROSOL_SSA_BAND13   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel013
+AEROSOL_ASY_BAND13   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel013
+#
+AEROSOL_EXT_BAND14   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel014
+AEROSOL_SSA_BAND14   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel014
+AEROSOL_ASY_BAND14   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel014
+#
+AEROSOL_EXT_BAND15   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel015
+AEROSOL_SSA_BAND15   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel015
+AEROSOL_ASY_BAND15   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel015
+#
+AEROSOL_EXT_BAND16   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel016
+AEROSOL_SSA_BAND16   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel016
+AEROSOL_ASY_BAND16   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel016
+#
+AEROSOL_EXT_BAND17   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel017
+AEROSOL_SSA_BAND17   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel017
+AEROSOL_ASY_BAND17   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel017
+#
+AEROSOL_EXT_BAND18   '1'                 Y        N               -              0.0      1.0   extinction  /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel018
+AEROSOL_SSA_BAND18   '1'                 Y        N               -              0.0      1.0   ssa         /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel018
+AEROSOL_ASY_BAND18   '1'                 Y        N               -              0.0      1.0   gasym       /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel018
+%%
+
+DerivedExports%%
+# ---------|---------|--------------------------------------------|
+#  Export  | Primary |_________________ Mask _____________________|
+#  Name    |  Name   |    Name    |           Expression          |    
+# ---------|---------|------------|-------------------------------|
+# ---------|---------|------------|-------------------------------|
+%%
+

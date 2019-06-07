@@ -1,0 +1,55 @@
+#
+# Sample resource file exemplifying the specification of an interface to
+# boundary conditions, emissions and other external files. This resource
+# file is meant to be read by the MAPL_ExtData Grid Component.
+#
+
+PrimaryExports%%
+# -------------|-------|-------|--------|----------------------|--------|--------|-------------|----------|
+#  Import      |       |       | Regrid |        Refresh       | OffSet | Scale  | Variable On |   File   |
+#  Name        | Units | Clim  | Method |     Time Template    | Factor | Factor |     File    | Template |
+# -------------|-------|-------|--------|----------------------|--------|--------|-------------|----------|
+
+# SO2 emissions
+SO2_EMIS_FIRES         'kg m-2 s-1'         N        Y     %y4-%m2-%d2T12:00:00Z   0.0      1.0     biomass      ExtData/PIESA/sfc/QFED/v2.4r6/Y%y4/M%m2/qfed2.emis_so2.005.%y4%m2%d2.nc4
+SO2_EMIS_NONENERGY     'kg m-2 s-1'         N        Y               0             0.0      1.0     sanl1        ExtData/MERRA2/sfc/edgar-v42.emis_so2.non_energy.x1152_y721.19700703T12z_20200703T00z.nc4
+SO2_EMIS_ENERGY        'kg m-2 s-1'         N        Y               0             0.0      1.0     sanl2        ExtData/MERRA2/sfc/edgar-v42.emis_so2.energy.x1152_y721.19700703T12z_20200703T00z.nc4
+SO2_EMIS_SHIPPING      'kg m-2 s-1'         N        Y               0             0.0      1.0     so2_ship     ExtData/MERRA2/sfc/edgar-v41.emis_so2.navigation.x360_y181_t47.19750703T12z_20210703T00z.nc4
+SO2_EMIS_AIRCRAFT_LTO  'kg m-2 s-1'         Y        Y               0             0.0      1.0     so2_aviation ExtData/PIESA/sfc/HTAP/v2.2/htap-v2.2.emis_so2.aviation_lto.x3600_y1800_t12.2010.nc4
+SO2_EMIS_AIRCRAFT_CDS  'kg m-2 s-1'         Y        Y               0             0.0      1.0     so2_aviation ExtData/PIESA/sfc/HTAP/v2.2/htap-v2.2.emis_so2.aviation_cds.x3600_y1800_t12.2010.nc4
+SO2_EMIS_AIRCRAFT_CRS  'kg m-2 s-1'         Y        Y               0             0.0      1.0     so2_aviation ExtData/PIESA/sfc/HTAP/v2.2/htap-v2.2.emis_so2.aviation_crs.x3600_y1800_t12.2010.nc4
+
+# Surface seawater concentration of DMS
+DMS_CONC_OCEAN         'mol m-3'            Y        Y               0             0.0      1.0e-6  conc         ExtData/MERRA2/sfc/DMSclim_sfcconcentration.x360_y181_t12.Lana2011.nc4
+
+# NH3 emissions
+NH3_EMIS               'kg m-2 s-1'         N        Y               0             0.0      1.0     emi_nh3      ExtData/MERRA2/sfc/edgar-v42.emis_nh3.anthropogenic.x1152_y721.19700703T12z_20200703T00z.nc4
+NH3_EMIS_FIRE          'kg m-2 s-1'         N        Y     %y4-%m2-%d2T12:00:00Z   0.0      1.0     biomass      ExtData/PIESA/sfc/QFED/v2.4r6/Y%y4/M%m2/qfed2.emis_nh3.005.%y4%m2%d2.nc4
+
+# Volume mixing ratio of prescribed oxidant field
+OH                     'mol mol-1'          N        N               0             0.0      1.0     OH           ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
+NO3                    'mol mol-1'          N        N               0             0.0      1.0     NO3          ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
+#HO2                   'mol mol-1'          N        N               0             0.0      1.0     HO2          ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
+H2O2                   'mol mol-1'          N        N               0             0.0      1.0     H2O2         ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
+
+
+# SOA(gas) emissions
+SOAG_EMIS              'm-2 s-1'            Y        N               0             0.0      1.0     soag         /home/adarmeno/projects/SOAG/SOAG.emiss.x144_y91_t12.1990.nc4
+
+# CO emissions for VOC
+CO_BIOMASS_VOC         'kg m-2 s-1'         N        Y     %y4-%m2-%d2t12:00:00Z   0.0      1.0     biomass       ExtData/PIESA/sfc/QFED/v2.4r6/Y%y4/M%m2/qfed2.emis_co.005.%y4%m2%d2.nc4
+CO_BF_VOC              'kg m-2 s-1'         Y        Y     %y4-%m2-%d2t12:00:00Z   0.0      1.0     emcobf        ExtData/PIESA/sfc/co_biofuel_v2.x360_y181_t12.2001.nc
+CO_FS_VOC              'kg m-2 s-1'         Y        Y     %y4-%m2-%d2t12:00:00Z   0.0      1.0     emcofs        ExtData/PIESA/sfc/co_fossilfuel_v2.x360_y181_t12.2001.nc
+
+# Photolysis rates
+#jH2O2                 's-1'                Y        N               0             0.0      1.0     jH2O2        /home/adarmeno/projects/GMI-jH2O2/Y2008/gmi_jh2o2.x144_y91_z72.2008%m2.nc4
+%%
+
+DerivedExports%%
+# ---------|---------|--------------------------------------------|
+#  Export  | Primary |_________________ Mask _____________________|
+#  Name    |  Name   |    Name    |           Expression          |    
+# ---------|---------|------------|-------------------------------|
+# ---------|---------|------------|-------------------------------|
+%%
+

@@ -1,0 +1,62 @@
+#
+# Resource file for MAM Aerosol Optics Calculator
+#
+#
+# Usage: [mpirun -np NP] ./mam_optics_calculator.xx
+#
+# 
+
+# --------------------------------------------
+# Mode names can be specified as follows
+# --------------------------------------------
+# MAM7 scheme: AIT - Aitken mode                   
+#              ACC - Accumulation mode
+#              PCM - Primary Carbon mode
+#              FSS - Fine Seasalt mode
+#              CSS - Coarse Seasalt mode
+#              FDU - Fine Dust mode
+#              CDU - Coarse Dust mode
+# --------------------------------------------
+# MAM3 scheme: AIT - Aitken mode
+#              ACC - Accumulation mode
+#              COR - Coarse mode
+# --------------------------------------------
+
+
+verbose: .false.           
+
+# MAM scheme [default = MAM7]
+scheme: MAM7
+
+
+# grid/decomposition
+NX: 1
+NY: 1
+
+WORLD_IM: 180
+WORLD_JM:  91
+WORLD_LM:  72
+
+# date and time
+nymd: 20101215
+nhms: 100000
+
+# input and output files
+aerosol_file: /home/adarmeno/results/b_mam_test_03/holding/mam_inst3d_aer_v/b_mam_test_03.mam_inst3d_aer_v.20101215_1000z.nc4
+ optics_file: mam_ext3d.nc4
+
+# wavelengths, 'm'
+wavelength: 550.0e-9  640.0e-9
+
+# modes
+modes: ACC AIT PCM FSS CSS FDU CDU 
+
+# aerosol optics lookup tables
+MAM_AIT_OPTICS: /home/adarmeno/tmp/MAM7-OpticsTables/_optics_MAM7_AIT.v0.2-rc0.nc4
+MAM_ACC_OPTICS: /home/adarmeno/tmp/MAM7-OpticsTables/_optics_MAM7_ACC.v0.2-rc0.nc4
+MAM_PCM_OPTICS: /home/adarmeno/tmp/MAM7-OpticsTables/_optics_MAM7_PCM.v0.2-rc0.nc4
+MAM_FSS_OPTICS: /home/adarmeno/tmp/MAM7-OpticsTables/_optics_MAM7_FSS.v0.2-rc0.nc4
+MAM_CSS_OPTICS: /home/adarmeno/tmp/MAM7-OpticsTables/_optics_MAM7_CSS.v0.2-rc0.nc4
+MAM_FDU_OPTICS: /home/adarmeno/tmp/MAM7-OpticsTables/_optics_MAM7_FDU.v0.2-rc0.nc4
+MAM_CDU_OPTICS: /home/adarmeno/tmp/MAM7-OpticsTables/_optics_MAM7_CDU.v0.2-rc0.nc4
+

@@ -1,0 +1,21 @@
+
+#define NEW_IO
+#define RAD_O3_GCM_HRES
+#define RAD_O3_DECADAL_INPUT
+#define TRAC_ADV_CPU
+#define USE_ENT
+#define TRACERS_ON
+#define TRACERS_WATER
+#define TRACERS_DRYDEP
+#define TRDIAG_WETDEPO
+#define NO_HDIURN
+#define TRACERS_SPECIAL_Shindell
+#define SHINDELL_STRAT_CHEM
+#define TRACERS_TERP
+#define BIOGENIC_EMISSIONS
+#define BC_ALB
+#define TRACERS_AMP
+#define TRACERS_AMP_M1
+#define TRACERS_VOLCEXP
+#define CLD_AER_CDNC
+#define BLK_2MOM                              
