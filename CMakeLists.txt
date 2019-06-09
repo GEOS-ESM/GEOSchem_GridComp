@@ -1,5 +1,7 @@
 esma_set_this ()
 
+add_subdirectory(Shared)
+
 set (alldirs
   GEOSpchem_GridComp
   GOCART_GridComp
