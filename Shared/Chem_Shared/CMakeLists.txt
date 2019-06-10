@@ -31,7 +31,6 @@ endif ()
 
 esma_add_library(${this} 
    SRCS ${srcs} 
-   SUBDIRS HEMCO
    DEPENDENCIES GMAO_mpeu MAPL_Base Chem_Base)
 target_include_directories(${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 #add_definitions(-DDEBUG)
