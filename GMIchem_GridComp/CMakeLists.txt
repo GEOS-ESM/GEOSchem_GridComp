@@ -32,21 +32,6 @@ set (src_directories
   GMI_GridComp/GmiSpeciesConcentration/spcConcentrationMethod
   )
 
-include_directories (
-  GMI_GridComp
-  GMI_GridComp/GmiChemistry/include
-  GMI_GridComp/GmiChemistry/photolysis/include
-  GMI_GridComp/GmiChemistry/stratTropMech
-  GMI_GridComp/GmiShared/GmiInclude
-  GMI_GridComp/GmiChemistry/photolysis/fast_JX
-  GMI_GridComp/GmiChemistry/photolysis/fast_JX65
-  GMI_GridComp/GmiChemistry/photolysis/fast_JX53b
-  GMI_GridComp/GmiChemistry/photolysis/fastJX53c_ref
-  GMI_GridComp/GmiChemistry/photolysis/fastj 
-  )
-
-include_directories (${CMAKE_CURRENT_BINARY_DIR}/GMI_GridComp)
-
 # External dependencies
 #include_directories (${include_Chem_Shared})
 #include_directories (${include_Chem_Base})
@@ -65,7 +50,24 @@ endif ()
 
 
 esma_add_library (${this} SRCS ${srcs} DEPENDENCIES Chem_Shared GEOS_Shared)
+
+target_include_directories (${this}
+  PUBLIC
+  GMI_GridComp
+  GMI_GridComp/GmiChemistry/include
+  GMI_GridComp/GmiChemistry/photolysis/include
+  GMI_GridComp/GmiChemistry/stratTropMech
+  GMI_GridComp/GmiShared/GmiInclude
+  GMI_GridComp/GmiChemistry/photolysis/fast_JX
+  GMI_GridComp/GmiChemistry/photolysis/fast_JX65
+  GMI_GridComp/GmiChemistry/photolysis/fast_JX53b
+  GMI_GridComp/GmiChemistry/photolysis/fastJX53c_ref
+  GMI_GridComp/GmiChemistry/photolysis/fastj 
+  )
+
+target_include_directories (${this} PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/GMI_GridComp)
 target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
+
 
 
 set (gmi_gc ${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp)
