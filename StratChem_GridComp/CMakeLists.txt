@@ -78,10 +78,6 @@ set (automatic_rc
 
 set (registry SC_GridComp/SC_Registry.rc)
 
-message("this ${this}  registry ${registry}")
-message("headers ${automatic_headers}  rcs ${automatic_rc}")
-message("headers dest ${include_GEOSchem_GridComp} ${esma_etc}")
-  
 new_esma_generate_automatic_code (
   ${this} ${registry}
   "${automatic_headers}" "${automatic_rc}"
