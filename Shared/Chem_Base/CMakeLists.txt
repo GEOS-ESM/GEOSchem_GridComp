@@ -24,8 +24,10 @@ add_dependencies(MieObs_ ${this})
 
 foreach (exe Chem_Aod.x Chem_Aod3d.x ctl_crst.x Chem_BundleToG5rs.x reff_calculator.xx ext_calculator.xx)
   get_filename_component (basename ${exe} NAME_WE) # base file name
-  add_executable (${exe} ${basename}.F90)
-  target_link_libraries(${exe} ${this} ${OpenMP_Fortran_LIBRARIES})
+  ecbuild_add_executable (
+    TARGET ${exe}
+    SOURCES ${basename}.F90
+    LIBS ${this} ${OpenMP_Fortran_LIBRARIES})
   # Do not know how to propagate the flags for OpenMP link step from lower libraries.
   set_target_properties(${exe} PROPERTIES LINK_FLAGS "${OpenMP_Fortran_FLAGS}")
 endforeach ()
