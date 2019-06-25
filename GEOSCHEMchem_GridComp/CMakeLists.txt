@@ -90,3 +90,9 @@ add_custom_command (
 add_custom_target (phony_GEOSCHEMchem DEPENDS ${acg_headers})
 add_dependencies (${this} phony_GEOSCHEMchem)
 
+file (GLOB resource_files "*.rc")
+
+install(
+   FILES ${resource_files}
+   DESTINATION etc
+   )

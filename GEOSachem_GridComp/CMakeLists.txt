@@ -40,3 +40,14 @@ new_esma_generate_automatic_code (
   ${include_GEOSachem_GridComp} ${esma_etc}
   "-f"
   )
+
+set (resource_files
+   GEOS_AChemGridComp.rc
+   GEOSachem_ExtData.rc
+   GEOSachem_Registry.rc
+   )
+
+install(
+   FILES ${resource_files}
+   DESTINATION etc
+   )

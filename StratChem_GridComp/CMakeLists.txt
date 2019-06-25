@@ -85,3 +85,14 @@ new_esma_generate_automatic_code (
   "-N STRATCHEM"
   )
 
+
+set (resource_files
+   SC_GridComp/SC_GridComp.rc
+   SC_GridComp/SC_Registry.rc
+   SC_GridComp/StratChem_ExtData.rc
+   )
+
+install(
+   FILES ${resource_files}
+   DESTINATION etc
+   )

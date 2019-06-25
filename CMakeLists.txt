@@ -30,4 +30,7 @@ esma_add_library (${this}
   DEPENDENCIES MAPL_Base Chem_Shared Chem_Base
   INCLUDES ${INC_ESMF})
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/GEOS_ChemGridComp.rc ${esma_etc}/GEOS_ChemGridComp.rc COPYONLY)
+install(
+   FILES GEOS_ChemGridComp.rc
+   DESTINATION etc
+   )

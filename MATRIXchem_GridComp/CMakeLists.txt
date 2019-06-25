@@ -31,4 +31,9 @@ target_compile_definitions (${this} PRIVATE TRACERS_AMP TRACERS_AMP_M1 GEOS5_POR
 
 esma_generate_gocart_code (${this} -F)
 
-  
+file (GLOB resource_files "*.rc")
+
+install(
+   FILES ${resource_files}
+   DESTINATION etc
+   ) 

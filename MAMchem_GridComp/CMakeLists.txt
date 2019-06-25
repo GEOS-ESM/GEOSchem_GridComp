@@ -61,5 +61,10 @@ target_compile_definitions (${this} PRIVATE GEOS5 MODAL_AERO MODAL_AERO_7MODE GE
 
 esma_generate_gocart_code (${this} -F)
 
+file (GLOB resource_files "*.rc")
 
+install(
+   FILES ${resource_files}
+   DESTINATION etc
+   )
 

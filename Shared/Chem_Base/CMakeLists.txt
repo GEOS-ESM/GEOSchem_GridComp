@@ -34,8 +34,9 @@ endforeach ()
 
 # Copy RC files to build tree
 file (GLOB_RECURSE rc_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.rc)
-foreach(rc_file ${rc_files})
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${rc_file} ${esma_etc}/${rc_file} COPYONLY)
+foreach ( file ${rc_files} )
+   get_filename_component( dir ${file} DIRECTORY )
+   install( FILES ${file} DESTINATION etc/${dir} )
 endforeach()
 
 
