@@ -17,3 +17,8 @@ foreach ( file ${rc_files} )
    get_filename_component( dir ${file} DIRECTORY )
    install( FILES ${file} DESTINATION etc/${dir} )
 endforeach()
+
+install(FILES ana_lde.py DESTINATION bin)
+
+ecbuild_add_executable (TARGET ana_lde.x SOURCES ana_lde.F90  LIBS ${this})
+
