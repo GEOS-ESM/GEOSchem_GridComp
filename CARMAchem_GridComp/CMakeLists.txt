@@ -24,3 +24,14 @@ new_esma_generate_automatic_code (
   ${include_GEOSchem_GridComp} ${esma_etc}
   -v
   )
+
+set (resource_files
+   CARMAchem_GridComp_ExtData.rc
+   CARMAchem_MieRegistry.rc
+   CARMAchem_Registry.rc
+   )
+
+install( 
+   FILES ${resource_files} 
+   DESTINATION etc
+   )

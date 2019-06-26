@@ -125,3 +125,31 @@ add_dependencies (${this} phony_gmi)
 #  COMMENT "2nd stage generation of automatic code in GMI"
 #  )
 
+set ( rc_files
+   GMI_GridComp/GMI_ExtData.rc
+   GMI_GridComp/GMI_GridComp.rc
+   GMI_GridComp/GMI_Registry.rc
+)
+install (
+   FILES ${rc_files}
+   DESTINATION etc
+   )
+
+set ( ccmi1_rc_files
+   GMI_GridComp/CCMI_REF-C1/GMI_ExtData.rc
+   GMI_GridComp/CCMI_REF-C1/GMI_GridComp.rc
+)
+install (
+   FILES ${ccmi1_rc_files}
+   DESTINATION etc/CCMI_REF-C1/chemistry_files
+   )
+
+set ( ccmi2_rc_files
+   GMI_GridComp/CCMI_REF-C2/GMI_ExtData.rc
+   GMI_GridComp/CCMI_REF-C2/GMI_GridComp.rc
+)
+install (
+   FILES ${ccmi2_rc_files}
+   DESTINATION etc/CCMI_REF-C2/chemistry_files
+   )
+

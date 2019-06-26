@@ -21,15 +21,19 @@ set (srcs
   Aero_GridCompMod.F90
   )
 
+set (resource_files
+   GOCARTdata_AerRegistry.rc
+   GOCARTdata_ExtData.rc
+   ) 
+
+install( FILES ${resource_files} 
+   DESTINATION etc
+   )
+
 set (dependencies Chem_Base Chem_Shared MAPL_Base GMAO_mpeu)
 esma_add_library (${this}
   SRCS ${srcs}
   SUBCOMPONENTS ${alldirs}
   DEPENDENCIES ${dependencies}
   INCLUDES ${INC_ESMF})
-
-file (GLOB_RECURSE rc_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.rc)
-foreach(rc_file ${rc_files})
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${rc_file} ${esma_etc}/${rc_file} COPYONLY)
-endforeach()
 

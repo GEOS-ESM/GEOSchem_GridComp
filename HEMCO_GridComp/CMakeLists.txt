@@ -26,5 +26,9 @@ add_custom_command (
 add_custom_target (phony_HEMCO DEPENDS ${acg_headers})
 add_dependencies (${this} phony_HEMCO)
 
+file (GLOB resource_files "*.rc")
 
-
+install(
+   FILES ${resource_files}
+   DESTINATION etc
+   )
