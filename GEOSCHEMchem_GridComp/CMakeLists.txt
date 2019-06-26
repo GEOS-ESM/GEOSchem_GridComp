@@ -72,23 +72,13 @@ endif ()
 
 set_target_properties (${this} PROPERTIES Fortran_MODULE_DIRECTORY ${include_${this}})
 
-
-set (acg_headers
-   GEOSCHEMchem_InternalSpec___.h 
-   GEOSCHEMchem_DeclarePointer___.h 
-   GEOSCHEMchem_GetPointer___.h
-   GEOSCHEMchem_History___.rc
-  )
-
-add_custom_command (
-  OUTPUT ${acg_headers}
-  COMMAND ${esma_include}/MAPL_Base/mapl_acg.pl ${acg_flags} -v -F ${CMAKE_CURRENT_SOURCE_DIR}/GEOSCHEMchem_Registry.rc
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  MAIN_DEPENDENCY GEOSCHEMchem_Registry.rc 
-  COMMENT "Generating automated code for GEOSCHEMchem"
-  )
-add_custom_target (phony_GEOSCHEMchem DEPENDS ${acg_headers})
-add_dependencies (${this} phony_GEOSCHEMchem)
+new_esma_generate_automatic_code (
+   ${this} GEOSCHEMchem_Registry.rc
+   "GEOSCHEMCHEM_InternalSpec___.h;GEOSCHEMCHEM_DeclarePointer___.h;GEOSCHEMCHEM_GetPointer___.h"
+   GEOSCHEMCHEM_History___.rc
+   ${include_GEOSCHEMchem_GridComp} ${esma_etc}
+   "-v;-F"
+   )
 
 file (GLOB resource_files "*.rc")
 
