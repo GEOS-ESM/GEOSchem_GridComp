@@ -63,8 +63,16 @@ esma_generate_gocart_code (${this} -F)
 
 file (GLOB resource_files "*.rc")
 
+set (mamscripts mam_optics_calculator.py mam_optics_calculator.csh)
+
+ecbuild_add_executable(TARGET mam_optics_calculator.xx SOURCES mam_optics_calculator.F90 LIBS ${this})
+
 install(
    FILES ${resource_files}
    DESTINATION etc
    )
+
+install(
+   FILES ${mamscripts}
+   DESTINATION bin)
 
