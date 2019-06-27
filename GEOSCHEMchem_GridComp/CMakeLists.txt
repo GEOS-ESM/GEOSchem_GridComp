@@ -47,6 +47,19 @@ list (REMOVE_ITEM srcs
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/Headers/inquireMod.F90
    )
 
+if (CMAKE_Fortran_COMPILER_ID MATCHES Intel)
+   if (CMAKE_BUILD_TYPE MATCHES Release)
+      set (CMAKE_Fortran_FLAGS_RELEASE "")
+      foreach (src ${srcs})
+         if (${src} MATCHES GEOSCHEMchem_GridCompMod.F90)
+            set_source_files_properties (${src} PROPERTIES COMPILE_FLAGS "${FOPT2} ${GEOS_Fortran_Release_FPE_Flags} ${ALIGNCOM}")
+         else ()
+            set_source_files_properties (${src} PROPERTIES COMPILE_FLAGS "${GEOS_Fortran_FLAGS_RELEASE} ${EXTENDED_SOURCE}")
+         endif ()
+      endforeach ()
+   endif ()
+endif ()
+
 esma_add_library (${this}
    SRCS ${srcs}
    DEPENDENCIES MAPL_Base MAPL_cfio_r4 Chem_Base Chem_Shared HEMCO

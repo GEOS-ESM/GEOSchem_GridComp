@@ -42,9 +42,25 @@ foreach (dir ${src_directories})
   list (APPEND srcs ${tmpsrcs})
 endforeach()
 
+if (CMAKE_Fortran_COMPILER_ID MATCHES Intel)
+   if (CMAKE_BUILD_TYPE MATCHES Release)
+      set (CMAKE_Fortran_FLAGS_RELEASE "")
+      foreach (src ${srcs})
+         if (${src} MATCHES GMIchem_GridCompMod.F90)
+            set_source_files_properties (${src} PROPERTIES COMPILE_FLAGS "${FOPT2} ${GEOS_Fortran_Release_FPE_Flags} ${ALIGNCOM}")
+         elseif (${src} MATCHES GmiChem_GridCompClassMod.F90)
+            set_source_files_properties (${src} PROPERTIES COMPILE_FLAGS "${FOPT1} ${GEOS_Fortran_Release_FPE_Flags} ${ALIGNCOM}")
+         else ()
+            set_source_files_properties (${src} PROPERTIES COMPILE_FLAGS "${GEOS_Fortran_FLAGS_RELEASE} ${EXTENDED_SOURCE}")
+         endif ()
+      endforeach ()
+   endif ()
+endif ()
 if (CMAKE_BUILD_TYPE MATCHES Release)
-  set_source_files_properties( GMI_GridComp/GmiChem_GridCompMod.F90 PROPERTIES COMPILE_FLAGS -O2)
-  set_source_files_properties( GMI_GridComp/GmiChem_GridCompClassMod.F90 PROPERTIES COMPILE_FLAGS -O1)
+   set_source_files_properties( GMI_GridComp/GmiChem_GridCompMod.F90 
+      PROPERTIES COMPILE_FLAGS "-O2 ${common_Fortran_flags} ${GEOS_Fortran_Release_FPE_Flags} ${ALIGNCOM}")
+   set_source_files_properties( GMI_GridComp/GmiChem_GridCompClassMod.F90
+      PROPERTIES COMPILE_FLAGS "-O1 ${common_Fortran_flags} ${GEOS_Fortran_Release_FPE_Flags} ${ALIGNCOM}")
 endif ()
 
 
