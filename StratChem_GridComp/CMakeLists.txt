@@ -38,11 +38,35 @@ if (CMAKE_Fortran_COMPILER_ID MATCHES Intel)
          if (${src} MATCHES SC_GridComp/SC_GridCompMod.F90)
             set_source_files_properties (${src} PROPERTIES COMPILE_FLAGS "${FOPT2} ${GEOS_Fortran_Release_FPE_Flags} ${ALIGNCOM}")
          else ()
-            set_source_files_properties (${src} PROPERTIES COMPILE_FLAGS "${GEOS_Fortran_FLAGS_RELEASE} ${EXTENDED_SOURCE}")
+            set_source_files_properties (${src} PROPERTIES COMPILE_FLAGS "${GEOS_Fortran_FLAGS_RELEASE}")
          endif ()
       endforeach ()
    endif ()
 endif ()
+
+# Workaround for several older files that exceed the
+# 72 column limit of fixed-format Fortran source code.
+foreach (file
+    brpandl.F brpandlest.F
+    calc_qqjk.F
+    chxpart.F getBaseChem.F
+    hoxpart.F hoxpartest.F
+    interp_s.F khet3d.F
+    krates.F meso_phot.F
+    ncpandl.F ncpandlest.F
+    oxpandl.F oxpandlest.F
+    part.F partest.F
+    pscs.F rdkrate.F
+    sediment.F
+    solverd2.F solverest.F
+    sproic.F
+    storeBaseChem.F
+    verifyChemDt.F
+)
+  if (EXTENDED_SOURCE)
+    set_source_files_properties (SC_GridComp/${file} PROPERTIES COMPILE_FLAGS ${EXTENDED_SOURCE})
+  endif ()
+endforeach ()
 
 include_directories (${include_Chem_Shared})
 include_directories (${include_MAPL_Base})
