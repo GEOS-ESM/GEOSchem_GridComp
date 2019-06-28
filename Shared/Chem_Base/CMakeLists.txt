@@ -15,6 +15,8 @@ esma_add_library(${this} SRCS ${srcs} DEPENDENCIES GMAO_mpeu MAPL_Base GMAO_gfio
 target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 target_compile_definitions (${this} PRIVATE GEOS5)
 
+ecbuild_add_executable(TARGET gogo.x SOURCES gogo.F90 LIBS ${this})
+
 include (UseF2Py)
 include_directories (${esma_include}/${this})
 add_f2py_module(MieObs_ SOURCES MieObs_py.F90 
@@ -39,4 +41,4 @@ foreach ( file ${rc_files} )
    install( FILES ${file} DESTINATION etc/${dir} )
 endforeach()
 
-
+install(FILES mieobs.py ext_calculator.py reff.py extinction_calculator.csh DESTINATION bin)
