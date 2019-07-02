@@ -93,7 +93,7 @@ set (registry SC_GridComp/SC_Registry.rc)
 new_esma_generate_automatic_code (
   ${this} ${registry}
   "${automatic_headers}" "${automatic_rc}"
-  ${include_GEOSchem_GridComp} ${esma_etc}
+  ${include_StratChem_GridComp} ${esma_etc}
   "-N STRATCHEM"
   )
 
