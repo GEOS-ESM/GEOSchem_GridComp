@@ -20,7 +20,7 @@ ecbuild_add_executable(TARGET gogo.x SOURCES gogo.F90 LIBS ${this})
 include (UseF2Py)
 include_directories (${esma_include}/${this})
 add_f2py_module(MieObs_ SOURCES MieObs_py.F90 
-   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+   DESTINATION lib/Python
    INCLUDEDIRS ${CMAKE_CURRENT_BINARY_DIR} ${include_${this}} )
 add_dependencies(MieObs_ ${this})
 
@@ -41,4 +41,5 @@ foreach ( file ${rc_files} )
    install( FILES ${file} DESTINATION etc/${dir} )
 endforeach()
 
-install(FILES mieobs.py ext_calculator.py reff.py extinction_calculator.csh DESTINATION bin)
+install(PROGRAMS ext_calculator.py reff.py extinction_calculator.csh DESTINATION bin)
+install(PROGRAMS mieobs.py DESTINATION lib/Python)
