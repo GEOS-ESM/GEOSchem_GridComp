@@ -73,6 +73,6 @@ install(
    )
 
 install(
-   FILES ${mamscripts}
+   PROGRAMS ${mamscripts}
    DESTINATION bin)
 
