@@ -151,6 +151,13 @@ install (
    DESTINATION etc
    )
 
+foreach (file ${first_stage_files})
+   install(
+      FILES ${CMAKE_CURRENT_BINARY_DIR}/${file}
+      DESTINATION etc
+      )
+endforeach ()
+
 set ( ccmi1_rc_files
    GMI_GridComp/CCMI_REF-C1/GMI_ExtData.rc
    GMI_GridComp/CCMI_REF-C1/GMI_GridComp.rc
