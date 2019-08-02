@@ -226,7 +226,7 @@ contains
     call ESMF_ConfigGetAttribute(self%CF, self%verbose,       Label='verbose:', default=.false.,  __RC__)
 
     call ESMF_ConfigGetAttribute(self%CF, self%configuration, Label='matrix:',  default=1,        __RC__)
-    ASSERT_(self%configuration == MATRIX_CONFIGURATION)
+    _ASSERT(self%configuration == MATRIX_CONFIGURATION,'needs informative message')
 
 
 
@@ -259,7 +259,7 @@ contains
 !   Store internal state in GC
 !   --------------------------
     call ESMF_UserCompSetInternalState(GC, 'MATRIX_state', wrap, STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
   
 !                         ------------------
 !                         MAPL Data Services
@@ -293,7 +293,7 @@ contains
 !   All done
 !   --------
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
   end subroutine SetServices
 
@@ -530,13 +530,13 @@ contains
                                MATRIX_NUMB_MXX, MATRIX_MASS_MXX_SU, MATRIX_MASS_MXX_BC, MATRIX_MASS_MXX_OC, &
                                                 MATRIX_MASS_MXX_DU, MATRIX_MASS_MXX_SS/)
 
-    ASSERT_(any(matrix_aerosol_indexes > 0))
+    _ASSERT(any(matrix_aerosol_indexes > 0),'needs informative message')
     deallocate(matrix_aerosol_indexes, __STAT__)
     
 
 !   All done
 !   --------
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
    end subroutine Initialize_
 
@@ -1074,7 +1074,7 @@ contains
 
 !   All done
 !   --------
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
    end subroutine Run_
 
@@ -1150,7 +1150,7 @@ contains
 
 !   All done
 !   --------
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
    end subroutine Finalize_
 
@@ -1216,7 +1216,7 @@ contains
 !   Get my internal state
 !   ---------------------
     call ESMF_UserCompGetInternalState(GC, 'MATRIX_state', wrap, STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     myState => wrap%ptr
 
 !   Get the configuration
@@ -1263,7 +1263,7 @@ contains
 
 
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
    end subroutine extract_
 

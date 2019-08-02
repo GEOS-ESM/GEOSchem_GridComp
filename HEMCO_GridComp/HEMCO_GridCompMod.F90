@@ -238,7 +238,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'V10M',  &
@@ -247,7 +247,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'FRLAND',  &
@@ -256,7 +256,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'FRLANDICE',  &
@@ -265,7 +265,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'FRLAKE',  &
@@ -274,7 +274,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'FROCEAN',  &
@@ -283,7 +283,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'TS',  &
@@ -292,7 +292,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'T2M', &
@@ -301,7 +301,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly, &
         VLOCATION          = MAPL_VLocationNone, &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'ALBVF',  &
@@ -310,7 +310,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'PLE',  &
@@ -319,7 +319,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzVert,    &
         VLOCATION          = MAPL_VLocationEdge,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'TROPP',  &
@@ -328,7 +328,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'T',  &
@@ -337,7 +337,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzVert,    &
         VLOCATION          = MAPL_VLocationCenter,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'Z0H',  &
@@ -346,7 +346,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'USTAR',  &
@@ -355,7 +355,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'WET1',  &
@@ -364,7 +364,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'WET2',  &
@@ -373,7 +373,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'Q',  &
@@ -382,7 +382,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzVert,    &
         VLOCATION          = MAPL_VLocationCenter,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'SNOMAS',  &
@@ -391,7 +391,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'SNOWDP',  &
@@ -400,7 +400,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'LWI',  &
@@ -409,7 +409,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'LAI',  &
@@ -418,7 +418,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'CNV_MFC',  &
@@ -427,7 +427,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzVert,    &
         VLOCATION          = MAPL_VLocationEdge,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'DRPAR',  &
@@ -436,7 +436,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'DFPAR',  &
@@ -445,7 +445,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'SWNDSRF',  &
@@ -454,7 +454,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'CLDTT',  &
@@ -463,7 +463,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 !
 ! !INTERNAL STATE:
 !
@@ -483,9 +483,9 @@ CONTAINS
 ! Set services now
 ! ----------------
    call MAPL_GenericSetServices  ( GC, RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
   
   end subroutine SetServices
 
@@ -551,7 +551,7 @@ CONTAINS
     ThisInst => NULL()
 
     ! Successful return
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
   END SUBROUTINE Initialize_
 !EOC
@@ -611,7 +611,7 @@ CONTAINS
     ThisInst => NULL()
 
     ! Successful return
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
   end subroutine Run1
 !EOC
@@ -661,7 +661,7 @@ CONTAINS
     !!! Nothing to do in run phase 2 !!!
 
     ! Successful return
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
   end subroutine Run2
 !EOC
@@ -739,7 +739,7 @@ CONTAINS
     CALL MAPL_GenericFinalize( GC, Import, Export, Clock, __RC__ )
 
     ! Return w/ success
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
   end subroutine Finalize_
 !EOC
@@ -825,24 +825,24 @@ CONTAINS
 
     IF ( am_I_Root ) THEN
        CALL HCO_LogFile_Open( Inst%HcoConfig%Err, RC = HCRC )
-       ASSERT_(HCRC==HCO_SUCCESS)
+       _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
     ENDIF
 
     !-----------------------------------------------------------------
     ! Extract species to use in HEMCO 
     CALL Get_nnMatch( am_I_Root, Inst%HcoConfig, nnMatch, HCRC )
-    ASSERT_(HCRC==HCO_SUCCESS)
+    _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
 
     !-----------------------------------------------------------------
     ! Initialize HCO state. Use only species that are used
     ! in GEOS-Chem and are also found in the HEMCO config. file.
     CALL HcoState_Init ( am_I_Root, Inst%HcoState, Inst%HcoConfig, nnMatch, HCRC )
-    ASSERT_(HCRC==HCO_SUCCESS)
+    _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
 
     ! ------------------------------------------------------------------
     ! Register species. Grid MUST be defined before doing this! 
     CALL Register_Species ( am_I_Root, Inst%HcoState, HCRC )
-    ASSERT_(HCRC==HCO_SUCCESS)
+    _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
 
     ! ------------------------------------------------------------------
     ! Get grid definition 
@@ -861,10 +861,10 @@ CONTAINS
 
     CALL HCO_ArrAssert ( Inst%HcoState%Grid%XMID, Inst%HcoState%NX, &
                          Inst%HcoState%NY, RC )
-    ASSERT_(RC==HCO_SUCCESS)
+    _ASSERT(RC==HCO_SUCCESS,'needs informative message')
     CALL HCO_ArrAssert ( Inst%HcoState%Grid%YMID, Inst%HcoState%NX, &
                          Inst%HcoState%NY, RC )
-    ASSERT_(RC==HCO_SUCCESS)
+    _ASSERT(RC==HCO_SUCCESS,'needs informative message')
 
     Inst%HcoState%Grid%XMID%Val = lonCtr / Inst%HcoState%Phys%PI_180 
     Inst%HcoState%Grid%YMID%Val = latCtr / Inst%HcoState%Phys%PI_180 
@@ -911,14 +911,14 @@ CONTAINS
     ! the HEMCO configuration file is removed from buffer in this
     ! step. Also initializes the HEMCO clock
     CALL HCO_Init( am_I_Root, Inst%HcoState, HCRC )
-    ASSERT_(HCRC==HCO_SUCCESS)
+    _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
 
     ! ------------------------------------------------------------------
     ! Initialize extensions.
     ! This initializes all (enabled) extensions and selects all met.
     ! fields needed by them. 
     CALL HCOX_Init( am_I_Root, Inst%HcoState, Inst%ExtState, HCRC )
-    ASSERT_(HCRC==HCO_SUCCESS)
+    _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
 
     ! ------------------------------------------------------------------
     ! Define diagnostics. This creates a HEMCO diagnostics entry for
@@ -926,12 +926,12 @@ CONTAINS
     ! in the HEMCO configuration file, a default diagnostics is created 
     ! for every HEMCO species. 
     CALL Define_Diagnostics( am_I_Root, Inst%HcoState, HCRC )
-    ASSERT_(HCRC==HCO_SUCCESS)
+    _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
 
     ! ------------------------------------------------------------------
     ! Cleanup 
     CALL HCOI_SA_InitCleanup ( am_I_Root, HCRC )
-    ASSERT_(HCRC==HCO_SUCCESS)
+    _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
 
     ! Nullify pointers
     Inst%HcoState%GRIDCOMP => NULL()
@@ -939,7 +939,7 @@ CONTAINS
     Inst%HcoState%EXPORT   => NULL() 
 
     ! Return w/ success
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
     END SUBROUTINE HEMCOinit_ 
 !EOC
@@ -1023,7 +1023,7 @@ CONTAINS
 
     CALL HcoClock_Set ( am_I_Root, Inst%HcoState, yyyy, mm, dd, h, &
                         m, s, cDOY=doy, IsEmisTime=.TRUE., RC=STAT )
-    ASSERT_(STAT==HCO_SUCCESS)
+    _ASSERT(STAT==HCO_SUCCESS,'needs informative message')
 
     ! ------------------------------------------------------------------
     ! Set HEMCO fields 
@@ -1040,7 +1040,7 @@ CONTAINS
     ! ------------------------------------------------------------------
     ! Reset all emissions to zero
     CALL HCO_FluxArrReset( Inst%HcoState, STAT )
-    ASSERT_(STAT==HCO_SUCCESS)
+    _ASSERT(STAT==HCO_SUCCESS,'needs informative message')
 
     ! Make sure options are correct
     Inst%HcoState%Options%SpcMin     =  1
@@ -1053,7 +1053,7 @@ CONTAINS
     ! Now run driver routine. This calculates all 'core' emissions, 
     ! i.e. all emissions that are not extensions.
     CALL HCO_Run( am_I_Root, Inst%HcoState, -1, STAT )
-    ASSERT_(STAT==HCO_SUCCESS)
+    _ASSERT(STAT==HCO_SUCCESS,'needs informative message')
 
     ! ------------------------------------------------------------------
     ! Run HEMCO extensions 
@@ -1064,7 +1064,7 @@ CONTAINS
 !    IF ( am_I_Root ) write(*,*) 'HEMCO debug 334: ',SUM(Inst%ExtState%SUNCOS%Arr%Val),SUM(Inst%ExtState%T2M%Arr%Val)
 
     CALL HCOX_Run( am_I_Root, Inst%HcoState, Inst%ExtState, STAT )
-    ASSERT_(STAT==HCO_SUCCESS)
+    _ASSERT(STAT==HCO_SUCCESS,'needs informative message')
 
 !    ! testing only
 !    IF ( am_I_Root ) write(*,*) 'HEMCO debug 335: ',SUM(Inst%ExtState%SUNCOS%Arr%Val),Inst%ExtState%Megan
@@ -1075,12 +1075,12 @@ CONTAINS
 
     ! Update HEMCO diagnostics 
     CALL HcoDiagn_AutoUpdate ( am_I_Root, Inst%HcoState, STAT )
-    ASSERT_(STAT==HCO_SUCCESS)
+    _ASSERT(STAT==HCO_SUCCESS,'needs informative message')
  
     ! Fill exports (from HEMCO diagnostics)
     !IF ( HcoState%Options%HcoWritesDiagn ) THEN 
     CALL HcoDiagn_Write( am_I_Root, Inst%HcoState, .FALSE., STAT ) 
-    ASSERT_(STAT==HCO_SUCCESS)
+    _ASSERT(STAT==HCO_SUCCESS,'needs informative message')
     !ENDIF
 
     ! ------------------------------------------------------------------
@@ -1093,7 +1093,7 @@ CONTAINS
     Inst%HcoState%EXPORT   => NULL() 
 
     ! Return w/ success
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
     END SUBROUTINE HEMCOrun_
 !EOC
@@ -1156,11 +1156,11 @@ CONTAINS
 
     ! Cleanup extensions and ExtOpt object 
     CALL HCOX_Final( am_I_Root, Inst%HcoState, Inst%ExtState, ERROR )
-    ASSERT_(ERROR==HCO_SUCCESS)
+    _ASSERT(ERROR==HCO_SUCCESS,'needs informative message')
 
     ! Cleanup HCO core
     CALL HCO_Final( am_I_Root, Inst%HcoState, .FALSE., ERROR ) 
-    ASSERT_(ERROR==HCO_SUCCESS)
+    _ASSERT(ERROR==HCO_SUCCESS,'needs informative message')
 
     ! Cleanup diagnostics
     CALL DiagnBundle_Cleanup ( Inst%HcoState%Diagn )
@@ -1169,7 +1169,7 @@ CONTAINS
     CALL HcoState_Final ( Inst%HcoState ) 
 
     ! Return w/ success
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
   end subroutine HEMCOfinal_
 !EOC
@@ -1263,38 +1263,38 @@ CONTAINS
 
     ! 3rd dimension indexing
     NZ  = SIZE(ZLE,3) - 1
-    ASSERT_(NZ == HcoState%NZ)
+    _ASSERT(NZ == HcoState%NZ,'needs informative message')
     OFF = LBOUND(ZLE,3)  ! Left bound index (0 or 1)
 
     ! Set AREA
     IF ( .NOT. ASSOCIATED(HcoState%Grid%AREA_M2%Val) ) THEN
        CALL HCO_ArrAssert( HcoState%Grid%AREA_M2, HcoState%NX, HcoState%NY, STAT )
-       ASSERT_(STAT==HCO_SUCCESS)
+       _ASSERT(STAT==HCO_SUCCESS,'needs informative message')
        HcoState%Grid%AREA_M2%Val = AREA
     ENDIF
 
     ! Geopotential height (m)
     CALL HCO_ArrAssert( HcoState%Grid%ZSFC, HcoState%NX, HcoState%NY, STAT )
-    ASSERT_(RC==HCO_SUCCESS)
+    _ASSERT(RC==HCO_SUCCESS,'needs informative message')
     HcoState%Grid%ZSFC%Val = ZLE(:,:,NZ+OFF)
 
     ! Surface pressure
     CALL HCO_ArrAssert( HcoState%Grid%PSFC, HcoState%NX, HcoState%NY, STAT )
-    ASSERT_(RC==HCO_SUCCESS)
+    _ASSERT(RC==HCO_SUCCESS,'needs informative message')
     HcoState%Grid%PSFC%Val = PS
 
     ! Make sure HEMCO arrays are allocated and of correct size
     CALL HCO_ArrAssert( HcoState%Grid%BXHEIGHT_M, HcoState%NX, HcoState%NY, HcoState%NZ, STAT )
-    ASSERT_(RC==HCO_SUCCESS)
+    _ASSERT(RC==HCO_SUCCESS,'needs informative message')
     CALL HCO_ArrAssert( HcoState%Grid%PEDGE, HcoState%NX, HcoState%NY, HcoState%NZ+1, STAT )
-    ASSERT_(RC==HCO_SUCCESS)
+    _ASSERT(RC==HCO_SUCCESS,'needs informative message')
     IF ( ExtState%AIRVOL%DoUse ) THEN
        CALL HCO_ArrAssert( ExtState%AIRVOL%Arr, HcoState%NX, HcoState%NY, HcoState%NZ, STAT )
-       ASSERT_(RC==HCO_SUCCESS)
+       _ASSERT(RC==HCO_SUCCESS,'needs informative message')
     ENDIF 
     IF ( ExtState%AIR%DoUse ) THEN
        CALL HCO_ArrAssert( ExtState%AIR%Arr, HcoState%NX, HcoState%NY, HcoState%NZ, STAT )
-       ASSERT_(RC==HCO_SUCCESS)
+       _ASSERT(RC==HCO_SUCCESS,'needs informative message')
     ENDIF 
 
     ! Pass 3D fields to HEMCO state
@@ -1505,7 +1505,7 @@ CONTAINS
     ! FRAC_OF_PBL
     IF ( ExtState%FRAC_OF_PBL%DoUse ) THEN
        IF(am_I_Root) WRITE(*,*) 'HEMCO field FRAC_OF_PBL not defined!'
-       ASSERT_(.FALSE.)
+       _ASSERT(.FALSE.,'needs informative message')
     ENDIF
 
     ! PBL_MAX: currently undefined
@@ -1515,7 +1515,7 @@ CONTAINS
     IF ( ExtState%WET_TOTN%DoUse .OR. ExtState%DRY_TOTN%DoUse ) THEN
        IF ( .NOT. ASSOCIATED(ExtState%DRYCOEFF) ) THEN
           IF(am_I_Root) WRITE(*,*) 'HEMCO vector DRYCOEFF not defined!'
-          ASSERT_(.FALSE.)
+          _ASSERT(.FALSE.,'needs informative message')
        ENDIF
     ENDIF
 
@@ -1532,7 +1532,7 @@ CONTAINS
     ExtState => NULL()
 
     ! Return w/ success
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
     END SUBROUTINE SetExtFields 
 !EOC
@@ -1907,7 +1907,7 @@ CONTAINS
     Inst => NewInst
 
     ! Return w/ success
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
     END SUBROUTINE NewInst_ 
 !EOC

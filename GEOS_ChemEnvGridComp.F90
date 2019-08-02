@@ -67,7 +67,7 @@ contains
 
     Iam = 'SetServices'
     call ESMF_GridCompGet( GC, NAME=COMP_NAME, CONFIG=CF, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     Iam = trim(COMP_NAME) // 'SetServices'
 
 ! Register services for this component
@@ -86,7 +86,7 @@ contains
          DIMS       =  MAPL_DimsHorzVert,                          &
          VLOCATION  =  MAPL_VLocationEdge,                         &
                                                         RC=STATUS  )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call MAPL_AddImportSpec(GC,                               &
          SHORT_NAME = 'TH',                                        &
@@ -95,7 +95,7 @@ contains
          DIMS       =  MAPL_DimsHorzVert,                          &
          VLOCATION  =  MAPL_VLocationCenter,                       &
                                                         RC=STATUS  )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC,                             &
         SHORT_NAME = 'Q',                                         &
@@ -104,7 +104,7 @@ contains
         DIMS       = MAPL_DimsHorzVert,                           &
         VLOCATION  = MAPL_VLocationCenter,                        &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
 !   Convective precip
 !   -----------------
@@ -115,7 +115,7 @@ contains
          DEFAULT   = MAPL_UNDEF,                                   &
          DIMS      = MAPL_DimsHorzOnly,                            &
          VLOCATION = MAPL_VLocationNone,                RC=STATUS  )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 !   Total precip
 !   ------------
@@ -126,7 +126,7 @@ contains
          DEFAULT   = MAPL_UNDEF,                                   &
          DIMS      = MAPL_DimsHorzOnly,                            &
          VLOCATION = MAPL_VLocationNone,                RC=STATUS  )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call MAPL_AddImportSpec(GC,				 &
        SHORT_NAME	  = 'FRLAND',				 &
@@ -135,7 +135,7 @@ contains
        DIMS		  = MAPL_DimsHorzOnly,		     &
        VLOCATION	  = MAPL_VLocationNone,		     &
     						      RC=STATUS  )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call MAPL_AddImportSpec(GC,				 &
        SHORT_NAME	  = 'FRLANDICE',			 &
@@ -144,7 +144,7 @@ contains
        DIMS		  = MAPL_DimsHorzOnly,		     &
        VLOCATION	  = MAPL_VLocationNone,		     &
     						      RC=STATUS  )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call MAPL_AddImportSpec(GC,				 &
        SHORT_NAME	  = 'FROCEAN',  			 &
@@ -153,7 +153,7 @@ contains
        DIMS		  = MAPL_DimsHorzOnly,		     &
        VLOCATION	  = MAPL_VLocationNone,		     &
     						      RC=STATUS  )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call MAPL_AddImportSpec(GC,				 &
        SHORT_NAME	  = 'FRACI',  			 &
@@ -162,7 +162,7 @@ contains
        DIMS               = MAPL_DimsHorzOnly,                   &
        VLOCATION          = MAPL_VLocationNone,                  &
     						      RC=STATUS  )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 
     call MAPL_AddImportSpec(GC,                 &
@@ -171,7 +171,7 @@ contains
        UNITS          = 'K',                    &
        DIMS           = MAPL_DimsHorzOnly,      &
        VLOCATION      = MAPL_VLocationNone,     RC=STATUS  )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! !EXPORT STATE:
 
@@ -183,7 +183,7 @@ contains
         UNITS              = 'kg m-3',                       &
         DIMS               = MAPL_DimsHorzVert,              &
         VLOCATION          = MAPL_VLocationCenter,  RC=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
 !    Density of dry air
 !    ------------------
@@ -193,7 +193,7 @@ contains
         UNITS              = 'kg dry m-3 tot',               &
         DIMS               = MAPL_DimsHorzVert,              &
         VLOCATION          = MAPL_VLocationCenter,  RC=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
 !    DELP (This should be wired from DYN)
 !    ------------------------------------
@@ -203,7 +203,7 @@ contains
         UNITS              = 'Pa',                           &
         DIMS               = MAPL_DimsHorzVert,              &
         VLOCATION          = MAPL_VLocationCenter,  RC=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
 !   Total precip
 !   ------------
@@ -213,7 +213,7 @@ contains
          UNITS             = 'kg m-2 s-1',                   &
          DIMS              = MAPL_DimsHorzOnly,              &
          VLOCATION         = MAPL_VLocationNone,    RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 !    Convective precip
 !    -----------------
@@ -223,7 +223,7 @@ contains
         UNITS              = 'kg m-2 s-1',                   &
         DIMS               = MAPL_DimsHorzOnly,              &
         VLOCATION          = MAPL_VLocationNone,    RC=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
 !    Non-convective precip
 !    ---------------------
@@ -233,16 +233,16 @@ contains
         UNITS              = 'kg m-2 s-1',                   &
         DIMS               = MAPL_DimsHorzOnly,              &
         VLOCATION          = MAPL_VLocationNone,    RC=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 !EOS
 
 
 ! Create children's gridded components and invoke their SetServices
 ! -----------------------------------------------------------------
     call MAPL_GenericSetServices    ( GC, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
   
   end subroutine SetServices
 
@@ -290,11 +290,11 @@ contains
 
 !   Get to the imports...
 !   ---------------------
-    call MAPL_GetPointer ( IMPORT,  pe,  'PLE', RC=STATUS );  VERIFY_(STATUS)
+    call MAPL_GetPointer ( IMPORT,  pe,  'PLE', RC=STATUS );  _VERIFY(STATUS)
 
 !   Get to the exports...
 !   ---------------------
-    call MAPL_GetPointer ( EXPORT, delp,   'DELP',        RC=STATUS ); VERIFY_(STATUS)
+    call MAPL_GetPointer ( EXPORT, delp,   'DELP',        RC=STATUS ); _VERIFY(STATUS)
 
 !   Compute moist (rho) and dry (rhoDry) air density
 !   ------------------------------------------------
@@ -311,7 +311,7 @@ contains
 
 !   All Done
 !   --------
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
  end subroutine Run1
 
@@ -373,21 +373,21 @@ contains
 !   Get the target components name and set-up traceback handle.
 !   -----------------------------------------------------------
     call ESMF_GridCompGet ( GC, name=COMP_NAME, Grid=GRID, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     Iam = trim(COMP_NAME) // "Run2"
 
 ! Get my internal MAPL_Generic state
 !-----------------------------------
     call MAPL_GetObjectFromGC ( GC, MAPL, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 !   Get to the imports...
 !   ---------------------
-    call MAPL_GetPointer ( IMPORT,  pe,  'PLE', RC=STATUS );  VERIFY_(STATUS)
+    call MAPL_GetPointer ( IMPORT,  pe,  'PLE', RC=STATUS );  _VERIFY(STATUS)
 
 !   Get to the exports...
 !   ---------------------
-    call MAPL_GetPointer ( EXPORT, delp,   'DELP',        RC=STATUS ); VERIFY_(STATUS)
+    call MAPL_GetPointer ( EXPORT, delp,   'DELP',        RC=STATUS ); _VERIFY(STATUS)
 
 !   Compute moist (rho) and dry (rhoDry) air density
 !   ------------------------------------------------
@@ -455,7 +455,7 @@ contains
 
 !   All Done
 !   --------
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
  end subroutine Run2
 
@@ -527,7 +527,7 @@ contains
     k0  = 1-lbound(pe,3)
 
     allocate(npk(iml,jml,nl+1),stat=STATUS) ! work space
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     eps = MAPL_RVAP / MAPL_RGAS - 1.0
 
@@ -562,7 +562,7 @@ contains
 
 !   All Done
 !   --------
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
  end subroutine Airdens
 

@@ -234,7 +234,7 @@ contains
 !   Store internal state in GC
 !   --------------------------
     call ESMF_UserCompSetInternalState(GC, 'AChem_State', wrap, STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
   
 !                         ------------------
 !                         MAPL Data Services
@@ -397,7 +397,7 @@ contains
 !   All done
 !   --------
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
   end subroutine SetServices
 
@@ -536,7 +536,7 @@ contains
    call MAPL_TimerOff(mgState, 'INITIALIZE', __RC__)
    call MAPL_TimerOff(mgState, 'TOTAL',      __RC__)
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
    end subroutine Initialize_
 
@@ -841,7 +841,7 @@ contains
    if (run_alarm_ringing) then
        call ESMF_AlarmRingerOff(run_alarm, __RC__)
    else
-       RETURN_(ESMF_SUCCESS)
+       _RETURN(ESMF_SUCCESS)
    endif
 
 
@@ -1850,7 +1850,7 @@ contains
    call MAPL_TimerOff(mgState, 'RUN',   __RC__)
    call MAPL_TimerOff(mgState, 'TOTAL', __RC__)
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
    end subroutine Run_
 
@@ -1943,7 +1943,7 @@ contains
 
 !  All done
 !  --------
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
  end SUBROUTINE Finalize_
 
@@ -2007,7 +2007,7 @@ contains
 !   Get my internal state
 !   ---------------------
     call ESMF_UserCompGetInternalState(GC, 'AChem_State', wrap, STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     myState => wrap%ptr
 
 !   Get the configuration
@@ -2052,7 +2052,7 @@ contains
     km = dims(3)
 
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
  end subroutine extract_
 
@@ -2176,7 +2176,7 @@ contains
 
    deallocate(vData, __STAT__)
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
  end subroutine GetVolcDailyTables
 
@@ -2418,7 +2418,7 @@ contains
                        STATUS = ESMF_SUCCESS
                    end if
 
-                   VERIFY_(STATUS)
+                   _VERIFY(STATUS)
 
                    time = RSTATE(1)
                end do KPP_TIME_INTEGRATE
@@ -2481,7 +2481,7 @@ contains
    where (q_H2SO4 < 0.0) q_H2SO4 = tiny(0.0)
    where (q_NH3   < 0.0) q_NH3   = tiny(0.0)
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
  end subroutine gas_chemistry
 
@@ -2642,7 +2642,7 @@ contains
        end do
    end do
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
  end subroutine aqu_chemistry_fast
 
@@ -2847,7 +2847,7 @@ contains
    where (q_SO2   < 0.0) q_SO2   = tiny(0.0)
    where (q_NH3   < 0.0) q_NH3   = tiny(0.0)
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
    contains
 

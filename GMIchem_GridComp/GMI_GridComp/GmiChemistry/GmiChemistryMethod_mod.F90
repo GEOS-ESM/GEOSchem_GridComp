@@ -173,7 +173,7 @@
       if (pr_diag) Write(6,*) IAm, 'called by ', loc_proc
 
       allocate(tempListNames(numSpecies), STAT=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       !################################
       ! Begin reading the resource file
@@ -195,7 +195,7 @@
       call ESMF_ConfigGetAttribute(config, self%chem_opt, &
      &                label   = "chem_opt:", &
      &                default = 2, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 !     -------------------------------------------------------------
 !     chem_cycle:  number of time steps to cycle chemistry calls on
@@ -206,7 +206,7 @@
       call ESMF_ConfigGetAttribute(config, self%chem_cycle, &
      &                label   = "chem_cycle:", &
      &                default = 1.0d0, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 !     -----------------------------------------------------
 !     chem_mask_klo, chem_mask_khi:
@@ -217,12 +217,12 @@
       call ESMF_ConfigGetAttribute(config, self%chem_mask_klo, &
      &                label   = "chem_mask_klo:", &
      &                default = k1, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%chem_mask_khi, &
      &                label   = "chem_mask_khi:", &
      &                default = k2, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 !     -------------------------------------------------------------------
 !     synoz_threshold:  chemistry turned off where synoz > this threshold
@@ -233,7 +233,7 @@
       call ESMF_ConfigGetAttribute(config, self%synoz_threshold, &
      &                label   = "synoz_threshold:", &
      &                default = hugeReal, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 !    cloudDroplet_opt = 1: Boucher and LohMan    Correlation (default)
 !                     = 2: Nenes and Seinfeld    Parameterization
@@ -244,7 +244,7 @@
       call ESMF_ConfigGetAttribute(config, self%cloudDroplet_opt, &
      &                label   = "cloudDroplet_opt:", &
      &                default = 1, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
       
 !     -----------------------------------------------------
 !     oz_eq_synoz_opt 
@@ -255,7 +255,7 @@
       call ESMF_ConfigGetAttribute(config, self%oz_eq_synoz_opt, &
      &                label   = "oz_eq_synoz_opt:", &
      &                default = 1, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
       
 !     ------------------------------------------------------------
 !     t_cloud_ice:  temperature for ice formation in clouds (degK)
@@ -264,7 +264,7 @@
       call ESMF_ConfigGetAttribute(config, self%t_cloud_ice, &
      &                label   = "t_cloud_ice:", &
      &                default = 263.0d0, rc=STATUS )
-      VERIFY_(STATUS) 
+      _VERIFY(STATUS) 
 
       call rcEsmfReadLogical(config, self%do_chem_grp, "do_chem_grp:", &
      &                       default=.false., rc=STATUS)
@@ -290,7 +290,7 @@
       call ESMF_ConfigGetAttribute(config, self%sad_opt, &
      &                label   = "sad_opt:", &
      &                default = 0, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 !     ------------------------------------------------
 !     h2oclim_opt
@@ -303,7 +303,7 @@
       call ESMF_ConfigGetAttribute(config, self%h2oclim_opt, &
      &                label   = "h2oclim_opt:", &
      &                default = 2, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 
 !     =========       
@@ -328,20 +328,20 @@
       call ESMF_ConfigGetAttribute(config, self%phot_opt, &
      &                label   = "phot_opt:", &
      &                default = 1, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 !
 !     ---------
 !     qj / qqj:
 !     ---------
 
       allocate(self%mw(numSpecies), STAT=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
       self%mw(1:numSpecies) = mw_data(1:numSpecies)
 
       call rcEsmfReadTable(config, self%mw, "mw::", rc=STATUS)
 
       allocate(self%const_labels(numSpecies), STAT=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
       
       self%const_labels(1:numSpecies) = lchemvar(1:numSpecies)
      
@@ -412,7 +412,7 @@
 
          if (NUM_SBC > 0) then
             allocate(self%surf_bc_map(1:NUM_SBC), STAT=STATUS)
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
             self%surf_bc_map(:)         = 0
             self%surf_bc_map(1:NUM_SBC) = sbc_map(1:NUM_SBC)
 
@@ -458,22 +458,22 @@
          call ESMF_ConfigGetAttribute(config, self%io3_num, &
      &                label   = "io3_num:", &
      &                default = 0, rc=STATUS )
-         VERIFY_(STATUS)
+         _VERIFY(STATUS)
 
          call ESMF_ConfigGetAttribute(config, self%iacetone_num, &
      &                label   = "iacetone_num:", &
      &                default = 0, rc=STATUS )
-         VERIFY_(STATUS)
+         _VERIFY(STATUS)
 
          call ESMF_ConfigGetAttribute(config, self%ipropene_num, &
      &                label   = "ipropene_num:", &
      &                default = 0, rc=STATUS )
-         VERIFY_(STATUS)
+         _VERIFY(STATUS)
 
          call ESMF_ConfigGetAttribute(config, self%iisoprene_num, &
      &                label   = "iisoprene_num:", &
      &                default = 0, rc=STATUS )
-         VERIFY_(STATUS)
+         _VERIFY(STATUS)
       end if
 
       self%do_synoz   = .false.

@@ -79,7 +79,7 @@ CONTAINS
           print *, 'Error: expecting 4 PETs but found ', nPET, 'PETs'
           print *, 'Try:   mpirun -np 4 ut_CARMA.x'
        end if
-       ASSERT_(.FALSE.)
+       _ASSERT(.FALSE.,'needs informative message')
     end if
 
     if ( MAPL_am_I_root() ) then
@@ -210,7 +210,7 @@ CONTAINS
      j2 = ubound(T,2)
      k2 = ubound(T,3)
 
-     ASSERT_( (k2-k1+1) == 72)
+     _ASSERT( (k2-k1+1) == 72,'needs informative message')
 
 
 !     Fill typical values
@@ -383,7 +383,7 @@ CONTAINS
       call MAPL_GetPointer ( INTERNAL, du006, 'CARMA::dust::pc::006', __RC__ )
       call MAPL_GetPointer ( INTERNAL, du007, 'CARMA::dust::pc::007', __RC__ )
       call MAPL_GetPointer ( INTERNAL, du008, 'CARMA::dust::pc::008', __RC__ )
-      ASSERT_ ( associated(du001) )  
+      _ASSERT( associated(du001),'needs informative message' )  
       tracer => du001
 !     Local bounds
 !     ------------
@@ -474,7 +474,7 @@ CONTAINS
       call MAPL_GetPointer ( INTERNAL, ss006, 'CARMA::seasalt::pc::006', __RC__ )
       call MAPL_GetPointer ( INTERNAL, ss007, 'CARMA::seasalt::pc::007', __RC__ )
       call MAPL_GetPointer ( INTERNAL, ss008, 'CARMA::seasalt::pc::008', __RC__ )
-      ASSERT_ ( associated(ss001) )  
+      _ASSERT( associated(ss001), 'needs informative message' )  
       tracer => ss001
 !     Local bounds
 !     ------------
@@ -606,7 +606,7 @@ CONTAINS
       call MAPL_GetPointer ( INTERNAL, satice_h2o, 'CARMA::satice_H2O_old', __RC__ )
       call MAPL_GetPointer ( INTERNAL, satice_h2so4, 'CARMA::satice_H2SO4_old', __RC__ )
       call MAPL_GetPointer ( INTERNAL, told, 'CARMA::t_old', __RC__ )
-      ASSERT_ ( associated(su001) )  
+      _ASSERT( associated(su001), 'needs informative message' )  
       tracer => su001
 !     Local bounds
 !     ------------
@@ -617,7 +617,7 @@ CONTAINS
       j2 = ubound(tracer,2)
       k2 = ubound(tracer,3)
 
-      ASSERT_( (k2-k1+1) == 72)
+      _ASSERT( (k2-k1+1) == 72,'needs informative message')
 
 !     Fill typical values
 !     -------------------

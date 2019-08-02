@@ -107,9 +107,9 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
    end subroutine CFC_GridCompSetServices
 
 !-------------------------------------------------------------------------
@@ -195,29 +195,29 @@ CONTAINS
 ! Grab the virtual machine
 ! ------------------------
    CALL ESMF_VMGetCurrent(vm, RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 ! Load resource file
 ! ------------------
    CALL I90_loadf ( TRIM(rcfilen), status )
-   VERIFY_(status)
+   _VERIFY(status)
 
    CALL I90_label ( 'photolysisFile:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    CALL I90_Gtoken( fnPhoto, status )
-   VERIFY_(status)
+   _VERIFY(status)
 
    CALL I90_Label ( 'phot_Equation_number:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    gcCFC%photEquNumber = I90_Gint( status )
-   VERIFY_(status)
+   _VERIFY(status)
 
 ! Run-time debug switch
 ! ---------------------
    CALL I90_label ( 'DEBUG:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    n = I90_gint ( status )
-   VERIFY_(status)
+   _VERIFY(status)
    IF(n /= 0) THEN
     gcCFC%DebugIsOn = .TRUE.
    ELSE
@@ -227,15 +227,15 @@ CONTAINS
 ! Allocate space
 ! --------------
    ALLOCATE(gcCFC%CFCsfcFlux(i1:i2,j1:j2), STAT=status )
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcCFC%CFCloss(i1:i2,j1:j2,1:km,nbins), STAT=status )
-   VERIFY_(status)
+   _VERIFY(status)
 
 ! Photolysis tables: Initialize from NetCDF file
 ! ----------------------------------------------
    fileName = TRIM(fnPhoto)
    CALL readPhotTables(fileName, status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 ! Reverse vertical ordering of the radiative
 ! source function and the overhead O3 reference
@@ -254,7 +254,7 @@ CONTAINS
    END DO
 
    ALLOCATE(w(gcCFC%numo3), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    DO k = 1,km/2
     kr = km-k+1
@@ -264,7 +264,7 @@ CONTAINS
    END DO
 
    DEALLOCATE(w, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    RETURN
   CONTAINS
@@ -320,14 +320,14 @@ CONTAINS
   rc = 0
 
   CALL ESMF_VMGet(vm, MPICOMMUNICATOR=comm, rc=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #undef H5_HAVE_PARALLEL
 #ifdef H5_HAVE_PARALLEL
 
   CALL MPI_Info_create(info, status)
   CALL MPI_Info_set(info, "romio_cb_read", "automatic", status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #ifdef NETCDF_NEED_NF_MPIIO
   status = NF_OPEN_PAR(TRIM(fileName), IOR(NF_NOWRITE,NF_MPIIO), comm, info, unit)
@@ -345,7 +345,7 @@ CONTAINS
    IF(status /= NF_NOERR) THEN
     PRINT *,'Error opening file ',TRIM(fileName), status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    DO i = 1,nD
@@ -354,7 +354,7 @@ CONTAINS
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error inquiring dimension ID for ", TRIM(dimName(i)), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
 
     status = NF_INQ_DIMLEN(unit, dimid, n)
@@ -369,7 +369,7 @@ CONTAINS
      CASE (2)
       gcCFC%numO3 = n
      CASE (3)
-      ASSERT_(n == km)
+      _ASSERT(n == km,'needs informative message')
      CASE (4)
       gcCFC%nlam = n
      CASE (5)
@@ -386,26 +386,26 @@ CONTAINS
   END IF ! MAPL_AM_I_ROOT
 
   CALL MAPL_CommsBcast(vm, gcCFC%nsza, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_CommsBcast(vm, gcCFC%numO3, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_CommsBcast(vm, gcCFC%nlam, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_CommsBcast(vm, gcCFC%nts, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_CommsBcast(vm, gcCFC%nxdo, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #endif
 
   ALLOCATE(gcCFC%sdat(gcCFC%nsza,gcCFC%numo3,km,gcCFC%nlam), STAT=status)
-  VERIFY_(status)
+  _VERIFY(status)
   ALLOCATE(gcCFC%o3_tab(gcCFC%numo3,km), STAT=status)
-  VERIFY_(status)
+  _VERIFY(status)
   ALLOCATE(gcCFC%xtab(gcCFC%nlam,gcCFC%nxdo,gcCFC%nts), STAT=status)
-  VERIFY_(status)
+  _VERIFY(status)
   ALLOCATE(gcCFC%sza_tab(gcCFC%nsza), STAT=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #ifndef H5_HAVE_PARALLEL
 
@@ -419,7 +419,7 @@ CONTAINS
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error getting varid for ", TRIM(varName(i)), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
 
     SELECT CASE (i)
@@ -437,7 +437,7 @@ CONTAINS
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error getting values for ", TRIM(varName(i)), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
 
    END DO
@@ -445,30 +445,30 @@ CONTAINS
 #ifdef H5_HAVE_PARALLEL
 
    CALL MPI_Info_free(info, status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 #else
 
    status = NF_CLOSE(unit)
-   VERIFY_(status)
+   _VERIFY(status)
 
   END IF ! MAPL_AM_I_ROOT
 
   length = SIZE(gcCFC%sza_tab)
   CALL MPI_Bcast(gcCFC%sza_tab, length, MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
 
   length = SIZE(gcCFC%o3_tab)
   CALL MPI_Bcast(gcCFC%o3_tab, length, MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
 
   length = SIZE(gcCFC%sdat)
   CALL MPI_Bcast(gcCFC%sdat, length, MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
 
   length = SIZE(gcCFC%xtab)
   CALL MPI_Bcast(gcCFC%xtab, length, MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #endif
 
@@ -582,36 +582,36 @@ CONTAINS
 !  Get pointers to data in state
 !  -----------------------------
    call MAPL_GetPointer ( impChem,ptr2d,'CFC12', RC=STATUS)
-   VERIFY_(STATUS) 
+   _VERIFY(STATUS) 
    gcCFC%CFCsfcFlux = ptr2d
 
    ptrCFC12S => CFC12S   ! Stratospheric CFC-12 (CCl2F2)
    call MAPL_GetPointer ( EXPORT, CFC12S%data3d,  'CFC12S', RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    ptrCFC12T => CFC12T   ! Tropospheric CFC-12 (CCl2F2)
    call MAPL_GetPointer ( EXPORT, CFC12T%data3d,  'CFC12T', RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    ptrCFCEM => CFCEM	 ! CFC-12 Surface flux
    call MAPL_GetPointer ( EXPORT, CFCEM(1)%data2d,  'CFC12EM', RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    ptrCFCPH => CFCPH	 ! CFC-12 Photorate
    call MAPL_GetPointer ( EXPORT, CFCPH(1)%data3d,  'CFC12PH', RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    ptrCFCLS => CFCLS	 ! CFC-12 Loss due to photolysis
    call MAPL_GetPointer ( EXPORT, CFCLS(1)%data3d,  'CFC12SLS', RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    call MAPL_GetPointer ( EXPORT, CFCLS(2)%data3d,  'CFC12TLS', RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    ptrCFCCL => CFCCL	 ! CFC-12 Column mass density
    call MAPL_GetPointer ( EXPORT, CFCCL(1)%data2d,  'CFC12SCL', RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    call MAPL_GetPointer ( EXPORT, CFCCL(2)%data2d,  'CFC12TCL', RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Initialize local variables
 !  --------------------------
@@ -635,11 +635,11 @@ CONTAINS
 !  Imports
 !  -------
    CALL MAPL_GetPointer( impChem,     T,     'T', RC=status )
-   VERIFY_(status) 
+   _VERIFY(status) 
    CALL MAPL_GetPointer( impChem,    O3,    'O3', RC=status ) 
-   VERIFY_(status) 
+   _VERIFY(status) 
    CALL MAPL_GetPointer( impChem, tropp, 'TROPP', RC=status ) 
-   VERIFY_(status) 
+   _VERIFY(status) 
 
    IF(gcCFC%DebugIsOn) THEN
     CALL pmaxmin('CFC:     T',     T, qmin, qmax, iXj, km, 1. )
@@ -650,22 +650,22 @@ CONTAINS
 !  Allocate temporary workspace
 !  ----------------------------
    ALLOCATE(    emit2vmr(i1:i2,j1:j2), STAT=status)
-   VERIFY_(status) 
+   _VERIFY(status) 
    ALLOCATE(      tropPa(i1:i2,j1:j2), STAT=status)
-   VERIFY_(status) 
+   _VERIFY(status) 
    ALLOCATE(      pPa(i1:i2,j1:j2,km), STAT=status)
-   VERIFY_(status) 
+   _VERIFY(status) 
    ALLOCATE(       nd(i1:i2,j1:j2,km), STAT=status)
-   VERIFY_(status) 
+   _VERIFY(status) 
    ALLOCATE(    O3Col(i1:i2,j1:j2,km), STAT=status)
-   VERIFY_(status) 
+   _VERIFY(status) 
    ALLOCATE(photoRate(i1:i2,j1:j2,km), STAT=status)
-   VERIFY_(status) 
+   _VERIFY(status) 
 
 !  Fix bad tropopause pressure values if they exist.
 !  -------------------------------------------------
    CALL Chem_UtilTroppFixer(i2, j2, tropp, VERBOSE=.TRUE., NEWTROPP=tropPa, RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 !  Find the pressure at mid-layer
 !  ------------------------------
@@ -718,7 +718,7 @@ CONTAINS
    END DO
 
    ALLOCATE(s(gcCFC%nlam,i1:i2,j1:j2,1:km), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 !  Photolysis:  Loop over horizontal domain
 !  ----------------------------------------
@@ -756,7 +756,7 @@ CONTAINS
    END DO   ! Latitude
 
    DEALLOCATE(s, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    m = 0
 
 !  Apply photolysis
@@ -813,17 +813,17 @@ CONTAINS
 !  Clean up
 !  --------
    DEALLOCATE( emit2vmr, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(   tropPa, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(      pPa, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(       nd, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(    O3Col, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(photoRate, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    RETURN
 
@@ -993,7 +993,7 @@ CONTAINS
 
    DEALLOCATE(gcCFC%sdat, gcCFC%xtab, gcCFC%o3_tab, gcCFC%sza_tab, &
               gcCFC%CFCloss, gcCFC%CFCsfcFlux, STAT=status )
-   VERIFY_(status)
+   _VERIFY(status)
 
    RETURN
    END SUBROUTINE CFC_GridCompFinalize

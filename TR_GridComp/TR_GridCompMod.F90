@@ -30,7 +30,6 @@
 
    USE m_inpak90             ! Resource file management
    USE m_die,   ONLY: die
-   USE m_chars, ONLY: lowercase,uppercase
 
    USE MAPL_NewArthParserMod,  ONLY: MAPL_StateEval      ! for evaluating constraints
 
@@ -401,7 +400,7 @@ CONTAINS
 !   ----------------------------------
     allocate ( myState%chemReg, __STAT__ )
     myState%chemReg = Chem_RegistryCreate ( STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     r => myState%chemReg   ! short-hand
 
 !   Load private Config Attributes
@@ -427,7 +426,7 @@ CONTAINS
 !   call ESMF_ConfigGetAttribute ( myState%CF, myState%femisDU,      Label='dust_femis:',    default=1.0,      __RC__ )
 
 
-!   ASSERT_(flagMAM3 /= flagMAM7)
+!   _ASSERT(flagMAM3 /= flagMAM7,'needs informative message')
 
 !   if (flagMAM7) then
 !       myState%model = MAM7_MODEL
@@ -449,7 +448,7 @@ CONTAINS
 !   Store internal state in GC
 !   --------------------------
     call ESMF_UserCompSetInternalState ( GC, 'TR_STATE', wrap, STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
   
 !                         ------------------
 !                         MAPL Data Services
@@ -1258,7 +1257,7 @@ CONTAINS
 !        VLOCATION          = MAPL_VLocationCenter,               &
 !        DATATYPE           = MAPL_BundleItem,                    &
 !                                                      RC=STATUS  )
-!   VERIFY_(STATUS)
+!   _VERIFY(STATUS)
 
 
 !   Set the Profiling timers
@@ -1280,7 +1279,7 @@ CONTAINS
 !   All done
 !   --------
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
   END SUBROUTINE SetServices
 
@@ -1552,7 +1551,7 @@ CONTAINS
 
 !  All done
 !  --------
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
    END SUBROUTINE Initialize_
 
@@ -1706,7 +1705,7 @@ CONTAINS
        call ESMF_AlarmRingerOff(run_alarm, __RC__)
    else
        CALL MAPL_TimerOff(genState, "TOTAL")
-       RETURN_(ESMF_SUCCESS)
+       _RETURN(ESMF_SUCCESS)
    endif
 
    CALL MAPL_TimerOn(genState, "RUN")
@@ -1806,7 +1805,7 @@ CONTAINS
 
 !  All done
 !  --------
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
    END SUBROUTINE Run_
 
@@ -1931,7 +1930,7 @@ CONTAINS
 
 !OVP
    DEALLOCATE( MASK_10AM, MASK_2PM, STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 
 !  Informational message
@@ -1951,7 +1950,7 @@ CONTAINS
 
 !  All done
 !  --------
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
  END SUBROUTINE Finalize_
 
@@ -2015,7 +2014,7 @@ CONTAINS
 !   Get my internal state
 !   ---------------------
     call ESMF_UserCompGetInternalState(GC, 'TR_STATE', wrap, STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     myState => wrap%ptr
 
 !   Get the configuration
@@ -2043,7 +2042,7 @@ CONTAINS
     call ESMF_GridCompGet(GC, grid=GRID, __RC__)
 
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
  END SUBROUTINE extract_
 
@@ -2129,6 +2128,7 @@ CONTAINS
    CHARACTER(LEN=255) :: token
 
    LOGICAL            :: verbose=.FALSE.  ! turn on/off more verbose messages
+   LOGICAL            :: isPresent
 
    Iam = TRIM(myname)
    
@@ -2211,19 +2211,19 @@ CONTAINS
      ! order of source/sink phases
      !----------------------------
      call ESMF_ConfigGetAttribute ( CF, label='first_phase:', value=first_phase_str, __RC__ )
-     IF ( lowercase(TRIM(first_phase_str)) == "source" ) THEN
+     IF ( ESMF_UtilStringLowerCase(TRIM(first_phase_str)) == "source" ) THEN
        spec%run_order(1) = SOURCE_PHASE
        spec%run_order(2) =   SINK_PHASE
-     ELSE IF ( lowercase(TRIM(first_phase_str)) == "sink" ) THEN
+     ELSE IF ( ESMF_UtilStringLowerCase(TRIM(first_phase_str)) == "sink" ) THEN
        spec%run_order(1) =   SINK_PHASE
        spec%run_order(2) = SOURCE_PHASE
      ELSE
       IF(MAPL_AM_I_ROOT()) PRINT *,myname,": Invalid entry for first_phase - "//first_phase_str
       CALL final_(15)
-      VERIFY_(rc)
+      _VERIFY(rc)
      END IF
 
-     IF(verbose.AND.MAPL_AM_I_ROOT()) PRINT *,myname,": first_phase ",lowercase(TRIM(first_phase_str))
+     IF(verbose.AND.MAPL_AM_I_ROOT()) PRINT *,myname,": first_phase ",ESMF_UtilStringLowerCase(TRIM(first_phase_str))
 
 
      ! src_add
@@ -2289,13 +2289,13 @@ CONTAINS
        ELSE
          IF(MAPL_AM_I_ROOT()) PRINT *,myname,": TRACER src units 'timestep' requires tracer units hours, days or years."
          CALL final_(16)
-         VERIFY_(rc)
+         _VERIFY(rc)
        END IF
 
      ELSE
       IF(MAPL_AM_I_ROOT()) PRINT *,myname,": Invalid unit specified for TRACER src value."
       CALL final_(17)
-      VERIFY_(rc)
+      _VERIFY(rc)
      END IF
 
      IF(MAPL_AM_I_ROOT().AND.verbose) PRINT *,myname,": src value ",spec%src_value
@@ -2341,7 +2341,7 @@ CONTAINS
 
      IF(TRIM(spec%src_mode) == "file3d") THEN
        ALLOCATE (  spec%TRvolFlux(i1:i2,j1:j2,1:km), STAT=rc )
-       VERIFY_(rc)
+       _VERIFY(rc)
      END IF
    END IF
 
@@ -2368,7 +2368,7 @@ CONTAINS
      ELSE
       IF(MAPL_AM_I_ROOT()) PRINT *,myname,": Invalid unit specified for TRACER src value."
       CALL final_(19)
-      VERIFY_(rc)
+      _VERIFY(rc)
      END IF
 
      IF(MAPL_AM_I_ROOT().AND.verbose) PRINT *,myname,": src_value ",spec%src_value
@@ -2395,7 +2395,7 @@ CONTAINS
    IF ( .NOT. spec_ok ) THEN
      IF(MAPL_AM_I_ROOT()) PRINT *,myname,": Invalid src_mode for TRACER"
      CALL final_(21)
-     VERIFY_(rc)
+     _VERIFY(rc)
    END IF
 
 !------------------------------------------ <<<
@@ -2479,14 +2479,14 @@ CONTAINS
 
        IF(MAPL_AM_I_ROOT()) PRINT *,myname,": TRACER src MASKS not implemented yet"
        CALL final_(25)
-       VERIFY_(rc)
+       _VERIFY(rc)
 
      END IF
 
      IF ( .NOT. spec_ok ) THEN
        IF(MAPL_AM_I_ROOT()) PRINT *,myname,": Invalid src_horiz for TRACER"
        CALL final_(26)
-       VERIFY_(rc)
+       _VERIFY(rc)
      END IF
 
 !------------------------------------------ <<<
@@ -2564,7 +2564,7 @@ CONTAINS
      IF ( .NOT. spec_ok ) THEN
        IF(MAPL_AM_I_ROOT()) PRINT *,myname,": Invalid src_vert for TRACER"
        CALL final_(30)
-       VERIFY_(rc)
+       _VERIFY(rc)
      END IF
 
 !------------------------------------------ <<<
@@ -2581,7 +2581,7 @@ CONTAINS
      IF( spec%surface_constraint_count > 9 ) THEN
        IF(MAPL_AM_I_ROOT()) PRINT *,myname,': cannot have more than 9 surface constraints'
        CALL final_(131)
-       VERIFY_(rc)
+       _VERIFY(rc)
      END IF
 
      Init_Surface_Constraints: &
@@ -2601,7 +2601,7 @@ CONTAINS
              (TRIM(spec%constraints(n)%mode) .NE. 'scale') .AND. &
              (TRIM(spec%constraints(n)%mode) .NE. 'mask' ) ) THEN
            CALL final_(133)
-           VERIFY_(rc)
+           _VERIFY(rc)
          END IF
 
          IF(MAPL_AM_I_ROOT().AND.verbose) PRINT *,myname,': constraint mode ',TRIM(spec%constraints(n)%mode)
@@ -2618,7 +2618,7 @@ CONTAINS
            IF( spec%regions_ExtData_entry == NULL_REGION_MASK ) THEN
              IF(MAPL_AM_I_ROOT().AND.verbose) PRINT *,myname,': Must include regions_ExtData_entry to use REGIONS'
              CALL final_(134)
-             VERIFY_(rc)
+             _VERIFY(rc)
            END IF
            spec%constraints(n)%use_regions  = .TRUE.
            IF(MAPL_AM_I_ROOT().AND.verbose) PRINT *,myname,': constraint regions = ',TRIM(spec%constraints(n)%regions_str)
@@ -2626,8 +2626,8 @@ CONTAINS
 
          ! BOOLEAN EXPRESSION
          !
-         call ESMF_ConfigFindLabel    ( CF, 'surf_con'//c//'_bool:',  rc=rc )
-         IF ( rc == ESMF_SUCCESS ) THEN
+         call ESMF_ConfigFindLabel    ( CF, 'surf_con'//c//'_bool:',  isPresent=isPresent, __RC__)
+         IF ( isPresent ) THEN
            spec%constraints(n)%use_bool  = .TRUE.
 
            call ESMF_ConfigGetAttribute ( CF,  spec%constraints(n)%bool_FIELD,  __RC__ )
@@ -2648,7 +2648,7 @@ CONTAINS
                 (TRIM(spec%constraints(n)%bool_OP) .NE.  '>=' ) )  THEN
              IF(MAPL_AM_I_ROOT()) PRINT *,myname,': bad boolean operator'
              CALL final_(136)
-             VERIFY_(rc)
+             _VERIFY(rc)
            END IF
            IF(MAPL_AM_I_ROOT().AND.verbose) PRINT *,myname,': constraint boolean  FIELD: '//TRIM(spec%constraints(n)%bool_FIELD )
            IF(MAPL_AM_I_ROOT().AND.verbose) PRINT *,myname,': constraint boolean     OP: '//TRIM(spec%constraints(n)%bool_OP    )
@@ -2672,7 +2672,7 @@ CONTAINS
                (TRIM(spec%constraints(n)%mode) .EQ. 'scale') )  THEN
              IF(MAPL_AM_I_ROOT()) PRINT *,myname,': ERROR - Need to define surf_con'//c//'_expr'
              CALL final_(137)
-             VERIFY_(rc)
+             _VERIFY(rc)
            END IF
 
            spec%constraints(n)%use_expr  = .FALSE.
@@ -2733,7 +2733,7 @@ CONTAINS
      ELSE
       IF(MAPL_AM_I_ROOT()) PRINT *,myname,": Invalid unit specified for TRACER snk value."
       CALL final_(33)
-      VERIFY_(rc)
+      _VERIFY(rc)
      END IF
 
      IF(MAPL_AM_I_ROOT().AND.verbose) PRINT *,myname,": snk_value ",spec%snk_value
@@ -2763,13 +2763,13 @@ CONTAINS
      ELSE
       IF(MAPL_AM_I_ROOT()) PRINT *,myname,": Invalid TRACER time units",snk_time_units
       CALL final_(35)
-      VERIFY_(rc)
+      _VERIFY(rc)
      END IF
 
      IF(snk_period <= 0.00) THEN
       IF(MAPL_AM_I_ROOT()) PRINT *,myname,": TRACER decay period must be greater than zero."
       CALL final_(36)
-      VERIFY_(rc)
+      _VERIFY(rc)
      END IF
 
      IF ( TRIM(spec%snk_mode) == "efolding" ) THEN
@@ -2812,7 +2812,7 @@ CONTAINS
      ELSE
       IF(MAPL_AM_I_ROOT()) PRINT *,myname,": Invalid loss_species specified for TRACER snk."
       CALL final_(37)
-      VERIFY_(rc)
+      _VERIFY(rc)
      END IF
 
      IF(MAPL_AM_I_ROOT().AND.verbose) PRINT *,myname,": loss_species ",spec%loss_species
@@ -2822,7 +2822,7 @@ CONTAINS
    IF ( .NOT. spec_ok ) THEN
      IF(MAPL_AM_I_ROOT()) PRINT *,myname,": Invalid snk_mode for TRACER"
      CALL final_(38)
-     VERIFY_(rc)
+     _VERIFY(rc)
    END IF
 !------------------------------------------ <<<
 
@@ -2898,14 +2898,14 @@ CONTAINS
 
        IF(MAPL_AM_I_ROOT()) PRINT *,myname,": TRACER snk MASKS not implemented yet"
        CALL final_(41)
-       VERIFY_(rc)
+       _VERIFY(rc)
 
      END IF
 
      IF ( .NOT. spec_ok ) THEN
        IF(MAPL_AM_I_ROOT()) PRINT *,myname,": Invalid snk_horiz for TRACER"
        CALL final_(42)
-       VERIFY_(rc)
+       _VERIFY(rc)
      END IF
 
 !------------------------------------------ <<<
@@ -2983,7 +2983,7 @@ CONTAINS
      IF ( .NOT. spec_ok ) THEN
        IF(MAPL_AM_I_ROOT()) PRINT *,myname,": Invalid snk_vert for TRACER"
        CALL final_(46)
-       VERIFY_(rc)
+       _VERIFY(rc)
      END IF
 
 !------------------------------------------ <<<
@@ -3084,7 +3084,7 @@ CONTAINS
      call ESMF_ConfigGetAttribute ( CF, label='mw:', value=spec%mw, default=(-1.0), __RC__ )
 
 
-  RETURN_(ESMF_SUCCESS)
+  _RETURN(ESMF_SUCCESS)
 
 ! End of MAIN BODY of  TR_init_tracer_spec_
 
@@ -3155,8 +3155,8 @@ CONTAINS
 
     REAL  :: e,w   ! copies of the input that we can alter
 
-    ASSERT_( east >= -180. .AND. east <= 180. )
-    ASSERT_( west >= -180. .AND. west <= 180. )
+    _ASSERT( east >= -180. .AND. east <= 180. ,'needs informative message')
+    _ASSERT( west >= -180. .AND. west <= 180. ,'needs informative message')
 
     e = east
     w = west
@@ -3726,7 +3726,7 @@ CONTAINS
            END DO
            IF ( precursor_index == 0 ) THEN
              PRINT *,'FAILED TO FIND src_species '//spec%src_species
-             VERIFY_(123)
+             _VERIFY(123)
            END IF
 
            ! We require that the units of current tracer and its precursor are the same
@@ -3734,7 +3734,7 @@ CONTAINS
              PRINT *,'For tracer DECAY, these TR species need to have the same units:'
              PRINT *,'NAME:'//TRIM(spec%name)//' UNITS:'//TRIM(spec%units)
              PRINT *,'NAME:'//TRIM(spec_array(precursor_index)%name)//' UNITS:'//TRIM(spec_array(precursor_index)%units)
-             VERIFY_(124)
+             _VERIFY(124)
            END IF
 
            IF ( spec%unit_type == MMR_UNITS ) THEN
@@ -3867,7 +3867,7 @@ CONTAINS
            IF ( TRIM(spec%src_vert ) .NE. "surface"  ) THEN
              IF(MAPL_AM_I_ROOT()) PRINT *,"file2d requires vert=surface"
              rc = 13
-             VERIFY_(rc)
+             _VERIFY(rc)
            ENDIF
 
 !          Apply spec%constraints on the values in spec%TRsfcFlux
@@ -3998,7 +3998,7 @@ CONTAINS
            IF ( TRIM(spec%src_vert ) .NE. "surface"  ) THEN
              IF(MAPL_AM_I_ROOT()) PRINT *,"maintain_mixing_ratio requires vert=surface"
              rc = 15
-             VERIFY_(rc)
+             _VERIFY(rc)
            ENDIF
 
            IF ( TRIM(spec%src_horiz) == "all"          .OR.   &
@@ -4063,7 +4063,7 @@ CONTAINS
            ELSE
              IF(MAPL_AM_I_ROOT()) PRINT *,"maintain_mixing_ratio requires horiz=all | lat_zone | latlon_box"
              rc = 19
-             VERIFY_(rc)
+             _VERIFY(rc)
            ENDIF
 
            IF(debug_verbose) PRINT *,myname, pet, "DEBUG src mmr finish"
@@ -4082,7 +4082,7 @@ CONTAINS
            IF( ier(1) /= 0 ) THEN
             print*,'TR problem getting PTR for field '//spec%src_field_name
             rc = 20
-            VERIFY_(rc)
+            _VERIFY(rc)
            END IF
 
            IF ( spec%src_add ) THEN
@@ -4657,13 +4657,13 @@ CONTAINS
 
     ! Assume:  0 = water;  non-zero = land
 
-    IF ( UPPERCASE(TRIM(regions_str)) == "LAND" ) THEN
+    IF ( ESMF_UtilStringUpperCase(TRIM(regions_str)) == "LAND" ) THEN
 !     DO k=1,kmax
 !       regionNumbers(k)=k
 !     END DO
 !     k=kmax
       regionNumbers(1)= -1  ! shortcut
-    ELSE IF ( UPPERCASE(TRIM(regions_str)) == "WATER" ) THEN
+    ELSE IF ( ESMF_UtilStringUpperCase(TRIM(regions_str)) == "WATER" ) THEN
       regionNumbers(1)=0
       k=1
     ELSE
@@ -4757,7 +4757,7 @@ CONTAINS
       IF(MAPL_AM_I_ROOT()) THEN
         PRINT *,"BAD DimCount of Boolean expr field "//TRIM(bool_FIELD)
         STATUS = 234
-        VERIFY_(STATUS)
+        _VERIFY(STATUS)
       END IF
 
     END IF
@@ -5007,7 +5007,7 @@ CONTAINS
     fluxout%data2d => null()
     deallocate( fluxout )
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
   END SUBROUTINE TR_GOCART_wet_removal
 
@@ -5149,7 +5149,7 @@ CONTAINS
                delz_, vud_, delp_, airmol_, tmpu_, bcnv_, ple_, &
                area_, frlake_, frocean_, frseaice_, __STAT__ )
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
   END SUBROUTINE TR_GOCART_convection
 
@@ -5236,7 +5236,7 @@ CONTAINS
     call Chem_Settling ( i1, i2, j1, j2, km, n1, n2, nbins, rhFlag, &
                          tracer_radius, tracer_rho_p, cdt, w_c, tmpu, rhoa, hsurf,    &
                          hghte, tracer_sedimentation, rc )
-    VERIFY_(RC)
+    _VERIFY(RC)
 
     if ( associated(tendency3d) .OR.  associated(tendency2d) ) then
 
@@ -5256,7 +5256,7 @@ CONTAINS
     deallocate( w_c%qa, __STAT__)
     deallocate( w_c, __STAT__ )
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
   END SUBROUTINE TR_GOCART_settling
 
@@ -5329,7 +5329,7 @@ CONTAINS
 
     deallocate( dqa, drydepositionfrequency, __STAT__)
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
   END SUBROUTINE TR_GOCART_drydep
 

@@ -69,27 +69,29 @@
       integer :: STATUS, counter
       integer :: temp
       character(len=ESMF_MAXSTR), parameter :: IAm = "rcEsmfReadTable2ListInt"
+      logical :: isPresent
 !EOP
 !------------------------------------------------------------------------------
 !BOC
-      call ESMF_ConfigFindLabel(config, label=label, rc=STATUS )
+      call ESMF_ConfigFindLabel(config, label=label, isPresent=isPresent, rc=STATUS )
+      _VERIFY(STATUS)
 
       counter = 0
 
-      if (STATUS == ESMF_SUCCESS) then
+      if (isPresent) then
          call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
-         VERIFY_(STATUS)
+         _VERIFY(STATUS)
 
          do while (.not. endTable)
             counter = counter + 1
 
             call ESMF_ConfigGetAttribute(config, temp, rc=STATUS )
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
 
             value(counter) = temp
 
             call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
          end do
       end if
 
@@ -128,27 +130,29 @@
       integer :: STATUS, counter
       real(ESMF_KIND_R8) :: temp
       character(len=ESMF_MAXSTR), parameter :: IAm = "rcEsmfReadTable2ListReal"
+      logical :: isPresent
 !EOP
 !------------------------------------------------------------------------------
 !BOC
-      call ESMF_ConfigFindLabel(config, label=label, rc=STATUS )
+      call ESMF_ConfigFindLabel(config, label=label, isPresent=isPresent, rc=STATUS )
+      _VERIFY(STATUS)
 
       counter = 0
 
-      if (STATUS == ESMF_SUCCESS) then
+      if (isPresent) then
          call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
-         VERIFY_(STATUS)
+         _VERIFY(STATUS)
 
          do while (.not. endTable)
             counter = counter + 1
 
             call ESMF_ConfigGetAttribute(config, temp, rc=STATUS )
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
 
             value(counter) = temp
 
             call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
          end do
       end if
 
@@ -188,29 +192,31 @@
       character(len=1) :: cValue
       character(len=ESMF_MAXSTR) :: temp
       character(len=ESMF_MAXSTR), parameter :: IAm = "rcEsmfReadTable2ListWords"
+      logical :: isPresent
 !EOP
 !------------------------------------------------------------------------------
 !BOC     
-      call ESMF_ConfigFindLabel(config, label=label, rc=STATUS )
+      call ESMF_ConfigFindLabel(config, label=label, isPresent=isPresent, rc=STATUS )
+      _VERIFY(STATUS)
 
       counter = 0
 
-      if (STATUS == ESMF_SUCCESS) then
+      if (isPresent) then
          call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
-         VERIFY_(STATUS)
+         _VERIFY(STATUS)
 
          do while (.not. endTable)
             counter = counter + 1
 
             call ESMF_ConfigGetAttribute(config, temp, rc=STATUS )
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
 
             call reconstructPhrase(temp) 
 
             value(counter) = temp
 
             call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
          end do
       end if
 
@@ -250,22 +256,24 @@
       character(len=1) :: cValue
       character(len=ESMF_MAXSTR) :: tempWord
       character(len=ESMF_MAXSTR), parameter :: IAm = "rcEsmfReadTable2String"
+      logical :: isPresent
 !EOP
 !------------------------------------------------------------------------------
 !BOC     
       firstIter = .true.
 
-      call ESMF_ConfigFindLabel(config, label=label, rc=STATUS )
+      call ESMF_ConfigFindLabel(config, label=label, isPresent=isPresent, rc=STATUS )
+      _VERIFY(STATUS)
             
       value = ''
 
-      if (STATUS == ESMF_SUCCESS) then
+      if (isPresent) then
          call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
-         VERIFY_(STATUS)
+         _VERIFY(STATUS)
             
          do while (.not. endTable)
             call ESMF_ConfigGetAttribute(config, tempWord, rc=STATUS )
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
 
             call reconstructPhrase(tempWord)
          
@@ -277,7 +285,7 @@
             end if
 
             call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
          end do
       end if
 
@@ -328,7 +336,7 @@
       end if
 
       call ESMF_ConfigGetChar(config, cValue, label=label, default=cDefault, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       if (present(rc)) rc = STATUS
 

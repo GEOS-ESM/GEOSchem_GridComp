@@ -31,7 +31,6 @@
    use DryDepositionMod      ! Dry Deposition
    use WetRemovalMod         ! Large-scale Wet Removal
    use ConvectionMod         ! Offline convective mixing/scavenging
-   USE m_chars, ONLY: lowercase, uppercase
    USE Henrys_law_ConstantsMod, ONLY: get_HenrysLawCts
 
    implicit none
@@ -144,14 +143,14 @@ CONTAINS
 !  Load resource file
 !  ------------------
    cfg = ESMF_ConfigCreate(rc=status)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    call ESMF_ConfigLoadFile(cfg,TRIM(rcbasen)//'.rc',rc=status)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Parse resource file
 !  -------------------
    n = ESMF_ConfigGetLen(cfg,label='NI_instances:',rc=status)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 
 !  We have 5 tracers for each instance of BC
@@ -172,11 +171,11 @@ CONTAINS
 !  Record name of each instance
 !  ----------------------------
    call ESMF_ConfigFindLabel(cfg,'NI_instances:',rc=status)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    do i = 1, n
       call ESMF_ConfigGetAttribute(cfg,name,rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
                                             ! resource file name
       IF(TRIM(name) == "full" ) THEN
        name = " "              ! blank instance name for full (1)
@@ -185,7 +184,7 @@ CONTAINS
       END IF
 
       call NI_GridCompSetServices1_(gc,chemReg,name,rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
    end do
 
    call MAPL_AddImportSpec(GC,           &
@@ -196,9 +195,9 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
  end subroutine NI_GridCompSetServices
 
 
@@ -566,7 +565,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'EMI_NH3_BB'//trim(iname), &
@@ -576,7 +575,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'EMI_NH3_EN'//trim(iname), &
@@ -586,7 +585,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'EMI_NH3_IN'//trim(iname), &
@@ -596,7 +595,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'EMI_NH3_OC'//trim(iname), &
@@ -606,7 +605,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'EMI_NH3_RE'//trim(iname), &
@@ -616,7 +615,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'EMI_NH3_TR'//trim(iname), &
@@ -626,7 +625,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'NITRATE_HNO3'//trim(iname), &
@@ -636,9 +635,9 @@ CONTAINS
         VLOCATION  = MAPL_VLocationCenter, &
         RESTART    = MAPL_RestartSkip,     &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
  end subroutine NI_GridCompSetServices1_
 
@@ -838,7 +837,7 @@ CONTAINS
    IF(gcNI%regionsString(1:2) == "-1") THEN
     NoRegionalConstraint = .TRUE.
    ELSE
-    SELECT CASE (lowercase(gcNI%regionsString(1:2)))
+    SELECT CASE (ESMF_UtilStringLowerCase(gcNI%regionsString(1:2)))
      CASE ("gl") 
       NoRegionalConstraint = .TRUE.
      CASE ("al") 
@@ -1330,7 +1329,7 @@ RUN_ALARM: if (gcNI%run_alarm) then
    allocate( fluxout )
    allocate( fluxout%data2d(i1:i2,j1:j2), dqa(i1:i2,j1:j2), &
              drydepositionfrequency(i1:i2,j1:j2), stat=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 
 !  Unlike GEOS-4 hghte is defined for km+1
@@ -1413,14 +1412,14 @@ RUN_ALARM: if (gcNI%run_alarm) then
    if(w_c%reg%doing_DU) then
       allocate(duname(w_c%reg%i_DU:w_c%reg%j_DU))
       do n = w_c%reg%i_DU, w_c%reg%j_DU
-        duname(n) = uppercase(trim(w_c%reg%vname(n)))
+        duname(n) = ESMF_UtilStringUpperCase(trim(w_c%reg%vname(n)))
       end do
    end if
 
    if(w_c%reg%doing_SS) then
       allocate(ssname(w_c%reg%i_SS:w_c%reg%j_SS))
       do n = w_c%reg%i_SS, w_c%reg%j_SS
-        ssname(n) = uppercase(trim(w_c%reg%vname(n)))
+        ssname(n) = ESMF_UtilStringUpperCase(trim(w_c%reg%vname(n)))
       end do
    end if
 

@@ -113,19 +113,19 @@
       call ESMF_ConfigGetAttribute(config, self%num_ks_sdep, &
      &                label   = "num_ks_sdep:",&
      &                default = 1, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call rcEsmfReadLogical(config, self%do_drydep, &
      &               "do_drydep:", default=.false., rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call rcEsmfReadLogical(config, self%do_wetdep, &
      &               "do_wetdep:", default=.false., rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call rcEsmfReadLogical(config, self%do_simpledep, &
      &               "do_simpledep:", default=.false., rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
      ! ----------------------------------------------------------------
      ! wetdep_eff : wet deposition (scavenging) efficiencies; should be
@@ -135,7 +135,7 @@
       self%wetdep_eff(:) = 0.0d0
       
       call rcEsmfReadTable(config, self%wetdep_eff, "wetdep_eff::", rc=STATUS)
-      !VERIFY_(STATUS)
+      !_VERIFY(STATUS)
 
       !##############################
       ! End reading the resource file

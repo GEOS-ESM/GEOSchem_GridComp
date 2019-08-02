@@ -83,11 +83,11 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_StateGet (state, TRIM(fieldName), field=field, rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 !ALT      call ESMF_FieldSetCommit  (field, grid, farrayPtr=PTR, RC=STATUS)
           call ESMF_FieldEmptyComplete  (field, farrayPtr=PTR, RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       return
 
@@ -122,11 +122,11 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_StateGet (state, TRIM(fieldName), field=field, rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 !ALT      call ESMF_FieldSetCommit  (field, grid, farrayPtr=PTR, RC=STATUS)
           call ESMF_FieldEmptyComplete  (field, farrayPtr=PTR, RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       return
 
@@ -161,11 +161,11 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_StateGet (state, TRIM(fieldName), field=field, rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 !ALT      call ESMF_FieldSetCommit  (field, grid, farrayPtr=PTR, RC=STATUS)
           call ESMF_FieldEmptyComplete  (field, farrayPtr=PTR, RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       return
 
@@ -200,11 +200,11 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_StateGet (state, TRIM(fieldName), field=field, rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 !ALT      call ESMF_FieldSetCommit  (field, grid, farrayPtr=PTR, RC=STATUS)
           call ESMF_FieldEmptyComplete  (field, farrayPtr=PTR, RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       return
 
@@ -240,13 +240,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_StateGet (state, TRIM(fieldName), field=field, rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=ptr3D, RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       ptr3D(:,:,:) = PTR(:,:,:)
       
@@ -284,13 +284,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_StateGet (state, TRIM(fieldName), field=field, rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=ptr3D, RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       ptr3D(:,:,:) = PTR(:,:,:)
 
@@ -328,13 +328,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_StateGet (state, TRIM(fieldName), field=field, rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=ptr2D, RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       ptr2D(:,:) = PTR(:,:)
 
@@ -372,13 +372,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_StateGet (state, TRIM(fieldName), field=field, rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=ptr2D, RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       ptr2D(:,:) = PTR(:,:)
 
@@ -417,13 +417,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_StateGet (state, TRIM(fieldName), field=field, rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=PTR, RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
       
       return
 
@@ -460,13 +460,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_StateGet (state, TRIM(fieldName), field=field, rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=PTR, RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       return
 
@@ -503,13 +503,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_StateGet (state, TRIM(fieldName), field=field, rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=PTR, RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       return
 
@@ -546,13 +546,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_StateGet (state, TRIM(fieldName), field=field, rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=PTR, RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       return
 

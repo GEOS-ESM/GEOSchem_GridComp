@@ -25,7 +25,6 @@
    use Chem_MieMod           ! Aerosol LU Tables, calculator
    use m_inpak90             ! Resource file management
    use m_die, only: die
-   use m_chars, only: lowercase
    USE Henrys_law_ConstantsMod, ONLY: get_HenrysLawCts
 
    use m_StrTemplate
@@ -247,7 +246,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC,             &
         SHORT_NAME = 'pSO2_OCS',           &
@@ -257,9 +256,9 @@ CONTAINS
         VLOCATION  = MAPL_VLocationCenter, &
         RESTART    = MAPL_RestartSkip,     &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
    end subroutine SU_GridCompSetServices
 
 !-------------------------------------------------------------------------
@@ -656,7 +655,7 @@ CONTAINS
          VLOCATION  = MAPL_VLocationNone,   &
          RESTART    = MAPL_RestartSkip,     &
          RC         = STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call MAPL_AddImportSpec(GC,             &
          SHORT_NAME = 'SU_NEI_SRC2', &
@@ -666,7 +665,7 @@ CONTAINS
          VLOCATION  = MAPL_VLocationNone,   &
          RESTART    = MAPL_RestartSkip,     &
          RC         = STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
  end if
     
  if (.not. using_GMI_H2O2) then
@@ -678,7 +677,7 @@ CONTAINS
          VLOCATION  = MAPL_VLocationCenter,   &
          RESTART    = MAPL_RestartSkip,       &
          RC         = STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
  end if
 
  if (.not. using_GMI_OH) then
@@ -690,7 +689,7 @@ CONTAINS
          VLOCATION  = MAPL_VLocationCenter, &
          RESTART    = MAPL_RestartSkip,     &
          RC         = STATUS)
-         VERIFY_(STATUS)
+         _VERIFY(STATUS)
  end if
 
  if (.not. using_GMI_NO3) then
@@ -702,7 +701,7 @@ CONTAINS
          VLOCATION  = MAPL_VLocationCenter,  &
          RESTART    = MAPL_RestartSkip,      &
          RC         = STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
  end if
 
  call MAPL_AddImportSpec(GC,            &
@@ -713,7 +712,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone,  &
       RESTART    = MAPL_RestartSkip,    &
       RC         = STATUS)
- VERIFY_(STATUS)
+ _VERIFY(STATUS)
 
  call MAPL_AddImportSpec(GC,             & 
       SHORT_NAME = 'SU_ANTHROL1'//iname, &
@@ -723,7 +722,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone,   &
       RESTART    = MAPL_RestartSkip,     &
       RC         = STATUS)
- VERIFY_(STATUS)
+ _VERIFY(STATUS)
 
  call MAPL_AddImportSpec(GC,             &
       SHORT_NAME = 'SU_ANTHROL2'//iname, &
@@ -733,7 +732,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone,   &
       RESTART    = MAPL_RestartSkip,     &
       RC         = STATUS)
- VERIFY_(STATUS)
+ _VERIFY(STATUS)
 
  call MAPL_AddImportSpec(GC,            &
       SHORT_NAME = 'SU_SHIPSO2'//iname, &
@@ -743,7 +742,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone,  &
       RESTART    = MAPL_RestartSkip,    &
       RC         = STATUS)
- VERIFY_(STATUS)
+ _VERIFY(STATUS)
 
  call MAPL_AddImportSpec(GC,            &
       SHORT_NAME = 'SU_SHIPSO4'//iname, &
@@ -753,7 +752,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone,  &
       RESTART    = MAPL_RestartSkip,    &
       RC         = STATUS)
- VERIFY_(STATUS)
+ _VERIFY(STATUS)
 
  call MAPL_AddImportSpec(GC,           &
       SHORT_NAME = 'SU_DMSO'//iname,   &
@@ -763,7 +762,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone, &
       RESTART    = MAPL_RestartSkip,   &
       RC         = STATUS)
- VERIFY_(STATUS)
+ _VERIFY(STATUS)
 
  call MAPL_AddImportSpec(GC,             &
       SHORT_NAME = 'SU_AIRCRAFT'//iname, &
@@ -773,7 +772,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationCenter, &
       RESTART    = MAPL_RestartSkip,     &
       RC         = STATUS)
- VERIFY_(STATUS)
+ _VERIFY(STATUS)
 
  call MAPL_AddImportSpec(GC, &
       SHORT_NAME = 'SU_AVIATION_LTO'//trim(iname), &
@@ -783,7 +782,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone, &
       RESTART    = MAPL_RestartSkip,   &
       RC         = STATUS)
- VERIFY_(STATUS)
+ _VERIFY(STATUS)
 
  call MAPL_AddImportSpec(GC, &
       SHORT_NAME = 'SU_AVIATION_CDS'//trim(iname), &
@@ -793,7 +792,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone, &
       RESTART    = MAPL_RestartSkip,   &
       RC         = STATUS)
- VERIFY_(STATUS)
+ _VERIFY(STATUS)
 
  call MAPL_AddImportSpec(GC, &
       SHORT_NAME = 'SU_AVIATION_CRS'//trim(iname), &
@@ -803,10 +802,10 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone, &
       RESTART    = MAPL_RestartSkip,   &
       RC         = STATUS)
- VERIFY_(STATUS)
+ _VERIFY(STATUS)
  
 
- RETURN_(ESMF_SUCCESS)
+ _RETURN(ESMF_SUCCESS)
  end subroutine SU_GridCompSetServices1_
 
 !--------------------------------------------------------------------------
@@ -1263,7 +1262,7 @@ CONTAINS
    IF(gcSU%regionsString(1:2) == "-1") THEN
     NoRegionalConstraint = .TRUE.
    ELSE
-    SELECT CASE (lowercase(gcSU%regionsString(1:2)))
+    SELECT CASE (ESMF_UtilStringLowerCase(gcSU%regionsString(1:2)))
      CASE ("gl") 
       NoRegionalConstraint = .TRUE.
      CASE ("al") 
@@ -1483,7 +1482,7 @@ CONTAINS
                                 maskString=trim(gcSU%regionsString), &
                                 gridMask=gcSU%regionMask, &
                                 rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Read any pointwise emissions, if requested (hardcoded will go to sulfate)
 !  -------------------------------------------------------------------------
@@ -2080,7 +2079,7 @@ RUN_ALARM: if (gcSU%run_alarm) then
 
 
    deallocate(xoh, xno3, xh2o2, SU_radius, SU_rhop, stat=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    RETURN
 
