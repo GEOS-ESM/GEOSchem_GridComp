@@ -614,8 +614,8 @@ CONTAINS
 
    call MAPL_AddImportSpec(GC, &
      SHORT_NAME = 'pSOA_BIOB_VOC'//trim(iname), &
-     LONG_NAME  = 'Production of SOA from Biomass Burning VOC' , &
-     UNITS      = 'kg m-3 s-1',       &
+     LONG_NAME  = 'SOA from Anthropogenic and biomass burning VOC' , &
+     UNITS      = 'kg m-3 s-1',                &
      DIMS       = MAPL_DimsHorzVert,  &
      VLOCATION  = MAPL_VLocationCenter, &
      RESTART    = MAPL_RestartSkip,   &
@@ -2186,7 +2186,7 @@ RUN_ALARM: if (gcBRC%run_alarm) then
    _VERIFY(STATUS)
 
 
-!  SOA production from oxidation of biomass burning VOC
+!  SOA production from oxidation of anthropogenic VOC
    call MAPL_GetPointer(impChem, var3d, 'pSOA_BIOB_VOC'//iNAME, __RC__)
    gcBRC%psoa_biob_voc = var3d
 
@@ -2198,7 +2198,7 @@ RUN_ALARM: if (gcBRC%run_alarm) then
    w_c%qa(n2)%data3d = w_c%qa(n2)%data3d + cdt*gcBRC%psoa_biob_voc/rhoa  ! hydrophilic
 
    if ( associated(BRC_pSOA%data2d)) &
-       BRC_pSOA%data2d = sum(gcBRC%psoa_biob_voc*w_c%delp/rhoa/grav, 3)
+       BRC_pSOA%data2d = sum(cdt*gcBRC%psoa_biob_voc*w_c%delp/rhoa/grav, 3)
 
 
 !  Ad Hoc transfer of hydrophobic to hydrophilic aerosols
