@@ -1,5 +1,6 @@
 esma_set_this ()
 
+option(STRATCHEM_REDUCED_MECHANISM "reduces the number of chem species" OFF)
 
 set (subsrcs
   SC_GridCompMod.F90
@@ -76,6 +77,10 @@ include_directories (${include_GMAO_mpeu})
 set (dependencies Chem_Shared MAPL_Base MAPL_cfio_r4 GMAO_mpeu)
 esma_add_library (${this} SRCS ${srcs} DEPENDENCIES ${dependencies})
 target_include_directories (${this} PUBLIC ${INC_NETCDF})
+
+if (STRATCHEM_REDUCED_MECHANISM)
+   target_compile_definitions(${this} PRIVATE REDUCED)
+endif ()
 
 string (REPLACE "_GridComp" "" name ${this})
 
