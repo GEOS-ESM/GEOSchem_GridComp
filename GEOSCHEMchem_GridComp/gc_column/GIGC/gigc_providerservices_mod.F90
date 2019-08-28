@@ -128,8 +128,8 @@ MODULE gigc_providerservices_mod
                                       58.0,   58.0,  180.0,  180.0 ,     &
                                      180.0,  180.0,  132.0                /)
 
-  CHARACTER(LEN=15), PARAMETER :: COLLIST(8) = (/ 'NO2 ', 'O3  ', 'CH4 ', 'CO  ', &
-                                                  'BrO ', 'CH2O', 'SO2 ', 'IO  '  /)
+  CHARACTER(LEN=15), PARAMETER :: COLLIST(8) = (/ 'NO2', 'O3',   'CH4', 'CO', &
+                                                  'BrO', 'CH2O', 'SO2', 'IO'  /)
 
   ! Pointers for RATS and analysis OX. Those are not included in the GEOS-Chem
   ! registry and only filled if GEOS-Chem is the RATS and/or analysis OX 

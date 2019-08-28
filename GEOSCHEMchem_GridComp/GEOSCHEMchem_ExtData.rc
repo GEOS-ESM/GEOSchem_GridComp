@@ -329,38 +329,34 @@ ORDONEZ_CH3I   'kg_m-2_s-1'     Y    Y 2012-%m2-01T00:00:00   none     none    C
 ORDONEZ_CH2I2   'kg_m-2_s-1'    Y    Y 2012-%m2-01T00:00:00   none     none    CH2I2           /home/cakelle2/data/ORDONEZ/CH2I2_monthly_emissions_Ordonez_2012_COARDS.esmf.nc
 ORDONEZ_CH2ICL   'kg_m-2_s-1'   Y    Y 2012-%m2-01T00:00:00   none     none    CH2ICl          /home/cakelle2/data/ORDONEZ/CH2ICl_monthly_emissions_Ordonez_2012_COARDS.esmf.nc
 ORDONEZ_CH2IBR   'kg_m-2_s-1'   Y    Y 2012-%m2-01T00:00:00   none     none    CH2IBr          /home/cakelle2/data/ORDONEZ/CH2IBr_monthly_emissions_Ordonez_2012_COARDS.esmf.nc
-# scale factors are to convert kg/m2/s to 'kgC/m2/s'
-QFED_ACET_SFC  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none      0.61984 biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_acet.006.%y4%m2%d2.nc4
-QFED_ALD2_SFC  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none      0.54484 biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_ald2.006.%y4%m2%d2.nc4
-QFED_ALK4_SFC  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none      0.82588 biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_alk4.006.%y4%m2%d2.nc4
-QFED_BCPI_SFC  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_bc.006.%y4%m2%d2.nc4
-QFED_OCPI_SFC  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_oc.006.%y4%m2%d2.nc4
-QFED_C2H6_SFC  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none      0.79814 biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_c2h6.006.%y4%m2%d2.nc4
-QFED_C3H8_SFC  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none      0.81633 biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_c3h8.006.%y4%m2%d2.nc4
-QFED_CH2O_SFC  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_ch2o.006.%y4%m2%d2.nc4
-QFED_CO_SFC    'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_co.006.%y4%m2%d2.nc4
-QFED_MEK_SFC   'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none      0.66565 biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_mek.006.%y4%m2%d2.nc4
-QFED_NH3_SFC   'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_nh3.006.%y4%m2%d2.nc4
-QFED_NO_SFC    'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_no.006.%y4%m2%d2.nc4
-QFED_SO2_SFC   'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_so2.006.%y4%m2%d2.nc4
-QFED_C3H6_SFC  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none      0.85551 biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_c3h6.006.%y4%m2%d2.nc4
-QFED_CH4_SFC   'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_ch4.006.%y4%m2%d2.nc4
-QFED_ACET_FT  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none      0.61984 biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_acet.006.%y4%m2%d2.nc4
-QFED_ALD2_FT  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none      0.54484 biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_ald2.006.%y4%m2%d2.nc4
-QFED_ALK4_FT  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none      0.82588 biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_alk4.006.%y4%m2%d2.nc4
-QFED_BCPI_FT  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_bc.006.%y4%m2%d2.nc4
-QFED_OCPI_FT  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_oc.006.%y4%m2%d2.nc4
-QFED_C2H6_FT  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none      0.79814 biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_c2h6.006.%y4%m2%d2.nc4
-QFED_C3H8_FT  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none      0.81633 biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_c3h8.006.%y4%m2%d2.nc4
-QFED_CH2O_FT  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_ch2o.006.%y4%m2%d2.nc4
-QFED_CO_FT    'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_co.006.%y4%m2%d2.nc4
-QFED_MEK_FT   'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none      0.66565 biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_mek.006.%y4%m2%d2.nc4
-QFED_NH3_FT   'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_nh3.006.%y4%m2%d2.nc4
-QFED_NO_FT    'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_no.006.%y4%m2%d2.nc4
-QFED_SO2_FT   'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_so2.006.%y4%m2%d2.nc4
-QFED_C3H6_FT  'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none      0.85551 biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_c3h6.006.%y4%m2%d2.nc4
-QFED_CH4_FT   'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    biomass	       /discover/nobackup/projects/gmao/share/dao_ops/fvInput_nc3/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_ch4.006.%y4%m2%d2.nc4
+# GFAS
+GFAS_CO       'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        cofire           /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_SOAP     'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        cofire           /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_NO       'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        noxfire          /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_BCPI     'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        bcfire           /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_BCPO     'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        bcfire           /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_OCPI     'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        ocfire           /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_OCPO     'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        ocfire           /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_CO2      'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        co2fire          /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_CH4      'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        ch4fire          /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_SO2      'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        so2fire          /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_NH3      'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        nh3fire          /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_ACET     'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        c3h6ofire        /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_ALD2     'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        c2h4ofire        /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_ALK4     'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        hialkanesfire    /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_PRPE1    'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        hialkenesfire    /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_PRPE2    'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        c3h6fire         /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_C2H6     'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        c2h6fire         /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_C3H8     'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        c3h8fire         /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_CH2O     'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        ch2ofire         /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_C2H4     'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        c2h4fire         /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_ISOP     'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        c5h8fire         /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_DMS      'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        c2h6sfire        /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_TOLU     'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        c7h8fire         /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_BENZ     'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        c6h6fire         /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
+GFAS_XYLE     'kg_m-2_s-1'     N    Y %y4-%m2-%d2T00:00:00   none none        c8h10fire        /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
 # scale factors
+GFAS_EMITL    'm'              N    Y %y4-%m2-%d2T00:00:00   none none        apt              /discover/nobackup/cakelle2/data/GFAS/v2018-09/Y%y4/M%m2/GFAS_%y4%m2%d2.nc4
 LIQFUEL_THISYR       '1'        N    N -  		    none     none    COscalar	       /discover/nobackup/cakelle2/data/AnnualScalar.gen.1x1.2010.nc
 LIQFUEL_1985         '1'        N    N -  		    none     none    COscalar	       /discover/nobackup/cakelle2/data/AnnualScalar.gen.1x1.1985.nc
 BROMOCARB_SEASON     '1'        Y    N 2000-%m2-01T00:01:00   none     none    CHXBRY_scale      /discover/nobackup/cakelle2/data/BromoCarb_Season.esmf.nc
@@ -697,6 +693,10 @@ STRAT_OH           '1'          Y   N 2005-%m2-01T00:00:00   none     none    sp
 
 # --- NOAA GMD surface CH4 concentrations ---
 NOAA_GMD_CH4       'v/v'        N   N %y4-%m2-01T00:00:00    none     none    SFC_CH4         /discover/nobackup/cakelle2/data/NOAA_GMD/monthly.gridded.surface.methane.1979-2020.1x1.nc
+
+SfcVMR_CH3Cl       'ppbv'       N   N -                      none     none    CH3Cl           /discover/nobackup/cakelle2/data/SfcVMR/sfcvmr.nc
+SfcVMR_CH2Cl2      'ppbv'       N   N -                      none     none    CH2Cl2          /discover/nobackup/cakelle2/data/SfcVMR/sfcvmr.nc
+SfcVMR_CHCl3       'ppbv'       N   N -                      none     none    CHCl3           /discover/nobackup/cakelle2/data/SfcVMR/sfcvmr.nc
 
 # --- Spatially varying OM/OC ---
 OMOC_DJF           '1'          N   N -                      none     none    OMOC            /discover/nobackup/cakelle2/data/OMOC/OMOC.DJF.01x01.nc
