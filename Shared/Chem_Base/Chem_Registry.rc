@@ -106,6 +106,22 @@ units_GMI: 'mol mol-1'   # GMI chemistry (GEOS-5)
 units_OCS: 'kg kg-1'     # ACHEM chemistry (OCS)
 units_TR:  'mol mol-1'   # passive tracers
 
+! Whether to pass GEOS-CHEM values to GOCART export aerosol bundle
+! ------------------------------------------------------
+pass_GEOSCHEM_BC:   no  # &YesNo Use GEOS-Chem black carbon?
+pass_GEOSCHEM_BRC:  no  # &YesNo Use GEOS-Chem brown carbon?
+pass_GEOSCHEM_CFC:  no  # &YesNo Use GEOS-Chem CFCs?
+pass_GEOSCHEM_CH4:  no  # &YesNo Use GEOS-Chem Methane?
+pass_GEOSCHEM_CO2:  no  # &YesNo Use GEOS-Chem carbon dioxide?
+pass_GEOSCHEM_CO:   no  # &YesNo Use GEOS-Chem carbon monoxide?
+pass_GEOSCHEM_DU:   no  # &YesNo Use GEOS-Chem mineral dust?
+pass_GEOSCHEM_NI:   no  # &YesNo Use GEOS-Chem Nitrate?
+pass_GEOSCHEM_O3:   no  # &YesNo Use GEOS-Chem Ozone?
+pass_GEOSCHEM_OC:   no  # &YesNo Use GEOS-Chem organic carbon?
+pass_GEOSCHEM_Rn:   no  # &YesNo Use GEOS-Chem radon?
+pass_GEOSCHEM_SS:   no  # &YesNo Use GEOS-Chem sea salt?
+pass_GEOSCHEM_SU:   no  # &YesNo Use GEOS-Chem sulfates?
+
 # Variable names to override defaults.  Optional.  Name and Units must 
 # be 1 token. Long names can be more than one token.
 # --------------------------------------------------------------------
