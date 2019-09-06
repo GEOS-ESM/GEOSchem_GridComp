@@ -45,7 +45,7 @@ doing_SU:  yes  # sulfates
 doing_CFC: no   # CFCs
 doing_BC:  yes  # black carbon
 doing_OC:  yes  # organic carbon
-doing_BRC: no   # brown carbon
+doing_BRC: yes  # brown carbon
 doing_NI:  yes  # nitrate
 doing_Rn:  no   # radon
 doing_CH4: no   # methane
