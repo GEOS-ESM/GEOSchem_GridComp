@@ -179,8 +179,7 @@ CONTAINS
         (aero_type == 'NH3'     ) .or. &
         (aero_type == 'NH4a'    ) .or. &
         (aero_type == 'nitrate' ) .or. &
-        (aero_type == 'bromine' ) .or. &
-        (aero_type == 'dust'    ) ) then
+        (aero_type == 'bromine' ) ) then
      snow_scavenging = .false.
    end if
 
