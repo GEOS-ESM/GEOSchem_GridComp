@@ -20,7 +20,6 @@ module LDE_Mod
    use Chem_SimpleBundleMod
    use m_Random
    use m_MergeSorts
-   use m_chars, only: uppercase
 
    implicit NONE
 
@@ -366,7 +365,7 @@ CONTAINS
      if ( em > Nx * Ny ) then
         print *, trim(Iam)//': inconsistent em, Nx, Ny', em, Nx, Ny
         STATUS = 1
-        VERIFY_(STATUS)
+        _VERIFY(STATUS)
      end if
 
 !    Trig - Assumes GEOS-5 lat/lon grid
@@ -435,7 +434,7 @@ CONTAINS
            print *, trim(Iam)//': not enough ensemble members: ', &
                 js, ne, em, (em-ne) 
            STATUS = 3
-           VERIFY_(STATUS)
+           _VERIFY(STATUS)
         end if
 
 !       Final shuffle so that we can select fewer members later,
@@ -609,7 +608,7 @@ merid:        do j = 1, JM_World
 
 !    Use single channel
 !    ------------------
-     ASSERT_(size(bY_f%coords%levs) == size(bY_d%coords%levs))
+     _ASSERT(size(bY_f%coords%levs) == size(bY_d%coords%levs),'needs informative message')
      missing_f = .TRUE.
      missing_d = .TRUE.
      do k = 1, size(bY_f%coords%levs)
@@ -701,7 +700,7 @@ merid:        do j = 1, JM_World
      enddo
 
      CALL MPI_COMM_SPLIT(COMM, color, mype, lde_comm, STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
 !    Allocate V_World on all processes that will participate in the analysis
 !    -----------------------------------------------------------------------
@@ -1143,7 +1142,7 @@ merid:     do j = 1, JM_World
      
      myFace = (J1-1)/IM_World + 1
      ! Saniny checking: make sure the upper right corner is on the same face
-     ASSERT_(myFace == (jn -1)/IM_World+1)
+     _ASSERT(myFace == (jn -1)/IM_World+1,'needs informative message')
 
      face: do iFace = myface, myface
 
@@ -1337,7 +1336,7 @@ merid:     do j = 1, JM_World
 
 !    Use single channel
 !    ------------------
-     ASSERT_(size(bY_f%coords%levs) == size(bY_d%coords%levs))
+     _ASSERT(size(bY_f%coords%levs) == size(bY_d%coords%levs),'needs informative message')
      missing_f = .TRUE.
      missing_d = .TRUE.
      do k = 1, size(bY_f%coords%levs)
@@ -1485,14 +1484,14 @@ merid:     do j = 1, JM_World
 
                        __Iam__('isAerosol_')
          
-     if ( uppercase(name(1:2))=='DU'       .OR.  &
-          uppercase(name(1:2))=='SS'       .OR.  &
-          uppercase(name(1:2))=='NI'       .OR.  &
-          uppercase(name)     =='SO4'      .OR.  &
-          uppercase(name)     =='BCPHOBIC' .OR.  &
-          uppercase(name)     =='BCPHILIC' .OR.  &
-          uppercase(name)     =='OCPHOBIC' .OR.  &
-          uppercase(name)     =='OCPHILIC'       ) then
+     if ( ESMF_UtilStringUpperCase(name(1:2))=='DU'       .OR.  &
+          ESMF_UtilStringUpperCase(name(1:2))=='SS'       .OR.  &
+          ESMF_UtilStringUpperCase(name(1:2))=='NI'       .OR.  &
+          ESMF_UtilStringUpperCase(name)     =='SO4'      .OR.  &
+          ESMF_UtilStringUpperCase(name)     =='BCPHOBIC' .OR.  &
+          ESMF_UtilStringUpperCase(name)     =='BCPHILIC' .OR.  &
+          ESMF_UtilStringUpperCase(name)     =='OCPHOBIC' .OR.  &
+          ESMF_UtilStringUpperCase(name)     =='OCPHILIC'       ) then
             
           isAerosol_ = .TRUE.
 

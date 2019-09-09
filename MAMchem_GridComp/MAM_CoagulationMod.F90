@@ -220,8 +220,8 @@
        end if
    end do
     
-   ASSERT_(any(coag_mode_index /= 0))
-   ASSERT_(any(coag_mode_species_number /= 0))
+   _ASSERT(any(coag_mode_index /= 0),'needs informative message')
+   _ASSERT(any(coag_mode_species_number /= 0),'needs informative message')
 
 
    !  Allocate memory for bufferes
@@ -592,8 +592,8 @@
        end if
    end do
 
-   ASSERT_(any(coag_mode_index /= 0))
-   ASSERT_(any(coag_mode_species_number /= 0))
+   _ASSERT(any(coag_mode_index /= 0),'needs informative message')
+   _ASSERT(any(coag_mode_species_number /= 0),'needs informative message')
 
 
    !  Allocate memory for bufferes

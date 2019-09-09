@@ -287,20 +287,20 @@ CONTAINS
       ENDIF
 
       gmiConfigFile = ESMF_ConfigCreate(rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigLoadFile(gmiConfigFile, TRIM(rcfilen), rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, importRestartFile, &
      &                label   = "importRestartFile:", &
      &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%chem_mecha, &
      &                label   = "chem_mecha:", &
      &                default = 'strat_trop', rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%metdata_name_model, &
      &                label   = "metdata_name_model:", &
@@ -312,20 +312,20 @@ CONTAINS
 
       call rcEsmfReadLogical(gmiConfigFile, self%pr_diag, &
      &           "pr_diag:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call rcEsmfReadLogical(gmiConfigFile, self%verbose, &
      &           "verbose:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call rcEsmfReadLogical(gmiConfigFile, self%do_synoz, &
      &           "do_synoz:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%chem_opt, &
      &                label   = "chem_opt:", &
      &                default = 2, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       !---------------------------------------------------
       ! PSC exclusion zone, +/- NoPSCZone degrees latitude
@@ -333,7 +333,7 @@ CONTAINS
       CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%NoPSCZone, &
      &                LABEL   = "NoPSCZone:", &
      &                DEFAULT = 0, RC=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       !--------------------------------------------------
       ! Highest pressure at which PSCs are computed. If <= 0, 
@@ -343,7 +343,7 @@ CONTAINS
       CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%PSCMaxP, &
      &                LABEL   = "PSC_Max_P_hPa:", &
      &                DEFAULT = 0, RC=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       !--------------------------------------------------
       ! Enforce a maximum allowable condensed HNO3 (ppbv)
@@ -351,7 +351,7 @@ CONTAINS
       CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%HNO3Ice_MAX, &
      &                LABEL   = "Condensed_HNO3_limit:", &
      &                DEFAULT = 25, RC=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       !--------------------------------------------------
       ! Enforce a maximum allowable HCl (ppbv)
@@ -359,7 +359,7 @@ CONTAINS
       CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%HCl_MAX, &
      &                LABEL   = "HCl_limit:", &
      &                DEFAULT = 5.0, RC=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 !     ----------------------------------------------------
 !     sad_opt
@@ -372,7 +372,7 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%sad_opt, &
      &                label   = "sad_opt:", &
      &                default = 0, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 !     ------------------------------------------------
 !     h2oclim_opt
@@ -385,26 +385,26 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%h2oclim_opt, &
      &                label   = "h2oclim_opt:", &
      &                default = 2, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%h2oclim_timpyr, &
      &                label   = "h2oclim_timpyr:", &
      &                default = MONTHS_PER_YEAR, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%ch4clim_init_val, &
      &                label   = "ch4clim_init_val:", &
      &                default = 0.0d0, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%h2oclim_init_val, &
      &                label   = "h2oclim_init_val:", &
      &                default = 0.0d0, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call rcEsmfReadLogical(gmiConfigFile, self%pr_sad, &
      &           "pr_sad:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 !     ------------------------------------------------
 !     dehyd_opt
@@ -418,7 +418,7 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%dehyd_opt, &
      &                label   = "dehyd_opt:", &
      &                default = 1, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 !     ----------------------------------------------
 !     lbssad_opt
@@ -431,17 +431,17 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%lbssad_opt, &
      &                label   = "lbssad_opt:", &
      &                default = 2, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%lbssad_timpyr, &
      &                label   = "lbssad_timpyr:", &
      &                default = MONTHS_PER_YEAR, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%lbssad_init_val, &
      &                label   = "lbssad_init_val:", &
      &                default = 0.0d0, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call CheckNamelistOptionRange ('h2oclim_opt', self%h2oclim_opt, 1, 3)
       call CheckNamelistOptionRange ('lbssad_opt', self%lbssad_opt, 1, 4)
@@ -654,12 +654,12 @@ CONTAINS
    ! Get the declared bundle from the state
 
    call ESMF_StateGet(expChem, 'gmiSAD' , sadBun,   RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    ! Add tracer to the bundle
    do ib = 1, NSAD
       allocate( var(i1:i2, j1:j2, 1:km), STAT=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       var(:,:,:)  = 0.0d0
       
@@ -669,11 +669,11 @@ CONTAINS
    ! Sanity check
 
    call ESMF_FieldBundleGet(sadBun, fieldCount=numVars , rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    IF (MAPL_AM_I_ROOT()) THEN
       PRINT*,"  Number of fields in the bundle gmiSAD: ", numVars
    END IF
-   ASSERT_(NSAD == numVars)
+   _ASSERT(NSAD == numVars,'needs informative message')
 
     !---------------------------------------------------------------
     ! Create and populate the array that maps GMI species indices to
@@ -858,28 +858,28 @@ CONTAINS
 !  We need lots of pointers!
 !  -------------------------
    CALL FindPointers(STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Reserve some local work space
 !  -----------------------------
    ALLOCATE(lonDeg(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(latDeg(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    ALLOCATE(        tropopausePress(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    ALLOCATE(                pl(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(             var3d(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(           press3c(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(           press3e(i1:i2,j1:j2,0:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(               kel(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 ! Geolocation
 ! -----------
@@ -906,12 +906,12 @@ CONTAINS
 !  Emissions
 ! --------------------------------------------------------
    CALL Acquire_Clims(STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 ! Grab imports and do units conversions
 ! -------------------------------------
    CALL SatisfyImports(STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 ! Hand the species concentrations to GMI's bundle
 ! -----------------------------------------------
@@ -919,11 +919,11 @@ CONTAINS
       CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration, &
                w_c%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, &
                STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
    END IF
 
    DEALLOCATE(var3d, STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    IF (self%gotImportRst) THEN
 
@@ -954,7 +954,7 @@ CONTAINS
     CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration, &
     	     w_c%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
     	     STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! Check for HNO3COND above chosen limit
 ! -------------------------------------
@@ -965,7 +965,7 @@ CONTAINS
     IF(r > self%HNO3Ice_MAX*1.00E-09) THEN
      PRINT *,TRIM(Iam)//": Found HNO3COND above limit: ",r*1.00E+09," ppbv"
      status = 1
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
 
 ! Check for HCl above chosen limit
@@ -977,7 +977,7 @@ CONTAINS
     IF(r > self%HCl_MAX*1.00E-09) THEN
      PRINT *,TRIM(Iam)//": Found HCl above limit: ",r*1.00E+09," ppbv"
      status = 1
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
 
    END IF
@@ -985,17 +985,17 @@ CONTAINS
 ! Export states
 ! -------------
    CALL FillExports(STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    CALL populateBundleSAD (expChem)
 
 ! Scratch local work space
 ! ------------------------
    DEALLOCATE(tropopausePress, STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    DEALLOCATE(pl, press3c, press3e, kel, STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 ! IMPORTANT: Reset this switch to .TRUE. after first pass.
 ! --------------------------------------------------------
@@ -1048,7 +1048,7 @@ CONTAINS
     speciesName = TRIM(lchemvar(i))
     importName = TRIM(speciesName)//'_FIXED'
     CALL MAPL_GetPointer(impChem, PTR3D, TRIM(importName), RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     self%SpeciesConcentration%fixed_const(i1:i2,j1:j2,1:km,ic) = PTR3D(i1:i2,j1:j2,km:1:-1)
     NULLIFY(PTR3D)
 
@@ -1061,7 +1061,7 @@ CONTAINS
   IF(self%lbssad_opt >= 2) THEN
     importName = 'SAD'
     CALL MAPL_GetPointer(impChem, PTR3D, TRIM(importName), RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     self%lbssad(:,:,1:km,1) = PTR3D(:,:,km:1:-1)
     NULLIFY(PTR3D)
   END IF
@@ -1154,15 +1154,15 @@ CONTAINS
       ! Get the bundle from the state
 
       call ESMF_StateGet(state, "gmiSAD", sadBun, rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_FieldBundleGet(sadBun, fieldCount=numVars, rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       ! Verify that the number of fields in the bundle is equal to the number
       ! of SAD variables.
 
-      ASSERT_(numVars == NSAD)
+      _ASSERT(numVars == NSAD,'needs informative message')
 
       allocate(ptr3Dreal(i1:i2, j1:j2, 1:km))
 
@@ -1207,20 +1207,20 @@ CONTAINS
 !  Pointers to imports
 !  -------------------
    CALL MAPL_GetPointer(impChem,       ple,	'PLE', RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,         Q,       'Q', RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,	 T,	  'T', RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,     qctot,   'QCTOT', RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    CALL MAPL_GetPointer(expChem,   reffice, 'REFFICE', RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(expChem,   reffsts, 'REFFSTS', RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(expChem,   fallVel,   'VFALL', RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Validation
 !  ----------
@@ -1342,7 +1342,7 @@ CONTAINS
    rc=0
 
    DEALLOCATE(self%lonRad, self%latRad, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    RETURN
 

@@ -17,7 +17,6 @@
    USE MAPL_Mod
    USE Chem_Mod 	                        ! Chemistry Base Class
    USE SC_GridCompMod                           ! ESMF parent component
-   USE m_chars,  only: uppercase
 
 
    IMPLICIT NONE
@@ -107,20 +106,20 @@ CONTAINS
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
     call ESMF_GridCompGet( GC, NAME=COMP_NAME, CONFIG=CF, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     Iam = TRIM(COMP_NAME)//"::SetServices"
 
 !   Wrap internal state for storing in GC. Rename legacy state
 !   ----------------------------------------------------------
     allocate ( state, stat=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     wrap%ptr => state
 
 !   Start by loading the Chem Registry
 !   ----------------------------------
     allocate ( state%chemReg )
     state%chemReg = Chem_RegistryCreate ( STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     nq = state%chemReg%nq     ! total number of chemical tracers
     
@@ -144,21 +143,21 @@ CONTAINS
 
     call MAPL_GridCompSetEntryPoint ( GC, ESMF_METHOD_INITIALIZE,  Initialize_, &
                                       RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call MAPL_GridCompSetEntryPoint ( GC,  ESMF_METHOD_RUN,  Run_,        &
                                       RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call MAPL_GridCompSetEntryPoint ( GC,  ESMF_METHOD_FINALIZE,  Finalize_,  &
                                       RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 
 !   Store internal state in GC
 !   --------------------------
     call ESMF_UserCompSetInternalState ( GC, 'StratChem_state', wrap, STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 
  else
@@ -185,7 +184,7 @@ CONTAINS
          DIMS               = MAPL_DimsHorzVert,    &
          VLOCATION          = MAPL_VLocationCenter,    &
                                                         RC=STATUS  )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_AddImportSpec(GC,  &
          SHORT_NAME         = 'SO4SAREA',  &
          LONG_NAME          = 'SO4 aerosol surface area (non-Volcanic)',  &
@@ -193,7 +192,7 @@ CONTAINS
          DIMS               = MAPL_DimsHorzVert,    &
          VLOCATION          = MAPL_VLocationCenter,    &
                                                         RC=STATUS  )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 ! ======================== INTERNAL STATE =========================
 
@@ -202,7 +201,7 @@ CONTAINS
 ! -----------------------------------------------------------------
      CALL ESMF_ConfigGetAttribute(CF, providerName, Default="PCHEM", &
                                   Label="ANALYSIS_OX_PROVIDER:", RC=STATUS )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
 !   Species to be transported
 !   -------------------------
@@ -210,9 +209,9 @@ CONTAINS
 
 	  IF(TRIM(state%chemReg%vname(n)) == "OX" .AND. TRIM(providerName) == "STRATCHEM") THEN
            FRIENDLIES="ANALYSIS:DYNAMICS:TURBULENCE:MOIST"
-          ELSE IF(TRIM(UPPERCASE(state%chemReg%vname(n))) == "HBR"  .OR. &
-                  TRIM(UPPERCASE(state%chemReg%vname(n))) == "HOBR" .OR. &
-                  TRIM(UPPERCASE(state%chemReg%vname(n))) == "BRONO2" ) THEN
+          ELSE IF(TRIM(ESMF_UtilStringUpperCase(state%chemReg%vname(n))) == "HBR"  .OR. &
+                  TRIM(ESMF_UtilStringUpperCase(state%chemReg%vname(n))) == "HOBR" .OR. &
+                  TRIM(ESMF_UtilStringUpperCase(state%chemReg%vname(n))) == "BRONO2" ) THEN
            FRIENDLIES="DYNAMICS:TURBULENCE"
           ELSE
            FRIENDLIES="DYNAMICS:TURBULENCE:MOIST"
@@ -225,7 +224,7 @@ CONTAINS
                FRIENDLYTO = FRIENDLIES,                          &
                DIMS       = MAPL_DimsHorzVert,                   &
                VLOCATION  = MAPL_VLocationCenter,     RC=STATUS  )
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
 
     end do
 
@@ -240,14 +239,14 @@ CONTAINS
                ADD2EXPORT = .TRUE.,				 &
                DIMS       = MAPL_DimsHorzVert,  		 &
                VLOCATION  = MAPL_VLocationCenter,     RC=STATUS  )
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
 
     end do
 
 ! ======================== EXPORT STATE ===========================
 
     CALL ESMF_ConfigGetAttribute(CF, providerName, Default="GOCART.data", Label="AERO_PROVIDER:", RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     IF(TRIM(providerName) == "STRATCHEM") THEN
 
@@ -261,7 +260,7 @@ CONTAINS
          VLOCATION          = MAPL_VLocationCenter,                &
          DATATYPE           = MAPL_StateItem,                      &
                                                         RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
 ! This bundle is reserved for SURFACE to update snow albedo due to
 ! aerosol settling and deposition. But since GMI's aerosols are prescribed,
@@ -275,7 +274,7 @@ CONTAINS
          VLOCATION          = MAPL_VLocationNone,                 &
          DATATYPE           = MAPL_BundleItem,                    &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
     END IF
 
@@ -297,18 +296,18 @@ CONTAINS
 !   Set the profiling timers
 !   ------------------------
     CALL MAPL_TimerAdd(GC, NAME="INITIALIZE", RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     CALL MAPL_TimerAdd(GC, NAME="RUN", RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     CALL MAPL_TimerAdd(GC, NAME="FINALIZE", RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 !   Generic Set Services
 !   --------------------
     call MAPL_GenericSetServices ( GC, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
   
   END SUBROUTINE SetServices
 
@@ -392,13 +391,13 @@ CONTAINS
 !  Get my name and set-up traceback handle
 !  ---------------------------------------
    call ESMF_GridCompGet( GC, NAME=COMP_NAME, CONFIG=CF, RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    Iam = TRIM(COMP_NAME)//"::Initialize_"
 
 !  Get my internal MAPL_Generic state
 !  -----------------------------------
    call MAPL_GetObjectFromGC ( GC, ggState, RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Start timers
 !  ------------
@@ -408,19 +407,19 @@ CONTAINS
 !  Initialize GEOS Generic
 !  ------------------------
    call MAPL_GenericInitialize ( gc, impChem, expChem, clock,  RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Get pre-ESMF parameters from gc and clock
 !  -----------------------------------------
    call extract_ ( gc, clock, chemReg, gcChem, w_c, nymd, nhms, rdt, split, STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Chemistry time step length (seconds)
 !  ------------------------------------
    STATUS = 0
    IF(split < 1) THEN
     PRINT *,TRIM(Iam)//": SC_SPLIT cannot be less than 1"
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
    END IF
    cdt = rdt/split
    IF(MAPL_AM_I_ROOT()) PRINT *,TRIM(Iam)//": StratChem time step length: ",cdt," seconds"
@@ -428,10 +427,10 @@ CONTAINS
 !  Create Chem Bundle
 !  ------------------
    call ESMF_GridCompGet ( GC, grid=grid, rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_GridGet ( grid, globalCellCountPerDim=DIMS, RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    im = dims(1)
    jm = dims(2)
@@ -440,7 +439,7 @@ CONTAINS
    call ESMF_GridGet(GRID, localDE=0, &
         staggerloc=ESMF_STAGGERLOC_CENTER, &
         computationalCount=DIMS, RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Associate the Internal State fields with our legacy state 
 !  ---------------------------------------------------------
@@ -449,7 +448,7 @@ CONTAINS
                                         LONS=LONS, &
                                         LATS=LATS, &
                                         RC=STATUS  )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 ! Local sizes of three dimensions
 !--------------------------------
@@ -470,19 +469,19 @@ CONTAINS
 ! Latitudes and longitudes [radians]
 ! ----------------------------------
    ALLOCATE(gcChem%lonRad(1:i2,1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    gcChem%lonRad = LONS
 
    ALLOCATE(gcChem%latRad(1:i2,1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    gcChem%latRad = LATS
 
 ! Cell area [m^{2}] from import state
 ! -----------------------------------
    CALL MAPL_GetPointer(impChem, AREA, 'AREA', RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(gcChem%cellArea(1:i2,1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    gcChem%cellArea = AREA
 
 !  Initalize the legacy state but do not allocate memory for arrays
@@ -490,53 +489,53 @@ CONTAINS
    call Chem_BundleCreate_ ( chemReg, i1, i2, ig, im, j1, j2, jg, jm, km,  &
                              w_c, lon=lons(:,1), lat=lats(1,:), &
                              skipAlloc=.true., rc=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    w_c%grid_esmf = grid  ! Will need this for I/O later
 
    allocate(w_c%delp(1:i2,1:j2,km),stat=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Consistency Checks
 !  ------------------
-   ASSERT_ ( chemReg%i_XX == (chemReg%j_SC+1) )
-   ASSERT_ ( size(InternalSpec) == (chemReg%n_SC+chemReg%n_XX) )
+   _ASSERT( chemReg%i_XX == (chemReg%j_SC+1), 'needs informative message' )
+   _ASSERT( size(InternalSpec) == (chemReg%n_SC+chemReg%n_XX), 'needs informative message' )
 
    do L = 1, size(InternalSpec)
 
       call MAPL_VarSpecGet ( InternalSpec(L),          &
                              SHORT_NAME = short_name,  &
                              RC=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       N = chemReg%i_SC + L - 1 !  Assumption: SC and XX bins are contiguous
 
       call MAPL_GetPointer ( internal, NAME=short_name, ptr=w_c%qa(N)%data3d, &
                              rc = STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
    end do
 
 ! STRATCHEM cannot be the AERO_PROVIDER
 ! -------------------------------------
      CALL ESMF_ConfigGetAttribute(CF, providerName, Default="GOCART.data", Label="AERO_PROVIDER:", RC=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
      IF(TRIM(providerName) == "STRATCHEM") THEN
       PRINT *,TRIM(Iam)//": STRATCHEM cannot be the AERO_PROVIDER"
-      VERIFY_(ESMF_FAILURE)
+      _VERIFY(ESMF_FAILURE)
      END IF
 
 !  Call Legacy Initialize
 !  ----------------------
    CALL SC_GridCompInitialize(gcChem, w_c, impChem, expChem, nymd, nhms, cdt, STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Stop timers
 !  -----------
    CALL MAPL_TimerOff(ggState, "INITIALIZE")
    CALL MAPL_TimerOff(ggState, "TOTAL")
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
   END SUBROUTINE Initialize_
 
@@ -634,13 +633,13 @@ CONTAINS
 !  Get my name and set-up traceback handle
 !  ---------------------------------------
    call ESMF_GridCompGet( GC, NAME=COMP_NAME, CONFIG=CF, GRID=grid, RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    Iam = TRIM(COMP_NAME)//"::Run_"
 
 !  Get my internal MAPL_Generic state
 !  -----------------------------------
    call MAPL_GetObjectFromGC ( GC, ggState, RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Start timers
 !  ------------
@@ -650,37 +649,37 @@ CONTAINS
 ! Get parameters from generic state.
 !-----------------------------------
    call MAPL_Get(ggState, LONS=LONS, LATS=LATS, ORBIT=ORBIT, RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    allocate(ZTH(SIZE(LATS,1), SIZE(LATS,2)), STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    allocate(SLR(SIZE(LATS,1), SIZE(LATS,2)), STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Update solar zenith angle
 !  --------------------------
    call MAPL_SunGetInsolation(LONS, LATS,  &
         ORBIT, ZTH, SLR, CLOCK=CLOCK,      &
         RC=STATUS  )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Get pre-ESMF parameters from gc and clock
 !  -----------------------------------------
    call extract_ ( gc, clock, chemReg, gcChem, w_c, nymd, nhms, rdt, split, STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Obtain day of year. ESMF returns 1.00-366.x, which is what we want.
 !  -------------------------------------------------------------------
    CALL ESMF_ClockGet(CLOCK, currTIME=TIME, rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL ESMF_TimeGet(TIME, dayOfYear_r8=dayOfYear_r8, rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    dayOfYear = dayOfYear_r8
 
 !  Is this a leap year?
 !  --------------------
    isLeapYear = ESMF_TimeIsLeapYear(TIME,rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    gcChem%dayOfYear  = dayOfYear
    gcChem%isLeapYear = isLeapYear
@@ -692,12 +691,12 @@ CONTAINS
 !  Layer interface pressures
 !  -------------------------
    CALL MAPL_GetPointer(impChem, PLE, 'PLE', RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Layer pressure thickness
 !  ------------------------
    CALL MAPL_GetPointer(impChem, DELP, 'DELP', RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    w_c%delp = DELP
 
    i1 = gcChem%i1
@@ -713,30 +712,30 @@ CONTAINS
 !  ------------------------------------------------------------------------------------------
    irO3Ox = gcChem%irO3Ox
    CALL MAPL_GetPointer(impChem, TROPP, 'TROPP', RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    WHERE(TROPP /= MAPL_UNDEF) w_c%qa(irO3Ox)%data3d(:,:,km) = TROPP
    
 !  It appears that other anomalously high TROPP can be generated that SC cannot accommodate.
 !  So impose an upper limit (Pa) to the pressure range through which SC is to be applied.
 !  -----------------------------------------------------------------------------------------
    CALL ESMF_ConfigGetAttribute(CF, SCBaseP, LABEL="SC_BASE_PRESSURE:", DEFAULT=40000.00, RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    WHERE(TROPP > SCBaseP) w_c%qa(irO3Ox)%data3d(:,:,km) = SCBaseP
 
    IF( ANY(w_c%qa(irO3Ox)%data3d(:,:,km) == MAPL_UNDEF) ) THEN
     PRINT *,TRIM(Iam)//": At least one invalid tropopause pressure."
     STATUS = 1
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
    END IF
 
 !  For comparison purposes, export the SC base pressures and the
 !  imported TROPP. Note that AGCM updates TROPP before HISTORY is written.
 !  -----------------------------------------------------------------------
    CALL MAPL_GetPointer(expChem, SCTROPP, 'SCTROPP', RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    IF(ASSOCIATED(SCTROPP)) SCTROPP = w_c%qa(irO3Ox)%data3d(:,:,km)
    CALL MAPL_GetPointer(expChem, AGCMTROPP, 'AGCMTROPP', RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    IF(ASSOCIATED(AGCMTROPP)) AGCMTROPP = TROPP
 
 ! Are species tendencies requested?
@@ -744,7 +743,7 @@ CONTAINS
    m = ChemReg%i_SC
    n = ChemReg%j_SC
    ALLOCATE(doMyTendency(m:n), STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    doMyTendency(:) = .FALSE.
 
    nAlloc = 0
@@ -757,7 +756,7 @@ CONTAINS
     IF( STATUS /= ESMF_SUCCESS ) THEN
       print*,'SCTEND problem Getting Pointer for '//TRIM(incFieldName)
     ENDIF
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     IF(ASSOCIATED(sIncrement)) THEN
      NULLIFY(sIncrement)
@@ -775,7 +774,7 @@ CONTAINS
    StoreIC: IF(doingTendencies) THEN
 
     ALLOCATE(sInitial(1:i2,1:j2,km,nAlloc), STAT=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     k = 1
     m = ChemReg%i_SC
@@ -798,7 +797,7 @@ CONTAINS
 !  -----------------
    DO i = 1,split
     CALL SC_GridCompRun(gcChem, w_c, impChem, expChem, nymd, nhms, cdt, STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
    END DO
 
 !  Update age-of-air (days)
@@ -815,12 +814,12 @@ CONTAINS
 !  The most recent valid tropopause pressures are stored in RO3OX(:,:,km)
 !  -----------------------------------------------------------------------
    CALL MAPL_GetPointer(impChem, PLE, 'PLE', RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(expChem,  TO3,  'SCTO3', RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    IF(ASSOCIATED( TO3))  TO3 = 0.00
    CALL MAPL_GetPointer(expChem, TTO3, 'SCTTO3', RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    IF(ASSOCIATED(TTO3)) TTO3 = 0.00
 
    DoingTotalOzone: IF(ASSOCIATED(TTO3) .OR. ASSOCIATED(TO3)) THEN
@@ -829,9 +828,9 @@ CONTAINS
     irO3Ox = gcChem%irO3Ox
     
     ALLOCATE(wrk(SIZE(LATS,1), SIZE(LATS,2)), STAT=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     ALLOCATE(wgt(SIZE(LATS,1), SIZE(LATS,2)), STAT=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     DO k = 1,km
      wrk = w_c%qa(iOX)%data3d(:,:,k)*(PLE(:,:,k)-PLE(:,:,k-1))*(MAPL_AVOGAD/2.69E+20)/(MAPL_AIRMW*MAPL_GRAV)
@@ -866,7 +865,7 @@ CONTAINS
       incFieldName = TRIM(fieldName)//"_SCTEND"
 
       CALL MAPL_GetPointer(expChem, sIncrement, TRIM(incFieldName), RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
       IF(ASSOCIATED(sIncrement)) sIncrement = (w_c%qa(i)%data3d - sInitial(:,:,:,k))*dtInverse
 
       NULLIFY(sIncrement)
@@ -879,19 +878,19 @@ CONTAINS
 !  Clean up
 !  --------
     DEALLOCATE(sInitial, STAT=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
    
    END IF StoreTendencies
 
    DEALLOCATE(doMyTendency, STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Stop timers
 !  -----------
    CALL MAPL_TimerOff(ggState, "RUN"  )
    CALL MAPL_TimerOff(ggState, "TOTAL")
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
    END SUBROUTINE Run_
 
@@ -953,7 +952,7 @@ CONTAINS
 !  Get my name and set-up traceback handle
 !  ---------------------------------------
    call ESMF_GridCompGet( GC, NAME=COMP_NAME, RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    Iam = TRIM(COMP_NAME)//"::Finalize_"
 
 !  Get my internal MAPL_Generic state
@@ -969,27 +968,27 @@ CONTAINS
 !  --------------------------------
    call extract_ ( gc, clock, chemReg, gcChem, w_c, nymd, nhms, rdt, split, STATUS, &
                    state = state )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Finalize
 !  --------
    call SC_GridCompFinalize ( gcChem, w_c, impChem, expChem, nymd, nhms, rdt, STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Destroy Chem_Bundle
 !  -------------------
    call Chem_BundleDestroy ( w_c, STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Destroy Chem_Registry
 !  ---------------------
    call Chem_RegistryDestroy ( chemReg, STATUS ) 
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Destroy Legacy state
 !  --------------------
    deallocate ( state%chemReg, state%gcChem, state%w_c, stat = STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Stop timers
 !  -----------
@@ -999,9 +998,9 @@ CONTAINS
 !  Finalize MAPL Generic
 !  ---------------------
    call MAPL_GenericFinalize ( gc, impChem, expChem, clock,  RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
    END SUBROUTINE Finalize_
 
@@ -1039,7 +1038,7 @@ CONTAINS
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
     call ESMF_GridCompGet( GC, NAME=COMP_NAME, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     Iam = trim(COMP_NAME) // 'extract_'
 
     rc = 0
@@ -1047,7 +1046,7 @@ CONTAINS
 !   Get my internal state
 !   ---------------------
     call ESMF_UserCompGetInternalState(gc, 'StratChem_state', WRAP, STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     myState => wrap%ptr
     if ( present(state) ) then
          state => wrap%ptr
@@ -1057,15 +1056,15 @@ CONTAINS
 !   -----------------------------------------------------
     if ( .not. associated(myState%chemReg) ) then
          allocate ( myState%chemReg, stat=STATUS )
-         VERIFY_(STATUS)
+         _VERIFY(STATUS)
     end if
     if ( .not. associated(myState%gcChem) ) then
          allocate ( myState%gcChem, stat=STATUS )
-         VERIFY_(STATUS)
+         _VERIFY(STATUS)
     end if
     if ( .not. associated(myState%w_c) ) then
          allocate ( myState%w_c, stat=STATUS )
-         VERIFY_(STATUS)
+         _VERIFY(STATUS)
     end if
 
     chemReg => myState%chemReg
@@ -1075,27 +1074,27 @@ CONTAINS
 !   Get the configuration
 !   ---------------------
     call ESMF_GridCompGet ( GC, CONFIG = CF, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 !   Get time step
 !   -------------
     call ESMF_ConfigGetAttribute ( CF, rdt, LABEL="RUN_DT:", RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call ESMF_ConfigGetAttribute ( CF, split, LABEL="SC_SPLIT:", DEFAULT=1, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 !   Get time stamp
 !   --------------
     call ESMF_ClockGet(CLOCK,currTIME=TIME,rc=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call ESMF_TimeGet(TIME ,YY=IYR, MM=IMM, DD=IDD, H=IHR, M=IMN, S=ISC, rc=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call MAPL_PackTime(NYMD,IYR,IMM,IDD)
     call MAPL_PackTime(NHMS,IHR,IMN,ISC)
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
    END SUBROUTINE extract_
 

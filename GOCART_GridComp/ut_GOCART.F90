@@ -75,7 +75,7 @@ CONTAINS
           print *, 'Error: expecting 2 PETs but found ', nPET, 'PETs'
           print *, 'Try:   mpirun -np 2 ut_GOCART.x'
        end if
-       ASSERT_(.FALSE.)
+       _ASSERT(.FALSE.,'needs informative message')
     end if
 
     if ( MAPL_am_I_root() ) then
@@ -205,7 +205,7 @@ CONTAINS
      j2 = ubound(u,2)
      k2 = ubound(u,3)
 
-     ASSERT_( (k2-k1+1) == 72)
+     _ASSERT( (k2-k1+1) == 72,'needs informative message')
 
 
 !     Fill typical values
@@ -360,7 +360,7 @@ CONTAINS
 
 !     Local bounds
 !     ------------
-      ASSERT_ ( associated(du001) )  
+      _ASSERT( associated(du001), 'needs informative message' )  
       tracer => du001
       i1 = lbound(tracer,1)
       j1 = lbound(tracer,2)
@@ -369,7 +369,7 @@ CONTAINS
       j2 = ubound(tracer,2)
       k2 = ubound(tracer,3)
 
-     ASSERT_( (k2-k1+1) == 72)
+     _ASSERT( (k2-k1+1) == 72,'needs informative message')
 
 !     Fill typical values
 !     -------------------

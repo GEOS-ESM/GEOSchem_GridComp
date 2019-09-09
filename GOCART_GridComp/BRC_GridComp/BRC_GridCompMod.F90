@@ -25,7 +25,6 @@
    use Chem_MieMod           ! Aerosol LU Tables, calculator
    use m_inpak90             ! Resource file management
    use m_die, only: die
-   USE m_chars, only: lowercase
    use Chem_SettlingMod      ! Settling
    use DryDepositionMod      ! Dry Deposition
    use WetRemovalMod         ! Large-scale Wet Removal
@@ -136,14 +135,14 @@ CONTAINS
 !  Load resource file
 !  ------------------
    cfg = ESMF_ConfigCreate(rc=status)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    call ESMF_ConfigLoadFile(cfg,trim(rc_basename)//'.rc',rc=status)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Parse resource file
 !  -------------------
    n = ESMF_ConfigGetLen(cfg,label='BRC_instances:',rc=status)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 
 !  We have 2 tracers for each instance of BRC
@@ -164,10 +163,10 @@ CONTAINS
 !  Record name of each instance
 !  ----------------------------
    call ESMF_ConfigFindLabel(cfg,'BRC_instances:',rc=status)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    do i = 1, n
       call ESMF_ConfigGetAttribute(cfg,name,rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
                                             ! resource file name
       IF(TRIM(name) == "full" ) THEN
        name = " "              ! blank instance name for full (1)
@@ -175,10 +174,10 @@ CONTAINS
        name = TRIM(name)       ! instance name for others
       END IF
       call BRC_GridCompSetServices1_(gc,chemReg,name,rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
    end do
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
    end subroutine BRC_GridCompSetServices
 
 !-------------------------------------------------------------------------
@@ -531,7 +530,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone, &
       RESTART    = MAPL_RestartSkip,   &
       RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
       SHORT_NAME = 'BRC_TERPENE'//trim(iname), &
@@ -541,7 +540,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone, &
       RESTART    = MAPL_RestartSkip,   &
       RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
       SHORT_NAME = 'BRC_BIOFUEL'//trim(iname), &
@@ -551,7 +550,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone, &
       RESTART    = MAPL_RestartSkip,   &
       RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
       SHORT_NAME = 'BRC_ANTEBRC1'//trim(iname), &
@@ -561,7 +560,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone, &
       RESTART    = MAPL_RestartSkip,   &
       RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
       SHORT_NAME = 'BRC_ANTEBRC2'//trim(iname), &
@@ -571,7 +570,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone, &
       RESTART    = MAPL_RestartSkip,   &
       RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
       SHORT_NAME = 'BRC_SHIP'//trim(iname), &
@@ -581,7 +580,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone, &
       RESTART    = MAPL_RestartSkip,   &
       RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
       SHORT_NAME = 'BRC_AVIATION_LTO'//trim(iname), &
@@ -591,7 +590,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone, &
       RESTART    = MAPL_RestartSkip,   &
       RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
       SHORT_NAME = 'BRC_AVIATION_CDS'//trim(iname), &
@@ -601,7 +600,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone, &
       RESTART    = MAPL_RestartSkip,   &
       RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
       SHORT_NAME = 'BRC_AVIATION_CRS'//trim(iname), &
@@ -611,7 +610,7 @@ CONTAINS
       VLOCATION  = MAPL_VLocationNone, &
       RESTART    = MAPL_RestartSkip,   &
       RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
      SHORT_NAME = 'pSOA_BIOB_VOC'//trim(iname), &
@@ -619,9 +618,9 @@ CONTAINS
      UNITS      = 'kg m-3 s-1',                &
      DIMS       = MAPL_DimsHorzVert,  &
      VLOCATION  = MAPL_VLocationCenter, &
-      RESTART    = MAPL_RestartSkip,   &
+     RESTART    = MAPL_RestartSkip,   &
      RC         = STATUS)
-  VERIFY_(STATUS)
+  _VERIFY(STATUS)
   
 
 !  Parse the resource file to see if NEI imports are required
@@ -637,7 +636,7 @@ CONTAINS
        VLOCATION  = MAPL_VLocationNone, &
        RESTART    = MAPL_RestartSkip,   &
        RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
        SHORT_NAME = 'BRC_NEI_TOP'//trim(iname), &
@@ -647,11 +646,11 @@ CONTAINS
        VLOCATION  = MAPL_VLocationNone, &
        RESTART    = MAPL_RestartSkip,   &
        RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    end if NEI_EMISSIONS
 
 
-  RETURN_(ESMF_SUCCESS)
+  _RETURN(ESMF_SUCCESS)
 
  contains
    subroutine doing_nei_(rcbasen, iname, result, rc)
@@ -664,6 +663,7 @@ CONTAINS
    ! local
    type(ESMF_Config)  :: cfg
    character(len=255) :: name
+   logical            :: isPresent
    integer            :: status
    character(len=255) :: Iam
 
@@ -679,15 +679,15 @@ CONTAINS
 
    cfg = ESMF_ConfigCreate(__RC__)
    call ESMF_ConfigLoadFile(cfg, trim(name), __RC__)
-   call ESMF_ConfigFindLabel(cfg, 'nei_boundingbox:', rc=status)
+   call ESMF_ConfigFindLabel(cfg, 'nei_boundingbox:', isPresent=isPresent, __RC__)
 
-   if (status == ESMF_SUCCESS) then
+   if (isPresent) then
        result = .true.
    else 
        result = .false.
    end if
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
    end subroutine doing_nei_
 
  end subroutine BRC_GridCompSetServices1_
@@ -999,7 +999,7 @@ CONTAINS
    IF(gcBRC%regionsString(1:2) == "-1") THEN
     NoRegionalConstraint = .TRUE.
    ELSE
-    SELECT CASE (lowercase(gcBRC%regionsString(1:2)))
+    SELECT CASE (ESMF_UtilStringLowerCase(gcBRC%regionsString(1:2)))
      CASE ("gl") 
       NoRegionalConstraint = .TRUE.
      CASE ("al") 
@@ -2183,7 +2183,7 @@ RUN_ALARM: if (gcBRC%run_alarm) then
    allocate( fluxout )
    allocate( fluxout%data2d(i1:i2,j1:j2), dqa(i1:i2,j1:j2), &
              drydepositionfrequency(i1:i2,j1:j2), stat=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 
 !  SOA production from oxidation of anthropogenic VOC

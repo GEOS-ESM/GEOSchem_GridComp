@@ -25,7 +25,7 @@
    Use  Chem_AodMod
    Use  MAPL_GridManagerMod
    Use  MAPL_LatLonGridFactoryMod
-   Use  CubedSphereGridFactoryMod, only: CubedSphereGridFactory
+   Use  MAPL_CubedSphereGridFactoryMod, only: CubedSphereGridFactory
 
    IMPLICIT NONE
    PRIVATE
@@ -141,7 +141,7 @@ CONTAINS
 !   Wrap internal state for storing in GC; rename legacyState
 !   -------------------------------------
     allocate ( self, stat=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     wrap%ptr => self
  
 !   Load private Config Attributes
@@ -168,7 +168,7 @@ CONTAINS
 !   Store internal state in GC
 !   --------------------------
     call ESMF_UserCompSetInternalState ( GC, 'GAAS_state', wrap, STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
   
 !                         ------------------
 !                         MAPL Data Services
@@ -192,7 +192,7 @@ CONTAINS
 
 !   All done
 !   --------
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
   END SUBROUTINE SetServices
 
@@ -349,7 +349,7 @@ CONTAINS
 
 !  All done
 !  --------
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
    END SUBROUTINE Initialize_
 
@@ -455,7 +455,7 @@ CONTAINS
 !  Stop here if it is NOT analysis time
 !  -------------------------------------
    if ( .not. analysis_time ) then
-      RETURN_(ESMF_SUCCESS)
+      _RETURN(ESMF_SUCCESS)
    end if
 
 !  If desired, just bail out if analysis file is not there
@@ -471,7 +471,7 @@ CONTAINS
               PRINT *, TRIM(Iam)//': Cannot find AOD analysis file ', trim(filename)
               PRINT *,' '
            end if
-           RETURN_(ESMF_SUCCESS)
+           _RETURN(ESMF_SUCCESS)
         end if
      end if
 
@@ -484,7 +484,7 @@ CONTAINS
 
 !  Run MAPL Generic
 !  ----------------
-   call MAPL_GenericRun ( gc, IMPORT, EXPORT, clock,  __RC__ )
+!ALT   call MAPL_GenericRunChildren ( gc, IMPORT, EXPORT, clock,  __RC__ )
 
 !  Get pointer for IMPORT/EXPORT/INTERNAL states 
 !  ---------------------------------------------
@@ -521,7 +521,7 @@ CONTAINS
 !  -----------------------------------------------------------------
    izAOD = MAPL_SimpleBundleGetIndex(self%z_f,'AOD',3,__RC__)
    iyAOD = MAPL_SimpleBundleGetIndex(self%y_f,'AOD',3,__RC__)
-   ASSERT_(iyAOD==1) ! what we have created must have only AOD
+   _ASSERT(iyAOD==1,'needs informative message') ! what we have created must have only AOD
 
 !  Convert AOD to Log(AOD+eps) for A.K. Adjustment
 !  -----------------------------------------------
@@ -606,7 +606,7 @@ CONTAINS
 
 !  All done
 !  --------
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
 Contains
 
@@ -712,7 +712,7 @@ Contains
  
 !  All done
 !  --------
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
  end SUBROUTINE Finalize_
 
@@ -751,7 +751,7 @@ Contains
 !   Get my internal state
 !   ---------------------
     call ESMF_UserCompGetInternalState(gc, 'GAAS_state', WRAP, STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     self => wrap%ptr
 
 !   Get the configuration
@@ -775,7 +775,7 @@ Contains
 !   ---------------------
     call ESMF_GridCompGet ( GC, grid=GRID, __RC__)
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
    end subroutine extract_
 

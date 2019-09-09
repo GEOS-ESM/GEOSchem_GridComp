@@ -218,54 +218,54 @@ contains
 ! ---------------------------------------
 
     call ESMF_GridCompGet( GC, NAME=COMP_NAME, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     Iam = trim(COMP_NAME)//'::SetServices'
 
 !   Start by loading the Chem Registry
 !   ----------------------------------
     chemReg = Chem_RegistryCreate ( STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 !   If not doing PChem, use GEOS Generic stubs from this point on
 !   -------------------------------------------------------------
     if ( .NOT. chemReg%doing_PC ) then
        call MAPL_GenericSetServices ( GC, RC=STATUS )
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
        call Chem_RegistryDestroy ( chemReg, RC=STATUS )
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
        if (MAPL_AM_I_ROOT()) & 
            print *, trim(Iam)//': not ACTIVE, defaulting to GG stubs...'
-       RETURN_(ESMF_SUCCESS)
+       _RETURN(ESMF_SUCCESS)
     end if       
 
 ! Get the configuration
 ! ---------------------
 
     call ESMF_GridCompGet( GC, CONFIG = CF, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call ESMF_ConfigGetAttribute( CF, IO3AINC, Label='ALLOW_PCHEM_AINC_UPDATE:', default=0,        RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! Set the Initialize and Run entry point
 ! --------------------------------------
 
     call MAPL_GridCompSetEntryPoint ( GC, ESMF_METHOD_INITIALIZE, Initialize, RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call MAPL_GridCompSetEntryPoint ( GC,  ESMF_METHOD_RUN, Run,        RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     if ( IO3AINC/=0 ) then
        call MAPL_GridCompSetEntryPoint ( GC,  ESMF_METHOD_RUN, AINC_UPDATE,    RC=STATUS)
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
     endif
 
 ! Allocate this instance of the internal state and put it in wrapper.
 ! -------------------------------------------------------------------
 
     allocate( PCHEM_state, stat=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     WRAP%PTR => PCHEM_STATE
     PCHEM_STATE = DUMMY
@@ -274,7 +274,7 @@ contains
 ! ----------------------------------------------------
 
     call ESMF_UserCompSetInternalState ( GC, 'Pchem_state', WRAP, STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! Set the state variable specs.
 ! -----------------------------
@@ -284,37 +284,37 @@ contains
      call ESMF_ConfigGetAttribute(CF, OXFRIENDLY, Label='OX_FRIENDLIES:'      ,&
                                   default=FRIENDLIES                          ,&
                                                                      RC=STATUS )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call ESMF_ConfigGetAttribute(CF, N2OFRIENDLY, Label='N2O_FRIENDLIES:'    ,&
                                   default=FRIENDLIES                          ,&
                                                                      RC=STATUS )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call ESMF_ConfigGetAttribute(CF, CFC11FRIENDLY, Label='CFC11_FRIENDLIES:',&
                                   default=FRIENDLIES                          ,&
                                                                      RC=STATUS )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call ESMF_ConfigGetAttribute(CF, CFC12FRIENDLY, Label='CFC12_FRIENDLIES:',&
                                   default=FRIENDLIES                          ,&
                                                                      RC=STATUS )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call ESMF_ConfigGetAttribute(CF,HCFC22FRIENDLY,Label='HCFC22_FRIENDLIES:',&
                                   default=FRIENDLIES                          ,&
                                                                      RC=STATUS )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call ESMF_ConfigGetAttribute(CF, CH4FRIENDLY, Label='CH4_FRIENDLIES:'    ,&
                                   default=FRIENDLIES                          ,&
                                                                      RC=STATUS )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call ESMF_ConfigGetAttribute(CF, AOAFRIENDLY, Label='AOA_FRIENDLIES:'    ,&
                                   default=FRIENDLIES                          ,&
                                                                      RC=STATUS )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
 
 !BOS
@@ -328,7 +328,7 @@ contains
         DIMS       = MAPL_DimsHorzVert,                           &
         VLOCATION  = MAPL_VLocationEdge,                          &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddImportSpec(GC,                             &
         SHORT_NAME ='Q',                                          &
@@ -337,7 +337,7 @@ contains
         DIMS       = MAPL_DimsHorzVert,                           &
         VLOCATION  = MAPL_VLocationCenter,                        &  
                                                        RC=STATUS  )
-     VERIFY_(STATUS)                                                                          
+     _VERIFY(STATUS)                                                                          
 
      call MAPL_AddImportSpec(GC,                             &
         SHORT_NAME         = 'TROPP',                             &
@@ -346,7 +346,7 @@ contains
         DIMS               = MAPL_DimsHorzOnly,                   &
         VLOCATION          = MAPL_VLocationNone,                  &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
     if ( IO3AINC /=0 ) then
        ! The following import is only for offline purposes
@@ -361,7 +361,7 @@ contains
             default    = 0.0,                                         &
             DIMS       = MAPL_DimsHorzVert,                           &
             VLOCATION  = MAPL_VLocationCenter,             RC=STATUS  )
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
     endif
 
 ! !INTERNAL STATE:
@@ -374,7 +374,7 @@ contains
 
      CALL ESMF_ConfigGetAttribute(CF, providerName, Default="PCHEM", &
                                   Label="ANALYSIS_OX_PROVIDER:", RC=STATUS )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
      
      IF( providerName == "PCHEM" .AND. (INDEX(OXFRIENDLY,"ANALYSIS") == 0) ) THEN
       IF(MAPL_AM_I_ROOT()) THEN
@@ -385,7 +385,7 @@ contains
        PRINT *," "
       END IF
       STATUS = 1
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
      END IF
 
 ! Add species to the internal state only if PCHEM is the RATS provider
@@ -409,7 +409,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddInternalSpec(GC,                           &
         SHORT_NAME         = 'N2O',                               &
@@ -419,7 +419,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddInternalSpec(GC,                           &
         SHORT_NAME         = 'CFC11',                             &
@@ -429,7 +429,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddInternalSpec(GC,                           &
         SHORT_NAME         = 'CFC12',                             &
@@ -439,7 +439,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddInternalSpec(GC,                           &
         SHORT_NAME         = 'HCFC22',                            &
@@ -449,7 +449,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddInternalSpec(GC,                           &
         SHORT_NAME         = 'CH4',                               &
@@ -459,7 +459,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      END IF AddingRATS
 
@@ -471,7 +471,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
 
 ! !EXPORT STATE:
@@ -487,7 +487,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'H2O_TEND',                          &
@@ -496,7 +496,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'OX_PROD',                           &
@@ -505,7 +505,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'OX_LOSS',                           &
@@ -514,7 +514,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'N2O_PROD',                          &
@@ -523,7 +523,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'N2O_LOSS',                          &
@@ -532,7 +532,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'CFC11_PROD',                        &
@@ -541,7 +541,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'CFC11_LOSS',                        &
@@ -550,7 +550,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'CFC12_PROD',                        &
@@ -559,7 +559,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'CFC12_LOSS',                        &
@@ -568,7 +568,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'HCFC22_PROD',                       &
@@ -577,7 +577,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'HCFC22_LOSS',                       &
@@ -586,7 +586,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'CH4_PROD',                          &
@@ -595,7 +595,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'CH4_LOSS',                          &
@@ -604,7 +604,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'H2O_PROD',                          &
@@ -613,7 +613,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'H2O_LOSS',                          &
@@ -622,7 +622,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'O3',                                &
@@ -631,7 +631,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'O3PPMV',                            &
@@ -640,7 +640,7 @@ contains
         DIMS               = MAPL_DimsHorzVert,                   &
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'TO3',                               &
@@ -649,7 +649,7 @@ contains
         DIMS               = MAPL_DimsHorzOnly,                   &
         VLOCATION          = MAPL_VLocationNone,                  &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'TTO3',                              &
@@ -658,7 +658,7 @@ contains
         DIMS               = MAPL_DimsHorzOnly,                   &
         VLOCATION          = MAPL_VLocationNone,                  &
                                                        RC=STATUS  )
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      END IF AddingRATsExports
 
@@ -669,21 +669,21 @@ contains
 ! Set the Profiling timers
 ! ------------------------
     call MAPL_TimerAdd ( GC, name = "RUN",        RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call MAPL_TimerAdd ( GC, name = "-Read Species", RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call MAPL_TimerAdd ( GC, name = "INITIALIZE", RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call MAPL_TimerAdd ( GC, name = "-Read Header", RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! Generic Set Services
 ! --------------------
 
     call MAPL_GenericSetServices ( GC,RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
   
   end subroutine SetServices
 
@@ -750,14 +750,14 @@ contains
 ! -----------------------------------------------------------
 
     call ESMF_GridCompGet ( GC, name=COMP_NAME, VM=VM, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     Iam = trim(COMP_NAME)//'::Initialize'
 
 ! Get my internal MAPL_Generic state
 !-----------------------------------
 
     call MAPL_GetObjectFromGC ( GC, MAPL, RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! Start timer
 !------------      
@@ -768,7 +768,7 @@ contains
 !----------------------------------------
 
     call ESMF_UserCompGetInternalState(gc, 'Pchem_state', WRAP, STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     Pchem_STATE => WRAP%PTR
 
@@ -776,7 +776,7 @@ contains
 !------------------------
 
     call MAPL_GenericInitialize ( GC, IMPORT, EXPORT, CLOCK,  RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call MAPL_TimerOn (MAPL,"TOTAL"  )
 
@@ -789,7 +789,7 @@ contains
          IM=IM, JM=JM, LM=LM,                    &
          INTERNAL_ESMF_STATE=INTERNAL,           &
                                        RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 
 ! Is PCHEM the RATs provider?
@@ -808,22 +808,22 @@ contains
 !---------------------------------------------------------------------------
 
     call MAPL_GetResource(MAPL, PCHEMFILE,'pchem_clim:' ,DEFAULT='pchem_clim.dat', RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! Let us know if the above file contains more than one year of data
 !------------------------------------------------------------------
 
     call MAPL_GetResource(MAPL, PCHEM_STATE%climYears, 'pchem_clim_years:' ,DEFAULT=1, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call MAPL_TimerOn (MAPL,"-Read Header"  )
 
 #ifdef H5_HAVE_PARALLEL
     call MPI_Info_create(info, STATUS)
     call MPI_Info_set(info, "romio_cb_read", "automatic", STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call ESMF_VMGet(vm, mpiCommunicator=comm, rc=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 #ifdef NETCDF_NEED_NF_MPIIO
     STATUS = NF_OPEN_PAR(trim(PCHEMFILE),IOR(NF_NOWRITE,NF_MPIIO),comm,info,UNIT)
@@ -875,7 +875,7 @@ contains
        print*, NF_STRERROR(status)
        stop
     endif
-    ASSERT_(PCHEM_STATE%NSPECIES==NSPECIES)
+    _ASSERT(PCHEM_STATE%NSPECIES==NSPECIES,'needs informative message')
 
 ! If multiple climYears, the second record tells us starting and ending year and number of years
 !-----------------------------------------------------------------------------------------------
@@ -908,7 +908,7 @@ contains
           PRINT *,TRIM(Iam)//": Problem with "//TRIM(PCHEMFILE)
           PRINT *,"Expecting ",PCHEM_STATE%climYears," years but there are ",climYears
           STATUS=1
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
        END IF
     END IF
 
@@ -918,20 +918,20 @@ contains
     endif ! MAPL_am_I_root
 
     call MAPL_CommsBcast (vm, PCHEM_STATE%NLATS   ,1, 0, rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call MAPL_CommsBcast (vm, PCHEM_STATE%NLEVS   ,1, 0, rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call MAPL_CommsBcast (vm, PCHEM_STATE%begClimYear   ,1, 0, rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call MAPL_CommsBcast (vm, PCHEM_STATE%endClimYear   ,1, 0, rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 #endif
 
     allocate ( PCHEM_STATE%LATS (PCHEM_STATE%NLATS), STAT=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     allocate ( PCHEM_STATE%LEVS (PCHEM_STATE%NLEVS), STAT=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 #ifndef H5_HAVE_PARALLEL
     if ( MAPL_am_I_root() ) then
@@ -963,14 +963,14 @@ contains
     endif
 #ifdef H5_HAVE_PARALLEL
     call MPI_Info_free(info, status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 #else
     endif ! MAPL_am_I_root
 
     call MAPL_CommsBcast (vm, PCHEM_STATE%LATS,size(PCHEM_STATE%LATS), 0, rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call MAPL_CommsBcast (vm, PCHEM_STATE%LEVS,size(PCHEM_STATE%LEVS), 0, rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 #endif
     STATUS = NF_CLOSE(UNIT)
@@ -981,12 +981,12 @@ contains
 !-----------------------------------------------------------------------
 
     ALLOCATE(PCHEM_STATE%MNCV(PCHEM_STATE%NLATS, PCHEM_STATE%NLEVS, PCHEM_STATE%NSPECIES, 2), stat=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     PCHEM_STATE%MNCV = Z'7FA00000'
 
     IF(PCHEM_STATE%climYears == 1) THEN
        ALLOCATE(PCHEM_STATE%MNPL(PCHEM_STATE%NLATS, PCHEM_STATE%NLEVS, PCHEM_STATE%NSPECIES, 2, 2), stat=STATUS )
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
        PCHEM_STATE%MNPL = Z'7FA00000'
     ENDIF
 
@@ -994,12 +994,12 @@ contains
 !-------------------------------------------------------------------------
 
     call ESMF_TimeSet(PRVMONTH,YY=1869,MM=1,DD=1, H=0, M=0, S=0, RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     PCHEM_ALARM = ESMF_AlarmCreate(name='REFRESH_PCHEM_SPECIES', clock=CLOCK,      &
                                 ringTime=PRVMONTH, sticky=.false.,     RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call ESMF_AlarmRingerOn(PCHEM_ALARM, rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     END IF NeedRATsFile
 
@@ -1008,7 +1008,7 @@ contains
 ! Time
 !-----
     CALL ESMF_ClockGet(CLOCK, currTime=PCHEM_STATE%lastTimeHere, RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 
 #ifdef PRINT_STATES
@@ -1029,13 +1029,13 @@ contains
 #endif
 
 
-    call MAPL_TimerOff (MAPL,"INITIALIZE" )
     call MAPL_TimerOff (MAPL,"TOTAL"      )
+    call MAPL_TimerOff (MAPL,"INITIALIZE" )
 
 ! All Done
 !---------
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
   end subroutine Initialize
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1169,14 +1169,14 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 
     Iam = "Run"
     call ESMF_GridCompGet( GC, name=COMP_NAME, VM=VM, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     Iam = trim(COMP_NAME)//"::Run"
 
 ! Retrieve the pointer to the generic state
 !------------------------------------------
 
     call MAPL_GetObjectFromGC ( GC, MAPL, RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! Start timer
 !------------
@@ -1188,15 +1188,15 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 !------------------------
 
     call MAPL_Get( MAPL, RUNALARM = RUN_ALARM, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! Get the time step from the RUN_ALARM
 ! ------------------------------------
 
     call ESMF_AlarmGet ( RUN_ALARM, ringInterval=RingInterval,RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call ESMF_TimeIntervalGet( RingInterval, s_r8=dt_r8, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     DT = real(dt_r8)
 
@@ -1204,7 +1204,7 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 !---------------------------------------------------
 
     call ESMF_UserCompGetInternalState(GC, 'Pchem_state', WRAP, STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     Pchem_STATE => WRAP%PTR
 
@@ -1218,12 +1218,12 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
          ORBIT     = ORBIT,                      &
          INTERNAL_ESMF_STATE=INTERNAL,           &
                                        RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! Time
 !-----
     CALL ESMF_ClockGet(CLOCK, currTime=CurrTime, RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! Is PCHEM the RATs provider?
 ! ---------------------------
@@ -1244,25 +1244,25 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
     NLATS = PCHEM_STATE%NLATS
 
     allocate(PROD_INT(IM,JM,LM),stat=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     allocate(LOSS_INT(IM,JM,LM),stat=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     allocate(      PL(IM,JM,LM),stat=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     allocate(    PROD(IM,NLEVS),stat=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     allocate(    LOSS(IM,NLEVS),stat=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     allocate(   PROD1(NLATS,NLEVS),stat=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     allocate(   LOSS1(NLATS,NLEVS),stat=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! Time interpolation parameters
 ! -----------------------------
     
     call MAPL_ClimInterpFac(CLOCK, INDX1, INDX2, FAC, RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! Read bracketing months, make sure INDX1 and INDX2 are in range. Annual
 ! cycle is preserved for years that precede and succeed the climatology.
@@ -1271,7 +1271,7 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
        N = 12*PCHEM_STATE%climYears
 
        CALL ESMF_TimeGet(CurrTime, YY=YY, MM=MM, DD=DD, RC=STATUS)
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
 
        CCYY = YY
        IF(CCYY < PCHEM_STATE%begClimYear) CCYY = PCHEM_STATE%begClimYear
@@ -1290,32 +1290,32 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
        IF(YY > PCHEM_STATE%endClimYear .AND. INDX1 == N-12) INDX1 = N
 
        call ESMF_ClockGetAlarm(CLOCK,'REFRESH_PCHEM_SPECIES', PCHEM_ALARM,RC=STATUS)
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
 
        if (currTime < PCHEM_STATE%lastTimeHere) then
           ! this should have not happen, unless we are doing replay and rewind clock
           call ESMF_AlarmRingerOn(PCHEM_ALARM, RC=STATUS)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
        end if
 
        if ( ESMF_AlarmIsRinging( PCHEM_ALARM ) ) then
 
           call ESMF_AlarmRingerOff(PCHEM_ALARM, RC=STATUS)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
 
           call MAPL_TimerOff(MAPL,"RUN"  )
           call MAPL_TimerOn (MAPL,"-Read Species"  )
           call MAPL_GetResource(MAPL, PCHEMFILE,'pchem_clim:' ,DEFAULT='pchem_clim.dat', RC=STATUS )
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
 
           call ESMF_VMGet(vm, mpiCommunicator=comm, rc=STATUS)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
 
 #ifdef H5_HAVE_PARALLEL
           call MPI_Info_create(info, STATUS)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
           call MPI_Info_set(info, "romio_cb_read", "automatic", STATUS)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
 
 #ifdef NETCDF_NEED_NF_MPIIO
           STATUS = NF_OPEN_PAR(trim(PCHEMFILE),IOR(NF_NOWRITE,NF_MPIIO),comm,info,UNIT)
@@ -1424,18 +1424,18 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
           ENDDO
 
           STATUS = NF_CLOSE(UNIT)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
 
 #ifdef H5_HAVE_PARALLEL
           call MPI_Info_free(info, status)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
 #else
           endif ! MAPL_am_I_root
           call MPI_Bcast (PCHEM_STATE%MNCV, size(PCHEM_STATE%MNCV), MPI_REAL, 0, comm, STATUS)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
           IF(PCHEM_STATE%climYears == 1) THEN
              call MPI_Bcast (PCHEM_STATE%MNPL, size(PCHEM_STATE%MNPL), MPI_REAL, 0, comm, STATUS)
-             VERIFY_(STATUS)
+             _VERIFY(STATUS)
           ENDIF
 #endif
 
@@ -1443,9 +1443,9 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
           call MAPL_TimerOn  (MAPL,"RUN"  )
 
           call ESMF_TimeIntervalSet(oneMonth, MM = 1, RC=STATUS )
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
           call ESMF_TimeGet(currTime, midMonth=midMonth, RC=STATUS )
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
 
           if( currTime < midMonth ) then
              dummyTIME = CurrTime
@@ -1453,9 +1453,9 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
              dummyTIME = CurrTime + OneMonth
           endif
           call ESMF_TimeGet (dummyTIME, midMonth=midMonth,    RC=STATUS)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
           call ESMF_AlarmSet(PCHEM_ALARM, ringtime=midMonth, RC=STATUS)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
 
 #ifdef DEBUG
           if(MAPL_AM_I_ROOT()) then
@@ -1481,9 +1481,9 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 !-----------------------------------------------------------------
     
     call MAPL_GetPointer( IMPORT, TROPP,  'TROPP', RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call MAPL_GetPointer( IMPORT,   PLE,    'PLE', RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     PL = 0.5*(PLE(:,:,0:LM-1)+PLE(:,:,1:LM))
 
@@ -1508,29 +1508,29 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 !------
 
     call MAPL_GetPointer ( EXPORT,     O3,     'O3', RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call MAPL_GetPointer ( EXPORT, O3PPMV, 'O3PPMV', RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call MAPL_GetPointer ( EXPORT,    TO3,    'TO3', RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call MAPL_GetPointer ( EXPORT,   TTO3,   'TTO3', RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     if(associated(O3) .or. associated(O3PPMV)) then
 
        allocate(  ZTH(IM,JM),stat=STATUS)
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
        allocate(O3VMR(IM,JM),stat=STATUS)
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
        allocate(  WRK(IM,JM),stat=STATUS)
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
        allocate(  WGT(IM,JM),stat=STATUS)
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
 
        call MAPL_SunGetInsolation(LONS, LATS,  &
             ORBIT, ZTH, O3VMR, CLOCK=CLOCK,    & ! I dont need SLR, but it is not optional.
             RC=STATUS  )
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
 
        if(associated( TO3)) TO3  = 0.00
        if(associated(TTO3)) TTO3 = 0.00
@@ -1584,7 +1584,7 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 !-----------
 
     call MAPL_GetPointer ( INTERNAL, AOA, 'AOA', RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     AOA         = AOA +  (DT/86400.0) 
     AOA(:,:,LM) = 0.0
@@ -1614,7 +1614,7 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 !  All done
 !-----------
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
 contains
 
@@ -1637,14 +1637,14 @@ contains
 
     if (trim(NAME) == "H2O") then
        call MAPL_GetPointer ( IMPORT,   XX,  'Q', RC=STATUS )
-       VERIFY_(STATUS)
-       ASSERT_(associated(XX))
+       _VERIFY(STATUS)
+       _ASSERT(associated(XX),'needs informative message')
     else
        call MAPL_GetPointer ( INTERNAL, XX, NAME, RC=STATUS )
-       VERIFY_(STATUS)
-       ASSERT_(associated(XX))
+       _VERIFY(STATUS)
+       _ASSERT(associated(XX),'needs informative message')
        call MAPL_GetResource(MAPL, VALUE,LABEL=trim(NAME)//"_FIXED_VALUE:", default=-1., RC=STATUS)
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
        if(VALUE>=0.0) then
           XX = VALUE
           return
@@ -1652,7 +1652,7 @@ contains
     endif
  
     call MAPL_GetResource(MAPL,   TAU,LABEL=trim(NAME)//"_RELAXTIME:", DEFAULT=0.0 ,RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! If there are multiple climYears, we are not allowing production and loss.
 ! -------------------------------------------------------------------------
@@ -1662,17 +1662,17 @@ contains
       PRINT *,"            "//TRIM(NAME)//"_RELAXTIME has value ",TAU
      END IF
      STATUS = 1
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
     END IF
 
     call MAPL_GetPointer ( EXPORT, XX_PROD, trim(NAME)//'_PROD', RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call MAPL_GetPointer ( EXPORT, XX_LOSS, trim(NAME)//'_LOSS', RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     if (TAU<=0.0) then  ! By convention this is the prod(index 1) and loss(index 2) case
 
-       ASSERT_(trim(NAME)/="H2O")
+       _ASSERT(trim(NAME)/="H2O",'needs informative message')
 
        PROD1 = PCHEM_STATE%MNPL(:,:,NN,1,1)*FAC + PCHEM_STATE%MNPL(:,:,NN,1,2)*(1.-FAC)
        LOSS1 = PCHEM_STATE%MNPL(:,:,NN,2,1)*FAC + PCHEM_STATE%MNPL(:,:,NN,2,2)*(1.-FAC)
@@ -1704,15 +1704,15 @@ contains
        end do
 
        call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
 
        DELP = max(DELP, 1.e-16) ! avoid division by zero
 
        if(trim(NAME)=="H2O") then
           call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=20000. ,RC=STATUS)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
           allocate(WRK(IM,JM),stat=STATUS)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
           where (TROPP==MAPL_UNDEF)
              WRK = PCRIT
           elsewhere
@@ -1725,7 +1725,7 @@ contains
           deallocate(WRK)
        else
           call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=1.e+16 ,RC=STATUS)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
           LOSS_INT = (1./TAU) * max( min( (PCRIT   -PL)/DELP, 1.0), 0.0)
        endif
 
@@ -1741,13 +1741,13 @@ contains
 
     if(trim(NAME)=='OX') then
        call MAPL_GetPointer ( EXPORT, OX_TEND, 'OX_TEND', RC=STATUS )
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
        if(associated(OX_TEND)) OX_TEND = (PROD_INT - LOSS_INT*XX)
     end if
 
     if(trim(NAME)=='H2O') then
        call MAPL_GetPointer ( EXPORT, H2O_TEND, 'H2O_TEND', RC=STATUS )
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
        if(associated(H2O_TEND)) H2O_TEND = (PROD_INT - LOSS_INT*XX)
     end if
 
@@ -1809,7 +1809,7 @@ end subroutine RUN
 
    Iam = "AINC_UPDATE"
    call ESMF_GridCompGet( GC, name=COMP_NAME, RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    Iam = trim(COMP_NAME) // Iam
 
    if ( MAPL_AM_I_ROOT() ) then
@@ -1820,7 +1820,7 @@ end subroutine RUN
 !----------------------------------
 
    call MAPL_GetObjectFromGC ( GC, MAPL, RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 ! Local aliases to the state, grid, and configuration
 ! ---------------------------------------------------
@@ -1835,13 +1835,13 @@ end subroutine RUN
                    ORBIT               = ORBIT,  &
                    INTERNAL_ESMF_STATE=INTERNAL, &
                                        RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call ESMF_GridCompGet(GC, grid=grid, rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call ESMF_ClockGet(CLOCK, TIMESTEP=DELT, RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! **********************************************************************
 ! ****               Get Pointers to BKG Import Data                ****
@@ -1853,19 +1853,19 @@ end subroutine RUN
 #endif
 
     call MAPL_GetResource( MAPL, SUNFLAG, 'SUN_FLAG:', DEFAULT=0 , RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 !   Get pointers to import variables
 !   --------------------------------
     call MAPL_GetPointer(import,   do3, 'O3AINC',  RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call MAPL_GetPointer(import,   ple,    'PLE',  RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 !   Get pointers to internal variables
 !   ----------------------------------
     call MAPL_GetPointer(internal,   ox, 'OX',  RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     allocate ( ro3ox(IM,JM,LM) )
     allocate (    pl(IM,JM,LM) )
@@ -1881,7 +1881,7 @@ end subroutine RUN
 !                              TIME  = SUNFLAG, &
 !                              ZTHN = ZTHN,     &
                                RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     ZTH = max(ZTH,0.0)
     ro3ox = 1.0

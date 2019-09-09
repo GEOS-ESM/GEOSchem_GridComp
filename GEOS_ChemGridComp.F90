@@ -164,13 +164,13 @@ contains
 !   Wrap internal state for storing in GC; rename legacyState
 !   -------------------------------------
     allocate ( myState, stat=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     wrap%ptr => myState
 
 !   Load the Chemistry Registry
 !   ---------------------------
     chemReg = Chem_RegistryCreate ( STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! Register services for this component
 ! ------------------------------------
@@ -181,7 +181,7 @@ contains
 !   Store private state in GC
 !   -------------------------
     call ESMF_UserCompSetInternalState ( GC, 'GEOSchem_GridComp_State', wrap, STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
   
 ! Choose children to birth and which children not to conceive
 ! -----------------------------------------------------------
@@ -210,7 +210,7 @@ contains
 ! Sanity checks:
 ! --------------
     if (myState%enable_GAAS) then
-       ASSERT_(myState%enable_GOCART)
+       _ASSERT(myState%enable_GOCART,'needs informative message')
     end if
 
 ! Create children's gridded components and invoke their SetServices
@@ -703,7 +703,7 @@ contains
 ! -------------------------
   call MAPL_GenericSetServices ( GC, __RC__ )
 
-  RETURN_(ESMF_SUCCESS)
+  _RETURN(ESMF_SUCCESS)
   
   end subroutine SetServices
 
@@ -762,7 +762,7 @@ contains
 !   Get my internal state
 !   ---------------------
     call ESMF_UserCompGetInternalState(gc, 'GEOSchem_GridComp_State', WRAP, STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     myState => wrap%ptr
 
 !   Call GenericInitialize for every Child
@@ -843,7 +843,7 @@ contains
 
 !   All Done
 !   --------
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
   end subroutine Init
 
@@ -898,9 +898,9 @@ contains
 !-------------------------------------------------------------------
 
    call MAPL_GetObjectFromGC ( GC, MAPL, RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    call MAPL_Get(MAPL, RUNALARM = ALARM, RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Start timers
 !  ------------
@@ -911,7 +911,7 @@ contains
       ! Don't turn alarm off in phase 1, otherwise phase 2 will not be 
       ! executed!
 !      call ESMF_AlarmRingerOff(ALARM, RC=STATUS)
-!      VERIFY_(STATUS)
+!      _VERIFY(STATUS)
 
       ! Get the target components name and set-up traceback handle.
       ! -----------------------------------------------------------
@@ -928,7 +928,7 @@ contains
             write(*,*) '***********************************************************************'
          endif
          CALL MAPL_TimerOff( MAPL, "TOTAL" )
-         RETURN_(ESMF_SUCCESS)
+         _RETURN(ESMF_SUCCESS)
       endif
 
       ! Call Run phase 1 for every child with two phases
@@ -937,7 +937,7 @@ contains
 
       ! Get the children's states
       call MAPL_Get(MAPL, GCS=GCS, GIM=GIM, GEX=GEX, __RC__ )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       if(associated(GCS)) then
         NCHLD  = SIZE(GCS)  ! # of children
@@ -962,7 +962,7 @@ contains
                            phase = IPHASE, &
                           userRC = userRC, &
                                      __RC__ )
-            ASSERT_(userRC==ESMF_SUCCESS)
+            _ASSERT(userRC==ESMF_SUCCESS,'needs informative message')
             call MAPL_TimerOff(MAPL,trim(CHILD_NAME))
           endif
         enddo !I
@@ -975,7 +975,7 @@ contains
 
 !   All Done
 !   --------
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
  end subroutine Run1
 
@@ -1038,7 +1038,7 @@ contains
 !-------------------------------------------------------------------
 
    call MAPL_GetObjectFromGC ( GC, MAPL, RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    call MAPL_Get(MAPL, RUNALARM = ALARM, __RC__ ) 
 
 !  Start timers
@@ -1049,7 +1049,7 @@ contains
    ! --------------
    if ( ESMF_AlarmIsRinging   (ALARM, RC=STATUS) ) then
       call ESMF_AlarmRingerOff(ALARM, RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       ! Get the target components name and set-up traceback handle.
       ! -----------------------------------------------------------
@@ -1087,7 +1087,7 @@ contains
                          phase = IPHASE, &
                         userRC = userRC, &
                                    __RC__ )
-          ASSERT_(userRC==ESMF_SUCCESS)
+          _ASSERT(userRC==ESMF_SUCCESS,'needs informative message')
           call MAPL_TimerOff(MAPL,trim(CHILD_NAME))
         enddo !I
       endif
@@ -1122,7 +1122,7 @@ contains
 
 !   All Done
 !   --------
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
  end subroutine Run2
 

@@ -169,7 +169,7 @@ CONTAINS
       call NI_GridCompSetServices(GC, chemReg, __RC__)
    endif
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
    end subroutine Aero_GridCompSetServices
 

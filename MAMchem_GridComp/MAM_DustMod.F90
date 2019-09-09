@@ -135,7 +135,7 @@ CONTAINS
 !  --------------------------
    rc = 0
 
-   ASSERT_(self%id == MAM7_SCHEME .or. self%id == MAM3_SCHEME) 
+   _ASSERT(self%id == MAM7_SCHEME .or. self%id == MAM3_SCHEME,'needs informative message') 
  
    if (self%id == MAM7_SCHEME) then
        nmodes = size(MAM7_DU_EMISSION_MODE_ID)
@@ -300,7 +300,7 @@ CONTAINS
    deallocate(dqa_num,        __STAT__)
 
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
  end subroutine MAM_DU_Emission
 
@@ -384,7 +384,7 @@ CONTAINS
 !  --------------------------
    rc = 0
 
-   ASSERT_(self%id == MAM7_SCHEME .or. self%id == MAM3_SCHEME) 
+   _ASSERT(self%id == MAM7_SCHEME .or. self%id == MAM3_SCHEME,'needs informative message') 
  
    if (self%id == MAM7_SCHEME) then
        nmodes = size(MAM7_DU_EMISSION_MODE_ID)
@@ -519,7 +519,7 @@ CONTAINS
 !  Clean up
 !  --------
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
  end subroutine MAM_DU_Diagnostics
 

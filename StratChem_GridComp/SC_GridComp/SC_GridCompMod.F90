@@ -440,54 +440,54 @@ CONTAINS
 ! Grab the virtual machine
 ! ------------------------
    CALL ESMF_VMGetCurrent(vm, RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 ! Load resource file
 ! ------------------
    CALL I90_loadf ( TRIM(rcfilen), status )
-   VERIFY_(status)
+   _VERIFY(status)
 
 ! Parse resource file
 ! -------------------
    CALL I90_label ( 'solar_ZA_cutoff:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    gcSC%szaCutoff = I90_gfloat( status )
-   VERIFY_(status)
+   _VERIFY(status)
 
    CALL I90_label ( 'NO_cutoff:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    gcSC%kNOspec = I90_gfloat( status )
-   VERIFY_(status)
+   _VERIFY(status)
 
    CALL I90_label ( 'TRW_NOx:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    gcSC%NOxTRW = I90_gfloat( status )
-   VERIFY_(status)
+   _VERIFY(status)
 
    CALL I90_label ( 'Eccentricity_SC:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    gcSC%ecc_SC = I90_gfloat( status )
-   VERIFY_(status)
+   _VERIFY(status)
 
    CALL I90_label ( 'PSCpmax:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    gcSC%PSCpmax = I90_gfloat( status )
-   VERIFY_(status)
+   _VERIFY(status)
 
    CALL I90_label ( 'PSClatlim:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    gcSC%PSClatlim = I90_gfloat( status )
-   VERIFY_(status)
+   _VERIFY(status)
 
    CALL I90_label ( 'HNO3Ice_MAX:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    gcSC%HNO3Ice_MAX = I90_gfloat( status )
-   VERIFY_(status)
+   _VERIFY(status)
 
    CALL I90_label ( 'doPSCs:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    i = I90_gint( status )
-   VERIFY_(status)
+   _VERIFY(status)
    IF(i == 0) THEN
     gcSC%doPSCs = .FALSE.
    ELSE
@@ -495,9 +495,9 @@ CONTAINS
    END IF
 
    CALL I90_label ( 'importSulfateSA:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    i = I90_gint( status )
-   VERIFY_(status)
+   _VERIFY(status)
    IF(i == 0) THEN
     gcSC%importSulfSA = .FALSE.
    ELSE
@@ -505,9 +505,9 @@ CONTAINS
    END IF
 
    CALL I90_label ( 'addSAclim:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    i = I90_gint( status )
-   VERIFY_(status)
+   _VERIFY(status)
    IF(i == 0) THEN
     gcSC%addSAclim = .FALSE.
    ELSE
@@ -515,9 +515,9 @@ CONTAINS
    END IF
 
    CALL I90_label ( 'spinup:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    i = I90_gint( status )
-   VERIFY_(status)
+   _VERIFY(status)
    IF(i == 0) THEN
     gcSC%spinup = .FALSE.
    ELSE
@@ -525,9 +525,9 @@ CONTAINS
    END IF
 
    CALL I90_label ( 'doSediment:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    i = I90_gint( status )
-   VERIFY_(status)
+   _VERIFY(status)
    IF(i == 0) THEN
     gcSC%doSediment = .FALSE.
    ELSE
@@ -535,9 +535,9 @@ CONTAINS
    END IF
    
    CALL I90_label ( 'verbose:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    i = I90_gint( status )
-   VERIFY_(status)
+   _VERIFY(status)
    IF(i == 0) THEN
     gcSC%verbose = .FALSE.
    ELSE
@@ -545,9 +545,9 @@ CONTAINS
    END IF
    
    CALL I90_label ( 'useSolCyc:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    i = I90_gint( status )
-   VERIFY_(status)
+   _VERIFY(status)
    IF(i == 0) THEN
     gcSC%useSolCyc = .FALSE.
    ELSE
@@ -555,9 +555,9 @@ CONTAINS
    END IF
 
    CALL I90_label ( 'doFlux:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    i = I90_gint( status )
-   VERIFY_(status)
+   _VERIFY(status)
    IF(i == 0) THEN
     gcSC%doFlux = .FALSE.
    ELSE
@@ -565,34 +565,34 @@ CONTAINS
    END IF
 
    CALL I90_Label ( 'GHGYrAdj:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    gcSC%GHGYrAdj = I90_Gint( status )
-   VERIFY_(status)
+   _VERIFY(status)
 
    CALL I90_Label ( 'ODSYrAdj:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    gcSC%ODSYrAdj = I90_Gint( status )
-   VERIFY_(status)
+   _VERIFY(status)
 
    CALL I90_Label ( 'SO4saYr:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    gcSC%SO4saYr = I90_Gint( status )
-   VERIFY_(status)
+   _VERIFY(status)
 
    CALL I90_label ( 'KRateTables:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    CALL I90_Gtoken( fnKRates, status )
-   VERIFY_(status)
+   _VERIFY(status)
 
    CALL I90_label ( 'photolysisFile:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    CALL I90_Gtoken( fnPhoto, status )
-   VERIFY_(status)
+   _VERIFY(status)
 
    CALL I90_label ( 'climatologiesFile:', status )
-   VERIFY_(status)
+   _VERIFY(status)
    CALL I90_Gtoken( gcSC%climFileName, status )
-   VERIFY_(status)
+   _VERIFY(status)
 
 ! Release resource file
 ! ---------------------
@@ -723,77 +723,77 @@ CONTAINS
 ! --------------------------------------------------------------------
    fileName = TRIM(fnKRates)
    CALL rdkrate(gcSC, fileName, MAPL_AM_I_ROOT(), status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 ! Photolysis tables: Initialize from NetCDF file
 ! ----------------------------------------------
    fileName = TRIM(fnPhoto)
    CALL readPhotTables(fileName, status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 ! Grab climatological array sizes for subsequent allocation
 ! ---------------------------------------------------------
    CALL initClimVars(status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 ! Allocations for climatological fields
 ! -------------------------------------
    ALLOCATE(gcSC%SSG(gcSC%numSSGs), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%climRain(gcSC%numClimLats,km), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%climO3(gcSC%numClimLats,km), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%climOH(gcSC%numClimLats,km), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%climH2O(gcSC%numClimLats,km), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%climSF6LOSS(gcSC%numClimLats,km), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%CO2MBC(gcSC%numClimLats), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%SF6MBC(gcSC%numClimLats), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    ALLOCATE(gcSC%climRain3D(i1:i2,j1:j2,km), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%climO33D(i1:i2,j1:j2,km), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%climOH3D(i1:i2,j1:j2,km), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%climH2O3D(i1:i2,j1:j2,km), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%climSF6LOSS3D(i1:i2,j1:j2,km), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    ALLOCATE(gcSC%SO4sa(gcSC%numClimLats,km), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%SO4sa3D(i1:i2,j1:j2,km), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    ALLOCATE(gcSC%CO2MBC2D(i1:i2,j1:j2), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%SF6MBC2D(i1:i2,j1:j2), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 ! Allocate space
 ! --------------
    ALLOCATE(gcSC%CFC11EMISS(i1:i2,j1:j2), STAT=status )
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%CFC12EMISS(i1:i2,j1:j2), STAT=status )
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%CFC113EMISS(i1:i2,j1:j2), STAT=status )
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%MCFEMISS(i1:i2,j1:j2), STAT=status )
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%HCFC22EMISS(i1:i2,j1:j2), STAT=status )
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%CCL4EMISS(i1:i2,j1:j2), STAT=status )
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%CHBR3EMISS(i1:i2,j1:j2), STAT=status )
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(gcSC%CH2BR2EMISS(i1:i2,j1:j2), STAT=status )
-   VERIFY_(status)
+   _VERIFY(status)
 
 !  As a safety check, where value is undefined set to 0
    gcSC%CFC11EMISS(i1:i2,j1:j2) = 0.0
@@ -860,14 +860,14 @@ CONTAINS
   rc = 0
 
   CALL ESMF_VMGet(vm, MPICOMMUNICATOR=comm, rc=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #ifdef H5_HAVE_PARALLEL
 
   CALL MPI_Info_create(info, status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MPI_Info_set(info, "romio_cb_read", "automatic", status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #ifdef NETCDF_NEED_NF_MPIIO
   status = NF_OPEN_PAR(TRIM(fileName), IOR(NF_NOWRITE,NF_MPIIO), comm, info, unit)
@@ -885,7 +885,7 @@ CONTAINS
    IF(status /= NF_NOERR) THEN
     PRINT *,'Error opening file ',TRIM(fileName), status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    DO i = 1,nD
@@ -894,7 +894,7 @@ CONTAINS
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error inquiring dimension ID for ", TRIM(dimName(i)), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
 
     status = NF_INQ_DIMLEN(unit, dimid, n)
@@ -909,7 +909,7 @@ CONTAINS
      CASE (2)
       gcSC%numO3 = n
      CASE (3)
-      ASSERT_(n == km)
+      _ASSERT(n == km,'needs informative message')
      CASE (4)
       gcSC%nlam = n
      CASE (5)
@@ -928,34 +928,34 @@ CONTAINS
   END IF ! MAPL_AM_I_ROOT
 
   CALL MAPL_CommsBcast(vm, gcSC%nsza, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_CommsBcast(vm, gcSC%numO3, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_CommsBcast(vm, gcSC%nlam, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_CommsBcast(vm, gcSC%nts, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_CommsBcast(vm, gcSC%nxdo, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_CommsBcast(vm, gcSC%aqSize, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #endif
 
   ALLOCATE(gcSC%sdat(gcSC%nsza,gcSC%numo3,km,gcSC%nlam), STAT=status)
-  VERIFY_(status)
+  _VERIFY(status)
   ALLOCATE(gcSC%o2jdat(gcSC%nsza,gcSC%numo3,km), STAT=status)
-  VERIFY_(status)
+  _VERIFY(status)
   ALLOCATE(gcSC%o3_tab(gcSC%numo3,km), STAT=status)
-  VERIFY_(status)
+  _VERIFY(status)
   ALLOCATE(gcSC%xtab(gcSC%nlam,gcSC%nxdo,gcSC%nts), STAT=status)
-  VERIFY_(status)
+  _VERIFY(status)
   ALLOCATE(gcSC%sza_tab(gcSC%nsza), STAT=status)
-  VERIFY_(status)
+  _VERIFY(status)
   ALLOCATE(gcSC%CH2O_aq(gcSC%aqSize), STAT=status)
-  VERIFY_(status)
+  _VERIFY(status)
   ALLOCATE(gcSC%rlam(gcSC%nlam), STAT=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #ifndef H5_HAVE_PARALLEL
 
@@ -969,7 +969,7 @@ CONTAINS
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error getting varid for ", TRIM(varName(i)), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
 
     SELECT CASE (i)
@@ -993,18 +993,18 @@ CONTAINS
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error getting values for ", TRIM(varName(i)), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
 
    END DO
 
   status = NF_CLOSE(unit)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #ifdef H5_HAVE_PARALLEL
 
    CALL MPI_Info_free(info, status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 #else
 
@@ -1012,30 +1012,30 @@ CONTAINS
 
   length = SIZE(gcSC%sza_tab)
   CALL MPI_Bcast(gcSC%sza_tab, length, MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
 
   length = SIZE(gcSC%rlam)
   CALL MPI_Bcast(gcSC%rlam, length, MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
 
   length = SIZE(gcSC%o3_tab)
   CALL MPI_Bcast(gcSC%o3_tab, length, MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
 
   length = SIZE(gcSC%sdat)
   CALL MPI_Bcast(gcSC%sdat, length, MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
 
   length = SIZE(gcSC%o2jdat)
   CALL MPI_Bcast(gcSC%o2jdat, length, MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
 
   length = SIZE(gcSC%xtab)
   CALL MPI_Bcast(gcSC%xtab, length, MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
 
   CALL MAPL_CommsBcast(vm, gcSC%CH2O_aq, gcSC%aqsize, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #endif
 
@@ -1083,15 +1083,15 @@ CONTAINS
   rc = 0
 
   CALL ESMF_VMGet(vm, MPICOMMUNICATOR=comm, rc=status)
-  VERIFY_(status)
+  _VERIFY(status)
   fileName = TRIM(gcSC%climFileName)
 
 #ifdef H5_HAVE_PARALLEL
 
   CALL MPI_Info_create(info, status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MPI_Info_set(info, "romio_cb_read", "automatic", status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #ifdef NETCDF_NEED_NF_MPIIO
   status = NF_OPEN_PAR(TRIM(fileName), IOR(NF_NOWRITE,NF_MPIIO), comm, info, unit)
@@ -1109,48 +1109,48 @@ CONTAINS
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error opening file ",TRIM(fileName), status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    status = NF_INQ_DIMID(unit, 'lat', dimid)
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error inquiring dimid for lat", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
    status = NF_INQ_DIMLEN(unit, dimid, gcSC%numClimLats)
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error inquiring dimlen of lat", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    status = NF_INQ_DIMID(unit, 'lev', dimid)
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error inquiring dimid for lev", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
    status = NF_INQ_DIMLEN(unit, dimid, n)
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error inquiring dimlen of lev", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
-   ASSERT_(n == gcSC%km)
+   _ASSERT(n == gcSC%km,'needs informative message')
 
 #ifndef H5_HAVE_PARALLEL
 
   END IF ! MAPL_AM_I_ROOT
 
   CALL MAPL_CommsBcast(vm, gcSC%numClimLats, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #endif
 
   ALLOCATE(gcSC%climLatRad(gcSC%numClimLats), STAT=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #ifndef H5_HAVE_PARALLEL
 
@@ -1162,30 +1162,30 @@ CONTAINS
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error getting varid for lat", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    status = NF_GET_VAR_REAL(unit, n, gcSC%climLatRad)
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error getting values for climLatRad", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
   status = NF_CLOSE(unit)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #ifdef H5_HAVE_PARALLEL
 
    CALL MPI_Info_free(info, status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 #else
 
   END IF ! MAPL_AM_I_ROOT
 
   CALL MAPL_CommsBcast(vm, gcSC%climLatRad, SIZE(gcSC%climLatRad), 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #endif
 
@@ -1429,7 +1429,7 @@ CONTAINS
 ! Grab the virtual machine
 ! ------------------------
   CALL ESMF_VMGetCurrent(vm, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 ! Grab some calender elements
 ! ---------------------------
@@ -1443,68 +1443,68 @@ CONTAINS
   allocate( fluxout )
   allocate( fluxout%data2d(i1:i2,j1:j2),stat=STATUS)
 
-  VERIFY_(STATUS)
+  _VERIFY(STATUS)
 
 
 ! Create and set the clock
 ! ------------------------
   CALL ESMF_TimeSet(timeNow, YY=ccyy, MM=mm, DD=dd, H=hh, M=m, S=s, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL ESMF_TimeIntervalSet(interval, S=s, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   SCClock = ESMF_ClockCreate(NAME="SCClock", TIMESTEP=interval, STARTTIME=timeNow, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL ESMF_ClockSet(SCClock, CURRTIME=timeNow, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 ! Import state pointers
 ! ---------------------
   CALL MAPL_GetPointer(impChem,  specHum,	'Q', RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(impChem,    qctot,   'QCTOT', RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(impChem,     rhoa, 'AIRDENS', RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(impChem,  rhoadry, 'AIRDENS_DRYP', RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 !  Get 2D Imports
 !  --------------
    call MAPL_GetPointer ( impChem, pblh,     'ZPBL',    rc=status )
-   VERIFY_(status)
+   _VERIFY(status)
    call MAPL_GetPointer ( impChem, oro,      'LWI',     rc=status )
-   VERIFY_(status)
+   _VERIFY(status)
    call MAPL_GetPointer ( impChem, precc,    'CN_PRCP', rc=status )
-   VERIFY_(status)
+   _VERIFY(status)
    call MAPL_GetPointer ( impChem, precl,    'NCN_PRCP',rc=status )
-   VERIFY_(status)
+   _VERIFY(status)
    call MAPL_GetPointer ( impChem, cellArea, 'AREA',    rc=status )
-   VERIFY_(status)
+   _VERIFY(status)
    call MAPL_GetPointer ( impChem, frlake,   'FRLAKE',  rc=status )
-   VERIFY_(status)
+   _VERIFY(status)
    call MAPL_GetPointer ( impChem, frocean,  'FROCEAN', rc=status )
-   VERIFY_(status)
+   _VERIFY(status)
    call MAPL_GetPointer ( impChem, frseaice, 'FRACI',   rc=status )
-   VERIFY_(status)
+   _VERIFY(status)
 
 !  Get 3D Imports
 !  --------------
    call MAPL_GetPointer ( impChem,     T,   'T',       rc=status )
-   VERIFY_(status)
+   _VERIFY(status)
    call MAPL_GetPointer ( impChem, hghte,  'ZLE',     rc=status )
-   VERIFY_(status)
+   _VERIFY(status)
    call MAPL_GetPointer ( impChem, ple,    'PLE',     rc=status )
-   VERIFY_(status)
+   _VERIFY(status)
    call MAPL_GetPointer ( impChem, qccu,   'CNV_QC',  rc=status )
-   VERIFY_(status)
+   _VERIFY(status)
    call MAPL_GetPointer ( impChem, cmfmc,  'CNV_MFC', rc=status )
-   VERIFY_(status)
+   _VERIFY(status)
    call MAPL_GetPointer ( impChem, dtrain, 'CNV_MFD', rc=status )
-   VERIFY_(status)
+   _VERIFY(status)
    call MAPL_GetPointer ( impChem, pfllsan,'PFL_LSAN',rc=status )
-   VERIFY_(status)
+   _VERIFY(status)
    call MAPL_GetPointer ( impChem, pfilsan,'PFI_LSAN',rc=status )
-   VERIFY_(status)
+   _VERIFY(status)
 
   IF(gcSC%verbose) THEN
    ic = gcSC%irO3Ox
@@ -1530,27 +1530,27 @@ CONTAINS
 
   IF(gcSC%doFlux) THEN
    CALL MAPL_GetPointer(impChem,    f11ems,    'F11FLUX', RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
    CALL MAPL_GetPointer(impChem,    f12ems,    'F12FLUX', RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
    CALL MAPL_GetPointer(impChem,   f113ems,   'F113FLUX', RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
    CALL MAPL_GetPointer(impChem,    mcfems,    'MCFFLUX', RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
    CALL MAPL_GetPointer(impChem,   ccl4ems,   'CCL4FLUX', RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
    CALL MAPL_GetPointer(impChem, hcfc22ems, 'HCFC22FLUX', RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 #ifndef REDUCED
    CALL MAPL_GetPointer(impChem,  chbr3ems,  'CHBR3FLUX', RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
    CALL MAPL_GetPointer(impChem, ch2br2ems, 'CH2BR2FLUX', RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
 #endif
 
    CALL readEMSFactor(status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    gcSC%CFC11EMISS(i1:i2,j1:j2)  =    f11ems(i1:i2,j1:j2)*gcSC%emfCFC11
    gcSC%CFC12EMISS(i1:i2,j1:j2)  =    f12ems(i1:i2,j1:j2)*gcSC%emfCFC12
@@ -1567,20 +1567,20 @@ CONTAINS
 
 ! Read 3D OH climatology from Spivakovsky et al. 2000
   CALL MAPL_GetPointer(impChem, oh3dClim, 'OH3DClim', RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 ! If importing SO4 surface area from GOCART::SU then query the import state. Units: m^{2} m^{-3}.
 ! -----------------------------------------------------------------------------------------------
   IF(gcSC%importSulfSA) THEN
 
    CALL MAPL_GetPointer(impChem,  SO4SAv,  'SO4SAREAvolc', RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
    IF(gcSC%verbose) THEN
     CALL pmaxmin('SC: SO4SAvolc ', SO4SAv, qmin, qmax, iXj, km,    1. )
    END IF
 
    CALL MAPL_GetPointer(impChem,  SO4SAt,  'SO4SAREA', RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
    IF(gcSC%verbose) THEN
    CALL pmaxmin('SC: SO4SA ', SO4SAt, qmin, qmax, iXj, km,    1. )
    END IF
@@ -1590,190 +1590,190 @@ CONTAINS
 ! Export state pointers
 ! ---------------------
   CALL MAPL_GetPointer(expChem,      szarad,      'SZARAD', RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,     scbasek,     'SCBASEK', RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,      n2oflx,      'N2OFLX', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,      ch4flx,      'CH4FLX', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,      f11flx,      'F11FLX', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,      f12flx,      'F12FLX', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,     f113flx,     'F113FLX', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,   hcfc22flx,   'HCFC22FLX', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #ifndef REDUCED
   CALL MAPL_GetPointer(expChem, hcfc141bflx, 'HCFC141BFLX', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem, hcfc142bflx, 'HCFC142BFLX', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 #endif
 
   CALL MAPL_GetPointer(expChem,     ccl4flx,     'CCL4FLX', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,      mcfflx,      'MCFFLX', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    ch3clflx,    'CH3CLFLX', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    ch3brflx,    'CH3BRFLX', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    h1301flx,    'H1301FLX', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    h1211flx,    'H1211FLX', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #ifndef REDUCED
   CALL MAPL_GetPointer(expChem,    h1202flx,    'H1202FLX', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    h2402flx,    'H2402FLX', ALLOC=.TRUE., RC=status)
 #endif
 
   IF(gcSC%doFlux) THEN
    CALL MAPL_GetPointer(expChem,    mcfocnloss,  'MCFOCNLOSS', ALLOC=.TRUE., RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
    CALL MAPL_GetPointer(expChem,    ctcocnloss,  'CTCOCNLOSS', ALLOC=.TRUE., RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
    CALL MAPL_GetPointer(expChem,    ctclndloss,  'CTCLNDLOSS', ALLOC=.TRUE., RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
   ENDIF
 
   CALL MAPL_GetPointer(expChem,    rdair,  'rDryAir', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
   CALL MAPL_GetPointer(expChem,    qqj001,  'QQJ001', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj002,  'QQJ002', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj003,  'QQJ003', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj004,  'QQJ004', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj005,  'QQJ005', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj006,  'QQJ006', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj007,  'QQJ007', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj008,  'QQJ008', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj009,  'QQJ009', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj010,  'QQJ010', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj011,  'QQJ011', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj012,  'QQJ012', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj013,  'QQJ013', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj014,  'QQJ014', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj015,  'QQJ015', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj016,  'QQJ016', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj017,  'QQJ017', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj018,  'QQJ018', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj019,  'QQJ019', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqj020,  'QQJ020', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
   CALL MAPL_GetPointer(expChem,    qqk001,  'QQK001', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk002,  'QQK002', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk003,  'QQK003', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk004,  'QQK004', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk005,  'QQK005', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk006,  'QQK006', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk007,  'QQK007', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk008,  'QQK008', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk009,  'QQK009', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk010,  'QQK010', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk011,  'QQK011', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk012,  'QQK012', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk013,  'QQK013', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk014,  'QQK014', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk015,  'QQK015', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk016,  'QQK016', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk017,  'QQK017', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk018,  'QQK018', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk019,  'QQK019', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk020,  'QQK020', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk021,  'QQK021', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk022,  'QQK022', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk023,  'QQK023', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk024,  'QQK024', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk025,  'QQK025', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk026,  'QQK026', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk027,  'QQK027', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk028,  'QQK028', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk029,  'QQK029', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk030,  'QQK030', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk031,  'QQK031', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk032,  'QQK032', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk033,  'QQK033', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk034,  'QQK034', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    qqk035,  'QQK035', ALLOC=.TRUE., RC=status)
 
   CALL MAPL_GetPointer(expChem,  o3ppmv,    'O3PPMV', RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,   ozone,        'O3', RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,   dOxdt,   'OX_TEND', RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    dQdt,  'H2O_TEND', RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_GetPointer(expChem,    jocs, 'OCS_JRATE', ALLOC=.TRUE., RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 ! PSC preliminaries
 ! -----------------
   IF(gcSC%doPSCs) THEN
    CALL MAPL_GetPointer(expChem, natsad, 'NATSAD', ALLOC=.TRUE., RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
    natsad(:,:,:) = 0.00
    CALL MAPL_GetPointer(expChem, icesad, 'ICESAD', ALLOC=.TRUE., RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
    icesad(:,:,:) = 0.00
   END IF
 
@@ -1789,31 +1789,31 @@ CONTAINS
    IF(MAPL_AM_I_ROOT()) PRINT *,TRIM(Iam)//": Updating climatologies"
 
    CALL readClimVars(status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 #ifndef REDUCED
    CALL mapToSurf(gcSC%CO2MBC, gcSC%CO2MBC2D, "CO2MBC", status)
-   VERIFY_(status)
+   _VERIFY(status)
    CALL mapToSurf(gcSC%SF6MBC, gcSC%SF6MBC2D, "SF6MBC", status)
-   VERIFY_(status)
+   _VERIFY(status)
 #endif
 
    CALL mapToGrid(gcSC%climRain, gcSC%climRain3D, "Rain", status)
-   VERIFY_(status)
+   _VERIFY(status)
    CALL mapToGrid(gcSC%climO3, gcSC%climO33D, "O3", status)
-   VERIFY_(status)
+   _VERIFY(status)
    CALL mapToGrid(gcSC%climOH, gcSC%climOH3D, "OH", status)
-   VERIFY_(status)
+   _VERIFY(status)
    CALL mapToGrid(gcSC%climH2O, gcSC%climH2O3D, "H2O", status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 #ifndef REDUCED
    CALL mapToGrid(gcSC%climSF6LOSS, gcSC%climSF6LOSS3D, "SF6LOSS", status)
-   VERIFY_(status)
+   _VERIFY(status)
 #endif
 
    CALL mapToGrid(gcSC%SO4sa, gcSC%SO4sa3D, "SO4sa", status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    gcSC%BCnymd = nymd
   END IF BCUpdates
@@ -1963,7 +1963,7 @@ CONTAINS
      h2o = specHum(i,j,kRev)*numDens(k)*MAPL_AIRMW/MAPL_H2OMW
      h2oc =  qctot(i,j,kRev)*numDens(k)*MAPL_AIRMW/MAPL_H2OMW
      CALL swapSpecies(FROM_BUNDLE,status)
-     VERIFY_(status)
+     _VERIFY(status)
 
 ! Initializations to complete a gcSC%spinup (rarely used):
 !   1. Constrain HCl to be at least 1.e-11
@@ -1986,7 +1986,7 @@ CONTAINS
                     chbrcl2,chbr2cl,co2b,sf6b,hfc23,hfc32,hfc125,hfc134a,hfc143a, &
                                      hfc152a,mcfcolumn,ctccolumn,oro(i,j),status)
 
-      VERIFY_(status)
+      _VERIFY(status)
      END IF
 
 ! Update photolysis rates.
@@ -2007,11 +2007,11 @@ CONTAINS
 ! Store initial values in case time step is changed in the main chemistry loop.
 ! -----------------------------------------------------------------------------
      ALLOCATE(ratesBase(gcSC%numphoto+gcSC%numreacs),STAT=status)
-     VERIFY_(status)
+     _VERIFY(status)
      ratesBase(1:gcSC%numphoto) = aj(1:gcSC%numphoto)
      ratesBase(gcSC%numphoto+1:gcSC%numphoto+gcSC%numreacs) = ak(k,1:gcSC%numreacs)
      ALLOCATE(speciesBase(numSpecies+1),STAT=status)
-     VERIFY_(status)
+     _VERIFY(status)
      CALL storeBaseChem(ox,nox,hno3,n2o5,ho2no2,clono2,clx,hcl,hocl,h2o2,brx,n2o,cl2, &
                  oclo,brcl,hbr,brono2,ch4,hobr,ch3ooh,co,h2o,hno3c,h2oc,f11,f12,f113, &
                 f114,f115,ccl4,hcfc22,hcfc141b,hcfc142b,chbr3,ch2br2,ch2brcl,chbrcl2, &
@@ -2051,11 +2051,11 @@ CONTAINS
 
        startOver = .FALSE.
        CALL chemStage1(status)
-       VERIFY_(status)
+       _VERIFY(status)
        IF(startOver) CYCLE
 
        CALL chemStage2(status)
-       VERIFY_(status)
+       _VERIFY(status)
        IF(startOver) CYCLE
        EXIT
 
@@ -2154,14 +2154,14 @@ CONTAINS
 ! Housekeeping
 ! ------------
      DEALLOCATE(ratesBase,STAT=status)
-     VERIFY_(status)
+     _VERIFY(status)
      DEALLOCATE(speciesBase,STAT=status)
-     VERIFY_(status)
+     _VERIFY(status)
 
 ! Update the internal state bundle
 ! --------------------------------
      CALL swapSpecies(TO_BUNDLE,status)
-     VERIFY_(status)
+     _VERIFY(status)
 
 ! Update specific humidity
 ! ------------------------
@@ -2308,7 +2308,7 @@ CONTAINS
 ! Kill the clock
 ! --------------
    CALL ESMF_ClockDestroy(SCClock, RC=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    RETURN
 
@@ -2387,14 +2387,14 @@ CONTAINS
   rc = 0
 
   CALL ESMF_VMGet(vm, MPICOMMUNICATOR=comm, rc=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
   CALL ESMF_ClockGet(SCClock, CURRTIME=timeNow, RC=STATUS)
-  VERIFY_(STATUS)
+  _VERIFY(STATUS)
   CALL ESMF_TimeGet(timeNow, YY=ccyy, MM=mo, RC=STATUS)
-  VERIFY_(STATUS)
+  _VERIFY(STATUS)
   CALL MAPL_ClimInterpFac(SCClock, m1, m2, fac, RC=status)
-  VERIFY_(status) 
+  _VERIFY(status) 
 
   IF(m1 > m2 .AND. mo ==  1) m1 =  0
   IF(m1 > m2 .AND. mo == 12) m2 = 13
@@ -2404,9 +2404,9 @@ CONTAINS
 #ifdef H5_HAVE_PARALLEL
 
   CALL MPI_Info_create(info, status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MPI_Info_set(info, "romio_cb_read", "automatic", status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #ifdef NETCDF_NEED_NF_MPIIO
   status = NF_OPEN_PAR(TRIM(fileName), IOR(NF_NOWRITE,NF_MPIIO), comm, info, unit)
@@ -2424,7 +2424,7 @@ CONTAINS
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error opening file ",TRIM(fileName), status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
 #ifndef H5_HAVE_PARALLEL
@@ -2432,7 +2432,7 @@ CONTAINS
   END IF ! MAPL_AM_I_ROOT
 
   CALL MAPL_CommsBcast(vm, gcSC%numClimLats, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
   IF(MAPL_AM_I_ROOT()) THEN
 
@@ -2442,28 +2442,28 @@ CONTAINS
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error inquiring dimid for time_SSG", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    status = NF_INQ_DIMLEN(unit, dimid, numSSGmonths)
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error inquiring dimlen of time_SSG", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    status = NF_INQ_VARID(unit, 'time_SSG', n)
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error getting varid for time_SSG", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    status = NF_GET_ATT_INT(unit, n, "begin_date", i)
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error getting begin_date for time_SSG", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    beginYear = i/10000
@@ -2503,21 +2503,21 @@ CONTAINS
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error getting varid for ",TRIM(varName), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
 
     status = NF_GET_VARA_REAL(unit, n, i, 1, r)
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error getting first month for ",TRIM(varName), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
     
     status = NF_GET_VARA_REAL(unit, n, j, 1, s)
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error getting second month for ",TRIM(varName), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
 
     gcSC%SSG(k) = r*fac+s*(1-fac)
@@ -2528,14 +2528,14 @@ CONTAINS
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error getting varid for lat", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    status = NF_GET_VAR_REAL(unit, n, gcSC%climLatRad)
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error getting values for climLatRad", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    startco2(1) = 1
@@ -2543,9 +2543,9 @@ CONTAINS
    cntco2(2) = 1
 
    ALLOCATE(sm1(gcSC%numClimLats), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(sm2(gcSC%numClimLats), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    YrAdj = gcSC%GHGYrAdj
    IF(YrAdj < -1000) THEN
@@ -2568,7 +2568,7 @@ CONTAINS
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error getting varid for ",TRIM(varName), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
    
     startco2(2)=i
@@ -2576,7 +2576,7 @@ CONTAINS
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error getting values for first month of ",TRIM(varName), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
    
     startco2(2)=j
@@ -2584,7 +2584,7 @@ CONTAINS
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error getting values for second month of ",TRIM(varName), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
 
     IF(k==1) gcSC%CO2MBC(:)  = sm1(:)*fac+sm2(:)*(1.00-fac)
@@ -2593,9 +2593,9 @@ CONTAINS
    END DO
 
    DEALLOCATE(sm1, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(sm2, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    start(1) = 1
    start(2) = 1
@@ -2604,36 +2604,36 @@ CONTAINS
    cnt(3) = 1
 
    ALLOCATE(zm1(gcSC%numClimLats,gcSC%km), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    ALLOCATE(zm2(gcSC%numClimLats,gcSC%km), STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    status = NF_INQ_DIMID(unit, 'time_SO4', dimid)
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error inquiring dimid for time_SO4", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    status = NF_INQ_DIMLEN(unit, dimid, numSO4months)
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error inquiring dimlen of time_SO4", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    status = NF_INQ_VARID(unit, 'time_SO4', n)
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error getting varid for time_SO4", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    status = NF_GET_ATT_INT(unit, n, "begin_date", i)
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error getting begin_date for time_SO4", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    beginYear = i/10000
@@ -2666,7 +2666,7 @@ CONTAINS
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error getting varid for ",TRIM(varName), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
 
     IF(k <= 5) THEN
@@ -2679,7 +2679,7 @@ CONTAINS
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error getting values for first month of ",TRIM(varName), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
 
     IF(k <= 5) THEN
@@ -2692,7 +2692,7 @@ CONTAINS
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error getting values for second month of ",TRIM(varName), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
 
     SELECT CASE (k)
@@ -2714,38 +2714,38 @@ CONTAINS
    END DO
 
    DEALLOCATE(zm1, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(zm2, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    status = NF_CLOSE(unit)
-   VERIFY_(status)
+   _VERIFY(status)
 
 #ifdef H5_HAVE_PARALLEL
 
    CALL MPI_Info_free(info, status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 #else
 
   END IF ! MAPL_AM_I_ROOT
 
   CALL MAPL_CommsBcast(vm, gcSC%SSG, gcSC%numSSGs, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MPI_Bcast(gcSC%CO2MBC, SIZE(gcSC%CO2MBC), MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MPI_Bcast(gcSC%SF6MBC, SIZE(gcSC%SF6MBC), MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MPI_Bcast(gcSC%climOH, SIZE(gcSC%climOH), MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MPI_Bcast(gcSC%climH2O, SIZE(gcSC%climH2O), MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MPI_Bcast(gcSC%climO3, SIZE(gcSC%climO3), MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MPI_Bcast(gcSC%climSF6LOSS, SIZE(gcSC%climSF6LOSS), MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MPI_Bcast(gcSC%SO4sa, SIZE(gcSC%SO4sa), MPI_REAL, 0, comm, status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #endif
 
@@ -2794,20 +2794,20 @@ CONTAINS
   rc = 0
 
   CALL ESMF_VMGet(vm, MPICOMMUNICATOR=comm, rc=status)
-  VERIFY_(status)
+  _VERIFY(status)
   fileName = TRIM(gcSC%climFileName)
 
    CALL ESMF_ClockGet(SCClock, CURRTIME=timeNow, RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL ESMF_TimeGet(timeNow, YY=ccyy, RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 #ifdef H5_HAVE_PARALLEL
 
   CALL MPI_Info_create(info, status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MPI_Info_set(info, "romio_cb_read", "automatic", status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #ifdef NETCDF_NEED_NF_MPIIO
   status = NF_OPEN_PAR(TRIM(fileName), IOR(NF_NOWRITE,NF_MPIIO), comm, info, unit)
@@ -2825,20 +2825,20 @@ CONTAINS
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error opening file ",TRIM(fileName), status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    status = NF_INQ_DIMID(unit, 'emiss_year', dimid)
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error inquiring dimid for year", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
    status = NF_INQ_DIMLEN(unit, dimid, n)
    IF(status /= NF_NOERR) THEN
     PRINT *,"Error inquiring dimlen of year", status
     PRINT *, NF_STRERROR(status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
    gcSC%nyemiss = n
@@ -2848,7 +2848,7 @@ CONTAINS
   END IF ! MAPL_AM_I_ROOT
 
   CALL MAPL_CommsBcast(vm, gcSC%nyemiss, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
   IF(MAPL_AM_I_ROOT()) THEN
 
@@ -2864,14 +2864,14 @@ CONTAINS
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error getting varid for ",TRIM(varName), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
 
     status = NF_GET_VARA_REAL(unit, n, i, 1, r)
     IF(status /= NF_NOERR) THEN
      PRINT *,"Error getting first month for ",TRIM(varName), status
      PRINT *, NF_STRERROR(status)
-     VERIFY_(status)
+     _VERIFY(status)
     END IF
 
     IF(k == 1) THEN
@@ -2896,29 +2896,29 @@ CONTAINS
    END DO
 
    status = NF_CLOSE(unit)
-   VERIFY_(status)
+   _VERIFY(status)
 
 #ifdef H5_HAVE_PARALLEL
 
    CALL MPI_Info_free(info, status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 #else
 
   END IF ! MAPL_AM_I_ROOT
 
   CALL MAPL_CommsBcast(vm, gcSC%emfCFC11, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_CommsBcast(vm, gcSC%emfCFC12, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_CommsBcast(vm, gcSC%emfCFC113, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_CommsBcast(vm, gcSC%emfHCFC22, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_CommsBcast(vm, gcSC%emfMCF, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
   CALL MAPL_CommsBcast(vm, gcSC%emfCCL4, 1, 0, RC=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
 #endif
 
@@ -3389,7 +3389,7 @@ CONTAINS
    IF(qmax > gcSC%HNO3Ice_MAX) THEN
     PRINT *,TRIM(Iam)//": Found HNO3COND above limit: ",qmax," ppbv"
     status = 1
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
 ! Export states for NAT and ice surface area density [m^{-1}]
@@ -3402,7 +3402,7 @@ CONTAINS
    IF(k >= k1Strat) THEN
     CALL khet3d(k,km,gcSC%numreacs,gcSC%parts,SO4saProfile,sanat, &
 		saice,numDens,kel,h2o,hcl,clono2,ak,status)
-    VERIFY_(status)
+    _VERIFY(status)
    END IF
 
 ! Ad-hoc reaction rate adjustments.
@@ -3591,88 +3591,88 @@ CONTAINS
    rc = 0
 
    DEALLOCATE(gcSC%climLatRad, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    DEALLOCATE(gcSC%sdat, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%o2jdat, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%o3_tab, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%xtab, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%sza_tab, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%CH2O_aq, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%rlam, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    DEALLOCATE(gcSC%SSG, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%climRain, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%climO3, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%climOH, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%climH2O, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    DEALLOCATE(gcSC%climRain3D, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%climO33D, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%climOH3D, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%climH2O3D, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    DEALLOCATE(gcSC%SO4sa, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%SO4sa3D, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    DEALLOCATE(gcSC%CO2MBC, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%CO2MBC2D, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%SF6MBC, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%SF6MBC2D, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    DEALLOCATE(gcSC%KRxnOrder, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%standardKRxn, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%KRxnName, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%cnsttab, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%indxs1, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%indxs2, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%indxs3, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    DEALLOCATE(gcSC%CFC11EMISS, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%CFC12EMISS, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%CFC113EMISS, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%MCFEMISS, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%CCL4EMISS, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%HCFC22EMISS, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%CHBR3EMISS, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
    DEALLOCATE(gcSC%CH2BR2EMISS, STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
    RETURN
 

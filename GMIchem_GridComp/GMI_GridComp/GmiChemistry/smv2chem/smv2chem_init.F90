@@ -405,29 +405,29 @@
       !character(len=ESMF_MAXSTR) :: IAm = "initSMV2diag"
 !
       Allocate (savedVars%lonloop(itloop), STAT=STATUS)
-      !VERIFY_(STATUS)
+      !_VERIFY(STATUS)
       Allocate (savedVars%latloop(itloop), STAT=STATUS)
-      !VERIFY_(STATUS)
+      !_VERIFY(STATUS)
       Allocate (savedVars%altloop(itloop), STAT=STATUS)
-      !VERIFY_(STATUS)
+      !_VERIFY(STATUS)
       savedVars%lonloop = 0
       savedVars%latloop = 0
       savedVars%altloop = 0
 
       Allocate (savedVars%isteps(ilong, ilat, ivert), STAT=STATUS)
-      !VERIFY_(STATUS)
+      !_VERIFY(STATUS)
       savedVars%isteps = 0
 
       Allocate (savedVars%taccum(ilong, ilat, ivert), STAT=STATUS)
-      !VERIFY_(STATUS)
+      !_VERIFY(STATUS)
       savedVars%taccum = 0.0d0
 
       Allocate (savedVars%qqjts(ilong, ilat, ivert, num_qjs), STAT=STATUS)
-      !VERIFY_(STATUS)
+      !_VERIFY(STATUS)
       Allocate (savedVars%qqkts(ilong, ilat, ivert, num_qks), STAT=STATUS)
-      !VERIFY_(STATUS)
+      !_VERIFY(STATUS)
       Allocate (savedVars%yts  (ilong, ilat, ivert, num_active), STAT=STATUS)
-      !VERIFY_(STATUS)
+      !_VERIFY(STATUS)
       savedVars%qqjts = 0.0d0
       savedVars%qqkts = 0.0d0
       savedVars%yts = 0.0d0

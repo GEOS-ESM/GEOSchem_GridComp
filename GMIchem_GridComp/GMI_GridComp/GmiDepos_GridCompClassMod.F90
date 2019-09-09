@@ -244,29 +244,29 @@ CONTAINS
       ENDIF
 
       gmiConfigFile = ESMF_ConfigCreate(rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigLoadFile(gmiConfigFile, TRIM(rcfilen), rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, kineticsTextFile, &
      &                label   = "kineticsTextFile:", &
      &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, importRestartFile, &
      &                label   = "importRestartFile:", &
      &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call rcEsmfReadLogical(gmiConfigFile, self%do_synoz, &
      &           "do_synoz:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%chem_opt, &
      &                label   = "chem_opt:", &
      &                default = 2, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       !------------------------------
       ! Deposition related variables
@@ -274,11 +274,11 @@ CONTAINS
       
       call rcEsmfReadLogical(gmiConfigFile, self%do_drydep, &
      &           "do_drydep:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call rcEsmfReadLogical(gmiConfigFile, self%do_wetdep, &
      &           "do_wetdep:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       !------------------------------
       ! Diagnostics related variables
@@ -286,36 +286,36 @@ CONTAINS
 
       call rcEsmfReadLogical(gmiConfigFile, self%do_grav_set, &
      &           "do_grav_set:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call rcEsmfReadLogical(gmiConfigFile, self%pr_diag, &
      &           "pr_diag:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call rcEsmfReadLogical(gmiConfigFile, self%verbose, &
      &           "verbose:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call rcEsmfReadLogical(gmiConfigFile, self%pr_scav, &
      &           "pr_scav:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call rcEsmfReadLogical(gmiConfigFile, self%pr_dry_depos, &
      &           "pr_dry_depos:", default=.false., rc=STATUS)
 
       call rcEsmfReadLogical(gmiConfigFile, self%pr_wet_depos, &
      &           "pr_wet_depos:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%metdata_name_org, &
      &                label   = "metdata_name_org:", &
      &                default = 'GMAO', rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%metdata_name_model, &
      &                label   = "metdata_name_model:", &
      &                default = 'GEOS-5', rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 
 ! Does the GMICHEM import restart file exist?  If not,
@@ -380,9 +380,9 @@ CONTAINS
 ! Grid box surface area, m^{2}
 ! ----------------------------
    CALL MAPL_GetPointer(impChem, cellArea, 'AREA', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(self%cellArea(i1:i2,j1:j2), STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    self%cellArea(i1:i2,j1:j2)=cellArea(i1:i2,j1:j2)
 
 ! Discretization
@@ -406,7 +406,7 @@ CONTAINS
    IF(numSpecies /= NSP) THEN
     PRINT *,TRIM(IAm),': Number of species from Chem_Registry.rc does not match number in setkin_par.h'
     STATUS = 1
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     RETURN
    END IF
 
@@ -443,7 +443,7 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%Emission%emiss_opt, &
      &                label   = "emiss_opt:", &
      &                default = 0, rc=STATUS )
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
     !---------------------------------------------------------------
     ! Create and populate the array that maps GMI species indices to
@@ -641,58 +641,58 @@ CONTAINS
 !  Reserve some local work space
 !  -----------------------------
    ALLOCATE(lonDeg(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(latDeg(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    ALLOCATE(          lwi_flags(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(     fracCloudCover(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(         surf_rough(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(cosSolarZenithAngle(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(             radswg(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(   frictionVelocity(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(         con_precip(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(         tot_precip(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(  TwoMeter_air_temp(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    ALLOCATE(                pl(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(             var3d(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(              mass(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(           press3c(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(           press3e(i1:i2,j1:j2,0:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(  gridBoxThickness(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(               kel(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(          humidity(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(            moistq(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(          rain3Dcn(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(          rain3Dls(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    ALLOCATE(   diffaer(i1:i2,j1:j2,NSP),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(  s_radius(i1:i2,j1:j2,NSP),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    ALLOCATE(s_velocity(i1:i2,j1:j2,NSP),STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 ! Geolocation
 ! -----------
@@ -719,13 +719,13 @@ CONTAINS
 !  Emissions
 ! --------------------------------------------------------
    CALL Acquire_Clims(STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 
 ! Grab imports and do units conversions
 ! -------------------------------------
    CALL SatisfyImports(STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 ! Hand the species concentrations to GMI's bundle
 ! -----------------------------------------------
@@ -733,11 +733,11 @@ CONTAINS
       CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration, &
                w_c%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, &
                STATUS)   
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
    END IF
 
    DEALLOCATE(var3d, STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 ! Impose fixed concentrations
 ! ---------------------------
@@ -768,11 +768,11 @@ CONTAINS
 
     IF(self%pr_dry_depos) THEN
      ALLOCATE(var3dDBL(i1:i2,j1:j2,1:NSP),STAT=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
      var3dDBL(i1:i2,j1:j2,1:NSP) = 0.00D+00
      Call Set_dry_depos(self%Deposition, var3dDBL)
      DEALLOCATE(var3dDBL, STAT=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
     END IF
     CALL RunDryDeposition(self%Deposition, self%Emission, self%SpeciesConcentration, &
                           self%gmiGrid, lwi_flags, self%cellArea,                    &
@@ -787,19 +787,19 @@ CONTAINS
 
     IF(self%pr_wet_depos) THEN
      ALLOCATE(var3dDBL(i1:i2,j1:j2,1:NSP),STAT=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
      var3dDBL(i1:i2,j1:j2,1:NSP) = 0.00D+00
      Call Set_wet_depos(self%Deposition, var3dDBL)
      DEALLOCATE(var3dDBL, STAT=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
     END IF
     IF(self%pr_scav) THEN
      ALLOCATE(var4dDBL(i1:i2,j1:j2,1:km,1:NSP),STAT=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
      var4dDBL(i1:i2,j1:j2,1:km,1:NSP) = 0.00D+00
      Call Set_scav3d(self%Deposition, var4dDBL)
      DEALLOCATE(var4dDBL, STAT=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
     END IF
 
     CALL RunWetDeposition(self%Deposition, self%SpeciesConcentration,                  &
@@ -816,30 +816,30 @@ CONTAINS
       CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration, &
                w_c%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
                STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
    END IF
 
 ! Export states
 ! -------------
    CALL FillExports(STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 ! Scratch local work space
 ! ------------------------
    DEALLOCATE(lonDeg, latDeg, STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    DEALLOCATE(lwi_flags, TwoMeter_air_temp, &
               fracCloudCover, surf_rough, cosSolarZenithAngle, &
               radswg, frictionVelocity, con_precip, tot_precip, STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    DEALLOCATE(pl, mass, press3c, press3e, gridBoxThickness, kel, humidity, &
               moistq, rain3Dcn, rain3Dls, STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    DEALLOCATE(diffaer, s_radius, s_velocity, STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 ! IMPORTANT: Reset this switch to .TRUE. after first pass.
 ! --------------------------------------------------------
@@ -893,7 +893,7 @@ CONTAINS
     speciesName = TRIM(lchemvar(i))
     importName = TRIM(speciesName)//'_FIXED'
     CALL MAPL_GetPointer(impChem, PTR3D, TRIM(importName), RC=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     self%SpeciesConcentration%fixed_const(i1:i2,j1:j2,1:km,ic) = PTR3D(i1:i2,j1:j2,km:1:-1)
     NULLIFY(PTR3D)
 
@@ -914,7 +914,7 @@ CONTAINS
                             self%Emission%iuse,        &
                             self%Emission%iland,       &
                             RC=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      NULLIFY(PTR3D)
 
@@ -931,7 +931,7 @@ CONTAINS
                     self%Emission%iland,       &
                     self%Emission%xlai,        &
                     RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    NULLIFY(PTR3D)
 
@@ -983,9 +983,9 @@ CONTAINS
 ! ------------------------------------------------
    IF(self%do_drydep .OR. self%do_wetdep) THEN
     ALLOCATE(var3dDBL(i1:i2,j1:j2,1:NSP),STAT=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     ALLOCATE(var3d(i1:i2,j1:j2,1:NSP),STAT=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
    END IF
 
    IF(self%do_drydep .AND. self%pr_dry_depos) THEN
@@ -1002,19 +1002,19 @@ CONTAINS
 
    IF(self%do_drydep .OR. self%do_wetdep) THEN
     DEALLOCATE(var3d, var3dDBL, STAT=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
    ENDIF
 
    IF(self%do_wetdep .AND. self%pr_scav) THEN
     ALLOCATE(var4dDBL(i1:i2,j1:j2,1:km,1:NSP),STAT=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     CALL Get_scav3d(self%Deposition, var4dDBL)
     DO k=1,km
      kReverse = km-k+1
 #include "SCAV_FillExports___.h"
     END DO
     DEALLOCATE(var4dDBL,STAT=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
    END IF
 
   RETURN
@@ -1052,40 +1052,40 @@ CONTAINS
 !  Pointers to imports
 !  -------------------
    CALL MAPL_GetPointer(impChem,   cn_prcp,   'CN_PRCP', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,     tprec,     'TPREC', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,       lwi,       'LWI', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,     TsAir,        'TA', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,       T2m,       'T2M', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,     ustar,     'USTAR', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,       z0h,       'Z0H', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,   swndsrf,   'SWNDSRF', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,     cldtt,     'CLDTT', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
   
    CALL MAPL_GetPointer(impChem,   airdens, 'AIRDENS', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,       ple,	'PLE', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,         Q,       'Q', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,	 T,	  'T', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,       zle,	'ZLE', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,      dqdt,    'DQDT', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,  pfl_lsan,'PFL_LSAN', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    CALL MAPL_GetPointer(impChem,    pfl_cn,  'PFL_CN', rc=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Export state pointers
 !  ---------------------
@@ -1259,7 +1259,7 @@ CONTAINS
    INTEGER :: STATUS
    rc=0
    DEALLOCATE(self%cellArea, self%lonRad, self%latRad, STAT=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    RETURN
 
  END SUBROUTINE GmiDepos_GridCompFinalize

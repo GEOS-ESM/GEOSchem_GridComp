@@ -25,7 +25,6 @@
    use Chem_MieMod           ! Aerosol LU Tables, calculator
    use m_inpak90             ! Resource file management
    use m_die, only: die
-   USE m_chars, only: lowercase
    use Chem_SettlingMod      ! Settling
    use DryDepositionMod      ! Dry Deposition
    use WetRemovalMod         ! Large-scale Wet Removal
@@ -131,14 +130,14 @@ CONTAINS
 !  Load resource file
 !  ------------------
    cfg = ESMF_ConfigCreate(rc=status)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    call ESMF_ConfigLoadFile(cfg,trim(rc_basename)//'.rc',rc=status)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Parse resource file
 !  -------------------
    n = ESMF_ConfigGetLen(cfg,label='BC_instances:',rc=status)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 
 !  We have 2 tracers for each instance of BC
@@ -159,10 +158,10 @@ CONTAINS
 !  Record name of each instance
 !  ----------------------------
    call ESMF_ConfigFindLabel(cfg,'BC_instances:',rc=status)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    do i = 1, n
       call ESMF_ConfigGetAttribute(cfg,name,rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
                                             ! resource file name
       IF(TRIM(name) == "full" ) THEN
        name = " "              ! blank instance name for full (1)
@@ -170,10 +169,10 @@ CONTAINS
        name = TRIM(name)       ! instance name for others
       END IF
       call BC_GridCompSetServices1_(gc,chemReg,name,rc=status)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
    end do
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
    end subroutine BC_GridCompSetServices
 
 
@@ -527,7 +526,7 @@ CONTAINS
        VLOCATION  = MAPL_VLocationNone, &
        RESTART    = MAPL_RestartSkip,   &
        RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
        SHORT_NAME = 'BC_BIOFUEL'//trim(iname), &
@@ -537,7 +536,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'BC_ANTEBC1'//trim(iname), &
@@ -547,7 +546,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'BC_ANTEBC2'//trim(iname), &
@@ -557,7 +556,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'BC_SHIP'//trim(iname), &
@@ -567,7 +566,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'BC_AVIATION_LTO'//trim(iname), &
@@ -577,7 +576,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'BC_AVIATION_CDS'//trim(iname), &
@@ -587,7 +586,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'BC_AVIATION_CRS'//trim(iname), &
@@ -597,7 +596,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Parse the resource file to see if NEI imports are required
 !  ----------------------------------------------------------
@@ -612,7 +611,7 @@ CONTAINS
        VLOCATION  = MAPL_VLocationNone, &
        RESTART    = MAPL_RestartSkip,   &
        RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
    call MAPL_AddImportSpec(GC, &
        SHORT_NAME = 'BC_NEI_TOP'//trim(iname), &
@@ -622,11 +621,11 @@ CONTAINS
        VLOCATION  = MAPL_VLocationNone, &
        RESTART    = MAPL_RestartSkip,   &
        RC         = STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    end if NEI_EMISSIONS
 
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
  contains
    subroutine doing_nei_(rcbasen, iname, result, rc)
@@ -640,6 +639,7 @@ CONTAINS
    type(ESMF_Config)  :: cfg
    character(len=255) :: name
    integer            :: status
+   logical            :: isPresent
    character(len=255) :: Iam
 
    Iam = 'BC_GridCOmpSetServices1_::doing_nei_'
@@ -654,15 +654,15 @@ CONTAINS
 
    cfg = ESMF_ConfigCreate(__RC__)
    call ESMF_ConfigLoadFile(cfg, trim(name), __RC__)
-   call ESMF_ConfigFindLabel(cfg, 'nei_boundingbox:', rc=status)
+   call ESMF_ConfigFindLabel(cfg, 'nei_boundingbox:', isPresent=isPresent, __RC__)
 
-   if (status == ESMF_SUCCESS) then
+   if (isPresent) then
        result = .true.
    else 
        result = .false.
    end if
 
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
    end subroutine doing_nei_
 
  end subroutine BC_GridCompSetServices1_
@@ -952,7 +952,7 @@ CONTAINS
    IF(gcBC%regionsString(1:2) == "-1") THEN
     NoRegionalConstraint = .TRUE.
    ELSE
-    SELECT CASE (lowercase(gcBC%regionsString(1:2)))
+    SELECT CASE (ESMF_UtilStringLowerCase(gcBC%regionsString(1:2)))
      CASE ("gl") 
       NoRegionalConstraint = .TRUE.
      CASE ("al") 
@@ -1133,39 +1133,39 @@ CONTAINS
 !   ----------------------------------------------
 
     call MAPL_GetPointer(impChem,var2d,'BC_BIOMASS'//iNAME,rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     gcBC%biomass_src = var2d
 
 !   Biofuel and anthropogenic emissions (inventories)
 !   -------------------------------------------------
     call MAPL_GetPointer(impChem,var2d,'BC_BIOFUEL'//iNAME,rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     gcBC%biofuel_src = var2d
 
     call MAPL_GetPointer(impChem,var2d,'BC_ANTEBC1'//iNAME,rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     gcBC%ebcant1_src = var2d
 
     call MAPL_GetPointer(impChem,var2d,'BC_ANTEBC2'//iNAME,rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     gcBC%ebcant2_src = var2d
 
 !   Ship based BC emissions
     call MAPL_GetPointer(impChem,var2d,'BC_SHIP'//iNAME,rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     gcBC%bc_ship_src = var2d
 
 !   Aircraft emissions during LTO, CDS and CRS phases of flight
     call MAPL_GetPointer(impChem,var2d,'BC_AVIATION_LTO'//iNAME,rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     gcBC%aviation_lto_src = var2d
 
     call MAPL_GetPointer(impChem,var2d,'BC_AVIATION_CDS'//iNAME,rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     gcBC%aviation_cds_src = var2d
 
     call MAPL_GetPointer(impChem,var2d,'BC_AVIATION_CRS'//iNAME,rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     gcBC%aviation_crs_src = var2d
 
 !   As a safety check, where value is undefined set to 0
@@ -1982,7 +1982,7 @@ RUN_ALARM: if (gcBC%run_alarm) then
    allocate( fluxout )
    allocate( fluxout%data2d(i1:i2,j1:j2), dqa(i1:i2,j1:j2), &
              drydepositionfrequency(i1:i2,j1:j2), stat=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 
 
