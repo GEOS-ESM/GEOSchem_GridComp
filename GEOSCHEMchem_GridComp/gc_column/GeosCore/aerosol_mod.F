@@ -176,7 +176,6 @@
       INTEGER :: id_SOAIE, id_SOAME
       INTEGER :: id_INDIOL,id_LVOCOA,id_ISN1OA
 
-#if defined( NC_DIAG )
       ! Index to map between NRHAER and species database hygroscopic species
       ! NOTE: Increasing value of NRHAER in CMN_SIZE_Mod.F (e.g. if there is
       ! a new hygroscopic species) requires manual update of this mapping
@@ -194,7 +193,6 @@
       REAL(fp)           :: Fac_SOAIE
       REAL(fp)           :: Fac_SOAME
       REAL(fp)           :: Fac_SOAMG
-#endif
 
       !=================================================================
       ! MODULE ROUTINES -- follow below the "CONTAINS" statement
@@ -216,8 +214,8 @@
 !\\
 ! !INTERFACE:
 !
-      SUBROUTINE AEROSOL_CONC( am_I_Root, Input_Opt,  State_Met,
-     &                         State_Chm, State_Diag, RC         )
+      SUBROUTINE AEROSOL_CONC( am_I_Root,  Input_Opt,  State_Chm,
+     &                         State_Diag, State_Grid, State_Met, RC )
 !
 ! !USES:
 !
@@ -228,21 +226,23 @@
       USE HCO_EMISLIST_MOD,  ONLY : HCO_GetPtr 
       USE HCO_Error_Mod
       USE HCO_INTERFACE_MOD, ONLY : HcoState
-      USE Input_Opt_Mod,  ONLY : OptInput
-      USE State_Met_Mod,  ONLY : MetState
-      USE State_Chm_Mod,  ONLY : ChmState
-      USE State_Diag_Mod, ONLY : DgnState
-      USE UCX_MOD,        ONLY : KG_STRAT_AER
-      USE UnitConv_Mod,   ONLY : Convert_Spc_Units
-      USE TIME_MOD,       ONLY : GET_MONTH
+      USE Input_Opt_Mod,     ONLY : OptInput
+      USE State_Chm_Mod,     ONLY : ChmState
+      USE State_Diag_Mod,    ONLY : DgnState
+      USE State_Grid_Mod,    ONLY : GrdState
+      USE State_Met_Mod,     ONLY : MetState
+      USE UCX_MOD,           ONLY : KG_STRAT_AER
+      USE UnitConv_Mod,      ONLY : Convert_Spc_Units
+      USE TIME_MOD,          ONLY : GET_MONTH
 #if   defined( TOMAS ) 
-      USE TOMAS_MOD,      ONLY : IBINS
+      USE TOMAS_MOD,         ONLY : IBINS
 #endif
 !
 ! !INPUT PARAMETERS:
 !
       LOGICAL,        INTENT(IN)    :: am_I_Root   ! Is this the root CPU?
       TYPE(OptInput), INTENT(IN)    :: Input_Opt   ! Input Options object
+      TYPE(GrdState), INTENT(IN)    :: State_Grid  ! Grid State object
       TYPE(MetState), INTENT(IN)    :: State_Met   ! Meteorology State object
 !
 ! !INPUT/OUTPUT PARAMETERS: 
@@ -397,8 +397,9 @@
       Is_ComplexSOA = Input_Opt%LSOA
 
       ! Convert species to [kg] for this routine
-      CALL Convert_Spc_Units( am_I_Root, Input_Opt, State_Met, 
-     &                        State_Chm, 'kg', RC, OrigUnit=OrigUnit )
+      CALL Convert_Spc_Units( am_I_Root,  Input_Opt, State_Chm, 
+     &                        State_Grid, State_Met, 'kg',
+     &                        RC,         OrigUnit=OrigUnit )
 
       ! Trap potential errors
       IF ( RC /= GC_SUCCESS ) THEN
@@ -517,9 +518,9 @@
 !$OMP+DEFAULT( SHARED )
 !$OMP+PRIVATE( I, J, L, N, K )
 !$OMP+SCHEDULE( DYNAMIC )
-      DO L = 1, LLPAR
-      DO J = 1, JJPAR
-      DO I = 1, IIPAR
+      DO L = 1, State_Grid%NZ
+      DO J = 1, State_Grid%NY
+      DO I = 1, State_Grid%NX
       
          !==============================================================
          ! S U L F A T E   A E R O S O L S
@@ -1131,8 +1132,8 @@
 !$OMP END PARALLEL DO
 
       ! Convert species back to original unit
-      CALL Convert_Spc_Units( am_I_Root, Input_Opt, State_Met, 
-     &                        State_Chm, OrigUnit, RC )
+      CALL Convert_Spc_Units( am_I_Root,  Input_Opt, State_Chm, 
+     &                        State_Grid, State_Met, OrigUnit, RC )
       IF ( RC /= GC_SUCCESS ) THEN
          CALL GC_Error('Unit conversion error', RC, 
      &                 'End of AEROSOL_CONC in aerosol_mod.F')
@@ -1162,9 +1163,9 @@
 !\\
 ! !INTERFACE:
 !
-      SUBROUTINE RDAER( am_I_Root, Input_Opt,  State_Met,
-     &                  State_Chm, State_Diag, RC,
-     &                  MONTH,     YEAR,       ODSWITCH   )
+      SUBROUTINE RDAER( am_I_Root,  Input_Opt,  State_Chm,
+     &                  State_Diag, State_Grid, State_Met, RC,
+     &                  MONTH,      YEAR,       ODSWITCH   )
 !
 ! !USES:
 !
@@ -1176,26 +1177,26 @@
       USE PhysConstants,  ONLY : CONSVAP
       USE State_Chm_Mod,  ONLY : ChmState
       USE State_Diag_Mod, ONLY : DgnState
+      USE State_Grid_Mod, ONLY : GrdState
       USE State_Met_Mod,  ONLY : MetState
       USE TIME_MOD,       ONLY : ITS_A_NEW_MONTH
       USE TIME_MOD,       ONLY : SYSTEM_TIMESTAMP
-      USE TRANSFER_MOD,   ONLY : TRANSFER_3D
       USE UCX_MOD,        ONLY : GET_STRAT_OPT
       USE UCX_MOD,        ONLY : NDENS_AER
-#if defined( BPCH_DIAG ) || defined( MODEL_GEOS )
+#if defined( BPCH_DIAG )
       USE CMN_DIAG_MOD
       USE DIAG_MOD,       ONLY : AD21
 #endif
-#if defined( NC_DIAG )
       USE Species_Mod,        ONLY : Species
-#endif
 
       IMPLICIT NONE
 !
 ! !INPUT PARAMETERS:
 !
       LOGICAL,        INTENT(IN)    :: am_I_Root   ! Are we on root CPU?
-      TYPE(MetState), INTENT(IN)    :: State_Met   ! Meteorology State
+      TYPE(OptInput), INTENT(IN)    :: Input_Opt   ! Input Options object
+      TYPE(GrdState), INTENT(IN)    :: State_Grid  ! Grid State object
+      TYPE(MetState), INTENT(IN)    :: State_Met   ! Meteorology State object
       INTEGER,        OPTIONAL      :: MONTH       ! # of current month
       INTEGER,        OPTIONAL      :: YEAR        ! 4-digit year
       INTEGER,        OPTIONAL      :: ODSWITCH    ! Logical indicator
@@ -1204,7 +1205,6 @@
                                                    !  = 1: AOD computed 
                                                    !       at wavelength set 
                                                    !       in Radiation Menu
-      TYPE(OptInput), INTENT(IN)    :: Input_Opt   ! Input Options object
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
@@ -1293,8 +1293,12 @@
       CHARACTER(LEN=16)   :: STAMP
       INTEGER             :: I, J, L, N, R, IRH, W, IRHN
       INTEGER             :: AA, IWV, IIWV, NWVS, IR, NRT
-      REAL*4              :: TEMP(IIPAR,JJPAR,LGLOB)
-      REAL(fp)            :: TEMP2(IIPAR,JJPAR,LLPAR)
+      REAL*4              :: TEMP( State_Grid%NX,
+     &                             State_Grid%NY,
+     &                             State_Grid%NZ)
+      REAL(fp)            :: TEMP2(State_Grid%NX,
+     &                             State_Grid%NY,
+     &                             State_Grid%NZ)
       REAL(fp)            :: MSDENS(NAER), DRYAREA
       REAL(f8)            :: XTAU
       REAL*8              :: BCSCAT_AE  !(xnw, 8/24/15)
@@ -1379,10 +1383,9 @@
       REAL(fp), POINTER   :: WTAREA(:,:,:,:)
 
       ! For diagnostics
-#if defined( BPCH_DIAG ) || defined( MODEL_GEOS )
+#if defined( BPCH_DIAG )
       INTEGER             :: IOUT, IISOPAOD, IAERAQVOL
 #endif
-#if defined( NC_DIAG )
       LOGICAL                :: IsWL1
       LOGICAL                :: IsWL2
       LOGICAL                :: IsWL3
@@ -1391,7 +1394,6 @@
       CHARACTER(LEN=255)     :: ErrMsg
       !INTEGER                :: M
       TYPE(Species), POINTER :: SpcInfo
-#endif
 
       !=================================================================
       ! RDAER begins here!
@@ -1428,7 +1430,7 @@
       WERADIUS            => State_Chm%WetAeroRadi ! Wet Aerosol Radius [cm]
       WTAREA              => State_Chm%WetAeroArea ! Wet Aerosol Area [cm2/cm3]
 
-#if defined( BPCH_DIAG ) || defined( MODEL_GEOS )
+#if defined( BPCH_DIAG )
       IF ( Input_Opt%ND21 > 0 ) THEN
          ! Define certain bpch ND21 diagnostic indexes
          IISOPAOD  = 5 + 5*NRHAER + 3*NDUST + 3*NSTRATAER + 1
@@ -1436,7 +1438,6 @@
       ENDIF
 #endif
 
-# if defined( NC_DIAG )
       ! Initialize the mapping between hygroscopic species in the
       ! species database and the species order in NRHAER
       IF ( FIRST ) THEN
@@ -1470,7 +1471,6 @@
          
          ENDDO
       ENDIF
-#endif
 
       !=================================================================
       ! S U L F A T E   A E R O S O L S
@@ -1497,9 +1497,9 @@
 !$OMP PARALLEL DO
 !$OMP+DEFAULT( SHARED )
 !$OMP+PRIVATE( I, J, L )
-         DO L = 1, LLPAR
-         DO J = 1, JJPAR
-         DO I = 1, IIPAR
+         DO L = 1, State_Grid%NZ
+         DO J = 1, State_Grid%NY
+         DO I = 1, State_Grid%NX
             WAERSL(I,J,L,1) = SO4_NH4_NIT(I,J,L)
          ENDDO
          ENDDO
@@ -1535,9 +1535,9 @@
 !$OMP PARALLEL DO
 !$OMP+DEFAULT( SHARED )
 !$OMP+PRIVATE( I, J, L )
-         DO L = 1, LLPAR
-         DO J = 1, JJPAR
-         DO I = 1, IIPAR
+         DO L = 1, State_Grid%NZ
+         DO J = 1, State_Grid%NY
+         DO I = 1, State_Grid%NX
 
             ! Hydrophilic BC (a.k.a EC) [kg/m3]
             WAERSL(I,J,L,2) = BCPI(I,J,L)
@@ -1585,9 +1585,9 @@
 !$OMP PARALLEL DO
 !$OMP+DEFAULT( SHARED )
 !$OMP+PRIVATE( I, J, L )
-         DO L = 1, LLPAR
-         DO J = 1, JJPAR
-         DO I = 1, IIPAR
+         DO L = 1, State_Grid%NZ
+         DO J = 1, State_Grid%NY
+         DO I = 1, State_Grid%NX
 
             ! Accumulation mode seasalt aerosol [kg/m3]
             WAERSL(I,J,L,4) = SALA(I,J,L)
@@ -1771,9 +1771,9 @@
 #endif
 !$OMP+PRIVATE( RHOSTRAT, RAER,    SADSTRAT, XSASTRAT            )
 !$OMP+SCHEDULE( DYNAMIC )
-         DO L = 1, LLPAR
-         DO J = 1, JJPAR
-         DO I = 1, IIPAR
+         DO L = 1, State_Grid%NZ
+         DO J = 1, State_Grid%NY
+         DO I = 1, State_Grid%NX
 
             ! Skip non-chemistry boxes
             IF ( .not. State_Met%InChemGrid(I,J,L) ) CYCLE
@@ -1968,7 +1968,7 @@
             ! Skip stratospheric aerosols
             IF ((IIWV.EQ.1).and.(ISTRAT.le.0)) THEN
 
-#if defined( BPCH_DIAG ) || defined( MODEL_GEOS )
+#if defined( BPCH_DIAG )
                !----------------------------------------------------
                ! ND21 bpch diagnostics computed here:
                !  #7  Hygroscopic growth of SO4                [unitless]
@@ -1983,7 +1983,7 @@
      &                                    SCALEOD
                ENDIF
 #endif
-#if defined ( NC_DIAG )
+
                !----------------------------------------------------
                ! Netcdf diagnostics computed here:
                !  Hygroscopic growth of SO4                [unitless]
@@ -1992,10 +1992,11 @@
                !  Hygroscopic growth of Sea Salt (accum)   [unitless]
                !  Hygroscopic growth of Sea Salt (coarse)  [unitless]
                IF ( State_Diag%Archive_AerHygGrowth .AND.
-     &              L <= LLCHEM .AND. ODSWITCH.EQ.1 ) THEN
+     &              L <= State_Grid%MaxChemLev      .AND.
+     &              ODSWITCH.EQ.1 ) THEN
                   State_Diag%AerHygGrowth(I,J,L,Map_NRHAER(N)) = SCALEOD
                ENDIF
-#endif
+
                !=======================================================
                !now calulate the surface areas
                !==============================================================
@@ -2066,7 +2067,7 @@
      &                                       DRYAREA )
                ENDIF !Hydrophobic aerosol surface area
 
-#if defined( BPCH_DIAG ) || defined( MODEL_GEOS )
+#if defined( BPCH_DIAG )
                !----------------------------------------------------
                ! ND21 bpch diagnostics computed here:
                !  #59  Aqueous aerosol volume ( (RADIUS*AREA)/3 )
@@ -2082,7 +2083,7 @@
                   AD21(I,J,L,IAERAQVOL) = AD21(I,J,L,IAERAQVOL)+TAERVOL
                ENDIF
 #endif
-#if defined( NC_DIAG )
+
                !----------------------------------------------------
                ! Netcdf diagnostics computed here:
                !  Aqueous aerosol volume
@@ -2092,7 +2093,6 @@
      &                         TAREA(I,J,L, N+NDUST) ) / 3.D0
 
                ENDIF
-#endif
 
             ENDIF !Surface area calcs (1st wavelength only, non-strat)
          ENDDO
@@ -2113,11 +2113,11 @@
             ! Index for combination of aerosol type and RH
             N = NRHAER + ISTRAT
 
-#if defined( BPCH_DIAG ) || defined( MODEL_GEOS )
+#if defined( BPCH_DIAG )
             ! For ND21
             IOUT = 5 + 2*NRHAER + 3*(NDUST+NRHAER) + (ISTRAT-1)*3
 #endif
-#if defined( NC_DIAG )
+
             ! Assume ISTRAT == 1 is strat liquid aerosol and
             ! ISTRAT == 2 is polar strat cloud
             IsSLA = .FALSE.
@@ -2132,16 +2132,15 @@
      &                            "not defined for NSTRATAER " //
      &                            "greater than 2!" 
             END SELECT
-#endif
 
 !$OMP PARALLEL DO 
 !$OMP+DEFAULT( SHARED ) 
 !$OMP+PRIVATE( I, J, L, RAER, REFF )
 !$OMP+PRIVATE( SADSTRAT, XSASTRAT )
 !$OMP+SCHEDULE( DYNAMIC )
-            DO L = 1, LLPAR
-            DO J = 1, JJPAR
-            DO I = 1, IIPAR
+            DO L = 1, State_Grid%NZ
+            DO J = 1, State_Grid%NY
+            DO I = 1, State_Grid%NX
 
                ! Get aerosol effective radius
                CALL GET_STRAT_OPT(I,J,L,ISTRAT,RAER,REFF,
@@ -2159,7 +2158,7 @@
                   WERADIUS(I,J,L,NDUST+N) = RAER 
                ENDIF
 
-#if defined( BPCH_DIAG ) || defined( MODEL_GEOS )
+#if defined( BPCH_DIAG )
                IF ( Input_Opt%ND21.GT.0.AND.L.LE.Input_Opt%LD21 ) THEN
 
                   !----------------------------------------------------
@@ -2184,25 +2183,17 @@
                   ENDIF
                ENDIF
 #endif
-#if defined( NC_DIAG )
+
                !----------------------------------------------------
                ! Netcdf diagnostics computed here:
                !  Strat aerosol liquid surface area
                !  Polar strat cloud surface area
-#if defined( MODEL_GEOS )
                IF ( State_Diag%Archive_AerSurfAreaSLA 
      &              .AND. ISTRAT==1 ) THEN
-#else
-               IF ( State_Diag%Archive_AerSurfAreaSLA ) THEN
-#endif
                   State_Diag%AerSurfAreaSLA(I,J,L) = SADSTRAT
                ENDIF
-#if defined( MODEL_GEOS )
                IF ( State_Diag%Archive_AerSurfAreaPSC 
      &              .AND. ISTRAT==2 ) THEN
-#else
-               IF ( State_Diag%Archive_AerSurfAreaPSC ) THEN
-#endif
                   State_Diag%AerSurfAreaPSC(I,J,L) = SADSTRAT
                ENDIF
 
@@ -2251,7 +2242,6 @@
                      ENDIF
                   ENDIF
                ENDIF
-#endif                  
 
             ENDDO
             ENDDO
@@ -2265,7 +2255,7 @@
       ! NOTE: The cloud optical depths are actually recorded at
       !       1000 nm, but vary little with wavelength.
       !==============================================================
-#if defined( BPCH_DIAG ) || defined( MODEL_GEOS )
+#if defined( BPCH_DIAG )
       IF ( Input_Opt%ND21 > 0 .and. ODSWITCH .EQ. 1 ) THEN
 !$OMP PARALLEL DO
 !$OMP+DEFAULT( SHARED )
@@ -2302,8 +2292,8 @@
 
                ! loop over grid boxes
                DO L = 1, Input_Opt%LD21
-               DO J = 1, JJPAR
-               DO I = 1, IIPAR
+               DO J = 1, State_Grid%NY
+               DO I = 1, State_Grid%NX
 
                   !----------------------------------------------------
                   ! ND21 bpch diagnostics computed here:
@@ -2356,8 +2346,8 @@
             !  #17 Sea Salt (accum) Surface Area             [cm2/cm3 ]
             !  #20 Sea Salt (coarse) Surface Area            [cm2/cm3 ]
             DO L = 1, Input_Opt%LD21
-            DO J = 1, JJPAR
-            DO I = 1, IIPAR
+            DO J = 1, State_Grid%NY
+            DO I = 1, State_Grid%NX
 
                ! Get 3-D grid box indices
                IOUT = 5 + (3*(N-1)) + 3
@@ -2375,7 +2365,7 @@
      
       ENDIF
 #endif
-#if defined( NC_DIAG )
+
       IF ( State_Diag%Archive_AOD .and. ODSWITCH .EQ. 1 ) THEN
          ! Loop over aerosol types (dust handled in dust_mod.f)
 !$OMP PARALLEL DO
@@ -2409,9 +2399,9 @@
                ENDIF
 
                ! Loop over grid boxes
-               DO L = 1, LLPAR
-               DO J = 1, JJPAR
-               DO I = 1, IIPAR
+               DO L = 1, State_Grid%NZ
+               DO J = 1, State_Grid%NY
+               DO I = 1, State_Grid%NX
 
                   !----------------------------------------------------
                   ! Netcdf diagnostics computed here:
@@ -2511,9 +2501,9 @@
             !  Organic Carbon (hydrophilic) Surface Area  [cm2/cm3]
             !  Sea Salt (accum) Surface Area              [cm2/cm3]
             !  Sea Salt (coarse) Surface Area             [cm2/cm3]
-            DO L = 1, LLPAR
-            DO J = 1, JJPAR
-            DO I = 1, IIPAR
+            DO L = 1, State_Grid%NZ
+            DO J = 1, State_Grid%NY
+            DO I = 1, State_Grid%NX
                State_Diag%AerSurfAreaHyg(I,J,L,Map_NRHAER(N)) =
      &                                   TAREA(I,J,L,N+NDUST)
             ENDDO
@@ -2522,7 +2512,6 @@
          ENDDO ! end of loop over hygroscopic aerosols
 !$OMP END PARALLEL DO
       ENDIF
-#endif
 
       ! Turn off radiative effects of stratospheric aerosols?
       IF ( LUCX .and. .not.(LSTRATOD)) THEN
@@ -2576,8 +2565,8 @@
 !\\
 ! !INTERFACE:
 !
-      SUBROUTINE Init_Aerosol( am_I_Root, Input_Opt, 
-     &                         State_Chm, State_Diag, RC )
+      SUBROUTINE Init_Aerosol( am_I_Root,  Input_Opt,  State_Chm,
+     &                         State_Diag, State_Grid, RC )
 !
 ! !USES:
 !
@@ -2587,17 +2576,22 @@
       USE State_Chm_Mod,  ONLY : Ind_
       USE State_Chm_Mod,  ONLY : ChmState
       USE State_Diag_Mod, ONLY : DgnState
+      USE State_Grid_Mod, ONLY : GrdState
 !
 ! !INPUT PARAMETERS:
 !
       LOGICAL,        INTENT(IN)    :: am_I_Root   ! Are we on the root CPU?
       TYPE(OptInput), INTENT(IN)    :: Input_Opt   ! Input Options object
-      TYPE(ChmState), INTENT(INOUT) :: State_Chm   ! Chemistry State object
-      TYPE(DgnState), INTENT(INOUT) :: State_Diag  ! Diagnostics State object
+      TYPE(GrdState), INTENT(IN)    :: State_Grid  ! Grid State object
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
-      INTEGER,        INTENT(OUT) :: RC          ! Success or failure?
+      TYPE(ChmState), INTENT(INOUT) :: State_Chm   ! Chemistry State object
+      TYPE(DgnState), INTENT(INOUT) :: State_Diag  ! Diagnostics State object
+!
+! !OUTPUT PARAMETERS:
+!
+      INTEGER,        INTENT(OUT)   :: RC          ! Success or failure?
 ! 
 ! !REVISION HISTORY:
 !  20 Jul 2004 - R. Yantosca - Initial version
@@ -2671,150 +2665,176 @@
       !=================================================================
       ! Allocate arrays
       !=================================================================
-      ALLOCATE( BCPI( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( BCPI( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       BCPI = 0.0_fp
 
-      ALLOCATE( BCPO( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( BCPO( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:BCPO', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       BCPO = 0.0_fp
 
-      ALLOCATE( OCPI( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( OCPI( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:OCPI', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       OCPI = 0.0_fp
 
-      ALLOCATE( OCPO( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( OCPO( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:OCPO', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       OCPO = 0.0_fp
 
-      ALLOCATE( OCPISOA( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( OCPISOA( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:OCPISOA', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       OCPISOA = 0.0_fp
 
-      ALLOCATE( SALA( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( SALA( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:SALA', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       SALA = 0.0_fp
 
-      ALLOCATE( SALC( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( SALC( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:SALC', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       SALC = 0.0_fp
 
-      ALLOCATE( SO4_NH4_NIT( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( SO4_NH4_NIT(State_Grid%NX,State_Grid%NY,State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:SO4_NH4_NIT', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       SO4_NH4_NIT = 0.0_fp
 
-      ALLOCATE( SO4( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( SO4( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:SO4', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       SO4 = 0.0_fp
 
-      ALLOCATE( NH4( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( NH4( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:NH4', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       NH4 = 0.0_fp
 
-      ALLOCATE( NIT( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( NIT( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:NIT', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       NIT = 0.0_fp
 
-      ALLOCATE( FRAC_SNA( IIPAR, JJPAR, LLPAR, 3 ), STAT=RC )
+      ALLOCATE( FRAC_SNA( State_Grid%NX, State_Grid%NY, State_Grid%NZ,
+     &          3 ), STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:FRAC_SNA', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       FRAC_SNA = 0.0_fp
 
-      ALLOCATE( SOILDUST( IIPAR, JJPAR, LLPAR, NDUST ), STAT=RC )
+      ALLOCATE( SOILDUST( State_Grid%NX, State_Grid%NY, State_Grid%NZ,
+     &          NDUST ), STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:SOILDUST', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       SOILDUST = 0.0_fp
 
       IF ( Input_Opt%LUCX ) THEN 
-         ALLOCATE( SLA( IIPAR, JJPAR, LLPAR ), STAT=RC )
+         ALLOCATE( SLA( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &             STAT=RC )
          CALL GC_CheckVar( 'aerosol_mod.F:SLA', 0, RC )
          IF ( RC /= GC_SUCCESS ) RETURN
          SLA = 0.0_fp
 
-         ALLOCATE( SPA( IIPAR, JJPAR, LLPAR ), STAT=RC )
+         ALLOCATE( SPA( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &             STAT=RC )
          CALL GC_CheckVar( 'aerosol_mod.F:SPA', 0, RC )
          IF ( RC /= GC_SUCCESS ) RETURN
          SPA   = 0.0_fp
       ENDIF
 
-      ALLOCATE( TSOA( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( TSOA( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:TSOA', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       TSOA = 0.0_fp
 
-      ALLOCATE( ISOA( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( ISOA( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:ISOA', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       ISOA = 0.0_fp
 
-      ALLOCATE( ASOA( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( ASOA( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:ASOA', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       ASOA = 0.0_fp
 
-      ALLOCATE( OPOA( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( OPOA( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:OPOA', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       OPOA = 0.0_fp
 
-      ALLOCATE( PM25( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( PM25( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:PM25', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       PM25 = 0.0_fp
 
-      ALLOCATE( SOAGX( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( SOAGX( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:SOAGX', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       SOAGX = 0.0_fp
 
-      ALLOCATE( SOAMG( IIPAR, JJPAR, LLPAR ), STAT=RC )
+      ALLOCATE( SOAMG( State_Grid%NX, State_Grid%NY, State_Grid%NZ ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:SOAMG', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       SOAMG = 0.0_fp
 
       ! Mass of hydrophobic aerosol from Mian Chin
-      ALLOCATE( DAERSL(IIPAR,JJPAR,LLPAR,2), STAT=RC)       
+      ALLOCATE( DAERSL(State_Grid%NX,State_Grid%NY,State_Grid%NZ,2),
+     &          STAT=RC)       
       CALL GC_CheckVar( 'aerosol_mod.F:DAERSL', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       DAERSL = 0.0_fp
 
       ! Mass of hydrophilic aerosol from Mian Chin
-      ALLOCATE( WAERSL(IIPAR,JJPAR,LLPAR,NAER), STAT=RC)       
+      ALLOCATE( WAERSL(State_Grid%NX,State_Grid%NY,State_Grid%NZ,NAER),
+     &          STAT=RC)       
       CALL GC_CheckVar( 'aerosol_mod.F:WAERSL', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       WAERSL = 0.0_fp
 
       ! Mechanistic isoprene SOA (eam, 2014):
-      ALLOCATE( ISOAAQ(IIPAR,JJPAR,LLPAR), STAT=RC)
+      ALLOCATE( ISOAAQ(State_Grid%NX,State_Grid%NY,State_Grid%NZ),
+     &          STAT=RC)
       CALL GC_CheckVar( 'aerosol_mod.F:ISOAAQ', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       ISOAAQ = 0.0_fp
 
       ! Simple SOA
-      ALLOCATE( SOAS(IIPAR,JJPAR,LLPAR), STAT=RC )
+      ALLOCATE( SOAS(State_Grid%NX,State_Grid%NY,State_Grid%NZ),
+     &          STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:SOAS', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       SOAS = 0.0_fp
 
       ! OM/OC for POA
-      ALLOCATE( OCFPOA(IIPAR,JJPAR), STAT=RC )
+      ALLOCATE( OCFPOA(State_Grid%NX,State_Grid%NY), STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:OCFPOA', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       OCFPOA = 0.0_fp
 
       ! OM/OC for OPOA, OCPI, OCPO
-      ALLOCATE( OCFOPOA(IIPAR,JJPAR), STAT=RC )
+      ALLOCATE( OCFOPOA(State_Grid%NX,State_Grid%NY), STAT=RC )
       CALL GC_CheckVar( 'aerosol_mod.F:OCFOPOA', 0, RC )
       IF ( RC /= GC_SUCCESS ) RETURN
       OCFOPOA = 0.0_fp
@@ -2877,7 +2897,6 @@
 
       END SUBROUTINE CLEANUP_AEROSOL
 !EOC
-!EOC
 !------------------------------------------------------------------------------
 !                  GEOS-Chem Global Chemical Transport Model                  !
 !------------------------------------------------------------------------------
@@ -2891,9 +2910,9 @@
 !\\
 ! !INTERFACE:
 !
-      SUBROUTINE Set_AerMass_Diagnostic( am_I_Root,  Input_Opt,  
-     &                                   State_Met,  State_Chm, 
-     &                                   State_Diag, RC         )
+      SUBROUTINE Set_AerMass_Diagnostic( am_I_Root,  Input_Opt,
+     &                                   State_Chm,  State_Diag,
+     &                                   State_Grid, State_Met, RC )
 !
 ! !USES:
 !
@@ -2904,6 +2923,7 @@
       USE State_Chm_Mod,  ONLY : ChmState
       USE State_Chm_Mod,  ONLY : Ind_
       USE State_Diag_Mod, ONLY : DgnState
+      USE State_Grid_Mod, ONLY : GrdState
       USE State_Met_Mod,  ONLY : MetState
       USE PhysConstants,  ONLY : MwCarb
       USE UnitConv_Mod,   ONLY : Convert_Spc_Units
@@ -2912,8 +2932,9 @@
 !
       LOGICAL,          INTENT(IN)    :: am_I_Root   ! Are we on the root CPU?
       TYPE(OptInput),   INTENT(IN)    :: Input_Opt   ! Input Options object
-      TYPE(MetState),   INTENT(IN)    :: State_Met   ! Meteorology State object
       TYPE(ChmState),   INTENT(IN)    :: State_Chm   ! Chemistry State object
+      TYPE(GrdState),   INTENT(IN)    :: State_Grid  ! Grid State object
+      TYPE(MetState),   INTENT(IN)    :: State_Met   ! Meteorology State object
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
@@ -2938,7 +2959,6 @@
 !
 ! !LOCAL VARIABLES:
 !
-#if defined( NC_DIAG )
       ! SAVEd scalars
       LOGICAL                  :: First = .TRUE.
       
@@ -3141,9 +3161,9 @@
 !$OMP PARALLEL DO         
 !$OMP+DEFAULT( SHARED   ) 
 !$OMP+PRIVATE( I, J, L  )
-      DO L = 1, LLPAR
-      DO J = 1, JJPAR
-      DO I = 1, IIPAR
+      DO L = 1, State_Grid%NZ
+      DO J = 1, State_Grid%NY
+      DO I = 1, State_Grid%NX
          
          !--------------------------------------
          ! AerMassASOA [ug/m3]
@@ -3369,7 +3389,6 @@
       Spc      => NULL()
       AirDen   => NULL()
       
-#endif
       END SUBROUTINE Set_AerMass_Diagnostic
 !EOC
       END MODULE AEROSOL_MOD
