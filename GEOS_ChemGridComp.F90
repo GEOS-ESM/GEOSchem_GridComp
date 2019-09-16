@@ -357,7 +357,9 @@ contains
 ! -------------------------------
   IF(myState%enable_GOCART) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'AIRDENS     ','AIRDENS_DRYP', 'DELP        ', 'TPREC       ', 'CN_PRCP     ', 'NCN_PRCP    '/), &
+          SHORT_NAME  = (/ 'AIRDENS     ', 'AIRDENS_DRYP', &
+                           'DELP        ', 'TPREC       ', &
+                           'CN_PRCP     ', 'NCN_PRCP    ' /), &
           DST_ID = GOCART, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
@@ -376,14 +378,14 @@ contains
                    SRC_NAME  = (/ 'GOCART::du001    ', 'GOCART::du002    ', 'GOCART::du003    ', 'GOCART::du004    ', 'GOCART::du005    ', &
                                   'GOCART::ss001    ', 'GOCART::ss002    ', 'GOCART::ss003    ', 'GOCART::ss004    ', 'GOCART::ss005    ', &
                                   'GOCART::NO3an1   ', 'GOCART::NO3an2   ', 'GOCART::NO3an3   ', &
-!                                 'GOCART::BRCphobic', 'GOCART::BRCphilic', &
+                                  'GOCART::BRCphobic', 'GOCART::BRCphilic', &
                                   'GOCART::OCphobic ', 'GOCART::OCphilic ', &
                                   'GOCART::BCphobic ', 'GOCART::BCphilic ', &
                                   'GOCART::SO4      ' /), & 
                    DST_NAME  = (/ 'du001    ', 'du002    ', 'du003    ', 'du004    ', 'du005    ', &
                                   'ss001    ', 'ss002    ', 'ss003    ', 'ss004    ', 'ss005    ', &
-                                  'ni001    ', 'ni002    ', 'ni003    ', &
-!                                 'BRCphobic', 'BRCphilic', &
+                                  'NO3an1   ', 'NO3an2   ', 'NO3an3   ', &
+                                  'BRCphobic', 'BRCphilic', &
                                   'OCphobic ', 'OCphilic ', &
                                   'BCphobic ', 'BCphilic ', &
                                   'SO4      ' /), &
@@ -513,8 +515,8 @@ contains
   ENDIF
  
 
-! GOCART <=> ACHEM (OCS CHEMISTRY)
-! ---------------------------------
+! GOCART <=> ACHEM (OCS and SOA CHEMISTRY)
+! ----------------------------------------
   IF(myState%enable_GOCART .AND. myState%enable_ACHEM) then
    IF(chemReg%doing_OCS) THEN
     CALL MAPL_AddConnectivity ( GC, &
@@ -566,6 +568,15 @@ contains
             DST_ID = STRATCHEM, SRC_ID = CARMA, __RC__)
 
   END IF
+
+! CARMA <=> ACHEM (SOA)
+! ---------------------------------
+  IF(myState%enable_CARMA .AND. myState%enable_ACHEM) then
+   CALL MAPL_AddConnectivity ( GC, &
+        SHORT_NAME  = (/'pSOA_ANTHRO_VOC', 'pSOA_BIOB_VOC  '/), &
+        DST_ID = CARMA, SRC_ID = ACHEM, __RC__  )
+  ENDIF
+
 
 ! GOCART.data <=> GMICHEM coupling ...
 ! ------------------------------------
@@ -670,11 +681,10 @@ contains
     SHORT_NAME  = (/ "TO3" /), &
     DST_ID=GEOSCHEM, SRC_ID=PCHEM, __RC__)
 
-   ! added by ckeller, 10/31/2018
    CALL MAPL_AddConnectivity ( GC, &
-        SRC_NAME  = (/"O3"/), &
-        DST_NAME  = (/"PCHEM_O3"/), &
-        DST_ID = GEOSCHEM, SRC_ID = PCHEM, __RC__  )
+    SRC_NAME  = (/"O3"/), &
+    DST_NAME  = (/"PCHEM_O3"/), &
+    DST_ID = GEOSCHEM, SRC_ID = PCHEM, __RC__  )
   END IF
 
 ! HEMCO connections to CHEMENV
@@ -689,17 +699,7 @@ contains
 ! -----------------------------
   IF( myState%enable_HEMCO .AND. myState%enable_GOCART ) THEN
    CALL MAPL_AddConnectivity ( GC, &
-    SHORT_NAME  = (/ 'SU_ANTHROL1' , 'SU_ANTHROL2',    &
-                     'SU_SHIPSO2 ' , 'SU_SHIPSO4 ',    &
-                     'OC_ANTEOC1 ' , 'OC_ANTEOC2 ',    &
-                     'OC_BIOFUEL ' , 'OC_SHIP    ',    &
-                     'OC_TERPENE ' ,                   &
-                     'BC_ANTEBC1 ' , 'BC_ANTEBC2 ',    &
-                     'BC_BIOFUEL ' , 'BC_SHIP    ',    &
-                     'EMI_NH3_AG ' , 'EMI_NH3_EN ',    &
-                     'EMI_NH3_IN ' , 'EMI_NH3_RE ',    &
-                     'EMI_NH3_TR ' ,                   &
-                     'CO_FS      ' , 'CO_BF      ' /), &
+    SHORT_NAME  = (/ 'OC_MONOTERPENES', 'OC_ISOPRENE    ' /), &
     SRC_ID=HEMCO, DST_ID=GOCART, __RC__)
   END IF
 
