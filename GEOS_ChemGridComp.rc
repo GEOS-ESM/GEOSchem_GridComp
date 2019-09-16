@@ -19,7 +19,7 @@
   ENABLE_MATRIX:      .FALSE.
   ENABLE_MAM:         .FALSE.
   ENABLE_MAM_DATA:    .FALSE.
-  ENABLE_ACHEM:       .FALSE.
+  ENABLE_ACHEM:       .TRUE.
   ENABLE_TR:          .TRUE.
   ENABLE_DNA:         .FALSE.
-  ENABLE_HEMCO:       .FALSE.
+  ENABLE_HEMCO:       .TRUE.
