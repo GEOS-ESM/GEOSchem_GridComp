@@ -1485,14 +1485,16 @@ merid:     do j = 1, JM_World
 
                        __Iam__('isAerosol_')
          
-     if ( uppercase(name(1:2))=='DU'       .OR.  &
-          uppercase(name(1:2))=='SS'       .OR.  &
-          uppercase(name(1:2))=='NI'       .OR.  &
-          uppercase(name)     =='SO4'      .OR.  &
-          uppercase(name)     =='BCPHOBIC' .OR.  &
-          uppercase(name)     =='BCPHILIC' .OR.  &
-          uppercase(name)     =='OCPHOBIC' .OR.  &
-          uppercase(name)     =='OCPHILIC'       ) then
+     if ( uppercase(name(1:2))=='DU'        .OR. &
+          uppercase(name(1:2))=='SS'        .OR. &
+          uppercase(name(1:5))=='NO3AN'     .OR. &
+          uppercase(name)     =='SO4'       .OR. &
+          uppercase(name)     =='BCPHOBIC'  .OR. &
+          uppercase(name)     =='BCPHILIC'  .OR. &
+          uppercase(name)     =='OCPHOBIC'  .OR. &
+          uppercase(name)     =='OCPHILIC'  .OR. &
+          uppercase(name)     =='BRCPHOBIC' .OR. &
+          uppercase(name)     =='BRCPHILIC' ) then
             
           isAerosol_ = .TRUE.
 

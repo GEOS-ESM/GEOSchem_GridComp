@@ -548,12 +548,13 @@ CONTAINS
 
 !  Handle 3D exports (save bkg for increments)
 !  -------------------------------------------
-   if ( associated(duinc) ) duinc = du001+du002+du003+du004+du005
-   if ( associated(ssinc) ) ssinc = ss001+ss002+ss003+ss004+ss005
-   if ( associated(niinc) ) niinc = ni001+ni002+ni003
-   if ( associated(bcinc) ) bcinc = bcphobic + bcphilic
-   if ( associated(ocinc) ) ocinc = ocphobic + ocphilic
-   if ( associated(suinc) ) suinc = so4
+   if ( associated(duinc) ) duinc  = du001+du002+du003+du004+du005
+   if ( associated(ssinc) ) ssinc  = ss001+ss002+ss003+ss004+ss005
+   if ( associated(niinc) ) niinc  = no3an1+no3an2+no3an3
+   if ( associated(bcinc) ) bcinc  = bcphobic + bcphilic
+   if ( associated(ocinc) ) ocinc  = ocphobic + ocphilic
+   if ( associated(brcinc)) brcinc = brcphobic + brcphilic
+   if ( associated(suinc) ) suinc  = so4
 
 !  Create concetration analysis from AOD increments
 !   Here we pass in the y_f and y_d in terms of AOD,
@@ -569,19 +570,21 @@ CONTAINS
 
 !  Handle 3D exports
 !  -----------------
-   if ( associated(duana) ) duana = du001+du002+du003+du004+du005
-   if ( associated(ssana) ) ssana = ss001+ss002+ss003+ss004+ss005
-   if ( associated(niana) ) niana = ni001+ni002+ni003
-   if ( associated(bcana) ) bcana = bcphobic + bcphilic
-   if ( associated(ocana) ) ocana = ocphobic + ocphilic
-   if ( associated(suana) ) suana = so4
+   if ( associated(duana) ) duana  = du001+du002+du003+du004+du005
+   if ( associated(ssana) ) ssana  = ss001+ss002+ss003+ss004+ss005
+   if ( associated(niana) ) niana  = no3an1+no3an2+no3an3
+   if ( associated(bcana) ) bcana  = bcphobic + bcphilic
+   if ( associated(ocana) ) ocana  = ocphobic + ocphilic
+   if ( associated(brcana)) brcana = brcphobic + brcphilic
+   if ( associated(suana) ) suana  = so4
 
-   if ( associated(duinc) ) duinc = du001+du002+du003+du004+du005 - duinc
-   if ( associated(ssinc) ) ssinc = ss001+ss002+ss003+ss004+ss005 - ssinc
-   if ( associated(niinc) ) niinc = ni001+ni002+ni003 - niinc
-   if ( associated(bcinc) ) bcinc = bcphobic + bcphilic - bcinc
-   if ( associated(ocinc) ) ocinc = ocphobic + ocphilic - ocinc
-   if ( associated(suinc) ) suinc = so4 - suinc
+   if ( associated(duinc) ) duinc  = du001+du002+du003+du004+du005 - duinc
+   if ( associated(ssinc) ) ssinc  = ss001+ss002+ss003+ss004+ss005 - ssinc
+   if ( associated(niinc) ) niinc  = no3an1+no3an2+no3an3 - niinc
+   if ( associated(bcinc) ) bcinc  = bcphobic + bcphilic - bcinc
+   if ( associated(ocinc) ) ocinc  = ocphobic + ocphilic - ocinc
+   if ( associated(brcinc)) brcinc = brcphobic + brcphilic - brcinc
+   if ( associated(suinc) ) suinc  = so4 - suinc
 
 #ifdef PRINT_STATES
 

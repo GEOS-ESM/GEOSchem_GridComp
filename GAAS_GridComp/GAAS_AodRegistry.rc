@@ -17,7 +17,7 @@
 #        in GEOS-5. They are still kept for compatibility with GEOS-4.
 #
 #  IMPORTANT: This file should be the same as Chem_Registry.rc, except that
-#             only aerosols (DU, SS, SU, BC, OC, NI) are turned ON.
+#             only aerosols (DU, SS, SU, BC, OC, NI, BRC) are turned ON.
 #
 # !REVISION HISTORY:
 #
@@ -33,7 +33,7 @@
 
 #
 #  IMPORTANT: This file should be the same as Chem_Registry.rc, except that
-#             only aerosols (DU, SS, SU, BC, OC) are turned ON.
+#             only aerosols (DU, SS, SU, BC, OC, NI, BRC) are turned ON.
 #
 
 # Whether to include the constituent in the simulation
@@ -48,6 +48,7 @@ doing_SS:  no   # &YesNo Include sea salt?
 doing_SU:  no   # &YesNo Include sulfates?
 doing_BC:  no   # &YesNo Include black carbon?
 doing_OC:  no   # &YesNo Include organic carbon?
+doing_BRC: no   # &YesNo Include brown carbon?
 doing_NI:  no   # &YesNo Include nitrate?
 doing_SC:  no   # &YesNo Include stratospheric chemistry?
 doing_AC:  no   # auto chem
@@ -70,6 +71,7 @@ nbins_SS:   5   # sea salt
 nbins_SU:   4   # sulfates
 nbins_BC:   2   # black carbon
 nbins_OC:   2   # organic carbon
+nbins_BRC:  2   # brown carbon
 nbins_NI:   5   # nitrate
 nbins_SC:  34   # stratospheric chemistry
 nbins_AC:  35   # auto chem
@@ -90,6 +92,7 @@ units_SS:  kg/kg     # sea salt
 units_SU:  kg/kg     # sulfates
 units_BC:  kg/kg     # black carbon
 units_OC:  kg/kg     # organic carbon
+units_BRC: kg/kg     # brown carbon
 units_NI:  kg/kg     # nitrate
 units_SC:  kg/kg     # stratospheric chemistry
 units_AC:  kg/kg     # auto chem
