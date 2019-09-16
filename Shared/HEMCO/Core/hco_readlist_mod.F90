@@ -265,9 +265,9 @@ CONTAINS
     ! Read all fields?
     RdAll = .FALSE.
     IF ( PRESENT(ReadAll) ) RdAll = ReadAll
-    !IF ( HcoClock_First( HcoState%Clock, .FALSE. ) ) RdAll = .TRUE.
     ! Now use internal counter to determine first-time reading
     ! (ckeller, 02/07/2019).
+    !IF ( HcoClock_First( HcoState%Clock, .FALSE. ) ) RdAll = .TRUE.
     IF ( HcoState%ReadLists%Counter == 0 ) RdAll = .TRUE.
 
     ! Read content from one-time list on the first call 

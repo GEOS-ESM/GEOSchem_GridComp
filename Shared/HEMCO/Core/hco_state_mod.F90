@@ -367,7 +367,8 @@ CONTAINS
 
     ! Only shift hh/mm when applying time shift? 
     CALL GetExtOpt ( HcoConfig, CoreNr, 'Cap time shift', &
-                     OptValBool=HcoState%Options%TimeShiftCap, Found=Found, RC=RC )
+                     OptValBool=HcoState%Options%TimeShiftCap, &
+                     Found=Found, RC=RC )
     IF ( RC /= HCO_SUCCESS ) RETURN
     IF ( .NOT. Found ) HcoState%Options%TimeShiftCap = .FALSE.
 
