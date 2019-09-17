@@ -159,11 +159,33 @@ CONTAINS
       ELSE
        name = TRIM(name)       ! instance name for others
       END IF
+
       call SS_GridCompSetServices1_(gc,chemReg,name,rc=status)
       VERIFY_(STATUS)
    end do
 
+
+!  Set profiling timers
+!  --------------------
+   call MAPL_TimerAdd(GC, name = '-SS_TOTAL',           __RC__)
+   call MAPL_TimerAdd(GC, name = '-SS_RUN',             __RC__)
+   call MAPL_TimerAdd(GC, name = '-SS_INITIALIZE',      __RC__)
+   call MAPL_TimerAdd(GC, name = '-SS_FINALIZE',        __RC__)
+
+   call MAPL_TimerAdd(GC, name = '-SS_RUN1',            __RC__)
+   call MAPL_TimerAdd(GC, name = '--SS_EMISSIONS',      __RC__)
+
+   call MAPL_TimerAdd(GC, name = '-SS_RUN2',            __RC__)
+   call MAPL_TimerAdd(GC, name = '--SS_SETTLING',       __RC__)
+   call MAPL_TimerAdd(GC, name = '--SS_DRY_DEPOSITION', __RC__)
+   call MAPL_TimerAdd(GC, name = '--SS_WET_LS',         __RC__)
+   call MAPL_TimerAdd(GC, name = '--SS_WET_CV',         __RC__)
+   call MAPL_TimerAdd(GC, name = '--SS_DIAGNOSTICS',    __RC__)
+
+!  All done
+!  --------
    RETURN_(ESMF_SUCCESS)
+
    end subroutine SS_GridCompSetServices
 
 
@@ -177,7 +199,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   subroutine SS_GridCompInitialize ( gcSS, w_c, impChem, expChem, &
+   subroutine SS_GridCompInitialize ( gcSS, w_c, impChem, expChem, ggState, &
                                       nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -195,6 +217,7 @@ CONTAINS
    type(SS_GridComp), intent(inout) :: gcSS     ! Grid Component
    type(ESMF_State), intent(inout)  :: impChem  ! Import State
    type(ESMF_State), intent(inout)  :: expChem  ! Export State
+   type(MAPL_MetaComp), intent(inout) :: ggState
    integer, intent(out) ::  rc                  ! Error return code:
                                                 !  0 - all is well
                                                 !  1 - 
@@ -213,6 +236,9 @@ CONTAINS
    CHARACTER(LEN=255) :: name
    
    integer :: i, ier, n
+
+   call MAPL_TimerOn(ggState, '-SS_TOTAL')
+   call MAPL_TimerOn(ggState, '-SS_INITIALIZE')
 
 !  Load resource file
 !  ------------------
@@ -294,7 +320,7 @@ CONTAINS
        PRINT *,myname,": Initializing instance ",TRIM(gcSS%gcs(i)%iname)," [",gcSS%gcs(i)%instance,"]"
       END IF
       call SS_SingleInstance_ ( SS_GridCompInitialize1_, i, &
-                                gcSS%gcs(i), w_c, impChem, expChem,  &
+                                gcSS%gcs(i), w_c, impChem, expChem,  ggState, &
                                 nymd, nhms, cdt, ier )
       if ( ier .NE. 0 ) then
          rc = 1000+ier
@@ -311,6 +337,9 @@ CONTAINS
     rc = 40
    END IF
 
+   call MAPL_TimerOff(ggState, '-SS_INITIALIZE')
+   call MAPL_TimerOff(ggState, '-SS_TOTAL')
+
    end subroutine SS_GridCompInitialize
 
 
@@ -326,7 +355,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   subroutine SS_GridCompRun1 ( gcSS, w_c, impChem, expChem, &
+   subroutine SS_GridCompRun1 ( gcSS, w_c, impChem, expChem, ggState, &
                                       nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -345,6 +374,7 @@ CONTAINS
    TYPE(SS_GridComp), INTENT(INOUT) :: gcSS     ! Grid Component
    TYPE(ESMF_State), INTENT(INOUT)  :: impChem  ! Import State
    TYPE(ESMF_State), INTENT(INOUT)  :: expChem  ! Export State
+   TYPE(MAPL_MetaComp), INTENT(INOUT) :: ggState
    INTEGER, INTENT(OUT) ::  rc                  ! Error return code:
                                                 !  0 - all is well
                                                 !  1 - 
@@ -361,15 +391,21 @@ CONTAINS
 
    integer :: i, ier
 
+   call MAPL_TimerOn(ggState, '-SS_TOTAL')
+   call MAPL_TimerOn(ggState, '-SS_RUN')
+
    do i = 1, gcSS%n
       call SS_SingleInstance_ ( SS_GridCompRun1_, i, &
-                                gcSS%gcs(i), w_c, impChem, expChem, &
+                                gcSS%gcs(i), w_c, impChem, expChem, ggState, &
                                 nymd, nhms, cdt, ier )
       if ( ier .NE. 0 ) then
          rc = i * 1000+ier
          return
       end if
    end do
+
+   call MAPL_TimerOff(ggState, '-SS_RUN')
+   call MAPL_TimerOff(ggState, '-SS_TOTAL')
 
    end subroutine SS_GridCompRun1
 
@@ -386,7 +422,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   subroutine SS_GridCompRun2 ( gcSS, w_c, impChem, expChem, &
+   subroutine SS_GridCompRun2 ( gcSS, w_c, impChem, expChem, ggState, &
                                       run_alarm, nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -406,6 +442,7 @@ CONTAINS
    TYPE(SS_GridComp), INTENT(INOUT) :: gcSS     ! Grid Component
    TYPE(ESMF_State), INTENT(INOUT)  :: impChem  ! Import State
    TYPE(ESMF_State), INTENT(INOUT)  :: expChem  ! Export State
+   TYPE(MAPL_MetaComp), INTENT(INOUT) :: ggState
    INTEGER, INTENT(OUT) ::  rc                  ! Error return code:
                                                 !  0 - all is well
                                                 !  1 - 
@@ -422,17 +459,23 @@ CONTAINS
 
    integer :: i, ier
 
+   call MAPL_TimerOn(ggState, '-SS_TOTAL')
+   call MAPL_TimerOn(ggState, '-SS_RUN')
+
    do i = 1, gcSS%n
       gcSS%gcs(i)%run_alarm = run_alarm
 
       call SS_SingleInstance_ ( SS_GridCompRun2_, i, &
-                                gcSS%gcs(i), w_c, impChem, expChem, &
+                                gcSS%gcs(i), w_c, impChem, expChem, ggState, &
                                 nymd, nhms, cdt, ier )
       if ( ier .NE. 0 ) then
          rc = i * 1000+ier
          return
       end if
    end do
+
+   call MAPL_TimerOff(ggState, '-SS_RUN')
+   call MAPL_TimerOff(ggState, '-SS_TOTAL')
 
    end subroutine SS_GridCompRun2
 
@@ -447,7 +490,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   subroutine SS_GridCompFinalize ( gcSS, w_c, impChem, expChem, &
+   subroutine SS_GridCompFinalize ( gcSS, w_c, impChem, expChem, ggState, &
                                       nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -466,6 +509,7 @@ CONTAINS
    TYPE(SS_GridComp), INTENT(INOUT) :: gcSS     ! Grid Component
    TYPE(ESMF_State), INTENT(INOUT)  :: impChem  ! Import State
    TYPE(ESMF_State), INTENT(INOUT)  :: expChem  ! Export State
+   TYPE(MAPL_MetaComp), INTENT(INOUT) :: ggState
    INTEGER, INTENT(OUT) ::  rc                  ! Error return code:
                                                 !  0 - all is well
                                                 !  1 - 
@@ -482,9 +526,12 @@ CONTAINS
 
    integer :: i, ier
 
+   call MAPL_TimerOn(ggState, '-SS_TOTAL')
+   call MAPL_TimerOn(ggState, '-SS_FINALIZE')
+
    do i = 1, gcSS%n
       call SS_SingleInstance_ ( SS_GridCompFinalize1_, i, &
-                                gcSS%gcs(i), w_c, impChem, expChem, &
+                                gcSS%gcs(i), w_c, impChem, expChem, ggState, &
                                 nymd, nhms, cdt, ier )
       if ( ier .NE. 0 ) then
          rc = i * 1000+ier
@@ -494,6 +541,9 @@ CONTAINS
 
    if (associated(gcSS%gcs)) deallocate ( gcSS%gcs, stat=ier )
    gcSS%n = -1
+
+   call MAPL_TimerOff(ggState, '-SS_FINALIZE')
+   call MAPL_TimerOff(ggState, '-SS_TOTAL')
 
    end subroutine SS_GridCompFinalize
 
@@ -525,7 +575,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   subroutine SS_GridCompInitialize1_ ( gcSS, w_c, impChem, expChem, &
+   subroutine SS_GridCompInitialize1_ ( gcSS, w_c, impChem, expChem, ggState, &
                                       nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -543,6 +593,7 @@ CONTAINS
    type(SS_GridComp1), intent(inout) :: gcSS    ! Grid Component
    type(ESMF_State), intent(inout)   :: impChem ! Import State
    type(ESMF_State), intent(inout)   :: expChem ! Export State
+   type(MAPL_MetaComp), intent(inout) :: ggState
    integer, intent(out) ::  rc                  ! Error return code:
                                                 !  0 - all is well
                                                 !  1 - 
@@ -864,7 +915,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   subroutine SS_GridCompRun1_ ( gcSS, w_c, impChem, expChem, &
+   subroutine SS_GridCompRun1_ ( gcSS, w_c, impChem, expChem, ggState, &
                                nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -874,7 +925,8 @@ CONTAINS
 ! !INPUT/OUTPUT PARAMETERS:
 
    type(SS_GridComp1), intent(inout) :: gcSS    ! Grid Component
-   type(Chem_Bundle), intent(inout)  :: w_c     ! Chemical tracer fields   
+   type(Chem_Bundle), intent(inout)  :: w_c     ! Chemical tracer fields
+   type(MAPL_MetaComp), intent(inout) :: ggState
 
 ! !INPUT PARAMETERS:
 
@@ -922,7 +974,7 @@ CONTAINS
    real, allocatable, dimension(:,:) :: fsstemis
    real, allocatable, dimension(:,:) :: fgridefficiency
    real, allocatable, dimension(:,:) :: fhoppel, vsettle
-   real                              :: radius_wet, rhop_wet, diff_coef
+   real                              :: radius_wet, rhop_wet
    double precision                  :: a, c, k, wt, x
    double precision, allocatable, dimension(:,:) :: gweibull, wm
 
@@ -934,6 +986,8 @@ CONTAINS
    integer :: STATUS
 
 #include "SS_GetPointer___.h"
+
+   call MAPL_TimerOn(ggState, '-SS_RUN1')
 
 !  Initialize local variables
 !  --------------------------
@@ -999,7 +1053,10 @@ CONTAINS
 #endif
 
 !  Seasalt Source (and modifications)
-!  -----------
+!  ----------------------------------
+   call MAPL_TimerOn(ggState, '--SS_EMISSIONS')
+
+
 !  Grid box efficiency to emission (fraction of sea water)
    allocate(fgridefficiency(i1:i2,j1:j2), __STAT__ )
    fgridefficiency = min(max(0.,(frocean-frseaice)*gcSS%deep_lakes_mask),1.)
@@ -1082,7 +1139,7 @@ CONTAINS
        call wet_radius ( SS_radius(n), SS_rhop(n), w_c%rh(i,j,km), gcSS%rhFlag, &
                          radius_wet, rhop_wet )
        call Chem_CalcVsettle ( radius_wet, rhop_wet, rhoa(i,j,km), tmpu(i,j,km), &
-                               diff_coef, vsettle(i,j) )
+                               vsettle(i,j) )
        fhoppel(i,j) = (10./dz(i,j)) ** (vsettle(i,j)/MAPL_KARMAN/ustar(i,j))
       end do
      end do
@@ -1116,6 +1173,13 @@ CONTAINS
    deallocate(fsstemis, fgridefficiency, __STAT__)
    deallocate(fhoppel, vsettle, gweibull, wm, __STAT__)
 
+
+   call MAPL_TimerOff(ggState, '--SS_EMISSIONS')
+   
+   call MAPL_TimerOff(ggState, '-SS_RUN1')
+
+!  All done
+!  --------   
    return
 
  end subroutine SS_GridCompRun1_
@@ -1133,7 +1197,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   subroutine SS_GridCompRun2_ ( gcSS, w_c, impChem, expChem, &
+   subroutine SS_GridCompRun2_ ( gcSS, w_c, impChem, expChem, ggState, &
                                  nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -1143,7 +1207,8 @@ CONTAINS
 ! !INPUT/OUTPUT PARAMETERS:
 
    type(SS_GridComp1), intent(inout) :: gcSS    ! Grid Component
-   type(Chem_Bundle), intent(inout)  :: w_c     ! Chemical tracer fields   
+   type(Chem_Bundle), intent(inout)  :: w_c     ! Chemical tracer fields
+   type(MAPL_MetaComp), intent(inout) :: ggState
 
 ! !INPUT PARAMETERS:
 
@@ -1232,6 +1297,8 @@ CONTAINS
    integer :: STATUS
 
 #include "SS_GetPointer___.h"
+
+   call MAPL_TimerOn(ggState, '-SS_RUN2')
 
 !  Initialize local variables
 !  --------------------------
@@ -1329,9 +1396,13 @@ RUN_ALARM: if (gcSS%run_alarm) then
 
 !  Seasalt Settling
 !  ----------------
+   call MAPL_TimerOn(ggState, '--SS_SETTLING')
+
    call Chem_Settling ( i1, i2, j1, j2, km, n1, n2, nbins, gcSS%rhFlag, &
                         SS_radius, SS_rhop, cdt, w_c, tmpu, rhoa, hsurf,    &
                         hghte, SS_set, rc )
+
+   call MAPL_TimerOff(ggState, '--SS_SETTLING')
 
 #ifdef DEBUG
    do n = n1, n2
@@ -1342,6 +1413,7 @@ RUN_ALARM: if (gcSS%run_alarm) then
 
 !  Seasalt Deposition
 !  -----------
+   call MAPL_TimerOn(ggState, '--SS_DRY_DEPOSITION')
    drydepositionfrequency = 0.
    call DryDepositionGOCART( i1, i2, j1, j2, km, &
                              tmpu, rhoa, hghte, oro, ustar, &
@@ -1361,6 +1433,8 @@ RUN_ALARM: if (gcSS%run_alarm) then
      SS_dep(n)%data2d = dqa*w_c%delp(:,:,km)/grav/cdt
    end do
 
+   call MAPL_TimerOff(ggState, '--SS_DRY_DEPOSITION')
+
 #ifdef DEBUG
    do n = n1, n2
       call pmaxmin('SS: q_dry', w_c%qa(n)%data3d(i1:i2,j1:j2,1:km), qmin, qmax, &
@@ -1370,6 +1444,8 @@ RUN_ALARM: if (gcSS%run_alarm) then
 
 !  Seasalt Large-scale Wet Removal
 !  -------------------------------
+   call MAPL_TimerOn(ggState, '--SS_WET_LS')
+
    KIN = .TRUE.
    do n = 1, nbins
     w_c%qa(n1+n-1)%fwet = 1.
@@ -1378,6 +1454,8 @@ RUN_ALARM: if (gcSS%run_alarm) then
                           precc, precl, fluxout, rc )
     if(associated(SS_wet(n)%data2d)) SS_wet(n)%data2d = fluxout%data2d
    end do
+
+   call MAPL_TimerOff(ggState, '--SS_WET_LS')
 
 #ifdef DEBUG
    do n = n1, n2
@@ -1389,6 +1467,8 @@ RUN_ALARM: if (gcSS%run_alarm) then
 
 !  Seasalt Convective-scale Mixing and Wet Removal
 !  -----------------------------------------------
+   call MAPL_TimerOn(ggState, '--SS_WET_CV')
+
    KIN = .TRUE.
    icdt = cdt
    allocate(cmfmc_(i1:i2,j1:j2,km+1), qccu_(i1:i2,j1:j2,km), &
@@ -1455,17 +1535,25 @@ RUN_ALARM: if (gcSS%run_alarm) then
 
    deallocate(SS_radius, SS_rhop, __STAT__)
 
+   call MAPL_TimerOff(ggState, '--SS_WET_CV')
+
    end if RUN_ALARM
 
 !  Compute the desired output diagnostics here
 !  Ideally this will go where chemout is called in fvgcm.F since that
 !  will reflect the distributions after transport, etc.
 !  ------------------------------------------------------------------
+   call MAPL_TimerOn(ggState, '--SS_DIAGNOSTICS')
+
    call SS_Compute_Diags(i1, i2, j1, j2, km, nbins, gcSS, w_c, tmpu, rhoa, u, v, &
                          SS_sfcmass, SS_colmass, SS_mass, SS_exttau, SS_scatau, &
                          SS_sfcmass25, SS_colmass25, SS_mass25, SS_exttau25, SS_scatau25, &
                          SS_conc, SS_extcoef, SS_scacoef, SS_exttaufm, SS_scataufm, &
                          SS_angstrom, SS_fluxu, SS_fluxv, rc)
+
+   call MAPL_TimerOff(ggState, '--SS_DIAGNOSTICS')
+
+   call MAPL_TimerOff(ggState, '-SS_RUN2')
 
    return
 
@@ -1862,7 +1950,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   subroutine SS_GridCompFinalize1_ ( gcSS, w_c, impChem, expChem, &
+   subroutine SS_GridCompFinalize1_ ( gcSS, w_c, impChem, expChem, ggState, &
                                     nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -1884,6 +1972,7 @@ CONTAINS
 
    type(ESMF_State), intent(inout) :: impChem   ! Import State
    type(ESMF_State), intent(inout) :: expChem   ! Import State
+   type(MAPL_MetaComp), intent(inout) :: ggState
    integer, intent(out) ::  rc                  ! Error return code:
                                                 !  0 - all is well
                                                 !  1 -
@@ -2104,7 +2193,7 @@ double precision, parameter :: PI = 4.d0 * atan(1.d0)
 ! !INTERFACE:
 !
   subroutine SS_SingleInstance_ ( Method_, instance, &
-                                  gcSS, w_c, impChem, expChem, &
+                                  gcSS, w_c, impChem, expChem, ggState, &
                                   nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -2121,7 +2210,7 @@ double precision, parameter :: PI = 4.d0 * atan(1.d0)
 !  Input "function pointer"
 !  -----------------------
    interface 
-     subroutine Method_ (gc, w, imp, exp, ymd, hms, dt, rcode )
+     subroutine Method_ (gc, w, imp, exp, state, ymd, hms, dt, rcode )
        Use SS_GridCompMod
        Use ESMF
        Use MAPL_Mod
@@ -2130,6 +2219,7 @@ double precision, parameter :: PI = 4.d0 * atan(1.d0)
        type(Chem_Bundle),   intent(in)     :: w
        type(ESMF_State),    intent(inout)  :: imp
        type(ESMF_State),    intent(inout)  :: exp
+       type(MAPL_MetaComp), intent(inout)  :: state
        integer,             intent(in)     :: ymd, hms
        real,                intent(in)     :: dt
        integer,             intent(out)    :: rcode
@@ -2148,6 +2238,7 @@ double precision, parameter :: PI = 4.d0 * atan(1.d0)
    TYPE(SS_GridComp1), INTENT(INOUT) :: gcSS    ! Grid Component
    TYPE(ESMF_State), INTENT(INOUT)  :: impChem  ! Import State
    TYPE(ESMF_State), INTENT(INOUT)  :: expChem  ! Export State
+   TYPE(MAPL_MetaComp), intent(INOUT) :: ggState
    INTEGER, INTENT(OUT) ::  rc                  ! Error return code:
                                                 !  0 - all is well
                                                 !  1 - 
@@ -2196,7 +2287,7 @@ double precision, parameter :: PI = 4.d0 * atan(1.d0)
   
 ! Execute the instance method
 ! ---------------------------
-  call Method_ ( gcSS, w_c, impChem, expChem, &
+  call Method_ ( gcSS, w_c, impChem, expChem, ggState, &
                  nymd, nhms, cdt, rc )
 
 ! Restore the overall SS indices
