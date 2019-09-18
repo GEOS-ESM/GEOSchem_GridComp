@@ -70,6 +70,7 @@ MODULE GEOSCHEMchem_GridCompMod
 #if defined( MODEL_GEOS )
   USE MAPL_ConstantsMod                   ! Doesn't seem to be used. Needed?
   USE Chem_Mod                            ! Chemistry Base Class (chem_mie?)
+  USE Chem_GroupMod                       ! For family transport
   USE ERROR_Mod,     ONLY : mpiComm
   USE PHYSCONSTANTS
 #endif
@@ -2748,6 +2749,9 @@ CONTAINS
     IF ( am_I_Root ) THEN
        WRITE(*,*) '- Compute VUD online: ', Input_Opt%UseOnlineVUD
     ENDIF
+
+    ! Turn on Family Transport
+    CALL Init_GCC_Chem_Groups()
 
     !=======================================================================
     ! CH4 error checks 
