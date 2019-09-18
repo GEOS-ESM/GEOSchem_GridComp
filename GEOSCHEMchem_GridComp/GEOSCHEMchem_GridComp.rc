@@ -49,7 +49,7 @@ LINOZ_NFIELDS:         7
 LINOZ_NLAT            18
 LINOZ_NLEVELS:        25
 LINOZ_NMONTHS:        12
-LLSTRAT:              59
+LLSTRAT:              72
 
 #
 # %%% FAST-JX options %%%
