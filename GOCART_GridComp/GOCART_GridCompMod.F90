@@ -124,6 +124,7 @@ CONTAINS
     real                            :: DEFVAL_CO2
 
     character(len=ESMF_MAXSTR)      :: field_name
+    character(len=ESMF_MAXSTR)      :: chem_registry_file
 
 !                              ------------
 
@@ -151,7 +152,10 @@ CONTAINS
         state%chemReg = Chem_RegistryCreate(STATUS, rcfile='GOCARTdata_AerRegistry.rc')
         _VERIFY(STATUS)
     else
-        state%chemReg = Chem_RegistryCreate(STATUS, rcfile='Chem_Registry.rc')
+       call ESMF_ConfigGetAttribute(cf, chem_registry_file, label = "Chem_Registry_File:", &
+            default = "Chem_Registry.rc", rc = status)
+       _VERIFY(status)
+       state%chemReg = Chem_RegistryCreate(STATUS, rcfile=chem_registry_file)
         _VERIFY(STATUS)
     end if    
 
