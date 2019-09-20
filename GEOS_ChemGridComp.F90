@@ -151,6 +151,7 @@ contains
     type (GEOS_ChemGridComp), pointer :: myState   ! private, that is
     type (GEOS_ChemGridComp_Wrap)     :: wrap
     type(Chem_Registry)               :: chemReg
+    character(len=ESMF_MAXSTR) :: chem_gridcomp_rc_file
 
 !=============================================================================
 
@@ -182,11 +183,14 @@ contains
 !   -------------------------
     call ESMF_UserCompSetInternalState ( GC, 'GEOSchem_GridComp_State', wrap, STATUS )
     _VERIFY(STATUS)
+
+    call ESMF_ConfigGetAttribute(cf, chem_gridcomp_rc_file, label = "GEOS_ChemGridComp_RC_File:", &
+         default = "GEOS_ChemGridComp.rc", __RC__)
   
 ! Choose children to birth and which children not to conceive
 ! -----------------------------------------------------------
     myCF = ESMF_ConfigCreate(__RC__)
-    call ESMF_ConfigLoadFile ( myCF, 'GEOS_ChemGridComp.rc', __RC__ )
+    call ESMF_ConfigLoadFile ( myCF, chem_gridcomp_rc_file, __RC__ )
     call ESMF_ConfigGetAttribute(myCF,      myState%enable_PCHEM, Default=.FALSE., Label="ENABLE_PCHEM:",       __RC__ )
     call ESMF_ConfigGetAttribute(myCF,      myState%enable_ACHEM, Default=.FALSE., Label="ENABLE_ACHEM:",       __RC__ )
     call ESMF_ConfigGetAttribute(myCF,     myState%enable_GOCART, Default=.FALSE., Label="ENABLE_GOCART:",      __RC__ )
