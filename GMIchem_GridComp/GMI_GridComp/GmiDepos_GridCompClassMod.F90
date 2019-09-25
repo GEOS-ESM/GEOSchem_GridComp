@@ -545,7 +545,6 @@ CONTAINS
    INTEGER :: k, km, kReverse
    INTEGER :: loc_proc
    INTEGER :: n, STATUS
-   INTEGER :: num_emiss, shipEmissRecNum
 
    INTEGER, PARAMETER :: ToGMI = 1
    INTEGER, PARAMETER :: FromGMI = -1
