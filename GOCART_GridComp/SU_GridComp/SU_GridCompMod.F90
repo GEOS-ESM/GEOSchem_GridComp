@@ -259,7 +259,38 @@ CONTAINS
         RC         = STATUS)
    VERIFY_(STATUS)
 
+!  Set profiling timers
+!  --------------------
+   call MAPL_TimerAdd(GC, name = '-SU_TOTAL',           __RC__)
+   call MAPL_TimerAdd(GC, name = '-SU_RUN',             __RC__)
+   call MAPL_TimerAdd(GC, name = '-SU_INITIALIZE',      __RC__)
+   call MAPL_TimerAdd(GC, name = '-SU_FINALIZE',        __RC__)
+
+   call MAPL_TimerAdd(GC, name = '-SU_RUN1',            __RC__)
+   call MAPL_TimerAdd(GC, name = '--SU_EMISSIONS',      __RC__)
+   call MAPL_TimerAdd(GC, name = '---SU_EMISS_UPDATE',     __RC__)
+   call MAPL_TimerAdd(GC, name = '---SU_EMISS_DISTRIBUTE', __RC__)
+
+   call MAPL_TimerAdd(GC, name = '----SU_AIRCRAFT', __RC__)
+   call MAPL_TimerAdd(GC, name = '----SU_VERTICAL', __RC__)
+   call MAPL_TimerAdd(GC, name = '----SU_VOLCANOES', __RC__)
+   call MAPL_TimerAdd(GC, name = '----SU_LOCATIONS', __RC__)
+   call MAPL_TimerAdd(GC, name = '----SU_DMS', __RC__)
+
+
+   call MAPL_TimerAdd(GC, name = '-SU_RUN2',            __RC__)
+   call MAPL_TimerAdd(GC, name = '--SU_OXIDANTS',       __RC__)
+   call MAPL_TimerAdd(GC, name = '--SU_SETTLING',       __RC__)
+   call MAPL_TimerAdd(GC, name = '--SU_CHEMISTRY',      __RC__)
+   call MAPL_TimerAdd(GC, name = '--SU_DRY_DEPOSITION', __RC__)
+   call MAPL_TimerAdd(GC, name = '--SU_WET_LS',         __RC__)
+   call MAPL_TimerAdd(GC, name = '--SU_WET_CV',         __RC__)
+   call MAPL_TimerAdd(GC, name = '--SU_DIAGNOSTICS',    __RC__)
+
+!  All done
+!  --------
    RETURN_(ESMF_SUCCESS)
+
    end subroutine SU_GridCompSetServices
 
 !-------------------------------------------------------------------------
@@ -272,7 +303,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   subroutine SU_GridCompInitialize ( gcSU, w_c, impChem, expChem, &
+   subroutine SU_GridCompInitialize ( gcSU, w_c, impChem, expChem, ggState, &
                                       nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -290,6 +321,7 @@ CONTAINS
    type(SU_GridComp), intent(inout) :: gcSU   ! Grid Component
    type(ESMF_State), intent(inout)  :: impChem  ! Import State
    type(ESMF_State), intent(inout)  :: expChem  ! Export State
+   type(MAPL_MetaComp), intent(inout) :: ggState
    integer, intent(out) ::  rc                  ! Error return code:
                                                 !  0 - all is well
                                                 !  1 - 
@@ -308,6 +340,9 @@ CONTAINS
    CHARACTER(LEN=255) :: name
    
    integer :: i, ier, n, i_
+
+   call MAPL_TimerOn(ggState, '-SU_TOTAL')
+   call MAPL_TimerOn(ggState, '-SU_INITIALIZE')
 
 !  Load resource file
 !  ------------------
@@ -387,7 +422,7 @@ CONTAINS
        PRINT *,myname,": Initializing instance ",TRIM(gcSU%gcs(i)%iname)," [",gcSU%gcs(i)%instance,"]"
       END IF
       call SU_SingleInstance_ ( SU_GridCompInitialize1_, i, &
-                                gcSU%gcs(i), w_c, impChem, expChem,  &
+                                gcSU%gcs(i), w_c, impChem, expChem, ggState, &
                                 nymd, nhms, cdt, ier )
       if ( ier .NE. 0 ) then
          rc = 1000+ier
@@ -422,6 +457,8 @@ CONTAINS
     rc = 40
    END IF
 
+   call MAPL_TimerOff(ggState, '-SU_INITIALIZE')
+   call MAPL_TimerOff(ggState, '-SU_TOTAL')
 
  end subroutine SU_GridCompInitialize
 
@@ -435,7 +472,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   subroutine SU_GridCompRun1 ( gcSU, w_c, impChem, expChem, &
+   subroutine SU_GridCompRun1 ( gcSU, w_c, impChem, expChem, ggState, &
                                       nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -454,6 +491,7 @@ CONTAINS
    TYPE(SU_GridComp), INTENT(INOUT) :: gcSU     ! Grid Component
    TYPE(ESMF_State), INTENT(INOUT)  :: impChem  ! Import State
    TYPE(ESMF_State), INTENT(INOUT)  :: expChem  ! Export State
+   TYPE(MAPL_MetaComp), INTENT(INOUT) :: ggState
    INTEGER, INTENT(OUT) ::  rc                  ! Error return code:
                                                 !  0 - all is well
                                                 !  1 - 
@@ -470,15 +508,21 @@ CONTAINS
 
    integer :: i, ier
 
+   call MAPL_TimerOn(ggState, '-SU_TOTAL')
+   call MAPL_TimerOn(ggState, '-SU_RUN')
+
    do i = 1, gcSU%n
       call SU_SingleInstance_ ( SU_GridCompRun1_, i, &
-                                gcSU%gcs(i), w_c, impChem, expChem, &
+                                gcSU%gcs(i), w_c, impChem, expChem, ggState, &
                                 nymd, nhms, cdt, ier )
       if ( ier .NE. 0 ) then
          rc = i * 1000+ier
          return
       end if
    end do
+
+   call MAPL_TimerOff(ggState, '-SU_RUN')
+   call MAPL_TimerOff(ggState, '-SU_TOTAL')
 
  end subroutine SU_GridCompRun1
 
@@ -493,7 +537,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   subroutine SU_GridCompRun2 ( gcSU, w_c, impChem, expChem, &
+   subroutine SU_GridCompRun2 ( gcSU, w_c, impChem, expChem, ggState, &
                                 run_alarm, nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -513,6 +557,7 @@ CONTAINS
    TYPE(SU_GridComp), INTENT(INOUT) :: gcSU     ! Grid Component
    TYPE(ESMF_State), INTENT(INOUT)  :: impChem  ! Import State
    TYPE(ESMF_State), INTENT(INOUT)  :: expChem  ! Export State
+   TYPE(MAPL_MetaComp), INTENT(INOUT) :: ggState
    INTEGER, INTENT(OUT) ::  rc                  ! Error return code:
                                                 !  0 - all is well
                                                 !  1 - 
@@ -529,17 +574,23 @@ CONTAINS
 
    integer :: i, ier
 
+   call MAPL_TimerOn(ggState, '-SU_TOTAL')
+   call MAPL_TimerOn(ggState, '-SU_RUN')
+     
    do i = 1, gcSU%n
       gcSU%gcs(i)%run_alarm = run_alarm
 
       call SU_SingleInstance_ ( SU_GridCompRun2_, i, &
-                                gcSU%gcs(i), w_c, impChem, expChem, &
+                                gcSU%gcs(i), w_c, impChem, expChem, ggState, &
                                 nymd, nhms, cdt, ier )
       if ( ier .NE. 0 ) then
          rc = i * 1000+ier
          return
       end if
    end do
+
+   call MAPL_TimerOff(ggState, '-SU_RUN')
+   call MAPL_TimerOff(ggState, '-SU_TOTAL')
 
  end subroutine SU_GridCompRun2
 
@@ -555,7 +606,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   subroutine SU_GridCompFinalize ( gcSU, w_c, impChem, expChem, &
+   subroutine SU_GridCompFinalize ( gcSU, w_c, impChem, expChem, ggState, &
                                       nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -574,6 +625,7 @@ CONTAINS
    TYPE(SU_GridComp), INTENT(INOUT) :: gcSU     ! Grid Component
    TYPE(ESMF_State), INTENT(INOUT)  :: impChem  ! Import State
    TYPE(ESMF_State), INTENT(INOUT)  :: expChem  ! Export State
+   TYPE(MAPL_MetaComp), INTENT(INOUT) :: ggState
    INTEGER, INTENT(OUT) ::  rc                  ! Error return code:
                                                 !  0 - all is well
                                                 !  1 - 
@@ -590,9 +642,12 @@ CONTAINS
 
    integer i, ier
 
+   call MAPL_TimerOn(ggState, '-SU_TOTAL')
+   call MAPL_TimerOn(ggState, '-SU_FINALIZE')
+
    do i = 1, gcSU%n
       call SU_SingleInstance_ ( SU_GridCompFinalize1_, i, &
-                                gcSU%gcs(i), w_c, impChem, expChem, &
+                                gcSU%gcs(i), w_c, impChem, expChem, ggState, &
                                 nymd, nhms, cdt, ier )
       if ( ier .NE. 0 ) then
          rc = i * 1000+ier
@@ -602,6 +657,9 @@ CONTAINS
 
    if (associated(gcSU%gcs)) deallocate ( gcSU%gcs, stat=ier )
    gcSU%n = -1
+
+   call MAPL_TimerOff(ggState, '-SU_FINALIZE')
+   call MAPL_TimerOff(ggState, '-SU_TOTAL')
 
  end subroutine SU_GridCompFinalize
 
@@ -823,7 +881,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   subroutine SU_GridCompInitialize1_ ( gcSU, w_c, impChem, expChem, &
+   subroutine SU_GridCompInitialize1_ ( gcSU, w_c, impChem, expChem, ggState, &
                                         nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -841,6 +899,7 @@ CONTAINS
    type(SU_GridComp1), intent(inout) :: gcSU   ! Grid Component
    type(ESMF_State), intent(inout)   :: impChem  ! Import State
    type(ESMF_State), intent(inout)   :: expChem  ! Export State
+   type(MAPL_MetaComp), intent(inout) :: ggState
    integer, intent(out) ::  rc                   ! Error return code:
                                                  !  0 - all is well
                                                  !  1 - 
@@ -1343,7 +1402,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   subroutine SU_GridCompRun1_ ( gcSU, w_c, impChem, expChem, &
+   subroutine SU_GridCompRun1_ ( gcSU, w_c, impChem, expChem, ggState, &
                                  nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -1353,7 +1412,8 @@ CONTAINS
 ! !INPUT/OUTPUT PARAMETERS:
 
    type(SU_GridComp1), intent(inout) :: gcSU   ! Grid Component
-   type(Chem_Bundle), intent(inout)  :: w_c    ! Chemical tracer fields   
+   type(Chem_Bundle), intent(inout)  :: w_c    ! Chemical tracer fields
+   type(MAPL_MetaComp), intent(inout) :: ggState
 
 ! !INPUT PARAMETERS:
 
@@ -1420,6 +1480,8 @@ CONTAINS
 
 #include "SU_GetPointer___.h"
 
+   call MAPL_TimerOn(ggState, '-SU_RUN1')
+
 !  Initialize local variables
 !  --------------------------
    rc = 0
@@ -1452,6 +1514,9 @@ CONTAINS
    call MAPL_GetPointer(impChem, var2d, 'SU_regionMask', __RC__)
    gcSU%regionMask = var2d
 
+   call MAPL_TimerOn(ggState, '--SU_EMISSIONS')
+
+   call MAPL_TimerOn(ggState, '---SU_EMISS_UPDATE')
 
    call SulfateUpdateEmissions (impChem, iNAME, i1, i2, im, j1, j2, jm, km, cdt, &
                                 nymd, nhms, &
@@ -1498,7 +1563,7 @@ CONTAINS
     where(gcSU%pEnd < 0)   gcSU%pEnd   = 240000
    endif
 
-                           
+   call MAPL_TimerOff(ggState, '---SU_EMISS_UPDATE')
 !  Get 2D Imports
 !  --------------
    call MAPL_GetPointer ( impChem, pblh,     'ZPBL',     __RC__ )
@@ -1533,6 +1598,8 @@ CONTAINS
 
 !  SU Source
 !  -----------
+   call MAPL_TimerOn(ggState, '---SU_EMISS_DISTRIBUTE')
+
    call SulfateDistributeEmissions ( i1, i2, j1, j2, km, nbins, cdt, nymd, nhms, &
                                      gcSU%fSO4ant, &
                                      gcSU%eAircraftFuel, &
@@ -1553,7 +1620,7 @@ CONTAINS
                                      SU_emis, &
                                      SU_SO4eman, SU_SO2eman, SU_SO2embb, &
                                      SU_SO2emvn, SU_SO2emve, &
-                                     rc, &
+                                     rc, ggState, &
                                      aviation_layers=gcSU%aviation_layers,   &
                                      aviation_lto_src=gcSU%aviation_lto_src, &
                                      aviation_cds_src=gcSU%aviation_cds_src, &
@@ -1606,6 +1673,11 @@ CONTAINS
 
    endif POINTWISE_SOURCES
 
+   call MAPL_TimerOff(ggState, '---SU_EMISS_DISTRIBUTE')
+
+   call MAPL_TimerOff(ggState, '--SU_EMISSIONS')
+
+   call MAPL_TimerOff(ggState, '-SU_RUN1')
 
    return
 
@@ -1703,7 +1775,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   subroutine SU_GridCompRun2_ ( gcSU, w_c, impChem, expChem, &
+   subroutine SU_GridCompRun2_ ( gcSU, w_c, impChem, expChem, ggState, &
                                  nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -1713,7 +1785,8 @@ CONTAINS
 ! !INPUT/OUTPUT PARAMETERS:
 
    type(SU_GridComp1), intent(inout) :: gcSU   ! Grid Component
-   type(Chem_Bundle), intent(inout)  :: w_c    ! Chemical tracer fields   
+   type(Chem_Bundle), intent(inout)  :: w_c    ! Chemical tracer fields
+   type(MAPL_MetaComp), intent(inout) :: ggState
 
 ! !INPUT PARAMETERS:
 
@@ -1812,6 +1885,7 @@ CONTAINS
    integer :: STATUS
 
 #include "SU_GetPointer___.h"
+   call MAPL_TimerOn(ggState, '-SU_RUN2')
 
 !  Initialize local variables
 !  --------------------------
@@ -1928,6 +2002,7 @@ CONTAINS
 
 #endif
 
+   call MAPL_TimerOn(ggState, '--SU_OXIDANTS')
 
    call SulfateUpdateOxidants ( impChem, iNAME, i1, i2, im, j1, j2, jm, km, cdt, &
                                 gcSU%using_GMI_OH, gcSU%using_GMI_NO3, &
@@ -1939,6 +2014,8 @@ CONTAINS
                                 gcSU%nymd_oxidants, &
                                 gcSU%oh_conc, gcSU%no3_mr, gcSU%h2o2_mr, &
                                 xoh, xno3, xh2o2, gcSU%recycle_H2O2 )
+
+   call MAPL_TimerOff(ggState, '--SU_OXIDANTS')
 
 #ifdef DEBUG
    CALL pmaxmin('SU: OH_conc', gcSU%oh_conc, qmin, qmax, ijl,km, 1. )
@@ -1952,15 +2029,21 @@ CONTAINS
 !  Settling calculation
 !  Sulfate particle radius [m] and density [kg m-3]
 !  ---------------------------------------------
+   
+
    allocate( SU_radius(nbins), SU_rhop(nbins) )
    SU_radius = 1.e-6*gcSU%radius
    SU_rhop   = gcSU%rhop
 
 RUN_ALARM: if (gcSU%run_alarm) then
 
+   call MAPL_TimerOn(ggState, '--SU_SETTLING')
+
    call Chem_Settling ( i1, i2, j1, j2, km, n1, n2, nbins, gcSU%rhFlag, &
                           SU_radius, SU_rhop, cdt, w_c, tmpu, rhoa, hsurf,    &
                           hghte, SU_set, rc )
+
+   call MAPL_TimerOff(ggState, '--SU_SETTLING') 
 
 !  If doing the ACHEM provided pSO2 from OCS then add to SO2 here
 !  --------------------------------------------------------------
@@ -1970,7 +2053,9 @@ RUN_ALARM: if (gcSU%run_alarm) then
    ENDIF
 
 !  SU Chemistry Driver (dry deposition and chemistry)
-!  -----------
+!  --------------------------------------------------
+   call MAPL_TimerOn(ggState, '--SU_CHEMISTRY')
+
    call SU_ChemDrv ( i1, i2, j1, j2, km, nbins, cdt, nymd, nhms, gcSU, w_c, &
                      ustar, u, v, shflux, oro, pblh, tmpu, cloud, rhoa, hghte, &
                      SU_dep, SU_PSO2, SU_PMSA, SU_pSO4, SU_PSO4g, SU_PSO4aq, & ! 2d diagnostics
@@ -1978,16 +2063,24 @@ RUN_ALARM: if (gcSU%run_alarm) then
                      xoh, xno3, xh2o2, &                                       ! oxidants
                      rc)
 
+   call MAPL_TimerOff(ggState, '--SU_CHEMISTRY')
+
 !  Sulfate Large-scale Wet Removal
 !  -------------------------------
+   call MAPL_TimerOn(ggState, '--SU_WET_LS')
+
    KIN = .TRUE.
    call SU_Wet_Removal ( i1, i2, j1, j2, km, nbins, cdt, 'sulfur', KIN, &
                          ple, rhoa, gcSU, w_c, &
                          precc, precl, pfllsan, pfilsan, &
                          tmpu, SU_wet, SU_pso4, SU_pso4wet, pso4, pso4wet, rc )
+   
+   call MAPL_TimerOff(ggState, '--SU_WET_LS')
 
 !  Sulfate Convective-scale Mixing and Wet Removal
 !  -----------------------------------------------
+   call MAPL_TimerOn(ggState, '--SU_WET_CV')
+
    KIN = .TRUE.
    icdt = cdt
    allocate(cmfmc_(i1:i2,j1:j2,km+1), qccu_(i1:i2,j1:j2,km), &
@@ -2055,6 +2148,9 @@ RUN_ALARM: if (gcSU%run_alarm) then
               delz_, vud_, delp_, airmol_, tmpu_, bcnv_, ple_, &
               area_, frlake_, frocean_, frseaice_, h2o2_, __STAT__ )
 
+   call MAPL_TimerOff(ggState, '--SU_WET_CV')
+
+
 ! Update GMI Combo oxidants before exiting.
 ! Note: H2O2 is the only one modified as of this writing.
 ! -------------------------------------------------------
@@ -2067,7 +2163,9 @@ RUN_ALARM: if (gcSU%run_alarm) then
 !  Compute the desired output diagnostics here
 !  Ideally this will go where chemout is called in fvgcm.F since that
 !  will reflect the distributions after transport, etc.
-!  -----------
+!  ------------------------------------------------------------------
+   call MAPL_TimerOn(ggState, '--SU_DIAGNOSTICS')
+
    call SU_Compute_Diags(i1, i2, j1, j2, km, nbins, gcSU, w_c, tmpu, rhoa, u, v, &
                          SU_DMSsfcmass, SU_DMScolmass, &
                          SU_MSAsfcmass, SU_MSAcolmass, &
@@ -2077,10 +2175,13 @@ RUN_ALARM: if (gcSU%run_alarm) then
                          SU_conc, SU_extcoef, SU_scacoef, &
                          SU_angstrom, SU_fluxu, SU_fluxv, &
                          SU_sarea, SU_snum, rc)
-
+   
+   call MAPL_TimerOff(ggState, '--SU_DIAGNOSTICS')
 
    deallocate(xoh, xno3, xh2o2, SU_radius, SU_rhop, stat=STATUS)
    VERIFY_(STATUS)
+
+   call MAPL_TimerOff(ggState, '-SU_RUN2')
 
    RETURN
 
@@ -3099,7 +3200,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   subroutine SU_GridCompFinalize1_ ( gcSU, w_c, impChem, expChem, &
+   subroutine SU_GridCompFinalize1_ ( gcSU, w_c, impChem, expChem, ggState, &
                                       nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -3121,6 +3222,7 @@ CONTAINS
 
    type(ESMF_State), intent(inout) :: impChem   ! Import State
    type(ESMF_State), intent(inout) :: expChem   ! Import State
+   type(MAPL_MetaComp), intent(inout) :: ggState
    integer, intent(out) ::  rc                  ! Error return code:
                                                 !  0 - all is well
                                                 !  1 -
@@ -3166,7 +3268,7 @@ CONTAINS
 ! !INTERFACE:
 !
   subroutine SU_SingleInstance_ ( Method_, instance, &
-                                  gcSU, w_c, impChem, expChem, &
+                                  gcSU, w_c, impChem, expChem, ggState, &
                                   nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -3183,7 +3285,7 @@ CONTAINS
 !  Input "function pointer"
 !  -----------------------
    interface 
-     subroutine Method_ (gc, w, imp, exp, ymd, hms, dt, rcode )
+     subroutine Method_ (gc, w, imp, exp, state, ymd, hms, dt, rcode )
        Use SU_GridCompMod
        Use ESMF
        Use MAPL_Mod
@@ -3192,6 +3294,7 @@ CONTAINS
        type(Chem_Bundle),   intent(in)     :: w
        type(ESMF_State),    intent(inout)  :: imp
        type(ESMF_State),    intent(inout)  :: exp
+       type(MAPL_MetaComp), intent(inout)  :: state
        integer,             intent(in)     :: ymd, hms
        real,                intent(in)     :: dt
        integer,             intent(out)    :: rcode
@@ -3210,6 +3313,7 @@ CONTAINS
    TYPE(SU_GridComp1), INTENT(INOUT) :: gcSU    ! Grid Component
    TYPE(ESMF_State), INTENT(INOUT)  :: impChem  ! Import State
    TYPE(ESMF_State), INTENT(INOUT)  :: expChem  ! Export State
+   TYPE(MAPL_MetaComp), intent(INOUT) :: ggState
    INTEGER, INTENT(OUT) ::  rc                  ! Error return code:
                                                 !  0 - all is well
                                                 !  1 - 
@@ -3257,7 +3361,7 @@ CONTAINS
   
 ! Execute the instance method
 ! ---------------------------
-  call Method_ ( gcSU, w_c, impChem, expChem, &
+  call Method_ ( gcSU, w_c, impChem, expChem, ggState, &
                  nymd, nhms, cdt, rc )
 
 ! Restore the overall SU indices

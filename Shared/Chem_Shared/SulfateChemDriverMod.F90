@@ -1480,7 +1480,7 @@ CONTAINS
                                            SU_emis, &
                                            SU_SO4eman, SU_SO2eman, SU_SO2embb, &
                                            SU_SO2emvn, SU_SO2emve, &
-                                           rc, maskString, gridMask, &
+                                           rc, ggState, maskString, gridMask, &
                                            aviation_layers,   &
                                            aviation_lto_src, &
                                            aviation_cds_src, &
@@ -1527,6 +1527,8 @@ CONTAINS
    real, optional, dimension(i1:i2,j1:j2), intent(in) :: aviation_lto_src     ! SO2 Aviation-LTO
    real, optional, dimension(i1:i2,j1:j2), intent(in) :: aviation_cds_src     ! SO2 Aviation-CDS
    real, optional, dimension(i1:i2,j1:j2), intent(in) :: aviation_crs_src     ! SO2 Aviation-CRS
+
+   type(MAPL_MetaComp), intent(inout) :: ggState 
 
    character(len=*), parameter :: myname = 'SU_Emission'
 
@@ -1610,6 +1612,7 @@ CONTAINS
 
 !  Distribute aircraft emissions from LTO, CDS and CRS layers
 !  ----------------------------------------------------------
+   call MAPL_TimerOn(ggState, '----SU_AIRCRAFT')
    z_lto_bot = max(1e-3, aviation_layers(1))
    z_lto_top = max(2e-3, aviation_layers(2))
 
@@ -1630,7 +1633,9 @@ CONTAINS
 
    call distribute_aviation_emissions(delp, rhoa, z_crs_bot, z_crs_top, aviation_crs_src, emis_aviation, i1, i2, j1, j2, km)
    srcAviation = srcAviation + emis_aviation
+   call MAPL_TimerOff(ggState, '----SU_AIRCRAFT')
 
+   call MAPL_TimerOn(ggState, '----SU_VERTICAL')
 !  Find the pressure of the 100m, 500m, and PBLH altitudes
    ps = 0.0
    do k = 1, km
@@ -1747,6 +1752,7 @@ CONTAINS
 #endif
 
    end do ! k
+   call MAPL_TimerOff(ggState, '----SU_VERTICAL')
 
 !  Create mask for volcanic emissions
 !  When masking, both the mask and the string
@@ -1798,6 +1804,8 @@ CONTAINS
 
    END IF SetMask
 
+
+   call MAPL_TimerOn(ggState, '----SU_VOLCANOES')
 !  Add the volcanic source
 !  -----------------------
 !  Note: the model lat and lon are wired in radians
@@ -1815,7 +1823,9 @@ CONTAINS
 
  !    Get indices for volcanic emissions
  !    ----------------------------------
+      call MAPL_TimerOn(ggState, '----SU_LOCATIONS')
       call MAPL_GetHorzIJIndex(nvolc,iVolc,jVolc,Grid=Grid,lon=vLon/radToDeg,lat=vLat/radToDeg,rc=rc)
+      call MAPL_TimerOff(ggState, '----SU_LOCATIONS')
 
       if ( rc /= 0 ) call die(myname,'cannot get indices for volcanic emissions')
 
@@ -1911,6 +1921,7 @@ CONTAINS
    enddo     ! it
 
    endif
+   call MAPL_TimerOff(ggState, '----SU_VOLCANOES')
 
 !  Diagnostics -- this is really the point defined volcanos
    if(associated(SU_SO2emve%data2d)) then
@@ -1947,6 +1958,7 @@ CONTAINS
 !   temperature of 28 C for the calculation
 !  :the w10m dependence is from Liss and Merlivat (1986)
 !  All this needs some thorough checking!
+   call MAPL_TimerOn(ggState, '----SU_DMS')
    k = km
    sCO2 = 600.
    do j = j1, j2
@@ -1980,6 +1992,7 @@ CONTAINS
    call pmaxmin('SU: srcDMS        ', srcDMS , qmin, qmax, ijl, 1, 1. )
 #endif
 
+   call MAPL_TimerOff(ggState, '----SU_DMS')
    rc = 0
 
 contains
