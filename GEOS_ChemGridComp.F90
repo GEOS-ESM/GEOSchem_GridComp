@@ -18,7 +18,7 @@ module GEOS_ChemGridCompMod
   use Chem_UtilMod
 
   use GEOS_ChemEnvGridCompMod,  only : ChemEnv_SetServices   => SetServices
-  use GOCART_GridCompMod,       only : GOCART_SetServices    => SetServices
+  !use GOCART_GridCompMod,       only : GOCART_SetServices    => SetServices
   use StratChem_GridCompMod,    only : StratChem_SetServices => SetServices
   use GMIchem_GridCompMod,      only : GMI_SetServices       => SetServices
   use CARMAchem_GridCompMod,    only : CARMA_SetServices     => SetServices
@@ -111,7 +111,7 @@ contains
 
 ! !ARGUMENTS:
 
-    type(ESMF_GridComp), intent(INOUT) :: GC  ! gridded component
+    type(ESMF_GridComp) :: GC  ! gridded component
     integer,             intent(  OUT) :: RC  ! return code
 
 ! !DESCRIPTION:  The SetServices for the Chemistry GC needs to register its
@@ -145,6 +145,7 @@ contains
     CHARACTER(LEN=ESMF_MAXSTR) :: providerName
     CHARACTER(LEN=ESMF_MAXSTR) :: shortName
     CHARACTER(LEN=ESMF_MAXSTR) :: str
+    CHARACTER(LEN=ESMF_MAXSTR) :: GOCART_sharedObj
 
 !   Private state
 !   -------------
@@ -204,6 +205,10 @@ contains
     call ESMF_ConfigGetAttribute(myCF,        myState%enable_DNA, Default=.FALSE., Label="ENABLE_DNA:",         __RC__ )
     call ESMF_ConfigGetAttribute(myCF,      myState%enable_HEMCO, Default=.FALSE., Label="ENABLE_HEMCO:",       __RC__ )
 
+!  should  moved to GEOS_ChemGridComp.rc ?
+    call ESMF_ConfigGetAttribute ( CF, GOCART_sharedObj, Label="GOCART.SETSERVICES:", default='libGOCART_GridComp.so', RC=STATUS)
+    VERIFY_(STATUS)
+
 !ALT: valgrind flagged a memory leak.    myState%CF => myCF ! save for later
     call ESMF_ConfigDestroy(myCF, __RC__)
 
@@ -212,7 +217,7 @@ contains
     if (myState%enable_GAAS) then
        ASSERT_(myState%enable_GOCART)
     end if
-
+    
 ! Create children's gridded components and invoke their SetServices
 ! -----------------------------------------------------------------
     CHEMENV = MAPL_AddChild(GC, NAME='CHEMENV', SS=ChemEnv_SetServices, __RC__)
@@ -220,8 +225,10 @@ contains
     if (     myState%enable_HEMCO)       HEMCO = MAPL_AddChild(GC, NAME=       'HEMCO', SS=HEMCO_SetServices,     __RC__)
     if (     myState%enable_PCHEM)       PCHEM = MAPL_AddChild(GC, NAME=       'PCHEM', SS=PChem_SetServices,     __RC__)
     if (     myState%enable_ACHEM)       ACHEM = MAPL_AddChild(GC, NAME=       'ACHEM', SS=AChem_SetServices,     __RC__)
-    if (    myState%enable_GOCART)      GOCART = MAPL_AddChild(GC, NAME=      'GOCART', SS=GOCART_SetServices,    __RC__)
-    if (myState%enable_GOCARTdata)  GOCARTdata = MAPL_AddChild(GC, NAME= 'GOCART.data', SS=GOCART_SetServices,    __RC__)
+    !if (    myState%enable_GOCART)      GOCART = MAPL_AddChild(GC, NAME=      'GOCART', SS=GOCART_SetServices,    __RC__)
+    !if (myState%enable_GOCARTdata)  GOCARTdata = MAPL_AddChild(GC, NAME= 'GOCART.data', SS=GOCART_SetServices,    __RC__)
+    if (    myState%enable_GOCART)      GOCART = MAPL_AddChild(GC, NAME=      'GOCART', procName="setservices", sharedObj=GOCART_sharedObj,   __RC__)
+    if (myState%enable_GOCARTdata)  GOCARTdata = MAPL_AddChild(GC, NAME= 'GOCART.data', procName="setservices", sharedObj=GOCART_sharedObj,   __RC__)
     if (      myState%enable_GAAS)        GAAS = MAPL_AddChild(GC, NAME=        'GAAS', SS=GAAS_SetServices,      __RC__)
     if (       myState%enable_H2O)         H2O = MAPL_AddChild(GC, NAME=         'H2O', SS=H2O_SetServices,       __RC__)
     if ( myState%enable_STRATCHEM)   STRATCHEM = MAPL_AddChild(GC, NAME=   'STRATCHEM', SS=StratChem_SetServices, __RC__)

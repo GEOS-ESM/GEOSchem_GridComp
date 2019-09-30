@@ -36,7 +36,7 @@ contains
 
 ! !ARGUMENTS:
 
-    type(ESMF_GridComp), intent(INOUT) :: GC  ! gridded component
+    type(ESMF_GridComp) :: GC  ! gridded component
     integer, intent(OUT)               :: RC  ! return code
 
 ! !DESCRIPTION:  The SetServices for the Chemistry Env GC needs to register its

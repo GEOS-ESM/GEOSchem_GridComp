@@ -40,12 +40,12 @@ CONTAINS
 !
 ! !INTERFACE:
 
-   subroutine SetServices ( GC, RC )
+   subroutine SetServices ( GC, RC ) bind(c, name="setservices")
 
 ! !ARGUMENTS:
 
-    type(ESMF_GridComp), intent(INOUT) :: GC  ! gridded component
-    integer, optional                  :: RC  ! return code
+    type(ESMF_GridComp) :: GC  ! gridded component
+    integer, intent(out)             :: RC  ! return code
 
 ! !DESCRIPTION: Sets Initialize, Run and Finalize services. 
 !

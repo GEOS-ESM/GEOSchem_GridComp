@@ -182,8 +182,8 @@ contains
 
 ! !ARGUMENTS:
 
-    type(ESMF_GridComp), intent(INOUT) :: GC  ! gridded component
-    integer, optional                  :: rc  ! return code
+    type(ESMF_GridComp) :: GC  ! gridded component
+    integer, intent(out)            :: rc  ! return code
 
 ! !DESCRIPTION: Sets Initialize, Run and Finalize services. 
 !

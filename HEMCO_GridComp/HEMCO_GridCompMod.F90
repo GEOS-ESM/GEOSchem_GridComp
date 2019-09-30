@@ -111,11 +111,11 @@ CONTAINS
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
-    type(ESMF_GridComp), intent(INOUT) :: GC  ! gridded component
+    type(ESMF_GridComp) :: GC  ! gridded component
 !
 ! !OUTPUT PARAMETERS:
 !
-    integer, optional  , intent(  OUT) :: RC  ! return code
+    integer, intent(  OUT) :: RC  ! return code
 !
 ! !REVISION HISTORY:
 !  22 Feb 2016 - C. Keller   - Initial version

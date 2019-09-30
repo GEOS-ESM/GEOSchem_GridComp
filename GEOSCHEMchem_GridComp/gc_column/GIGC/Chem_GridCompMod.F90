@@ -314,7 +314,7 @@ CONTAINS
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
-    TYPE(ESMF_GridComp),  INTENT(INOUT) :: GC       ! Ref to this GridComp
+    TYPE(ESMF_GridComp) :: GC       ! Ref to this GridComp
 !
 ! !OUTPUT PARAMETERS:
 !
