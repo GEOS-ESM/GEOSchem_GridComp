@@ -1993,7 +1993,7 @@ CONTAINS
 #if defined( MODEL_GEOS )
     ! Top stratospheric level
     CALL ESMF_ConfigGetAttribute( GeosCF, value_LLSTRAT,         & 
-                                  Default = 72,                     &
+                                  Default = LM,                     &
                                   Label   = "LLSTRAT:",             &
                                   __RC__                           )
     IF ( am_I_Root ) THEN
