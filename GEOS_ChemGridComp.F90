@@ -692,7 +692,7 @@ contains
         ! GEOSCHEM connections to GOCART
         CALL MAPL_AddConnectivity ( GC,                         &
           SRC_NAME  = (/ "TRC_DST1",      "TRC_DST2",           &
-                         "TRC_DST3",      "TRC_DST3"        /), &
+                         "TRC_DST3",      "TRC_DST4"        /), &
           DST_NAME  = (/ "GEOSCHEM_DST1", "GEOSCHEM_DST2",      &
                          "GEOSCHEM_DST3", "GEOSCHEM_DST4"   /), &
           DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__)

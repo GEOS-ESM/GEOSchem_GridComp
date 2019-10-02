@@ -4358,7 +4358,7 @@ end subroutine aerosol_activation_properties
       int_name = 'GOCART::NO3an2_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = ptr3d_GC_NIT + ptr3d_GC_NITS *      &
+      ptr3d_int = ptr3d_GC_NITS *      &
                   ( GC_FracSALA * GC_FracSALA_wt002 + &
                     GC_FracSALC * GC_FracSALC_wt002 )
 
@@ -4366,7 +4366,7 @@ end subroutine aerosol_activation_properties
       int_name = 'GOCART::NO3an3_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = ptr3d_GC_NIT + ptr3d_GC_NITS *     &
+      ptr3d_int = ptr3d_GC_NITS *     &
                ( GC_FracSALA *  GC_FracSALA_wt003 +  &
                  GC_FracSALC * ( 1 - GC_FracSALC_wt001 - GC_FracSALC_wt002 ) )
 
