@@ -60,13 +60,14 @@ LINOZ_NMONTHS:        12
 #
 # FAST-JX options:
 # LLFASTJX are the number of levels used for FAST-JX. The default value for a simulation
-# on 72 model levels is 601. It may need to be increased to 1201 if running on 132 model
-# levels. FJX_EXTRAL_ITERMAX and FJX_EXTRAL_ERR are fine tuning parameter that can be used
-# to get more control over the FAST-JX calculations. Increase FJX_EXTRAL_ITERMAX to 5 if 
-# you encounter problems with FAST-JX at 132 model levels.
-LLFASTJX:             601 
-FJX_EXTRAL_ITERMAX:   1 
-FJX_EXTRAL_ERR:       1
+# on 72 model levels is 601, and 1201 if running on 132 model levels. 
+# FJX_EXTRAL_ITERMAX (defaults: 1 and 5 for 72 and 132 model levels, respectively) and 
+# FJX_EXTRAL_ERR (default = 1) are fine tuning parameter that can be used
+# to get more control over the FAST-JX calculations. Increase FJX_EXTRAL_ITERMAX if 
+# you encounter problems with FAST-JX, e.g. at 132 model levels.
+#LLFASTJX:             601 
+#FJX_EXTRAL_ITERMAX:   1 
+#FJX_EXTRAL_ERR:       1
 
 #
 # %%% Run phases (1 or 2. 2 recommended) %%% 
