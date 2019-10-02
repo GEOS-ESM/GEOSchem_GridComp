@@ -16,7 +16,6 @@ MODULE GCKPP_HETRATES
 !
   USE CMN_FJX_MOD,        ONLY : NDUST
   USE CMN_FJX_MOD,        ONLY : NAER
-  USE CMN_SIZE_MOD,       ONLY : LLSTRAT
   USE ERROR_MOD,          ONLY : ERROR_STOP
   USE ERROR_MOD,          ONLY : GEOS_CHEM_STOP
   USE ERROR_MOD,          ONLY : IS_SAFE_DIV, SAFE_DIV
@@ -172,7 +171,7 @@ MODULE GCKPP_HETRATES
 
   ! Universal gas consatant [bar/(mol/kg)/K]
   REAL(fp), PARAMETER :: con_R = RStarG*1.0e-2_fp
-!
+
 ! !REMARKS:
 !  Need 
 !  - TOTAREA (previously used for archiving N2O5 hydrolysis in the planeflight
@@ -673,34 +672,34 @@ MODULE GCKPP_HETRATES
 
       ! Calculate genuine first-order uptake reactions first
       HET(ind_HO2,    1) = HetHO2(        MW_HO2,    2E-1_fp)
-      HET(ind_NO2,    1) = HetNO2(        MW_NO2,    1E-4_fp)
-      HET(ind_NO3,    1) = HetNO3(        MW_NO3,    1E-1_fp)
-      HET(ind_GLYX,   1) = HetGLYX(       MW_GLYX,   1E-1_fp)
-      HET(ind_MGLY,   1) = HetMGLY(       MW_MGLY,   1E-1_fp)
-      HET(ind_IEPOXA, 1) = HetIEPOX(      MW_IEPOXA, 1E-1_fp)
-      HET(ind_IEPOXB, 1) = HetIEPOX(      MW_IEPOXB, 1E-1_fp)
-      HET(ind_IEPOXD, 1) = HetIEPOX(      MW_IEPOXD, 1E-1_fp)
-      HET(ind_IMAE,   1) = HetIMAE(       MW_IMAE,   1E-1_fp)
-      HET(ind_LVOC,   1) = HetLVOC(       MW_LVOC,   1E+0_fp)
-      HET(ind_ISN1OG, 1) = HetISN1OG(     MW_ISN1OG, 1E+0_fp)
-      HET(ind_ISOPND, 1) = HetISOPND(     MW_ISOPND, 5E-3_fp)
-      HET(ind_ISOPNB, 1) = HetISOPNB(     MW_ISOPNB, 5E-3_fp)
-      HET(ind_MACRN,  1) = HetMACRN(      MW_MACRN,  5E-3_fp)
-      HET(ind_MVKN,   1) = HetMVKN(       MW_MVKN,   5E-3_fp)
-      HET(ind_R4N2,   1) = HetR4N2(       MW_R4N2,   5E-3_fp)
-      HET(ind_DHDN,   1) = HetDHDN(       MW_DHDN,   5E-3_fp)
-      HET(ind_MONITS, 1) = HetMONITS(     MW_MONITS, 1E-2_fp)
-      HET(ind_MONITU, 1) = HetMONITU(     MW_MONITU, 1E-2_fp)
-      HET(ind_HONIT,  1) = HetHONIT(      MW_HONIT,  1E-2_fp)
-      HET(ind_IONITA, 1) = HetIONITA(     MW_IONITA, 1E-1_fp)
-      HET(ind_MONITA, 1) = HetMONITA(     MW_MONITA, 1E-1_fp)
+      HET(ind_NO2,    1) = HetNO2(        MW_NO2,    1E-4_fp, Input_Opt )
+      HET(ind_NO3,    1) = HetNO3(        MW_NO3,    1E-1_fp, Input_Opt )
+      HET(ind_GLYX,   1) = HetGLYX(       MW_GLYX,   1E-1_fp, Input_Opt )
+      HET(ind_MGLY,   1) = HetMGLY(       MW_MGLY,   1E-1_fp, Input_Opt )
+      HET(ind_IEPOXA, 1) = HetIEPOX(      MW_IEPOXA, 1E-1_fp, Input_Opt )
+      HET(ind_IEPOXB, 1) = HetIEPOX(      MW_IEPOXB, 1E-1_fp, Input_Opt )
+      HET(ind_IEPOXD, 1) = HetIEPOX(      MW_IEPOXD, 1E-1_fp, Input_Opt )
+      HET(ind_IMAE,   1) = HetIMAE(       MW_IMAE,   1E-1_fp, Input_Opt )
+      HET(ind_LVOC,   1) = HetLVOC(       MW_LVOC,   1E+0_fp, Input_Opt )
+      HET(ind_ISN1OG, 1) = HetISN1OG(     MW_ISN1OG, 1E+0_fp, Input_Opt )
+      HET(ind_ISOPND, 1) = HetISOPND(     MW_ISOPND, 5E-3_fp, Input_Opt )
+      HET(ind_ISOPNB, 1) = HetISOPNB(     MW_ISOPNB, 5E-3_fp, Input_Opt )
+      HET(ind_MACRN,  1) = HetMACRN(      MW_MACRN,  5E-3_fp, Input_Opt )
+      HET(ind_MVKN,   1) = HetMVKN(       MW_MVKN,   5E-3_fp, Input_Opt )
+      HET(ind_R4N2,   1) = HetR4N2(       MW_R4N2,   5E-3_fp, Input_Opt )
+      HET(ind_DHDN,   1) = HetDHDN(       MW_DHDN,   5E-3_fp, Input_Opt )
+      HET(ind_MONITS, 1) = HetMONITS(     MW_MONITS, 1E-2_fp, Input_Opt )
+      HET(ind_MONITU, 1) = HetMONITU(     MW_MONITU, 1E-2_fp, Input_Opt )
+      HET(ind_HONIT,  1) = HetHONIT(      MW_HONIT,  1E-2_fp, Input_Opt )
+      HET(ind_IONITA, 1) = HetIONITA(     MW_IONITA, 1E-1_fp, Input_Opt )
+      HET(ind_MONITA, 1) = HetMONITA(     MW_MONITA, 1E-1_fp, Input_Opt )
 
       ! Now calculate reaction rates where the educt can be consumed.
       ! kIIR1Ltd: Assume that the first reactant is limiting. Assume that the
       ! second reactant is "abundant" and calculate the overall rate based on
       ! the uptake rate of the first reactant only.
       HET(ind_N2O5,  1) = kIIR1Ltd( spcVec, Ind_('N2O5'), Ind_('H2O'), &
-                                    HETN2O5(1.08E2_fp, 1E-1_fp))
+                                    HETN2O5(1.08E2_fp, 1E-1_fp,Input_Opt))
 
       !--------------------------------------------------------------------
       ! Br/Cl heterogeneous chemistry
@@ -710,10 +709,10 @@ MODULE GCKPP_HETRATES
          !----------------------------------------------------------------
          ! ClNO3 and BrNO3 hydrolysis (SDE 2016-12-21)
          !----------------------------------------------------------------
-         kITemp = HETBrNO3_JS( XDenA, rLiq, rIce, ALiq, AIce, TempK )
+         kITemp = HETBrNO3_JS( XDenA, rLiq, rIce, ALiq, AIce, TempK, Input_Opt )
          HET(ind_BrNO3, 1) = kIIR1Ltd( spcVec, Ind_('BrNO3'), Ind_('H2O'), &
                                        kITemp, HetMinLife)
-         kITemp = HETClNO3_JS( XDenA, rLiq, rIce, ALiq, AIce, TempK )
+         kITemp = HETClNO3_JS( XDenA, rLiq, rIce, ALiq, AIce, TempK, Input_Opt )
          HET(ind_ClNO3, 1) = kIIR1Ltd( spcVec, Ind_('ClNO3'), Ind_('H2O'), &
                                        kITemp, HetMinLife)
 
@@ -805,7 +804,7 @@ MODULE GCKPP_HETRATES
 	 ! NOTE: the restriction of these reactions to the troposphere has been
          ! restored - TMS (2017/04/06 )
          HET(ind_ClNO3, 2) = kIIR1Ltd( spcVec, Ind_('ClNO3'), Ind_('HCl'), &
-                             HETClNO3_HCl( 0.97E2_fp, 0E+0_fp), HetMinLife)
+                             HETClNO3_HCl( 0.97E2_fp, 0E+0_fp, Input_Opt), HetMinLife)
 
          !----------------------------------------------------------------
          ! ClNO3 + HBr (TMS index: hhc09)
@@ -831,7 +830,7 @@ MODULE GCKPP_HETRATES
          ! O3 + Br- calculation (TMS index: hhc12)
          !----------------------------------------------------------------
          kITemp = HETO3_HBr_JS( XDenA, rLiq, rIce, ALiq, AIce, VAir, &
-                                TempK, brConc_Cld, spcVec(Ind_('O3')))
+                                TempK, brConc_Cld, spcVec(Ind_('O3')), Input_Opt)
          HET(ind_O3,    1) = kIIR1Ltd( spcVec, Ind_('O3'), Ind_('HBr'), &
                                        kITemp, HetMinLife)
 
@@ -873,7 +872,7 @@ MODULE GCKPP_HETRATES
 	 ! NOTE: the restriction of these reactions to the troposphere has been
          ! restored - TMS (2017/04/06 )
          HET(ind_BrNO3, 2) = kIIR1Ltd( spcVec, Ind_('BrNO3'), Ind_('HCl'), &
-                             HETBrNO3_HCl(  1.42E2_fp, 0E+0_fp), HetMinLife)
+                             HETBrNO3_HCl(  1.42E2_fp, 0E+0_fp, Input_Opt), HetMinLife)
 
          !----------------------------------------------------------------
          ! N2O5 + HCl on sulfate
@@ -1244,12 +1243,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETNO3( A, B ) RESULT( HET_NO3 )
+    FUNCTION HETNO3( A, B, Input_Opt ) RESULT( HET_NO3 )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -1289,6 +1289,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -1321,12 +1323,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETNO2( A, B ) RESULT( HET_NO2 )
+    FUNCTION HETNO2( A, B, Input_Opt ) RESULT( HET_NO2 )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 ! 
@@ -1366,6 +1369,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -1570,12 +1575,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETN2O5( A, B ) RESULT( HET_N2O5 )
+    FUNCTION HETN2O5( A, B, Input_Opt ) RESULT( HET_N2O5 )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -1668,6 +1674,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -1693,12 +1701,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETGLYX( A, B ) RESULT( HET_GLYX )
+    FUNCTION HETGLYX( A, B, Input_Opt ) RESULT( HET_GLYX )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -1765,6 +1774,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -1796,12 +1807,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETMGLY( A, B ) RESULT( HET_MGLY )
+    FUNCTION HETMGLY( A, B, Input_Opt ) RESULT( HET_MGLY )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -1851,6 +1863,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -1882,12 +1896,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETIEPOX( A, B ) RESULT( HET_IEPOX )
+    FUNCTION HETIEPOX( A, B, Input_Opt ) RESULT( HET_IEPOX )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -1953,6 +1968,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -1984,12 +2001,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETIMAE( A, B ) RESULT( HET_IMAE )
+    FUNCTION HETIMAE( A, B, Input_Opt ) RESULT( HET_IMAE )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -2066,6 +2084,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -2098,12 +2118,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETLVOC( A, B ) RESULT( HET_LVOC )
+    FUNCTION HETLVOC( A, B, Input_Opt ) RESULT( HET_LVOC )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -2142,6 +2163,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -2174,12 +2197,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETISN1OG( A, B ) RESULT( HET_ISN1OG )
+    FUNCTION HETISN1OG( A, B, Input_Opt ) RESULT( HET_ISN1OG )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -2218,6 +2242,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -2249,12 +2275,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETISOPND( A, B ) RESULT( HET_ISOPND )
+    FUNCTION HETISOPND( A, B, Input_Opt ) RESULT( HET_ISOPND )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -2297,6 +2324,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -2328,12 +2357,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETISOPNB( A, B ) RESULT( HET_ISOPNB )
+    FUNCTION HETISOPNB( A, B, Input_Opt ) RESULT( HET_ISOPNB )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -2376,6 +2406,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -2407,12 +2439,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETMACRN( A, B ) RESULT( HET_MACRN )
+    FUNCTION HETMACRN( A, B, Input_Opt ) RESULT( HET_MACRN )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -2455,6 +2488,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -2486,12 +2521,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETMVKN( A, B ) RESULT( HET_MVKN )
+    FUNCTION HETMVKN( A, B, Input_Opt ) RESULT( HET_MVKN )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -2534,6 +2570,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -2565,12 +2603,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETR4N2( A, B ) RESULT( HET_R4N2 )
+    FUNCTION HETR4N2( A, B, Input_Opt ) RESULT( HET_R4N2 )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -2613,6 +2652,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -2644,12 +2685,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETDHDN( A, B ) RESULT( HET_DHDN )
+    FUNCTION HETDHDN( A, B, Input_Opt ) RESULT( HET_DHDN )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -2692,6 +2734,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -2723,12 +2767,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETMONITS( A, B ) RESULT( HET_MONITS )
+    FUNCTION HETMONITS( A, B, Input_Opt ) RESULT( HET_MONITS )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -2768,6 +2813,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -2799,12 +2846,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETMONITU( A, B ) RESULT( HET_MONITU )
+    FUNCTION HETMONITU( A, B, Input_Opt ) RESULT( HET_MONITU )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -2844,6 +2892,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -2875,12 +2925,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETHONIT( A, B ) RESULT( HET_HONIT )
+    FUNCTION HETHONIT( A, B, Input_Opt ) RESULT( HET_HONIT )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -2920,6 +2971,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -2952,12 +3005,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETIONITA( A, B ) RESULT( HET_IONITA )
+    FUNCTION HETIONITA( A, B, Input_Opt ) RESULT( HET_IONITA )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -2998,6 +3052,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -3030,12 +3086,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETMONITA( A, B ) RESULT( HET_MONITA )
+    FUNCTION HETMONITA( A, B, Input_Opt ) RESULT( HET_MONITA )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -3076,6 +3133,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp    ! EF - turn off NOy het reactions on sulfates   XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -3230,6 +3289,7 @@ MODULE GCKPP_HETRATES
          IF ( Input_Opt%LUCX .and. STRATBOX ) THEN
             IF (N.eq.13) THEN
                XSTKCF = KHETI_SLA(2)
+               !If(Input_Opt%TurnOffHetRates) XSTKCF = 0.0e+0_fp       ! EF - turn off NOy het reactions on sulfates  KHETI_SLA(2)
             ELSEIF (N.eq.14) THEN
                IF (NATSURFACE) THEN
                   XSTKCF = 0.003e+0_fp ! NAT
@@ -3245,6 +3305,7 @@ MODULE GCKPP_HETRATES
                ! Note that XSTKCF is actually a premultiplying
                ! factor in this case, including c-bar
                ADJUSTEDRATE = XAREA(N) * XSTKCF
+               !If(Input_Opt%TurnOffHetRates) XSTKCF = 0.0e+0_fp       ! EF - turn off NOy het reactions on sulfates  XAREA(N) * XSTKCF
             ELSE
                ! Reaction rate for surface of aerosol
                ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -3540,7 +3601,7 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETO3_HBr_JS( denAir, rLiq, rIce, ALiq, AIce, VAir, TK, brConc, O3Conc ) RESULT( kISum )
+    FUNCTION HETO3_HBr_JS( denAir, rLiq, rIce, ALiq, AIce, VAir, TK, brConc, O3Conc, Input_Opt ) RESULT( kISum )
 !
 ! !INPUT PARAMETERS: 
 !
@@ -3553,6 +3614,7 @@ MODULE GCKPP_HETRATES
       REAL(fp), INTENT(IN) :: TK          ! Temperature (K)
       REAL(fp), INTENT(IN) :: brConc      ! Bromide concentration (mol/L)
       REAL(fp), INTENT(IN) :: O3Conc      ! Ozone concentration (mol/L)
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -3597,6 +3659,7 @@ MODULE GCKPP_HETRATES
                ! Note that XSTKCF is actually a premultiplying
                ! factor in this case, including c-bar
                ADJUSTEDRATE = XAREA(N) * XSTKCF
+               !IF(Input_Opt%TurnOffHetRates) ADJUSTEDRATE = 0.0e+0_fp       ! EF - turn off NOy het reactions on sulfates  XAREA(N) * XSTKCF
             ELSE
                ! Reaction rate for surface of aerosol
                ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP,XSQM)
@@ -3757,12 +3820,16 @@ MODULE GCKPP_HETRATES
             ! For UCX-based mechanisms only consider PSC reactions in strat
             IF (N.eq.13) THEN
                XSTKCF = KHETI_SLA(5)
+               ! Turn off het rates in stratosphere
+               IF ( Input_Opt%TurnOffHetRates ) XSTKCF = 0.0e+0_fp       ! EF turn off ClNO3 + HBr on sulfates as in GMI
             ELSEIF (N.eq.14) THEN
                IF (NATSURFACE) THEN
                   XSTKCF = 0.3e+0_fp ! NAT
                ELSE
                   XSTKCF = 0.3e+0_fp ! Ice
                ENDIF
+               ! Turn off het rates in stratosphere
+               IF ( Input_Opt%TurnOffHetRates ) XSTKCF = 0.0e+0_fp       ! EF turn off ClNO3 + HBr on ALL PSCs as in GMI
             ENDIF
 
          ENDIF
@@ -3810,7 +3877,7 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETClNO3_JS( denAir, rLiq, rIce, ALiq, AIce, TK ) RESULT( HET_ClNO3 )
+    FUNCTION HETClNO3_JS( denAir, rLiq, rIce, ALiq, AIce, TK, Input_Opt ) RESULT( HET_ClNO3 )
 !
 ! !INPUT PARAMETERS: 
 !
@@ -3820,6 +3887,7 @@ MODULE GCKPP_HETRATES
       REAL(fp), INTENT(IN) :: ALiq        ! Area of liquid cloud droplets (cm2/cm3)
       REAL(fp), INTENT(IN) :: AIce        ! Area of ice cloud crystals (cm2/cm3)
       REAL(fp), INTENT(IN) :: TK          ! Temperature (K)
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -3879,6 +3947,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp       ! EF - turn off NOy het reactions on sulfates  XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP,XSQM)
@@ -4900,7 +4970,7 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETBrNO3_JS( denAir, rLiq, rIce, ALiq, AIce, TK ) RESULT( HET_BrNO3 )
+    FUNCTION HETBrNO3_JS( denAir, rLiq, rIce, ALiq, AIce, TK, Input_Opt ) RESULT( HET_BrNO3 )
 !
 ! !INPUT PARAMETERS: 
 !
@@ -4910,6 +4980,7 @@ MODULE GCKPP_HETRATES
       REAL(fp), INTENT(IN) :: ALiq        ! Area of liquid cloud droplets (cm2/cm3)
       REAL(fp), INTENT(IN) :: AIce        ! Area of ice cloud crystals (cm2/cm3)
       REAL(fp), INTENT(IN) :: TK          ! Temperature (K)
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -4971,6 +5042,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp       ! EF - turn off NOy het reactions on sulfates  XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP,XSQM)
@@ -5000,12 +5073,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETClNO3_HCl( A, B ) RESULT( kISum )
+    FUNCTION HETClNO3_HCl( A, B, Input_Opt ) RESULT( kISum )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE:
 !
@@ -5066,6 +5140,8 @@ MODULE GCKPP_HETRATES
             ! Note that XSTKCF is actually a premultiplying
             ! factor in this case, including c-bar
             ADJUSTEDRATE = XAREA(N) * XSTKCF
+            ! Turn off het rates in stratosphere
+            !IF ( Input_Opt%TurnOffHetRates ) ADJUSTEDRATE = 0.0e+0_fp       ! EF - turn off NOy het reactions on sulfates  XAREA(N) * XSTKCF
          ELSE
             ! Reaction rate for surface of aerosol
             ADJUSTEDRATE=ARSL1K(XAREA(N),XRADI(N),XDENA,XSTKCF,XTEMP, &
@@ -5092,12 +5168,13 @@ MODULE GCKPP_HETRATES
 !\\
 ! !INTERFACE:
 !
-    FUNCTION HETBrNO3_HCl( A, B ) RESULT( kISum )
+    FUNCTION HETBrNO3_HCl( A, B, Input_Opt ) RESULT( kISum )
 !
 ! !INPUT PARAMETERS: 
 !
       ! Rate coefficients
       REAL(fp), INTENT(IN) :: A, B
+      TYPE(OptInput), INTENT(IN) :: Input_Opt  ! Input Options object
 !
 ! !RETURN VALUE: 
 !
@@ -5140,6 +5217,8 @@ MODULE GCKPP_HETRATES
                XSTKCF = 0.9e+0_fp ! Sulfate
             ELSEIF (N.eq.13) THEN
                XSTKCF = KHETI_SLA(7)
+               ! Turn off het rates in stratosphere
+               IF ( Input_Opt%TurnOffHetRates ) XSTKCF = 0.0e+0_fp       ! EF turn off BrNO3 + HCl on sulfates as in GMI
             ELSEIF (N.eq.14) THEN
                IF (NATSURFACE) THEN
                   XSTKCF = 0.3e+0_fp ! NAT
@@ -5321,12 +5400,16 @@ MODULE GCKPP_HETRATES
  	       XSTKCF = 0.8e+0_fp ! Sulfate
             ELSEIF (N.eq.13) THEN
                XSTKCF = KHETI_SLA(9)
+               ! Turn off het rates in stratosphere
+               IF ( Input_Opt%TurnOffHetRates ) XSTKCF = 0.0e+0_fp       ! EF turn off HOCl + HBr on sulfates as in GMI
             ELSEIF (N.eq.14) THEN
                IF (NATSURFACE) THEN
                   XSTKCF = 0.3e+0_fp ! NAT
                ELSE
                   XSTKCF = 0.3e+0_fp ! Ice
                ENDIF
+               ! Turn off het rates in stratosphere
+               IF ( Input_Opt%TurnOffHetRates ) XSTKCF = 0.0e+0_fp       ! EF turn off HOCl + HBr on ALL PSCs as in GMI
             ENDIF
          ENDIF
 
@@ -6002,7 +6085,8 @@ MODULE GCKPP_HETRATES
       IF ( CLDFR.le.0.0e+0_fp ) CLDFr = 1.0e-32_fp
 
       ! Quick test - is there any cloud?
-      IF (((QL.le.0.0e+0_fp).and.(QL.le.0.0e+0_fp)).or.(CLDF(I,J,L).le.0.0e+0_fp)) THEN
+      !IF (((QL.le.0.0e+0_fp).and.(QL.le.0.0e+0_fp)).or.(CLDF(I,J,L).le.0.0e+0_fp)) THEN
+      IF (((QL.le.0.0e+0_fp).and.(QI.le.0.0e+0_fp)).or.(CLDF(I,J,L).le.0.0e+0_fp)) THEN
          rLiq = xCldR_Cont
          ALiq = 0.0e+0_fp
          VLiq = 0.0e+0_fp
@@ -6713,10 +6797,10 @@ MODULE GCKPP_HETRATES
       !=================================================================
 
       ! Check if box is in the troposphere
-      IS_TROP  = ( State_Met%PEDGE(I,J,L) > State_Met%TROPP(I,J) )
+      IS_TROP  = ( State_Met%InTroposphere(I,J,L) )
 
       ! Check if box is in the stratosphere
-      IS_STRAT = ( ( L .le. LLSTRAT ) .and. ( .not. IS_TROP) )
+      IS_STRAT = ( State_Met%InStratosphere(I,J,L) .and. ( .not. IS_TROP) )
 
       ! Check if there are solid PSCs
       IS_PSC   = ( ( Input_Opt%LPSCCHEM ) .and. &
