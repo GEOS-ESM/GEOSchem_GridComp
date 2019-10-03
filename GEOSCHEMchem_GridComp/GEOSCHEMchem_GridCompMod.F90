@@ -242,8 +242,8 @@ MODULE GEOSCHEMchem_GridCompMod
                                       58.0,   58.0,  180.0,  180.0 ,     &
                                      180.0,  180.0,  132.0                /)
 
-  CHARACTER(LEN=15), PARAMETER :: COLLIST(8) = (/ 'NO2', 'O3',   'CH4', 'CO', &
-                                                  'BrO', 'CH2O', 'SO2', 'IO'  /)
+  CHARACTER(LEN=15), PARAMETER :: COLLIST(8) = (/ 'NO2 ', 'O3  ', 'CH4 ', 'CO  ', &
+                                                  'BrO ', 'CH2O', 'SO2 ', 'IO  '  /)
 #endif
  
   ! Pointers to import, export and internal state data. Declare them as 
@@ -4216,7 +4216,7 @@ CONTAINS
                 IF ( PerturbO3 ) THEN
                    IF ( FIXPERT < 0.0 ) THEN
                       CALL RANDOM_NUMBER(Harvest=Rnd)
-                      IF ( Rnd(2) >= 0.5 ) Rnd(1) = Rnd(1) * -1.0
+                      IF ( Rnd(2) >= 0.5 ) Rnd(1) = Rnd(1) * (-1.0)
                       Rnd(1) = 1.0 + ( Rnd(1) * MAXPERT )
                    ENDIF
                    Ptr3DA(I,J,L) = Ptr3DA(I,J,L) * Rnd(1)
@@ -4226,7 +4226,7 @@ CONTAINS
                 IF ( PerturbCO ) THEN
                    IF ( FIXPERT < 0.0 ) THEN
                       CALL RANDOM_NUMBER(Harvest=Rnd)
-                      IF ( Rnd(2) >= 0.5 ) Rnd(1) = Rnd(1) * -1.0
+                      IF ( Rnd(2) >= 0.5 ) Rnd(1) = Rnd(1) * (-1.0)
                       Rnd(1) = 1.0 + ( Rnd(1) * MAXPERT )
                    ENDIF
                    Ptr3DB(I,J,L) = Ptr3DB(I,J,L) * Rnd(1)
