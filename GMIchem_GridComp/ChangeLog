@@ -1,4 +1,10 @@
 GMIchem ChangeLog
+2019-08-15 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_16
+        * Added Jules' ship emissions, with some refinements
+
+2019-06-21 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_15
+        * CH4 is now a forced boundary condition by default
+
 2019-03-07 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_MERGE_11
         * Split the GMI Run routine into Run1 and Run2.
 	* Old Single-Phase mode can still be used, but 2-Phase is the default.

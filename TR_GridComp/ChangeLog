@@ -1,5 +1,8 @@
 TR_GridComp ChangeLog
 
+2019-07-05 <michael.manyin@nasa.gov>, Tag: Icarus-3_2_p9_MEM_15
+        * Added Elliot's aoa_bl tracer, and vertical specification "boundary_layer"
+
 2019-04-29 <michael.manyin@nasa.gov>, Tag: Icarus-3_2_p9_MEM_MERGE_13
         * Added start-source tracers (Be7s, Be10s, Pb210s)
         * Added CO tracers based on CMIP6 emissions and using HTAP2 regional map

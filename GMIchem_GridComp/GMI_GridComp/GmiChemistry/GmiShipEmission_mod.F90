@@ -11,6 +11,8 @@
 !
       implicit none
 !
+        INTEGER, PARAMETER :: DBL = KIND(0.00D+00)
+!
       private
 !
 ! !PUBLIC MEMBER FUNCTIONS:
@@ -25,10 +27,10 @@
 !
 ! !INTERFACE:
 !
-      subroutine calcShipEmission (emiss_o3, thisRecord, curRecord, &
+      subroutine calcShipEmission (emiss_o3, emiss_hno3, &
                      latdeg, jno2val,       &
-     &               emissionArray, emiss_ozone, o3_index, &
-                     i1, i2, ju1, j2, k1, k2, ju1_gl, j2_gl, num_emiss)
+                     emissionArray, emiss_ship_no, ship_o3_index, ship_hno3_index, &
+                     cellArea, i1, i2, ju1, j2, num_emiss)
 !
 ! !USES:
       use GmiArrayBundlePointer_mod, only : t_GmiArrayBundle
@@ -36,17 +38,18 @@
       implicit none
 !
 ! !INPUT PARAMETERS:
-      integer                , intent(in) :: i1, i2, ju1, j2, k1, k2
-      integer                , intent(in) :: ju1_gl, j2_gl
-      integer                , intent(in) :: o3_index, curRecord
+      integer                , intent(in) :: i1, i2, ju1, j2
+      integer                , intent(in) :: ship_o3_index
+      integer                , intent(in) :: ship_hno3_index
+      REAL(KIND=DBL), POINTER, intent(in) :: cellArea(:,:)
       integer                , intent(in) :: num_emiss
       real*8                 , intent(in) :: latdeg (i1:i2, ju1:j2)
-      real*8                 , intent(in) :: jno2val(i1:i2, ju1:j2)
+      real                   , intent(in) :: jno2val(i1:i2, ju1:j2)
+      real                   , intent(in) :: emiss_ship_no(i1:i2, ju1:j2)
 !
 ! !INPUT/OUTPUT PARAMETERS:
-      integer                , intent(inOut) :: thisRecord
       real*8                 , intent(inOut) :: emiss_o3(i1:i2, ju1:j2)
-      real*8                 , intent(inOut) :: emiss_ozone(i1:i2, ju1:j2)
+      real*8                 , intent(inOut) :: emiss_hno3(i1:i2, ju1:j2)
       type (t_GmiArrayBundle), intent(inOut) :: emissionArray(num_emiss)
 !
 ! !DESCRIPTION: 
@@ -75,12 +78,6 @@
 !-------------------------------------------------------------------------
 !BOC
 
-      ! Check if new record (month or day).
-      if (thisRecord /= curRecord) then
-          emiss_ozone(:,:) = emissionArray(o3_index)%pArray3D(:,:,1)
-          thisRecord       = curRecord
-      end if
-        
       emiss_o3(:,:) = 0.0d0
 
       do j=ju1,j2
@@ -89,16 +86,30 @@
             if ((latdeg(i,j).lt.60.0d0) .and. (latdeg(i,j).gt.-60.0d0)) then
                if (jno2val(i,j).le.0.0095d0) then
                   tempVar       = jno2val(i,j)/0.0095d0
-                  emiss_o3(i,j) = 10.0d0 * emiss_ozone(i,j) * tempVar*tempVar
+                  emiss_o3(i,j) = 10.0d0 * emiss_ship_no(i,j) * tempVar*tempVar
                else
-                  emiss_o3(i,j) = emiss_ozone(i,j) * 10.0d0
+                  emiss_o3(i,j) = 10.0d0 * emiss_ship_no(i,j)
                endif
             endif
 
          enddo 
       enddo
 
-      emissionArray(o3_index)%pArray3D(:,:,1) = emiss_o3(:,:)
+      ! Ship NO values are kg/m2/s 
+      ! Both the Emissions diagnostic, and the Emissions Array are in units kg/s
+
+      emiss_o3(:,:) = emiss_o3(:,:) * cellArea(:,:)
+
+      emissionArray(ship_o3_index)%pArray3D(:,:,1 ) = emiss_o3(:,:)
+      emissionArray(ship_o3_index)%pArray3D(:,:,2:) = 0.0
+
+
+      ! Fill HNO3 array entry
+      emissionArray(ship_hno3_index)%pArray3D(:,:,1 ) = emiss_ship_no(:,:) * 2.1 * cellArea
+      emissionArray(ship_hno3_index)%pArray3D(:,:,2:) = 0.0
+
+      ! Fill the emissions diagnostic
+      emiss_hno3(:,:) =                                 emiss_ship_no(:,:) * 2.1 * cellArea
 
       return
 

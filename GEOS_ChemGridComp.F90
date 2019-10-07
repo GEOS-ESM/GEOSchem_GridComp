@@ -16,6 +16,7 @@ module GEOS_ChemGridCompMod
   use MAPL_Mod
   use Chem_Mod
   use Chem_UtilMod
+  use Bundle_IncrementMod
 
   use GEOS_ChemEnvGridCompMod,  only : ChemEnv_SetServices   => SetServices
   use GOCART_GridCompMod,       only : GOCART_SetServices    => SetServices
@@ -243,6 +244,26 @@ contains
          UNITS      = 'X',                                         &
          DATATYPE   = MAPL_BundleItem,                             &
          __RC__  )
+
+! A container for total chemistry tracer increments
+! -------------------------------------------
+    call MAPL_AddExportSpec(GC,                                    &
+         SHORT_NAME = 'CHEMTRI',                                   &
+         LONG_NAME  = 'chemistry_friendly_tracers_increments',     &
+         UNITS      = 'X',                                         &
+         DATATYPE   = MAPL_BundleItem,                             &
+         __RC__  )
+
+
+! A container for chemistry tracer increments for Run1.
+! ---------------------------------------------------------
+    call MAPL_AddExportSpec(GC,                                    &
+         SHORT_NAME = 'CHEMTRIr1',                                 &
+         LONG_NAME  = 'chemistry_friendly_tracers_increments_emissions',    &
+         UNITS      = 'X',                                         &
+         DATATYPE   = MAPL_BundleItem,                             &
+         __RC__  )
+
 
 ! Radiatively Active Tracers (RATs).  If a RATS_PROVIDER is not
 ! specified in the AGCM.rc, then the provider defaults to PCHEM.
@@ -670,12 +691,24 @@ contains
     SHORT_NAME  = (/ "TO3" /), &
     DST_ID=GEOSCHEM, SRC_ID=PCHEM, __RC__)
 
+
    ! added by ckeller, 10/31/2018
    CALL MAPL_AddConnectivity ( GC, &
-        SRC_NAME  = (/"O3"/), &
-        DST_NAME  = (/"PCHEM_O3"/), &
-        DST_ID = GEOSCHEM, SRC_ID = PCHEM, __RC__  )
+    SRC_NAME  = (/"O3"/), &
+    DST_NAME  = (/"PCHEM_O3"/), &
+    DST_ID = GEOSCHEM, SRC_ID = PCHEM, __RC__  )
   END IF
+
+  ! GOCART needs ozone for CFC12 photolysis.
+  ! Only provide it from GEOS-Chem if PCHEM is not running.
+  IF(myState%enable_GOCART .AND. myState%enable_GEOSCHEM) then
+   IF ( .NOT. myState%enable_PCHEM ) THEN
+    CALL MAPL_AddConnectivity ( GC, &
+       SRC_NAME  = (/"TRC_O3"/), &
+       DST_NAME  = (/"O3"/), &
+       DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__  )
+   ENDIF
+  ENDIF
 
 ! HEMCO connections to CHEMENV
 ! -----------------------------
@@ -788,12 +821,24 @@ contains
 !                   to ANALYSIS.
 !   -----------------------------------------------------------
     call ESMF_StateGet (INTERNAL, 'CHEM_TRACERS', fBUNDLE, __RC__)
-    call MAPL_GridCompGetFriendlies(GCS,                     &
-                                         (/ "ANALYSIS  ",    &
-                                            "TURBULENCE",    &
-                                            "DYNAMICS  ",    &
-                                            "MOIST     " /), &
-                                           fBUNDLE, __RC__ )
+    call MAPL_GridCompGetFriendlies(GCS,                       &
+                                         (/ "ANALYSIS    ",    &
+                                            "TURBULENCE  ",    &
+                                            "DYNAMICS    ",    &
+                                            "MOIST       ",    &
+                                            "STRATCHEM   ",    &
+                                            "GMICHEM     ",    &
+                                            "GEOSCHEMCHEM",    &
+                                            "TR          " /), &
+                                           fBUNDLE, AddGCPrefix=.true., __RC__ )
+
+
+
+
+!   Get tracer increment species count from AGCM.rc
+!   -----------------------------------------------
+    call Initialize_IncBundle_init(GC, INTERNAL, EXPORT, CHMinc, __RC__)
+
 
 !   AERO State for AERO_PROVIDER set to NONE
 !   ----------------------------------------
@@ -886,6 +931,7 @@ contains
   type (ESMF_GridComp),     pointer     :: GCS(:)
   type (ESMF_State),        pointer     :: GIM(:)
   type (ESMF_State),        pointer     :: GEX(:)
+  type (ESMF_State)                     :: INTERNAL
   type (MAPL_MetaComp),     pointer     :: CHLD
   integer,                  allocatable :: CHLDPHASES(:)
   integer                               :: I, NCHLD
@@ -939,15 +985,18 @@ contains
       ! Call Run phase 1 for every child with two phases
       ! (ckeller, 2014/09/10)
       ! ------------------------------------------------
-
       ! Get the children's states
-      call MAPL_Get(MAPL, GCS=GCS, GIM=GIM, GEX=GEX, __RC__ )
-      VERIFY_(STATUS)
+      call MAPL_Get ( MAPL, GCS=GCS, GIM=GIM, GEX=GEX,   &
+                    INTERNAL_ESMF_STATE=INTERNAL, __RC__ )
+
+!    !Initialize chemistry increment bundle
+!    !---------------------------------------
+      call Initialize_IncBundle_run(INTERNAL, EXPORT, CHMinc, __RC__)
+
 
       if(associated(GCS)) then
         NCHLD  = SIZE(GCS)  ! # of children
         IPHASE = 1          ! phase to be called
-
         ! do for every child: get child state, determine number of 
         ! of run phases and call phase one if more than one phase
         ! exists. Also updated MAPL_Get to accept the output 
@@ -957,7 +1006,6 @@ contains
           call ESMF_GridCompGet( GCS(I), NAME=CHILD_NAME, __RC__ )
           call MAPL_GetObjectFromGC(GCS(I), CHLD, __RC__ )
           call MAPL_Get(CHLD, NumRunPhases=NPHASE, __RC__ )
-
           if ( NPHASE > 1 ) then
             call MAPL_TimerOn(MAPL,trim(CHILD_NAME))
             call ESMF_GridCompRun (GCS(I), &
@@ -972,7 +1020,12 @@ contains
           endif
         enddo !I
       endif
-    endif ! alarm is ringing
+
+!   ! Compute Run1 chemistry increment
+    !----------------------------------
+      call Compute_IncBundle(INTERNAL, EXPORT, CHMinc, MAPL, __RC__)
+
+   endif ! alarm is ringing
 
 !  Stop timers
 !  ------------
@@ -1015,7 +1068,7 @@ contains
 
   type (MAPL_MetaComp),     pointer  :: MAPL
   type (ESMF_Alarm)                  :: ALARM
-
+  type (ESMF_State)                  :: INTERNAL
 !=============================================================================
 
     INTEGER, PARAMETER :: numRATs = 8
@@ -1034,7 +1087,6 @@ contains
     integer                               :: NPHASE, IPHASE
     integer                               :: userRC
     character(len=ESMF_MAXSTR)            :: CHILD_NAME
-
 !-------------------------------------------------------------------
 ! Begin... 
 
@@ -1066,11 +1118,18 @@ contains
       ! (ckeller, 2014/09/10)
       ! -----------------------------------------------------------------
       ! Get the children's states
-      call MAPL_Get(MAPL, GCS=GCS, GIM=GIM, GEX=GEX, __RC__ )
+
+      call MAPL_Get ( MAPL, GCS=GCS, GIM=GIM, GEX=GEX,   &
+                    INTERNAL_ESMF_STATE=INTERNAL, __RC__ )
+
+
+      ! Initialize Chemistry increment bundle
+      !----------------------------------------------------
+      call Initialize_IncBundle_run(INTERNAL, EXPORT, CHMincR2, __RC__)
+
 
       if(associated(GCS)) then
         NCHLD  = SIZE(GCS)  ! # of children
-
         ! do for every child: get child state, determine number of 
         ! run phases and phase to call, execute.
         ! --------------------------------------------------------
@@ -1096,6 +1155,10 @@ contains
           call MAPL_TimerOff(MAPL,trim(CHILD_NAME))
         enddo !I
       endif
+
+      !Compute chemistry tracer increments 
+      !---------------------------------------
+      call Compute_IncBundle(INTERNAL, EXPORT, CHMincR2, MAPL, __RC__)
 
 
 !   Check contents of RATS
