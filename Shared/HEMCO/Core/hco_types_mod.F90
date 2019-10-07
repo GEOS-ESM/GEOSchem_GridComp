@@ -298,7 +298,7 @@ MODULE HCO_TYPES_MOD
      TYPE(ListCont), POINTER :: Hour
      INTEGER                 :: FileLun       = -1  ! LUN of file in archive
      CHARACTER(LEN=2023)     :: FileInArchive = ''  ! name of file in archive
-     INTEGER                 :: Counter       =  0  ! ReadList read counter 
+     INTEGER                 :: Counter       =  0  ! ReadList read counter
   END TYPE RdList
 
   !-------------------------------------------------------------------------
@@ -348,6 +348,7 @@ MODULE HCO_TYPES_MOD
      INTEGER                     :: tShift(2) ! time stamp shift in months & seconds 
      INTEGER                     :: CycleFlag ! cycle flag
      LOGICAL                     :: MustFind  ! file must be found
+     LOGICAL                     :: UseSimYear! use simulation year 
      INTEGER                     :: UpdtFlag  ! update flag 
      LOGICAL                     :: ncRead    ! read from source?
      TYPE(Arr3D_SP),     POINTER :: V3(:)     ! vector of 3D fields
@@ -445,6 +446,9 @@ MODULE HCO_TYPES_MOD
      TYPE(HcoErr),       POINTER  :: Err            => NULL()
      TYPE(ModSpc),       POINTER  :: ModelSpc(:)
      INTEGER                      :: nModelSpc
+     INTEGER                      :: nModelAdv
+     CHARACTER(LEN=255)           :: MetField
+     CHARACTER(LEN=255)           :: GridRes
      LOGICAL                      :: ConfigFileRead = .FALSE.
   END TYPE ConfigObj
 

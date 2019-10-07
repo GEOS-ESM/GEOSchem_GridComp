@@ -283,7 +283,7 @@ CONTAINS
             ENDDO 
             DO I = 1, LEN(TRIM(ADJUSTL(lName)))
                IF ( lName(I:I) == '_' ) lName(I:I) = ' '
-            ENDDO 
+            ENDDO
  
             ! Add to export state 
             CALL MAPL_AddExportSpec(GC,       &
