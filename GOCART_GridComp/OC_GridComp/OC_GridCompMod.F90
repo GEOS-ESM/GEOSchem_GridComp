@@ -586,9 +586,29 @@ CONTAINS
    VERIFY_(STATUS)
 
    call MAPL_AddImportSpec(GC, &
-      SHORT_NAME = 'OC_MONOTERPENES'//trim(iname), &
-      LONG_NAME  = 'source species'  , &
-      UNITS      = '1',                &
+      SHORT_NAME = 'OC_MTPA'//trim(iname), &
+      LONG_NAME  = 'MEGAN MTPA (a-, b-pinene, sabinene, carene)', &
+      UNITS      = 'kgC/m2/s',                &
+      DIMS       = MAPL_DimsHorzOnly,  &
+      VLOCATION  = MAPL_VLocationNone, &
+      RESTART    = MAPL_RestartSkip,   &
+      RC         = STATUS)
+   VERIFY_(STATUS)
+
+   call MAPL_AddImportSpec(GC, &
+      SHORT_NAME = 'OC_MTPO'//trim(iname), &
+      LONG_NAME  = 'MEGAN MTPO (myrcene, ocimene, other monoterpenes)'  , &
+      UNITS      = 'kgC/m2/s',                &
+      DIMS       = MAPL_DimsHorzOnly,  &
+      VLOCATION  = MAPL_VLocationNone, &
+      RESTART    = MAPL_RestartSkip,   &
+      RC         = STATUS)
+   VERIFY_(STATUS)
+
+   call MAPL_AddImportSpec(GC, &
+      SHORT_NAME = 'OC_LIMO'//trim(iname), &
+      LONG_NAME  = 'MEGAN Limonenes' , &
+      UNITS      = 'kgC/m2/s',                &
       DIMS       = MAPL_DimsHorzOnly,  &
       VLOCATION  = MAPL_VLocationNone, &
       RESTART    = MAPL_RestartSkip,   &
@@ -1265,7 +1285,13 @@ CONTAINS
 !   ----------------------------------------------------------
     gcOC%biogvoc_src = 0.0
 
-    call MAPL_GetPointer(impChem, var2d, 'OC_MONOTERPENES'//iNAME, __RC__)
+    call MAPL_GetPointer(impChem, var2d, 'OC_MTPA'//iNAME, __RC__)
+    gcOC%biogvoc_src = gcOC%biogvoc_src + gcOC%fMonoterpenes*var2d
+
+    call MAPL_GetPointer(impChem, var2d, 'OC_MTPO'//iNAME, __RC__)
+    gcOC%biogvoc_src = gcOC%biogvoc_src + gcOC%fMonoterpenes*var2d
+
+    call MAPL_GetPointer(impChem, var2d, 'OC_LIMO'//iNAME, __RC__)
     gcOC%biogvoc_src = gcOC%biogvoc_src + gcOC%fMonoterpenes*var2d
 
     call MAPL_GetPointer(impChem, var2d, 'OC_ISOPRENE'//iNAME, __RC__)

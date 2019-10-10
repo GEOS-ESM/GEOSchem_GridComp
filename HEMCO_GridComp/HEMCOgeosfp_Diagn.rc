@@ -3,8 +3,7 @@
 #
 # Name           Spec           ExtNr  Cat Hier Dim  Unit
 OC_ISOPRENE      ISOP           108    -1   -1   2   kgC/m2/s
-OC_MONOTERPENES  BIOGENIC_MONX  109    -1   -1   2   kgC/m2/s
-OC_TERPENE       MTPA            -1    -1   -1   2   kg/m2/s
-OC_MTPO          MTPO            -1    -1   -1   2   kg/m2/s
-OC_LIMO          LIMO            -1    -1   -1   2   kg/m2/s
-OC_SESQ          SESQ            -1    -1   -1   2   kg/m2/s
+OC_MTPA          MTPA           109    -1   -1   2   kg/m2/s
+OC_MTPO          MTPO           109    -1   -1   2   kg/m2/s
+OC_LIMO          LIMO           109    -1   -1   2   kg/m2/s
+OC_SESQ          SESQ           109    -1   -1   2   kg/m2/s

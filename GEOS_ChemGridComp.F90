@@ -699,7 +699,7 @@ contains
 ! -----------------------------
   IF( myState%enable_HEMCO .AND. myState%enable_GOCART ) THEN
    CALL MAPL_AddConnectivity ( GC, &
-    SHORT_NAME  = (/ 'OC_MONOTERPENES', 'OC_ISOPRENE    ' /), &
+    SHORT_NAME  = (/ 'OC_ISOPRENE', 'OC_MTPA    ', 'OC_MTPO    ', 'OC_LIMO    '/), &
     SRC_ID=HEMCO, DST_ID=GOCART, __RC__)
   END IF
 
