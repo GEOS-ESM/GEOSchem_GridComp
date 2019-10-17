@@ -1342,36 +1342,6 @@ if ( r%doing_GOCART ) then
 !   --------------------------------------
     do n = r%i_GOCART, r%j_GOCART
 
-       if (state%data_driven) then
-          FRIENDLIES = trim(COMP_NAME)
-          call ESMF_ConfigGetAttribute(CF, AEROFRIENDLY, &
-                    Label='AERO_FRIENDLIES:', default=FRIENDLIES, __RC__)
-       else
-          if (trim(r%vname(n)) == 'OX' .and. &
-              trim(providerName) == 'GOCART') then
-             FRIENDLIES = 'ANALYSIS:DYNAMICS:TURBULENCE:MOIST'
-          else
-             FRIENDLIES = 'DYNAMICS:TURBULENCE:MOIST'
-          end if
-          short_name = uppercase(trim(r%vname(n)))
-          if ( short_name(1:2) .eq. 'DU'    .or. &
-               short_name(1:2) .eq. 'SS'    .or. &
-               short_name(1:2) .eq. 'OC'    .or. &
-               short_name(1:3) .eq. 'BRC'   .or. &
-               short_name(1:2) .eq. 'BC'    .or. &
-               short_name(1:3) .eq. 'DMS'   .or. &
-               short_name(1:3) .eq. 'SO2'   .or. &
-               short_name(1:3) .eq. 'SO4'   .or. &
-               short_name(1:3) .eq. 'MSA'   .or. &
-               short_name(1:3) .eq. 'NH3'   .or. &
-               short_name(1:4) .eq. 'NH4A'  .or. &
-               short_name(1:5) .eq. 'NO3AN' ) then
-             FRIENDLIES = 'DYNAMICS:TURBULENCE'
-          endif
-       end if ! data or computational GC
-       DEFVAL = 0.0
-       if ( short_name(1:3) .eq. 'CO2' ) DEFVAL = DEFVAL_CO2
-
        call MAPL_AddInternalSpec(GC,               &
           SHORT_NAME = trim(COMP_NAME)//'::'//trim(r%vname(n))//'_ForBundle', &
           LONG_NAME  = r%vtitle(n),                &
@@ -1379,6 +1349,16 @@ if ( r%doing_GOCART ) then
           RESTART    = MAPL_RestartOptional,       &
           DIMS       = MAPL_DimsHorzVert,          &
           VLOCATION  = MAPL_VLocationCenter, __RC__)
+
+       ! Also add an export for diagnostics
+       call MAPL_AddExportSpec(GC,                    &
+          SHORT_NAME = trim(r%vname(n))//'_ForRad', &
+          LONG_NAME  = r%vtitle(n),                &
+          UNITS      = r%vunits(n),                &
+          DIMS       = MAPL_DimsHorzVert,             &
+          VLOCATION  = MAPL_VLocationCenter,          &
+          __RC__)
+
     end do
 
 !   This state is needed by radiation - It will contain 
@@ -1935,7 +1915,8 @@ end if ! doing GOCART
              short_name .eq. 'SO4'      .or. &
              short_name .eq. 'SO4V'     )    &
         then
-           ! Point the AEROSOLS export bundle to the internal state fields "_ForBundle"
+           ! Point the AEROSOLS export bundle to the internal state
+           ! fields "_ForBundle"
            call ESMF_StateGet(INTERNAL,                               &
                               trim(COMP_NAME) // '::'//               &
                               trim(ChemReg%vname(n)) // '_ForBundle', &
@@ -2654,6 +2635,7 @@ CONTAINS
    real, pointer, dimension(:,:,:) :: ptr3d_int
    real, pointer, dimension(:,:,:) :: ptr3d_intfb
    real, pointer, dimension(:,:,:) :: ptr3d_imp
+   real, pointer, dimension(:,:,:) :: ptr3d_exp
    
    logical                         :: run_alarm
    logical                         :: alarm_is_ringing
@@ -2841,14 +2823,27 @@ CONTAINS
       CALL MAPL_GetPointer(internal, ptr3d_intfb,     &
                            trim(int_name)//'_ForBundle', __RC__ )
       ptr3d_intfb = ptr3d_int
+      nullify(ptr3d_int)
+      nullify(ptr3d_intfb)
    end do
-   if ( associated( ptr3d_int   ) ) nullify( ptr3d_int   )
-   if ( associated (ptr3d_intfb ) ) nullify( ptr3d_intfb )
+
    if ( w_c%reg%pass_GEOSCHEM ) then
       ! Set verbose to FALSE to turn off print messages
       call copy_geoschem_to_intstate_forbundle_(w_c, impChem, internal, &
                                                 verbose=.TRUE., rc=rc)
    endif
+
+   ! Set the diagnostics for aerosols sent to radiation
+   do n = ChemReg%i_GOCART, ChemReg%j_GOCART
+      int_name = trim(COMP_NAME)//'::'//trim(chemReg%vname(n))
+      CALL MAPL_GetPointer(internal, ptr3d_intfb,     &
+                           trim(int_name)//'_ForBundle', __RC__ )
+      call MAPL_GetPointer (expChem, ptr3d_exp, &
+                            trim(chemReg%vname(n))//'_ForRad', __RC__)
+      ptr3d_exp(:,:,:) = ptr3d_intfb
+      nullify(ptr3d_intfb)
+      nullify(ptr3d_exp)
+   enddo
 
 !  Get the diagnostics
    call MAPL_GetPointer (expChem, totexttau, 'TOTEXTTAU', __RC__)
@@ -2891,6 +2886,7 @@ CONTAINS
    if(associated(pm25_rh50)) pm25_rh50(:,:) = 0.
 
    if(associated(rh2x))      rh2x           = w_c%rh
+
    if(associated(delpx))     delpx          = w_c%delp
 
    if(associated(pso4t))     pso4t(:,:,:)   = 0.
