@@ -43,6 +43,7 @@ NO_air       'kg NO m-2 s-1'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  NO_air		
 NO_lgt       'kg NO m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  NO_lgt		 /dev/null
 NO_pwrp      'kg NO m-2 s-1'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  NO_pp		 /discover/nobackup/lott/g5input/hires/GMI/EDGAR_GMI.emis_no.fossil_biofuel.x1152_y721.t12.2008.nc
 NO_ship      'kg NO m-2 s-1'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  NO_ship  	 /discover/nobackup/lott/g5input/hires/GMI/EDGAR_GMI.emis_no.fossil_biofuel.x1152_y721.t12.2008.nc
+SHIP_NO      'kg NO m-2 s-1'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  NO_ship  	 /discover/nobackup/lott/g5input/hires/GMI/EDGAR_GMI.emis_no.fossil_biofuel.x1152_y721.t12.2008.nc
 CH4_biom    'kg CH4 m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  biomass  	 ExtData/PIESA/../g5chem/sfc/QFED/v2.5r1/0.25/Y%y4/M%m2/qfed2.emis_ch4.006.%y4%m2%d2.nc4
 CH4_aggr    'kg CH4 m-2 s-1'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  CH4_TOT  	 /discover/nobackup/lott/g5input/hires/GMI/TRANSCOM_EDGAR_GMI.emis_ch4.x1152_y721.t12.2005.nc
 MEGAN_ISOP    'mg C m-2 h-1'    Y   Y	-			 none	 none  BIOGSRCE_AEF_ISOP /discover/nobackup/projects/gmao/share/dasilva/fvInput/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc

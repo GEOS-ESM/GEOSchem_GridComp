@@ -1,6 +1,6 @@
 !=======================================================================
 !
-! $Id$
+! $Id: setkin_par.h,v 1.3.10.1 2019/05/31 14:58:18 mmanyin Exp $
 !
 ! FILE
 !   setkin_par.h
@@ -66,130 +66,130 @@
 ! -----------------------------------------------------------------
 
       integer IBBC
-      parameter (IBBC      =   1)
+      parameter (IBBC      =   0)
 
       integer IBOC
-      parameter (IBOC      =   1)
+      parameter (IBOC      =   0)
 
       integer IDUST1
-      parameter (IDUST1    =   1)
+      parameter (IDUST1    =   0)
 
       integer IDUST2
-      parameter (IDUST2    =   1)
+      parameter (IDUST2    =   0)
 
       integer IDUST3
-      parameter (IDUST3    =   1)
+      parameter (IDUST3    =   0)
 
       integer IDUST4
-      parameter (IDUST4    =   1)
+      parameter (IDUST4    =   0)
 
       integer IFBC
-      parameter (IFBC      =   1)
+      parameter (IFBC      =   0)
 
       integer IFOC
-      parameter (IFOC      =   1)
+      parameter (IFOC      =   0)
 
       integer IFSO2
-      parameter (IFSO2     =   1)
+      parameter (IFSO2     =   0)
 
       integer IFSO4A
-      parameter (IFSO4A    =   1)
+      parameter (IFSO4A    =   0)
 
       integer IFSO4D1
-      parameter (IFSO4D1   =   1)
+      parameter (IFSO4D1   =   0)
 
       integer IFSO4D2
-      parameter (IFSO4D2   =   1)
+      parameter (IFSO4D2   =   0)
 
       integer IFSO4D3
-      parameter (IFSO4D3   =   1)
+      parameter (IFSO4D3   =   0)
 
       integer IFSO4D4
-      parameter (IFSO4D4   =   1)
+      parameter (IFSO4D4   =   0)
 
       integer IFSO4N1
-      parameter (IFSO4N1   =   1)
+      parameter (IFSO4N1   =   0)
 
       integer IFSO4N2
-      parameter (IFSO4N2   =   1)
+      parameter (IFSO4N2   =   0)
 
       integer IFSO4N3
-      parameter (IFSO4N3   =   1)
+      parameter (IFSO4N3   =   0)
 
       integer IFSO4N4
-      parameter (IFSO4N4   =   1)
+      parameter (IFSO4N4   =   0)
 
       integer IFSO4S1
-      parameter (IFSO4S1   =   1)
+      parameter (IFSO4S1   =   0)
 
       integer IFSO4S2
-      parameter (IFSO4S2   =   1)
+      parameter (IFSO4S2   =   0)
 
       integer IFSO4S3
-      parameter (IFSO4S3   =   1)
+      parameter (IFSO4S3   =   0)
 
       integer IFSO4S4
-      parameter (IFSO4S4   =   1)
+      parameter (IFSO4S4   =   0)
 
       integer INDMS
-      parameter (INDMS     =   1)
+      parameter (INDMS     =   0)
 
       integer INOC
-      parameter (INOC      =   1)
+      parameter (INOC      =   0)
 
       integer INSO2
-      parameter (INSO2     =   1)
+      parameter (INSO2     =   0)
 
       integer INSO4A
-      parameter (INSO4A    =   1)
+      parameter (INSO4A    =   0)
 
       integer INSO4D1
-      parameter (INSO4D1   =   1)
+      parameter (INSO4D1   =   0)
 
       integer INSO4D2
-      parameter (INSO4D2   =   1)
+      parameter (INSO4D2   =   0)
 
       integer INSO4D3
-      parameter (INSO4D3   =   1)
+      parameter (INSO4D3   =   0)
 
       integer INSO4D4
-      parameter (INSO4D4   =   1)
+      parameter (INSO4D4   =   0)
 
       integer INSO4N1
-      parameter (INSO4N1   =   1)
+      parameter (INSO4N1   =   0)
 
       integer INSO4N2
-      parameter (INSO4N2   =   1)
+      parameter (INSO4N2   =   0)
 
       integer INSO4N3
-      parameter (INSO4N3   =   1)
+      parameter (INSO4N3   =   0)
 
       integer INSO4N4
-      parameter (INSO4N4   =   1)
+      parameter (INSO4N4   =   0)
 
       integer INSO4S1
-      parameter (INSO4S1   =   1)
+      parameter (INSO4S1   =   0)
 
       integer INSO4S2
-      parameter (INSO4S2   =   1)
+      parameter (INSO4S2   =   0)
 
       integer INSO4S3
-      parameter (INSO4S3   =   1)
+      parameter (INSO4S3   =   0)
 
       integer INSO4S4
-      parameter (INSO4S4   =   1)
+      parameter (INSO4S4   =   0)
 
       integer ISSLT1
-      parameter (ISSLT1    =   1)
+      parameter (ISSLT1    =   0)
 
       integer ISSLT2
-      parameter (ISSLT2    =   1)
+      parameter (ISSLT2    =   0)
 
       integer ISSLT3
-      parameter (ISSLT3    =   1)
+      parameter (ISSLT3    =   0)
 
       integer ISSLT4
-      parameter (ISSLT4    =   1)
+      parameter (ISSLT4    =   0)
 
       integer ICH2O
       parameter (ICH2O     =   1)
@@ -348,7 +348,7 @@
 ! -----------------------------------------------------------------
 
       integer ISYNOZ
-      parameter (ISYNOZ   =   1)
+      parameter (ISYNOZ   =   0)
 
 ! -----------------------------------------------------------------
 ! WARNING: In GEOS-5 we no longer transport dehyd and its only 

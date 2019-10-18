@@ -1,6 +1,6 @@
       SUBROUTINE solverd2(dt,requiredDt,examineDt,k,k1Strat,levels,daytime,tropo,m,aj,ak,br,
      &        brcl,bro,brono2,brx,ccl4,ch2o,ch3br,ch3ccl3,ch3cl,ch3o2,ch3ooh,ch4,cho,cl,cl2, 
-     &              chbr3,ch2br2,ch2brcl,chbrcl2,chbr2cl,co2b,sf6b,cl2o2,clo,clono2,clono2e, 
+     &              chbr3,ch2br2,ch2brcl,chbrcl2,chbr2cl,co2,sf6,cl2o2,clo,clono2,clono2e, 
      &            clx,clxe,co,f11,f113,f12,f114,f115,h,h1211,h1301,h1202,h2402,h2o,h2o2,hbr, 
      &         hcfc22,hcfc141b,hcfc142b,hfc23,hfc32,hfc125,hfc134a,hfc143a,hfc152a,hcl,hcle, 
      &   hno3,ho2,ho2no2,hobr,hocl,hocle,lbrono2het,lbrx,lclono2,lclono2het,lclx,lh2o2,lhbr, 
@@ -36,7 +36,7 @@ c... Currently no production or loss of ox at night (rxn 112)
       REAL(KIND=DBL), INTENT(INOUT) :: clx,co,f11,f113,f12,f114,f115,hcfc22
       REAL(KIND=DBL), INTENT(INOUT) :: hcfc141b,hcfc142b,h1301,h1211,h1202,h2402
       REAL(KIND=DBL), INTENT(INOUT) :: hfc23,hfc32,hfc125,hfc134a
-      REAL(KIND=DBL), INTENT(INOUT) :: hfc143a,hfc152a,co2b,sf6b
+      REAL(KIND=DBL), INTENT(INOUT) :: hfc143a,hfc152a,co2,sf6
       REAL(KIND=DBL), INTENT(INOUT) :: chbr3,ch2br2,ch2brcl,chbrcl2,chbr2cl 
       REAL(KIND=DBL), INTENT(INOUT) :: h2o,h2o2,hbr,hcl,hno3,ho2no2
       REAL(KIND=DBL), INTENT(INOUT) :: hobr,hocl,lbrono2het,lclono2,lclono2het
@@ -250,7 +250,7 @@ c...  update hydrocarbon, chlorine  and bromine species
      &                 ak(k,78))*o1d) * n2o*dt
      &                 +ak(k,81)*n*no2*dt 
 
-                  co2b = co2b-aj(12)*co2b
+                  co2 = co2-aj(12)*co2
      &                  +(ak(k,36)*oh+ak(k,122)*o3p)*co *dt 
 
                   ch4 = ch4 -
@@ -261,7 +261,7 @@ c...  update hydrocarbon, chlorine  and bromine species
                   
                   co = co + (aj(11)*ch2o
      &                 +ak(k,52)*cho*m(k)*o2
-     &                 +aj(12)*co2b
+     &                 +aj(12)*co2
      &                 -(ak(k,36)*oh
      &                 +ak(k,122)*o3p)*co )*dt
                   

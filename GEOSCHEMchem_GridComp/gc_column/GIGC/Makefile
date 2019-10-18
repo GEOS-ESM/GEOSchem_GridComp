@@ -44,6 +44,10 @@
 #                              making distclean, for safety's sake.
 #  12 Dec 2014 - R. Yantosca - Define defaults for  ESMF, MAPL, FVdycore
 #                              that can be overridden by cmd line or env var
+#  08 Mar 2018 - E. Lundgren - Remove gigc_initialization_mod, gigc_types_mod, 
+#                              and gchp_utils
+#  21 Dec 2018 - E. Lundgren - Remove compilation condition that xxx.install 
+#                              does not exist
 #EOP
 #------------------------------------------------------------------------------
 #BOC
@@ -67,12 +71,22 @@ LIB=$(ROOTDIR)/lib
 MOD=$(ROOTDIR)/mod
 
 # This code here should get the exact number of the intel version (MDY)
-INTELVERSIONTEXT :=$(shell ifort --version))
-INTELVERSIONTEXT :=$(sort $(INTELVERSIONTEXT))
-LONGVERSION      :=$(word 3, $(INTELVERSIONTEXT))
-MAJORVERSION     :=$(subst ., ,$(LONGVERSION))
-MAJORVERSION     :=$(firstword $(MAJORVERSION))
-MAJORVERSION     :=$(strip $(MAJORVERSION))
+ifeq ($(ESMF_COMPILER),intel)
+  INTELVERSIONTEXT :=$(shell ifort --version))
+  INTELVERSIONTEXT :=$(sort $(INTELVERSIONTEXT))
+  LONGVERSION      :=$(word 3, $(INTELVERSIONTEXT))
+  MAJORVERSION     :=$(subst ., ,$(LONGVERSION))
+  MAJORVERSION     :=$(firstword $(MAJORVERSION))
+  MAJORVERSION     :=$(strip $(MAJORVERSION))
+else ifeq ($(ESMF_COMPILER),gfortran)
+  GNUVERSIONTEXT   :=$(shell gfortran -dumpversion))
+  LONGVERSION      :=$(GNUVERSIONTEXT))
+  MAJORVERSION     :=$(subst ., ,$(LONGVERSION))
+  MAJORVERSION     :=$(firstword $(MAJORVERSION))
+  MAJORVERSION     :=$(strip $(MAJORVERSION))
+else
+  MAJORVERSION     :="0"
+endif
 
 # Include header file.  This returns variables CC, F90, FREEFORM, LD, R8,
 # as well as the default Makefile compilation rules for source code files.
@@ -92,16 +106,14 @@ ifndef ESMF_DIR
   export ESMF_DIR=$(CURDIR)/ESMF
 endif
 
-# Compiler for ESMF
+# Compiler for ESMF - eg intel, intelgcc, gfortran
 ifndef ESMF_COMPILER
-#  export ESMF_COMPILER=intelgcc
-  export ESMF_COMPILER=intel
+   $(error ESMF_COMPILER is not defined)
 endif
 
 # MPI type for ESMF
 ifndef ESMF_COMM
-#  export ESMF_COMM=openmpi
-  export ESMF_COMM=mvapich2
+   $(error ESMF_COMM is not defined)
 endif
 
 # Operating system type for ESMF
@@ -121,7 +133,13 @@ export ESMF_INSTALL_MODDIR=$(ESMF_DIR)/$(ARCH)/mod
 export ESMF_INSTALL_HEADERDIR=$(ESMF_DIR)/$(ARCH)/include
 
 # Other ESMF compilation settings
-export ESMF_F90COMPILEOPTS=-align all -fPIC -traceback 
+ifeq ($(ESMF_COMPILER),intel)
+  export ESMF_F90COMPILEOPTS=-align all -fPIC -traceback 
+else ifeq ($(ESMF_COMPILER),gfortran)
+  export ESMF_F90COMPILEOPTS=-falign-commons -fPIC -fbacktrace
+else
+  export ESMF_F90COMPILEOPTS=-fPIC
+endif
 export ESMF_CXXCOMPILEOPTS=-fPIC
 export ESMF_OPENMP=OFF
 
@@ -210,6 +228,7 @@ endif
 
 baselibs_fvdycore:
 ifeq ($(wildcard $(FVDIR)/fvdycore.install),)
+	@echo "<><>"
 	$(MAKE) -C $(FVDIR) ESMADIR=$(ESMADIR) install
 	@touch $(FVDIR)/fvdycore.install
 endif
@@ -331,27 +350,26 @@ wipeout_fvdycore:
 ###                                                                         ###
 ###############################################################################
 
-Chem_GridCompMod.o          : Chem_GridCompMod.F90 gigc_mpi_wrap.o     \
-		              gigc_chunk_mod.o gigc_diagnostics_mod.o  \
-	                      gigc_chem_utils.o
+GEOSChem.o		    : GEOSChem.F90                                  \
+                              GIGC_GridCompMod.o
 
-GEOSChem.o		    : GEOSChem.F90 GIGC_GridCompMod.o
+Chem_GridCompMod.o          : Chem_GridCompMod.F90                          \
+			      gigc_chunk_mod.o                              \
+                              gigc_historyexports_mod.o                     \
+                              gigc_providerservices_mod.o
+
+GIGC_GridCompMod.o          : GIGC_GridCompMod.F90                          \
+                              Chem_GridCompMod.o                            \
+	                      GEOS_ctmEnvGridComp.o
 
 GEOS_ctmEnvGridComp.o	    : GEOS_ctmEnvGridComp.F90
 
-gigc_chem_utils.o           : gigc_chem_utils.F90
+gigc_chunk_mod.o            : gigc_chunk_mod.F90                            \
+                              gigc_historyexports_mod.o                     \
 
-GIGC_Diagnostics_Mod.o      : GIGC_Diagnostics_Mod.F90
+gigc_historyexports_mod.o   : gigc_historyexports_mod.F90
 
-GIGC_GridCompMod.o          : GIGC_GridCompMod.F90 Chem_GridCompMod.o \
-	                      GEOS_ctmEnvGridComp.o
+gigc_providerservices_mod.o : gigc_providerservices_mod.F90
 
-gigc_initialization_mod.o   : gigc_initialization_mod.F90 gigc_mpi_wrap.o
-
-gigc_chunk_mod.o            : gigc_chunk_mod.F90 gigc_finalization_mod.o \
-			      gigc_initialization_mod.o gc_land_interface.o \
-			      gigc_diagnostics_mod.o
-
-gc_land_inteface.o          : gc_land_interface.F90
 #EOC
 

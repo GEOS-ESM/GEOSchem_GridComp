@@ -363,7 +363,7 @@ CONTAINS
       CALL ESMF_StateGet(state, 'TRADV', TRADV_BUNDLE, __RC__ )
 
       DO i=1,GMI_GROUP_SPECIES_COUNT
-        CALL ESMFL_BundleGetPointerToData(TRADV_BUNDLE, TRIM(gmi_group_species(i)), x(i)%p, __RC__ )
+        CALL ESMFL_BundleGetPointerToData(TRADV_BUNDLE, 'GMICHEM::'//TRIM(gmi_group_species(i)), x(i)%p, __RC__ )
       ENDDO
 
       i1 = LBOUND(x(1)%p,1); i2 = UBOUND(x(1)%p,1)
@@ -373,7 +373,7 @@ CONTAINS
       allocate( qq2(i1:i2,j1:j2,k1:k2), __STAT__ )
 
       DO ig=1,NUMGRP
-        CALL ESMFL_BundleGetPointerToData(TRADV_BUNDLE, TRIM(chem_group_names(ig)), qq1, __RC__ )
+        CALL ESMFL_BundleGetPointerToData(TRADV_BUNDLE, 'GMICHEM::'//TRIM(chem_group_names(ig)), qq1, __RC__ )
 
 !       PACK GROUP  using REAL*8 if possible
 
@@ -408,7 +408,7 @@ CONTAINS
       CALL ESMF_StateGet(state, 'TRADV', TRADV_BUNDLE, __RC__ )
 
       DO i=1,GCC_GROUP_SPECIES_COUNT
-        CALL ESMFL_BundleGetPointerToData(TRADV_BUNDLE, TRIM(gcc_group_species(i)), y(i)%p, __RC__ )
+        CALL ESMFL_BundleGetPointerToData(TRADV_BUNDLE, 'GEOSCHEMCHEM::'//TRIM(gcc_group_species(i)), y(i)%p, __RC__ )
       ENDDO
 
       i1 = LBOUND(y(1)%p,1); i2 = UBOUND(y(1)%p,1)
@@ -418,7 +418,7 @@ CONTAINS
       allocate( qq2(i1:i2,j1:j2,k1:k2), __STAT__ )
 
       DO ig=1,NUMGRP
-        CALL ESMFL_BundleGetPointerToData(TRADV_BUNDLE, TRIM(chem_group_names(ig)), qq1, __RC__ )
+        CALL ESMFL_BundleGetPointerToData(TRADV_BUNDLE, 'GEOSCHEMCHEM::'//TRIM(chem_group_names(ig)), qq1, __RC__ )
 
 !       PACK GROUP  using REAL*8 if possible
 
@@ -456,17 +456,20 @@ CONTAINS
 ! !INTERFACE:
 
 #ifdef CHEM_INFO
- SUBROUTINE Unpack_Chem_Groups(state, PLE, AREA, bry_ratio, aBRCL, aCL2, aOCLO, aCL2O2, aCLO, aHCL, aHOCL, zBRCL, zCL2, zOCLO, zCL2O2, zCLO, zHCL, zHOCL, zBRY, aCLY, zCLY )
+ SUBROUTINE Unpack_Chem_Groups(state, PLE, AREA, Q_separate, bry_ratio, aBRCL, aCL2, aOCLO, aCL2O2, aCLO, aHCL, aHOCL, zBRCL, zCL2, zOCLO, zCL2O2, zCLO, zHCL, zHOCL, zBRY, aCLY, zCLY )
 #else
- SUBROUTINE Unpack_Chem_Groups(state, PLE, AREA)
+ SUBROUTINE Unpack_Chem_Groups(state, PLE, AREA, Q_separate)
 #endif
 
   IMPLICIT NONE
 
 ! !ARGUMENTS
    type(ESMF_State), intent(in) :: state
-   REAL*4, POINTER, DIMENSION(:,:,:)  :: PLE
-   REAL*4, POINTER, DIMENSION(:,:)    :: AREA
+   REAL*4, POINTER, DIMENSION(:,:,:), INTENT(IN)           :: PLE
+   REAL*4, POINTER, DIMENSION(:,:),   INTENT(IN)           :: AREA
+   REAL*4, POINTER, DIMENSION(:,:,:), INTENT(IN), OPTIONAL :: Q_separate  ! water vapor  [kg vapor / kg moist air]
+                                                                          ! option to provide Q separate from the advection bundle,
+                                                                          ! otherwise we get Q from that bundle (TRADV)
 #ifdef CHEM_INFO
    REAL*4, POINTER, DIMENSION(:,:,:)  :: bry_ratio, aBRCL, aCL2, aOCLO, aCL2O2, aCLO, aHCL, aHOCL
    REAL*4, POINTER, DIMENSION(:,:,:)  ::            zBRCL, zCL2, zOCLO, zCL2O2, zCLO, zHCL, zHOCL
@@ -539,11 +542,16 @@ CONTAINS
 
       CALL ESMF_StateGet(state, 'TRADV', TRADV_BUNDLE, __RC__ )
 
-      CALL ESMFL_BundleGetPointerToData(TRADV_BUNDLE, 'Q', Q, __RC__ )
+      IF ( PRESENT(Q_separate) ) THEN
+        Q => Q_separate
+      ELSE
+        CALL ESMFL_BundleGetPointerToData(TRADV_BUNDLE, 'Q', Q, __RC__ )
+      ENDIF
+
       kmol_per_kg_AIR(:,:,:) = (1.0 - Q(:,:,:))/MAPL_AIRMW + Q(:,:,:)/MAPL_H2OMW
 
       DO ig=1,NUMGRP
-        CALL ESMFL_BundleGetPointerToData(TRADV_BUNDLE, TRIM(chem_group_names(ig)), qq1, __RC__ )
+        CALL ESMFL_BundleGetPointerToData(TRADV_BUNDLE, 'GMICHEM::'//TRIM(chem_group_names(ig)), qq1, __RC__ )
 !
 !  BASED ON INCLUDE FILE  vvv
 !
@@ -674,12 +682,13 @@ CONTAINS
 
           elsewhere
 
-            x(iCL2  )%p(:,:,:) = x(iCL2  )%p(:,:,:) + BRCL_diff(:,:,:) / 12.0
-            x(iOCLO )%p(:,:,:) = x(iOCLO )%p(:,:,:) + BRCL_diff(:,:,:) /  6.0
-            x(iCL2O2)%p(:,:,:) = x(iCL2O2)%p(:,:,:) + BRCL_diff(:,:,:) / 12.0
-            x(iCLO  )%p(:,:,:) = x(iCLO  )%p(:,:,:) + BRCL_diff(:,:,:) /  6.0
-            x(iHCL  )%p(:,:,:) = x(iHCL  )%p(:,:,:) + BRCL_diff(:,:,:) /  6.0
-            x(iHOCL )%p(:,:,:) = x(iHOCL )%p(:,:,:) + BRCL_diff(:,:,:) /  6.0
+            ! Add to species (subtract a negative):
+            x(iCL2  )%p(:,:,:) = x(iCL2  )%p(:,:,:) - BRCL_diff(:,:,:) / 12.0
+            x(iOCLO )%p(:,:,:) = x(iOCLO )%p(:,:,:) - BRCL_diff(:,:,:) /  6.0
+            x(iCL2O2)%p(:,:,:) = x(iCL2O2)%p(:,:,:) - BRCL_diff(:,:,:) / 12.0
+            x(iCLO  )%p(:,:,:) = x(iCLO  )%p(:,:,:) - BRCL_diff(:,:,:) /  6.0
+            x(iHCL  )%p(:,:,:) = x(iHCL  )%p(:,:,:) - BRCL_diff(:,:,:) /  6.0
+            x(iHOCL )%p(:,:,:) = x(iHOCL )%p(:,:,:) - BRCL_diff(:,:,:) /  6.0
 
           end where
 
@@ -735,10 +744,11 @@ CONTAINS
 
           elsewhere
 
-            x(iN2O5)%p(:,:,:) = x(iN2O5)%p(:,:,:) + CLONO2_diff(:,:,:) / 8.0
-            x(iNO  )%p(:,:,:) = x(iNO  )%p(:,:,:) + CLONO2_diff(:,:,:) / 4.0
-            x(iNO2 )%p(:,:,:) = x(iNO2 )%p(:,:,:) + CLONO2_diff(:,:,:) / 4.0
-            x(iHNO3)%p(:,:,:) = x(iHNO3)%p(:,:,:) + CLONO2_diff(:,:,:) / 4.0
+            ! Add to species (subtract a negative):
+            x(iN2O5)%p(:,:,:) = x(iN2O5)%p(:,:,:) - CLONO2_diff(:,:,:) / 8.0
+            x(iNO  )%p(:,:,:) = x(iNO  )%p(:,:,:) - CLONO2_diff(:,:,:) / 4.0
+            x(iNO2 )%p(:,:,:) = x(iNO2 )%p(:,:,:) - CLONO2_diff(:,:,:) / 4.0
+            x(iHNO3)%p(:,:,:) = x(iHNO3)%p(:,:,:) - CLONO2_diff(:,:,:) / 4.0
 
           end where
         end where
@@ -808,7 +818,7 @@ CONTAINS
       CALL ESMF_StateGet(state, 'TRADV', TRADV_BUNDLE, __RC__ )
 
       DO ig=1,NUMGRP
-        CALL ESMFL_BundleGetPointerToData(TRADV_BUNDLE, TRIM(chem_group_names(ig)), qq1, __RC__ )
+        CALL ESMFL_BundleGetPointerToData(TRADV_BUNDLE, 'GEOSCHEMCHEM::'//TRIM(chem_group_names(ig)), qq1, __RC__ )
 !
 !  BASED ON INCLUDE FILE  vvv
 !
@@ -927,12 +937,13 @@ CONTAINS
 
           elsewhere
 
-            y(iCL2  )%p(:,:,:) = y(iCL2  )%p(:,:,:) + BRCL_diff(:,:,:) / 12.0  * mw_CL2
-            y(iOCLO )%p(:,:,:) = y(iOCLO )%p(:,:,:) + BRCL_diff(:,:,:) /  6.0  * mw_OCLO
-            y(iCL2O2)%p(:,:,:) = y(iCL2O2)%p(:,:,:) + BRCL_diff(:,:,:) / 12.0  * mw_CL2O2
-            y(iCLO  )%p(:,:,:) = y(iCLO  )%p(:,:,:) + BRCL_diff(:,:,:) /  6.0  * mw_CLO
-            y(iHCL  )%p(:,:,:) = y(iHCL  )%p(:,:,:) + BRCL_diff(:,:,:) /  6.0  * mw_HCL
-            y(iHOCL )%p(:,:,:) = y(iHOCL )%p(:,:,:) + BRCL_diff(:,:,:) /  6.0  * mw_HOCL
+            ! Add to species (subtract a negative):
+            y(iCL2  )%p(:,:,:) = y(iCL2  )%p(:,:,:) - BRCL_diff(:,:,:) / 12.0  * mw_CL2
+            y(iOCLO )%p(:,:,:) = y(iOCLO )%p(:,:,:) - BRCL_diff(:,:,:) /  6.0  * mw_OCLO
+            y(iCL2O2)%p(:,:,:) = y(iCL2O2)%p(:,:,:) - BRCL_diff(:,:,:) / 12.0  * mw_CL2O2
+            y(iCLO  )%p(:,:,:) = y(iCLO  )%p(:,:,:) - BRCL_diff(:,:,:) /  6.0  * mw_CLO
+            y(iHCL  )%p(:,:,:) = y(iHCL  )%p(:,:,:) - BRCL_diff(:,:,:) /  6.0  * mw_HCL
+            y(iHOCL )%p(:,:,:) = y(iHOCL )%p(:,:,:) - BRCL_diff(:,:,:) /  6.0  * mw_HOCL
 
           end where
 
@@ -991,10 +1002,11 @@ CONTAINS
 
           elsewhere
 
-            y(iN2O5)%p(:,:,:) = y(iN2O5)%p(:,:,:) + CLNOX_diff(:,:,:) / 8.0 * mw_N2O5
-            y(iNO  )%p(:,:,:) = y(iNO  )%p(:,:,:) + CLNOX_diff(:,:,:) / 4.0 * mw_NO
-            y(iNO2 )%p(:,:,:) = y(iNO2 )%p(:,:,:) + CLNOX_diff(:,:,:) / 4.0 * mw_NO2
-            y(iHNO3)%p(:,:,:) = y(iHNO3)%p(:,:,:) + CLNOX_diff(:,:,:) / 4.0 * mw_HNO3
+            ! Add to species (subtract a negative):
+            y(iN2O5)%p(:,:,:) = y(iN2O5)%p(:,:,:) - CLNOX_diff(:,:,:) / 8.0 * mw_N2O5
+            y(iNO  )%p(:,:,:) = y(iNO  )%p(:,:,:) - CLNOX_diff(:,:,:) / 4.0 * mw_NO
+            y(iNO2 )%p(:,:,:) = y(iNO2 )%p(:,:,:) - CLNOX_diff(:,:,:) / 4.0 * mw_NO2
+            y(iHNO3)%p(:,:,:) = y(iHNO3)%p(:,:,:) - CLNOX_diff(:,:,:) / 4.0 * mw_HNO3
 
           end where
 

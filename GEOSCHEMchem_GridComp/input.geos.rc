@@ -5,7 +5,16 @@ Start YYYYMMDD, hhmmss  : 20130701 000000
 End   YYYYMMDD, hhmmss  : 20130801 000000
 Run directory           : ./
 Root data directory     : /discover/nobackup/cakelle2/data
-Global offsets I0, J0   : 0 0
+Met field               : geosfp
+------------------------+------------------------------------------------------
+%%% GRID MENU %%%       :
+Grid resolution         : 4.0x5.0
+Longitude min/max       : -180.0 180.0
+Latitude  min/max       : -90.0   90.0
+ Half-sized polar boxes?: T
+Number of levels        : 72
+Nested grid simulation? : F
+ Buffer zone (N S E W ) :  0  0  0  0
 ------------------------+------------------------------------------------------
 %%% TIMESTEP MENU %%%   :
 Tran/conv timestep [sec]: 600
@@ -219,7 +228,7 @@ Switches for UCX        :---
     => OCS?             : T
     => CFCs?            : T
     => Cl species?      : T
-    => Br species?      : F
+    => Br species?      : T
     => N2O?             : T
  => Set initial glob MRs:---
     => strat. H2O?      : F
@@ -266,6 +275,9 @@ Overhead O3 for FAST-JX :---
  => TOMS/SBUV O3        : F
 Gamma HO2               : 0.2
 ------------------------+------------------------------------------------------
+%%% PHOTOLYSIS MENU %%% :
+FAST-JX directory       : /discover/nobackup/cakelle2/data/CHEM_INPUTS/FAST_JX/v2019-06/
+------------------------+------------------------------------------------------
 %%% RADIATION MENU %%%  :
 AOD Wavelength (nm)     : 550
 Turn on RRTMG?          : F
@@ -274,8 +286,6 @@ Calculate SW fluxes?    : F
 Clear-sky flux?         : F
 All-sky flux?           : F
 Radiation Timestep [sec]: 10800
-Species fluxes          : 0 0 0 0 0 0 0 0 0 1 0
- ---[O3,ME,SU,NI,AM,BC,OA,SS,DU,PM,ST]
 ------------------------+------------------------------------------------------
 %%% OUTPUT MENU %%%     : 123456789.123456789.123456789.1--1=ZERO+2=BPCH
 Schedule output for JAN : 3000000000000000000000000000000
@@ -371,6 +381,13 @@ Turn on plane flt diag? : F
 Flight track info file  : Planeflight.dat.YYYYMMDD
 Output file name        : plane.log.YYYYMMDD
 ------------------------+------------------------------------------------------
+%%% OBSPACK MENU %%%    :
+Turn on ObsPack diag?   : F
+Quiet logfile output    : F
+ObsPack input file      : ./obspack_co2_1_OCO2MIP_2018-11-28.YYYYMMDD.nc
+ObsPack output file     : GEOSChem.ObsPack.YYYYMMDD_hhmmz.nc4
+ObsPack output species  : NO CO O3
+------------------------+------------------------------------------------------
 %%% ND48 MENU %%%       :
 Turn on ND48 stations   : F
 Station Timeseries file : stations.YYYYMMDD
@@ -436,24 +453,6 @@ Save CO P/L (ND20)?     : F
 Save benchmark output?  : T
 File w/ initial Ox      : Ox.mass.initial
 File w/ final Ox        : Ox.mass.final
-------------------------+------------------------------------------------------
-%%% NESTED GRID MENU %%%:
-Save TPCORE BC's        : F
-Input BCs at 2x2.5?     : F
-Over North America?     : F
-TPCORE NA BC directory  : BC_4x5_NA/
-Over Europe?            : F
-TPCORE EU BC directory  : BC_4x5_EU/
-Over China?             : F
-TPCORE CH BC directory  : BC_4x5_CH/
-Over Asia?              : F
-TPCORE AS BC directory  : BC_4x5_AS/
-Over Custom Region?     : F
-TPCORE BC directory     : BC_4x5/
-BC timestep [sec]       : 10800
-LL box of BC region     :   9  26
-UR box of BC region     :  29  41
-I0_W, J0_W, I0_E, J0_E  :   3   3   3   3
 ------------------------+------------------------------------------------------
 END OF FILE             :
 ------------------------+------------------------------------------------------
