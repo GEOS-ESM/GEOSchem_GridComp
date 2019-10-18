@@ -269,7 +269,7 @@
 
 ! Species placement in w_c%qa(ic)%data3d 
 ! --------------------------------------
-    INTEGER ::    iAoA,     iCO2b,    iSF6b
+    INTEGER ::    iAoA,      iCO2,    iSF6
     INTEGER :: 	   iOx,      iNOx,    iHNO3,     iN2O5
     INTEGER :: iHO2NO2,   iClONO2,     iClx,      iHCl
     INTEGER ::   iHOCl,     iH2O2,     iBrx,      iN2O
@@ -650,8 +650,8 @@ CONTAINS
     IF(TRIM(w_c%reg%vname(i)) == "HFC134A") gcSC%iHFC134a = i
     IF(TRIM(w_c%reg%vname(i)) == "HFC143A") gcSC%iHFC143a = i
     IF(TRIM(w_c%reg%vname(i)) == "HFC152A") gcSC%iHFC152a = i
-    IF(TRIM(w_c%reg%vname(i)) ==    "CO2B") gcSC%iCO2b = i
-    IF(TRIM(w_c%reg%vname(i)) ==    "SF6B") gcSC%iSF6b = i
+    IF(TRIM(w_c%reg%vname(i)) ==     "CO2") gcSC%iCO2 = i
+    IF(TRIM(w_c%reg%vname(i)) ==     "SF6") gcSC%iSF6 = i
     IF(TRIM(w_c%reg%vname(i)) == "AOADAYS") gcSC%iAoA = i
     IF(TRIM(w_c%reg%vname(i)) ==  "O3CHEM") gcSC%iO3 = i
     IF(TRIM(w_c%reg%vname(i)) ==     "O3P") gcSC%iO3p = i
@@ -1366,7 +1366,7 @@ CONTAINS
    REAL(KIND=DBL) ::    oclo,     brcl,      hbr,  brono2,     ch4
    REAL(KIND=DBL) ::    hobr,   ch3ooh,       co,   hno3c,    ccl4
    REAL(KIND=DBL) ::     f11,      f12,     f113,    f114,    f115
-   REAL(KIND=DBL) ::  hcfc22, hcfc141b, hcfc142b,    co2b,    sf6b
+   REAL(KIND=DBL) ::  hcfc22, hcfc141b, hcfc142b,     co2,    sf6
    REAL(KIND=DBL) ::   h1301,    h1211,    h1202,   h2402
    REAL(KIND=DBL) ::   chbr3,   ch2br2,  ch2brcl, chbr2cl, chbrcl2
    REAL(KIND=DBL) :: ch3ccl3,    ch3cl,    ch3br,   hfc23,   hfc32
@@ -1983,7 +1983,7 @@ CONTAINS
       CALL SSGSfcFlx(cellDepth(1),cellVolume(1),numDens(1),numDensDry(1),n2o,ch4, &
                      f11,f12,f113,f114,f115,ccl4,ch3ccl3,ch3cl,ch3br,h1301,h1211, &
                        h1202,h2402,hcfc22,hcfc141b,hcfc142b,chbr3,ch2br2,ch2brcl, &
-                    chbrcl2,chbr2cl,co2b,sf6b,hfc23,hfc32,hfc125,hfc134a,hfc143a, &
+                      chbrcl2,chbr2cl,co2,sf6,hfc23,hfc32,hfc125,hfc134a,hfc143a, &
                                      hfc152a,mcfcolumn,ctccolumn,oro(i,j),status)
 
       VERIFY_(status)
@@ -2015,7 +2015,7 @@ CONTAINS
      CALL storeBaseChem(ox,nox,hno3,n2o5,ho2no2,clono2,clx,hcl,hocl,h2o2,brx,n2o,cl2, &
                  oclo,brcl,hbr,brono2,ch4,hobr,ch3ooh,co,h2o,hno3c,h2oc,f11,f12,f113, &
                 f114,f115,ccl4,hcfc22,hcfc141b,hcfc142b,chbr3,ch2br2,ch2brcl,chbrcl2, &
-                        chbr2cl,hfc23,hfc32,hfc125,hfc134a,hfc143a,hfc152a,co2b,sf6b, &
+                          chbr2cl,hfc23,hfc32,hfc125,hfc134a,hfc143a,hfc152a,co2,sf6, &
                ch3ccl3,ch3cl,ch3br,h1301,h1211,h1202,h2402,o3,o3p,o1d,n,no,no2,no3,h, & 
               oh,ho2,cl,clo,bro,br,cl2o2,ch2o,ch3o2,box_ro3ox,speciesBase,numSpecies)
 
@@ -2043,7 +2043,7 @@ CONTAINS
         CALL getBaseChem(ox,nox,hno3,n2o5,ho2no2,clono2,clx,hcl,hocl,h2o2,brx,n2o,cl2, &
                   oclo,brcl,hbr,brono2,ch4,hobr,ch3ooh,co,h2o,hno3c,h2oc,f11,f12,f113, &
                  f114,f115,ccl4,hcfc22,hcfc141b,hcfc142b,chbr3,ch2br2,ch2brcl,chbrcl2, &
-                         chbr2cl,hfc23,hfc32,hfc125,hfc134a,hfc143a,hfc152a,co2b,sf6b, &
+                          chbr2cl,hfc23,hfc32,hfc125,hfc134a,hfc143a,hfc152a,co2,sf6,  &
                 ch3ccl3,ch3cl,ch3br,h1301,h1211,h1202,h2402,o3,o3p,o1d,n,no,no2,no3,h, &           
                oh,ho2,cl,clo,bro,br,cl2o2,ch2o,ch3o2,box_ro3ox,speciesBase,numSpecies)
         passNumber = 1
@@ -2064,9 +2064,9 @@ CONTAINS
 ! Calculate SF6 photochemical loss using climatological loss rates from GSFC2D
 ! ----------------------------------------------------------------------------
 #ifndef REDUCED
-      sf6b = sf6b - sf6b*climSF6LOSSProfile(k)*tdt
+      sf6 = sf6 - sf6*climSF6LOSSProfile(k)*tdt
 !   Should increase the loss when addressing "lifetime" concerns
-!     sf6b = sf6b - sf6b*10*climSF6LOSSProfile(k)*tdt 
+!     sf6 = sf6 - sf6*10*climSF6LOSSProfile(k)*tdt 
 #endif
 
 ! Parameterized scavenging of species in the troposphere
@@ -2967,7 +2967,7 @@ CONTAINS
 
  SUBROUTINE SSGSfcFlx(dZ,dV,m,mdry,n2o,ch4,f11,f12,f113,f114,f115,ccl4,ch3ccl3, &
                   ch3cl,ch3br,h1301,h1211,h1202,h2402,hcfc22,hcfc141b,hcfc142b, &
-                                chbr3,ch2br2,ch2brcl,chbrcl2,chbr2cl,co2b,sf6b, &
+                                 chbr3,ch2br2,ch2brcl,chbrcl2,chbr2cl,co2,sf6,  &
                                     hfc23,hfc32,hfc125,hfc134a,hfc143a,hfc152a, &
                                                           mcfcol,ctccol,lwi,rc)
 
@@ -2994,7 +2994,7 @@ CONTAINS
   INTEGER, PARAMETER :: DBL=KIND(0.00D+00)
   REAL(KIND=DBL), INTENT(INOUT) :: n2o,ch4,f11,f12,f113,f114,f115,ccl4,ch3ccl3
   REAL(KIND=DBL), INTENT(INOUT) :: ch3cl,ch3br,h1301,h1211,h1202,h2402
-  REAL(KIND=DBL), INTENT(INOUT) :: hcfc22,hcfc141b,hcfc142b,co2b,sf6b
+  REAL(KIND=DBL), INTENT(INOUT) :: hcfc22,hcfc141b,hcfc142b,co2,sf6
   REAL(KIND=DBL), INTENT(INOUT) :: chbr3,ch2br2,ch2brcl,chbrcl2,chbr2cl
   REAL(KIND=DBL), INTENT(INOUT) :: hfc23,hfc32,hfc125,hfc134a,hfc143a,hfc152a
 
@@ -3151,8 +3151,8 @@ CONTAINS
   END IF
 
 #ifndef REDUCED
-  co2b  = gcSC%CO2MBC2D(i,j)  * mdry * 1.00E-06
-  sf6b  = gcSC%SF6MBC2D(i,j)  * mdry * 1.00E-12    
+  co2   = gcSC%CO2MBC2D(i,j)  * mdry * 1.00E-06
+  sf6   = gcSC%SF6MBC2D(i,j)  * mdry * 1.00E-12    
 #endif
  
 ! Find the flux per unit time
@@ -3250,8 +3250,8 @@ CONTAINS
       hfc134a = w_c%qa( gcSC%iHFC134a)%data3d(i,j,kRev)*m
       hfc143a = w_c%qa( gcSC%iHFC143a)%data3d(i,j,kRev)*m
       hfc152a = w_c%qa( gcSC%iHFC152a)%data3d(i,j,kRev)*m
-         co2b = w_c%qa(    gcSC%iCO2b)%data3d(i,j,kRev)*m
-         sf6b = w_c%qa(    gcSC%iSF6b)%data3d(i,j,kRev)*m
+          co2 = w_c%qa(     gcSC%iCO2)%data3d(i,j,kRev)*m
+          sf6 = w_c%qa(     gcSC%iSF6)%data3d(i,j,kRev)*m
            o3 = w_c%qa(      gcSC%iO3)%data3d(i,j,kRev)*m
           o3p = w_c%qa(     gcSC%iO3p)%data3d(i,j,kRev)*m
           o1d = w_c%qa(     gcSC%iO1d)%data3d(i,j,kRev)*m
@@ -3322,8 +3322,8 @@ CONTAINS
      w_c%qa( gcSC%iHFC134a)%data3d(i,j,kRev) =  hfc134a*rm
      w_c%qa( gcSC%iHFC143a)%data3d(i,j,kRev) =  hfc143a*rm
      w_c%qa( gcSC%iHFC152a)%data3d(i,j,kRev) =  hfc152a*rm
-     w_c%qa(    gcSC%iCO2b)%data3d(i,j,kRev) =     co2b*rm
-     w_c%qa(    gcSC%iSF6b)%data3d(i,j,kRev) =     sf6b*rm
+     w_c%qa(     gcSC%iCO2)%data3d(i,j,kRev) =      co2*rm
+     w_c%qa(     gcSC%iSF6)%data3d(i,j,kRev) =      sf6*rm
      w_c%qa(      gcSC%iO3)%data3d(i,j,kRev) =       o3*rm
      w_c%qa(     gcSC%iO3p)%data3d(i,j,kRev) =      o3p*rm
      w_c%qa(     gcSC%iO1d)%data3d(i,j,kRev) =      o1d*rm
@@ -3520,7 +3520,7 @@ CONTAINS
 
        CALL solverd2(dt,requiredDt,examineDt,k,k1Strat,km,daytime,tropo,numDens,aj,ak,br, &
            brcl,bro,brono2,brx,ccl4,ch2o,ch3br,ch3ccl3,ch3cl,ch3o2,ch3ooh,ch4,cho,cl,cl2, &
-                 chbr3,ch2br2,ch2brcl,chbrcl2,chbr2cl,co2b,sf6b,cl2o2,clo,clono2,clono2e, &
+                   chbr3,ch2br2,ch2brcl,chbrcl2,chbr2cl,co2,sf6,cl2o2,clo,clono2,clono2e, &
                clx,clxe,co,f11,f113,f12,f114,f115,h,h1211,h1301,h1202,h2402,h2o,h2o2,hbr, &
             hcfc22,hcfc141b,hcfc142b,hfc23,hfc32,hfc125,hfc134a,hfc143a,hfc152a,hcl,hcle, &
       hno3,ho2,ho2no2,hobr,hocl,hocle,lbrono2het,lbrx,lclono2,lclono2het,lclx,lh2o2,lhbr, &

@@ -116,7 +116,7 @@
 
 ! Variables for Ship Emissions
 ! ----------------------------
-   INTEGER :: jnoxnum
+   INTEGER :: jno2num
    LOGICAL :: do_ShipEmission
    LOGICAL :: do_semiss_inchem
 
@@ -311,7 +311,6 @@ CONTAINS
    REAL :: qmin, qmax, tokgCPerBox
 
    real(rPrec), pointer :: var(:,:,:)
-   real(rPrec), pointer :: jNO2val(:,:)
    type(ESMF_FieldBundle)      :: qjBundle
    type(ESMF_FieldBundle)      :: tAreaBundle
    type(ESMF_FieldBundle)      :: eRadiusBundle 
@@ -319,6 +318,9 @@ CONTAINS
    character (len=4) :: binName
    character(len=ESMF_MAXSTR) :: varName
    real(r8)  :: hugeReal
+   integer   :: badIndex = -9999
+   integer   :: IXj
+   REAL, POINTER, DIMENSION(:,:) :: jNO2val_phot
 
 ! Grid cell area can be set by initialize
 ! ---------------------------------------
@@ -461,9 +463,19 @@ CONTAINS
      &          LABEL="Prather_jNO_factor:", DEFAULT=1.00, RC=STATUS )
       VERIFY_(STATUS)
 
-      CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%jNOindex, &
-     &                 LABEL="jNO_index:", DEFAULT=6, RC=STATUS )
-      VERIFY_(STATUS)
+      found = .FALSE.
+      i = 1
+      DO WHILE (.NOT. found .AND. i <= NUM_J)
+        IF ( TRIM(lqjchem(i)) == 'NO + hv = N + O' ) THEN
+          self%jNOindex = i
+          found = .TRUE.
+        END IF
+       i = i+1
+      END DO
+      IF ( .NOT. found ) THEN
+        STATUS = 123
+        VERIFY_(STATUS)
+      END IF
 
 !... do solar cycle in incoming solar flux?
 
@@ -1017,7 +1029,7 @@ CONTAINS
       VERIFY_(STATUS)
       var(:,:,:)  = 0.0d0
 
-      call addTracerToBundle (qjBundle, var, w_c%grid_esmf, TRIM(self%qj_labels(ib)))
+      call addTracerToBundle (qjBundle, var, w_c%grid_esmf, self%qj_labels(ib))
    end do
 
    ! Sanity check
@@ -1076,26 +1088,26 @@ CONTAINS
       ! Initial Settings for Ship Emissions
       !------------------------------------
 
-      self%jnoxnum = 999
+      self%jno2num = badIndex
 
       if (self%do_ShipEmission) then
          do ic=1, NUM_J
             if (TRIM(self%chem_mecha) ==         'strat_trop' .OR. &
 	        TRIM(self%chem_mecha) == 'strat_trop_aerosol') THEN
-               if (Trim(self%qj_labels(ic)) =='NO2 + hv = NO + O') self%jnoxnum = ic
+               if (Trim(self%qj_labels(ic)) =='NO2 + hv = NO + O') self%jno2num = ic
             else if (TRIM(self%chem_mecha) == 'troposphere') then
-               if (Trim(self%qj_labels(ic)) =='NO2 + hv = NO + O3') self%jnoxnum = ic
+               if (Trim(self%qj_labels(ic)) =='NO2 + hv = NO + O3') self%jno2num = ic
             endif
          end do
-         if (self%jnoxnum.eq.999) then
-            print*,'jnoxnum not found in GmiPhotolysis_GridCompInitialize'
+         if (self%jno2num .eq. badIndex) then
+            print*,'jno2num not found in GmiPhotolysis_GridCompInitialize'
             stop
          endif
-      endif
 
-      ALLOCATE (jNO2val(i1:i2,j1:j2))
-      jNO2val(i1:i2,j1:j2) = 0.0
-      CALL initDataInStateField(expChem, w_c%grid_esmf, jNO2val,  'jNO2val')
+         ALLOCATE (jNO2val_phot(i1:i2,j1:j2))
+         jNO2val_phot(i1:i2,j1:j2) = 0.0
+         CALL initDataInStateField(expChem, w_c%grid_esmf, jNO2val_phot,  'jNO2val')
+      endif
 
     !---------------------------------------------------------------
     ! Create and populate the array that maps GMI species indices to
@@ -1198,7 +1210,7 @@ CONTAINS
    REAL, POINTER, DIMENSION(:,:,:) :: SSAOD, SSAHYGRO, SSASA, SSCOD, SSCHYGRO, SSCSA
 
 !  Export for Ship Emissions
-   REAL(rPrec), POINTER, DIMENSION(:,:) :: jNO2val
+   REAL, POINTER, DIMENSION(:,:) :: jNO2val_phot
 
 !  Local
 !  -----
@@ -1210,7 +1222,6 @@ CONTAINS
    INTEGER :: ihi, julo, jhi, ju1,  k1, k2, ilong, ilat
    INTEGER :: loc_proc
    INTEGER :: n, STATUS
-   INTEGER :: num_emiss, shipEmissRecNum
 
    INTEGER, PARAMETER :: ToGMI = 1
    INTEGER, PARAMETER :: FromGMI = -1
@@ -2207,14 +2218,17 @@ CONTAINS
 
 ! Ship Emisssions
 ! ---------------
-  if ((self%do_ShipEmission) .and. (self%do_semiss_inchem)) then
-     ALLOCATE (jNO2val(i1:i2,j1:j2),STAT=STATUS)
+  if (self%do_ShipEmission)  then
+
+     w_c%qa(w_c%reg%j_XX)%data3d(i1:i2,j1:j2,km-1) = self%qjgmi(self%jno2num)%pArray3D(:,:,1)
+
+     ALLOCATE (jNO2val_phot(i1:i2,j1:j2),STAT=STATUS)
      VERIFY_(STATUS)
 
-     jNO2val(:,:) = self%qjgmi(self%jnoxnum)%pArray3D(:,:,1)
-     CALL setDataToStateField(expChem,  jNO2val,  'jNO2val')
+     jNO2val_phot(:,:) = self%qjgmi(self%jno2num)%pArray3D(:,:,1)
+     CALL setDataToStateField(expChem,  jNO2val_phot,  'jNO2val')
      
-     DEALLOCATE (jNO2val,STAT=STATUS)
+     DEALLOCATE (jNO2val_phot,STAT=STATUS)
      VERIFY_(STATUS)
   end if
 

@@ -149,8 +149,8 @@
   HFC134A_SCTEND    | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_HFC134A
   HFC143A_SCTEND    | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_HFC143A
   HFC152A_SCTEND    | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_HFC152A
-  CO2B_SCTEND       | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_lat-depedent_CO2  
-  SF6B_SCTEND       | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_SF6
+  CO2_SCTEND        | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_lat-depedent_CO2  
+  SF6_SCTEND        | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_SF6
   AOADAYS_SCTEND    | days s-1       | xyz | C |    |   |   |     | chemical_rate_of_change_AOADAYS
   QQJ001            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-CFC11
   QQJ002            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-CFC12
@@ -278,8 +278,8 @@
   HFC134A       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CH2FCF3
   HFC143A       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CF3CH3
   HFC152A       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CH2CHF2
-  CO2B          | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | lat-depedent_CO2  
-  SF6B          | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | sulfur_hexafluoride 
+  CO2           | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | lat-depedent_CO2  
+  SF6           | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | sulfur_hexafluoride 
   AOADAYS       | days       | xyz | C |    |   |   |     |      |    |    | D,T,C   | age-of-air
   O3CHEM        | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | ozone_from_chemistry
   O3P           | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | atomic_oxygen_in_the_ground_state

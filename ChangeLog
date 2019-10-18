@@ -1,4 +1,36 @@
 AeroChem ChangeLog
+2019-06-21 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_15
+    * In bundles, chem tracers now have grid comp prefix, to
+      eliminate naming collisions
+
+2019-05-05 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_14
+    * Tendencies are now computed using the Bundle approach from Elliot
+
+2018-11-29 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_MERGE_8
+    * NI can now use HNO3 from GMI, and export changes back too
+
+2018-11-02 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_MERGE_7a
+    * Increased GEOS-Chem wet removal.
+    * Now GEOS-Chem allows SZA through 98 degrees.
+    * Made Bry&Cly family transport more robust.
+
+2018-10-17 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_MERGE_7
+    * Corrected the TH and T imports to chem (when SYNCTQ).
+
+2018-10-10 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_MERGE_6
+    * Support 132 levels in GMI
+    * Clarified which GOCART and TR import rst fields to skip
+
+2018-09-12 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_MERGE_5
+    * Integrated GEOS-Chem v1102f into the Merged CHEM tag
+
+2018-08-31 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_MERGE_4
+    * Added wet/dry distinction for HSTAR in GMI
+    * Added family transport for Bry and Cly in GMI
+
+2018-08-28 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_MERGE_3-r2
+    * Option to taper QV above tropopause during Replay
+
 2018-07-17 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_MERGE_3-r1
     * In StratChem turn off surface fluxes for CFC-11, etc by default
     * Renamed StratChem SF6 to SF6B in several Chem Registries
