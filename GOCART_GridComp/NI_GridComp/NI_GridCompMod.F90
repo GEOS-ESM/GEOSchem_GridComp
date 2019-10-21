@@ -31,7 +31,6 @@
    use DryDepositionMod      ! Dry Deposition
    use WetRemovalMod         ! Large-scale Wet Removal
    use ConvectionMod         ! Offline convective mixing/scavenging
-   USE m_chars, ONLY: lowercase, uppercase
    USE Henrys_law_ConstantsMod, ONLY: get_HenrysLawCts
 
    implicit none
@@ -838,7 +837,7 @@ CONTAINS
    IF(gcNI%regionsString(1:2) == "-1") THEN
     NoRegionalConstraint = .TRUE.
    ELSE
-    SELECT CASE (lowercase(gcNI%regionsString(1:2)))
+    SELECT CASE (ESMF_UtilStringLowerCase(gcNI%regionsString(1:2)))
      CASE ("gl") 
       NoRegionalConstraint = .TRUE.
      CASE ("al") 
@@ -1413,14 +1412,14 @@ RUN_ALARM: if (gcNI%run_alarm) then
    if(w_c%reg%doing_DU) then
       allocate(duname(w_c%reg%i_DU:w_c%reg%j_DU))
       do n = w_c%reg%i_DU, w_c%reg%j_DU
-        duname(n) = uppercase(trim(w_c%reg%vname(n)))
+        duname(n) = ESMF_UtilStringUpperCase(trim(w_c%reg%vname(n)))
       end do
    end if
 
    if(w_c%reg%doing_SS) then
       allocate(ssname(w_c%reg%i_SS:w_c%reg%j_SS))
       do n = w_c%reg%i_SS, w_c%reg%j_SS
-        ssname(n) = uppercase(trim(w_c%reg%vname(n)))
+        ssname(n) = ESMF_UtilStringUpperCase(trim(w_c%reg%vname(n)))
       end do
    end if
 

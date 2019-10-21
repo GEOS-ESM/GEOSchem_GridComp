@@ -25,7 +25,6 @@
    use Chem_MieMod           ! Aerosol LU Tables, calculator
    use m_inpak90             ! Resource file management
    use m_die, only: die
-   USE m_chars, only: lowercase
    use Chem_SettlingMod      ! Settling
    use DryDepositionMod      ! Dry Deposition
    use WetRemovalMod         ! Large-scale Wet Removal
@@ -619,7 +618,7 @@ CONTAINS
      UNITS      = 'kg m-3 s-1',                &
      DIMS       = MAPL_DimsHorzVert,  &
      VLOCATION  = MAPL_VLocationCenter, &
-      RESTART    = MAPL_RestartSkip,   &
+     RESTART    = MAPL_RestartSkip,   &
      RC         = STATUS)
   VERIFY_(STATUS)
   
@@ -664,6 +663,7 @@ CONTAINS
    ! local
    type(ESMF_Config)  :: cfg
    character(len=255) :: name
+   logical            :: isPresent
    integer            :: status
    character(len=255) :: Iam
 
@@ -679,9 +679,9 @@ CONTAINS
 
    cfg = ESMF_ConfigCreate(__RC__)
    call ESMF_ConfigLoadFile(cfg, trim(name), __RC__)
-   call ESMF_ConfigFindLabel(cfg, 'nei_boundingbox:', rc=status)
+   call ESMF_ConfigFindLabel(cfg, 'nei_boundingbox:', isPresent=isPresent, __RC__)
 
-   if (status == ESMF_SUCCESS) then
+   if (isPresent) then
        result = .true.
    else 
        result = .false.
@@ -999,7 +999,7 @@ CONTAINS
    IF(gcBRC%regionsString(1:2) == "-1") THEN
     NoRegionalConstraint = .TRUE.
    ELSE
-    SELECT CASE (lowercase(gcBRC%regionsString(1:2)))
+    SELECT CASE (ESMF_UtilStringLowerCase(gcBRC%regionsString(1:2)))
      CASE ("gl") 
       NoRegionalConstraint = .TRUE.
      CASE ("al") 

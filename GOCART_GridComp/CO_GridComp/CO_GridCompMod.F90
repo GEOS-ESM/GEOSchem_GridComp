@@ -26,7 +26,6 @@
 
    USE m_inpak90                       ! Resource file management
    USE m_die, ONLY: die
-   USE m_chars, ONLY: lowercase
    USE Henrys_law_ConstantsMod, ONLY: get_HenrysLawCts
 
    IMPLICIT NONE

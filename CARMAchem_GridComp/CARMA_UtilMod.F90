@@ -24,7 +24,6 @@
    USE Chem_UtilMod
    USE Chem_ConstMod, only: undef
    USE m_inpak90	     ! Resource file management
-   USE m_chars, only: uppercase, lowercase
 
 !  Utility Modules
    use DustEmissionMod       ! Dust Emissions
@@ -269,8 +268,8 @@ CONTAINS
    do ielem = 1, reg%NELEM
 
     igroup    = reg%igroup(ielem)
-    groupname = uppercase(trim(reg%groupname(igroup)))
-    elemname  = uppercase(trim(reg%elemname(ielem)))
+    groupname = ESMF_UtilStringUpperCase(trim(reg%groupname(igroup)))
+    elemname  = ESMF_UtilStringUpperCase(trim(reg%elemname(ielem)))
     ienconc   = r%f_group(igroup)%f_ienconc
 
 !   Dust
@@ -833,8 +832,8 @@ CONTAINS
                               pblh, shflux, z0h, drydepositionfrequency, rc )
 
     igroup = reg%igroup(ielem)
-    groupname = uppercase(trim(reg%groupname(igroup)))
-    elemname  = uppercase(trim(reg%elemname(ielem)))
+    groupname = ESMF_UtilStringUpperCase(trim(reg%groupname(igroup)))
+    elemname  = ESMF_UtilStringUpperCase(trim(reg%elemname(ielem)))
     ienconc = r%f_group(igroup)%f_ienconc
 
     do ibin = 1, reg%NBIN
@@ -1074,8 +1073,8 @@ CONTAINS
    do ielem = 1, reg%NELEM
 
     igroup = reg%igroup(ielem)
-    groupname = uppercase(trim(reg%groupname(igroup)))
-    elemname  = uppercase(trim(reg%elemname(ielem)))
+    groupname = ESMF_UtilStringUpperCase(trim(reg%groupname(igroup)))
+    elemname  = ESMF_UtilStringUpperCase(trim(reg%elemname(ielem)))
     ienconc = r%f_group(igroup)%f_ienconc
 
     n = n1 + (ielem-1)*reg%NBIN
@@ -1083,7 +1082,7 @@ CONTAINS
 !   For now we presume we are wet removing an aerosol
     KIN = .true.    ! aerosol
     call WetRemovalGOCART (i1, i2, j1, j2, km, n, n+reg%NBIN-1, cdt,      &
-                           lowercase(trim(groupname)), KIN,               &
+                           ESMF_UtilStringLowerCase(trim(groupname)), KIN,               &
                            qa, ple, tmpu, rhoa, pfllsan, pfilsan, & 
                            precc, precl, wetremovalflux, rc )
     if(associated(DU_wet)  .and. igroup .eq. reg%igrp_dust)         DU_wet(:,:)  = wetremovalflux%data2d
@@ -1314,8 +1313,8 @@ CONTAINS
 !  For now we do the calculation based on elements
    do ielem = 1, reg%NELEM
     igroup = reg%igroup(ielem)
-    groupname = uppercase(trim(reg%groupname(igroup)))
-    elemname  = uppercase(trim(reg%elemname(ielem)))
+    groupname = ESMF_UtilStringUpperCase(trim(reg%groupname(igroup)))
+    elemname  = ESMF_UtilStringUpperCase(trim(reg%elemname(ielem)))
     ienconc = r%f_group(igroup)%f_ienconc
 
     do ibin = 1, reg%NBIN
@@ -1331,7 +1330,7 @@ CONTAINS
 !   For now we presume we are wet removing an aerosol
     KIN = .true.    ! aerosol
     call convection(i1, i2, j1, j2, km, 1, reg%NBIN, icdt, &
-                    lowercase(trim(groupname)), KIN, &
+                    ESMF_UtilStringLowerCase(trim(groupname)), KIN, &
                     tc_, cmfmc_, dtrain_, area_, delz_, delp_, vud_, &
                     airmass_, airmol_, tmpu_, ple_, &
                     bcnv_)
@@ -1730,8 +1729,8 @@ CONTAINS
    allocate(dq(i1:i2,j1:j2), stat=STATUS)
    do ielem = 1, reg%NELEM
     igroup = reg%igroup(ielem)
-    groupname = uppercase(trim(reg%groupname(igroup)))
-    elemname  = uppercase(trim(reg%elemname(ielem)))
+    groupname = ESMF_UtilStringUpperCase(trim(reg%groupname(igroup)))
+    elemname  = ESMF_UtilStringUpperCase(trim(reg%elemname(ielem)))
 
     do ibin = 1, reg%NBIN
      n = n1 + (ielem-1)*reg%NBIN + ibin - 1
@@ -1895,7 +1894,7 @@ CONTAINS
 !  ---------------
    if(reg%NGAS > 0) then
      do igas = 1, reg%NGAS
-      gasname = uppercase(trim(reg%gasname(igas)))
+      gasname = ESMF_UtilStringUpperCase(trim(reg%gasname(igas)))
       n = n1 + reg%NELEM*reg%NBIN - 1 + igas
       if( gasname == 'H2SO4') then
        if(associated(h2so4_cmass)) then
@@ -2010,8 +2009,8 @@ CONTAINS
      do ielem = 1, reg%NELEM
 
       igroup = reg%igroup(ielem)
-      groupname = uppercase(trim(reg%groupname(igroup)))
-      elemname  = uppercase(trim(reg%elemname(ielem)))
+      groupname = ESMF_UtilStringUpperCase(trim(reg%groupname(igroup)))
+      elemname  = ESMF_UtilStringUpperCase(trim(reg%elemname(ielem)))
       if(  groupname == 'DUST' .or. &
          ( groupname == 'MIXEDP' .AND. elemname  == 'DUST'      )) then
 
@@ -2083,8 +2082,8 @@ CONTAINS
      do ielem = 1, reg%NELEM
 
       igroup = reg%igroup(ielem)
-      groupname = uppercase(trim(reg%groupname(igroup)))
-      elemname  = uppercase(trim(reg%elemname(ielem)))
+      groupname = ESMF_UtilStringUpperCase(trim(reg%groupname(igroup)))
+      elemname  = ESMF_UtilStringUpperCase(trim(reg%elemname(ielem)))
       if(  groupname == 'SULFATE' .or. &
          ( groupname == 'MIXEDP' .AND. elemname  == 'SULFATE'      )) then
 
@@ -2156,8 +2155,8 @@ CONTAINS
      do ielem = 1, reg%NELEM
 
       igroup = reg%igroup(ielem)
-      groupname = uppercase(trim(reg%groupname(igroup)))
-      elemname  = uppercase(trim(reg%elemname(ielem)))
+      groupname = ESMF_UtilStringUpperCase(trim(reg%groupname(igroup)))
+      elemname  = ESMF_UtilStringUpperCase(trim(reg%elemname(ielem)))
       if(  groupname == 'SEASALT' .or. &
          ( groupname == 'MIXEDP' .AND. elemname  == 'SEASALT'      )) then
 
@@ -2230,8 +2229,8 @@ CONTAINS
      do ielem = 1, reg%NELEM
 
       igroup = reg%igroup(ielem)
-      groupname = uppercase(trim(reg%groupname(igroup)))
-      elemname  = uppercase(trim(reg%elemname(ielem)))
+      groupname = ESMF_UtilStringUpperCase(trim(reg%groupname(igroup)))
+      elemname  = ESMF_UtilStringUpperCase(trim(reg%elemname(ielem)))
       if(  groupname == 'BLACKCARBON' .or. &
          ( groupname == 'MIXEDP' .AND. elemname  == 'BLACKCARBON'      )) then
 
@@ -2304,8 +2303,8 @@ CONTAINS
      do ielem = 1, reg%NELEM
 
       igroup = reg%igroup(ielem)
-      groupname = uppercase(trim(reg%groupname(igroup)))
-      elemname  = uppercase(trim(reg%elemname(ielem)))
+      groupname = ESMF_UtilStringUpperCase(trim(reg%groupname(igroup)))
+      elemname  = ESMF_UtilStringUpperCase(trim(reg%elemname(ielem)))
       if(  groupname == 'SMOKE' .or. &
          ( groupname == 'MIXEDP' .AND. elemname  == 'SMOKE'      )) then
 
@@ -2494,8 +2493,8 @@ CONTAINS
 !  Map the mie tables to the particular tracers
    do ielem = 1, reg%NELEM
       igroup = reg%igroup(ielem)
-      groupname = uppercase(trim(reg%groupname(igroup)))
-      elemname  = uppercase(trim(reg%elemname(ielem)))
+      groupname = ESMF_UtilStringUpperCase(trim(reg%groupname(igroup)))
+      elemname  = ESMF_UtilStringUpperCase(trim(reg%elemname(ielem)))
       do ibin = 1, reg%NBIN
        iq = (ielem-1)*reg%NBIN + ibin
        if(  groupname == 'DUST' .OR. groupname == 'ASH' .OR. &

@@ -297,7 +297,7 @@ CONTAINS
 ! ------------------------------------------------------
    CALL setUpPandL(RC=status)
    VERIFY_(status)
-   ASSERT_(gcO3%nlevsPCHEM == km)
+   _ASSERT(gcO3%nlevsPCHEM == km,'needs informative message')
 
 ! GMIchem: Obtain static vegetation properties for dry deposition
 ! ---------------------------------------------------------------
@@ -439,7 +439,7 @@ CONTAINS
        status = 1
        VERIFY_(status)
     END IF
-    ASSERT_(gcO3%NSPECIES == nspecies)
+    _ASSERT(gcO3%NSPECIES == nspecies,'needs informative message')
 
 ! Validate the length of the climatology
 ! --------------------------------------

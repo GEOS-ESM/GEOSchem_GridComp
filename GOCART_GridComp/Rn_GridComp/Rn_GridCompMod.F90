@@ -24,7 +24,6 @@
 
    USE m_inpak90	     ! Resource file management
    USE m_die, ONLY: die
-   USE m_chars, ONLY: lowercase
 
    IMPLICIT NONE
 
@@ -611,7 +610,7 @@ subroutine RN_GridCompSetServices1_(  gc, chemReg, iname, rc)
    IF(gcRn%regionsString(1:2) == "-1") THEN
     NoRegionalConstraint = .TRUE.
    ELSE
-    SELECT CASE (lowercase(gcRn%regionsString(1:2)))
+    SELECT CASE (ESMF_UtilStringLowerCase(gcRn%regionsString(1:2)))
      CASE ("gl") 
       NoRegionalConstraint = .TRUE.
      CASE ("al") 

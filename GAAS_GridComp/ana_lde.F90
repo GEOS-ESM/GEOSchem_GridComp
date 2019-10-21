@@ -19,7 +19,7 @@
 
    use MAPL_GridManagerMod
    use MAPL_LatLonGridFactoryMod
-   use CubedSphereGridFactoryMod, only: CubedSphereGridFactory
+   use MAPL_CubedSphereGridFactoryMod, only: CubedSphereGridFactory
 
    implicit NONE
 

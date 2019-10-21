@@ -19,7 +19,6 @@
    USE Chem_StateMod	     ! Chemistry State
    USE Chem_UtilMod	     ! I/O
    USE m_inpak90	     ! Resource file management
-   USE m_chars, ONLY: lowercase, uppercase
    USE Henrys_law_ConstantsMod, ONLY: get_HenrysLawCts
 
    IMPLICIT NONE
@@ -602,7 +601,7 @@ CONTAINS
    IF(gcCH4%regionsString(1:2) == "-1") THEN
     NoRegionalConstraint = .TRUE.
    ELSE
-    SELECT CASE (lowercase(gcCH4%regionsString(1:2)))
+    SELECT CASE (ESMF_UtilStringLowerCase(gcCH4%regionsString(1:2)))
      CASE ("gl") 
       NoRegionalConstraint = .TRUE.
      CASE ("al") 
@@ -631,7 +630,7 @@ CONTAINS
 
 !  Use instance name as key to CH4 emission source
 !  -----------------------------------------------
-   gcCH4%CH4Source = "CH4_"//TRIM(UPPERCASE(gcCH4%iname))
+   gcCH4%CH4Source = "CH4_"//TRIM(ESMF_UtilStringUpperCase(gcCH4%iname))
 
    RETURN
 

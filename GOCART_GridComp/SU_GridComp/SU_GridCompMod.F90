@@ -25,7 +25,6 @@
    use Chem_MieMod           ! Aerosol LU Tables, calculator
    use m_inpak90             ! Resource file management
    use m_die, only: die
-   use m_chars, only: lowercase
    USE Henrys_law_ConstantsMod, ONLY: get_HenrysLawCts
 
    use m_StrTemplate
@@ -1263,7 +1262,7 @@ CONTAINS
    IF(gcSU%regionsString(1:2) == "-1") THEN
     NoRegionalConstraint = .TRUE.
    ELSE
-    SELECT CASE (lowercase(gcSU%regionsString(1:2)))
+    SELECT CASE (ESMF_UtilStringLowerCase(gcSU%regionsString(1:2)))
      CASE ("gl") 
       NoRegionalConstraint = .TRUE.
      CASE ("al") 

@@ -179,7 +179,7 @@ subroutine main(config_file, rc)
   if (setup%verbose .and. .false.) then
       call ESMF_StateGet(aero_state, itemCount=n, __RC__)
 
-      ASSERT_(n > 0)
+      _ASSERT(n > 0,'needs informative message')
 
       call ESMF_StateGet(aero_state, 'MAM::OPTICS', bundle, __RC__)
       o = MAPL_SimpleBundleCreate(bundle, __RC__)
@@ -198,7 +198,7 @@ subroutine main(config_file, rc)
   if (setup%verbose) then
       call ESMF_StateGet(aero_state, itemCount=n, __RC__)
 
-      ASSERT_(n > 0)
+      _ASSERT(n > 0,'needs informative message')
 
       call ESMF_StateGet(aero_state, 'MAM::OPTICS', bundle, __RC__)
       o = MAPL_SimpleBundleCreate(bundle, __RC__)
@@ -259,9 +259,9 @@ subroutine main(config_file, rc)
       ! ------------------------------------------------------------------
       ! Read the optics lookup table
       ! ------------------------------------------------------------------
-      ASSERT_(associated(setup%optics_lut))
-      ASSERT_(associated(setup%mode))
-      ASSERT_(size(setup%mode) == size(setup%optics_lut))
+      _ASSERT(associated(setup%optics_lut),'needs informative message')
+      _ASSERT(associated(setup%mode),'needs informative message')
+      _ASSERT(size(setup%mode) == size(setup%optics_lut),'needs informative message')
 
       n = 0
       do n = 1, size(setup%mode)
@@ -270,7 +270,7 @@ subroutine main(config_file, rc)
           end if
       end do
 
-      ASSERT_(n > 0)
+      _ASSERT(n > 0,'needs informative message')
 
       lut = MAML_OpticsTableCreate(setup%optics_lut(n), __RC__)
 
@@ -646,8 +646,8 @@ subroutine setup_set_mam_modes_(self, rc)
       end if
   end do
 
-  ASSERT_(n > 0)
-  ASSERT_(n < (MAM_MAX_NUMBER_MODES + 1))
+  _ASSERT(n > 0,'needs informative message')
+  _ASSERT(n < (MAM_MAX_NUMBER_MODES + 1),'needs informative message')
   
   allocate(self%mode(n), __STAT__)
   
@@ -705,8 +705,8 @@ subroutine setup_set_mam_optics_lut_(self, rc)
       n = 0
   end if
 
-  ASSERT_(n > 0)
-  ASSERT_(n < (MAM_MAX_NUMBER_MODES + 1))
+  _ASSERT(n > 0,'needs informative message')
+  _ASSERT(n < (MAM_MAX_NUMBER_MODES + 1),'needs informative message')
 
   allocate(self%optics_lut(n), __STAT__)
 
@@ -745,7 +745,7 @@ subroutine setup_set_wavelengths_(self, rc)
   end do
 
 
-  ASSERT_(n > 0)
+  _ASSERT(n > 0,'needs informative message')
 
   allocate(self%wavelength(n), __STAT__)
   

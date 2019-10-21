@@ -909,7 +909,7 @@ CONTAINS
      CASE (2)
       gcSC%numO3 = n
      CASE (3)
-      ASSERT_(n == km)
+      _ASSERT(n == km,'needs informative message')
      CASE (4)
       gcSC%nlam = n
      CASE (5)
@@ -1138,7 +1138,7 @@ CONTAINS
     VERIFY_(status)
    END IF
 
-   ASSERT_(n == gcSC%km)
+   _ASSERT(n == gcSC%km,'needs informative message')
 
 #ifndef H5_HAVE_PARALLEL
 

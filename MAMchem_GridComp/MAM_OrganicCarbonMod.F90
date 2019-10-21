@@ -174,7 +174,7 @@ CONTAINS
    f_sh = 1 / (pi/6 * D_emiss_sh**3)
 
 
-   ASSERT_(self%id == MAM7_SCHEME .or. self%id == MAM3_SCHEME) 
+   _ASSERT(self%id == MAM7_SCHEME .or. self%id == MAM3_SCHEME,'needs informative message') 
  
    if (self%id == MAM7_SCHEME) then
        mode_name = MAM7_PRIMARY_CARBON_MODE_NAME
@@ -406,7 +406,7 @@ CONTAINS
 !  --------------------------
    rc = 0
 
-   ASSERT_(self%id == MAM7_SCHEME .or. self%id == MAM3_SCHEME) 
+   _ASSERT(self%id == MAM7_SCHEME .or. self%id == MAM3_SCHEME,'needs informative message') 
 #if (0) 
    if (self%id == MAM7_SCHEME) then
        nmodes = size(MAM7_DU_EMISSION_MODE_ID)

@@ -30,7 +30,6 @@
 
    USE m_inpak90             ! Resource file management
    USE m_die,   ONLY: die
-   USE m_chars, ONLY: lowercase,uppercase
 
    USE MAPL_NewArthParserMod,  ONLY: MAPL_StateEval      ! for evaluating constraints
 
@@ -427,7 +426,7 @@ CONTAINS
 !   call ESMF_ConfigGetAttribute ( myState%CF, myState%femisDU,      Label='dust_femis:',    default=1.0,      __RC__ )
 
 
-!   ASSERT_(flagMAM3 /= flagMAM7)
+!   _ASSERT(flagMAM3 /= flagMAM7,'needs informative message')
 
 !   if (flagMAM7) then
 !       myState%model = MAM7_MODEL
@@ -2141,6 +2140,7 @@ CONTAINS
    CHARACTER(LEN=255) :: token
 
    LOGICAL            :: verbose=.FALSE.  ! turn on/off more verbose messages
+   LOGICAL            :: isPresent
 
    Iam = TRIM(myname)
    
@@ -2223,10 +2223,10 @@ CONTAINS
      ! order of source/sink phases
      !----------------------------
      call ESMF_ConfigGetAttribute ( CF, label='first_phase:', value=first_phase_str, __RC__ )
-     IF ( lowercase(TRIM(first_phase_str)) == "source" ) THEN
+     IF ( ESMF_UtilStringLowerCase(TRIM(first_phase_str)) == "source" ) THEN
        spec%run_order(1) = SOURCE_PHASE
        spec%run_order(2) =   SINK_PHASE
-     ELSE IF ( lowercase(TRIM(first_phase_str)) == "sink" ) THEN
+     ELSE IF ( ESMF_UtilStringLowerCase(TRIM(first_phase_str)) == "sink" ) THEN
        spec%run_order(1) =   SINK_PHASE
        spec%run_order(2) = SOURCE_PHASE
      ELSE
@@ -2235,7 +2235,7 @@ CONTAINS
       VERIFY_(rc)
      END IF
 
-     IF(verbose.AND.MAPL_AM_I_ROOT()) PRINT *,myname,": first_phase ",lowercase(TRIM(first_phase_str))
+     IF(verbose.AND.MAPL_AM_I_ROOT()) PRINT *,myname,": first_phase ",ESMF_UtilStringLowerCase(TRIM(first_phase_str))
 
 
      ! src_add
@@ -2645,8 +2645,8 @@ CONTAINS
 
          ! BOOLEAN EXPRESSION
          !
-         call ESMF_ConfigFindLabel    ( CF, 'surf_con'//c//'_bool:',  rc=rc )
-         IF ( rc == ESMF_SUCCESS ) THEN
+         call ESMF_ConfigFindLabel    ( CF, 'surf_con'//c//'_bool:',  isPresent=isPresent, __RC__)
+         IF ( isPresent ) THEN
            spec%constraints(n)%use_bool  = .TRUE.
 
            call ESMF_ConfigGetAttribute ( CF,  spec%constraints(n)%bool_FIELD,  __RC__ )
@@ -3181,8 +3181,8 @@ CONTAINS
 
     REAL  :: e,w   ! copies of the input that we can alter
 
-    ASSERT_( east >= -180. .AND. east <= 180. )
-    ASSERT_( west >= -180. .AND. west <= 180. )
+    _ASSERT( east >= -180. .AND. east <= 180. ,'needs informative message')
+    _ASSERT( west >= -180. .AND. west <= 180. ,'needs informative message')
 
     e = east
     w = west
@@ -4698,13 +4698,13 @@ CONTAINS
 
     ! Assume:  0 = water;  non-zero = land
 
-    IF ( UPPERCASE(TRIM(regions_str)) == "LAND" ) THEN
+    IF ( ESMF_UtilStringUpperCase(TRIM(regions_str)) == "LAND" ) THEN
 !     DO k=1,kmax
 !       regionNumbers(k)=k
 !     END DO
 !     k=kmax
       regionNumbers(1)= -1  ! shortcut
-    ELSE IF ( UPPERCASE(TRIM(regions_str)) == "WATER" ) THEN
+    ELSE IF ( ESMF_UtilStringUpperCase(TRIM(regions_str)) == "WATER" ) THEN
       regionNumbers(1)=0
       k=1
     ELSE

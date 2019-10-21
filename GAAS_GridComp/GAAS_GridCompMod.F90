@@ -25,7 +25,7 @@
    Use  Chem_AodMod
    Use  MAPL_GridManagerMod
    Use  MAPL_LatLonGridFactoryMod
-   Use  CubedSphereGridFactoryMod, only: CubedSphereGridFactory
+   Use  MAPL_CubedSphereGridFactoryMod, only: CubedSphereGridFactory
 
    IMPLICIT NONE
    PRIVATE
@@ -484,7 +484,7 @@ CONTAINS
 
 !  Run MAPL Generic
 !  ----------------
-   call MAPL_GenericRun ( gc, IMPORT, EXPORT, clock,  __RC__ )
+!ALT   call MAPL_GenericRunChildren ( gc, IMPORT, EXPORT, clock,  __RC__ )
 
 !  Get pointer for IMPORT/EXPORT/INTERNAL states 
 !  ---------------------------------------------
@@ -521,7 +521,7 @@ CONTAINS
 !  -----------------------------------------------------------------
    izAOD = MAPL_SimpleBundleGetIndex(self%z_f,'AOD',3,__RC__)
    iyAOD = MAPL_SimpleBundleGetIndex(self%y_f,'AOD',3,__RC__)
-   ASSERT_(iyAOD==1) ! what we have created must have only AOD
+   _ASSERT(iyAOD==1,'needs informative message') ! what we have created must have only AOD
 
 !  Convert AOD to Log(AOD+eps) for A.K. Adjustment
 !  -----------------------------------------------

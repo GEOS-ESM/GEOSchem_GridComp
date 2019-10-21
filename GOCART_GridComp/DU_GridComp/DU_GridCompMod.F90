@@ -24,7 +24,6 @@
    use Chem_MieMod           ! Aerosol LU Tables, calculator
    use m_inpak90             ! Resource file management
    use m_die, only: die
-   USE m_chars, only: lowercase
    use DustEmissionMod       ! Emissions
    use Chem_SettlingMod      ! Settling
    use DryDepositionMod      ! Dry deposition

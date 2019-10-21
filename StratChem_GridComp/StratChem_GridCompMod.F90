@@ -17,7 +17,6 @@
    USE MAPL_Mod
    USE Chem_Mod 	                        ! Chemistry Base Class
    USE SC_GridCompMod                           ! ESMF parent component
-   USE m_chars,  only: uppercase
 
 
    IMPLICIT NONE
@@ -210,9 +209,9 @@ CONTAINS
 
 	  IF(TRIM(state%chemReg%vname(n)) == "OX" .AND. TRIM(providerName) == "STRATCHEM") THEN
            FRIENDLIES="ANALYSIS:DYNAMICS:TURBULENCE:MOIST"
-          ELSE IF(TRIM(UPPERCASE(state%chemReg%vname(n))) == "HBR"  .OR. &
-                  TRIM(UPPERCASE(state%chemReg%vname(n))) == "HOBR" .OR. &
-                  TRIM(UPPERCASE(state%chemReg%vname(n))) == "BRONO2" ) THEN
+          ELSE IF(TRIM(ESMF_UtilStringUpperCase(state%chemReg%vname(n))) == "HBR"  .OR. &
+                  TRIM(ESMF_UtilStringUpperCase(state%chemReg%vname(n))) == "HOBR" .OR. &
+                  TRIM(ESMF_UtilStringUpperCase(state%chemReg%vname(n))) == "BRONO2" ) THEN
            FRIENDLIES="DYNAMICS:TURBULENCE"
           ELSE
            FRIENDLIES="DYNAMICS:TURBULENCE:MOIST"
@@ -502,8 +501,8 @@ CONTAINS
 
 !  Consistency Checks
 !  ------------------
-   ASSERT_ ( chemReg%i_XX == (chemReg%j_SC+1) )
-   ASSERT_ ( size(InternalSpec) == (chemReg%n_SC+chemReg%n_XX) )
+   _ASSERT( chemReg%i_XX == (chemReg%j_SC+1), 'needs informative message' )
+   _ASSERT( size(InternalSpec) == (chemReg%n_SC+chemReg%n_XX), 'needs informative message' )
 
    do L = 1, size(InternalSpec)
 

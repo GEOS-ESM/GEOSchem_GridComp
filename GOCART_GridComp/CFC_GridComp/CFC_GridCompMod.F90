@@ -369,7 +369,7 @@ CONTAINS
      CASE (2)
       gcCFC%numO3 = n
      CASE (3)
-      ASSERT_(n == km)
+      _ASSERT(n == km,'needs informative message')
      CASE (4)
       gcCFC%nlam = n
      CASE (5)

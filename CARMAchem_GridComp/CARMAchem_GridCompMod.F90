@@ -546,7 +546,7 @@ CONTAINS
 
 !   Initialize the tracer array
 !   ---------------------------
-    ASSERT_ ( size(InternalSpec) == reg%nq )
+    _ASSERT( size(InternalSpec) == reg%nq, 'needs informative message' )
 
     do L = 1, size(InternalSpec)
 
@@ -1864,7 +1864,7 @@ contains
 
      na = size(aerosol)
 
-     ASSERT_ (na == size(q,4))
+     _ASSERT(na == size(q,4), 'needs informative message')
 
      ext_ = 0.0d0
      ssa_ = 0.0d0
