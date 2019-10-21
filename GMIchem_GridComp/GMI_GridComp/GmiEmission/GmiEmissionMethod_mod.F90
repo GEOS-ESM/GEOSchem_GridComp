@@ -63,7 +63,6 @@
       public  :: Get_emiss_map_dust      , Get_emiss_map_aero
       public  :: Get_isop_scale          , Get_do_gcr
       public  :: Get_do_semiss_inchem    , Get_do_ShipEmission, Get_doMEGANemission
-      public  :: Get_o3_index            , Get_hno3_index
       public  :: Get_doReadDailyEmiss
       public  :: Get_lightNOampFactor    , Get_numberNOPerFlash, Get_minDeepCloudTop
       public  :: Get_begDailyEmissRec    , Get_endDailyEmissRec
@@ -184,15 +183,14 @@
     logical          :: do_semiss_inchem           ! do surface emissions inside chemistry solver?
     integer          :: emiss_dust_opt                ! sulfur dust emiss option
     integer          :: num_emiss                     ! number of emissions
-    integer          :: o3_index   ! index of O3   in emiss_map
-    integer          :: hno3_index ! index of HNO3 in emiss_map
+    integer          :: ship_o3_index                 ! index of ship O3   in emissionArray
+    integer          :: ship_hno3_index               ! index of ship HNO3 in emissionArray
     real*8 , pointer :: emiss          (:,:,:,:)   => null() ! array of emissions (kg/s)
     real*8 , pointer :: emissDust     (:,:,:)     => null() ! used in sulfur chemistry
     real*8 , pointer :: emiss_isop     (:,:)       => null() ! isoprene    emissions (kg/s)
     real*8 , pointer :: emiss_monot    (:,:)       => null() ! monoterpene emissions (kg/s)
     real*8 , pointer :: emiss_nox      (:,:)       => null() ! NOx         emissions (kg/s)
-    real*8 , pointer :: emiss_o3    (:,:)       => null() ! ozone       emissions
-    real*8 , pointer :: emiss_ozone (:,:)       => null() ! ozone ship emissions
+    real*8 , pointer :: emiss_o3       (:,:)       => null() ! ozone       emissions
     real*8 , pointer :: emiss_hno3     (:,:)       => null() ! hno3        emissions
     integer          :: ncon_soil (NVEGTYPE)           ! Olson -> soil type
                                                        !    1 => water/desert/ice
@@ -283,7 +281,7 @@
       character (len=MAX_STRING_LENGTH      ) :: emissionSpeciesNames
       character (len=MAX_STRING_LENGTH      ) :: emissionDustSpeciesNames
       character (len=MAX_STRING_LENGTH      ) :: emissionAeroSpeciesNames
-      character(len=ESMF_MAXSTR) :: IAm, err_msg
+      character(len=ESMF_MAXSTR) :: IAm, err_msg, sp_name
 
 !EOP
 !--------------------------------------------------------------------
@@ -680,16 +678,32 @@
 
          self%num_emiss = Count (tempListNames(:) /= '')
 
-         ! The specie name precedes the underscore. In GEOS-5 we need to keep
+! MEM
+         IF ( self%do_ShipEmission ) THEN
+           ! Add 2 special entries
+           tempListNames( self%num_emiss + 1 ) = '*shipO3*'
+           tempListNames( self%num_emiss + 2 ) = '*shipHNO3*'
+           self%num_emiss = self%num_emiss + 2
+         END IF
+
+         ! The species name precedes the underscore. In GEOS-5 we need to keep
          ! the entire emissionSpeciesName for use in the initialize method.
          ! -------------------------------------------------------------------
          IF (self%num_emiss > 0) THEN
             DO ic = 1, self%num_emiss
-               err_msg = tempListNames(ic)
-               self%emissionSpeciesNames(ic) = TRIM(err_msg)
-               ios = INDEX(err_msg,'_')
-               IF(ios > 0) err_msg = err_msg(1:ios-1)
-               self%emiss_map(ic) = getSpeciesIndex(TRIM(err_msg))
+               sp_name = tempListNames(ic)
+               self%emissionSpeciesNames(ic) = TRIM(sp_name)
+               ios = INDEX(sp_name,'_')
+               IF(ios > 0) sp_name = sp_name(1:ios-1)
+
+               IF      ( TRIM(sp_name) ==        '*shipO3*'   ) THEN
+                 self%emiss_map(ic) = getSpeciesIndex('O3')
+               ELSE IF ( TRIM(sp_name) ==        '*shipHNO3*' ) THEN
+                 self%emiss_map(ic) = getSpeciesIndex('HNO3')
+               ELSE
+                 self%emiss_map(ic) = getSpeciesIndex(TRIM(sp_name))
+               END IF
+
             END DO
          END IF
 
@@ -897,6 +911,7 @@
   integer :: i1_gl, i2_gl, ju1_gl, j2_gl
   integer :: ilong, ilat, ivert
   integer :: tracer_opt
+  integer :: badIndex = -9999
   real*8  :: tr_source_land, tr_source_ocean
   real*8  :: tdt_days, rsecpdy
 !EOP
@@ -921,7 +936,7 @@
   call Get_tr_source_ocean(SpeciesConcentration, tr_source_ocean)
 
   call readEmissionResourceFile(self, config, loc_proc, numSpecies, pr_diag, chem_opt)
-  self%idaySoilType = -999
+  self%idaySoilType = badIndex
   self%firstBiogenicBase = .TRUE.
 
   if ((tracer_opt == 0) .and. btest(self%emiss_opt,1)) then
@@ -1009,24 +1024,18 @@
   if (self%do_ShipEmission) then
      call Allocate_emiss_o3(self, i1, i2, ju1, j2)
      call Allocate_emiss_hno3 (self, i1, i2, ju1, j2)
-     Allocate(self%emiss_ozone(i1:i2, ju1:j2))
      
-     id                       = 0
-     self%o3_index   = 999
-     self%hno3_index = 999
+     self%ship_o3_index   = badIndex
+     self%ship_hno3_index = badIndex
      
-     if (io3_num   == 0) stop "the index of   O3 should be non zero"
-     if (ihno3_num == 0) stop "the index of HNO3 should be non zero"
-
      do ix = 1, numSpecies
-        ic = self%emiss_map(ix)
-        if (ic > 0) id = id + 1
-        if (ic == io3_num  ) self%o3_index   = id
-        if (ic == ihno3_num) self%hno3_index = id
+        if ( self%emissionSpeciesNames(ix) == '*shipO3*'   )  self%ship_o3_index   = ix
+        if ( self%emissionSpeciesNames(ix) == '*shipHNO3*' )  self%ship_hno3_index = ix
      end do
 
-     if (self%o3_index   == 999) stop "O3   is not defined in emiss_map"
-     if (self%hno3_index == 999) stop "HNO3 is not defined in emiss_map"
+     if (self%ship_o3_index   == badIndex) stop "shipO3   is not in emissionArray"
+     if (self%ship_hno3_index == badIndex) stop "shipHNO3 is not in emissionArray"
+
   endif
 
   if (self%emiss_aero_opt /= 0) then
@@ -1133,7 +1142,6 @@
       integer       :: ydummy, thisDay, thisMonth, thisDate, ddummy, ic, curRecord
       logical       :: doReadDailyEmiss, rootProc
       integer       :: begDailyEmissRec, endDailyEmissRec
-      integer       :: hno3_index
       integer       :: nymd, num_time_steps, ndt
       real*8        :: tdt8
       integer       :: i1, i2, ju1, j2, k, k1, k2, ilo, ihi, julo, jhi
@@ -1180,10 +1188,6 @@
         self%emiss_monot = 0.0d0
         self%emiss_isop  = 0.0d0
         self%emiss_nox   = 0.0d0
-     end if
-
-     if (self%do_ShipEmission) then
-        self%emiss_hno3(:,:) = self%emissionArray(hno3_index)%pArray3D(:,:,1)
      end if
 
 ! For GOCART emission
@@ -1347,7 +1351,7 @@
            do ij = ju1, j2
               do il = i1, i2
                  self%emissionArray(ic)%pArray3D(il,ij,:) =  &
-     &                self%emissionArray(ic)%pArray3D(il,ij,:) * mcor(il,ij) * units_fac
+     &           self%emissionArray(ic)%pArray3D(il,ij,:) * mcor(il,ij) * units_fac
               end do
           end do
          end do
@@ -2265,20 +2269,6 @@
     num_emiss = self%num_emiss
     return
   end subroutine Get_num_emiss
-!-------------------------------------------------------------------------
-  subroutine Get_o3_index (self, o3_index)
-    integer        , intent(out)  :: o3_index
-    type (t_Emission), intent(in)   :: self
-    o3_index = self%o3_index
-    return
-  end subroutine Get_o3_index
-!-------------------------------------------------------------------------
-  subroutine Get_hno3_index (self, hno3_index)
-    integer        , intent(out)  :: hno3_index
-    type (t_Emission), intent(in)   :: self
-    hno3_index = self%hno3_index
-    return
-  end subroutine Get_hno3_index
 !-------------------------------------------------------------------------
   subroutine Get_ndust (self, ndust)
     integer        , intent(out)  :: ndust

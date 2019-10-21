@@ -135,6 +135,9 @@ CONTAINS
     CHARACTER(LEN=2) :: leadChars
     CHARACTER(LEN=ESMF_MAXSTR) :: name
 
+    LOGICAL :: do_ShipEmission
+    TYPE(ESMF_Config)  :: gmiConfig
+
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
     call ESMF_GridCompGet( GC, NAME=COMP_NAME, CONFIG=CF, RC=STATUS )
@@ -282,6 +285,29 @@ CONTAINS
     
     END SELECT
 
+! Import NO from Ships, only if using the parameterization
+
+    gmiConfig = ESMF_ConfigCreate(__RC__)
+
+    call ESMF_ConfigLoadFile(gmiConfig, 'GMI_GridComp.rc', __RC__)
+
+!   This duplicates the call in the Emissions code; really should only be done once!
+!   call rcEsmfReadLogical(gmiConfig, do_ShipEmission, "do_ShipEmission:", default=.false., __RC__)
+    CALL ESMF_ConfigGetAttribute(gmiConfig, do_ShipEmission, Default=.false., &
+                                  Label="do_ShipEmission:", __RC__)
+
+    IF ( do_ShipEmission ) THEN
+       call MAPL_AddImportSpec(GC,                         & 
+          SHORT_NAME = 'SHIP_NO',                          &
+          LONG_NAME  = 'NO from Ships',                    &
+          UNITS      = 'kg NO m^(-2) s^(-1)',              &
+          DIMS       = MAPL_DimsHorzOnly,                  &
+          VLOCATION  = MAPL_VLocationNone,   __RC__) 
+    END IF
+
+    call ESMF_ConfigDestroy(gmiConfig, __RC__)
+
+
 ! Future option - import OCS from ACHEM -  if (state%chemReg%doing_OCS) then import ACHEM::OCS
 
      call MAPL_AddImportSpec(GC,                           & 
@@ -311,6 +337,8 @@ CONTAINS
 	  ELSE
            FRIENDLIES="DYNAMICS:TURBULENCE:MOIST"
 	  END IF
+
+          FRIENDLIES = FRIENDLIES//':'//TRIM(COMP_NAME)
 	 
           CALL MAPL_AddInternalSpec(GC,                                  &
                SHORT_NAME         = TRIM(state%chemReg%vname(n)),        &
@@ -331,6 +359,7 @@ CONTAINS
                SHORT_NAME      = TRIM(state%chemReg%vname(n)),        &
                LONG_NAME       = TRIM(state%chemReg%vtitle(n)),       &
                UNITS           = TRIM(state%chemReg%vunits(n)),       &     
+               FRIENDLYTO      = TRIM(COMP_NAME),                     &
                ADD2EXPORT      = .TRUE.,                              &
                DIMS            = MAPL_DimsHorzVert,                   &
                VLOCATION       = MAPL_VLocationCenter,     RC=STATUS  )
@@ -1030,11 +1059,12 @@ CONTAINS
 !  Initalize the legacy state but do not allocate memory for arrays
 !  ----------------------------------------------------------------
    call Chem_BundleCreate_ ( chemReg, i1, i2, ig, im, j1, j2, jg, jm, km,  &
-                             w_c, lon=lons(:,1), lat=lats(1,:), &
+                             w_c, lon=lons, lat=lats, &
                              skipAlloc=.true., rc=STATUS )
    VERIFY_(STATUS)
 
    w_c%grid_esmf = grid
+   ALLOCATE(w_c%delp(i1:i2,j1:j2,km),w_c%rh(i1:i2,j1:j2,km),__STAT__)
 
 !  Allow user to specify 1 or 2 RUN phases   (set in AGCM.rc)
 !  --------------------------------------------------------------------------
@@ -1614,6 +1644,12 @@ CONTAINS
 !  Layer pressure thickness
 !  ------------------------
    CALL MAPL_GetPointer(impChem, DELP, 'DELP', __RC__)
+   w_c%delp = DELP
+
+!  Fill in RH.  Note: Not converted to %
+!  -------------------------------------
+   CALL MAPL_GetPointer(impChem, rh2, 'RH2', __RC__)
+   w_c%rh = rh2
 
 !  Assure non-negative volumetric mixing ratios [mole fractions]
 !  -------------------------------------------------------------

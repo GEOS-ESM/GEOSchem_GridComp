@@ -216,6 +216,8 @@ CONTAINS
           ELSE
            FRIENDLIES="DYNAMICS:TURBULENCE:MOIST"
 	  END IF
+
+          FRIENDLIES = FRIENDLIES//':'//TRIM(COMP_NAME)
 	 
           call MAPL_AddInternalSpec(GC,                          &
                SHORT_NAME = TRIM(state%chemReg%vname(n)),        &
@@ -236,6 +238,7 @@ CONTAINS
                SHORT_NAME = TRIM(state%chemReg%vname(n)),	 &
                LONG_NAME  = TRIM(state%chemReg%vtitle(n)),	 &
                UNITS      = TRIM(state%chemReg%vunits(n)),	 &
+               FRIENDLYTO = TRIM(COMP_NAME),                     &
                ADD2EXPORT = .TRUE.,				 &
                DIMS       = MAPL_DimsHorzVert,  		 &
                VLOCATION  = MAPL_VLocationCenter,     RC=STATUS  )
@@ -487,7 +490,7 @@ CONTAINS
 !  Initalize the legacy state but do not allocate memory for arrays
 !  ----------------------------------------------------------------
    call Chem_BundleCreate_ ( chemReg, i1, i2, ig, im, j1, j2, jg, jm, km,  &
-                             w_c, lon=lons(:,1), lat=lats(1,:), &
+                             w_c, lon=lons(:,:), lat=lats(:,:), &
                              skipAlloc=.true., rc=STATUS )
    VERIFY_(STATUS)
 
