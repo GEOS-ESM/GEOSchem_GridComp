@@ -128,14 +128,14 @@ CONTAINS
 !  Load resource file
 !  ------------------
    cfg = ESMF_ConfigCreate(rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    call ESMF_ConfigLoadFile(cfg,trim(rc_basename)//'.rc',rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 !  Parse resource file
 !  -------------------
    n = ESMF_ConfigGetLen(cfg,label='DU_instances:',rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 
 !  We have 5 tracers for each instance of DU
@@ -156,10 +156,10 @@ CONTAINS
 !  Record name of each instance
 !  ----------------------------
    call ESMF_ConfigFindLabel(cfg,'DU_instances:',rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    do i = 1, n
       call ESMF_ConfigGetAttribute(cfg,name,rc=status)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
                                             ! resource file name
       IF(TRIM(name) == "full" ) THEN
        name = " "              ! blank instance name for full (1)
@@ -167,10 +167,10 @@ CONTAINS
        name = TRIM(name)       ! instance name for others
       END IF
       call DU_GridCompSetServices1_(gc,chemReg,name,rc=status)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
    end do
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
    end subroutine DU_GridCompSetServices
 
 
@@ -524,9 +524,9 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone,    &
         RESTART    = MAPL_RestartSkip,      &
         RC         = STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
 
    end subroutine DU_GridCompSetServices1_
 
@@ -935,7 +935,7 @@ CONTAINS
    if(gcDU%nymd < 0) then
 
    call MAPL_GetPointer( impChem, du_src, 'DU_SRC'//iNAME, rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    gcDU%src = du_src
 
 !   As a safety check, where du_src is undefined set to 0
@@ -974,7 +974,7 @@ CONTAINS
    DU_radius = 1.e-6*gcDU%radius
    DU_rhop   = gcDU%rhop
    allocate( emissions(i1:i2,j1:j2), dqa(i1:i2,j1:j2), stat=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 
 #ifdef DEBUG
@@ -1380,7 +1380,7 @@ RUN_ALARM: if (gcDU%run_alarm) then
    allocate( fluxout )
    allocate( fluxout%data2d(i1:i2,j1:j2), dqa(i1:i2,j1:j2), &
              drydepositionfrequency(i1:i2,j1:j2), stat=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 !  Dust Settling
 !  -----------

@@ -143,14 +143,14 @@ CONTAINS
 !  Load resource file
 !  ------------------
    cfg = ESMF_ConfigCreate(rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    call ESMF_ConfigLoadFile(cfg,TRIM(rcbasen)//'.rc',rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 !  Parse resource file
 !  -------------------
    n = ESMF_ConfigGetLen(cfg,label='NI_instances:',rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 
 !  We have 5 tracers for each instance of BC
@@ -171,11 +171,11 @@ CONTAINS
 !  Record name of each instance
 !  ----------------------------
    call ESMF_ConfigFindLabel(cfg,'NI_instances:',rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    do i = 1, n
       call ESMF_ConfigGetAttribute(cfg,name,rc=status)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
                                             ! resource file name
       IF(TRIM(name) == "full" ) THEN
        name = " "              ! blank instance name for full (1)
@@ -184,7 +184,7 @@ CONTAINS
       END IF
 
       call NI_GridCompSetServices1_(gc,chemReg,name,rc=status)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
    end do
 
    call MAPL_AddImportSpec(GC,           &
@@ -195,9 +195,9 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
  end subroutine NI_GridCompSetServices
 
 
@@ -565,7 +565,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'EMI_NH3_BB'//trim(iname), &
@@ -575,7 +575,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'EMI_NH3_EN'//trim(iname), &
@@ -585,7 +585,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'EMI_NH3_IN'//trim(iname), &
@@ -595,7 +595,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'EMI_NH3_OC'//trim(iname), &
@@ -605,7 +605,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'EMI_NH3_RE'//trim(iname), &
@@ -615,7 +615,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'EMI_NH3_TR'//trim(iname), &
@@ -625,7 +625,7 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    call MAPL_AddImportSpec(GC, &
         SHORT_NAME = 'NITRATE_HNO3'//trim(iname), &
@@ -635,9 +635,9 @@ CONTAINS
         VLOCATION  = MAPL_VLocationCenter, &
         RESTART    = MAPL_RestartSkip,     &
         RC         = STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
  end subroutine NI_GridCompSetServices1_
 
@@ -1329,7 +1329,7 @@ RUN_ALARM: if (gcNI%run_alarm) then
    allocate( fluxout )
    allocate( fluxout%data2d(i1:i2,j1:j2), dqa(i1:i2,j1:j2), &
              drydepositionfrequency(i1:i2,j1:j2), stat=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 
 !  Unlike GEOS-4 hghte is defined for km+1

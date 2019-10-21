@@ -298,7 +298,7 @@
    deallocate(w10m,              __STAT__)
 
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
  end subroutine MAM_SS_Emission
 
@@ -518,7 +518,7 @@
 !  Clean up
 !  --------
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
  end subroutine MAM_SS_Diagnostics
 

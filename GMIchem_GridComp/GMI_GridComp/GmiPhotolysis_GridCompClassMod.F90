@@ -355,25 +355,25 @@ CONTAINS
       ENDIF
 
       gmiConfigFile = ESMF_ConfigCreate(rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigLoadFile(gmiConfigFile, TRIM(rcfilen), rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, kineticsTextFile, &
      &                label   = "kineticsTextFile:", &
      &                default = ' ', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, importRestartFile, &
      &                label   = "importRestartFile:", &
      &                default = ' ', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%chem_mecha, &
      &                label   = "chem_mecha:", &
      &                default = 'strat_trop', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       !------------------------------
       ! Emission related variables
@@ -381,15 +381,15 @@ CONTAINS
 
       call rcEsmfReadLogical(gmiConfigFile, self%do_synoz, &
      &           "do_synoz:", default=.false., rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call rcEsmfReadLogical(gmiConfigFile, self%do_semiss_inchem, &
      &           "do_semiss_inchem:", default=.false., rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call rcEsmfReadLogical(gmiConfigFile, self%do_ShipEmission, &
      &           "do_ShipEmission:", default=.false., rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       !------------------------------
       ! Diagnostics related variables
@@ -397,11 +397,11 @@ CONTAINS
 
       call rcEsmfReadLogical(gmiConfigFile, self%pr_diag, &
      &           "pr_diag:", default=.false., rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call rcEsmfReadLogical(gmiConfigFile, self%verbose, &
      &           "verbose:", default=.false., rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       !-------------------------------------------
       ! Should BC files have current date and time?
@@ -410,7 +410,7 @@ CONTAINS
       
       call rcEsmfReadLogical(gmiConfigFile, self%BCRealTime, &
      &           "BCRealTime:", default=.false., rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       
       !-----------------------------
       ! Photolysis Related Variables
@@ -434,7 +434,7 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%phot_opt, &
      &                label   = "phot_opt:", &
      &                default = 1, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
 !     -----------------------------------------------------
 !     fastj_opt: set when phot_opt=3
@@ -447,7 +447,7 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%fastj_opt, &
      &                label   = "fastj_opt:", &
      &                default = 1, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call rcEsmfReadLogical(gmiConfigFile, self%do_clear_sky, "do_clear_sky:", &
      &                       default=.true., rc=STATUS)
@@ -455,15 +455,15 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%fastj_offset_sec, &
      &                label   = "fastj_offset_sec:", &
      &                default = 0.0d0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%jNOamp, &
      &          LABEL="Prather_jNO_factor:", DEFAULT=1.00, RC=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%jNOindex, &
      &                 LABEL="jNO_index:", DEFAULT=6, RC=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
 !... do solar cycle in incoming solar flux?
 
@@ -474,7 +474,7 @@ CONTAINS
       CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%sc_infile_name, &
      &                label   = "sc_infile_name:", &
      &                default = '', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
 !     ---------
 !     qj / qqj:
@@ -483,19 +483,19 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%qj_init_val, &
      &                label   = "qj_init_val:", &
      &                default = 1.0d-30, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       ! sets of photolysis per year (1 => yearly, 12 => monthly)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%qj_timpyr, &
      &                label   = "qj_timpyr:", &
      &                default = 1, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%qj_infile_name, &
      &                label   = "qj_infile_name:", &
      &                default = '', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
 !     -------
 !     albedo:
@@ -512,32 +512,32 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%sfalbedo_opt, &
      &                label   = "sfalbedo_opt:", &
      &                default = 0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%saldif_init_val, &
      &                label   = "saldif_init_val:", &
      &                default = 0.1d0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%saldir_init_val, &
      &                label   = "saldir_init_val:", &
      &                default = 0.1d0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%sasdif_init_val, &
      &                label   = "sasdif_init_val:", &
      &                default = 0.1d0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%sasdir_init_val, &
      &                label   = "sasdir_init_val:", &
      &                default = 0.1d0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%sfalbedo_infile_name, &
      &                label   = "sfalbedo_infile_name:", &
      &                default = '', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
 !     --------------------------------------------------------
 !     uvalbedo_opt
@@ -550,46 +550,46 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%uvalbedo_opt, &
      &                label   = "uvalbedo_opt:", &
      &                default = 0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%uvalbedo_init_val, &
      &                label   = "uvalbedo_init_val:", &
      &                default = 0.1d0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%uvalbedo_infile_name, &
      &                label   = "uvalbedo_infile_name:", &
      &                default = '', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%cross_section_file, &
      &                label   = "cross_section_file:", &
      &                default = '', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%aerosolOpticalData_file, &
      &                label   = "aerosolOpticalData_file:", &
      &                default = '', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%rate_file, &
      &                label   = "rate_file:", &
      &                default = '', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%T_O3_climatology_file, &
      &                label   = "T_O3_climatology_file:", &
      &                default = '', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%scattering_data_file, &
      &                label   = "scattering_data_file:", &
      &                default = '', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call rcEsmfReadLogical(gmiConfigFile, self%do_ozone_inFastJX, &
      &              "do_ozone_inFastJX:", default=.false., rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       !=================================================================
       ! do_AerDust_Calc is used to detrmine if aerosol/dust calculations
@@ -614,22 +614,22 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%AerDust_Effect_opt, &
      &                label   = "AerDust_Effect_opt:", &
      &                default = 0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%AerDust_infile_name, &
      &                label   = "AerDust_infile_name:", &
      &                default = '', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%Aerosol_infile_name, &
      &                label   = "Aerosol_infile_name:", &
      &                default = '', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%Dust_infile_name, &
      &                label   = "Dust_infile_name:", &
      &                default = '', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call CheckNamelistOptionRange ('phot_opt', self%phot_opt, 0, 7)
       call CheckNamelistOptionRange ('fastj_opt', self%fastj_opt, 0, 4)
@@ -665,12 +665,12 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%chem_mask_klo, &
      &                label   = "chem_mask_klo:", &
      &                default = 1, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%chem_mask_khi, &
      &                label   = "chem_mask_khi:", &
      &                default = km, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
 !     -------------------------------------------------------------------
 !     synoz_threshold:  chemistry turned off where synoz > this threshold
@@ -681,7 +681,7 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%synoz_threshold, &
      &                label   = "synoz_threshold:", &
      &                default = hugeReal, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       ! ----------------------------------------
       ! Do we want to couple to GOCART aerosols?
@@ -689,23 +689,23 @@ CONTAINS
       
       call rcEsmfReadLogical(gmiConfigFile, self%usingGOCART_BC, &
      &           "usingGOCART_BC:", default=.false., rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       
       call rcEsmfReadLogical(gmiConfigFile, self%usingGOCART_DU, &
      &           "usingGOCART_DU:", default=.false., rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       
       call rcEsmfReadLogical(gmiConfigFile, self%usingGOCART_OC, &
      &           "usingGOCART_OC:", default=.false., rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       
       call rcEsmfReadLogical(gmiConfigFile, self%usingGOCART_SS, &
      &           "usingGOCART_SS:", default=.false., rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       
       call rcEsmfReadLogical(gmiConfigFile, self%usingGOCART_SU, &
      &           "usingGOCART_SU:", default=.false., rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
 
    IF( MAPL_AM_I_ROOT() ) THEN
@@ -731,7 +731,7 @@ CONTAINS
       PRINT *," AM_I_AERO_PROVIDER: ",self%AM_I_AERO_PROVIDER
       PRINT *," Cannot couple GOCART aerosols to GMICHEM when GMICHEM is the AERO_PROVIDER"
      END IF
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
     END IF
    END IF
 
@@ -817,9 +817,9 @@ CONTAINS
 ! Grid box surface area, m^{2}
 ! ----------------------------
    CALL MAPL_GetPointer(impChem, cellArea, 'AREA', rc=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(self%cellArea(i1:i2,j1:j2), STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    self%cellArea(i1:i2,j1:j2)=cellArea(i1:i2,j1:j2)
 
 ! Discretization
@@ -843,7 +843,7 @@ CONTAINS
    IF(numSpecies /= NSP) THEN
     PRINT *,TRIM(IAm),': Number of species from Chem_Registry.rc does not match number in setkin_par.h'
     STATUS = 1
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
    END IF
 
 ! Photolysis reaction list.  Read from kinetics
@@ -1009,12 +1009,12 @@ CONTAINS
    ! Get the declared bundle from the state
 
    call ESMF_StateGet(expChem, 'gmiQJ' , qjBundle,   RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    ! Add tracer to the bundle
    do ib = 1, self%num_qjo
       allocate( var(i1:i2, j1:j2, 1:km), STAT=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       var(:,:,:)  = 0.0d0
 
       call addTracerToBundle (qjBundle, var, w_c%grid_esmf, TRIM(self%qj_labels(ib)))
@@ -1023,18 +1023,18 @@ CONTAINS
    ! Sanity check
 
    call ESMF_FieldBundleGet(qjBundle, fieldCount=numVars , rc=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    _ASSERT(self%num_qjo == numVars,'needs informative message')
 
    ! eRadius Bundle
 
    call ESMF_StateGet(expChem, 'gmiERADIUS' , eRadiusBundle,   RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    ! Add tracer to the bundle
    do ib = 1, nSADdust+nSADaer
       allocate( var(i1:i2, j1:j2, 1:km), STAT=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       var(:,:,:)  = 0.0d0
 
       write (binName ,'(i4.4)') ib
@@ -1046,18 +1046,18 @@ CONTAINS
    ! Sanity check
 
    call ESMF_FieldBundleGet(eRadiusBundle, fieldCount=numVars , rc=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    _ASSERT(nSADdust+nSADaer == numVars,'needs informative message')
 
    ! for tArea Bundle
 
    call ESMF_StateGet(expChem, 'gmiTAREA' , tAreaBundle,   RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    ! Add tracer to the bundle
    do ib = 1, nSADdust+nSADaer
       allocate( var(i1:i2, j1:j2, 1:km), STAT=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       var(:,:,:)  = 0.0d0
 
       write (binName ,'(i4.4)') ib
@@ -1069,7 +1069,7 @@ CONTAINS
    ! Sanity check
 
    call ESMF_FieldBundleGet(tAreaBundle, fieldCount=numVars , rc=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    _ASSERT(nSADdust+nSADaer == numVars,'needs informative message')
 
       !------------------------------------
@@ -1323,57 +1323,57 @@ CONTAINS
 !  Reserve some local work space
 !  -----------------------------
    ALLOCATE(lonDeg(i1:i2,j1:j2),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(latDeg(i1:i2,j1:j2),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(averagePressEdge(0:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    ALLOCATE(              var2d(i1:i2,j1:j2),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(    tropopausePress(i1:i2,j1:j2),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(              pctm2(i1:i2,j1:j2),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(     fracCloudCover(i1:i2,j1:j2),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(           surf_alb(i1:i2,j1:j2),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(   solarZenithAngle(i1:i2,j1:j2),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    ALLOCATE(                pl(i1:i2,j1:j2,1:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(             var3d(i1:i2,j1:j2,1:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(              mass(i1:i2,j1:j2,1:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(           press3c(i1:i2,j1:j2,1:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(           press3e(i1:i2,j1:j2,0:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(  gridBoxThickness(i1:i2,j1:j2,1:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(               kel(i1:i2,j1:j2,1:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(          humidity(i1:i2,j1:j2,1:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(totalCloudFraction(i1:i2,j1:j2,1:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(         tau_cloud(i1:i2,j1:j2,1:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(              clwc(i1:i2,j1:j2,1:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(               cmf(i1:i2,j1:j2,1:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(  relativeHumidity(i1:i2,j1:j2,1:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(            moistq(i1:i2,j1:j2,1:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(           tau_clw(i1:i2,j1:j2,1:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(           tau_cli(i1:i2,j1:j2,1:km),STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 ! Geolocation
 ! -----------
@@ -1400,26 +1400,26 @@ CONTAINS
 !  Emissions
 ! --------------------------------------------------------
    CALL Acquire_Clims(STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 ! Obtain dust and aerosols from either GOCART or
 ! from climatologies supplied by the GMI project
 ! ----------------------------------------------
    CALL Acquire_BC(STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL Acquire_DU(STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL Acquire_OC(STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL Acquire_SS(STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL Acquire_SU(STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 ! Grab imports and do units conversions
 ! -------------------------------------
    CALL SatisfyImports(STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 ! Hand the species concentrations to GMI's bundle
 ! -----------------------------------------------
@@ -1427,11 +1427,11 @@ CONTAINS
       CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration, &
                w_c%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, &
                STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
    END IF
 
    DEALLOCATE(var3D, STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 ! Impose fixed concentrations
 ! ---------------------------
@@ -1484,30 +1484,30 @@ CONTAINS
       CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration, &
                w_c%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
                STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
    END IF
 
 ! Export states
 ! -------------
 
    CALL FillExports(STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    CALL populateBundleQJ ( )
 
 ! Scratch local work space
 ! ------------------------
    DEALLOCATE(lonDeg, latDeg, averagePressEdge, STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    DEALLOCATE(var2d, tropopausePress, pctm2, fracCloudCover, surf_alb, &
               solarZenithAngle, STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    DEALLOCATE(pl, mass, press3c, press3e, gridBoxThickness, kel, humidity, &
               totalCloudFraction, tau_cloud, clwc, cmf, relativeHumidity, &
               moistq, STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 ! IMPORTANT: Reset this switch to .TRUE. after first pass.
 ! --------------------------------------------------------
@@ -1558,18 +1558,18 @@ CONTAINS
    CASE("GOCART.data")
 
     CALL ESMF_StateGet(impChem, 'AERO', aero, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL ESMF_StateGet(aero, 'AEROSOLS', aerosols, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
     CALL ESMFL_BundleGetPointertoData(aerosols, 'BCphobic', PTR3D, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%dAersl(:,:,km:1:-1,1) = PTR3D(:,:,1:km)*airdens(:,:,1:km)
     IF(self%verbose) CALL pmaxmin('BCphobic:', PTR3D, qmin, qmax, iXj, km, 1. )
     NULLIFY(PTR3D)
 
     CALL ESMFL_BundleGetPointertoData(aerosols, 'BCphilic', PTR3D, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%wAersl(:,:,km:1:-1,2) = PTR3D(:,:,1:km)*airdens(:,:,1:km)
     IF(self%verbose) CALL pmaxmin('BCphilic:', PTR3D, qmin, qmax, iXj, km, 1. )
     NULLIFY(PTR3D)
@@ -1579,9 +1579,9 @@ CONTAINS
     IF(self%usingGOCART_BC) THEN
 
      CALL MAPL_GetPointer(impChem, BCphobic, 'GOCART::BCphobic', RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
      CALL MAPL_GetPointer(impChem, BCphilic, 'GOCART::BCphilic', RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      self%dAersl(:,:,km:1:-1,1) = BCphobic(:,:,1:km)*airdens(:,:,1:km)
      self%wAersl(:,:,km:1:-1,2) = BCphilic(:,:,1:km)*airdens(:,:,1:km)
@@ -1596,14 +1596,14 @@ CONTAINS
    CASE("GMICHEM")
 
     CALL MAPL_GetPointer(impChem, PTR3D, 'BC1', RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%dAersl(:,:,1:km,1) = PTR3D(:,:,km:1:-1)
     IF(self%verbose) CALL pmaxmin('BCphobic:', PTR3D, qmin, qmax, iXj, km, 1. )
     IF(ASSOCIATED(BCphobic) .AND. self%AM_I_AERO_PROVIDER) BCphobic(:,:,:) = PTR3D(:,:,:)/airdens(:,:,:)
     NULLIFY(PTR3D)
 
     CALL MAPL_GetPointer(impChem, PTR3D, 'BC2', RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%wAersl(:,:,1:km,2) = PTR3D(:,:,km:1:-1)
     IF(self%verbose) CALL pmaxmin('BCphilic:', PTR3D, qmin, qmax, iXj, km, 1. )
     IF(ASSOCIATED(BCphilic) .AND. self%AM_I_AERO_PROVIDER) BCphilic(:,:,:) = PTR3D(:,:,:)/airdens(:,:,:)
@@ -1612,7 +1612,7 @@ CONTAINS
    CASE DEFAULT
 
     STATUS = 1
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
   END SELECT
 
@@ -1658,7 +1658,7 @@ CONTAINS
     speciesName = TRIM(lchemvar(i))
     importName = TRIM(speciesName)//'_FIXED'
     CALL MAPL_GetPointer(impChem, PTR3D, TRIM(importName), RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%SpeciesConcentration%fixed_const(i1:i2,j1:j2,1:km,ic) = PTR3D(i1:i2,j1:j2,km:1:-1)
     NULLIFY(PTR3D)
 
@@ -1708,12 +1708,12 @@ CONTAINS
    CASE("GOCART.data")
 
     CALL ESMF_StateGet(impChem, 'AERO', aero, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL ESMF_StateGet(aero, 'AEROSOLS', aerosols, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
     CALL ESMFL_BundleGetPointertoData(aerosols, 'du001', PTR3D, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%dust(:,:,km:1:-1,1) = PTR3D(:,:,1:km)*airdens(:,:,1:km)*0.009
     self%dust(:,:,km:1:-1,2) = PTR3D(:,:,1:km)*airdens(:,:,1:km)*0.081
     self%dust(:,:,km:1:-1,3) = PTR3D(:,:,1:km)*airdens(:,:,1:km)*0.234
@@ -1722,19 +1722,19 @@ CONTAINS
     NULLIFY(PTR3D)
 
     CALL ESMFL_BundleGetPointertoData(aerosols, 'du002', PTR3D, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%dust(:,:,km:1:-1,5) = PTR3D(:,:,1:km)*airdens(:,:,1:km)
     IF(self%verbose) CALL pmaxmin('du002:', PTR3D, qmin, qmax, iXj, km, 1. )
     NULLIFY(PTR3D)
 
     CALL ESMFL_BundleGetPointertoData(aerosols, 'du003', PTR3D, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%dust(:,:,km:1:-1,6) = PTR3D(:,:,1:km)*airdens(:,:,1:km)
     IF(self%verbose) CALL pmaxmin('du003:', PTR3D, qmin, qmax, iXj, km, 1. )
     NULLIFY(PTR3D)
 
     CALL ESMFL_BundleGetPointertoData(aerosols, 'du004', PTR3D, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%dust(:,:,km:1:-1,7) = PTR3D(:,:,1:km)*airdens(:,:,1:km)
     IF(self%verbose) CALL pmaxmin('du004:', PTR3D, qmin, qmax, iXj, km, 1. )
     NULLIFY(PTR3D)
@@ -1745,13 +1745,13 @@ CONTAINS
     IF(self%usingGOCART_DU) THEN
 
      CALL MAPL_GetPointer(impChem, DU001, 'GOCART::du001', RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
      CALL MAPL_GetPointer(impChem, DU002, 'GOCART::du002', RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
      CALL MAPL_GetPointer(impChem, DU003, 'GOCART::du003', RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
      CALL MAPL_GetPointer(impChem, DU004, 'GOCART::du004', RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      IF(self%verbose) THEN
       CALL pmaxmin('DU001:', DU001, qmin, qmax, iXj, km, 1. )
@@ -1776,7 +1776,7 @@ CONTAINS
 
      WRITE(importName, FMT="('MDUST',I1)") i
      CALL MAPL_GetPointer(impChem, PTR3D, TRIM(importName), RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
      self%dust(:,:,1:km,i) = PTR3D(:,:,km:1:-1)
      IF(self%verbose) CALL pmaxmin(TRIM(importName)//":", PTR3D, qmin, qmax, iXj, km, 1. )
 
@@ -1801,7 +1801,7 @@ CONTAINS
    CASE DEFAULT
 
     STATUS = 1
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
   END SELECT
 
@@ -1849,18 +1849,18 @@ CONTAINS
    CASE("GOCART.data")
 
     CALL ESMF_StateGet(impChem, 'AERO', aero, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL ESMF_StateGet(aero, 'AEROSOLS', aerosols, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
     CALL ESMFL_BundleGetPointertoData(aerosols, 'OCphobic', PTR3D, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%dAersl(:,:,km:1:-1,2) = PTR3D(:,:,1:km)*airdens(:,:,1:km)
     IF(self%verbose) CALL pmaxmin('OCphobic:', PTR3D, qmin, qmax, iXj, km, 1. )
     NULLIFY(PTR3D)
 
     CALL ESMFL_BundleGetPointertoData(aerosols, 'OCphilic', PTR3D, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%wAersl(:,:,km:1:-1,3) = PTR3D(:,:,1:km)*airdens(:,:,1:km)
     IF(self%verbose) CALL pmaxmin('OCphilic:', PTR3D, qmin, qmax, iXj, km, 1. )
     NULLIFY(PTR3D)
@@ -1870,9 +1870,9 @@ CONTAINS
     IF(self%usingGOCART_OC) THEN
 
      CALL MAPL_GetPointer(impChem, OCphobic, 'GOCART::OCphobic', RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
      CALL MAPL_GetPointer(impChem, OCphilic, 'GOCART::OCphilic', RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      self%dAersl(:,:,km:1:-1,2) = OCphobic(:,:,1:km)*airdens(:,:,1:km)
      self%wAersl(:,:,km:1:-1,3) = OCphilic(:,:,1:km)*airdens(:,:,1:km)
@@ -1887,14 +1887,14 @@ CONTAINS
    CASE("GMICHEM")
 
     CALL MAPL_GetPointer(impChem, PTR3D, 'OC1', RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%dAersl(:,:,1:km,2) = PTR3D(:,:,km:1:-1)
     IF(self%verbose) CALL pmaxmin('OCphobic:', PTR3D, qmin, qmax, iXj, km, 1. )
     IF(ASSOCIATED(OCphobic) .AND. self%AM_I_AERO_PROVIDER) OCphobic(:,:,:) = PTR3D(:,:,:)/airdens(:,:,:)
     NULLIFY(PTR3D)
 
     CALL MAPL_GetPointer(impChem, PTR3D, 'OC2', RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%wAersl(:,:,1:km,3) = PTR3D(:,:,km:1:-1)
     IF(self%verbose) CALL pmaxmin('OCphilic:', PTR3D, qmin, qmax, iXj, km, 1. )
     IF(ASSOCIATED(OCphilic) .AND. self%AM_I_AERO_PROVIDER) OCphilic(:,:,:) = PTR3D(:,:,:)/airdens(:,:,:)
@@ -1903,7 +1903,7 @@ CONTAINS
    CASE DEFAULT
 
     STATUS = 1
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
   END SELECT
 
@@ -1959,36 +1959,36 @@ CONTAINS
    CASE("GOCART.data")
 
     CALL ESMF_StateGet(impChem, 'AERO', aero, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL ESMF_StateGet(aero, 'AEROSOLS', aerosols, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
     CALL ESMFL_BundleGetPointertoData(aerosols, 'ss001', PTR3D, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%wAersl(:,:,km:1:-1,4) = PTR3D(:,:,1:km)*airdens(:,:,1:km)
     IF(self%verbose) CALL pmaxmin('ss001:', PTR3D, qmin, qmax, iXj, km, 1. )
     NULLIFY(PTR3D)
 
     CALL ESMFL_BundleGetPointertoData(aerosols, 'ss002', PTR3D, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%wAersl(:,:,km:1:-1,4) = self%wAersl(:,:,km:1:-1,4)+PTR3D(:,:,1:km)*airdens(:,:,1:km)
     IF(self%verbose) CALL pmaxmin('ss002:', PTR3D, qmin, qmax, iXj, km, 1. )
     NULLIFY(PTR3D)
 
     CALL ESMFL_BundleGetPointertoData(aerosols, 'ss003', PTR3D, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%wAersl(:,:,km:1:-1,5) = PTR3D(:,:,1:km)*airdens(:,:,1:km)
     IF(self%verbose) CALL pmaxmin('ss003:', PTR3D, qmin, qmax, iXj, km, 1. )
     NULLIFY(PTR3D)
 
     CALL ESMFL_BundleGetPointertoData(aerosols, 'ss004', PTR3D, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%wAersl(:,:,km:1:-1,5) = self%wAersl(:,:,km:1:-1,5)+PTR3D(:,:,1:km)*airdens(:,:,1:km)
     IF(self%verbose) CALL pmaxmin('ss004:', PTR3D, qmin, qmax, iXj, km, 1. )
     NULLIFY(PTR3D)
 
     CALL ESMFL_BundleGetPointertoData(aerosols, 'ss005', PTR3D, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%wAersl(:,:,km:1:-1,5) = self%wAersl(:,:,km:1:-1,5)+PTR3D(:,:,1:km)*airdens(:,:,1:km)
     IF(self%verbose) CALL pmaxmin('ss005:', PTR3D, qmin, qmax, iXj, km, 1. )
     NULLIFY(PTR3D)
@@ -1998,15 +1998,15 @@ CONTAINS
     IF(self%usingGOCART_SS) THEN
 
      CALL MAPL_GetPointer(impChem, SS001, 'GOCART::ss001', RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
      CALL MAPL_GetPointer(impChem, SS002, 'GOCART::ss002', RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
      CALL MAPL_GetPointer(impChem, SS003, 'GOCART::ss003', RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
      CALL MAPL_GetPointer(impChem, SS004, 'GOCART::ss004', RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
      CALL MAPL_GetPointer(impChem, SS005, 'GOCART::ss005', RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      IF(self%verbose) THEN
       CALL pmaxmin('SS001:', SS001, qmin, qmax, iXj, km, 1. )
@@ -2031,7 +2031,7 @@ CONTAINS
 ! Accumulated
 ! -----------
     CALL MAPL_GetPointer(impChem, PTR3D, 'SS1', RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%wAersl(:,:,1:km,4) = PTR3D(:,:,km:1:-1)
     IF(self%verbose) CALL pmaxmin('SS1:', PTR3D, qmin, qmax, iXj, km, 1. )
     IF(ASSOCIATED(SS001) .AND. self%AM_I_AERO_PROVIDER) SS001(:,:,:) = PTR3D(:,:,:)/airdens(:,:,:)
@@ -2044,7 +2044,7 @@ CONTAINS
 
      WRITE(importName,FMT="('SS',I1)") i
      CALL MAPL_GetPointer(impChem, PTR3D, TRIM(importName), RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
      self%wAersl(:,:,1:km,5) = self%wAersl(:,:,1:km,5)+PTR3D(:,:,km:1:-1)
      IF(self%verbose) CALL pmaxmin(TRIM(importName)//':', PTR3D, qmin, qmax, iXj, km, 1. )
 
@@ -2064,7 +2064,7 @@ CONTAINS
    CASE DEFAULT
 
     STATUS = 1
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
   END SELECT
 
@@ -2111,12 +2111,12 @@ CONTAINS
    CASE("GOCART.data")
 
     CALL ESMF_StateGet(impChem, 'AERO', aero, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL ESMF_StateGet(aero, 'AEROSOLS', aerosols, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
     CALL ESMFL_BundleGetPointertoData(aerosols, 'SO4', PTR3D, RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%wAersl(:,:,km:1:-1,1) = PTR3D(:,:,1:km)*airdens(:,:,1:km)
     IF(self%verbose) CALL pmaxmin('SO4:', PTR3D, qmin, qmax, iXj, km, 1. )
     NULLIFY(PTR3D)
@@ -2127,7 +2127,7 @@ CONTAINS
     IF(self%usingGOCART_SU) THEN
 
      CALL MAPL_GetPointer(impChem, SO4, 'GOCART::SO4', RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
      self%wAersl(:,:,km:1:-1,1) = SO4(:,:,1:km)*airdens(:,:,1:km)
 
      IF(self%verbose) THEN
@@ -2155,7 +2155,7 @@ CONTAINS
    CASE("GMICHEM")
 
     CALL MAPL_GetPointer(impChem, PTR3D, 'SO4', RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self%wAersl(:,:,km:1:-1,1) = PTR3D(:,:,1:km)
     IF(self%verbose) CALL pmaxmin('SO4:', PTR3D, qmin, qmax, iXj, km, 1. )
     IF(ASSOCIATED(SO4) .AND. self%AM_I_AERO_PROVIDER) SO4(:,:,:) = PTR3D(:,:,:)/airdens(:,:,:)
@@ -2164,7 +2164,7 @@ CONTAINS
    CASE DEFAULT
 
     STATUS = 1
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
   END SELECT
 
@@ -2209,13 +2209,13 @@ CONTAINS
 ! ---------------
   if ((self%do_ShipEmission) .and. (self%do_semiss_inchem)) then
      ALLOCATE (jNO2val(i1:i2,j1:j2),STAT=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      jNO2val(:,:) = self%qjgmi(self%jnoxnum)%pArray3D(:,:,1)
      CALL setDataToStateField(expChem,  jNO2val,  'jNO2val')
      
      DEALLOCATE (jNO2val,STAT=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
   end if
 
 ! ------------------------------------------------------------------------
@@ -2223,7 +2223,7 @@ CONTAINS
 ! ------------------------------------------------------------------------
    IF(self%gotImportRst .AND. self%phot_opt == 3 .AND. self%do_AerDust_calc) THEN
      ALLOCATE(var4dDBL(i1:i2,j1:j2,1:km,1:num_AerDust),STAT=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
      var4dDBL(:,:,:,:) = self%optDepth(:,:,:,:)
      DO k=1,km
       kReverse = km-k+1
@@ -2246,7 +2246,7 @@ CONTAINS
       IF(ASSOCIATED(   SSCSA))    SSCSA(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k,20)
      END DO
      DEALLOCATE(var4dDBL, STAT=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
    END IF
 
   RETURN
@@ -2285,10 +2285,10 @@ CONTAINS
       !==================
 
       call ESMF_StateGet(expChem, "gmiQJ", qjBundle, rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_FieldBundleGet(qjBundle, fieldCount=numVars, rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       _ASSERT(numVars == self%num_qjo,'needs informative message')
 
       do ib = 1, numVars
@@ -2301,10 +2301,10 @@ CONTAINS
       !=====================
 
       call ESMF_StateGet(expChem, "gmiTAREA", tAreaBundle, rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_FieldBundleGet(tAreaBundle, fieldCount=numVars, rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       _ASSERT(numVars == nSADdust+nSADaer,'needs informative message')
 
       do ib = 1, numVars
@@ -2317,10 +2317,10 @@ CONTAINS
       !=======================
 
       call ESMF_StateGet(expChem, "gmiERADIUS", eRadiusBundle, rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_FieldBundleGet(eRadiusBundle, fieldCount=numVars, rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       _ASSERT(numVars == nSADdust+nSADaer,'needs informative message')
 
       do ib = 1, numVars
@@ -2368,73 +2368,73 @@ CONTAINS
 !  Pointers to imports
 !  -------------------
    CALL MAPL_GetPointer(impChem,    cldtt,    'CLDTT', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,    albvf,    'ALBVF', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    CALL MAPL_GetPointer(impChem,   airdens, 'AIRDENS', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,       ple,	'PLE', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,         Q,       'Q', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,	 T,	  'T', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,       zle,	'ZLE', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,      fcld,    'FCLD', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,    taucli,  'TAUCLI', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,    tauclw,  'TAUCLW', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,	ql,	 'QL', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,   cnv_mfc, 'CNV_MFC', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,       rh2,	'RH2', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,      dqdt,    'DQDT', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 !  Export state pointers
 !  ---------------------
    CALL MAPL_GetPointer(expChem,  SZAPHOT,  'SZAPHOT', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem,   DUSTOD,   'DUSTOD', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem,   DUSTSA,   'DUSTSA', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem,    SO4OD,    'SO4OD', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem, SO4HYGRO, 'SO4HYGRO', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem,    SO4SA,    'SO4SA', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem,     BCOD,     'BCOD', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem,  BCHYGRO,  'BCHYGRO', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem,     BCSA,     'BCSA', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem,     OCOD,     'OCOD', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem,  OCHYGRO,  'OCHYGRO', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem,     OCSA,     'OCSA', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem,    SSAOD,    'SSAOD', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem, SSAHYGRO, 'SSAHYGRO', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem,    SSASA,    'SSASA', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem,    SSCOD,    'SSCOD', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem, SSCHYGRO, 'SSCHYGRO', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem,    SSCSA,    'SSCSA', RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    
 !  Validation
 !  ----------
@@ -2464,31 +2464,31 @@ CONTAINS
 !  --------------------------------------------------------------------------------------------
    IF(self%AM_I_AERO_PROVIDER) THEN
     CALL MAPL_GetPointer(expChem, BCphobic, 'GMICHEM::BCphobic', ALLOC=.TRUE., RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL MAPL_GetPointer(expChem, BCphilic, 'GMICHEM::BCphilic', ALLOC=.TRUE., RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL MAPL_GetPointer(expChem,    DU001,    'GMICHEM::du001', ALLOC=.TRUE., RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL MAPL_GetPointer(expChem,    DU002,    'GMICHEM::du002', ALLOC=.TRUE., RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL MAPL_GetPointer(expChem,    DU003,    'GMICHEM::du003', ALLOC=.TRUE., RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL MAPL_GetPointer(expChem,    DU004,    'GMICHEM::du004', ALLOC=.TRUE., RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL MAPL_GetPointer(expChem, OCphobic, 'GMICHEM::OCphobic', ALLOC=.TRUE., RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL MAPL_GetPointer(expChem, OCphilic, 'GMICHEM::OCphilic', ALLOC=.TRUE., RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL MAPL_GetPointer(expChem,    SS001,    'GMICHEM::ss001', ALLOC=.TRUE., RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL MAPL_GetPointer(expChem,    SS003,    'GMICHEM::ss003', ALLOC=.TRUE., RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL MAPL_GetPointer(expChem,    SS004,    'GMICHEM::ss004', ALLOC=.TRUE., RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL MAPL_GetPointer(expChem,    SS005,    'GMICHEM::ss005', ALLOC=.TRUE., RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     CALL MAPL_GetPointer(expChem,      SO4,      'GMICHEM::SO4', ALLOC=.TRUE., RC=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
    END IF
 
   RETURN
@@ -2653,7 +2653,7 @@ CONTAINS
    INTEGER :: STATUS
    rc = 0
    DEALLOCATE(self%cellArea, self%latRad, self%lonRad, STAT=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    RETURN
 

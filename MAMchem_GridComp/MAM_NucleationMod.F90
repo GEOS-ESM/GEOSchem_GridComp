@@ -372,7 +372,7 @@
 
    deallocate(dz, __STAT__)
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
    end subroutine MAM_Nucleation
 

@@ -121,14 +121,14 @@ CONTAINS
 !  Load resource file
 !  ------------------
    cfg = ESMF_ConfigCreate(rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    call ESMF_ConfigLoadFile(cfg,trim(rc_basename)//'.rc',rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 !  Parse resource file
 !  -------------------
    n = ESMF_ConfigGetLen(cfg,label='SS_instances:',rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 
 !  We have 5 tracers for each instance of SS
@@ -149,10 +149,10 @@ CONTAINS
 !  Record name of each instance
 !  ----------------------------
    call ESMF_ConfigFindLabel(cfg,'SS_instances:',rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    do i = 1, n
       call ESMF_ConfigGetAttribute(cfg,name,rc=status)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
                                             ! resource file name
       IF(TRIM(name) == "full" ) THEN
        name = " "              ! blank instance name for full (1)
@@ -160,10 +160,10 @@ CONTAINS
        name = TRIM(name)       ! instance name for others
       END IF
       call SS_GridCompSetServices1_(gc,chemReg,name,rc=status)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
    end do
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
    end subroutine SS_GridCompSetServices
 
 
@@ -510,7 +510,7 @@ CONTAINS
 
    ! Import spec goes here... 
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
    end subroutine SS_GridCompSetServices1_
 

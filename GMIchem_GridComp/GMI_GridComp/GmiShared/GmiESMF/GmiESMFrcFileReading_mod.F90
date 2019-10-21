@@ -74,24 +74,24 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_ConfigFindLabel(config, label=label, isPresent=isPresent, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       counter = 0
 
       if (isPresent) then
          call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
-         _VERIFY(STATUS)
+         VERIFY_(STATUS)
 
          do while (.not. endTable)
             counter = counter + 1
 
             call ESMF_ConfigGetAttribute(config, temp, rc=STATUS )
-            _VERIFY(STATUS)
+            VERIFY_(STATUS)
 
             value(counter) = temp
 
             call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
-            _VERIFY(STATUS)
+            VERIFY_(STATUS)
          end do
       end if
 
@@ -135,24 +135,24 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_ConfigFindLabel(config, label=label, isPresent=isPresent, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       counter = 0
 
       if (isPresent) then
          call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
-         _VERIFY(STATUS)
+         VERIFY_(STATUS)
 
          do while (.not. endTable)
             counter = counter + 1
 
             call ESMF_ConfigGetAttribute(config, temp, rc=STATUS )
-            _VERIFY(STATUS)
+            VERIFY_(STATUS)
 
             value(counter) = temp
 
             call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
-            _VERIFY(STATUS)
+            VERIFY_(STATUS)
          end do
       end if
 
@@ -197,26 +197,26 @@
 !------------------------------------------------------------------------------
 !BOC     
       call ESMF_ConfigFindLabel(config, label=label, isPresent=isPresent, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       counter = 0
 
       if (isPresent) then
          call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
-         _VERIFY(STATUS)
+         VERIFY_(STATUS)
 
          do while (.not. endTable)
             counter = counter + 1
 
             call ESMF_ConfigGetAttribute(config, temp, rc=STATUS )
-            _VERIFY(STATUS)
+            VERIFY_(STATUS)
 
             call reconstructPhrase(temp) 
 
             value(counter) = temp
 
             call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
-            _VERIFY(STATUS)
+            VERIFY_(STATUS)
          end do
       end if
 
@@ -263,17 +263,17 @@
       firstIter = .true.
 
       call ESMF_ConfigFindLabel(config, label=label, isPresent=isPresent, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
             
       value = ''
 
       if (isPresent) then
          call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
-         _VERIFY(STATUS)
+         VERIFY_(STATUS)
             
          do while (.not. endTable)
             call ESMF_ConfigGetAttribute(config, tempWord, rc=STATUS )
-            _VERIFY(STATUS)
+            VERIFY_(STATUS)
 
             call reconstructPhrase(tempWord)
          
@@ -285,7 +285,7 @@
             end if
 
             call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
-            _VERIFY(STATUS)
+            VERIFY_(STATUS)
          end do
       end if
 
@@ -336,7 +336,7 @@
       end if
 
       call ESMF_ConfigGetChar(config, cValue, label=label, default=cDefault, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       if (present(rc)) rc = STATUS
 

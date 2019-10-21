@@ -151,7 +151,7 @@
 
       call rcEsmfReadLogical(config, pr_diag, &
      &               "pr_diag:", default = .false., rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       if (pr_diag) Write(6,*) IAm, 'called by ', loc_proc
 
@@ -179,17 +179,17 @@
       call ESMF_ConfigGetAttribute(config, self%const_opt, &
      &               label   = "const_opt:",&
      &               default = 2, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%const_infile_name, &
      &               label   = "const_infile_name:",&
      &               default = ' ', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%const_var_name, &
      &               label   = "const_var_name:",& 
      &               default = 'const', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       allocate(self%const_init_val(numSpecies)) 
       self%const_init_val(:)  = 1.0d-30
@@ -203,12 +203,12 @@
       call ESMF_ConfigGetAttribute(config, self%fixed_const_infile_name, &
      &                label   = "fixed_const_infile_name:", &
      &                default = '', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%io3_num, &
      &                label   = "io3_num:", &
      &                default = 0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       allocate(self%const_labels(numSpecies))
 
@@ -236,22 +236,22 @@
       call ESMF_ConfigGetAttribute(config, self%tracer_opt, &
      &                label   = "tracer_opt:", &
      &                default = 0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%efol_time, &
      &                label   = "efol_time:", &
      &                default = 0.0d0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%tr_source_land, &
      &                label   = "tr_source_land:", &
      &                default = 0.0d0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%tr_source_ocean, &
      &                label   = "tr_source_ocean:", &
      &                default = 0.0d0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       ! ---------------------------------------------------------------
       ! Check option ranges.  Note that as new options are added, these

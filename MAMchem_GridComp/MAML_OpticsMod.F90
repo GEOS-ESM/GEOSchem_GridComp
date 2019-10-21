@@ -359,7 +359,7 @@ contains
    deallocate(mie_c_ext, mie_c_sca, mie_c_asy,__STAT__)
 
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
   end subroutine MAML_OpticsInterpolate
 
@@ -427,7 +427,7 @@ contains
    n_im_mix = sum(n_im_mix * q_mass / density) / vol
 
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
   end subroutine MAML_RefractiveIndex
 

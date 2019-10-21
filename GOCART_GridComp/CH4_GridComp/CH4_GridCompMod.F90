@@ -104,14 +104,14 @@ CONTAINS
 !  Load resource file
 !  ------------------
    cfg = ESMF_ConfigCreate(rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    call ESMF_ConfigLoadFile(cfg,TRIM(rcbasen)//'.rc',rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 !  Parse resource file
 !  -------------------
    n = ESMF_ConfigGetLen(cfg,label='CH4_instances:',rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 !  We cannot have fewer instances than the number of
 !   CH4 bins in the registry (it is OK to have less, though)
@@ -128,10 +128,10 @@ CONTAINS
 !  Record name of each instance
 !  ----------------------------
    call ESMF_ConfigFindLabel(cfg,'CH4_instances:',rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    do i = 1, n
       call ESMF_ConfigGetAttribute(cfg,name,rc=status)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
                                             ! resource file name
       IF(TRIM(name) == "full" ) THEN
        name = " "              ! blank instance name for full (1)
@@ -139,7 +139,7 @@ CONTAINS
        name = TRIM(name)       ! instance name for others
       END IF
       call CH4_GridCompSetServices1_(gc,chemReg,name,rc=status)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
    end do
 
    call MAPL_AddImportSpec(GC,           &
@@ -150,9 +150,9 @@ CONTAINS
         VLOCATION  = MAPL_VLocationNone, &
         RESTART    = MAPL_RestartSkip,   &
         RC         = STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
    end subroutine CH4_GridCompSetServices
 
@@ -209,12 +209,12 @@ CONTAINS
 !  Load resource file
 !  ------------------
    CALL I90_loadf ( TRIM(rcbasen)//'.rc', status )
-   _VERIFY(status)
+   VERIFY_(status)
 
 !  Parse resource file
 !  -------------------
    CALL I90_label ( 'CH4_instances:', status )
-   _VERIFY(status)
+   VERIFY_(status)
 
 !  First determine how many instances we have
 !  ------------------------------------------   
@@ -227,7 +227,7 @@ CONTAINS
    END DO
    IF ( n == 0 ) THEN
     status = 1
-    _VERIFY(status)
+    VERIFY_(status)
    END IF
    
 !  We cannot have fewer instances than the number of
@@ -235,7 +235,7 @@ CONTAINS
 !  --------------------------------------------------------
    IF ( n < w_c%reg%n_CH4 ) THEN
     status = 1
-    _VERIFY(status)
+    VERIFY_(status)
    ELSE IF ( n >= w_c%reg%n_CH4 ) THEN
     IF(MAPL_AM_I_ROOT()) PRINT *, TRIM(Iam)//": Bins = ",w_c%reg%n_CH4," of ",n," expected."
    END IF
@@ -245,15 +245,15 @@ CONTAINS
 !  Next allocate necessary memory
 !  ------------------------------
    ALLOCATE ( gcCH4%gcs(n), STAT=status )    
-   _VERIFY(status)
+   VERIFY_(status)
 
 !  Record name of each instance
 !  ----------------------------
    CALL I90_label ( 'CH4_instances:', status )
-   _VERIFY(status)
+   VERIFY_(status)
    DO i = 1, n
       CALL I90_gtoken( name, status )
-      _VERIFY(status)
+      VERIFY_(status)
                                             ! resource file name
       gcCH4%gcs(i)%rcfilen = trim(rcbasen)//'---'//trim(name)//'.rc'
       gcCH4%gcs(i)%instance = i              ! instance number 
@@ -274,7 +274,7 @@ CONTAINS
       CALL CH4_SingleInstance_ ( CH4_GridCompInitialize1_, i, &
                                 gcCH4%gcs(i), w_c, impChem, expChem,  &
                                 nymd, nhms, cdt, status )
-      _VERIFY(status)
+      VERIFY_(status)
    END DO
 
 !  Get Henrys Law cts for the parameterized convective wet removal
@@ -288,7 +288,7 @@ CONTAINS
 !  All done
 !  --------
    CALL I90_FullRelease( status )
-   _VERIFY(status)
+   VERIFY_(status)
 
  END SUBROUTINE CH4_GridCompInitialize
 
@@ -342,7 +342,7 @@ CONTAINS
       CALL CH4_SingleInstance_ ( CH4_GridCompRun1_, i, &
                                 gcCH4%gcs(i), w_c, impChem, expChem, &
                                 nymd, nhms, cdt, status )
-      _VERIFY(status)
+      VERIFY_(status)
    END DO
 
  END SUBROUTINE CH4_GridCompRun
@@ -397,7 +397,7 @@ CONTAINS
       CALL CH4_SingleInstance_ ( CH4_GridCompFinalize1_, i, &
                                 gcCH4%gcs(i), w_c, impChem, expChem, &
                                 nymd, nhms, cdt, status )
-      _VERIFY(status)
+      VERIFY_(status)
    END DO
 
    DEALLOCATE ( gcCH4%gcs, stat=status )    
@@ -423,7 +423,7 @@ CONTAINS
        DIMS       = MAPL_DimsHorzOnly, &
        VLOCATION  = MAPL_VLocationNone, &
        RC         = STATUS)
-  _VERIFY(STATUS)
+  VERIFY_(STATUS)
   call MAPL_AddImportSpec(GC, &
        SHORT_NAME = 'CH4_oh'//iname, &
        LONG_NAME  = 'source species'  , &
@@ -431,9 +431,9 @@ CONTAINS
        DIMS       = MAPL_DimsHorzVert, &
        VLOCATION  = MAPL_VLocationCenter, &
        RC         = STATUS)
-  _VERIFY(STATUS)
+  VERIFY_(STATUS)
 
- _RETURN(ESMF_SUCCESS)
+ RETURN_(ESMF_SUCCESS)
 
  end subroutine CH4_GridCompSetServices1_
 
@@ -528,7 +528,7 @@ CONTAINS
    if ( nbeg /= nend ) then
       IF(MAPL_AM_I_ROOT()) PRINT *,TRIM(Iam)//": Must have only 1 bin at the single instance level"
       status = 1
-      _VERIFY(status)
+      VERIFY_(status)
    end if
 
 !  Allocate memory, etc
@@ -536,26 +536,26 @@ CONTAINS
    ALLOCATE ( gcCH4%CH4sfcFlux(i1:i2,j1:j2), &
               gcCH4%regionMask(i1:i2,j1:j2), &
               gcCH4%OHnd(i1:i2,j1:j2,km), STAT=status )
-   _VERIFY(status)
+   VERIFY_(status)
 
 !  Load resource file
 !  ------------------
    CALL I90_loadf ( TRIM(rcfilen), status )
-   _VERIFY(status)
+   VERIFY_(status)
 
 !  Maximum allowed solar zenith angle for "daylight"
 !  -------------------------------------------------
    CALL I90_label ( 'solar_ZA_cutoff:', status )
-   _VERIFY(status)
+   VERIFY_(status)
    gcCH4%szaCutoff = I90_gfloat( status )
-   _VERIFY(status)
+   VERIFY_(status)
 
 !  Run-time debug switch
 !  ---------------------
    CALL I90_label ( 'DEBUG:', status )
-   _VERIFY(status)
+   VERIFY_(status)
    n = I90_gint ( status )
-   _VERIFY(status)
+   VERIFY_(status)
    IF(n /= 0) THEN
     gcCH4%DebugIsOn = .TRUE.
    ELSE
@@ -565,9 +565,9 @@ CONTAINS
 !  Methane photolysis feedback switch
 !  ----------------------------------
    CALL I90_label ( 'CH4_Feedback:', status )
-   _VERIFY(status)
+   VERIFY_(status)
    n = I90_gint ( status )
-   _VERIFY(status)
+   VERIFY_(status)
    IF(n /= 0) THEN
     gcCH4%CH4FeedBack = .TRUE.
    ELSE
@@ -577,9 +577,9 @@ CONTAINS
 !  Water vapor feedback switch
 !  ---------------------------
    CALL I90_label ( 'H2O_Feedback:', status )
-   _VERIFY(status)
+   VERIFY_(status)
    n = I90_gint ( status )
-   _VERIFY(status)
+   VERIFY_(status)
    IF(n /= 0) THEN
     gcCH4%H2OFeedBack = .TRUE.
    ELSE
@@ -587,14 +587,14 @@ CONTAINS
    END IF
 
    call MAPL_GetPointer(impChem,ptr2D,'CH4_regionMask',rc=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 !  Grab the region string.
 !  -----------------------
    CALL I90_label ( 'CH4_regions_indices:', status )
-   _VERIFY(status)
+   VERIFY_(status)
    CALL I90_gtoken( gcCH4%regionsString, status )
-   _VERIFY(status)
+   VERIFY_(status)
 
 !  Is this instantiation a global case?
 !  -----------------------------------
@@ -745,23 +745,23 @@ CONTAINS
    IF ( nbeg /= nend ) THEN
     IF(MAPL_AM_I_ROOT()) PRINT *,TRIM(Iam)//": Must have only 1 bin at the single instance level"
     status = 1
-    _VERIFY(status)
+    VERIFY_(status)
    END IF
 
 !  Get imports
 !  -----------
    CALL MAPL_GetPointer(impChem, T,	   'T',           RC=status)
-   _VERIFY(status)
+   VERIFY_(status)
    CALL MAPL_GetPointer(impChem, Q,	   'Q',           RC=status)
-   _VERIFY(status)
+   VERIFY_(status)
    CALL MAPL_GetPointer(impChem, rhoWet,   'AIRDENS',     RC=status)
-   _VERIFY(status)
+   VERIFY_(status)
    CALL MAPL_GetPointer(impChem, rhoDry,   'AIRDENS_DRYP',RC=status)
-   _VERIFY(status)
+   VERIFY_(status)
    CALL MAPL_GetPointer(impChem, cellArea, 'AREA',        RC=status)
-   _VERIFY(status)
+   VERIFY_(status)
    CALL MAPL_GetPointer(impChem, ple,	   'PLE',         RC=status)
-   _VERIFY(status)
+   VERIFY_(status)
 
    IF(gcCH4%DebugIsOn) THEN
     CALL pmaxmin('CH4:AREA', cellArea, qmin, qmax, iXj,  1,   1. )
@@ -776,11 +776,11 @@ CONTAINS
 !  The latter appears to be in molecules cm^-3.
 !  ---------------------------------------------------------
     call MAPL_GetPointer(impChem,ptr2d,'CH4_sfcFlux'//trim(iNAME),rc=status)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     gcCH4%CH4sfcFlux=ptr2d
 
     call MAPL_GetPointer(impChem,ptr3d,'CH4_oh'//trim(iNAME),rc=status)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     gcCH4%OHnd=ptr3d
 
 !  OH number density from molecules cm^-3 to molecules m^-3
@@ -796,7 +796,7 @@ CONTAINS
         dCH4nd(i1:i2,j1:j2,km), &
     cellVolume(i1:i2,j1:j2,km), &
      cellDepth(i1:i2,j1:j2,km), STAT=status)
-   _VERIFY(status)
+   VERIFY_(status)
 
 !  Layer mean pressures
 !  --------------------
@@ -850,16 +850,16 @@ CONTAINS
 !  of the feedback switch(es) determines if the increments are actually applied.
 !  -----------------------------------------------------------------------------
    ALLOCATE(photJ(i1:i2,j1:j2,1:km), STAT=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    photJ(:,:,:) = 0.00
 
    CALL getJRates(status)
-   _VERIFY(status)
+   VERIFY_(status)
 
 !  Change in CH4 number density [m^{-3} s^{-1}] due to photolysis
 !  --------------------------------------------------------------
    ALLOCATE(dCH4Phot(i1:i2,j1:j2,1:km), STAT=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    dCH4Phot(i1:i2,j1:j2,1:km) = photJ(i1:i2,j1:j2,1:km)*w_c%qa(nbeg)%data3d(i1:i2,j1:j2,1:km)
 
@@ -868,7 +868,7 @@ CONTAINS
    END IF
 
    DEALLOCATE(photJ, STAT=status)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 !  Increment the CH4 number density when the switch is on
 !  ------------------------------------------------------
@@ -967,9 +967,9 @@ CONTAINS
 !  Housekeeping
 !  ------------
    DEALLOCATE(ndDry, ndWet, p, rkoh, dCH4nd, cellDepth, cellVolume, STAT=status)
-   _VERIFY(status)
+   VERIFY_(status)
    DEALLOCATE(dCH4Phot, STAT=status)
-   _VERIFY(status)
+   VERIFY_(status)
 
    RETURN
 
@@ -1029,7 +1029,7 @@ CONTAINS
 ! O2 overhead number density profile [cm^{-2}]
 ! --------------------------------------------
   ALLOCATE(O2Column(i1:i2,j1:j2,1:km), STAT=status)
-  _VERIFY(status)
+  VERIFY_(status)
 
   f = O2VMR*5.00E-05
   O2Column(:,:,1) = O2Abv80km+cellDepth(:,:,1)*ndWet(:,:,1)*f
@@ -1046,11 +1046,11 @@ CONTAINS
 ! Grab some memory
 ! ----------------
   ALLOCATE(SZARad(i1:i2,j1:j2), STAT=status)
-  _VERIFY(status)
+  VERIFY_(status)
   ALLOCATE(SZADeg(i1:i2,j1:j2), STAT=status)
-  _VERIFY(status)
+  VERIFY_(status)
   ALLOCATE(sinSZA(i1:i2,j1:j2), STAT=status)
-  _VERIFY(status)
+  VERIFY_(status)
 
   WHERE(w_c%cosz(i1:i2,j1:j2) > 1.00)
     SZARad(i1:i2,j1:j2) = 0.00
@@ -1061,7 +1061,7 @@ CONTAINS
   sinSZA(i1:i2,j1:j2) = SIN(SZARad(i1:i2,j1:j2))
 
   ALLOCATE(zgrz(i1:i2,j1:j2), STAT=status)
-  _VERIFY(status)
+  VERIFY_(status)
 
   WHERE(SZADeg(i1:i2,j1:j2) <= 90.00)
     zgrz(i1:i2,j1:j2) = 1000.00
@@ -1075,7 +1075,7 @@ CONTAINS
   END IF
 
   ALLOCATE(sfaca(i1:i2,j1:j2), STAT=status)
-  _VERIFY(status)
+  VERIFY_(status)
   sfaca(i1:i2,j1:j2) = 0.00
 
 ! Chapman function calculation from ACDB 2-D model
@@ -1118,7 +1118,7 @@ CONTAINS
   END IF
 
   ALLOCATE(arg(i1:i2,j1:j2), STAT=status)
-  _VERIFY(status)
+  VERIFY_(status)
 
 ! At each layer, compute the rate constant, J [s^{-1}], if the sun is up
 ! ----------------------------------------------------------------------
@@ -1136,19 +1136,19 @@ CONTAINS
   END IF
 
   DEALLOCATE(SZARad, STAT=status)
-  _VERIFY(status)
+  VERIFY_(status)
   DEALLOCATE(SZADeg, STAT=status)
-  _VERIFY(status)
+  VERIFY_(status)
   DEALLOCATE(sinSZA, STAT=status)
-  _VERIFY(status)
+  VERIFY_(status)
   DEALLOCATE(zgrz, STAT=status)
-  _VERIFY(status)
+  VERIFY_(status)
   DEALLOCATE(sfaca, STAT=status)
-  _VERIFY(status)
+  VERIFY_(status)
   DEALLOCATE(arg, STAT=status)
-  _VERIFY(status)
+  VERIFY_(status)
   DEALLOCATE(O2Column, STAT=status)
-  _VERIFY(status)
+  VERIFY_(status)
 
   RETURN
 
@@ -1206,7 +1206,7 @@ CONTAINS
 
    DEALLOCATE ( gcCH4%CH4sfcFlux, gcCH4%regionMask, gcCH4%OHnd, STAT=status )
    rc = status
-   _VERIFY(status)
+   VERIFY_(status)
 
    RETURN
 

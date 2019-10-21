@@ -238,7 +238,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'V10M',  &
@@ -247,7 +247,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'FRLAND',  &
@@ -256,7 +256,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'FRLANDICE',  &
@@ -265,7 +265,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'FRLAKE',  &
@@ -274,7 +274,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'FROCEAN',  &
@@ -283,7 +283,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'TS',  &
@@ -292,7 +292,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'T2M', &
@@ -301,7 +301,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly, &
         VLOCATION          = MAPL_VLocationNone, &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'ALBVF',  &
@@ -310,7 +310,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'PLE',  &
@@ -319,7 +319,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzVert,    &
         VLOCATION          = MAPL_VLocationEdge,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'TROPP',  &
@@ -328,7 +328,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'T',  &
@@ -337,7 +337,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzVert,    &
         VLOCATION          = MAPL_VLocationCenter,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'Z0H',  &
@@ -346,7 +346,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'USTAR',  &
@@ -355,7 +355,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'WET1',  &
@@ -364,7 +364,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'WET2',  &
@@ -373,7 +373,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'Q',  &
@@ -382,7 +382,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzVert,    &
         VLOCATION          = MAPL_VLocationCenter,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'SNOMAS',  &
@@ -391,7 +391,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'SNOWDP',  &
@@ -400,7 +400,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'LWI',  &
@@ -409,7 +409,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'LAI',  &
@@ -418,7 +418,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'CNV_MFC',  &
@@ -427,7 +427,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzVert,    &
         VLOCATION          = MAPL_VLocationEdge,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'DRPAR',  &
@@ -436,7 +436,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'DFPAR',  &
@@ -445,7 +445,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'SWNDSRF',  &
@@ -454,7 +454,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC, &
         SHORT_NAME         = 'CLDTT',  &
@@ -463,7 +463,7 @@ CONTAINS
         DIMS               = MAPL_DimsHorzOnly,    &
         VLOCATION          = MAPL_VLocationNone,    &
                                                        RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 !
 ! !INTERNAL STATE:
 !
@@ -483,9 +483,9 @@ CONTAINS
 ! Set services now
 ! ----------------
    call MAPL_GenericSetServices  ( GC, RC=STATUS )
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
   
   end subroutine SetServices
 
@@ -551,7 +551,7 @@ CONTAINS
     ThisInst => NULL()
 
     ! Successful return
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
   END SUBROUTINE Initialize_
 !EOC
@@ -611,7 +611,7 @@ CONTAINS
     ThisInst => NULL()
 
     ! Successful return
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
   end subroutine Run1
 !EOC
@@ -661,7 +661,7 @@ CONTAINS
     !!! Nothing to do in run phase 2 !!!
 
     ! Successful return
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
   end subroutine Run2
 !EOC
@@ -739,7 +739,7 @@ CONTAINS
     CALL MAPL_GenericFinalize( GC, Import, Export, Clock, __RC__ )
 
     ! Return w/ success
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
   end subroutine Finalize_
 !EOC
@@ -939,7 +939,7 @@ CONTAINS
     Inst%HcoState%EXPORT   => NULL() 
 
     ! Return w/ success
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
     END SUBROUTINE HEMCOinit_ 
 !EOC
@@ -1093,7 +1093,7 @@ CONTAINS
     Inst%HcoState%EXPORT   => NULL() 
 
     ! Return w/ success
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
     END SUBROUTINE HEMCOrun_
 !EOC
@@ -1169,7 +1169,7 @@ CONTAINS
     CALL HcoState_Final ( Inst%HcoState ) 
 
     ! Return w/ success
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
   end subroutine HEMCOfinal_
 !EOC
@@ -1532,7 +1532,7 @@ CONTAINS
     ExtState => NULL()
 
     ! Return w/ success
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
     END SUBROUTINE SetExtFields 
 !EOC
@@ -1907,7 +1907,7 @@ CONTAINS
     Inst => NewInst
 
     ! Return w/ success
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
     END SUBROUTINE NewInst_ 
 !EOC
