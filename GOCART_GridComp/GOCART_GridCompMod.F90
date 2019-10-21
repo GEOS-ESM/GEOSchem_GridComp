@@ -4316,7 +4316,7 @@ end subroutine aerosol_activation_properties
                            __STAT__)
       do L = 1,size(ptr3d_GC_SALA,3)
       do J = 1,size(ptr3d_GC_SALA,2)
-      do I = 1,size(ptr3d_GC_SALA,2)
+      do I = 1,size(ptr3d_GC_SALA,1)
          if ( ( ptr3d_GC_SALA(I,J,L) + ptr3d_GC_SALC(I,J,L) ) < 1E-31 ) then
             GC_FracSALA(I,J,L) = 0.5
             GC_FracSALC(I,J,L) = 0.5
