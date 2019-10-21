@@ -259,7 +259,7 @@ contains
 !   Store internal state in GC
 !   --------------------------
     call ESMF_UserCompSetInternalState(GC, 'MATRIX_state', wrap, STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
   
 !                         ------------------
 !                         MAPL Data Services
@@ -293,7 +293,7 @@ contains
 !   All done
 !   --------
 
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
   end subroutine SetServices
 
@@ -536,7 +536,7 @@ contains
 
 !   All done
 !   --------
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
    end subroutine Initialize_
 
@@ -1074,7 +1074,7 @@ contains
 
 !   All done
 !   --------
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
    end subroutine Run_
 
@@ -1150,7 +1150,7 @@ contains
 
 !   All done
 !   --------
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
    end subroutine Finalize_
 
@@ -1216,7 +1216,7 @@ contains
 !   Get my internal state
 !   ---------------------
     call ESMF_UserCompGetInternalState(GC, 'MATRIX_state', wrap, STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     myState => wrap%ptr
 
 !   Get the configuration
@@ -1263,7 +1263,7 @@ contains
 
 
 
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
    end subroutine extract_
 

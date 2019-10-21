@@ -89,10 +89,10 @@
 !BOC
       field = ESMF_FieldCreate(grid=grid, fArrayptr=PTR, &
               name = fieldName, RC=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call MAPL_FieldBundleAdd ( bundle, field, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       return
 
@@ -126,10 +126,10 @@
 !BOC
       field = ESMF_FieldCreate(grid=grid, fArrayptr=PTR, &
               name = fieldName, RC=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call MAPL_FieldBundleAdd ( bundle, field, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       return
 
@@ -163,13 +163,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_FieldBundleGet (bundle, fieldName, field=field, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=ptr3D, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       ptr3D = PTR
 
@@ -205,13 +205,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_FieldBundleGet (bundle, fieldName, field=field, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=ptr3D, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       ptr3D = PTR
 
@@ -247,13 +247,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_FieldBundleGet (bundle, fieldIndex=index, field=field, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=ptr3D, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       ptr3D = PTR
 
@@ -289,13 +289,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_FieldBundleGet (bundle, fieldIndex=index, field=field, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=ptr3D, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       ptr3D = PTR
 
@@ -332,13 +332,13 @@
 !------------------------------------------------------------------------------
 !BOC
      call ESMF_FieldBundleGet (bundle, fieldName, field=field, RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=PTR, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       return
 
@@ -373,13 +373,13 @@
 !------------------------------------------------------------------------------
 !BOC
      call ESMF_FieldBundleGet (bundle, fieldName, field=field, RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=PTR, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       return
 
@@ -414,13 +414,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_FieldBundleGet (bundle, fieldIndex=index, field=field, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_FieldGet  (field, array=array, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=PTR, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       return
 
@@ -455,13 +455,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_FieldBundleGet (bundle, fieldIndex=index, field=field, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=PTR, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       return
 
@@ -495,10 +495,10 @@
 !BOC
       field = ESMF_FieldCreate(grid=grid, fArrayptr=PTR, &
               name = fieldName, RC=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call MAPL_FieldBundleAdd ( bundle, field, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       return
 
@@ -532,10 +532,10 @@
 !BOC
       field = ESMF_FieldCreate(grid=grid, fArrayptr=PTR, &
               name = fieldName, RC=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call MAPL_FieldBundleAdd ( bundle, field, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       return
 
@@ -569,13 +569,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_FieldBundleGet (bundle, fieldName, field=field, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=ptr2D, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       ptr2D = PTR
 
@@ -611,13 +611,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_FieldBundleGet (bundle, fieldName, field=field, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=ptr2D, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       ptr2D = PTR
 
@@ -653,13 +653,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_FieldBundleGet (bundle, fieldIndex=index, field=field, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=ptr2D, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       ptr2D = PTR
 
@@ -695,13 +695,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_FieldBundleGet (bundle, fieldIndex=index, field=field, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=ptr2D, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       ptr2D = PTR
 
@@ -738,13 +738,13 @@
 !------------------------------------------------------------------------------
 !BOC
      call ESMF_FieldBundleGet (bundle, fieldName, field=field, RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=PTR, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       return
 
@@ -779,13 +779,13 @@
 !------------------------------------------------------------------------------
 !BOC
      call ESMF_FieldBundleGet (bundle, fieldName, field=field, RC=STATUS)
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=PTR, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       return
 
@@ -820,13 +820,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_FieldBundleGet (bundle, fieldIndex=index, field=field, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_FieldGet  (field, array=array, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=PTR, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       return
 
@@ -861,13 +861,13 @@
 !------------------------------------------------------------------------------
 !BOC
       call ESMF_FieldBundleGet (bundle, fieldIndex=index, field=field, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_FieldGet  (field, array=array,                 RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ArrayGet  (array, farrayptr=PTR, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       return
 

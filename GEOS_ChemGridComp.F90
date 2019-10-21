@@ -165,13 +165,13 @@ contains
 !   Wrap internal state for storing in GC; rename legacyState
 !   -------------------------------------
     allocate ( myState, stat=STATUS )
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     wrap%ptr => myState
 
 !   Load the Chemistry Registry
 !   ---------------------------
     chemReg = Chem_RegistryCreate ( STATUS )
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
 ! Register services for this component
 ! ------------------------------------
@@ -182,7 +182,7 @@ contains
 !   Store private state in GC
 !   -------------------------
     call ESMF_UserCompSetInternalState ( GC, 'GEOSchem_GridComp_State', wrap, STATUS )
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
     call ESMF_ConfigGetAttribute(cf, chem_gridcomp_rc_file, label = "GEOS_ChemGridComp_RC_File:", &
          default = "GEOS_ChemGridComp.rc", __RC__)
@@ -712,7 +712,7 @@ contains
 ! -------------------------
   call MAPL_GenericSetServices ( GC, __RC__ )
 
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
   
   end subroutine SetServices
 
@@ -771,7 +771,7 @@ contains
 !   Get my internal state
 !   ---------------------
     call ESMF_UserCompGetInternalState(gc, 'GEOSchem_GridComp_State', WRAP, STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     myState => wrap%ptr
 
 !   Call GenericInitialize for every Child
@@ -852,7 +852,7 @@ contains
 
 !   All Done
 !   --------
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
   end subroutine Init
 
@@ -907,9 +907,9 @@ contains
 !-------------------------------------------------------------------
 
    call MAPL_GetObjectFromGC ( GC, MAPL, RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    call MAPL_Get(MAPL, RUNALARM = ALARM, RC=STATUS )
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 !  Start timers
 !  ------------
@@ -920,7 +920,7 @@ contains
       ! Don't turn alarm off in phase 1, otherwise phase 2 will not be 
       ! executed!
 !      call ESMF_AlarmRingerOff(ALARM, RC=STATUS)
-!      _VERIFY(STATUS)
+!      VERIFY_(STATUS)
 
       ! Get the target components name and set-up traceback handle.
       ! -----------------------------------------------------------
@@ -937,7 +937,7 @@ contains
             write(*,*) '***********************************************************************'
          endif
          CALL MAPL_TimerOff( MAPL, "TOTAL" )
-         _RETURN(ESMF_SUCCESS)
+         RETURN_(ESMF_SUCCESS)
       endif
 
       ! Call Run phase 1 for every child with two phases
@@ -946,7 +946,7 @@ contains
 
       ! Get the children's states
       call MAPL_Get(MAPL, GCS=GCS, GIM=GIM, GEX=GEX, __RC__ )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       if(associated(GCS)) then
         NCHLD  = SIZE(GCS)  ! # of children
@@ -984,7 +984,7 @@ contains
 
 !   All Done
 !   --------
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
  end subroutine Run1
 
@@ -1047,7 +1047,7 @@ contains
 !-------------------------------------------------------------------
 
    call MAPL_GetObjectFromGC ( GC, MAPL, RC=STATUS)
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    call MAPL_Get(MAPL, RUNALARM = ALARM, __RC__ ) 
 
 !  Start timers
@@ -1058,7 +1058,7 @@ contains
    ! --------------
    if ( ESMF_AlarmIsRinging   (ALARM, RC=STATUS) ) then
       call ESMF_AlarmRingerOff(ALARM, RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       ! Get the target components name and set-up traceback handle.
       ! -----------------------------------------------------------
@@ -1131,7 +1131,7 @@ contains
 
 !   All Done
 !   --------
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
  end subroutine Run2
 

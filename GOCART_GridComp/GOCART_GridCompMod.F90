@@ -150,13 +150,13 @@ CONTAINS
 
     if (state%data_driven) then
         state%chemReg = Chem_RegistryCreate(STATUS, rcfile='GOCARTdata_AerRegistry.rc')
-        _VERIFY(STATUS)
+        VERIFY_(STATUS)
     else
        call ESMF_ConfigGetAttribute(cf, chem_registry_file, label = "Chem_Registry_File:", &
             default = "Chem_Registry.rc", rc = status)
-       _VERIFY(status)
+       VERIFY_(status)
        state%chemReg = Chem_RegistryCreate(STATUS, rcfile=chem_registry_file)
-        _VERIFY(STATUS)
+        VERIFY_(STATUS)
     end if    
 
     r => state%chemReg   ! short hand
@@ -184,7 +184,7 @@ CONTAINS
 !       Store internal state in GC
 !       --------------------------
         call ESMF_UserCompSetInternalState ( GC, 'GOCART_state', wrap, STATUS )
-        _VERIFY(STATUS)
+        VERIFY_(STATUS)
 
      else
 
@@ -193,7 +193,7 @@ CONTAINS
         end if 
 
         call MAPL_GenericSetServices ( GC, __RC__ )
-        _RETURN(ESMF_SUCCESS)
+        RETURN_(ESMF_SUCCESS)
 
      endif
 
@@ -1052,7 +1052,7 @@ if ( r%doing_GOCART ) then
       PRINT *," "
      END IF
      STATUS = 1
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
     END IF
      
 !   Loop over all constituents on registry
@@ -1080,7 +1080,7 @@ if ( r%doing_GOCART ) then
               trim(CONVPAR_OPTION) .ne. 'NONE' )  then
               print *, trim(Iam)//': CONVPAR_OPTION (',trim(CONVPAR_OPTION),') Not Properly Defined.'
               STATUS = 1
-              _VERIFY(STATUS)
+              VERIFY_(STATUS)
           endif
 
           short_name = ESMF_UtilStringUpperCase(trim(r%vname(n)))
@@ -1162,7 +1162,7 @@ if ( r%doing_GOCART ) then
          UNITS     ='1',                                           &
          DIMS      = MAPL_DimsHorzVert,                            &
          VLOCATION = MAPL_VLocationCenter,              RC=STATUS  )
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
     call MAPL_AddExportSpec ( gc,                                  &
          SHORT_NAME = 'DELP',                                      &
@@ -1170,7 +1170,7 @@ if ( r%doing_GOCART ) then
          UNITS      = 'Pa',                                        &
          DIMS       = MAPL_DimsHorzVert,                           &
          VLOCATION  = MAPL_VLocationCenter,             RC=STATUS  )
-     _VERIFY(STATUS)
+     VERIFY_(STATUS)
 
 !   Diagnostic Exports over all aerosol tracers
 !   -------------------------------------------
@@ -1318,7 +1318,7 @@ end if ! doing GOCART
 !   All done
 !   --------
 
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
   
   end subroutine SetServices
 
@@ -1467,7 +1467,7 @@ end if ! doing GOCART
 !  Get pre-ESMF parameters from gc and clock
 !  -----------------------------------------
    call extract_ ( gc, clock, chemReg, gcChem, w_c, nymd, nhms, cdt, STATUS, state=myState )
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 
 !  Create Chem Bundle
@@ -1559,7 +1559,7 @@ end if ! doing GOCART
 !   ----------------------
     call Aero_GridCompInitialize ( gcChem, w_c, gc, impChem, expChem, &
                                    nymd, nhms, cdt, myState%data_driven, STATUS )
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
 
 !   Create H2O2 and HNO3 alarms
@@ -1567,16 +1567,16 @@ end if ! doing GOCART
     if (.not. myState%data_driven .and. w_c%reg%doing_SU) then
 
         call ESMF_ClockGet(clock, calendar=calendar, currTime=currentTime, RC=STATUS)
-        _VERIFY(STATUS)
+        VERIFY_(STATUS)
 
         call ESMF_TimeGet(currentTime, YY=year, MM=month, DD=day, H=hh, M=mm, S=ss, RC=STATUS)
-        _VERIFY(STATUS)
+        VERIFY_(STATUS)
         
         call ESMF_TimeSet(ringTime, YY=year, MM=month, DD=day, H=0, M=0, S=0, RC=STATUS)
-        _VERIFY(STATUS)
+        VERIFY_(STATUS)
 
         call ESMF_TimeIntervalSet(ringInterval, H=3, calendar=calendar, RC=STATUS)
-        _VERIFY(STATUS)
+        VERIFY_(STATUS)
 
         do while (ringTime < currentTime) 
             ringTime = currentTime + ringInterval
@@ -1589,22 +1589,22 @@ end if ! doing GOCART
                                       Enabled      = .true.   ,    &
                                       Sticky       = .false.  ,    &
                                       RC           = STATUS)
-        _VERIFY(STATUS)
+        VERIFY_(STATUS)
     end if
 
 
     if (.not. myState%data_driven .and. w_c%reg%doing_NI) then
         call ESMF_ClockGet(clock, calendar=calendar, currTime=currentTime, RC=STATUS)
-        _VERIFY(STATUS)
+        VERIFY_(STATUS)
 
         call ESMF_TimeGet(currentTime, YY=year, MM=month, DD=day, H=hh, M=mm, S=ss, RC=STATUS)
-        _VERIFY(STATUS)
+        VERIFY_(STATUS)
         
         call ESMF_TimeSet(ringTime, YY=year, MM=month, DD=day, H=0, M=0, S=0, RC=STATUS)
-        _VERIFY(STATUS)
+        VERIFY_(STATUS)
 
         call ESMF_TimeIntervalSet(ringInterval, H=3, calendar=calendar, RC=STATUS)
-        _VERIFY(STATUS)
+        VERIFY_(STATUS)
 
         do while (ringTime < currentTime) 
             ringTime = currentTime + ringInterval
@@ -1617,7 +1617,7 @@ end if ! doing GOCART
                                       Enabled      = .true.   ,    &
                                       Sticky       = .false.  ,    &
                                       RC           = STATUS)
-        _VERIFY(STATUS)
+        VERIFY_(STATUS)
     end if
 
 
@@ -2144,7 +2144,7 @@ end if ! doing GOCART
     call MAPL_TimerOff(ggState, 'TOTAL')
     call MAPL_TimerOff(ggState, 'INITIALIZE')
 
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
 CONTAINS
 
@@ -2158,7 +2158,7 @@ CONTAINS
          call ESMF_StateGet( STATE, NAME, FIELD, __RC__ )
          call MAPL_AllocateCoupling( FIELD, __RC__ )
          call MAPL_FieldBundleAdd ( BUNDLE, FIELD, __RC__ )
-         _RETURN(ESMF_SUCCESS)
+         RETURN_(ESMF_SUCCESS)
        end subroutine AddFromExportToBundle_
 
    end subroutine Initialize_
@@ -2261,7 +2261,7 @@ CONTAINS
 !  Get pre-ESMF parameters from gc and clock
 !  -----------------------------------------
    call extract_ ( gc, clock, chemReg, gcChem, w_c, nymd, nhms, cdt, STATUS, state=myState )
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    allocate(r4ZTH(SIZE(LATS,1), SIZE(LATS,2)), __STAT__)
    allocate(  ZTH(SIZE(LATS,1), SIZE(LATS,2)), __STAT__)
@@ -2301,7 +2301,7 @@ CONTAINS
    call MAPL_TimerOn(ggState,'AERO1')
    call Aero_GridCompRun1 ( gcChem, w_c, gc, impChem, expChem, &
                             nymd, nhms, hdt, STATUS )
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    call MAPL_TimerOff(ggState,'AERO1')
 
    deallocate(SLR,   __STAT__)
@@ -2311,7 +2311,7 @@ CONTAINS
    call MAPL_TimerOff(ggState, 'RUN')
    call MAPL_TimerOff(ggState, 'TOTAL')
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
    end subroutine Run1_
 
@@ -2454,7 +2454,7 @@ CONTAINS
 !  Is time to recycle H2O2 and HNO3?
 !  ---------------------------------
    call extract_ ( gc, clock, chemReg, gcChem, w_c, nymd, nhms, cdt, STATUS, state=myState )
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    if (.not. myState%data_driven) then
 
@@ -2497,7 +2497,7 @@ CONTAINS
 !  Get pre-ESMF parameters from gc and clock
 !  -----------------------------------------
    call extract_ ( gc, clock, chemReg, gcChem, w_c, nymd, nhms, cdt, STATUS, state=myState )
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    if (myState%data_driven) then
        
@@ -2513,7 +2513,7 @@ CONTAINS
        call MAPL_TimerOff(ggState, 'RUN')
        call MAPL_TimerOff(ggState, 'TOTAL')
 
-       _RETURN(ESMF_SUCCESS)
+       RETURN_(ESMF_SUCCESS)
    end if 
 
 
@@ -2557,7 +2557,7 @@ CONTAINS
    call MAPL_TimerOn(ggState,'AERO2')
    call Aero_GridCompRun2 ( gcChem, w_c, gc, impChem, expChem, &
                             run_alarm, nymd, nhms, cdt, STATUS )
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    call MAPL_TimerOff(ggState,'AERO2')
 
    if (run_alarm) then
@@ -2852,7 +2852,7 @@ CONTAINS
    call MAPL_TimerOff(ggState, 'RUN')
    call MAPL_TimerOff(ggState, 'TOTAL')
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
    end subroutine Run2_
 
@@ -2913,7 +2913,7 @@ CONTAINS
 !  Get my name and set-up traceback handle
 !  ---------------------------------------
    call ESMF_GridCompGet( GC, NAME=COMP_NAME, RC=STATUS )
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
    Iam = trim(COMP_NAME) // '::' // 'Finalize_'
 
 !  Get my internal MAPL_Generic state
@@ -2927,28 +2927,28 @@ CONTAINS
 !  -----------------------------------------
    call extract_ ( gc, clock, chemReg, gcChem, w_c, nymd, nhms, cdt, STATUS, &
                    state = state )
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 !  Call pre-ESMF version
 !  ---------------------
    call Aero_GridCompFinalize ( gcChem, w_c, impChem, expChem, &
                                 nymd, nhms, cdt, STATUS )
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 !  Destroy Chem_Bundle
 !  -------------------
    call Chem_BundleDestroy ( w_c, STATUS )
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 !  Destroy Chem_Registry
 !  ---------------------
    call Chem_RegistryDestroy ( chemReg, STATUS ) 
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
 !  Destroy Legacy state
 !  --------------------
    deallocate ( state%chemReg, state%gcChem, state%w_c, stat = STATUS )
-   _VERIFY(STATUS)
+   VERIFY_(STATUS)
 
    call MAPL_TimerOff(ggState, 'FINALIZE')
    call MAPL_TimerOff(ggState, 'TOTAL')
@@ -2958,7 +2958,7 @@ CONTAINS
 !ALT: do not deallocate "foreign objects"
    call MAPL_GenericFinalize ( gc, impChem, expChem, clock, __RC__ )
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
    end subroutine Finalize_
 
@@ -3000,7 +3000,7 @@ CONTAINS
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
     call ESMF_GridCompGet( GC, NAME=COMP_NAME, RC=STATUS )
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     Iam = trim(COMP_NAME) // '::' // 'extract_'
 
     rc = 0
@@ -3013,7 +3013,7 @@ CONTAINS
 !   Get my internal state
 !   ---------------------
     call ESMF_UserCompGetInternalState(gc, 'GOCART_state', WRAP, STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     myState => wrap%ptr
     if ( present(state) ) then
          state => wrap%ptr
@@ -3023,15 +3023,15 @@ CONTAINS
 !   -----------------------------------------------------
     if ( .not. associated(myState%chemReg) ) then
          allocate ( myState%chemReg, stat=STATUS )
-         _VERIFY(STATUS)
+         VERIFY_(STATUS)
     end if
     if ( .not. associated(myState%gcChem) ) then
          allocate ( myState%gcChem, stat=STATUS )
-         _VERIFY(STATUS)
+         VERIFY_(STATUS)
     end if
     if ( .not. associated(myState%w_c) ) then
          allocate ( myState%w_c, stat=STATUS )
-         _VERIFY(STATUS)
+         VERIFY_(STATUS)
     end if
 
     chemReg => myState%chemReg
@@ -3041,7 +3041,7 @@ CONTAINS
 !   Get the configuration
 !   ---------------------
     call ESMF_GridCompGet ( GC, CONFIG = CF, RC=STATUS )
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
 !   Get time step
 !   -------------
@@ -3056,15 +3056,15 @@ CONTAINS
 !   ------------------------------------------
 
     call ESMF_ClockGet(CLOCK,currTIME=TIME,rc=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
     call ESMF_TimeGet(TIME ,YY=IYR, MM=IMM, DD=IDD, H=IHR, M=IMN, S=ISC, rc=STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
 
     call MAPL_PackTime(NYMD,IYR,IMM,IDD)
     call MAPL_PackTime(NHMS,IHR,IMN,ISC)
 
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
    end subroutine extract_
 
@@ -3098,7 +3098,7 @@ logical function isDataDrivenGC_(gc, rc)
        isDataDrivenGC_ = .false.
    end if
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
 end function isDataDrivenGC_
 
@@ -3247,7 +3247,7 @@ subroutine aerosol_optics(state, rc)
 
   deallocate(aerosol_names, ext, ssa, asy, q_4d, __STAT__)
 
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
 
 contains 
 
@@ -3300,7 +3300,7 @@ contains
      ssa = ssa_
      asy = asy_
 
-     _RETURN(ESMF_SUCCESS)
+     RETURN_(ESMF_SUCCESS)
 
     end subroutine mie_
 
@@ -3561,7 +3561,7 @@ subroutine aerosol_activation_properties(state, rc)
 
   deallocate(q, __STAT__)
 
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
 
 contains
 
@@ -3787,7 +3787,7 @@ contains
      end select
 
 
-     _RETURN(ESMF_SUCCESS)
+     RETURN_(ESMF_SUCCESS)
 
     end subroutine aap_
 

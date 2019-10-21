@@ -307,10 +307,10 @@ subroutine main(config_file, rc)
 ! Finalize framework
 ! ------------------
   call ESMF_Finalize(__RC__)
-  _VERIFY(status)
+  VERIFY_(status)
    
 
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
 
 end subroutine main
 
@@ -369,7 +369,7 @@ subroutine setup_initialize(self, config_file, rc)
       call MAPL_InitializeShmem(__RC__)
   end if
 
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
 end subroutine setup_initialize
 
 
@@ -390,7 +390,7 @@ subroutine setup_finalize(self, rc)
 
   call MAPL_FinalizeShmem(__RC__)
 
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
 end subroutine setup_finalize
 
 
@@ -434,7 +434,7 @@ subroutine optics_bundle_initialize(optics, grid, mam, rc)
       call MAPL_FieldBundleAdd(optics, field, __RC__)
   end do
 
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
 
 end subroutine optics_bundle_initialize
 
@@ -467,7 +467,7 @@ subroutine optics_compute(aero_state, rc)
   
   q = q + 5.0 
 
-  _RETURN(ESMF_SUCCESS) 
+  RETURN_(ESMF_SUCCESS) 
 
 end subroutine optics_compute
 
@@ -486,7 +486,7 @@ subroutine setup_set_config_(self, config_file, rc)
   self%config = ESMF_ConfigCreate(__RC__)
   call ESMF_ConfigLoadFile(self%config, fileName=trim(config_file), __RC__)
  
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
 end subroutine setup_set_config_
 
 
@@ -500,7 +500,7 @@ subroutine setup_set_verbosity_(self, rc)
 
   call ESMF_ConfigGetAttribute(self%config, self%verbose, label='verbose:', __RC__)
  
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
 end subroutine setup_set_verbosity_
 
 
@@ -515,7 +515,7 @@ subroutine setup_set_io_files_(self, rc)
   call ESMF_ConfigGetAttribute(self%config, self%aerosol_file, label='aerosol_file:', __RC__)
   call ESMF_ConfigGetAttribute(self%config, self%optics_file,  label='optics_file:',  __RC__)
  
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
 end subroutine setup_set_io_files_
 
 
@@ -551,7 +551,7 @@ subroutine setup_set_grid_(self, rc)
   call ESMF_GridValidate(self%grid, __RC__)
 
 
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
 end subroutine setup_set_grid_
 
 
@@ -586,7 +586,7 @@ subroutine setup_set_time_(self, rc)
 
   call ESMF_TimeSet(self%time, yy=year, mm=month, dd=day, h=hours, m=minutes, s=seconds, __RC__)
 
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
 end subroutine setup_set_time_
 
 
@@ -615,7 +615,7 @@ subroutine setup_set_mam_scheme_id_(self, rc)
       __raise__(MAM_UNKNOWN_SCHEME_ERROR, "Unsupported MAM scheme: " // trim(scheme))
   end select
 
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
 end subroutine setup_set_mam_scheme_id_
 
 
@@ -681,7 +681,7 @@ subroutine setup_set_mam_modes_(self, rc)
       __raise__(MAM_UNKNOWN_SCHEME_ERROR, "Unsupported MAM scheme")
   end select
 
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
 end subroutine setup_set_mam_modes_
 
 
@@ -715,7 +715,7 @@ subroutine setup_set_mam_optics_lut_(self, rc)
       call ESMF_ConfigGetAttribute(self%config, self%optics_lut(i), label=trim(optics_lut_label), __RC__)
   end do
 
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
 end subroutine setup_set_mam_optics_lut_
 
 
@@ -754,7 +754,7 @@ subroutine setup_set_wavelengths_(self, rc)
       call ESMF_ConfigGetAttribute(self%config, self%wavelength(i), __RC__)
   end do
 
-  _RETURN(ESMF_SUCCESS)
+  RETURN_(ESMF_SUCCESS)
 end subroutine setup_set_wavelengths_
 
 

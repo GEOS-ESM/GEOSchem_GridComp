@@ -74,18 +74,18 @@ CONTAINS
   IF(ampFactor <= 0.00) THEN
    IF(MAPL_AM_I_ROOT()) PRINT *,TRIM(IAm)//": Invalid ampFactor ",ampFactor
    status = 1
-   _VERIFY(status)
+   VERIFY_(status)
   END IF
   IF(numberNOperFlash <= 0.00) THEN
    IF(MAPL_AM_I_ROOT()) PRINT *,TRIM(IAm)//": Invalid numberNOperFlash ",numberNOperFlash
    status = 1
-   _VERIFY(status)
+   VERIFY_(status)
   END IF
 
 ! Grab some memory
 ! ----------------
   ALLOCATE(pNOx2D(i1:i2, j1:j2),STAT=status)
-  _VERIFY(status)
+  VERIFY_(status)
   pNOx2D(:,:) = 0.00
 
 ! Calculate the NOx produdction rate [molecules NO m^{-2} s^{-1}]
@@ -117,7 +117,7 @@ CONTAINS
 ! Clean up
 ! --------
   DEALLOCATE(pNOx2D,STAT=status)
-  _VERIFY(status)
+  VERIFY_(status)
 
   RETURN
  END SUBROUTINE emiss_lightning
@@ -163,7 +163,7 @@ CONTAINS
 ! Deep convection is arbitrarily assigned when the cloud top is greater than 7 km.
 ! --------------------------------------------------------------------------------
    ALLOCATE(r(numKm,3),STAT=status)
-   _VERIFY(status)
+   VERIFY_(status)
 
 ! Deep convection, continental
 ! ----------------------------
@@ -287,7 +287,7 @@ CONTAINS
 ! Clean up
 ! --------
    DEALLOCATE(r,STAT=status)
-   _VERIFY(status)
+   VERIFY_(status)
 
   RETURN
  END SUBROUTINE partition

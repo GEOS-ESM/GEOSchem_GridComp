@@ -2054,10 +2054,10 @@
 
        if (ix == 0) then
            STATUS = MAM_UNKNOWN_AEROSOL_COMPONENT_ERROR
-           _VERIFY(STATUS)
+           VERIFY_(STATUS)
        else
            STATUS = MAM_SUCCESS
-           _VERIFY(STATUS)
+           VERIFY_(STATUS)
        end if
 
        if (present(rc)) then
@@ -2118,10 +2118,10 @@
 
        if (ix == 0) then
            STATUS = MAM_GENERAL_ERROR
-           _VERIFY(STATUS)
+           VERIFY_(STATUS)
        else
            STATUS = MAM_SUCCESS
-           _VERIFY(STATUS)
+           VERIFY_(STATUS)
        end if
 
        if (present(rc)) then

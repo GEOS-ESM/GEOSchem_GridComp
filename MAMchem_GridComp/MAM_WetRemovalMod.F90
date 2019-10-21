@@ -175,7 +175,7 @@
    end do
 
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
    end subroutine MAM_WetRemoval
 

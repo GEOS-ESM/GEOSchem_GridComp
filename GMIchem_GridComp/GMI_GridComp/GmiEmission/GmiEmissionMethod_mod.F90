@@ -313,7 +313,7 @@
       call ESMF_ConfigGetAttribute(config, self%emiss_opt, &
      &                label   = "emiss_opt:", &
      &                default = 0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       
     ! --------------------------------------------
     ! emiss_in_opt
@@ -326,7 +326,7 @@
       call ESMF_ConfigGetAttribute(config, self%emiss_in_opt, &
      &                label   = "emiss_in_opt:", &
      &                default = 0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
     ! ------------------------------------
     ! emiss_conv_flag
@@ -338,7 +338,7 @@
       call ESMF_ConfigGetAttribute(config, self%emiss_conv_flag, &
      &                label   = "emiss_conv_flag:", &
      &                default = 0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
     ! ------------------------------------------------------------------
     ! semiss_inchem_flag
@@ -354,14 +354,14 @@
       call ESMF_ConfigGetAttribute(config, self%semiss_inchem_flag, &
      &                label   = "semiss_inchem_flag:", &
      &                default = -1, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       
       ! sets of emissons per year (1 => yearly, 12 => monthly)
     
       call ESMF_ConfigGetAttribute(config, self%emiss_timpyr, &
      &                label   = "emiss_timpyr:", &
      &                default = 1, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       
       self%emiss_map(:) =  0  
      
@@ -371,16 +371,16 @@
       call ESMF_ConfigGetAttribute(config, self%emiss_conv_fac, &
      &                label   = "emiss_conv_fac:", &
      &                default = 1.0d0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
     
       call ESMF_ConfigGetAttribute(config, self%emiss_init_val, &
      &                label   = "emiss_init_val:", &
      &                default = 1.0d0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       CALL rcEsmfReadLogical(config, self%clim_emiss_by_area, &
      &           "clim_emiss_by_area:", DEFAULT=.TRUE., RC=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
      ! Save the number of emitting layers for each emissionSpeciesName
      ! ---------------------------------------------------------------
@@ -396,17 +396,17 @@
 
       call rcEsmfReadLogical(config, self%doReadDailyEmiss, &
      &           "doReadDailyEmiss:", default=.false., rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%begDailyEmissRec, &
      &                label   = "begDailyEmissRec:", &
      &                default = 1, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%endDailyEmissRec, &
      &                label   = "endDailyEmissRec:", &
      &                default = 366, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       
     ! --------------------------------------
     ! Aerosols and Sulfur from Penner et al.
@@ -419,14 +419,14 @@
       call ESMF_ConfigGetAttribute(config, self%emiss_aero_opt, &
      &                label   = "emiss_aero_opt:", &
      &                default = 0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       ! number of aerosol emissions
      
       call ESMF_ConfigGetAttribute(config, self%naero, &
      &                label   = "naero:", &
      &                default = 1, rc=STATUS )
-      _VERIFY(STATUS) 
+      VERIFY_(STATUS) 
      
       self%emiss_map_aero(:) = 0    ! map emissions to species #
 
@@ -438,7 +438,7 @@
       call ESMF_ConfigGetAttribute(config, self%emiss_aero_infile_name, &
      &                label   = "emiss_aero_infile_name:", &
      &                default = ' ', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
      ! emiss_dust_opt   0: for no     dust emissions
      !                  1: for GMI    dust emissions
@@ -447,28 +447,28 @@
       call ESMF_ConfigGetAttribute(config, self%emiss_dust_opt, &
      &                label   = "emiss_dust_opt:", &
      &                default = 0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       ! number of dust bins
 
       call ESMF_ConfigGetAttribute(config, self%ndust, &
      &                label   = "ndust:", &
      &                default = 1, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
      ! number of starting point for new dust emiss.
       
       call ESMF_ConfigGetAttribute(config, self%nst_dust, &
      &                label   = "nst_dust:", &
      &                default = 1, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       
       ! number of dust emissions per emiss. file
      
       call ESMF_ConfigGetAttribute(config, self%nt_dust, &
      &                label   = "nt_dust:", &
      &                default = 1, rc=STATUS )
-      _VERIFY(STATUS)   
+      VERIFY_(STATUS)   
      
       self%emiss_map_dust(:) = 0    ! map emissions to species #
       
@@ -482,7 +482,7 @@
       call ESMF_ConfigGetAttribute(config, self%emiss_dust_infile_name, &
      &                label   = "emiss_dust_infile_name:", &
      &                default = ' ', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
      
      ! -----------------------------------------------------
      ! Information on scale factors for various NO emissions
@@ -495,17 +495,17 @@
       call ESMF_ConfigGetAttribute(config, self%scFactorNOff_infile_name, &
      &                label   = "scFactorNOff_infile_name:", &
      &                default = ' ', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
      ! Biomass burning
       call rcEsmfReadLogical(config, self%doScaleNObbEmiss, &
      &           "doScaleNObbEmiss:", default=.false., rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%scFactorNObb_infile_name, &
      &                label   = "scFactorNObb_infile_name:", &
      &                default = ' ', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
     ! ---------------------------------------------------
     ! Harvard emissions:  acetone, isoprene, propene, NO.
@@ -523,17 +523,17 @@
       call ESMF_ConfigGetAttribute(config, self%GOCARTerod_infile_name, &
      &                label   = "GOCARTerod_infile_name:", &
      &                default = ' ', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
      
       call ESMF_ConfigGetAttribute(config, self%GOCARTocean_infile_name, &
      &                label   = "GOCARTocean_infile_name:", &
      &                default = ' ', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
       
       call ESMF_ConfigGetAttribute(config, self%GOCARTerod_mod_infile_name, &
      &                label   = "GOCARTerod_mod_infile_name:", &
      &                default = ' ', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
     
     !... do Galactic Cosmic Rays source of NOx?
     
@@ -545,7 +545,7 @@
       call ESMF_ConfigGetAttribute(config, self%gcr_infile_name, &
      &                label   = "gcr_infile_name:", &
      &                default = ' ', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
     !... do Ship Emission Calculations
 
@@ -556,72 +556,72 @@
 
       call rcEsmfReadLogical(config, self%doMEGANemission, &
      &           "doMEGANemission:", default=.false., rc=STATUS)
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%MEGAN_infile_name, &
      &                label   = "MEGAN_infile_name:", &
      &                default = ' ', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%laiMEGAN_InfileName, &
      &                label   = "laiMEGAN_InfileName:", &
      &                default = ' ', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%aefMboMEGAN_InfileName, &
      &                label   = "aefMboMEGAN_InfileName:", &
      &                default = ' ', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
      
       call ESMF_ConfigGetAttribute(config, self%aefIsopMEGAN_InfileName, &
      &                label   = "aefIsopMEGAN_InfileName:", &
      &                default = ' ', rc=STATUS )
-      _VERIFY(STATUS) 
+      VERIFY_(STATUS) 
       
       call ESMF_ConfigGetAttribute(config, self%aefOvocMEGAN_InfileName, &
      &                label   = "aefOvocMEGAN_InfileName:", &
      &                default = ' ', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
      
       call ESMF_ConfigGetAttribute(config, self%aefMonotMEGAN_InfileName, &
      &                label   = "aefMonotMEGAN_InfileName:", &
      &                default = ' ', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
      
       call ESMF_ConfigGetAttribute(config, self%fertscal_infile_name, &
      &                label   = "fertscal_infile_name:", &
      &                default = 'fertscale_4x5_dao.asc', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%lai_infile_name, &
      &                label   = "lai_infile_name:", &
      &                default = 'lai_4x5_dao.asc', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%precip_infile_name, &
      &                label   = "precip_infile_name:", &
      &                default = 'precip_4x5_dao.asc', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%soil_infile_name, &
      &                label   = "soil_infile_name:", &
      &                default = 'soiltype.asc', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%veg_infile_name, &
      &                label   = "veg_infile_name:", &
      &                default = 'vegtype_4x5_dao.asc', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%isopconv_infile_name, &
      &                label   = "isopconv_infile_name:", &
      &                default = 'isopconvtable.asc', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%monotconv_infile_name, &
      &                label   = "monotconv_infile_name:", &
      &                default = 'monotconvtable.asc', rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
 
     ! ---------------------------------------------------------------------------------------
     ! lightning_opt = 0 --> default lightning
@@ -637,22 +637,22 @@
       call ESMF_ConfigGetAttribute(config, self%lightning_opt, &
      &                label   = "lightning_opt:", &
      &                default = 0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
      
       call ESMF_ConfigGetAttribute(config, self%lightNOampFactor, &
      &                label   = "lightNOampFactor:", &
      &                default = 1.0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
      
       call ESMF_ConfigGetAttribute(config, self%numberNOperFlash, &
      &                label   = "numberNOperFlash:", &
      &                default = 1.50E+26, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
     
       call ESMF_ConfigGetAttribute(config, self%minDeepCloudTop, &
      &                label   = "minDeepCloudTop:", &
      &                default = 7.0, rc=STATUS )
-      _VERIFY(STATUS)
+      VERIFY_(STATUS)
     
       ! ---------------------------------------------------------------
       ! Check option ranges.  Note that as new options are added, these

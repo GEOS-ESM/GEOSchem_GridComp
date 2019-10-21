@@ -322,7 +322,7 @@ CONTAINS
    deallocate(dqa_mass,       __STAT__)
    deallocate(dqa_num,        __STAT__)
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
  end subroutine MAM_OC_Emission
 
@@ -541,7 +541,7 @@ CONTAINS
 !  Clean up
 !  --------
 
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
  end subroutine MAM_OC_Diagnostics
 

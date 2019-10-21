@@ -141,7 +141,7 @@ CONTAINS
 !   Wrap internal state for storing in GC; rename legacyState
 !   -------------------------------------
     allocate ( self, stat=STATUS )
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     wrap%ptr => self
  
 !   Load private Config Attributes
@@ -168,7 +168,7 @@ CONTAINS
 !   Store internal state in GC
 !   --------------------------
     call ESMF_UserCompSetInternalState ( GC, 'GAAS_state', wrap, STATUS )
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
   
 !                         ------------------
 !                         MAPL Data Services
@@ -192,7 +192,7 @@ CONTAINS
 
 !   All done
 !   --------
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
   END SUBROUTINE SetServices
 
@@ -349,7 +349,7 @@ CONTAINS
 
 !  All done
 !  --------
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
    END SUBROUTINE Initialize_
 
@@ -455,7 +455,7 @@ CONTAINS
 !  Stop here if it is NOT analysis time
 !  -------------------------------------
    if ( .not. analysis_time ) then
-      _RETURN(ESMF_SUCCESS)
+      RETURN_(ESMF_SUCCESS)
    end if
 
 !  If desired, just bail out if analysis file is not there
@@ -471,7 +471,7 @@ CONTAINS
               PRINT *, TRIM(Iam)//': Cannot find AOD analysis file ', trim(filename)
               PRINT *,' '
            end if
-           _RETURN(ESMF_SUCCESS)
+           RETURN_(ESMF_SUCCESS)
         end if
      end if
 
@@ -606,7 +606,7 @@ CONTAINS
 
 !  All done
 !  --------
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
 Contains
 
@@ -712,7 +712,7 @@ Contains
  
 !  All done
 !  --------
-   _RETURN(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
  end SUBROUTINE Finalize_
 
@@ -751,7 +751,7 @@ Contains
 !   Get my internal state
 !   ---------------------
     call ESMF_UserCompGetInternalState(gc, 'GAAS_state', WRAP, STATUS)
-    _VERIFY(STATUS)
+    VERIFY_(STATUS)
     self => wrap%ptr
 
 !   Get the configuration
@@ -775,7 +775,7 @@ Contains
 !   ---------------------
     call ESMF_GridCompGet ( GC, grid=GRID, __RC__)
 
-    _RETURN(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
    end subroutine extract_
 
