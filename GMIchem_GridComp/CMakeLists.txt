@@ -17,7 +17,6 @@ set (src_directories
   GMI_GridComp/GmiChemistry/sad
   GMI_GridComp/GmiChemistry/smv2chem
   GMI_GridComp/GmiChemistry/stratTropMech
-  GMI_GridComp/GmiChemistry/sulfur
   GMI_GridComp/GmiDeposition
   GMI_GridComp/GmiEmission
   GMI_GridComp/GmiEmission/GOCARTroutines
