@@ -20,6 +20,6 @@
   ENABLE_MAM:         .FALSE.
   ENABLE_MAM_DATA:    .FALSE.
   ENABLE_ACHEM:       .FALSE.
-  ENABLE_TR:          .TRUE.
+  ENABLE_TR:          .FALSE.
   ENABLE_DNA:         .FALSE.
   ENABLE_HEMCO:       .FALSE.
