@@ -1335,29 +1335,19 @@ if ( r%doing_GOCART ) then
           DIMS       = MAPL_DimsHorzVert,          &
           VLOCATION  = MAPL_VLocationCenter, __RC__)
 
-    end do
-
-!   Loop over all constituents on registry again to create duplicate
-!   internal state for storing values for aerosol bundle exported to Radiation
-!   --------------------------------------
-    do n = r%i_GOCART, r%j_GOCART
-
+       !   Create duplicate internal state for storing values for
+       !   aerosol bundle exported to Radiation. Note that not all
+       !   species are necessarily added to the bundle. Look at the
+       !   code for adding fields to the bundle to determine what
+       !   are actually added. (ewl, 10/25/19)
        call MAPL_AddInternalSpec(GC,               &
           SHORT_NAME = trim(COMP_NAME)//'::'//trim(r%vname(n))//'_ForBundle', &
           LONG_NAME  = r%vtitle(n),                &
           UNITS      = r%vunits(n),                &
           RESTART    = MAPL_RestartOptional,       &
           DIMS       = MAPL_DimsHorzVert,          &
+          FRIENDLYTO = trim(COMP_NAME),            &
           VLOCATION  = MAPL_VLocationCenter, __RC__)
-
-       ! Also add an export for diagnostics
-       call MAPL_AddExportSpec(GC,                    &
-          SHORT_NAME = trim(r%vname(n))//'_ForRad', &
-          LONG_NAME  = r%vtitle(n),                &
-          UNITS      = r%vunits(n),                &
-          DIMS       = MAPL_DimsHorzVert,             &
-          VLOCATION  = MAPL_VLocationCenter,          &
-          __RC__)
 
     end do
 
@@ -2602,7 +2592,6 @@ CONTAINS
    character(len=ESMF_MAXSTR)      :: IAm
    integer                         :: STATUS
    character(len=ESMF_MAXSTR)      :: COMP_NAME
-
    type(Chem_Registry), pointer    :: chemReg
    type(Aero_GridComp), pointer    :: gcChem      ! Grid Component
    type(Chem_Bundle), pointer      :: w_c         ! Chemical tracer fields     
@@ -2813,7 +2802,10 @@ CONTAINS
 
 !  Set the 'ForBundle' internal state fields to the tracer internal state
 !  values by default. If passing GEOS-Chem then call subroutine to copy
-!  mapped import values to 'ForBundle' intstate
+!  mapped import values to 'ForBundle' intstate. Note that not all
+!  '_ForBundle' fields are passed to Radiation. See code for adding
+!  fields to the AEROSOLS bundle to determine what fields are actually
+!  added (ewl, 10/25/19)
 !  ---------------------
    call MAPL_Get ( ggSTATE, INTERNAL_ESMF_STATE=internal, __RC__ )
    do n = ChemReg%i_GOCART, ChemReg%j_GOCART
@@ -2826,24 +2818,11 @@ CONTAINS
       nullify(ptr3d_int)
       nullify(ptr3d_intfb)
    end do
-
    if ( w_c%reg%pass_GEOSCHEM ) then
       ! Set verbose to FALSE to turn off print messages
       call copy_geoschem_to_intstate_forbundle_(w_c, impChem, internal, &
                                                 verbose=.TRUE., rc=rc)
    endif
-
-   ! Set the diagnostics for aerosols sent to radiation
-   do n = ChemReg%i_GOCART, ChemReg%j_GOCART
-      int_name = trim(COMP_NAME)//'::'//trim(chemReg%vname(n))
-      CALL MAPL_GetPointer(internal, ptr3d_intfb,     &
-                           trim(int_name)//'_ForBundle', __RC__ )
-      call MAPL_GetPointer (expChem, ptr3d_exp, &
-                            trim(chemReg%vname(n))//'_ForRad', __RC__)
-      ptr3d_exp(:,:,:) = ptr3d_intfb
-      nullify(ptr3d_intfb)
-      nullify(ptr3d_exp)
-   enddo
 
 !  Get the diagnostics
    call MAPL_GetPointer (expChem, totexttau, 'TOTEXTTAU', __RC__)
