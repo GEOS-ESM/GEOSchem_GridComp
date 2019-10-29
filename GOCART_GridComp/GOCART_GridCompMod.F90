@@ -1117,6 +1117,8 @@ if ( r%doing_GOCART ) then
           DIMS       = MAPL_DimsHorzVert,          &
           VLOCATION  = MAPL_VLocationCenter, __RC__)
 
+   if (mapl_am_i_root()) print*,'internal SHORT_NAME = ',trim(COMP_NAME)//'::'//trim(r%vname(n))
+
     end do
 
 !   This state is needed by radiation - It will contain 
@@ -1421,6 +1423,12 @@ end if ! doing GOCART
   
   real(ESMF_KIND_R4),  dimension(4) :: Vect_Hcts
 
+    !development testing variables - to be deleted
+    real, dimension(:,:,:), pointer       :: ptr_test
+    real, dimension(:,:), pointer       :: ptr_test2d
+
+    type (ESMF_Field)                   :: field_test
+
 !  Get my name and set-up traceback handle
 !  ---------------------------------------
    call ESMF_GridCompGet( GC, NAME=COMP_NAME, CONFIG=CF, __RC__ )
@@ -1675,12 +1683,11 @@ end if ! doing GOCART
                               trim(COMP_NAME) // '::'//     &
                               trim(ChemReg%vname(n)),       &
                               FIELD, __RC__ )
-
            fld = MAPL_FieldCreate(FIELD, name=ChemReg%vname(n), __RC__)
            call MAPL_FieldBundleAdd(aero_state_aerosols, fld, __RC__)
         end if
     end do
-    
+
     call ESMF_FieldBundleGet(aero_state_aerosols, fieldCount=n_aerosols, __RC__)
 
     if (n_aerosols > 0) then
@@ -2017,6 +2024,8 @@ end if ! doing GOCART
 
     end if
 
+
+
 !   Black Carbon
 !   ------------
     if ( ChemReg%doing_BC ) then
@@ -2129,6 +2138,21 @@ end if ! doing GOCART
 
     end if
 
+
+
+!  call ESMF_StateGet( impChem, 'climDUDP001', field, __RC__ )
+!  call ESMF_FieldGet( field, farrayPtr=ptr_test2d, __RC__ )
+!  if (mapl_am_i_root()) print*,'GOCART.data climDUDP001 = ', ptr_test2d
+
+
+!   call ESMF_StateGet( internal, 'GOCART.data::du001', field, __RC__ )
+!   call ESMF_FieldGet( field, farrayPtr=ptr_test, __RC__ )
+!   if (mapl_am_i_root()) print*,'GOCART.data::du001 = ', ptr_test
+
+!if (mapl_am_i_root()) print*,'GOCART.data INTERNAL STATE = '
+!call ESMF_StatePrint(internal, __RC__)
+
+
 #ifdef PRINT_STATES
 
    if (MAPL_AM_I_ROOT()) then
@@ -2232,6 +2256,13 @@ CONTAINS
 
    type(GOCART_state), pointer     :: myState
 
+    !development testing variables
+    real, dimension(:,:), pointer     :: ptr_test2d
+    type (ESMF_Field)                   :: field
+    type (ESMF_State)                   :: AEROng
+    type (ESMF_FieldBundle)             :: AEROngbundle
+    integer                             :: NQ
+
 
 !                               ---
 
@@ -2307,6 +2338,12 @@ CONTAINS
 
    call MAPL_TimerOff(ggState, 'RUN')
    call MAPL_TimerOff(ggState, 'TOTAL')
+
+
+!  call ESMF_StateGet( impChem, 'climDUDP001', field, __RC__ )
+!  call ESMF_FieldGet( field, farrayPtr=ptr_test2d, __RC__ )
+!  if (mapl_am_i_root()) print*,'GOCART.data climDUDP001 = ', ptr_test2d
+
 
    RETURN_(ESMF_SUCCESS)
 
@@ -2503,6 +2540,8 @@ CONTAINS
        do n = chemReg%i_GOCART, chemReg%j_GOCART
            call MAPL_GetPointer ( internal, NAME=trim(COMP_NAME)//'::'//trim(chemReg%vname(n)), ptr=ptr3d_int, __RC__ )
            call MAPL_GetPointer ( impChem,  NAME='clim'//trim(chemReg%vname(n)), ptr=ptr3d_imp, __RC__ )
+
+if (mapl_am_i_root()) print*,'GOCART interal state var = ',trim(COMP_NAME)//'::'//trim(chemReg%vname(n))
              
            ptr3d_int = ptr3d_imp
        end do
