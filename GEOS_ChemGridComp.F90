@@ -19,6 +19,7 @@ module GEOS_ChemGridCompMod
 
   use GEOS_ChemEnvGridCompMod,  only : ChemEnv_SetServices   => SetServices
   use GOCART_GridCompMod,       only : GOCART_SetServices    => SetServices
+  use GOCARTng_GridCompMod,     only : GOCARTng_SetServices  => SetServices !GOCART REFACTOR
   use StratChem_GridCompMod,    only : StratChem_SetServices => SetServices
   use GMIchem_GridCompMod,      only : GMI_SetServices       => SetServices
   use CARMAchem_GridCompMod,    only : CARMA_SetServices     => SetServices
@@ -51,6 +52,7 @@ module GEOS_ChemGridCompMod
      LOGICAL :: enable_ACHEM
      LOGICAL :: enable_GOCART
      LOGICAL :: enable_GOCARTdata
+     LOGICAL :: enable_GOCARTng        ! GOCART REFACTOR
      LOGICAL :: enable_GAAS
      LOGICAL :: enable_H2O
      LOGICAL :: enable_STRATCHEM
@@ -86,6 +88,7 @@ module GEOS_ChemGridCompMod
   integer ::        PCHEM = -1
   integer ::        ACHEM = -1
   integer ::       GOCART = -1
+  integer ::     GOCARTng = -1
   integer ::   GOCARTdata = -1
   integer ::         GAAS = -1
   integer ::          H2O = -1
@@ -98,7 +101,6 @@ module GEOS_ChemGridCompMod
   integer ::      MAMdata = -1
   integer ::           TR = -1
   integer ::          DNA = -1
-
 contains
 
 !BOP
@@ -191,6 +193,7 @@ contains
     call ESMF_ConfigGetAttribute(myCF,      myState%enable_ACHEM, Default=.FALSE., Label="ENABLE_ACHEM:",       __RC__ )
     call ESMF_ConfigGetAttribute(myCF,     myState%enable_GOCART, Default=.FALSE., Label="ENABLE_GOCART:",      __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCARTdata, Default=.FALSE., Label="ENABLE_GOCART_DATA:", __RC__ )
+    call ESMF_ConfigGetAttribute(myCF,   myState%enable_GOCARTng, Default=.FALSE., Label="ENABLE_GOCARTng:",    __RC__ )
     call ESMF_ConfigGetAttribute(myCF,       myState%enable_GAAS, Default=.FALSE., Label="ENABLE_GAAS:",        __RC__ )
     call ESMF_ConfigGetAttribute(myCF,        myState%enable_H2O, Default=.FALSE., Label="ENABLE_H2O:",         __RC__ )
     call ESMF_ConfigGetAttribute(myCF,  myState%enable_STRATCHEM, Default=.FALSE., Label="ENABLE_STRATCHEM:",   __RC__ )
@@ -222,6 +225,7 @@ contains
     if (     myState%enable_ACHEM)       ACHEM = MAPL_AddChild(GC, NAME=       'ACHEM', SS=AChem_SetServices,     __RC__)
     if (    myState%enable_GOCART)      GOCART = MAPL_AddChild(GC, NAME=      'GOCART', SS=GOCART_SetServices,    __RC__)
     if (myState%enable_GOCARTdata)  GOCARTdata = MAPL_AddChild(GC, NAME= 'GOCART.data', SS=GOCART_SetServices,    __RC__)
+    if (myState%enable_GOCARTng)      GOCARTng = MAPL_AddChild(GC, NAME=      'GOCARTng',SS=GOCARTng_SetServices, __RC__)
     if (      myState%enable_GAAS)        GAAS = MAPL_AddChild(GC, NAME=        'GAAS', SS=GAAS_SetServices,      __RC__)
     if (       myState%enable_H2O)         H2O = MAPL_AddChild(GC, NAME=         'H2O', SS=H2O_SetServices,       __RC__)
     if ( myState%enable_STRATCHEM)   STRATCHEM = MAPL_AddChild(GC, NAME=   'STRATCHEM', SS=StratChem_SetServices, __RC__)
@@ -366,6 +370,14 @@ contains
           SHORT_NAME  = (/'DELP       '/), &
           DST_ID = GOCARTdata, SRC_ID = CHEMENV, __RC__  )
   ENDIF
+
+!  IF ((myState%enable_GOCARTng) .AND. (myState%enable_GOCART)) then  !GOCART REFACTOR TEST
+!     call MAPL_AddConnectivity (GC, &
+!          SHORT_NAME = [ 'AERO' ], &
+!          DST_ID = GOCARTng, SRC_ID = GOCART, __RC__)
+!  endif
+
+
 
   IF(myState%enable_GAAS) then
      CALL MAPL_AddConnectivity ( GC, &
@@ -952,7 +964,6 @@ contains
           call ESMF_GridCompGet( GCS(I), NAME=CHILD_NAME, __RC__ )
           call MAPL_GetObjectFromGC(GCS(I), CHLD, __RC__ )
           call MAPL_Get(CHLD, NumRunPhases=NPHASE, __RC__ )
-
           if ( NPHASE > 1 ) then
             call MAPL_TimerOn(MAPL,trim(CHILD_NAME))
             call ESMF_GridCompRun (GCS(I), &
@@ -1078,7 +1089,6 @@ contains
           else
             IPHASE = 1
           endif
-
           call MAPL_TimerOn(MAPL,trim(CHILD_NAME))
           call ESMF_GridCompRun (GCS(I), &
                    importState = GIM(I), &
@@ -1161,6 +1171,8 @@ contains
                                     ID = GOCARTdata
            case ('GOCART')
                                     ID = GOCART
+           case ('GOCARTng')
+                                    ID = GOCARTng
            case ('GAAS')
                                     ID = GAAS
            case ('H2O')
@@ -1183,6 +1195,7 @@ contains
                                     ID = TR
            case ('DNA')
                                     ID = DNA
+
            case DEFAULT
 
               message = "unknown provider "//trim(name)
