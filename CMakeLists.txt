@@ -5,6 +5,7 @@ add_subdirectory(Shared)
 set (alldirs
   GEOSpchem_GridComp
   GOCART_GridComp
+  GOCARTng_GridComp
   StratChem_GridComp
   GMIchem_GridComp
   CARMAchem_GridComp
