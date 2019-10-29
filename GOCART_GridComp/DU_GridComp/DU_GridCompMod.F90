@@ -207,6 +207,13 @@ CONTAINS
                                                 !  0 - all is well
                                                 !  1 - 
 
+
+    !development testing variables
+    real, dimension(:,:,:), pointer     :: ptr_test
+    type (ESMF_Field)                   :: field
+    integer                         :: STATUS
+
+
 ! !DESCRIPTION: Initializes the DU Grid Component. It primarily sets
 !               the import state for each active constituent package.
 !
@@ -318,6 +325,13 @@ CONTAINS
     PRINT *,myname,": I90_FullRelease not successful."
     rc = 40
    END IF
+
+
+   call ESMF_StateGet( expChem, 'DUMASS', field, RC=status )
+!  verify_(status)
+   call ESMF_FieldGet( field, farrayPtr=ptr_test, RC=status )
+!  verify_(status)
+   if (mapl_am_i_root()) print*,'DU DUMASS = ', ptr_test
 
    end subroutine DU_GridCompInitialize
 
