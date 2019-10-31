@@ -1398,7 +1398,7 @@ end if ! doing GOCART
    integer, parameter              :: n_gocart_modes = 13
    character(len=ESMF_MAXSTR)      :: aero_aci_modes(n_gocart_modes)
    character(len=ESMF_MAXSTR)      :: short_name
-   real                            :: f_aci_seasalt, maxclean
+   real                            :: f_aci_seasalt, maxclean, ccntuning
    character(LEN=ESMF_MAXSTR)      :: CLDMICRO
      
    type(MAPL_VarSpec), pointer     :: InternalSpec(:)
@@ -1844,13 +1844,15 @@ end if ! doing GOCART
         call ESMF_AttributeSet(aero_aci, name='fraction_of_land_type',        value='FRLAND',   __RC__)
 
         ! scaling factor for sea salt
-        call ESMF_ConfigGetAttribute(CF, f_aci_seasalt, default=14.0, label='SS_SCALE:', __RC__)
+        call ESMF_ConfigGetAttribute(CF, f_aci_seasalt, default=4.0, label='SS_SCALE:', __RC__)
         call ESMF_AttributeSet(aero_aci, name='seasalt_scaling_factor', value=f_aci_seasalt, __RC__)
         
         ! max mixing ratio before switching to "polluted" size distributions
-        call ESMF_ConfigGetAttribute(CF, maxclean, default=1.0e-12, label='MAXCLEAN:', __RC__)
+        call ESMF_ConfigGetAttribute(CF, maxclean, default=1.0e-9, label='MAXCLEAN:', __RC__)
         call ESMF_AttributeSet(aero_aci, name='max_q_clean', value=maxclean, __RC__)
-       
+        
+        call ESMF_ConfigGetAttribute(CF, CCNtuning, default=3.0, label='CCNTUNING:', __RC__)        
+        call ESMF_AttributeSet(aero_aci, name='ccn_tuning', value=CCNtuning, __RC__)
        
         call ESMF_ConfigGetAttribute( CF, CLDMICRO, Label='CLDMICRO:',  default="1MOMENT", RC=STATUS)
         call ESMF_AttributeSet(aero_aci, name='cldmicro', value=CLDMICRO, __RC__)
@@ -3340,6 +3342,7 @@ subroutine aerosol_activation_properties(state, rc)
 
   real                            :: ss_scale          ! sea salt scaling factor
   real                            :: max_clean          ! max mixing ratio before considered polluted
+  real                            :: ccn_tuning         ! tunes conversion factors for sulfate
   character(LEN=ESMF_MAXSTR)      :: cld_micro
   
   character(len=ESMF_MAXSTR)      :: fld_name
@@ -3361,7 +3364,7 @@ subroutine aerosol_activation_properties(state, rc)
   real, parameter :: densBRC =  900.0
 
   real, parameter :: k_SO4   = 0.65
-  real, parameter :: k_ORG   = 0.20
+  real, parameter :: k_ORG   = 0.05 !donif 2019
   real, parameter :: k_SS    = 1.28
   real, parameter :: k_DU    = 0.0001
   real, parameter :: k_BC    = 0.0001
@@ -3428,7 +3431,7 @@ subroutine aerosol_activation_properties(state, rc)
   call ESMF_AttributeGet(state, name='seasalt_scaling_factor', value=ss_scale, __RC__)
   call ESMF_AttributeGet(state, name='max_q_clean', value=max_clean, __RC__)
   call ESMF_AttributeGet(state, name='cldmicro', value=cld_micro, __RC__)
-  
+  call ESMF_AttributeGet(state, name='ccn_tuning', value=ccn_tuning, __RC__)
 
 ! Aerosol mass mixing ratios
 ! --------------------------
@@ -3501,7 +3504,7 @@ subroutine aerosol_activation_properties(state, rc)
       hygroscopicity = k_ORG*q_ + hygroscopicity
       density = densORG*q_ + density
 
-      where (q > 2.0e-12 .and. hygroscopicity > tiny(0.0))
+      where (q > tiny(0.0) .and. hygroscopicity > tiny(0.0))
           hygroscopicity = hygroscopicity / q
           hygroscopicity = max(0.001, hygroscopicity)
 
@@ -3513,15 +3516,10 @@ subroutine aerosol_activation_properties(state, rc)
       end where
 
       ! required by the aap_(...)
-      if(adjustl(cld_micro)/="2MOMENT") then ! maintained for compatibility with the single moment
-      
        call ESMF_FieldBundleGet(aerosols, 'SO4', field=fld, __RC__)
        call ESMF_FieldGet(fld, farrayPtr=q_, __RC__)  ! only use the mass of sulfate to make the conversion
       
-      else
-       q = q_
-      end if 
-
+     
   else if (index(mode_, 'bcphilic') > 0) then
       call ESMF_FieldBundleGet(aerosols, 'BCphilic', field=fld, __RC__)
       call ESMF_FieldGet(fld, farrayPtr=q_, __RC__)
@@ -3600,7 +3598,7 @@ contains
      real, dimension(i1:i2,j1:j2,km) :: qaux
       !real, parameter    :: max_clean = 5.0e-7  !max mixing ratio before considered polluted
  
-
+!      real, parameter :: CCN_tuning = 10.0
  
 
      mode_ = trim(mode)
@@ -3616,7 +3614,7 @@ contains
       if(adjustl(cld_micro)=="2MOMENT") then
         qaux=q !this corrects a bug
         else
-        qaux  =  q_ ! this is incorrect bu we keep it to get zero diff with the single moment
+        qaux  =  q_ !keep it to get zero diff with the single moment
         max_clean = 5.0e-7
       end if
 
@@ -3737,33 +3735,33 @@ contains
          where (q > max_clean)          
              sigma    = SIGI(1)
              diameter = DPGI(1)
-             num      = TPI(1) * qaux / (dens_*fmassaux)             ! only sulfate  mass
+             num      = TPI(1) * qaux*ccn_tuning / (dens_*fmassaux)             ! only sulfate  mass
          elsewhere 
              sigma    = SIGIclean(1)
              diameter = DPGIclean(1)
-             num      = TPIclean(1) * qaux / (dens_*fmassclean)      ! only sulfate 
+             num      = TPIclean(1) * qaux*ccn_tuning / (dens_*fmassclean)      ! only sulfate 
          end where 
 
      case ('sulforg02')
          where (q > max_clean)
              sigma    = SIGI(2)
              diameter = DPGI(2)
-             num      = TPI(2) * qaux / (dens_*fmassaux)            ! only sulfate mass
+             num      = TPI(2) * qaux*ccn_tuning / (dens_*fmassaux)            ! only sulfate mass
          elsewhere
              sigma    = SIGIclean(2)
              diameter = DPGIclean(2)        
-             num      = TPIclean(2) * qaux / (dens_*fmassclean)     ! only sulfate
+             num      = TPIclean(2) * qaux*ccn_tuning / (dens_*fmassclean)     ! only sulfate
          end where 
    
      case ('sulforg03')
          where (q > max_clean)
              sigma    = SIGI(3)
              diameter = DPGI(3)        
-             num      = TPI(3) * qaux / (dens_*fmassaux)           ! only sulfate mass
+             num      = TPI(3) * qaux*ccn_tuning / (dens_*fmassaux)           ! only sulfate mass
          elsewhere 
              sigma    = SIGIclean(3)
              diameter = DPGIclean(3)
-             num      = TPIclean(3) * qaux / (dens_*fmassclean)    ! only sulfate
+             num      = TPIclean(3) * qaux*ccn_tuning / (dens_*fmassclean)    ! only sulfate
          end where 
 
      case ('bcphilic')
