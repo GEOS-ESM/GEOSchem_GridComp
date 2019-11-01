@@ -2541,7 +2541,7 @@ CONTAINS
            call MAPL_GetPointer ( internal, NAME=trim(COMP_NAME)//'::'//trim(chemReg%vname(n)), ptr=ptr3d_int, __RC__ )
            call MAPL_GetPointer ( impChem,  NAME='clim'//trim(chemReg%vname(n)), ptr=ptr3d_imp, __RC__ )
 
-if (mapl_am_i_root()) print*,'GOCART interal state var = ',trim(COMP_NAME)//'::'//trim(chemReg%vname(n))
+!if (mapl_am_i_root()) print*,'GOCART interal state var = ',trim(COMP_NAME)//'::'//trim(chemReg%vname(n))
              
            ptr3d_int = ptr3d_imp
        end do
@@ -3205,6 +3205,7 @@ subroutine aerosol_optics(state, rc)
   j1 = lbound(ple, 2); j2 = ubound(ple, 2)
                        km = ubound(ple, 3)
 
+
 ! Relative humidity
 ! -----------------
   call ESMF_AttributeGet(state, name='relative_humidity_for_aerosol_optics', value=fld_name, __RC__)
@@ -3214,6 +3215,7 @@ subroutine aerosol_optics(state, rc)
   j1 = lbound(rh, 2); j2 = ubound(rh, 2)
                       km = ubound(rh, 3)
   
+
   call ESMF_StateGet(state, 'AEROSOLS', aerosols, __RC__)
   call ESMF_FieldBundleGet(aerosols, fieldCount=n_aerosols, __RC__)
 
