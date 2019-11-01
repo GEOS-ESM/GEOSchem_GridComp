@@ -1072,16 +1072,6 @@ if ( r%doing_GOCART ) then
 !         Set aerosol friendly attribute to MOIST as function of Convective Parameterization
 !         ----------------------------------------------------------------------------------
          
-	 ! CALL ESMF_ConfigGetAttribute(CF, CONVPAR_OPTION, Label='CONVPAR_OPTION:', __RC__) ! Note: Default set in GEOS_GcmGridComp.F90    
-         ! IF( trim(CONVPAR_OPTION) .ne. 'RAS'  .and. &
-         !     trim(CONVPAR_OPTION) .ne. 'GF'   .and. &
-         !     trim(CONVPAR_OPTION) .ne. 'BOTH' .and. &
-         !     trim(CONVPAR_OPTION) .ne. 'NONE' )  then
-         !     print *, trim(Iam)//': CONVPAR_OPTION (',trim(CONVPAR_OPTION),') Not Properly Defined.'
-         !     STATUS = 1
-         !     VERIFY_(STATUS)
-         ! endif
-
           short_name = uppercase(trim(r%vname(n)))
           if ( short_name(1:2) .eq. 'DU'    .or. &
                short_name(1:2) .eq. 'SS'    .or. &
@@ -1099,11 +1089,6 @@ if ( r%doing_GOCART ) then
 	       FRIENDLIES = 'DYNAMICS:TURBULENCE'
 	      !FRIENDLIES = 'DYNAMICS:TURBULENCE:MOIST'
 	       if(trim(FRIENDLIES) == 'DYNAMICS:TURBULENCE:MOIST') call Disable_Convection
-               
-	      ! if( trim(CONVPAR_OPTION)=='NONE' ) FRIENDLIES = 'DYNAMICS:TURBULENCE'
-              ! if( trim(CONVPAR_OPTION)=='RAS'  ) FRIENDLIES = 'DYNAMICS:TURBULENCE'
-              ! if( trim(CONVPAR_OPTION)=='BOTH' ) FRIENDLIES = 'DYNAMICS:TURBULENCE:MOIST'
-              ! if( trim(CONVPAR_OPTION)=='GF'   ) FRIENDLIES = 'DYNAMICS:TURBULENCE:MOIST'
           endif
 
        end if ! data or computational GC
