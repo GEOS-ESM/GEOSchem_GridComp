@@ -21,6 +21,7 @@
    use Chem_UtilMod, only: Chem_UtilNegFiller
    use Aero_GridCompMod      ! Parent Aerosol component with IRF methods but no SetServices()
    USE m_chars, ONLY: uppercase
+   use ConvectionMod, only: Disable_Convection
 
    implicit none
    private
@@ -120,7 +121,7 @@ CONTAINS
     character(len=ESMF_MAXSTR)      :: AEROFRIENDLY
     character(len=ESMF_MAXSTR)      :: providerName
     character(len=ESMF_MAXSTR)      :: short_name
-    character(len=ESMF_MAXSTR)      :: CONVPAR_OPTION
+!    character(len=ESMF_MAXSTR)      :: CONVPAR_OPTION
     real                            :: DEFVAL
     real                            :: DEFVAL_CO2
 
@@ -1069,16 +1070,16 @@ if ( r%doing_GOCART ) then
 
 !         Set aerosol friendly attribute to MOIST as function of Convective Parameterization
 !         ----------------------------------------------------------------------------------
-          CALL ESMF_ConfigGetAttribute(CF, CONVPAR_OPTION, Label='CONVPAR_OPTION:', __RC__) ! Note: Default set in GEOS_GcmGridComp.F90
-
-          IF( trim(CONVPAR_OPTION) .ne. 'RAS'  .and. &
-              trim(CONVPAR_OPTION) .ne. 'GF'   .and. &
-              trim(CONVPAR_OPTION) .ne. 'BOTH' .and. &
-              trim(CONVPAR_OPTION) .ne. 'NONE' )  then
-              print *, trim(Iam)//': CONVPAR_OPTION (',trim(CONVPAR_OPTION),') Not Properly Defined.'
-              STATUS = 1
-              VERIFY_(STATUS)
-          endif
+         
+	 ! CALL ESMF_ConfigGetAttribute(CF, CONVPAR_OPTION, Label='CONVPAR_OPTION:', __RC__) ! Note: Default set in GEOS_GcmGridComp.F90    
+         ! IF( trim(CONVPAR_OPTION) .ne. 'RAS'  .and. &
+         !     trim(CONVPAR_OPTION) .ne. 'GF'   .and. &
+         !     trim(CONVPAR_OPTION) .ne. 'BOTH' .and. &
+         !     trim(CONVPAR_OPTION) .ne. 'NONE' )  then
+         !     print *, trim(Iam)//': CONVPAR_OPTION (',trim(CONVPAR_OPTION),') Not Properly Defined.'
+         !     STATUS = 1
+         !     VERIFY_(STATUS)
+         ! endif
 
           short_name = uppercase(trim(r%vname(n)))
           if ( short_name(1:2) .eq. 'DU'    .or. &
@@ -1093,10 +1094,15 @@ if ( r%doing_GOCART ) then
                short_name(1:3) .eq. 'NH3'   .or. &
                short_name(1:4) .eq. 'NH4A'  .or. &
                short_name(1:5) .eq. 'NO3AN' ) then
-               if( trim(CONVPAR_OPTION)=='NONE' ) FRIENDLIES = 'DYNAMICS:TURBULENCE'
-               if( trim(CONVPAR_OPTION)=='RAS'  ) FRIENDLIES = 'DYNAMICS:TURBULENCE'
-               if( trim(CONVPAR_OPTION)=='BOTH' ) FRIENDLIES = 'DYNAMICS:TURBULENCE:MOIST'
-               if( trim(CONVPAR_OPTION)=='GF'   ) FRIENDLIES = 'DYNAMICS:TURBULENCE:MOIST'
+               
+	       FRIENDLIES = 'DYNAMICS:TURBULENCE'
+	      !FRIENDLIES = 'DYNAMICS:TURBULENCE:MOIST'
+	       if(trim(FRIENDLIES) == 'DYNAMICS:TURBULENCE:MOIST') call Disable_Convection
+               
+	      ! if( trim(CONVPAR_OPTION)=='NONE' ) FRIENDLIES = 'DYNAMICS:TURBULENCE'
+              ! if( trim(CONVPAR_OPTION)=='RAS'  ) FRIENDLIES = 'DYNAMICS:TURBULENCE'
+              ! if( trim(CONVPAR_OPTION)=='BOTH' ) FRIENDLIES = 'DYNAMICS:TURBULENCE:MOIST'
+              ! if( trim(CONVPAR_OPTION)=='GF'   ) FRIENDLIES = 'DYNAMICS:TURBULENCE:MOIST'
           endif
 
        end if ! data or computational GC
