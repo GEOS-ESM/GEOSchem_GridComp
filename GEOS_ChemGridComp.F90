@@ -225,7 +225,7 @@ contains
     if (     myState%enable_ACHEM)       ACHEM = MAPL_AddChild(GC, NAME=       'ACHEM', SS=AChem_SetServices,     __RC__)
     if (    myState%enable_GOCART)      GOCART = MAPL_AddChild(GC, NAME=      'GOCART', SS=GOCART_SetServices,    __RC__)
     if (myState%enable_GOCARTdata)  GOCARTdata = MAPL_AddChild(GC, NAME= 'GOCART.data', SS=GOCART_SetServices,    __RC__)
-    if (myState%enable_GOCARTng)      GOCARTng = MAPL_AddChild(GC, NAME=      'GOCARTng',SS=GOCARTng_SetServices, __RC__)
+    if (  myState%enable_GOCARTng)    GOCARTng = MAPL_AddChild(GC, NAME=    'GOCARTng', SS=GOCARTng_SetServices,  __RC__)
     if (      myState%enable_GAAS)        GAAS = MAPL_AddChild(GC, NAME=        'GAAS', SS=GAAS_SetServices,      __RC__)
     if (       myState%enable_H2O)         H2O = MAPL_AddChild(GC, NAME=         'H2O', SS=H2O_SetServices,       __RC__)
     if ( myState%enable_STRATCHEM)   STRATCHEM = MAPL_AddChild(GC, NAME=   'STRATCHEM', SS=StratChem_SetServices, __RC__)
@@ -291,6 +291,13 @@ contains
 ! Aerosol for radiation.  If an AERO_PROVIDER is not specified
 ! in the AGCM.tmpl, then the provider defaults to GOCART.data.
 ! -----------------------------------------------------------
+      
+
+! Provide GOCARTng's AERO state
+! -----------------------------
+  call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AEROng',    &
+                                CHILD_ID = GOCARTng, __RC__  )
+
 
   call ESMF_ConfigGetAttribute(CF, providerName, Default='GOCART.data', &
                                Label="AERO_PROVIDER:", __RC__ )
@@ -753,7 +760,7 @@ contains
    type (ESMF_State)                   :: INTERNAL
    type (ESMF_State),          pointer :: GEX(:)
    type (ESMF_FieldBundle)             :: fBUNDLE
-   type (ESMF_State)                   :: AERO
+   type (ESMF_State)                   :: AERO, AEROng
    type (ESMF_State)                   :: AERO_ACI
    type (ESMF_Config)                  :: CF, myCF
 
@@ -815,6 +822,16 @@ contains
         call ESMF_StateGet(EXPORT, 'AERO_ACI', AERO_ACI, __RC__)
         call ESMF_AttributeSet(AERO_ACI, name='implements_aerosol_activation_properties_method', value=.false., __RC__)
     end if
+
+
+        call ESMF_StateGet(EXPORT, 'AEROng', AEROng, __RC__)
+!   Verify that childen's states are properly added - for testing to be deleted
+    if(mapl_am_i_root()) print*,'AEROng in CHEM print state = '
+    if(mapl_am_i_root()) then
+        call esmf_stateprint(AEROng, __RC__)
+    end if
+
+
 
 #ifdef PRINT_STATES
 
