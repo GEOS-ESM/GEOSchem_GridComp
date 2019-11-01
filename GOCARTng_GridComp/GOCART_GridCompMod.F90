@@ -166,7 +166,7 @@ contains
 !   aerosols and aerosol optics
 !   --------------------------------------------------------
     call MAPL_AddExportSpec(GC,                       &
-       SHORT_NAME = 'AERO',                           &
+       SHORT_NAME = 'AEROng',                           &
        LONG_NAME  = 'aerosol_mass_mixing_ratios_ng',  &
        UNITS      = 'kg kg-1',                        &
        DIMS       = MAPL_DimsHorzVert,                &
@@ -300,7 +300,7 @@ contains
 
 !   Fill AERO, AERO_ACI, and AERO_DP with the analogous children's states
 !   ----------------------------------------------------------------------
-    call ESMF_StateGet (EXPORT, 'AERO'    , AERO     , __RC__)
+    call ESMF_StateGet (EXPORT, 'AEROng'    , AERO     , __RC__)
     call ESMF_StateGet (EXPORT, 'AERO_ACI', AERO_ACI , __RC__)
     call ESMF_StateGet (EXPORT, 'AERO_DP' , AERO_DP  , __RC__)
 
@@ -322,15 +322,10 @@ contains
 
                 call ESMF_StateGet (GEX(i), trim(CHILD_NAME)//'_AERO_DP', child_bundle, __RC__)
                 call ESMF_FieldBundleGet (child_bundle, fieldCount=fieldCount, __RC__)
-                   if (mapl_am_i_root()) print*,'fieldCount = ', fieldCount
                 allocate (fieldList(FieldCount), __STAT__)
                 call ESMF_FieldBundleGet (child_bundle, fieldList=fieldList, __RC__)
                 call ESMF_FieldBundleAdd (AERO_DP, fieldList, __RC__)
                 deallocate(fieldList, __STAT__)
-!                do k = 1, fieldCount
-!                    call ESMF_FieldBundleGet (child_bundle, fieldIndex=i, field=field, __RC__)
-!                    call ESMF_FieldBundleAdd (AERO_DP, field, __RC__)
-!                end do
             end if
         end do     
     end do
@@ -343,16 +338,16 @@ contains
     end if
 
 !   Verify that childen's states are properly added - for testing to be deleted
-    if(mapl_am_i_root()) print*,'GOCARTng AERO_ACI print state = '
-    if(mapl_am_i_root()) then
-        call esmf_stateprint(AERO_ACI, __RC__)
-    end if
+!    if(mapl_am_i_root()) print*,'GOCARTng AERO_ACI print state = '
+!    if(mapl_am_i_root()) then
+!        call esmf_stateprint(AERO_ACI, __RC__)
+!    end if
 
 !   Verify that childen's states are properly added - for testing to be deleted
-    if(mapl_am_i_root()) print*,'GOCARTng AERO_DP print bundle = '
-    if(mapl_am_i_root()) then
-        call esmf_fieldbundleprint(AERO_DP, __RC__)
-    end if
+!    if(mapl_am_i_root()) print*,'GOCARTng AERO_DP print bundle = '
+!    if(mapl_am_i_root()) then
+!        call esmf_fieldbundleprint(AERO_DP, __RC__)
+!    end if
   
 !   Verify contents of the sea salt state - for testing to be deleted
 !  if(mapl_am_i_root()) print*,'last child_state print state = '
@@ -360,7 +355,7 @@ contains
 !      call esmf_stateprint(child_state, __RC__)
 !  end if
 
-if (mapl_am_i_root()) print*,'GOCARTng Initialize END'
+!if (mapl_am_i_root()) print*,'GOCARTng Initialize END'
 
 
     RETURN_(ESMF_SUCCESS)
