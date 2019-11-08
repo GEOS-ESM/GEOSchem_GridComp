@@ -19,9 +19,9 @@ module DUng_GridCompMod
    implicit none
    private
 
-   type(Chem_Mie), dimension(2), save :: gocartMieTable
-   integer, parameter :: instanceComputational = 1
-   integer, parameter :: instanceData          = 2
+!   type(Chem_Mie), dimension(2), save :: gocartMieTable
+!   integer, parameter :: instanceComputational = 1
+!   integer, parameter :: instanceData          = 2
 
 
 ! !PUBLIC MEMBER FUNCTIONS:
@@ -395,8 +395,8 @@ if (mapl_am_i_root()) print*,'GOCART DUng Initialize BEGIN' ! for testing - to b
         write (field_name, '(A, I0.3)') '', i
         call ESMF_StateGet (INTERNAL, trim(COMP_NAME)//'::du'//trim(field_name), field, __RC__)
         fld = MAPL_FieldCreate (field, name='du'//trim(field_name), __RC__)
-        call MAPL_StateAdd (DU_State    , field, __RC__)
-        call MAPL_StateAdd (DU_State_ACI, field, __RC__)
+        call MAPL_StateAdd (DU_State    , fld, __RC__)
+        call MAPL_StateAdd (DU_State_ACI, fld, __RC__)
 
 !       Dry deposition
 !       ---------------
@@ -425,16 +425,16 @@ if (mapl_am_i_root()) print*,'GOCART DUng Initialize BEGIN' ! for testing - to b
 
 !   Set AERO States' attributes
 !   ----------------------------
-    if (data_driven) then
-        instance = instanceData
-    else
-        instance = instanceComputational
-    end if
+!    if (data_driven) then
+!        instance = instanceData
+!    else
+!        instance = instanceComputational
+!    end if
 
 !    gocartMieTable(instance) = Chem_MieCreate('AGCM.rc', __RC__)
 
     ! Mie Table instance/index
-    call ESMF_AttributeSet(DU_State, name='mie_table_instance', value=instance, __RC__)
+!    call ESMF_AttributeSet(DU_State, name='mie_table_instance', value=instance, __RC__)
 
     ! state of the atmosphere
     call ESMF_AttributeSet(DU_State, name='air_pressure_for_aerosol_optics',             value='PLE', __RC__)
@@ -678,7 +678,7 @@ if (mapl_am_i_root()) print*,'DUng ExtData Run_data END'
 
     real, dimension(:,:,:,:), allocatable            :: ext, ssa, asy  ! (lon:,lat:,lev:,band:)
 
-    integer                                          :: instance
+!    integer                                          :: instance
     integer                                          :: n
     integer                                          :: i1, j1, i2, j2, km
     integer                                          :: band, offset
@@ -688,59 +688,58 @@ if (mapl_am_i_root()) print*,'DUng ExtData Run_data END'
     real    :: x
     integer :: i, j, k
 
-    __Iam__('GOCARTng::aerosol_optics')
+    __Iam__('DUng::aerosol_optics')
 
 
 !   Begin... 
 
 
-! Mie Table instance/index
-! ------------------------
-  call ESMF_AttributeGet(state, name='mie_table_instance', value=instance, __RC__)
+!   Mie Table instance/index
+!   ------------------------
+!    call ESMF_AttributeGet(state, name='mie_table_instance', value=instance, __RC__)
 
-! Radiation band
-! --------------
-  band = 0
-  call ESMF_AttributeGet(state, name='band_for_aerosol_optics', value=band, __RC__)
-  offset = band - n_bands
+!   Radiation band
+!   --------------
+    band = 0
+    call ESMF_AttributeGet(state, name='band_for_aerosol_optics', value=band, __RC__)
+    offset = band - n_bands
 
-! Pressure at layer edges 
-! ------------------------
-  call ESMF_AttributeGet(state, name='air_pressure_for_aerosol_optics', value=fld_name, __RC__)
-  call MAPL_GetPointer(state, ple, trim(fld_name), __RC__)
+!   Pressure at layer edges 
+!   ------------------------
+    call ESMF_AttributeGet(state, name='air_pressure_for_aerosol_optics', value=fld_name, __RC__)
+    call MAPL_GetPointer(state, ple, trim(fld_name), __RC__)
 
-  i1 = lbound(ple, 1); i2 = ubound(ple, 1)
-  j1 = lbound(ple, 2); j2 = ubound(ple, 2)
+    i1 = lbound(ple, 1); i2 = ubound(ple, 1)
+    j1 = lbound(ple, 2); j2 = ubound(ple, 2)
                        km = ubound(ple, 3)
 
-  call ESMF_AttributeGet (state, name='n_bins'   , value=n_bins   , __RC__)
-  call ESMF_AttributeGet (state, name='COMP_NAME', value=COMP_NAME, __RC__)
+    call ESMF_AttributeGet (state, name='n_bins'   , value=n_bins   , __RC__)
+    call ESMF_AttributeGet (state, name='COMP_NAME', value=COMP_NAME, __RC__)
 
 
-  allocate(ext(i1:i2,j1:j2,km,n_bands), &
-           ssa(i1:i2,j1:j2,km,n_bands), &
-           asy(i1:i2,j1:j2,km,n_bands), __STAT__)
+    allocate(ext(i1:i2,j1:j2,km,n_bands), &
+             ssa(i1:i2,j1:j2,km,n_bands), &
+             asy(i1:i2,j1:j2,km,n_bands), __STAT__)
 
-  allocate(q_4d(i1:i2,j1:j2,km,n_bins), __STAT__)
+    allocate(q_4d(i1:i2,j1:j2,km,n_bins), __STAT__)
 
-  do n = 1, n_bins
-      write (fld_name, '(A, I0.3)') 'du', n
-      call ESMF_StateGet(state, trim(COMP_NAME)//'::'//trim(fld_name), field=fld, __RC__)
-      call ESMF_FieldGet(fld, farrayPtr=q, __RC__)
+    do n = 1, n_bins
+        write (fld_name, '(A, I0.3)') 'du', n
+        call ESMF_StateGet(state, trim(fld_name), field=fld, __RC__)
+        call ESMF_FieldGet(fld, farrayPtr=q, __RC__)
 
-      do k = 1, km
-          do j = j1, j2
-              do i = i1, i2
-                  x = ((PLE(i,j,k) - PLE(i,j,k-1))*0.01)*(100./MAPL_GRAV)
-                  q_4d(i,j,k,n) = x * q(i,j,k)
-              end do
-          end do
-      end do
-  end do
+        do k = 1, km
+            do j = j1, j2
+                do i = i1, i2
+                    x = ((PLE(i,j,k) - PLE(i,j,k-1))*0.01)*(100./MAPL_GRAV)
+                    q_4d(i,j,k,n) = x * q(i,j,k)
+                end do
+            end do
+        end do
+    end do
 
 
-!  call mie_(n_bins, n_bands, offset, q_4d, rh, ext, ssa, asy, __RC__)
-  call mie_(n_bins, n_bands, offset, q_4d, rh, ext, ssa, asy, __RC__)
+    call mie_(n_bins, n_bands, offset, q_4d, rh, ext, ssa, asy, __RC__)
 
 
   call ESMF_AttributeGet(state, name='extinction_in_air_due_to_ambient_aerosol', value=fld_name, __RC__)
