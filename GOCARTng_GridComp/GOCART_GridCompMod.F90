@@ -36,6 +36,18 @@ module GOCARTng_GridCompMod
      character (len=ESMF_MAXSTR), pointer    :: instances_BC(:) => null()
      character (len=ESMF_MAXSTR), pointer    :: instances_OC(:) => null()
      character (len=ESMF_MAXSTR), pointer    :: instances_NI(:) => null()
+!     character (len=ESMF_MAXSTR), pointer    :: active_instances_DU = 0
+!     character (len=ESMF_MAXSTR), pointer    :: active_instances_SS = 0
+!     character (len=ESMF_MAXSTR), pointer    :: active_instances_SU = 0
+!     character (len=ESMF_MAXSTR), pointer    :: active_instances_BC = 0
+!     character (len=ESMF_MAXSTR), pointer    :: active_instances_OC = 0
+!     character (len=ESMF_MAXSTR), pointer    :: active_instances_NI = 0
+     integer                                 :: active_instances_DU = 0
+     integer                                 :: active_instances_SS = 0
+     integer                                 :: active_instances_SU = 0
+     integer                                 :: active_instances_BC = 0
+     integer                                 :: active_instances_OC = 0
+     integer                                 :: active_instances_NI = 0
   end type GOCARTng_State
 
   type wrap_
@@ -141,12 +153,12 @@ contains
     myCF = ESMF_ConfigCreate (__RC__)
     call ESMF_ConfigLoadFile (myCF, 'GOCARTng_GridComp.rc', __RC__)
 
-    call getInstances_('DU', myCF, instances=self%instances_DU, __RC__)
-    call getInstances_('SS', myCF, instances=self%instances_SS, __RC__)
-    call getInstances_('SU', myCF, instances=self%instances_SU, __RC__)
-    call getInstances_('BC', myCF, instances=self%instances_BC, __RC__)
-    call getInstances_('OC', myCF, instances=self%instances_OC, __RC__)
-    call getInstances_('NI', myCF, instances=self%instances_NI, __RC__)
+    call getInstances_('DU', myCF, instances=self%instances_DU, active_instances=self%active_instances_DU, __RC__)
+    call getInstances_('SS', myCF, instances=self%instances_SS, active_instances=self%active_instances_SS, __RC__)
+    call getInstances_('SU', myCF, instances=self%instances_SU, active_instances=self%active_instances_SU, __RC__)
+    call getInstances_('BC', myCF, instances=self%instances_BC, active_instances=self%active_instances_BC, __RC__)
+    call getInstances_('OC', myCF, instances=self%instances_OC, active_instances=self%active_instances_OC, __RC__)
+    call getInstances_('NI', myCF, instances=self%instances_NI, active_instances=self%active_instances_NI, __RC__)
 
     call ESMF_ConfigDestroy(myCF, __RC__)
 
@@ -249,17 +261,20 @@ contains
     type (ESMF_GridComp),       pointer  :: GCS(:)
     type (ESMF_State),          pointer  :: GEX(:)
     type (ESMF_State)                    :: INTERNAL
+    type (ESMF_Grid)                     :: grid
 
     type (ESMF_State)                    :: AERO, AERO_ACI
     type (ESMF_FieldBundle)              :: AERO_DP, child_bundle
     type (ESMF_State)                    :: child_state
     type (ESMF_Field), allocatable       :: fieldList(:)
+    type (ESMF_Field)                    :: field
+    character (len=ESMF_MAXSTR)          :: field_name
 
     type (GOCARTng_state),      pointer  :: self
     type (wrap_)                         :: wrap
 
     character (len=ESMF_MAXSTR)          :: CHILD_NAME
-    character (len=ESMF_MAXSTR)          :: AEROlist(6) ! Needs to match number of aerosol states in GOCARTng_State
+    character (len=ESMF_MAXSTR), allocatable :: AEROlist(:)
 
     integer                              :: i, j, k, fieldCount
 
@@ -269,7 +284,7 @@ contains
 
 !   Get the target components name and set-up traceback handle.
 !   -----------------------------------------------------------
-    call ESMF_GridCompGet (GC, name=COMP_NAME,  __RC__)
+    call ESMF_GridCompGet (GC, grid=grid, name=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) // '::' // 'Initialize'
 
    if (MAPL_AM_I_ROOT()) then
@@ -300,13 +315,18 @@ contains
 
 !   Fill AERO, AERO_ACI, and AERO_DP with the analogous children's states
 !   ----------------------------------------------------------------------
-    call ESMF_StateGet (EXPORT, 'AEROng'    , AERO     , __RC__)
+    call ESMF_StateGet (EXPORT, 'AEROng'  , AERO     , __RC__)
     call ESMF_StateGet (EXPORT, 'AERO_ACI', AERO_ACI , __RC__)
     call ESMF_StateGet (EXPORT, 'AERO_DP' , AERO_DP  , __RC__)
 
 !   Get list of AERO_PROVIDERs 
 !   ---------------------------
     call getAERO_ (self, AEROlist, __RC__)
+
+if (mapl_am_i_root()) print*,'GOCARTng AEROlist = ', AEROlist
+
+    call ESMF_AttributeSet(AERO, name='active_aerosol_instances', valueList=AEROlist, itemCount=size(AEROlist), __RC__)
+
 
 !   Add AERO_PROVIDER's states to GOCART's AERO states
 !   ---------------------------------------------------
@@ -344,10 +364,10 @@ contains
 !    end if
 
 !   Verify that childen's states are properly added - for testing to be deleted
-!    if(mapl_am_i_root()) print*,'GOCARTng AERO_DP print bundle = '
-!    if(mapl_am_i_root()) then
-!        call esmf_fieldbundleprint(AERO_DP, __RC__)
-!    end if
+    if(mapl_am_i_root()) print*,'GOCARTng AERO_DP print bundle = '
+    if(mapl_am_i_root()) then
+        call esmf_fieldbundleprint(AERO_DP, __RC__)
+    end if
   
 !   Verify contents of the sea salt state - for testing to be deleted
 !  if(mapl_am_i_root()) print*,'last child_state print state = '
@@ -436,7 +456,7 @@ if (mapl_am_i_root()) print*,'GOCARTng Run1 END'
 
 !===============================================================================
 
-  subroutine getInstances_ (aerosol, myCF, instances, rc)
+  subroutine getInstances_ (aerosol, myCF, instances, active_instances, rc)
 
 !   Description: Fills the GOCARTng_State (aka, self%instance_XX) with user
 !                defined instances from the GOCARTng_GridComp.rc.
@@ -447,6 +467,7 @@ if (mapl_am_i_root()) print*,'GOCARTng Run1 END'
     type (ESMF_Config),               intent(inout)  :: myCF
     integer,                          intent(  out)  :: rc
     character (len=ESMF_MAXSTR), pointer             :: instances(:)
+    integer,                          intent(inout)  :: active_instances
 
 !   locals
     integer                                          :: STATUS
@@ -460,6 +481,8 @@ if (mapl_am_i_root()) print*,'GOCARTng Run1 END'
     n_inst_act  = ESMF_ConfigGetLen (myCF, label='ACTIVE_INSTANCES_'//trim(aerosol)//':', __RC__)
     n_inst_pass = ESMF_ConfigGetLen (myCF, label='PASSIVE_INSTANCES_'//trim(aerosol)//':', __RC__)
     allocate (instances(n_inst_act + n_inst_pass), __STAT__)
+
+    active_instances = n_inst_act
 
     call ESMF_ConfigFindLabel (myCF, 'ACTIVE_INSTANCES_'//trim(aerosol)//':', __RC__)
     do i = 1, n_inst_act
@@ -488,31 +511,105 @@ if (mapl_am_i_root()) print*,'GOCARTng Run1 END'
   
     implicit none
 
-    type (GOCARTng_state), pointer,    intent(in   )     :: self
-    character (len=ESMF_MAXSTR),       intent(inout)     :: AEROlist(6) 
-    integer,                           intent(  out)     :: rc
+    type (GOCARTng_state), pointer,                 intent(in   )     :: self
+    character (len=ESMF_MAXSTR), allocatable,       intent(inout)     :: AEROlist(:) 
+    integer,                                        intent(  out)     :: rc
 
 !   locals
     integer                                              :: STATUS
     character (len=ESMF_MAXSTR)                          :: Iam = 'GOCARTng::getAERO_'
-
+    integer                                              :: i, ind, tot_active_inst
 !--------------------------------------------------------------------------------------
 
 !   Begin...
-    AEROlist(1) = trim(self%instances_DU(1))
-    AEROlist(2) = trim(self%instances_SS(1))
-    AEROlist(3) = trim(self%instances_SU(1))
-    AEROlist(4) = trim(self%instances_BC(1))
-    AEROlist(5) = trim(self%instances_OC(1))
-    AEROlist(6) = trim(self%instances_NI(1))
+!    AEROlist(1) = trim(self%instances_DU(1))
+!    AEROlist(2) = trim(self%instances_SS(1))
+!    AEROlist(3) = trim(self%instances_SU(1))
+!    AEROlist(4) = trim(self%instances_BC(1))
+!    AEROlist(5) = trim(self%instances_OC(1))
+!    AEROlist(6) = trim(self%instances_NI(1))
+
+    tot_active_inst = self%active_instances_DU + self%active_instances_SS + self%active_instances_SU + &
+                      self%active_instances_BC + self%active_instances_OC + self%active_instances_NI
+
+    allocate (AEROlist(tot_active_inst), __STAT__)
+
+    ind = 1
+        
+    do i = 1, self%active_instances_DU
+        AEROlist(ind) = self%instances_DU(i)
+        ind = ind + 1
+    end do
+
+    do i = 1, self%active_instances_SS
+        AEROlist(ind) = self%instances_SS(i)
+        ind = ind + 1
+    end do
+
+
+
+
+
 
     RETURN_(ESMF_SUCCESS)
 
   end subroutine getAERO_
 
 
+!====================================================================================
+
+  subroutine get_optics (state, rc)
+
+    implicit none
+
+!   !ARGUMENTS:
+    type (ESMF_State)                                :: state
+    integer,            intent(out)                  :: rc
+
+!   !Local
+    type (ESMF_State)                                :: child_state
+    integer                                          :: i
+!   character (len=ESMF_MAXSTR), allocatable         :: AEROlist(:)
 
 
+
+    __Iam__('GOCARTng::getOptics_')
+
+
+
+!  call ESMF_AttributeGet (state, name='active_aerosol_instances', itemCount=i, __RC__)
+!  allocate(AEROlist(i), __STAT__)
+!  call ESMF_AttributeGet (state, name='active_aerosol_instances', valueList=AEROlisttest, __RC__)
+
+!f (mapl_am_i_root()) print*,'AEROlisttest = ', AEROlisttest
+
+!   execute childrens' aerosol_optics method and sum output  to get totals
+!   do i = 1 , size(AEROlist)
+!       call ESMF_StateGet(state, AEROlist(i), child_state, __RC__)
+
+!     call ESMF_AttributeGet(child_state, name='relative_humidity_for_aerosol_optics', value=AS_FIELD_NAME, RC=STATUS)
+!     VERIFY_(STATUS)
+
+!     if (AS_FIELD_NAME /= '') then
+!        call MAPL_GetPointer(AEROng, AS_PTR_3D, trim(AS_FIELD_NAME), RC=STATUS)
+!        VERIFY_(STATUS)
+
+!        AS_PTR_3D = RH
+!     end if
+
+
+
+
+
+
+
+
+!       call ESMF_MethodExecute(AEROlist(i), label="aerosol_optics", __RC__)
+!    end do
+
+
+
+  end subroutine get_optics
 
 
 
