@@ -824,14 +824,6 @@ contains
     end if
 
 
-        call ESMF_StateGet(EXPORT, 'AEROng', AEROng, __RC__)
-!   Verify that childen's states are properly added - for testing to be deleted
-    if(mapl_am_i_root()) print*,'AEROng in CHEM print state = '
-    if(mapl_am_i_root()) then
-        call esmf_stateprint(AEROng, __RC__)
-    end if
-
-
 
 #ifdef PRINT_STATES
 
