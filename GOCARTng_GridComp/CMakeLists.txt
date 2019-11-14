@@ -3,9 +3,11 @@ esma_set_this ()
 set (alldirs
   DUng_GridComp
   SSng_GridComp
-#  SUng_GridComp
+  SUng_GridComp
   BCng_GridComp
+  BRCng_GridComp
   OCng_GridComp
+  NIng_GridComp
   )
 
 set (srcs
