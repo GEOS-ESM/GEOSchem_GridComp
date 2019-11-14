@@ -13,15 +13,9 @@ module DUng_GridCompMod
    USE ESMF
    USE MAPL_Mod
 
-   use Chem_Mod              ! Only used for development - delete after Mie tables are refactored
-
 
    implicit none
    private
-
-!   type(Chem_Mie), dimension(2), save :: gocartMieTable
-!   integer, parameter :: instanceComputational = 1
-!   integer, parameter :: instanceData          = 2
 
 
 ! !PUBLIC MEMBER FUNCTIONS:
@@ -73,7 +67,6 @@ contains
     character (len=ESMF_MAXSTR)                 :: IAm
     integer                                     :: STATUS
     character (len=ESMF_MAXSTR)                 :: COMP_NAME
-
 
     type (ESMF_Config)                          :: cfg
 
@@ -202,26 +195,6 @@ if (mapl_am_i_root()) print*,'GOCARTng DU COMP_NAME = ', trim(COMP_NAME) ! for t
 !          RESTART    = MAPL_RestartSkip, __RC__)
     end if ! (data_driven)
 
-!   Pressure at layer edges
-!   -----------------------
-    call MAPL_AddImportSpec(GC,                            &
-       SHORT_NAME = 'PLE',                                 &
-       LONG_NAME  = 'air_pressure',                        &
-       UNITS      = 'Pa',                                  &
-       DIMS       = MAPL_DimsHorzVert,                     &
-       VLOCATION  = MAPL_VLocationEdge,                    &
-       RESTART    = MAPL_RestartSkip,     __RC__)
-
-!   RH: is between 0 and 1
-!   ----------------------
-    call MAPL_AddImportSpec(GC,                            &
-       SHORT_NAME = 'RH2',                                 &
-       LONG_NAME  = 'Rel_Hum_after_moist',                 &
-       UNITS      = '1',                                   &
-       DIMS       = MAPL_DimsHorzVert,                     &
-       VLOCATION  = MAPL_VLocationCenter,                  &
-       RESTART    = MAPL_RestartSkip,     __RC__)
-
 
 !   EXPORT STATE
 !   -------------
@@ -233,7 +206,8 @@ if (mapl_am_i_root()) print*,'GOCARTng DU COMP_NAME = ', trim(COMP_NAME) ! for t
 !   ---------------------------------------------
     call MAPL_AddExportSpec (GC,                             &
        SHORT_NAME = trim(COMP_NAME)//'_AERO',                &
-       LONG_NAME  = 'dust_aerosols_from_'//trim(COMP_NAME),  &
+!       SHORT_NAME = 'AERO',                &
+       LONG_NAME  = 'aerosols_from_'//trim(COMP_NAME),  &
        UNITS      = 'kg kg-1',                               &
        DIMS       = MAPL_DimsHorzVert,                       &
        VLOCATION  = MAPL_VLocationCenter,                    &
@@ -243,7 +217,7 @@ if (mapl_am_i_root()) print*,'GOCARTng DU COMP_NAME = ', trim(COMP_NAME) ! for t
 !   ----------------------------------------------------------
     call MAPL_AddExportSpec (GC,                                              &
        SHORT_NAME = trim(COMP_NAME)//'_AERO_ACI',                             &
-       LONG_NAME  = 'aerosol_cloud_interaction_dust_from_'//trim(COMP_NAME),  &
+       LONG_NAME  = 'aerosol_cloud_interaction_aerosols_from_'//trim(COMP_NAME),  &
        UNITS      = 'kg kg-1',                                                &
        DIMS       = MAPL_DimsHorzVert,                                        &
        VLOCATION  = MAPL_VLocationCenter,                                     &
@@ -309,7 +283,7 @@ if (mapl_am_i_root()) print*,'GOCARTng DUng SetServices END' ! for testing - to 
     type (MAPL_MetaComp),       pointer  :: MAPL
     type (ESMF_Grid)                     :: grid
     type (ESMF_State)                    :: INTERNAL
-    type (ESMF_State)                    :: DU_State, DU_State_ACI
+    type (ESMF_State)                    :: AERO, AERO_ACI
     type (ESMF_State)                    :: providerState
     type (ESMF_Config)                   :: cfg
     type (ESMF_FieldBundle)              :: DU_Bundle_DP
@@ -319,7 +293,6 @@ if (mapl_am_i_root()) print*,'GOCARTng DUng SetServices END' ! for testing - to 
     character (len=ESMF_MAXSTR)          :: field_name, prefix
 
     logical                              :: data_driven
-    integer                              :: instance
 
 
     !development testing variables - to be deleted
@@ -337,7 +310,7 @@ if (mapl_am_i_root()) print*,'GOCARTng DUng SetServices END' ! for testing - to 
     Iam = trim(COMP_NAME) // trim(Iam)
 
 
-if (mapl_am_i_root()) print*,'GOCART DUng Initialize BEGIN' ! for testing - to be deleted
+if (mapl_am_i_root()) print*, trim(COMP_NAME),' Initialize BEGIN' ! for testing - to be deleted
 
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
@@ -351,6 +324,7 @@ if (mapl_am_i_root()) print*,'GOCART DUng Initialize BEGIN' ! for testing - to b
         if (mapl_am_i_root()) print*,'DUngGridComp_'//trim(COMP_NAME)//'.rc does not exist! loading DUng_GridComp_DU.data.rc instead'
         call ESMF_ConfigLoadFile(cfg, 'DUng_GridComp_DU.rc', __RC__)
     end if
+
     call ESMF_ConfigGetAttribute(cfg, n_bins, label='bins:', __RC__)
 
 !   Call Generic Initialize for DUng GC
@@ -380,13 +354,14 @@ if (mapl_am_i_root()) print*,'GOCART DUng Initialize BEGIN' ! for testing - to b
 
 !   Fill AERO States with dust fields
 !   ------------------------------------
-    call ESMF_StateGet (EXPORT, trim(COMP_NAME)//'_AERO'    , DU_State    , __RC__)
-    call ESMF_StateGet (EXPORT, trim(COMP_NAME)//'_AERO_ACI', DU_State_ACI, __RC__)
+    call ESMF_StateGet (EXPORT, trim(COMP_NAME)//'_AERO'    , AERO    , __RC__)
+!    call ESMF_StateGet (EXPORT, 'AERO'    , AERO    , __RC__)
+    call ESMF_StateGet (EXPORT, trim(COMP_NAME)//'_AERO_ACI', AERO_ACI, __RC__)
     call ESMF_StateGet (EXPORT, trim(COMP_NAME)//'_AERO_DP' , DU_Bundle_DP, __RC__)
 
 !   Set attributes for this instance
-    call ESMF_AttributeSet (DU_State, name='n_bins',    value=n_bins   , __RC__)
-    call ESMF_AttributeSet (DU_State, name='COMP_NAME', value=COMP_NAME, __RC__)
+    call ESMF_AttributeSet (AERO, name='n_bins',    value=n_bins   , __RC__)
+    call ESMF_AttributeSet (AERO, name='COMP_NAME', value=COMP_NAME, __RC__)
 
 
 !   Fill EXPORT States and Bundle
@@ -395,8 +370,8 @@ if (mapl_am_i_root()) print*,'GOCART DUng Initialize BEGIN' ! for testing - to b
         write (field_name, '(A, I0.3)') '', i
         call ESMF_StateGet (INTERNAL, trim(COMP_NAME)//'::du'//trim(field_name), field, __RC__)
         fld = MAPL_FieldCreate (field, name='du'//trim(field_name), __RC__)
-        call MAPL_StateAdd (DU_State    , fld, __RC__)
-        call MAPL_StateAdd (DU_State_ACI, fld, __RC__)
+        call MAPL_StateAdd (AERO    , fld, __RC__)
+        call MAPL_StateAdd (AERO_ACI, fld, __RC__)
 
 !       Dry deposition
 !       ---------------
@@ -425,78 +400,70 @@ if (mapl_am_i_root()) print*,'GOCART DUng Initialize BEGIN' ! for testing - to b
 
 !   Set AERO States' attributes
 !   ----------------------------
-!    if (data_driven) then
-!        instance = instanceData
-!    else
-!        instance = instanceComputational
-!    end if
-
-!    gocartMieTable(instance) = Chem_MieCreate('AGCM.rc', __RC__)
-
     ! Mie Table instance/index
-!    call ESMF_AttributeSet(DU_State, name='mie_table_instance', value=instance, __RC__)
+!    call ESMF_AttributeSet(AERO, name='mie_table_instance', value=instance, __RC__)
 
     ! state of the atmosphere
-    call ESMF_AttributeSet(DU_State, name='air_pressure_for_aerosol_optics',             value='PLE', __RC__)
-    call ESMF_AttributeSet(DU_State, name='relative_humidity_for_aerosol_optics',        value='RH',  __RC__)
+    call ESMF_AttributeSet(AERO, name='air_pressure_for_aerosol_optics',             value='PLE', __RC__)
+    call ESMF_AttributeSet(AERO, name='relative_humidity_for_aerosol_optics',        value='RH',  __RC__)
 
     ! aerosol optics
-    call ESMF_AttributeSet(DU_State, name='band_for_aerosol_optics',                     value=0,     __RC__)
-    call ESMF_AttributeSet(DU_State, name='extinction_in_air_due_to_ambient_aerosol',    value='EXT', __RC__)
-    call ESMF_AttributeSet(DU_State, name='single_scattering_albedo_of_ambient_aerosol', value='SSA', __RC__)
-    call ESMF_AttributeSet(DU_State, name='asymmetry_parameter_of_ambient_aerosol',      value='ASY', __RC__)
+    call ESMF_AttributeSet(AERO, name='band_for_aerosol_optics',                     value=0,     __RC__)
+    call ESMF_AttributeSet(AERO, name='extinction_in_air_due_to_ambient_aerosol',    value='EXT', __RC__)
+    call ESMF_AttributeSet(AERO, name='single_scattering_albedo_of_ambient_aerosol', value='SSA', __RC__)
+    call ESMF_AttributeSet(AERO, name='asymmetry_parameter_of_ambient_aerosol',      value='ASY', __RC__)
 
     ! add PLE to aero state
-    call ESMF_AttributeGet(DU_State, name='air_pressure_for_aerosol_optics', value=field_name, __RC__)
+    call ESMF_AttributeGet(AERO, name='air_pressure_for_aerosol_optics', value=field_name, __RC__)
     if (field_name /= '') then
         field = MAPL_FieldCreateEmpty(trim(field_name), grid, __RC__)
 
         call MAPL_FieldAllocCommit(field, dims=MAPL_DimsHorzVert, location=MAPL_VLocationEdge, typekind=MAPL_R4, hw=0, __RC__)
-        call MAPL_StateAdd(DU_State, field, __RC__)
+        call MAPL_StateAdd(AERO, field, __RC__)
     end if
 
     ! add RH to Aero state
-    call ESMF_AttributeGet(DU_State, name='relative_humidity_for_aerosol_optics', value=field_name, __RC__)
+    call ESMF_AttributeGet(AERO, name='relative_humidity_for_aerosol_optics', value=field_name, __RC__)
     if (field_name /= '') then
         field = MAPL_FieldCreateEmpty(trim(field_name), grid, __RC__)
 
         call MAPL_FieldAllocCommit(field, dims=MAPL_DimsHorzVert, location=MAPL_VLocationCenter, typekind=MAPL_R4, hw=0, __RC__)
-        call MAPL_StateAdd(DU_State, field, __RC__)
+        call MAPL_StateAdd(AERO, field, __RC__)
     end if
 
     ! add EXT to aero state
-    call ESMF_AttributeGet(DU_State, name='extinction_in_air_due_to_ambient_aerosol', value=field_name, __RC__)
+    call ESMF_AttributeGet(AERO, name='extinction_in_air_due_to_ambient_aerosol', value=field_name, __RC__)
     if (field_name /= '') then
         field = MAPL_FieldCreateEmpty(trim(field_name), grid, __RC__)
 
         call MAPL_FieldAllocCommit(field, dims=MAPL_DimsHorzVert, location=MAPL_VLocationCenter, typekind=MAPL_R4, hw=0, __RC__)
-        call MAPL_StateAdd(DU_State, field, __RC__)
+        call MAPL_StateAdd(AERO, field, __RC__)
     end if
 
     ! add SSA to aero state
-    call ESMF_AttributeGet(DU_State, name='single_scattering_albedo_of_ambient_aerosol', value=field_name, __RC__)
+    call ESMF_AttributeGet(AERO, name='single_scattering_albedo_of_ambient_aerosol', value=field_name, __RC__)
     if (field_name /= '') then
         field = MAPL_FieldCreateEmpty(trim(field_name), grid, __RC__)
 
         call MAPL_FieldAllocCommit(field, dims=MAPL_DimsHorzVert, location=MAPL_VLocationCenter, typekind=MAPL_R4, hw=0, __RC__)
-        call MAPL_StateAdd(DU_State, field, __RC__)
+        call MAPL_StateAdd(AERO, field, __RC__)
     end if
 
     ! add ASY to aero state
-    call ESMF_AttributeGet(DU_State, name='asymmetry_parameter_of_ambient_aerosol', value=field_name, RC=STATUS)
+    call ESMF_AttributeGet(AERO, name='asymmetry_parameter_of_ambient_aerosol', value=field_name, RC=STATUS)
     if (field_name /= '') then
         field = MAPL_FieldCreateEmpty(trim(field_name), grid, __RC__)
 
         call MAPL_FieldAllocCommit(field, dims=MAPL_DimsHorzVert, location=MAPL_VLocationCenter, typekind=MAPL_R4, hw=0, __RC__)
-        call MAPL_StateAdd(DU_State, field, __RC__)
+        call MAPL_StateAdd(AERO, field, __RC__)
     end if
 
     ! attach the aerosol optics method
-    call ESMF_MethodAdd(DU_State, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
+    call ESMF_MethodAdd(AERO, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
 
 
 
-if (mapl_am_i_root()) print*,'GOCART DUng Initialize END'  ! for testing - to be deleted
+if (mapl_am_i_root()) print*, trim(COMP_NAME),' Initialize END'  ! for testing - to be deleted
 
 
 
@@ -548,7 +515,7 @@ if (mapl_am_i_root()) print*,'GOCART DUng Initialize END'  ! for testing - to be
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) // Iam
 
-if (mapl_am_i_root()) print*,'GOCARTng DUng Run1 BEGIN'
+if (mapl_am_i_root()) print*,trim(COMP_NAME),' Run1 BEGIN'
 
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
@@ -569,7 +536,7 @@ if (mapl_am_i_root()) print*,'GOCARTng DUng Run1 BEGIN'
     end if
 
 
-if (mapl_am_i_root()) print*,'GOCARTng DUng Run1 END'
+if (mapl_am_i_root()) print*,trim(COMP_NAME),' Run1 END'
 
 
     RETURN_(ESMF_SUCCESS)
@@ -606,7 +573,7 @@ if (mapl_am_i_root()) print*,'GOCARTng DUng Run1 END'
 
 
     type (MAPL_MetaComp), pointer      :: MAPL
-    type (ESMF_State)                  :: DU_State
+    type (ESMF_State)                  :: AERO
 
     integer                            :: i, n_bins
     character (len=ESMF_MAXSTR)        :: field_name
@@ -629,11 +596,12 @@ if (mapl_am_i_root()) print*,'GOCARTng DUng Run1 END'
     Iam = trim(COMP_NAME) // Iam
 
 
-if (mapl_am_i_root()) print*,'DUng ExtData Run_data BEGIN'
+if (mapl_am_i_root()) print*,trim(COMP_NAME),' Run_data BEGIN'
 
 
-    call ESMF_StateGet (EXPORT, trim(COMP_NAME)//'_AERO', DU_State, __RC__)
-    call ESMF_AttributeGet (DU_State, name='n_bins', value=n_bins, __RC__)
+    call ESMF_StateGet (EXPORT, trim(COMP_NAME)//'_AERO', AERO, __RC__)
+!    call ESMF_StateGet (EXPORT, 'AERO', AERO, __RC__)
+    call ESMF_AttributeGet (AERO, name='n_bins', value=n_bins, __RC__)
 
 !   Update interal data pointers with ExtData
 !   -----------------------------------------
@@ -646,7 +614,7 @@ if (mapl_am_i_root()) print*,'DUng ExtData Run_data BEGIN'
     end do
 
 
-if (mapl_am_i_root()) print*,'DUng ExtData Run_data END'
+if (mapl_am_i_root()) print*,trim(COMP_NAME),' Run_data END'
  
 
     RETURN_(ESMF_SUCCESS)
@@ -704,6 +672,9 @@ if (mapl_am_i_root()) print*,'DUng ExtData Run_data END'
     call ESMF_AttributeGet(state, name='band_for_aerosol_optics', value=band, __RC__)
     offset = band - n_bands
 
+if(mapl_am_i_root()) print*,'DUng aerosol_optics band =',band
+
+
 !   Pressure at layer edges 
 !   ------------------------
     call ESMF_AttributeGet(state, name='air_pressure_for_aerosol_optics', value=fld_name, __RC__)
@@ -711,7 +682,7 @@ if (mapl_am_i_root()) print*,'DUng ExtData Run_data END'
 
     i1 = lbound(ple, 1); i2 = ubound(ple, 1)
     j1 = lbound(ple, 2); j2 = ubound(ple, 2)
-                       km = ubound(ple, 3)
+                         km = ubound(ple, 3)
 
     call ESMF_AttributeGet (state, name='n_bins'   , value=n_bins   , __RC__)
     call ESMF_AttributeGet (state, name='COMP_NAME', value=COMP_NAME, __RC__)
@@ -760,6 +731,7 @@ if (mapl_am_i_root()) print*,'DUng ExtData Run_data END'
       var = asy(:,:,:,1)
   end if
 
+if (mapl_am_i_root()) print*,'DUng aerosol_optics IM RUNNING_ ='
 
 
   deallocate(ext, ssa, asy, __STAT__)
