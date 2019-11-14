@@ -18,7 +18,7 @@ module SUng_GridCompMod
 
 ! !PUBLIC MEMBER FUNCTIONS:
    PUBLIC  SetServices
-   PUBLIC  Initialize
+!   PUBLIC  Initialize
 
 
 ! !DESCRIPTION: This module implements GOCARTS' Sulfate (SU) Gridded Component.
@@ -104,12 +104,12 @@ if (mapl_am_i_root()) print*,'GOCARTng SU COMP_NAME = ', trim(COMP_NAME) ! for t
 
 !   Set entry points
 !   ------------------------
-    call MAPL_GridCompSetEntryPoint (GC, ESMF_METHOD_INITIALIZE,  Initialize, __RC__)
-    call MAPL_GridCompSetEntryPoint (GC, ESMF_METHOD_RUN, Run1, __RC__)
+!    call MAPL_GridCompSetEntryPoint (GC, ESMF_METHOD_INITIALIZE,  Initialize, __RC__)
+!    call MAPL_GridCompSetEntryPoint (GC, ESMF_METHOD_RUN, Run1, __RC__)
 
-!   Is DU data driven?
+!   Is SU data driven?
 !   ------------------
-    call data_driven_ (COMP_NAME, data_driven, __RC__)
+!    call data_driven_ (COMP_NAME, data_driven, __RC__)
 
 
 !   INTERNAL STATE
