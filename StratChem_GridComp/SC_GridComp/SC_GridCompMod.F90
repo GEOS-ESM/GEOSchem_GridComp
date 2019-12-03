@@ -16,7 +16,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod 	     ! Chemistry Base Class
    USE Chem_StateMod	     ! Chemistry State
    USE Chem_ConstMod, only: undefval => undef         ! Constants !
@@ -25,9 +25,6 @@
    USE WetRemovalMod
    USE ConvectionMod         ! Offline convective mixing/scavenging
 
-
-   USE ESMF_CFIOFileMOD
-   USE MAPL_CFIOMOD
 
    IMPLICIT none
    INTEGER, PARAMETER :: DBL = KIND(0.00D+00)
@@ -45,6 +42,8 @@
    PUBLIC  SC_GridCompInitialize
    PUBLIC  SC_GridCompRun
    PUBLIC  SC_GridCompFinalize
+
+   include "netcdf.inc"
 
 !
 ! !DESCRIPTION:

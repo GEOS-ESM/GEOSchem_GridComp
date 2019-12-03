@@ -23,7 +23,7 @@ MODULE inquireMod
   ! We only need to refer to these modules if we are connecting
   ! to the GEOS-5 GCM via the ESMF/MAPL framework (bmy, 8/3/12)
   USE ESMF
-  USE MAPL_Mod
+  USE MAPL
 #endif
 
   IMPLICIT NONE

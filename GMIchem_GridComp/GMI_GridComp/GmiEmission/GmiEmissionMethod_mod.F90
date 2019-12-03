@@ -10,7 +10,7 @@
 !
 ! !USES:
       use ESMF, only : ESMF_Config, ESMF_MAXSTR, ESMF_ConfigGetAttribute
-      use MAPL_Mod
+      use MAPL
       use GmiTimeControl_mod  , only : t_GmiClock, Get_curGmiDate, GmiSplitDateTime
       use GmiGrid_mod, only : t_gmiGrid
       use GmiGrid_mod, only : Get_i1, Get_i2, Get_ju1, Get_j2, Get_k1, Get_k2

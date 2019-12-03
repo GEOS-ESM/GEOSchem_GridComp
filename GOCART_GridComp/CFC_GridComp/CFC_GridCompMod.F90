@@ -14,15 +14,12 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod 	     ! Chemistry Base Class
    USE Chem_StateMod	     ! Chemistry State
    USE Chem_ConstMod, ONLY: grav
    USE Chem_UtilMod	     ! I/O
    USE m_inpak90	     ! Resource file management
-
-   USE ESMF_CFIOFileMOD
-   USE MAPL_CFIOMOD
 
    IMPLICIT NONE
 
@@ -30,6 +27,8 @@
 !
    PRIVATE
    PUBLIC  CFC_GridComp       ! The CFC object 
+
+   include "netcdf.inc"
 
 !
 ! !PUBLIC MEMBER FUNCTIONS:

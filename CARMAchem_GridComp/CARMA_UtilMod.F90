@@ -19,7 +19,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod
    USE Chem_UtilMod
    USE Chem_ConstMod, only: undef

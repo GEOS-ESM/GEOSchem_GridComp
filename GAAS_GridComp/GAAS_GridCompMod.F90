@@ -14,8 +14,7 @@
 ! !USES:
 !
    Use ESMF
-   Use MAPL_Mod
-   Use MAPL_MaxMinMod
+   Use MAPL
    Use m_StrTemplate  
 
    Use  LDE_Mod

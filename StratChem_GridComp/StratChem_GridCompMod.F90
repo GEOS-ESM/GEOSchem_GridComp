@@ -14,7 +14,7 @@
 ! !USES:
 !
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod 	                        ! Chemistry Base Class
    USE SC_GridCompMod                           ! ESMF parent component
 

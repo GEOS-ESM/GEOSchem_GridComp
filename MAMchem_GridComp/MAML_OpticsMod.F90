@@ -15,9 +15,7 @@
 ! !USES:
 
    use ESMF
-   use MAPL_Mod
-
-   use MAPL_SimpleBundleMod
+   use MAPL
 
    use MAM_BaseMod
    use MAM_ConstituentsDataMod

@@ -16,8 +16,7 @@
 !
    use shr_kind_mod, only : r8 => shr_kind_r8
 
-   use MAPL_Mod
-   use MAPL_ConstantsMod, only : MAPL_PI
+   use MAPL
 
    use MAM_ComponentsDataMod
    use modal_aero_gasaerexch, only : modal_aero_soaexch

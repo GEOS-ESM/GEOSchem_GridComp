@@ -29,7 +29,7 @@ module GIGC_GridCompMod
 ! !USES:
 
   use ESMF
-  use MAPL_Mod
+  use MAPL
   use CHEM_GridCompMod,    only : AtmosChemSetServices => SetServices
   use AdvCore_GridCompMod, only : AtmosAdvSetServices  => SetServices
   use GEOS_ctmEnvGridComp, only : EctmSetServices      => SetServices

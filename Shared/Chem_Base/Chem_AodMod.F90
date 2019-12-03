@@ -17,8 +17,7 @@
 
 
    use ESMF
-   use MAPL_Mod
-   use MAPL_SimpleBundleMod
+   use MAPL
 
    use Chem_MieTableMod
    use Chem_MieMod

@@ -16,7 +16,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod            ! SAD Base Class
    USE Chem_UtilMod
 

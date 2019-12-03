@@ -15,7 +15,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
 
    use Chem_Mod              ! Chemistry Base Class
    use Chem_StateMod         ! Chemistry State
@@ -2723,7 +2723,7 @@ CONTAINS
 
   Use OC_GridCompMod
   Use ESMF
-  Use MAPL_Mod
+  Use MAPL
   Use Chem_Mod 
 
   IMPLICIT NONE
@@ -2736,7 +2736,7 @@ CONTAINS
      subroutine Method_ (gc, w, imp, exp, ymd, hms, dt, rcode )
        Use OC_GridCompMod
        Use ESMF
-       Use MAPL_Mod
+       Use MAPL
        Use Chem_Mod 
        type(OC_GridComp1),  intent(inout)  :: gc
        type(Chem_Bundle),   intent(in)     :: w

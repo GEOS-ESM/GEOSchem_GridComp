@@ -22,7 +22,7 @@ use Chem_Mod                     ! Chemistry Base Class
 use Chem_ConstMod, only: grav    ! Constants
 use Chem_UtilMod                 ! I/O
 use m_mpout                      ! new to GEOS-5
-use MAPL_Mod                     ! To test for rootproc
+use MAPL                     ! To test for rootproc
 
 Implicit None
 

@@ -36,7 +36,7 @@
 !BOC
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
 
    IMPLICIT NONE
    PRIVATE

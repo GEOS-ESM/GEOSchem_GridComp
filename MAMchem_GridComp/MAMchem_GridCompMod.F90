@@ -14,9 +14,7 @@
 ! !USES:
 !
    use ESMF
-   use MAPL_Mod
-
-   use MAPL_SimpleBundleMod
+   use MAPL
 
    use Chem_UtilMod,        only: Chem_UtilResVal
 

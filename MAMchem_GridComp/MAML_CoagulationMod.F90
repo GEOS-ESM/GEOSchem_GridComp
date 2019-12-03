@@ -14,7 +14,7 @@
 !
 ! !USES:
 !
-   use MAPL_Mod
+   use MAPL
    use MAPL_ConstantsMod, only : MAPL_PI, MAPL_RHOWTR, r8 => MAPL_R8, r4 => MAPL_R4
 
    use modal_aero_coag, only : getcoags_wrapper_f

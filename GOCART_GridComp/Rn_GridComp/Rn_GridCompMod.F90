@@ -15,7 +15,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
 
    USE Chem_Mod 	     ! Chemistry Base Class
    USE Chem_StateMod	     ! Chemistry State
@@ -1043,7 +1043,7 @@ CONTAINS
 
   USE Rn_GridCompMod
   USE ESMF
-  USE MAPL_Mod
+  USE MAPL
   USE Chem_Mod 
 
   IMPLICIT NONE
@@ -1056,7 +1056,7 @@ CONTAINS
      SUBROUTINE Method_ (gc, w, imp, exp, ymd, hms, dt, rcode )
        USE Rn_GridCompMod
        USE ESMF
-       USE MAPL_Mod
+       USE MAPL
        USE Chem_Mod 
        TYPE(Rn_GridComp1),  INTENT(INOUT)  :: gc
        TYPE(Chem_Bundle),   INTENT(IN)     :: w

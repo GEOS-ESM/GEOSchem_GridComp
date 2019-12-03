@@ -13,7 +13,7 @@ module GEOS_ChemGridCompMod
 ! !USES:
 
   use ESMF
-  use MAPL_Mod
+  use MAPL
   use Chem_Mod
   use Chem_UtilMod
   use Bundle_IncrementMod

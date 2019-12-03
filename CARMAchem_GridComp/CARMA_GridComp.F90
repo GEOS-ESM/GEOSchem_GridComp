@@ -17,7 +17,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod
    USE Chem_UtilMod
    USE m_inpak90	     ! Resource file management

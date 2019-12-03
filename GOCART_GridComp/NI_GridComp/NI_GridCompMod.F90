@@ -15,7 +15,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE MAPL_ConstantsMod, only: MAPL_AIRMW, MAPL_AVOGAD, MAPL_PI
 
    use Chem_Mod              ! Chemistry Base Class
@@ -2184,7 +2184,7 @@ CONTAINS
 
   Use NI_GridCompMod
   Use ESMF
-  Use MAPL_Mod
+  Use MAPL
   Use Chem_Mod 
 
   IMPLICIT NONE
@@ -2197,7 +2197,7 @@ CONTAINS
      subroutine Method_ (gc, w, imp, exp, ymd, hms, dt, rcode )
        Use NI_GridCompMod
        Use ESMF
-       Use MAPL_Mod
+       Use MAPL
        Use Chem_Mod 
        type(NI_GridComp1),  intent(inout)  :: gc
        type(Chem_Bundle),   intent(in)     :: w

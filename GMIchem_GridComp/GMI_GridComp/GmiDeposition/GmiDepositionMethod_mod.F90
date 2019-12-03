@@ -10,7 +10,7 @@
 !
 ! !USES:
       use Esmf
-      use MAPL_Mod
+      use MAPL
       use GmiGrid_mod                  , only : t_gmiGrid, Get_i1, Get_i2
       use GmiGrid_mod                  , only : Get_ju1, Get_j2, Get_k1, Get_k2
       use GmiGrid_mod                  , only : Get_ilo, Get_ihi

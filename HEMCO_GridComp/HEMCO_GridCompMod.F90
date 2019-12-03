@@ -44,7 +44,7 @@ MODULE HEMCO_GridCompMod
 ! !USES:
 !
   USE ESMF
-  USE MAPL_Mod
+  USE MAPL
 
   ! HEMCO routines/variables
   USE HCO_ERROR_MOD

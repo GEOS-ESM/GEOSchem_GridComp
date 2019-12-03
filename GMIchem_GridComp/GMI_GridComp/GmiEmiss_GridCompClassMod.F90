@@ -17,8 +17,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
-   USE MAPL_NewArthParserMod, ONLY : LowCase
+   USE MAPL
    USE Chem_Mod
    USE Chem_UtilMod
 

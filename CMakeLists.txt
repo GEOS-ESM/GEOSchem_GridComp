@@ -27,7 +27,7 @@ set (srcs
 esma_add_library (${this}
   SRCS ${srcs}
   SUBCOMPONENTS ${alldirs}
-  DEPENDENCIES MAPL_Base Chem_Shared Chem_Base
+  DEPENDENCIES MAPL Chem_Shared Chem_Base
   INCLUDES ${INC_ESMF})
 
 install(

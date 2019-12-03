@@ -11,12 +11,8 @@
 module LDE_Mod
 
    use ESMF
-   use MAPL_Mod
-   use MAPL_CommsMod
-   use MAPL_MaxMinMod
-   use MAPL_ShmemMod, only: MAPL_NodeRankList
+   use MAPL
 
-   use MAPL_SimpleBundleMod
    use Chem_SimpleBundleMod
    use m_Random
    use m_MergeSorts

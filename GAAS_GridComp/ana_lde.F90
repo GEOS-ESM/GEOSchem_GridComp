@@ -11,15 +11,10 @@
    Program Ana_LDE
 
    use ESMF
-   use MAPL_Mod
+   use MAPL
 
    use LDE_Mod
-   use MAPL_SimpleBundleMod
    use Chem_SimpleBundleMod
-
-   use MAPL_GridManagerMod
-   use MAPL_LatLonGridFactoryMod
-   use MAPL_CubedSphereGridFactoryMod, only: CubedSphereGridFactory
 
    implicit NONE
 

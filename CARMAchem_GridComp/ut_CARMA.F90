@@ -17,7 +17,7 @@
    Program ut_CARMA
 
    use ESMF
-   use MAPL_Mod
+   use MAPL
     use CARMAchem_GridCompMod, only: SetServices
    implicit NONE
 

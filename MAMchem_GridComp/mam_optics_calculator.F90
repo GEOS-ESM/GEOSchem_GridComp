@@ -18,9 +18,7 @@ program mam_optics_calculator
 
   use ESMF
 
-  use MAPL_Mod
-  use MAPL_ShmemMod
-  use MAPL_SimpleBundleMod
+  use MAPL
 
   use MAM_BaseMod
   use MAM3_DataMod, only: MAM3_MODE_NAME, MAM3_MODES 

@@ -110,14 +110,14 @@ module GEOS_PChemGridCompMod
 ! !USES:
 
   use ESMF
-  use MAPL_Mod
+  use MAPL
   use Chem_Mod
-  use ESMF_CFIOFileMOD
-  use MAPL_CFIOMOD
+
   
   implicit none
   private
 #include "mpif.h"
+  include "netcdf.inc"
 
 ! !PUBLIC MEMBER FUNCTIONS:
 

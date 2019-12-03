@@ -15,7 +15,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod         ! Chemistry Base Class
    USE Chem_UtilMod
 

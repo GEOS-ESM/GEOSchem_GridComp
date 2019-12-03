@@ -12,7 +12,7 @@
 !
 ! !USES:
       use ESMF
-      use MAPL_Mod
+      use MAPL
       use FV_StateMod, only : calcCourantNumberMassFlux => fv_computeMassFluxes
       use m_set_eta,  only : set_eta
 

@@ -15,9 +15,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
-
-   USE MAPL_SimpleBundleMod
+   USE MAPL
 
    use Chem_ConstMod, only: grav, undef
    use Chem_UtilMod,  only: Chem_BiomassDiurnal

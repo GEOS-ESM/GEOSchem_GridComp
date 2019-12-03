@@ -16,10 +16,7 @@
 ! !USES:
 !
    USE ESMF
-   USE MAPL_Mod
-
-   USE MAPL_MaxMinMod
-   USE MAPL_SimpleBundleMod
+   USE MAPL
 
    USE Chem_Mod              ! Chemistry Base Class
    USE Chem_ArrayMod
@@ -30,8 +27,6 @@
 
    USE m_inpak90             ! Resource file management
    USE m_die,   ONLY: die
-
-   USE MAPL_NewArthParserMod,  ONLY: MAPL_StateEval      ! for evaluating constraints
 
    USE   DryDepositionGmiMod,  ONLY: TR_GMI_DryDeposition         ! in this dir
    USE      WetRemovalGmiMod,  ONLY: TR_GMI_WetRemoval            ! in this dir

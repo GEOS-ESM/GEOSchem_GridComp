@@ -12,7 +12,7 @@
    Program ut_GOCART
 
    use ESMF
-   use MAPL_Mod
+   use MAPL
    use GOCART_GridCompMod, only: SetServices
 
    implicit NONE
