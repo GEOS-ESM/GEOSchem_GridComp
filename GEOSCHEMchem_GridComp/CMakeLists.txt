@@ -9,10 +9,10 @@ set (src_directories
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/History
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosUtil
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/NcdfUtil
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/ISOROPIA
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/ISORROPIA
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/KPP/Standard
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/Interfaces/GCHP
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/ObsPack
   )
 
@@ -46,12 +46,9 @@ list (REMOVE_ITEM srcs
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/aero_drydep.F
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/exchange_mod.F
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/YuIMN_Code.F
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC/gigc_manualexports_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC/GIGC_GridCompMod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC/Chem_GridCompMod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC/GEOS_ctmEnvGridComp.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC/GEOSChem.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/apm_driv_mod.F
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/Headers/inquireMod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/Interfaces/GCHP/Chem_GridCompMod.F90
    )
 
 if (CMAKE_Fortran_COMPILER_ID MATCHES Intel)
