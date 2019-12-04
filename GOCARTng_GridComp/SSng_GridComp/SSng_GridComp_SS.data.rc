@@ -4,6 +4,24 @@
 
 bins:  5
 
+
+variable_table::
+
+# Name     Units        Long Name
+# -----    ------       ----------------------
+ss001      'kg kg-1'    'Sea Salt Mixing Ratio (bin001)'
+ss002      'kg kg-1'    'Sea Salt Mixing Ratio (bin002)'
+ss003      'kg kg-1'    'Sea Salt Mixing Ratio (bin003)'
+ss004      'kg kg-1'    'Sea Salt Mixing Ratio (bin004)'
+ss005      'kg kg-1'    'Sea Salt Mixing Ratio (bin005)'
+::
+
+
+OPTICS_FILE: ExtData/MERRA2/x/opticsBands_SS.v3_3.RRTMG.nc
+
+NUM_BANDS: 30
+
+
 particle_radius: 0.079 0.316 1.119 2.818 7.772
 
 radius_lower: 0.03 0.1 0.5 1.5 5.0
