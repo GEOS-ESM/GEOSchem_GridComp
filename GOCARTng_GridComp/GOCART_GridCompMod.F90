@@ -143,6 +143,7 @@ contains
 !   ------------------------------------------------
     call MAPL_GridCompSetEntryPoint (GC, ESMF_METHOD_INITIALIZE,  Initialize,  __RC__)
     call MAPL_GridCompSetEntryPoint (GC, ESMF_METHOD_RUN,  Run1, __RC__)
+    call MAPL_GridCompSetEntryPoint (GC, ESMF_METHOD_RUN,  Run2, __RC__)
 
 !   Store internal state in GC
 !   --------------------------
@@ -340,7 +341,7 @@ contains
 !   ---------------------------
     call getAERO_ (self, AEROlist, __RC__)
 
-if (mapl_am_i_root()) print*,'GOCARTng AEROlist = ', AEROlist
+if (mapl_am_i_root()) print*, trim(COMP_NAME), ' AEROlist = ', AEROlist
 
     call ESMF_AttributeSet(AERO, name='active_aerosol_instances', valueList=AEROlist, itemCount=size(AEROlist), __RC__)
 
@@ -353,12 +354,12 @@ if (mapl_am_i_root()) print*,'GOCARTng AEROlist = ', AEROlist
             if (trim(AEROlist(j)) == trim(CHILD_NAME)) then
                 call ESMF_StateGet (GEX(i), trim(CHILD_NAME)//'_AERO', child_state, __RC__)
 !               call ESMF_StateGet (GEX(i), 'AERO', child_state, __RC__)
-                call ESMF_StateAdd (AERO, (/child_state/), relaxedFlag=.true., __RC__)
+                call ESMF_StateAdd (AERO, (/child_state/), __RC__)
 
                 call ESMF_StateGet (GEX(i), trim(CHILD_NAME)//'_AERO_ACI', child_state, __RC__)
                 call ESMF_StateAdd (AERO_ACI, (/child_state/), __RC__)
 
-                call ESMF_StateGet (GEX(i), trim(CHILD_NAME)//'_AERO_DP', child_bundle, __RC__)
+                call ESMF_StateGet (GEX(i), 'AERO_DP', child_bundle, __RC__)
                 call ESMF_FieldBundleGet (child_bundle, fieldCount=fieldCount, __RC__)
                 allocate (fieldList(FieldCount), __STAT__)
                 call ESMF_FieldBundleGet (child_bundle, fieldList=fieldList, __RC__)
@@ -527,6 +528,83 @@ if (mapl_am_i_root()) print*,'GOCARTng AEROlist = ', AEROlist
     RETURN_(ESMF_SUCCESS)
 
   end subroutine Run1
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!BOP
+! !IROUTINE: RUN -- Run method for the CONVECT component
+
+! !INTERFACE:
+
+  subroutine Run2 (GC, IMPORT, EXPORT, CLOCK, RC)
+
+    ! !ARGUMENTS:
+
+    type (ESMF_GridComp), intent(inout) :: GC     ! Gridded component 
+    type (ESMF_State),    intent(inout) :: IMPORT ! Import state
+    type (ESMF_State),    intent(inout) :: EXPORT ! Export state
+    type (ESMF_Clock),    intent(inout) :: CLOCK  ! The clock
+    integer, optional,    intent(  out) :: RC     ! Error code:
+
+! !DESCRIPTION: This version uses the MAPL\_GenericSetServices. This function sets
+!                the Initialize and Finalize services, as well as allocating
+
+!EOP
+
+!****************************************************************************
+! ErrLog Variables
+
+    character(len=ESMF_MAXSTR)          :: IAm
+    integer                             :: STATUS
+    character(len=ESMF_MAXSTR)          :: COMP_NAME
+
+! Local derived type aliases
+
+    type (MAPL_MetaComp),      pointer  :: MAPL
+    type (ESMF_GridComp),      pointer  :: GCS(:)
+    type (ESMF_State),         pointer  :: GIM(:)
+    type (ESMF_State),         pointer  :: GEX(:)
+    type (ESMF_State)                   :: INTERNAL
+
+    integer                             :: i
+
+!****************************************************************************
+! Begin... 
+
+!   Get my name and set-up traceback handle
+!   ---------------------------------------
+    Iam = 'Run2'
+    call ESMF_GridCompGet( GC, NAME=COMP_NAME, __RC__ )
+    Iam = trim(COMP_NAME) // Iam
+
+
+if (mapl_am_i_root()) print*, trim(COMP_NAME),' RUN2 BEGIN'
+
+!   Get my internal MAPL_Generic state
+!   -----------------------------------
+    call MAPL_GetObjectFromGC ( GC, MAPL, RC=STATUS )
+    VERIFY_(STATUS)
+
+!   Get parameters from generic state.
+!   -----------------------------------
+    call MAPL_Get ( MAPL, GCS=GCS, GIM=GIM, GEX=GEX, INTERNAL_ESMF_STATE=INTERNAL, __RC__ )
+
+!   Run the children
+!   -----------------
+!    do i = 1, size(GCS)
+!      call ESMF_GridCompRun (GCS(i), importState=GIM(i), exportState=GEX(i), clock=CLOCK, __RC__)
+!    end do
+
+! only run for DU.data for testing purposes
+    call ESMF_GridCompRun (GCS(1), importState=GIM(1), exportState=GEX(1), phase=2, clock=CLOCK, __RC__)
+
+
+if (mapl_am_i_root()) print*, trim(COMP_NAME),' RUN2 END'
+
+    RETURN_(ESMF_SUCCESS)
+
+  end subroutine Run2
+
 
 !===============================================================================
 
@@ -716,8 +794,8 @@ if (mapl_am_i_root()) print*,'GOCARTng AEROlist = ', AEROlist
     asy = 0.0d0
 
 
-!   do i = 1, size(AEROlist)
-    do i = 1, 2 
+   do i = 1, size(AEROlist)
+!    do i = 1, 2 
 
         call ESMF_StateGet(state, trim(AEROlist(i))//'_AERO', child_state, __RC__)
 !       ! set RH for aerosol optics
