@@ -13,12 +13,18 @@ module SSng_GridCompMod
    USE ESMF
    USE MAPL_Mod
 
+   USE Chem_MieMod
+
    implicit none
    private
 
+   type(Chem_Mie), dimension(2), save :: gocartngMieTable
+   integer, parameter :: instanceComputational = 1
+   integer, parameter :: instanceData          = 2
+
 ! !PUBLIC MEMBER FUNCTIONS:
    PUBLIC  SetServices
-   PUBLIC  Initialize
+!   PUBLIC  Initialize
 
 
 
@@ -220,7 +226,7 @@ if (mapl_am_i_root()) print*,'GOCARTng SS COMP_NAME = ', trim(COMP_NAME) ! for t
 !   DEVELOPMENT NOTE - Change to StateItem in future
 !   ---------------------------------------------------------------
     call MAPL_AddExportSpec(GC,                                   &
-       SHORT_NAME = trim(COMP_NAME)//'_AERO_DP',                  &
+       SHORT_NAME = 'AERO_DP',                  &
        LONG_NAME  = 'aerosol_deposition_from_'//trim(COMP_NAME),  &
        UNITS      = 'kg m-2 s-1',                                 &
        DIMS       = MAPL_DimsHorzOnly,                            &
@@ -277,9 +283,10 @@ if (mapl_am_i_root()) print*,'GOCARTng SSng SetServices END' ! for testing - to 
     type (ESMF_State)                   :: AERO, AERO_ACI
     type (ESMF_State)                   :: providerState
     type (ESMF_Config)                  :: cfg
-    type (ESMF_FieldBundle)             :: SS_Bundle_DP
+    type (ESMF_FieldBundle)             :: Bundle_DP
 
     integer                             :: i, n_bins, nbins_test
+    integer                              :: instance
     type (ESMF_Field)                   :: field, fld
     character (len=ESMF_MAXSTR)         :: field_name, prefix
 
@@ -348,7 +355,8 @@ if (mapl_am_i_root()) print*,'GOCART SSng Initialize BEGIN' ! for testing - to b
     call ESMF_StateGet (EXPORT, trim(COMP_NAME)//'_AERO'    , AERO    , __RC__)
 !    call ESMF_StateGet (EXPORT, 'AERO'    , AERO    , __RC__)
     call ESMF_StateGet (EXPORT, trim(COMP_NAME)//'_AERO_ACI', AERO_ACI, __RC__)
-    call ESMF_StateGet (EXPORT, trim(COMP_NAME)//'_AERO_DP' , SS_Bundle_DP, __RC__)
+    call ESMF_StateGet (EXPORT, 'AERO_DP' , Bundle_DP, __RC__)
+
 
 !   Set number of bins for this instance
     call ESMF_AttributeSet (AERO, name='n_bins', value=n_bins, __RC__)
@@ -366,31 +374,41 @@ if (mapl_am_i_root()) print*,'GOCART SSng Initialize BEGIN' ! for testing - to b
 !       ---------------
         call ESMF_StateGet (providerState, trim(prefix)//'SSDP'//trim(field_name), field, __RC__)
         call MAPL_AllocateCoupling (field, __RC__)
-        call MAPL_FieldBundleAdd (SS_Bundle_DP, field, __RC__)
+        call MAPL_FieldBundleAdd (Bundle_DP, field, __RC__)
 
 !       Wet deposition (Convective scavenging)
 !       --------------------------------------
         call ESMF_StateGet (providerState, trim(prefix)//'SSSV'//trim(field_name), field, __RC__)
         call MAPL_AllocateCoupling (field, __RC__)
-        call MAPL_FieldBundleAdd (SS_Bundle_DP, field, __RC__)
+        call MAPL_FieldBundleAdd (Bundle_DP, field, __RC__)
 
 !       Wet deposition
 !       ---------------
         call ESMF_StateGet (providerState, trim(prefix)//'SSWT'//trim(field_name), field, __RC__)
         call MAPL_AllocateCoupling (field, __RC__)
-        call MAPL_FieldBundleAdd (SS_Bundle_DP, field, __RC__)
+        call MAPL_FieldBundleAdd (Bundle_DP, field, __RC__)
 
 !       Gravitational Settling
 !       ----------------------
         call ESMF_StateGet (providerState, trim(prefix)//'SSSD'//trim(field_name), field, __RC__)
         call MAPL_AllocateCoupling (field, __RC__)
-        call MAPL_FieldBundleAdd (SS_Bundle_DP, field, __RC__)
+        call MAPL_FieldBundleAdd (Bundle_DP, field, __RC__)
     end do
 
 !   Set AERO States' attributes
 !   ----------------------------
+    if (data_driven) then
+        instance = instanceData
+    else
+        instance = instanceComputational
+    end if
+
+
+    gocartngMieTable(instance) = Chem_MieCreateng(cfg, COMP_NAME, __RC__)
+
+
     ! Mie Table instance/index
-!    call ESMF_AttributeSet(AERO, name='mie_table_instance', value=instance, __RC__)
+    call ESMF_AttributeSet(AERO, name='mie_table_instance', value=instance, __RC__)
 
     ! state of the atmosphere
     call ESMF_AttributeSet(AERO, name='air_pressure_for_aerosol_optics',             value='PLE', __RC__)
@@ -621,8 +639,6 @@ if (mapl_am_i_root()) print*,'SSng ExtData Run_data END'
     integer,            intent(out)                  :: rc
 
 !   !Local
-
-
     real, dimension(:,:,:), pointer                  :: ple
     real, dimension(:,:,:), pointer                  :: rh
     real, dimension(:,:,:), pointer                  :: var
@@ -635,7 +651,7 @@ if (mapl_am_i_root()) print*,'SSng ExtData Run_data END'
 
     real, dimension(:,:,:,:), allocatable            :: ext, ssa, asy  ! (lon:,lat:,lev:,band:)
 
-!    integer                                          :: instance
+    integer                                          :: instance
     integer                                          :: n
     integer                                          :: i1, j1, i2, j2, km
     integer                                          :: band, offset
@@ -653,7 +669,7 @@ if (mapl_am_i_root()) print*,'SSng ExtData Run_data END'
 
 !   Mie Table instance/index
 !   ------------------------
-!    call ESMF_AttributeGet(state, name='mie_table_instance', value=instance, __RC__)
+    call ESMF_AttributeGet(state, name='mie_table_instance', value=instance, __RC__)
 
 !   Radiation band
 !   --------------
@@ -669,6 +685,11 @@ if (mapl_am_i_root()) print*,'SSng ExtData Run_data END'
     i1 = lbound(ple, 1); i2 = ubound(ple, 1)
     j1 = lbound(ple, 2); j2 = ubound(ple, 2)
                          km = ubound(ple, 3)
+
+!   Relative humidity
+!   -----------------
+    call ESMF_AttributeGet(state, name='relative_humidity_for_aerosol_optics', value=fld_name, __RC__)
+    call MAPL_GetPointer(state, rh, trim(fld_name), __RC__)
 
     call ESMF_AttributeGet (state, name='n_bins'   , value=n_bins   , __RC__)
 
@@ -695,42 +716,42 @@ if (mapl_am_i_root()) print*,'SSng ExtData Run_data END'
     end do
 
 
-    call mie_(n_bins, n_bands, offset, q_4d, rh, ext, ssa, asy, __RC__)
+    call mie_(gocartngMieTable(instance), n_bins, n_bands, offset, q_4d, rh, ext, ssa, asy, __RC__)
 
 
-  call ESMF_AttributeGet(state, name='extinction_in_air_due_to_ambient_aerosol', value=fld_name, __RC__)
-  if (fld_name /= '') then
-      call MAPL_GetPointer(state, var, trim(fld_name), __RC__)
-      var = ext(:,:,:,1)
-  end if
+    call ESMF_AttributeGet(state, name='extinction_in_air_due_to_ambient_aerosol', value=fld_name, __RC__)
+    if (fld_name /= '') then
+        call MAPL_GetPointer(state, var, trim(fld_name), __RC__)
+        var = ext(:,:,:,1)
+    end if
 
-  call ESMF_AttributeGet(state, name='single_scattering_albedo_of_ambient_aerosol', value=fld_name, __RC__)
-  if (fld_name /= '') then
-      call MAPL_GetPointer(state, var, trim(fld_name), __RC__)
-      var = ssa(:,:,:,1)
-  end if
+    call ESMF_AttributeGet(state, name='single_scattering_albedo_of_ambient_aerosol', value=fld_name, __RC__)
+    if (fld_name /= '') then
+        call MAPL_GetPointer(state, var, trim(fld_name), __RC__)
+        var = ssa(:,:,:,1)
+    end if
 
- call ESMF_AttributeGet(state, name='asymmetry_parameter_of_ambient_aerosol', value=fld_name, __RC__)
-  if (fld_name /= '') then
-      call MAPL_GetPointer(state, var, trim(fld_name), __RC__)
-      var = asy(:,:,:,1)
-  end if
+   call ESMF_AttributeGet(state, name='asymmetry_parameter_of_ambient_aerosol', value=fld_name, __RC__)
+    if (fld_name /= '') then
+        call MAPL_GetPointer(state, var, trim(fld_name), __RC__)
+        var = asy(:,:,:,1)
+    end if
 
 if (mapl_am_i_root()) print*,'SSng aerosol_optics IM RUNNING_ ='
 
 
 
-  deallocate(ext, ssa, asy, __STAT__)
+    deallocate(ext, ssa, asy, __STAT__)
 
 
-  RETURN_(ESMF_SUCCESS)
+    RETURN_(ESMF_SUCCESS)
 
   contains
 
-    subroutine mie_(n_bins, nb, offset, q, rh, ext, ssa, asy, rc)
+    subroutine mie_(mie_table, n_bins, nb, offset, q, rh, ext, ssa, asy, rc)
     implicit none
 
-!    type(Chem_Mie),    intent(inout):: mie_table    ! mie table
+    type(Chem_Mie),    intent(inout):: mie_table    ! mie table
     integer,           intent(in )  :: n_bins           ! number of bins
     integer,           intent(in )  :: nb               ! number of bands
     integer,           intent(in )  :: offset           ! bands offset 
@@ -745,7 +766,7 @@ if (mapl_am_i_root()) print*,'SSng aerosol_optics IM RUNNING_ ='
 
     ! local
     integer :: STATUS
-    character(len=ESMF_MAXSTR) :: Iam='aerosol_optics::mie_'
+    character(len=ESMF_MAXSTR) :: Iam='SSng::aerosol_optics::mie_'
     character (len=ESMF_MAXSTR)                      :: fld_name
 
     integer :: l, idx, na
@@ -761,23 +782,32 @@ if (mapl_am_i_root()) print*,'SSng aerosol_optics IM RUNNING_ ='
      ssa_ = 0.0d0
      asy_ = 0.0d0
 
-!    do l = 1, n_bins
-!        #if (0)
-!           write (fld_name, '(A, I0.3)') 'du', l
-!           idx = Chem_MieQueryIdx(mie_table, trim(fld_name), __RC__)
-!           call Chem_MieQueryAllBand4D(mie_table, idx, nb, offset, q(:,:,:,l), rh, ext, ssa, asy, __RC__)
-!        #else
-            ext = 1e-3
-!            ext_ = ext_ +          ext     ! total extinction due to dust
-            ssa = 0.95
-            asy = 0.5
-!        #endif
-!    end do
+    do l = 1, n_bins
+        write (fld_name, '(A, I0.3)') 'ss', l
+        idx = Chem_MieQueryIdx(mie_table, trim(fld_name), __RC__)
+        call Chem_MieQueryAllBand4D(mie_table, idx, nb, offset, q(:,:,:,l), rh, ext, ssa, asy, __RC__)
 
-!     ext = ext_
+        ext_ = ext_ +          ext     ! total extinction due to dust
+        ssa_ = ssa_ +     (ssa*ext)    ! total scattering
+        asy_ = asy_ + asy*(ssa*ext)    ! sum of (asy * sca)
 
 
-     RETURN_(ESMF_SUCCESS)
+!if (l == 2) then
+!  if (mapl_am_i_root()) print*,'GOCARTng du001 nb = ', nb
+!  if (mapl_am_i_root()) print*,'GOCARTng ss002 offset = ', offset
+!  if (mapl_am_i_root()) print*,'GOCARTng ext = ', ext
+!   if (mapl_am_i_root()) print*,'GOCARTng q(:,:,:,1) = ', q(:,:,:,1)
+!   if (mapl_am_i_root()) print*,'GOCARTng rh = ', rh
+!end if
+
+    end do
+
+    ext = ext_
+    ssa = ssa_
+    asy = asy_
+
+
+    RETURN_(ESMF_SUCCESS)
 
     end subroutine mie_
 
