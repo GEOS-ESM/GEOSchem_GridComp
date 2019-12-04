@@ -4,6 +4,20 @@
 
 bins: 5
 
+variable_table::
+
+# Name     Units        Long Name
+# -----    ------       ----------------------
+du001      'kg kg-1'    'Dust Mixing Ratio (bin001)'
+du002      'kg kg-1'    'Dust Mixing Ratio (bin002)'
+du003      'kg kg-1'    'Dust Mixing Ratio (bin003)'
+du004      'kg kg-1'    'Dust Mixing Ratio (bin004)'
+du005      'kg kg-1'    'Dust Mixing Ratio (bin005)'
+::
+
+OPTICS_FILE: ExtData/g5chem/x/opticsBands_DU.nc4
+
+NUM_BANDS: 18
 
 particle_radius: 0.73 1.4 2.4 4.5 8.0
 
