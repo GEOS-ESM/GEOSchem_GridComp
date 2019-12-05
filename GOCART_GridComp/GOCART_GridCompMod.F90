@@ -2265,7 +2265,7 @@ CONTAINS
 !  Assume that DT is always an integral number of seconds
 !  Add a fraction to both (and then truncate to int), to avoid cases like 900 /= 899.999999
    if (int(cdt+0.2) /= int(hdt+0.2)) then
-      PRINT*,'   Implementation of GOCART_DT is problematic; set GOCART_DT equal to the HEARTBEAT_DT.'
+      PRINT*,'   Implementation of GOCART_DT is problematic; set GOCART_DT = HEARTBEAT_DT.'
       VERIFY_(234)
    endif
 !  With the new MAPL:
