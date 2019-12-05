@@ -2264,12 +2264,11 @@ CONTAINS
 !  ----------------------------------------------------------------------------------------
 !  Assume that DT is always an integral number of seconds
 !  Add a fraction to both (and then truncate to int), to avoid cases like 900 /= 899.999999
-   if (int(cdt+0.2) /= int(hdt+0.2)) then
-      PRINT*,'   Implementation of GOCART_DT is problematic; set GOCART_DT = HEARTBEAT_DT.'
-      VERIFY_(234)
+   if (abs(cdt-hdt) > 0.1) then
+     __raise__(234, 'Implementation of GOCART_DT is problematic; set GOCART_DT = HEARTBEAT_DT')
    endif
-!  With the new MAPL:
-!  _ASSERT(int(cdt+0.2) /= int(hdt+0.2), 'needs informative message')
+!  With the new MAPL2.0, use this line instead of the 3 above:
+!  _ASSERT(abs(cdt-hdt) < 0.1, 'Implementation of GOCART_DT is problematic; set GOCART_DT = HEARTBEAT_DT')
 
    allocate(r4ZTH(SIZE(LATS,1), SIZE(LATS,2)), __STAT__)
    allocate(  ZTH(SIZE(LATS,1), SIZE(LATS,2)), __STAT__)
