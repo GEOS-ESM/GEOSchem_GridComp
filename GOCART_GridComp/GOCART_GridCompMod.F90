@@ -2260,6 +2260,16 @@ CONTAINS
    call extract_ ( gc, clock, chemReg, gcChem, w_c, nymd, nhms, cdt, STATUS, state=myState )
    VERIFY_(STATUS)
 
+!  Until all the gas phase species handle GOCART_DT correctly, we must run at the heartbeat
+!  ----------------------------------------------------------------------------------------
+!  Assume that DT is always an integral number of seconds
+!  Add a fraction to both (and then truncate to int), to avoid cases like 900 /= 899.999999
+   if (abs(cdt-hdt) > 0.1) then
+     __raise__(234, 'Implementation of GOCART_DT is problematic; set GOCART_DT = HEARTBEAT_DT')
+   endif
+!  With the new MAPL2.0, use this line instead of the 3 above:
+!  _ASSERT(abs(cdt-hdt) < 0.1, 'Implementation of GOCART_DT is problematic; set GOCART_DT = HEARTBEAT_DT')
+
    allocate(r4ZTH(SIZE(LATS,1), SIZE(LATS,2)), __STAT__)
    allocate(  ZTH(SIZE(LATS,1), SIZE(LATS,2)), __STAT__)
    allocate(  SLR(SIZE(LATS,1), SIZE(LATS,2)), __STAT__)
