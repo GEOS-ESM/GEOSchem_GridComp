@@ -93,7 +93,7 @@ def geos5_bands(scheme=scheme_cs, units='m', spectrum=None):
         bands = bands_rrtmg
 
 
-    if spectrum != None:
+    if spectrum is not None:
         if spectrum.lower() == 'shortwave' or spectrum.lower() == 'solar':
             _spectrum = 'shortwave'
 
@@ -103,7 +103,7 @@ def geos5_bands(scheme=scheme_cs, units='m', spectrum=None):
         _spectrum = None
          
     
-    if _spectrum == None:
+    if _spectrum is None:
        result = 1e-6 * np.array(bands['shortwave'] + bands['longwave'])
     else:
        result = 1e-6 * np.array(bands[_spectrum])
@@ -126,7 +126,7 @@ class LUT:
                        N_integration_bins=10000, verbose=False):
 
 
-        assert (wavelengths != None) != (bands != None)
+        assert (wavelengths is not None) != (bands is not None)
 
         # LUT's parameters
         self.wavelengths = wavelengths                       # monochromatic wavelengths, 'm'
@@ -166,7 +166,7 @@ class LUT:
         print 'Im(n)', n_im_min, n_im_max
         print 'n    =', n 
 
-        if self.bands != None and self.scheme == scheme_cs:
+        if self.bands is not None and self.scheme == scheme_cs:
             # widths of band 0 and 2
             d0 = self.bands[0][1] - self.bands[0][0]
             d2 = self.bands[2][1] - self.bands[2][0]
@@ -195,11 +195,11 @@ class LUT:
         self.n_re = None          # sampled refractive_indexes - real part
         self.n_im = None          # sampled refractive_indexes - imaginary part
 
-        if self.bands != None:
+        if self.bands is not None:
             self.n_re = [self.__sample_refractive_index_real(min=n_re_min[b], max=n_re_max[b]) for b in range(len(self.bands))]
             self.n_im = [self.__sample_refractive_index_imaginary(min=n_im_min[b], max=n_im_max[b]) for b in range(len(self.bands))]
 
-        if self.wavelengths != None:
+        if self.wavelengths is not None:
             self.n_re = [self.__sample_refractive_index_real(min=n_re_min[w], max=n_re_max[w]) for w in range(len(self.wavelengths))]
             self.n_im = [self.__sample_refractive_index_imaginary(min=n_im_min[w], max=n_im_max[w]) for w in range(len(self.wavelengths))]
 
@@ -315,7 +315,7 @@ class LUT:
         Computes monochromatic LUT. 
         '''
 
-        assert self.wavelengths != None
+        assert self.wavelengths is not None
 
         # x in [-1, 1] 
         x = (2*np.log(self.Dgs) - log(self.Dgs_min) - log(self.Dgs_max)) / (log(self.Dgs_max) - log(self.Dgs_min))
@@ -351,7 +351,7 @@ class LUT:
         Computes band-averaged LUT. 
         '''
 
-        assert self.bands != None
+        assert self.bands is not None
 
         # Gauss-Legendre quadrature (n=3)
         glq_w_n3 = (0.8888888888888888, 0.5555555555555556, 0.5555555555555556)
@@ -458,20 +458,20 @@ class LUT:
         coefficients of chebyshev expansion.
         '''
         
-        if self.wavelengths != None:
+        if self.wavelengths is not None:
             result = self.__compute_monochromatic_optics()
 
-        if  self.bands != None:
+        if  self.bands is not None:
             result = self.__compute_bandaveraged_optics()
 
         return result
 
     def save(self, file, c_ext=None, c_sca=None, c_g=None, title='', comment='', history='', n_chars=80):
 
-        if self.wavelengths != None:
+        if self.wavelengths is not None:
             self.__save_monochromatic(file, c_ext, c_sca, c_g, title, comment, history, n_chars)
 
-        if  self.bands != None:
+        if  self.bands is not None:
             self.__save_band_averaged(file, c_ext, c_sca, c_g, title, comment, history, n_chars)
 
 
