@@ -23,6 +23,9 @@
    use m_die, only: die
    use m_inpak90
 
+
+   use ESMF
+
 #if defined(GEOS5)
    use ESMF
    use MAPL_Mod
@@ -39,15 +42,14 @@
 ! !PUBLIC MEMBER FUNCTIONS:
 !
    public  Chem_MieCreate          ! Constructor 
-   public  Chem_MieCreateng        ! Constructor for GOCARTng
+   public  Chem_MieCreateng        ! Constructor for GOCARTng. Does not use Chem_Registry
    public  Chem_MieDestroy         ! Destructor
    public  Chem_MieQuery           ! Query the Mie table to return parameters (qname interface)
-   public  Chem_MieQueryByIntng    ! Query the Mie table to return parameters (qname interface)
    public  Chem_MieQueryTauList    
    public  Chem_MieQueryAllBand3D
    public  Chem_MieQueryAllBand4D
    public  Chem_MieQueryIdx        ! Query the index of the mie table given the qname
-
+   public  getNumbands_
 !
 ! !DESCRIPTION:
 !
@@ -795,9 +797,9 @@ end subroutine Chem_MieDestroy
 !
 ! !INTERFACE:
 !
-   subroutine Chem_MieQueryByInt ( this, idx, channel, q_mass, rh,     &
+   impure elemental subroutine Chem_MieQueryByInt ( this, idx, channel, q_mass, rh,     &
                                    tau, ssa, gasym, bext, bsca, bbck,  &
-                                   reff, pmom, p11, p22, gf, rhop, rhod, &
+                                   reff, p11, p22, gf, rhop, rhod, &
                                    vol, area, refr, refi, rc )
 
 ! !INPUT PARAMETERS:
@@ -817,7 +819,7 @@ end subroutine Chem_MieDestroy
    real,    optional,      intent(out) :: bsca  ! mass scattering efficiency [m2 (kg dry mass)-1]
    real,    optional,      intent(out) :: bbck  ! mass backscatter efficiency [m2 (kg dry mass)-1]
    real,    optional,      intent(out) :: reff  ! effective radius (micron)
-   real,    optional,      intent(out) :: pmom(:,:)
+!   real,    optional,      intent(out) :: pmom(:,:)
    real,    optional,      intent(out) :: p11   ! P11 phase function at backscatter
    real,    optional,      intent(out) :: p22   ! P22 phase function at backscatter
    real,    optional,      intent(out) :: gf    ! Growth factor (ratio of wet to dry radius)
@@ -904,10 +906,10 @@ end subroutine Chem_MieDestroy
          rEff = 1.E6 * rEff ! convert to microns
       endif
 
-      if(present(pmom)) then
-         pmom(:,:) = TABLE%pmom(irh  ,ichannel,TYPE,:,:) * (1.-arh) &
-                   + TABLE%pmom(irhp1,ichannel,TYPE,:,:) * arh
-      endif
+!      if(present(pmom)) then
+!         pmom(:,:) = TABLE%pmom(irh  ,ichannel,TYPE,:,:) * (1.-arh) &
+!                   + TABLE%pmom(irhp1,ichannel,TYPE,:,:) * arh
+!      endif
 
       if(present(p11) ) then
          p11In =   TABLE%pback(irh  ,ichannel,TYPE,1) * (1.-arh) &
@@ -1027,9 +1029,9 @@ end subroutine Chem_MieDestroy
     end subroutine Chem_MieQueryTauList
 
 
-   subroutine Chem_MieQueryByChar( this, idx, channel, q_mass, rh,     &
+   impure elemental subroutine Chem_MieQueryByChar( this, idx, channel, q_mass, rh,     &
                                    tau, ssa, gasym, bext, bsca, bbck,  &
-                                   rEff, pmom, p11, p22, rc )
+                                   rEff, p11, p22, rc )
 
 !  ! INPUT parameters
    type(Chem_Mie), target, intent(in ) :: this     
@@ -1046,7 +1048,7 @@ end subroutine Chem_MieDestroy
    real,    optional,      intent(out) :: bsca  ! mass scattering efficiency [m2 (kg dry mass)-1]
    real,    optional,      intent(out) :: bbck  ! mass backscatter efficiency [m2 (kg dry mass)-1]
    real,    optional,      intent(out) :: reff  ! effective radius (micron)
-   real,    optional,      intent(out) :: pmom(:,:)
+!   real,    optional,      intent(out) :: pmom(:,:)
    real,    optional,      intent(out) :: p11   ! P11 phase function at backscatter
    real,    optional,      intent(out) :: p22   ! P22 phase function at backscatter
    integer, optional,      intent(out) :: rc    ! error code
@@ -1067,10 +1069,15 @@ end subroutine Chem_MieDestroy
    end if
 
    do iq = 1, this%nq
+
+if (mapl_am_i_root()) print*,'chem_miequerybychar NAME = ',trim(name)
+if (mapl_am_i_root()) print*,'chem_miequerybychar idx = ',trim(idx)
+if (mapl_am_i_root()) print*,'chem_miequerybychar this%vname = ',trim(this%vname(iq))
+
       if( uppercase(trim(NAME)) == uppercase(trim(this%vname(iq)))) then
          call  Chem_MieQueryByInt( this, iq, channel, q_mass, rh,     &
                              tau, ssa, gasym, bext, bsca, bbck, &
-                             rEff, pmom, p11, p22, rc=rc )
+                             rEff, p11, p22, rc=rc )
          if ( rc /= 0 ) return
       endif
    enddo
@@ -1281,24 +1288,21 @@ end subroutine Chem_MieDestroy
 !
 ! !INTERFACE:
 !
-
   function Chem_MieCreateng ( cf, COMP_NAME, rc ) result(this)
 
 ! !INPUT PARAMETERS:
-
-   type(ESMF_Config) :: cf  ! Mie table file name
-   character (len=ESMF_MAXSTR)    :: COMP_NAME
-
-!   type(Chem_Registry), target, optional, intent(in) :: chemReg ! Optional chemReg
+   type (ESMF_Config)             :: cf          ! Mie table file name
+   character (len=ESMF_MAXSTR)    :: COMP_NAME   ! GC COMP_NAME
+!   integer                        :: NUM_BANDS   ! number of bands
 
 ! !OUTPUT PARAMETERS:
 
-   type(Chem_Mie) this
+   type (Chem_Mie) this
    integer, intent(out) ::  rc
 
 ! !DESCRIPTION:
 !
-!     This routine creates a LUT object from an ESMF configuration
+!  This routine creates a LUT object from an ESMF configuration
 !  attribute CF. This routine is usually called from GEOS-5.
 !
 !  IMPORTANT: Does not yet handle the phase function!!!!
@@ -1311,14 +1315,8 @@ end subroutine Chem_MieDestroy
 !EOP
 !-------------------------------------------------------------------------
 
-!   type(Chem_Registry), pointer :: reg
-   integer        :: iq, rcs(32)
-   integer        :: i, itick, iiq
-   integer        :: nCols
-   real, pointer  :: rh_table(:), lambda_table(:), &
-                     bext(:,:,:), bsca(:,:,:), reff(:,:), gf(:,:), &
-                     rhop(:,:), rhod(:)
-   character(len=255) :: name
+   integer                        :: NUM_BANDS   ! number of bands
+   integer        :: iq, i, nCols
    __Iam__('Chem_MieCreateng')
 
 
@@ -1327,27 +1325,22 @@ end subroutine Chem_MieDestroy
 !  corresponding Mie Table
 !  -----------------------------------------------------
    call ESMF_ConfigGetDim( CF, this%nq, nCols, label=('variable_table::'), __RC__ )
-   allocate(this%vname(this%nq), this%vindex(this%nq), stat=rc  )
-   if ( rc /= 0 ) return
-   allocate(this%vtable(this%nq), stat=rc )
-   if ( rc /= 0 ) return
+   allocate(this%vname(this%nq), this%vindex(this%nq), __STAT__ )
+   allocate(this%vtable(this%nq), __STAT__ )
 
-!if (mapl_am_i_root()) print*,'this%nq = ', this%nq
    call ESMF_ConfigFindLabel( CF, 'variable_table::', __RC__ )
    do iq = 1, this%nq
       this%vindex(iq) = iq
       call ESMF_ConfigNextLine( CF, __RC__ )
       call ESMF_ConfigGetAttribute( CF, this%vname(iq), __RC__ )
-!if (mapl_am_i_root()) print*, 'this%vname(iq) = ',trim(this%vname(iq))
    enddo
+
 
 !  Get file names for the optical tables
 !  -------------------------------------
    call ESMF_ConfigGetAttribute( CF, this%optics_file, Label="OPTICS_FILE:" , &
-                                 default='ExtData/g5chem/x/opticsBands_'//COMP_NAME(1:3)//'.nc', &
+                                 default='ExtData/g5chem/x/opticsBands_'//COMP_NAME(1:2)//'.nc', &
                                  RC = status )
-
-!if (mapl_am_i_root()) print*, 'GOCARTng OPTICS_FILE = ',trim(this%optics_file)
 
 !  this accounts for BRC, and future GC names with a 3 character prefix
    if (RC /= 0 ) then
@@ -1356,37 +1349,24 @@ end subroutine Chem_MieDestroy
                                  __RC__ )
    end if
 
-   call ESMF_ConfigGetAttribute( CF, this%nch           , Label= "NUM_BANDS:" , &
-                                 default=18, __RC__)
+!  Set the number of bands and channels
+!  -------------------------------------
+   call getNumbands_(NUM_BANDS, __RC__)
 
-!if (mapl_am_i_root()) print*,'GOCARTng this%nch = ', this%nch
+   this%nch = NUM_BANDS
 
+!  Make chanel = number of bands
+!  --------------------------------------------------------------------
+   allocate ( this%channels(this%nch), __STAT__ )
 
+   do i = 1, this%nch
+       this%channels(i) = i
+   end do
 
-   allocate ( this%channels(this%nch), stat=rc )
-   if ( rc /= 0 ) return
+   allocate(this%mie_aerosol, __STAT__)
+   this%mie_aerosol = Chem_MieTableCreate( this%optics_file, __RC__ )
+   call Chem_MieTableRead( this%mie_aerosol, this%nch, this%channels, __RC__)
 
-   call ESMF_ConfigGetAttribute( CF, this%channels       , Label= "BANDS:" , &
-                                 count=this%nch, rc=rc )
-
-
-!if (mapl_am_i_root()) print*,'GOCARTng this%channels = ', this%channels
-
-
-!  If there is no BAND definition on CF, make something up
-!  -------------------------------------------------------
-   if(rc /= ESMF_SUCCESS) then
-      do i=1,this%nch
-         this%channels(i) = i
-      end do
-   end if
-
-   allocate(this%mie_aerosol, stat=rc)
-   if (rc /= 0) return
-
-   this%mie_aerosol = Chem_MieTableCreate(this%optics_file, __RC__ )
-
-   call Chem_MieTableRead(this%mie_aerosol, this%nch, this%channels, __RC__)
 
 !  Now map the mie tables to the hash table for the registry
 !  This part is hard-coded for now!
@@ -1395,7 +1375,6 @@ end subroutine Chem_MieDestroy
 !          ~~~~~~~~~~~~~~~~~~~~
 !          UPDATE FOR SU AND NI
 !          ~~~~~~~~~~~~~~~~~~~~
-!
 !       if (COMP_NAME(1:2) == 'SU') then
 !           name = trim(this%vname(iq))
 !          Only sulfate aerosol species have entries in the Mie table
@@ -1403,216 +1382,105 @@ end subroutine Chem_MieDestroy
 !              name(1:3) == 'sul' .or. name(1:3) == 'SUL') then
 !               blah blah blah
 !           end if
+!        else.....
 
        this%vtable(iq) = this%mie_aerosol
-
-!if (mapl_am_i_root()) print*,'this%vtable(iq) = ', this%mie_aerosol
-
-
    end do
 
 
 !  All done
 !  --------
-
-
-   return
-!    RETURN_(ESMF_SUCCESS)
+   RETURN_(ESMF_SUCCESS)
 
  end function Chem_MieCreateng
 
 
+!-----------------------------------------------------------------------------------
+  subroutine getNumbands_(NUM_BANDS, RC)
 
-!-------------------------------------------------------------------------
-!     NASA/GSFC, Global Modeling and Assimilation Office, Code 900.3     !
-!-------------------------------------------------------------------------
-!BOP
-!
-! !IROUTINE:  Chem_MieQuery --- Return Tau, SSA, etc (scalar version)
-!
-!
-! !INTERFACE:
-!
-   subroutine Chem_MieQueryByIntng ( this, idx, channel, q_mass, rh,     &
-                                   tau, ssa, gasym, bext, bsca, bbck,  &
-                                   reff, pmom, p11, p22, gf, rhop, rhod, &
-                                   vol, area, refr, refi, rc )
+    !ARGUMENTS:
+!   type (MAPL_MetaComp),         intent(inout)    :: MAPL
+   integer,                      intent(  out)    :: NUM_BANDS   ! number of bands
+   integer, optional,            intent(  out)    :: RC          ! Error code:
 
-! !INPUT PARAMETERS:
+   !Locals
+   type (ESMF_Config)                          :: CF
 
-   type(Chem_Mie), target, intent(in ) :: this
-   integer,                intent(in ) :: idx     ! variable index on Chem_Mie
-   integer,                intent(in ) :: channel ! channel number
-   real,                   intent(in ) :: q_mass  ! aerosol mass [kg/m2],
-   real,                   intent(in ) :: rh      ! relative himidity
+   logical                              :: USE_RRTMGP, USE_RRTMGP_SORAD
+   logical                              :: USE_RRTMG , USE_RRTMG_SORAD
+   logical                              :: USE_CHOU  , USE_CHOU_SORAD
+   real                                 :: RFLAG
 
-! !OUTPUT PARAMETERS:
+   integer, parameter                   :: NB_CHOU   = 10        ! Number of bands in IRRAD calcs for Chou
+   integer, parameter                   :: NB_RRTMG  = 16        ! Number of bands in IRRAD calcs for RRTMG
+   integer, parameter                   :: NB_RRTMGP = 16        ! Number of bands in IRRAD calcs for RRTMGP
 
-   real,    optional,      intent(out) :: tau   ! aerol extinction optical depth
-   real,    optional,      intent(out) :: ssa   ! single scattering albedo
-   real,    optional,      intent(out) :: gasym ! asymmetry parameter
-   real,    optional,      intent(out) :: bext  ! mass extinction efficiency [m2 (kg dry mass)-1]
-   real,    optional,      intent(out) :: bsca  ! mass scattering efficiency [m2 (kg dry mass)-1]
-   real,    optional,      intent(out) :: bbck  ! mass backscatter efficiency [m2 (kg dry mass)-1]
-   real,    optional,      intent(out) :: reff  ! effective radius (micron)
-   real,    optional,      intent(out) :: pmom(:,:)
-   real,    optional,      intent(out) :: p11   ! P11 phase function at backscatter
-   real,    optional,      intent(out) :: p22   ! P22 phase function at backscatter
-   real,    optional,      intent(out) :: gf    ! Growth factor (ratio of wet to dry radius)
-   real,    optional,      intent(out) :: rhop  ! Wet particle density [kg m-3]
-   real,    optional,      intent(out) :: rhod  ! Dry particle density [kg m-3]
-   real,    optional,      intent(out) :: vol   ! Wet particle volume [m3 kg-1]
-   real,    optional,      intent(out) :: area  ! Wet particle cross section [m2 kg-1]
-   real,    optional,      intent(out) :: refr  ! Wet particle real part of ref. index
-   real,    optional,      intent(out) :: refi  ! Wet particle imag. part of ref. index
-   integer, optional,      intent(out) :: rc    ! error code
+   integer, parameter                   :: NB_CHOU_SORAD   = 8   ! Number of bands in SORAD calcs for Chou
+   integer, parameter                   :: NB_RRTMG_SORAD  = 14  ! Number of bands in SORAD calcs for RRTMG
+   integer, parameter                   :: NB_RRTMGP_SORAD = 14  ! Number of bands in SORAD calcs for RRTMGP
 
-! !DESCRIPTION:
-!
-!   Returns requested parameters from the Mie tables, as a function 
-!   of species, relative humidity, and channel
-!
-!  Notes: Needs some checking, and I still force an interpolation step
+   __Iam__('getNumbands_')
 
-!
-! !REVISION HISTORY:
-!
-!  23Mar2005 Colarco
-!  11Jul2005 da Silva   Standardization.
-!
-!EOP
-!-------------------------------------------------------------------------
+!   Description: Get number of bands for Mie table creation
 
-      integer                      :: ICHANNEL, TYPE
-      integer                      :: irh, irhp1, isnap
-      real                         :: rhUse, arh
-      real                         :: bextIn, bscaIn, bbckIn, gasymIn, p11In, p22In, &
-                                      gfIn, rhopIn, rhodIn, volIn, areaIn, &
-                                      refrIn, refiIn
-      type(Chem_MieTable), pointer :: TABLE
-
-      character(len=*), parameter  :: Iam = 'Chem_MieQueryByIntng'
-
-      if ( present(rc) ) rc = 0
-
-      ICHANNEL = CHANNEL+1
-      TABLE => this%vtableUse
-      TYPE = idx
-
-!      ASSERT_(TYPE>0)
-!      ASSERT_(ICHANNEL>=LBOUND(TABLE%bext,1))
-!      ASSERT_(ICHANNEL<=UBOUND(TABLE%bext,1))
-
-!     Now map the input RH to the high resolution hash table for RH
-      rhUse = max(rh,0.)
-      rhUse = min(rh,0.99)
-      isnap = int((rhUse+0.001)*1000.)
-      if(isnap .lt. 1) isnap = 1
-      arh   = TABLE%rha( isnap )
-      irh   = TABLE%rhi( isnap )
-      irhp1 = irh+1
-      if(irhp1 .gt. TABLE%nrh) irhp1 = TABLE%nrh
-
-!     Now linearly interpolate the input table for the requested aerosol and
-!     channel; rh is the relative humidity.
-
-      if(present(bext) .or. present(tau) .or. present(ssa) ) then
-         bextIn =   TABLE%bext(irh  ,ichannel,TYPE) * (1.-arh) &
-                  + TABLE%bext(irhp1,ichannel,TYPE) * arh
-      endif
-
-      if(present(bsca) .or. present(ssa) ) then
-         bscaIn =   TABLE%bsca(irh  ,ichannel,TYPE) * (1.-arh) &
-                  + TABLE%bsca(irhp1,ichannel,TYPE) * arh
-      endif
-
-      if(present(bbck)) then
-         bbckIn =   TABLE%bbck(irh  ,ichannel,TYPE) * (1.-arh) &
-                  + TABLE%bbck(irhp1,ichannel,TYPE) * arh
-      endif
-
-      if(present(gasym)) then
-         gasymIn =  TABLE%g(irh  ,ichannel,TYPE) * (1.-arh) &
-                  + TABLE%g(irhp1,ichannel,TYPE) * arh
-      endif
-
-      if(present(rEff) ) then
-         rEff =     TABLE%rEff(irh  ,TYPE) * (1.-arh) &
-                  + TABLE%rEff(irhp1,TYPE) * arh
-         rEff = 1.E6 * rEff ! convert to microns
-      endif
-
-      if(present(pmom)) then
-         pmom(:,:) = TABLE%pmom(irh  ,ichannel,TYPE,:,:) * (1.-arh) &
-                   + TABLE%pmom(irhp1,ichannel,TYPE,:,:) * arh
-      endif
-
-      if(present(p11) ) then
-         p11In =   TABLE%pback(irh  ,ichannel,TYPE,1) * (1.-arh) &
-                 + TABLE%pback(irhp1,ichannel,TYPE,1) * arh
-      endif
-
-      if(present(p22) ) then
-         p22In =   TABLE%pback(irh  ,ichannel,TYPE,5) * (1.-arh) &
-                 + TABLE%pback(irhp1,ichannel,TYPE,5) * arh
-      endif
-
-      if(present(gf) ) then
-         gfIn =     TABLE%gf(irh  ,TYPE) * (1.-arh) &
-                  + TABLE%gf(irhp1,TYPE) * arh
-      endif
-
-      if(present(rhod) ) then
-         rhodIn =   TABLE%rhod(1  ,TYPE)
-      endif
-
-      if(present(vol) ) then
-         volIn  =   TABLE%vol(irh  ,TYPE) * (1.-arh) &
-                  + TABLE%vol(irhp1,TYPE) * arh
-      endif
-
-      if(present(area) ) then
-         areaIn  =   TABLE%area(irh  ,TYPE) * (1.-arh) &
-                  + TABLE%area(irhp1,TYPE) * arh
-      endif
-
-      if(present(refr) .or. present(tau) .or. present(ssa) ) then
-         refrIn =   TABLE%refr(irh  ,ichannel,TYPE) * (1.-arh) &
-                  + TABLE%refr(irhp1,ichannel,TYPE) * arh
-      endif
-
-      if(present(refi) .or. present(tau) .or. present(ssa) ) then
-         refiIn =   TABLE%refi(irh  ,ichannel,TYPE) * (1.-arh) &
-                  + TABLE%refi(irhp1,ichannel,TYPE) * arh
-      endif
+!   Begin...
 
 
-!     Fill the requested outputs
-      if(present(tau  )) tau   = bextIn * q_mass
-      if(present(ssa  )) ssa   = bscaIn/bextIn
-      if(present(bext )) bext  = bextIn
-      if(present(bsca )) bsca  = bscaIn
-      if(present(bbck )) bbck  = bbckIn
-      if(present(gasym)) gasym = gasymIn
-      if(present(p11  )) p11   = p11In
-      if(present(p22  )) p22   = p22In
-      if(present(gf   )) gf    = gfIn
-      if(present(rhop )) rhop  = rhopIn
-      if(present(rhod )) rhod  = rhodIn
-      if(present(vol ))  vol   = volIn
-      if(present(area )) area  = areaIn
-      if(present(refr )) refr  = refrIn
-      if(present(refi )) refi  = refiIn
-
-!  All Done
-!----------
-
-      return
-
- end subroutine Chem_MieQueryByIntng
+      CF = ESMF_ConfigCreate (__RC__)
+      call ESMF_ConfigLoadFile (CF, 'AGCM.rc', __RC__)
 
 
+!     Get number of bands for aerosol Mie tables
+!     ------------------------------------------
+      ! first for IRRAD bands
+      USE_RRTMGP = .false.
+      USE_RRTMG  = .false.
+      USE_CHOU   = .false.
+      call ESMF_ConfigGetAttribute(CF, RFLAG, label='USE_RRTMGP_IRRAD:', DEFAULT=0.0, __RC__)
+      USE_RRTMGP = RFLAG /= 0.0
+      if (.not. USE_RRTMGP) then
+          call ESMF_ConfigGetAttribute(CF, RFLAG, label='USE_RRTMG_IRRAD:', DEFAULT=0.0, __RC__)
+          USE_RRTMG = RFLAG /= 0.0
+          USE_CHOU  = .not.USE_RRTMG
+      end if
 
+
+   ! then SOLAR
+      USE_RRTMGP_SORAD = .false.
+      USE_RRTMG_SORAD  = .false.
+      USE_CHOU_SORAD   = .false.
+      call ESMF_ConfigGetAttribute(CF, RFLAG, label='USE_RRTMGP_SORAD:', DEFAULT=0.0, __RC__)
+      USE_RRTMGP_SORAD = RFLAG /= 0.0
+      if (.not. USE_RRTMGP_SORAD) then
+          call ESMF_ConfigGetAttribute(CF, RFLAG, label='USE_RRTMG_SORAD:', DEFAULT=0.0, __RC__)
+          USE_RRTMG_SORAD = RFLAG /= 0.0
+          USE_CHOU_SORAD  = .not.USE_RRTMG_SORAD
+      end if
+
+     call ESMF_ConfigDestroy(CF, __RC__)
+
+      ! Set the offset for the IRRAD aerosol bands
+      if (USE_RRTMGP_SORAD) then
+          NUM_BANDS = NB_RRTMGP_SORAD
+      else if (USE_RRTMG_SORAD) then
+          NUM_BANDS = NB_RRTMG_SORAD
+      else
+          NUM_BANDS = NB_CHOU_SORAD
+      end if
+
+      ! Set number of IRRAD bands for aerosol optics
+      if (USE_RRTMGP) then
+          NUM_BANDS = NB_RRTMGP + NUM_BANDS
+      else if (USE_RRTMG) then
+          NUM_BANDS = NB_RRTMG + NUM_BANDS
+      else
+          NUM_BANDS = NB_CHOU + NUM_BANDS
+      end if
+
+
+      RETURN_(ESMF_SUCCESS)
+
+  end subroutine getNumbands_
 
 
 
