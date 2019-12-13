@@ -833,7 +833,7 @@ N + NO2 = N2O + O :                          GCARR(5.80E-12, 0.0E+00, 220.0);   
 BrO + O = Br + O2 :                          GCARR(1.90E-11, 0.0E+00, 230.0);     {2014/02/03; Eastham2014; SDE}
 CH2O + O = CO + HO2 + OH :                   GCARR(3.40E-11, 0.0E+00, -1600.0);   {2014/02/03; Eastham2014; SDE}
 O1D + HCl = 0.120O + 0.120HCl + 0.220H +
- 0.660Cl + 0.240ClO + 0.670OH :              GCARR(1.50E-10, 0.0E+00, 0.0);       {2018/06/21; JPL 15-10; ELF}
+ 0.660Cl + 0.220ClO + 0.660OH :              GCARR(1.50E-10, 0.0E+00, 0.0);       {2018/06/21; JPL 15-10; ELF}
 O1D + HBr = 0.200O + 0.200HBr + 0.200BrO +
  0.600OH + 0.200H + 0.600Br :                GCARR(1.50E-10, 0.0E+00, 0.0);       {2018/06/21; JPL 15-10; ELF}
 O1D + Cl2 = 0.250O + 0.250Cl2 + 0.750Cl +
@@ -846,7 +846,7 @@ O1D + CH2Br2 = 0.050O + 0.050CH2Br2 +
 O1D + CHBr3 = 0.300O + 0.300CHBr3 +
  0.700BrO + 1.400Br :                        GCARR(6.60E-10, 0.0E+00, 0.0);       {2018/06/21; JPL 15-10; ELF}
 O1D + HCFC22 = 0.250O + 0.250HCFC22 +
- 0.560ClO + 0.190Cl :                        GCARR(1.02E-10, 0.0E+00, 0.0);       {2017/02/22; JPL 15-10; BHH,MJE,ELF}
+ 0.560ClO + 0.190Cl :                        GCARR(1.02E-10, 0.0E+00, 0.0);       {2018/06/21; JPL 15-10; BHH,MJE,ELF}
 O1D + CFC11 = 0.100O + 0.100CFC11 +
  0.900ClO + 1.800Cl :                        GCARR(2.30E-10, 0.0E+00, 0.0);       {2018/06/21; JPL 15-10; ELF}
 O1D + CFC12 = 0.140O + 0.140CFC12 +
@@ -854,7 +854,7 @@ O1D + CFC12 = 0.140O + 0.140CFC12 +
 O1D + H1211 = 0.350O + 0.350H1211 +
  0.310BrO + 0.310Cl + 0.340Br + 0.340ClO :   GCARR(1.50E-10, 0.0E+00, 0.0);       {2018/06/21; JPL 15-10; ELF}
 O1D + H1301 = 0.550O + 0.550H1301 +
- 0.450BrO :                                  GCARR(1.00E-10, 0.0E+00, 0.0);       {2014/02/03; Eastham2014; SDE}
+ 0.450BrO :                                  GCARR(1.00E-10, 0.0E+00, 0.0);       {2018/06/21; JPL 15-10; ELF}
 O1D + HCFC141b = 0.310O + 0.310HCFC141b +
  0.690ClO + 0.690Cl :                        GCARR(2.60E-10, 0.0E+00, 0.0);       {2014/02/03; Eastham2014; SDE}
 O1D + HCFC142b = 0.350O + 0.350HCFC142b +
@@ -1335,9 +1335,9 @@ CFC113 + hv = 3.000Cl :                      PHOTOL(39);     {2014/02/03; Eastha
 CFC114 + hv = 2.000Cl :                      PHOTOL(40);     {2014/02/03; Eastham2014; SDE}
 CFC115 + hv = Cl :                           PHOTOL(41);     {2014/02/03; Eastham2014; SDE}
 HCFC123 + hv = 2.000Cl :                     PHOTOL(47);     {2014/02/03; Eastham2014; SDE}
-HCFC141b + hv = 1.000Cl :                    PHOTOL(48);     {2019/06/27; Eastham2014; SDE, ELF}
+HCFC141b + hv = 2.000Cl :                    PHOTOL(48);     {2014/02/03; Eastham2014; SDE}
 HCFC142b + hv = 1.000Cl :                    PHOTOL(49);     {2019/06/27; Eastham2014; SDE, ELF}
-HCFC22 + hv = 2.000Cl :                      PHOTOL(46);     {2014/02/03; Eastham2014; SDE}
+HCFC22 + hv = 1.000Cl :                      PHOTOL(46);     {2019/06/27; Eastham2014; SDE, ELF}
 H1301 + hv = Br :                            PHOTOL(53);     {2014/02/03; Eastham2014; SDE}
 H1211 + hv = Cl + Br :                       PHOTOL(51);     {2014/02/03; Eastham2014; SDE}
 H2402 + hv = 2.000Br :                       PHOTOL(54);     {2014/02/03; Eastham2014; SDE}

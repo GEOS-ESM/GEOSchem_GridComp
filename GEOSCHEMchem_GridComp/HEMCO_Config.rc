@@ -60,21 +60,26 @@ BEGIN SECTION EXTENSION SWITCHES
 101     SeaFlux           : on    DMS/ACET/ALD2
 103     LightNOx          : on    NO
     --> GEOS-5 flash rates:       false
-    --> OTD-LIS scaling   :       0.355
-###    --> OTD-LIS scaling   :       0.634
-#C720   --> OTD-LIS scaling   :       1.4152E-3
-#C180   --> OTD-LIS scaling   :       1.527e-2
-#    --> OTD-LIS scaling   :       6.32e-3
+#C24 --> OTD-LIS scaling : 0.6
+#C48 --> OTD-LIS scaling : 0.355
+#C90 --> OTD-LIS scaling : 0.1
+#C180 --> OTD-LIS scaling : 1.527e-2
+#C360 --> OTD-LIS scaling : 7.024e-3
+#C720 --> OTD-LIS scaling : 1.4152E-3
+    --> OTD-LIS scaling : @OTD_LIS_SCALING
     --> CDF table         :       /discover/nobackup/cakelle2/data/light_dist.ott2010.dat
     --> Use CNV_FRC       :       false
     --> OTD-LIS factors   :       false
 104     SoilNOx           : on    NO 
     --> Use fertilizer NOx:       true
 105     DustDead          : on    DST1/DST2/DST3/DST4
-    --> Mass tuning factor:       5.0416e-4
-#C48    --> Mass tuning factor:       5.0416e-4
-#C720   --> Mass tuning factor:       2.3e-4
-#C180   --> Mass tuning factor:       3.23e-4
+#C24 --> Mass tuning factor: 6.0e-4
+#C48 --> Mass tuning factor: 5.0416e-4
+#C90 --> Mass tuning factor: 4.0e-4
+#C180 --> Mass tuning factor: 3.23e-4
+#C360 --> Mass tuning factor: 2.35e-4
+#C720 --> Mass tuning factor: 2.3e-4
+     --> Mass tuning factor: @MASS_TUNING_FACTOR
 107     SeaSalt           : on    SALA/SALC/Br2/BrSALA/BrSALC
     --> SALA lower radius :       0.01 
     --> SALA upper radius :       0.5

@@ -46,7 +46,7 @@ class GADS:
 
         result = {'re': [], 'im': []}
 
-        if wavelengths == None and bands == None:
+        if wavelengths is None and bands is None:
             result['re'] = self._refractive_index_real
             result['im'] = self._refractive_index_imag
         else:
@@ -76,7 +76,7 @@ class GADS:
             spline_n_re = scipy.interpolate.UnivariateSpline(_w, _n_re, k=k, s=s)
             spline_n_im = scipy.interpolate.UnivariateSpline(_w, _n_im, k=k, s=s)
 
-            if wavelengths != None:
+            if wavelengths is not None:
                  result['re'] = spline_n_re(wavelengths)
                  result['im'] = spline_n_im(wavelengths)
             else:
@@ -99,7 +99,7 @@ class GADS:
         bands.
         '''
         
-        if bands == None:
+        if bands is None:
             result = self._wavelength
         else:
             result = []
@@ -173,12 +173,12 @@ def refractive_index(components=('OC', 'BC', 'SU', 'SS', 'DU', 'AMM', 'SOA', 'PO
     #    assert np.array_equal(species[s].wavelengths(), species[_s].wavelengths())
 
     n = None
-    if wavelengths != None:
+    if wavelengths is not None:
         n = {}
         for s in species.keys():
             n[s] = species[s].refractive_index(wavelengths=wavelengths)
     
-    if bands != None:
+    if bands is not None:
         n = {}
         for s in species.keys():
             n[s] = species[s].refractive_index(bands=bands)

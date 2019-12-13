@@ -69,6 +69,7 @@ MODULE GEOSCHEMchem_GridCompMod
 
 #if defined( MODEL_GEOS )
   USE Chem_Mod                            ! Chemistry Base Class (chem_mie?)
+  USE Chem_GroupMod                       ! For family transport
   USE ERROR_Mod,     ONLY : mpiComm
   USE PHYSCONSTANTS
 #endif
@@ -1991,7 +1992,7 @@ CONTAINS
 #if defined( MODEL_GEOS )
     ! Top stratospheric level
     CALL ESMF_ConfigGetAttribute( GeosCF, value_LLSTRAT,         & 
-                                  Default = 59,                     &
+                                  Default = LM,                     &
                                   Label   = "LLSTRAT:",             &
                                   __RC__                           )
     IF ( am_I_Root ) THEN
@@ -1999,18 +2000,32 @@ CONTAINS
                   value_LLSTRAT
     ENDIF
 
-    ! FAST-JX settings: number of levels, number of EXTRAL iterations,
-    ! print error if EXTRAL fails? 
+    ! LLFASTJX: default is 1201 for LM=132, 601 otherwise
+    IF ( LM == 132 ) THEN
+       I = 1201
+    ELSE
+       I = 601
+    ENDIF 
     CALL ESMF_ConfigGetAttribute( GeosCF, Input_Opt%LLFASTJX,     & 
-                                  Default = 601,                  &
+                                  Default = I,                    &
                                   Label   = "LLFASTJX:",          &
                                   __RC__                          )
+
+    ! FJX_EXTRAL_ITERMAX: default is 5 for LM=132, 1 otherwise
+    IF ( LM == 132 ) THEN
+       I = 5 
+    ELSE
+       I = 1 
+    ENDIF 
     CALL ESMF_ConfigGetAttribute( GeosCF, Input_Opt%FJX_EXTRAL_ITERMAX, & 
-                                  Default = 1,                          &
+                                  Default = I,                          &
                                   Label   = "FJX_EXTRAL_ITERMAX:",      &
                                   __RC__                                )
+
+    ! FJX_EXTRAL_ERR: default is 1
+    I = 1
     CALL ESMF_ConfigGetAttribute( GeosCF, DoIt,   & 
-                                  Default = 1,                        &
+                                  Default = I,                        &
                                   Label   = "FJX_EXTRAL_ERR:",        &
                                   __RC__                              )
     Input_Opt%FJX_EXTRAL_ERR = ( DoIt == 1 )
@@ -2747,6 +2762,9 @@ CONTAINS
     IF ( am_I_Root ) THEN
        WRITE(*,*) '- Compute VUD online: ', Input_Opt%UseOnlineVUD
     ENDIF
+
+    ! Turn on Family Transport
+    CALL Init_GCC_Chem_Groups()
 
     !=======================================================================
     ! CH4 error checks 
