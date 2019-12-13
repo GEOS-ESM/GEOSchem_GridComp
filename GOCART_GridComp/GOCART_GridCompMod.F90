@@ -3325,18 +3325,33 @@ contains
      asy_ = 0.0d0
 
      do l = 1, na
-        idx = Chem_MieQueryIdx(mie_table, trim(aerosol(l)), __RC__)
 
+        idx = Chem_MieQueryIdx(mie_table, trim(aerosol(l)), __RC__)
+if ( (trim(aerosol(l)) == 'du001') .OR. (trim(aerosol(l)) == 'du002') .OR. (trim(aerosol(l)) == 'du003') &
+     .OR. (trim(aerosol(l)) == 'du004') .OR. (trim(aerosol(l)) == 'du005') ) then
         call Chem_MieQueryAllBand4D(mie_table, idx, nb, offset, q(:,:,:,l), rh, ext, ssa, asy, __RC__)
 
         ext_ = ext_ +          ext     ! total extinction
         ssa_ = ssa_ +     (ssa*ext)    ! total scattering
         asy_ = asy_ + asy*(ssa*ext)    ! sum of (asy * sca)
+
+!if (trim(aerosol(l)) == 'du002') then
+!  if (mapl_am_i_root()) print*,'GOCART du002 offset = ', offset
+!  if (mapl_am_i_root()) print*,'GOCART ext  = ', sum(ext(:,:,:,1))
+!  if (mapl_am_i_root()) print*,'GOCART ssa  = ', sum(ssa(:,:,:,1))
+!  if (mapl_am_i_root()) print*,'GOCART asy  = ', sum(asy(:,:,:,1))
+!end if
+
+end if ! trim(aerosol(l) == du00x
+
      end do
+
+
 
      ext = ext_
      ssa = ssa_
      asy = asy_
+
 
      RETURN_(ESMF_SUCCESS)
 
