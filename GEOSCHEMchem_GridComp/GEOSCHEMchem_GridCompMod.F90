@@ -70,6 +70,7 @@ MODULE GEOSCHEMchem_GridCompMod
 #if defined( MODEL_GEOS )
   USE MAPL_ConstantsMod                   ! Doesn't seem to be used. Needed?
   USE Chem_Mod                            ! Chemistry Base Class (chem_mie?)
+  USE Chem_GroupMod                       ! For family transport
   USE ERROR_Mod,     ONLY : mpiComm
   USE PHYSCONSTANTS
 #endif
@@ -242,8 +243,8 @@ MODULE GEOSCHEMchem_GridCompMod
                                       58.0,   58.0,  180.0,  180.0 ,     &
                                      180.0,  180.0,  132.0                /)
 
-  CHARACTER(LEN=15), PARAMETER :: COLLIST(8) = (/ 'NO2', 'O3',   'CH4', 'CO', &
-                                                  'BrO', 'CH2O', 'SO2', 'IO'  /)
+  CHARACTER(LEN=15), PARAMETER :: COLLIST(8) = (/ 'NO2 ', 'O3  ', 'CH4 ', 'CO  ', &
+                                                  'BrO ', 'CH2O', 'SO2 ', 'IO  '  /)
 #endif
  
   ! Pointers to import, export and internal state data. Declare them as 
@@ -1992,7 +1993,7 @@ CONTAINS
 #if defined( MODEL_GEOS )
     ! Top stratospheric level
     CALL ESMF_ConfigGetAttribute( GeosCF, value_LLSTRAT,         & 
-                                  Default = 59,                     &
+                                  Default = LM,                     &
                                   Label   = "LLSTRAT:",             &
                                   __RC__                           )
     IF ( am_I_Root ) THEN
@@ -2000,18 +2001,32 @@ CONTAINS
                   value_LLSTRAT
     ENDIF
 
-    ! FAST-JX settings: number of levels, number of EXTRAL iterations,
-    ! print error if EXTRAL fails? 
+    ! LLFASTJX: default is 1201 for LM=132, 601 otherwise
+    IF ( LM == 132 ) THEN
+       I = 1201
+    ELSE
+       I = 601
+    ENDIF 
     CALL ESMF_ConfigGetAttribute( GeosCF, Input_Opt%LLFASTJX,     & 
-                                  Default = 601,                  &
+                                  Default = I,                    &
                                   Label   = "LLFASTJX:",          &
                                   __RC__                          )
+
+    ! FJX_EXTRAL_ITERMAX: default is 5 for LM=132, 1 otherwise
+    IF ( LM == 132 ) THEN
+       I = 5 
+    ELSE
+       I = 1 
+    ENDIF 
     CALL ESMF_ConfigGetAttribute( GeosCF, Input_Opt%FJX_EXTRAL_ITERMAX, & 
-                                  Default = 1,                          &
+                                  Default = I,                          &
                                   Label   = "FJX_EXTRAL_ITERMAX:",      &
                                   __RC__                                )
+
+    ! FJX_EXTRAL_ERR: default is 1
+    I = 1
     CALL ESMF_ConfigGetAttribute( GeosCF, DoIt,   & 
-                                  Default = 1,                        &
+                                  Default = I,                        &
                                   Label   = "FJX_EXTRAL_ERR:",        &
                                   __RC__                              )
     Input_Opt%FJX_EXTRAL_ERR = ( DoIt == 1 )
@@ -2748,6 +2763,9 @@ CONTAINS
     IF ( am_I_Root ) THEN
        WRITE(*,*) '- Compute VUD online: ', Input_Opt%UseOnlineVUD
     ENDIF
+
+    ! Turn on Family Transport
+    CALL Init_GCC_Chem_Groups()
 
     !=======================================================================
     ! CH4 error checks 
@@ -4216,7 +4234,7 @@ CONTAINS
                 IF ( PerturbO3 ) THEN
                    IF ( FIXPERT < 0.0 ) THEN
                       CALL RANDOM_NUMBER(Harvest=Rnd)
-                      IF ( Rnd(2) >= 0.5 ) Rnd(1) = Rnd(1) * -1.0
+                      IF ( Rnd(2) >= 0.5 ) Rnd(1) = Rnd(1) * (-1.0)
                       Rnd(1) = 1.0 + ( Rnd(1) * MAXPERT )
                    ENDIF
                    Ptr3DA(I,J,L) = Ptr3DA(I,J,L) * Rnd(1)
@@ -4226,7 +4244,7 @@ CONTAINS
                 IF ( PerturbCO ) THEN
                    IF ( FIXPERT < 0.0 ) THEN
                       CALL RANDOM_NUMBER(Harvest=Rnd)
-                      IF ( Rnd(2) >= 0.5 ) Rnd(1) = Rnd(1) * -1.0
+                      IF ( Rnd(2) >= 0.5 ) Rnd(1) = Rnd(1) * (-1.0)
                       Rnd(1) = 1.0 + ( Rnd(1) * MAXPERT )
                    ENDIF
                    Ptr3DB(I,J,L) = Ptr3DB(I,J,L) * Rnd(1)

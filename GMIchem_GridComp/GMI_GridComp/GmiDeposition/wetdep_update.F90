@@ -1,6 +1,6 @@
 !=============================================================================
 !
-! $Id$
+! $Id: wetdep_update.F90,v 1.1.1.1.28.1.66.1.12.1.192.1.8.1 2019/05/31 14:58:45 mmanyin Exp $
 !
 ! CODE DEVELOPER
 !   Dan Bergmann, LLNL
@@ -326,8 +326,10 @@
 
       else if (chem_opt == 8) then
 
-        hstar_wet(IFSO2) = 600.0d0
-        hstar_wet(INSO2) = 600.0d0
+        PRINT*,'CHEM_OPT 8 is not supported --  stopping now'
+        STOP
+!       hstar_wet(IFSO2) = 600.0d0
+!       hstar_wet(INSO2) = 600.0d0
 
       end if
 

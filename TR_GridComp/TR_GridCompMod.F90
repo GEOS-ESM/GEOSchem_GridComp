@@ -794,6 +794,16 @@ CONTAINS
         DIMS       = MAPL_DimsHorzOnly,                    &
         VLOCATION  = MAPL_VLocationNone, __RC__)
 
+!    PPBL
+!    ----
+     call MAPL_AddImportSpec(GC,                           &
+        SHORT_NAME = 'PPBL',                               &
+        LONG_NAME  = 'pbltop_pressure',                    &
+        UNITS      = '1',                                  &
+        RESTART    = MAPL_RestartSkip,                     &
+        DIMS       = MAPL_DimsHorzOnly,                    &
+        VLOCATION  = MAPL_VLocationNone, __RC__)
+
 !    SHFX (pos is up)
 !    ----------------------------------------
      call MAPL_AddImportSpec(GC,                           &
@@ -1172,6 +1182,8 @@ CONTAINS
      ELSE
         friend_list = 'DYNAMICS:TURBULENCE:MOIST'
      END IF
+
+     friend_list = friend_list//':'//TRIM(COMP_NAME)
 
      call MAPL_AddInternalSpec(GC,                           &
         SHORT_NAME         = TRIM(r%vname(n)),               &
@@ -2561,6 +2573,13 @@ CONTAINS
        spec_ok = .TRUE.
      END IF
 
+!
+!    BOUNDARY LAYER
+!
+     IF(TRIM(spec%src_vert) == "boundary_layer" ) THEN
+       spec_ok = .TRUE.
+     END IF
+
      IF ( .NOT. spec_ok ) THEN
        IF(MAPL_AM_I_ROOT()) PRINT *,myname,": Invalid src_vert for TRACER"
        CALL final_(30)
@@ -2980,6 +2999,13 @@ CONTAINS
        spec_ok = .TRUE.
      END IF
 
+!
+!    BOUNDARY LAYER 
+!
+     IF(TRIM(spec%snk_vert) == "boundary_layer" ) THEN
+       spec_ok = .TRUE.
+     END IF
+
      IF ( .NOT. spec_ok ) THEN
        IF(MAPL_AM_I_ROOT()) PRINT *,myname,": Invalid snk_vert for TRACER"
        CALL final_(46)
@@ -3296,6 +3322,7 @@ CONTAINS
    REAL, POINTER, DIMENSION(:,:)   :: soilT   => null()
    REAL, POINTER, DIMENSION(:,:)   :: fracIce => null()
    REAL, POINTER, DIMENSION(:,:)   :: tropp   => null()
+   REAL, POINTER, DIMENSION(:,:)   :: ppbl    => null()
 
    REAL, POINTER, DIMENSION(:,:,:) :: Q       => null()
    REAL, POINTER, DIMENSION(:,:,:) :: lwi     => null()
@@ -3523,10 +3550,11 @@ CONTAINS
      IF(debug_verbose) PRINT *,myname, pet, "DEBUG done with mask alloc"
 
 !                   SRC                                          SNK
-     IF ( TRIM(spec%src_vert) == "pressures"    .OR.   TRIM(spec%snk_vert) == "pressures"    .OR. &
-          TRIM(spec%src_vert) == "troposphere"  .OR.   TRIM(spec%snk_vert) == "troposphere"  .OR. &
-          TRIM(spec%src_vert) == "stratosphere" .OR.   TRIM(spec%snk_vert) == "stratosphere" .OR. &
-          TRIM(spec%src_mode) == "file2d"       .OR. &
+     IF ( TRIM(spec%src_vert) == "pressures"      .OR.   TRIM(spec%snk_vert) == "pressures"      .OR. &
+          TRIM(spec%src_vert) == "troposphere"    .OR.   TRIM(spec%snk_vert) == "troposphere"    .OR. &
+          TRIM(spec%src_vert) == "stratosphere"   .OR.   TRIM(spec%snk_vert) == "stratosphere"   .OR. &
+          TRIM(spec%src_vert) == "boundary_layer" .OR.   TRIM(spec%snk_vert) == "boundary_layer" .OR. &
+          TRIM(spec%src_mode) == "file2d"         .OR. &
           TRIM(spec%src_mode) == "maintain_mixing_ratio" ) THEN
 
        IF(debug_verbose) PRINT *,myname, pet, "DEBUG start groupA"
@@ -3549,6 +3577,7 @@ CONTAINS
 !      call MAPL_GetPointer( impChem,   soilT, 'TSOIL1', __RC__ ) 
        call MAPL_GetPointer( impChem, fracIce,  'FRACI', __RC__ ) 
        call MAPL_GetPointer( impChem,   tropp,  'TROPP', __RC__ ) 
+       call MAPL_GetPointer( impChem,    ppbl,   'PPBL', __RC__ )
 
 
 !      Fix bad tropopause pressure values if they exist.
@@ -3622,6 +3651,12 @@ CONTAINS
        END DO
      END IF
 
+     IF ( TRIM(spec%src_vert) == "boundary_layer" ) THEN
+       DO k=1,km
+         WHERE ( p(:,:,k) .GE.   ppbl(:,:) )       src_mask3d(:,:,k)  = .TRUE.
+       END DO
+     END IF
+
 !    Then add in the horizontal extent
      DO k=1,km
        src_mask3d(:,:,k) = src_mask3d(:,:,k) .AND. spec%src_mask_horiz(:,:) 
@@ -3656,6 +3691,12 @@ CONTAINS
      IF ( TRIM(spec%snk_vert) == "stratosphere" ) THEN
        DO k=1,km
          WHERE ( p(:,:,k) .LE. tropPa(:,:) )       snk_mask3d(:,:,k)  = .TRUE.
+       END DO
+     END IF
+
+     IF ( TRIM(spec%snk_vert) == "boundary_layer" ) THEN
+       DO k=1,km
+         WHERE ( p(:,:,k) .GE.   ppbl(:,:) )       snk_mask3d(:,:,k)  = .TRUE.
        END DO
      END IF
 

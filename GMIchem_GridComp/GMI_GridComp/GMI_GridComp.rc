@@ -83,7 +83,7 @@ pr_diag: F
 pr_const: T
 pr_surf_emiss: T
 pr_emiss_3d: T
-# only set TRUE if you need QJ, QQJ, QK, QQK exports:
+# only set TRUE if you need QQJ, QQK exports:
 pr_qqjk: F
 pr_noon: F
 pr_local: F
@@ -117,7 +117,7 @@ do_simpledep: F
 
 do_emission: T
 do_dust_emiss: F
-Diurnal_Emission_Species: 10
+Diurnal_Emission_Species: 9
 clim_emiss_by_area: T
 
         #############################################################################
@@ -135,7 +135,6 @@ C2H6_biom
 PRPE_biom
 C3H8_biom
 CH2O_biom
-CH4_biom
 CO_biom
 MEK_biom
 NO_biom
@@ -145,12 +144,9 @@ CO_biof
 NO_fosf
 NO_biof
 NO_pwrp
-NO_ship
-CH4_aggr
 ::
 
 emissionSpeciesLayers::
-1
 1
 1
 1
@@ -166,11 +162,10 @@ emissionSpeciesLayers::
 1
 1
 1
-1
-1
 ::
 
-do_ShipEmission: F
+# Ship Emissions requires SHIP_NO in ExtData:
+do_ShipEmission: T
 doMEGANemission: T
 
 isop_scale::
@@ -259,7 +254,7 @@ CF3Br
 H2402
 CH3Br
 CH3Cl
-xxx
+CH4
 N2O
 ::
 

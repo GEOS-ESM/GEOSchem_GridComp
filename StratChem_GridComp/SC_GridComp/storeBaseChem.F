@@ -1,7 +1,7 @@
       SUBROUTINE storeBaseChem(ox,nox,hno3,n2o5,ho2no2,clono2,clx,hcl,hocl,h2o2,brx,n2o,cl2,
      &                  oclo,brcl,hbr,brono2,ch4,hobr,ch3ooh,co,h2o,hno3c,h2oc,f11,f12,f113,
      &                 f114,f115,ccl4,hcfc22,hcfc141b,hcfc142b,chbr3,ch2br2,ch2brcl,chbrcl2,
-     &                         chbr2cl,hfc23,hfc32,hfc125,hfc134a,hfc143a,hfc152a,co2b,sf6b,
+     &                         chbr2cl,hfc23,hfc32,hfc125,hfc134a,hfc143a,hfc152a,co2,sf6,
      &                ch3ccl3,ch3cl,ch3br,h1301,h1211,h1202,h2402,o3,o3p,o1d,n,no,no2,no3,h,
      &                         oh,ho2,cl,clo,bro,br,cl2o2,ch2o,ch3o2,ro3ox,sBase,numSpecies)
 
@@ -14,7 +14,7 @@
       REAL(KIND=DBL), INTENT(IN) :: hocl,h2o2,brx,n2o,cl2,oclo,brcl,hbr
       REAL(KIND=DBL), INTENT(IN) :: brono2,ch4,hobr,ch3ooh,co,h2o,hno3c
       REAL(KIND=DBL), INTENT(IN) :: h2oc,f11,f12,f113,f114,f115,ccl4,ch3ccl3
-      REAL(KIND=DBL), INTENT(IN) :: hcfc22,hcfc141b,hcfc142b,co2b,sf6b
+      REAL(KIND=DBL), INTENT(IN) :: hcfc22,hcfc141b,hcfc142b,co2,sf6
       REAL(KIND=DBL), INTENT(IN) :: hfc23,hfc32,hfc125,hfc134a,hfc143a,hfc152a
       REAL(KIND=DBL), INTENT(IN) :: chbr3,ch2br2,ch2brcl,chbrcl2,chbr2cl
       REAL(KIND=DBL), INTENT(IN) :: ch3cl,ch3br,h1301,h1211,h1202,h2402
@@ -128,9 +128,9 @@
       count = count+1
       sBase(count) = hfc152a
       count = count+1
-      sBase(count) = co2b
+      sBase(count) = co2
       count = count+1
-      sBase(count) = sf6b
+      sBase(count) = sf6
       count = count+1
       sBase(count) = o3
       count = count+1
