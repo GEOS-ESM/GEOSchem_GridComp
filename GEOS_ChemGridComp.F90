@@ -681,6 +681,8 @@ contains
     SHORT_NAME  = (/ "TO3" /), &
     DST_ID=GEOSCHEM, SRC_ID=PCHEM, __RC__)
 
+
+   ! added by ckeller, 10/31/2018
    CALL MAPL_AddConnectivity ( GC, &
     SRC_NAME  = (/"O3"/), &
     DST_NAME  = (/"PCHEM_O3"/), &
