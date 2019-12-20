@@ -78,7 +78,7 @@ contains
     character (len=ESMF_MAXSTR), allocatable    :: aerosol_names(:)
 
 
-    integer                                     :: n, i, n_bins, nCols, aero_n
+    integer                                     :: n, i, nCols, aero_n
     real                                        :: DEFVAL
     logical                                     :: data_driven = .true.
 
@@ -98,12 +98,12 @@ if (mapl_am_i_root()) print*,'GOCARTng DUng SetServices BEGIN'           ! for t
 if (mapl_am_i_root()) print*,'GOCARTng DU COMP_NAME = ', trim(COMP_NAME) ! for testing - to be deleted
 
 
-!   Load resource file and get number of bins 
-!   -------------------------------------------
+!   Load resource file  
+!   -------------------
     cfg = ESMF_ConfigCreate (__RC__)
     call ESMF_ConfigLoadFile (cfg, 'DUng_GridComp_'//trim(COMP_NAME)//'.rc', RC=STATUS)
     if (STATUS /= 0) then
-        if (mapl_am_i_root()) print*,'DUngGridComp_'//trim(COMP_NAME)//'.rc does not exist! loading DUng_GridComp_DU.rc instead'
+        if (mapl_am_i_root()) print*,'DUngGridComp_'//trim(COMP_NAME)//'.rc does not exist! Loading DUng_GridComp_DU.rc instead'
         call ESMF_ConfigLoadFile (cfg, 'DUng_GridComp_DU.rc', __RC__)
     end if
 
@@ -119,8 +119,6 @@ if (mapl_am_i_root()) print*,'GOCARTng DU COMP_NAME = ', trim(COMP_NAME) ! for t
         call ESMF_ConfigGetAttribute( cfg, aerosol_names(i), __RC__ )
     end do
 
-
-    call ESMF_ConfigGetAttribute (cfg, n_bins, label='bins:', __RC__)
 
 !   Set entry points
 !   ------------------------
@@ -305,7 +303,7 @@ if (mapl_am_i_root()) print*,'GOCARTng DUng SetServices END' ! for testing - to 
     type (ESMF_Config)                   :: cfg
     type (ESMF_FieldBundle)              :: Bundle_DP
 
-    integer                              :: i, n_bins, aero_n, nCols
+    integer                              :: i, aero_n, nCols
     integer                              :: instance
     type (ESMF_Field)                    :: field, fld
     character (len=ESMF_MAXSTR)          :: field_name, prefix
@@ -343,8 +341,8 @@ if (mapl_am_i_root()) print*, trim(COMP_NAME),' Initialize BEGIN' ! for testing 
 !    call getNumbands_(MAPL, NUM_BANDS, __RC__)
 
 
-!   Load resource file and get number of bins 
-!   -------------------------------------------
+!   Load resource file  
+!   -------------------
     cfg = ESMF_ConfigCreate (__RC__)
     call ESMF_ConfigLoadFile (cfg, 'DUng_GridComp_'//trim(COMP_NAME)//'.rc', RC=STATUS)
     if (STATUS /= 0) then
@@ -364,8 +362,6 @@ if (mapl_am_i_root()) print*, trim(COMP_NAME),' Initialize BEGIN' ! for testing 
         call ESMF_ConfigGetAttribute( cfg, aerosol_names(i), __RC__ )
     end do
 
-
-    call ESMF_ConfigGetAttribute(cfg, n_bins, label='bins:', __RC__)
 
 !   Call Generic Initialize for DUng GC
 !   ----------------------------------------
@@ -399,19 +395,16 @@ if (mapl_am_i_root()) print*, trim(COMP_NAME),' Initialize BEGIN' ! for testing 
     call ESMF_StateGet (EXPORT, trim(COMP_NAME)//'_AERO_ACI', AERO_ACI, __RC__)
     call ESMF_StateGet (EXPORT, 'AERO_DP' , Bundle_DP, __RC__)
 
-
 !   Add list of aerosol names to AERO state 
     call ESMF_AttributeSet(AERO, name='aerosol_names', valueList=aerosol_names, itemCount=size(aerosol_names), __RC__)
-
-!   Set attributes for this instance
-    call ESMF_AttributeSet (AERO, name='n_bins',    value=n_bins   , __RC__)
 
 
 !   Fill EXPORT States and Bundle
 !   ------------------------------
-    do i = 1, n_bins
+    do i = 1, size(aerosol_names)
         write (field_name, '(A, I0.3)') '', i
-        call ESMF_StateGet (INTERNAL, trim(COMP_NAME)//'::du'//trim(field_name), field, __RC__)
+!        call ESMF_StateGet (INTERNAL, trim(COMP_NAME)//'::du'//trim(field_name), field, __RC__)
+        call ESMF_StateGet (INTERNAL, trim(COMP_NAME)//'::'//trim(aerosol_names(i)), field, __RC__)
         fld = MAPL_FieldCreate (field, name='du'//trim(field_name), __RC__)
         call MAPL_StateAdd (AERO    , fld, __RC__)
         call MAPL_StateAdd (AERO_ACI, fld, __RC__)
@@ -450,7 +443,8 @@ if (mapl_am_i_root()) print*, trim(COMP_NAME),' Initialize BEGIN' ! for testing 
     end if
 
 
-    gocartngMieTable(instance) = Chem_MieCreateng(cfg, COMP_NAME, __RC__)
+    call MAPL_GetResource(MAPL, NUM_BANDS, 'NUM_BANDS:', __RC__)
+    gocartngMieTable(instance) = Chem_MieCreateng(cfg, NUM_BANDS,__RC__)
 
 
     ! Mie Table instance/index
@@ -688,7 +682,7 @@ if (mapl_am_i_root()) print*,trim(Iam),' END'
     type (MAPL_MetaComp), pointer      :: MAPL
     type (ESMF_State)                  :: AERO
 
-    integer                            :: i, n_bins
+    integer                            :: i, n
     character (len=ESMF_MAXSTR)        :: field_name
 
     real, pointer, dimension(:,:,:)    :: ptr3d_int
@@ -714,11 +708,12 @@ if (mapl_am_i_root()) print*,trim(COMP_NAME),' Run_data BEGIN'
 
     call ESMF_StateGet (EXPORT, trim(COMP_NAME)//'_AERO', AERO, __RC__)
 !    call ESMF_StateGet (EXPORT, 'AERO', AERO, __RC__)
-    call ESMF_AttributeGet (AERO, name='n_bins', value=n_bins, __RC__)
+    call ESMF_AttributeGet (AERO, name='aerosol_names', itemCount=n, __RC__)
+
 
 !   Update interal data pointers with ExtData
 !   -----------------------------------------
-    do i = 1, n_bins
+    do i = 1, n
     write (field_name, '(A, I0.3)') 'du', i
         call MAPL_GetPointer (INTERNAL, NAME=trim(COMP_NAME)//'::'//trim(field_name), ptr=ptr3d_int, __RC__)
         call MAPL_GetPointer (IMPORT,  NAME='clim'//trim(field_name), ptr=ptr3d_imp, __RC__)
@@ -762,7 +757,6 @@ if (mapl_am_i_root()) print*,trim(COMP_NAME),' Run_data END'
     integer                                          :: n
     integer                                          :: i1, j1, i2, j2, km
     integer                                          :: band, offset
-    integer                                          :: n_bins
     integer, parameter                               :: n_bands = 1
 
     real    :: x
@@ -805,8 +799,6 @@ if (mapl_am_i_root()) print*,trim(COMP_NAME),' Run_data END'
 !   -----------------
     call ESMF_AttributeGet (state, name='relative_humidity_for_aerosol_optics', value=fld_name, __RC__)
     call MAPL_GetPointer (state, rh, trim(fld_name), __RC__)
-
-!    call ESMF_AttributeGet (state, name='n_bins'   , value=n_bins   , __RC__)
 
 
     allocate(ext(i1:i2, j1:j2, km), &
@@ -878,8 +870,8 @@ if (mapl_am_i_root()) print*,trim(COMP_NAME),' Run_data END'
     ! local
     integer                               :: STATUS
     character (len=ESMF_MAXSTR)           :: Iam = 'DUng::aerosol_optics::mie_'
-    character (len=ESMF_MAXSTR)           :: fld_name
-    integer                               :: l, idx, na
+    integer                               :: l, na
+
 
     real(kind=8) :: bext_ (size(ext,1),size(ext,2),size(ext,3))
     real(kind=8) :: bssa_ (size(ext,1),size(ext,2),size(ext,3))
@@ -894,8 +886,7 @@ if (mapl_am_i_root()) print*,trim(COMP_NAME),' Run_data END'
      gasym_ = 0.0d0
 
      do l = 1, na 
-         idx = Chem_MieQueryIdx(mie_table, trim(aerosol_names(l)), __RC__)
-         call Chem_MieQuery(mie_table, idx, real(offset+1.), q(:,:,:,l), rh, bext, gasym=gasym, ssa=bssa)
+         call Chem_MieQuery(mie_table, l, real(offset+1.), q(:,:,:,l), rh, bext, gasym=gasym, ssa=bssa)
 
          bext_  = bext_  +             bext     ! total extinction due to dust
          bssa_  = bssa_  +       (bssa*bext)    ! total scattering
