@@ -292,6 +292,7 @@ if (mapl_am_i_root()) print*,'GOCARTng SSng SetServices END' ! for testing - to 
 
     logical                             :: data_driven
 
+    integer                             ::NUM_BANDS
 
     !development testing variables - to be deleted
     real, dimension(:,:,:), pointer       :: ptr_test
@@ -403,8 +404,8 @@ if (mapl_am_i_root()) print*,'GOCART SSng Initialize BEGIN' ! for testing - to b
         instance = instanceComputational
     end if
 
-
-    gocartngMieTable(instance) = Chem_MieCreateng(cfg, COMP_NAME, __RC__)
+    call MAPL_GetResource(MAPL, NUM_BANDS, 'NUM_BANDS:', __RC__)
+    gocartngMieTable(instance) = Chem_MieCreateng(cfg, NUM_BANDS, __RC__)
 
 
     ! Mie Table instance/index
