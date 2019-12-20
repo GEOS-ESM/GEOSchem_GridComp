@@ -353,7 +353,6 @@ if (mapl_am_i_root()) print*, trim(COMP_NAME), ' AEROlist = ', AEROlist
         do j = 1, size(AEROlist)
             if (trim(AEROlist(j)) == trim(CHILD_NAME)) then
                 call ESMF_StateGet (GEX(i), trim(CHILD_NAME)//'_AERO', child_state, __RC__)
-!               call ESMF_StateGet (GEX(i), 'AERO', child_state, __RC__)
                 call ESMF_StateAdd (AERO, (/child_state/), __RC__)
 
                 call ESMF_StateGet (GEX(i), trim(CHILD_NAME)//'_AERO_ACI', child_state, __RC__)
@@ -375,29 +374,6 @@ if (mapl_am_i_root()) print*, trim(COMP_NAME), ' AEROlist = ', AEROlist
     if(mapl_am_i_root()) then
         call esmf_stateprint(AERO, nestedFlag=.true.,__RC__)
     end if
-
-!all ESMF_StateGet(AERO, 'AERO', AERO_nested
-
-
-!   Verify that childen's states are properly added - for testing to be deleted
-!    if(mapl_am_i_root()) print*,'GOCARTng AERO_ACI print state = '
-!    if(mapl_am_i_root()) then
-!        call esmf_stateprint(AERO_ACI, __RC__)
-!    end if
-
-!   Verify that childen's states are properly added - for testing to be deleted
-!    if(mapl_am_i_root()) print*,'GOCARTng AERO_DP print bundle = '
-!    if(mapl_am_i_root()) then
-!        call esmf_fieldbundleprint(AERO_DP, __RC__)
-!    end if
-  
-!   Verify contents of the sea salt state - for testing to be deleted
-!  if(mapl_am_i_root()) print*,'last child_state print state = '
-!  if(mapl_am_i_root()) then
-!      call esmf_stateprint(child_state, __RC__)
-!  end if
-
-!if (mapl_am_i_root()) print*,'GOCARTng Initialize END'
 
 
     ! state of the atmosphere
@@ -726,8 +702,6 @@ if (mapl_am_i_root()) print*, trim(COMP_NAME),' RUN2 END'
     integer,            intent(out)                  :: rc
 
 !   !Local
-
-
     real, dimension(:,:,:), pointer                  :: ple
     real, dimension(:,:,:), pointer                  :: rh
     real, dimension(:,:,:), pointer                  :: var
@@ -795,9 +769,8 @@ if (mapl_am_i_root()) print*, trim(COMP_NAME),' RUN2 END'
 
 
    do i = 1, size(AEROlist)
-!    do i = 1, 2 
-
         call ESMF_StateGet(state, trim(AEROlist(i))//'_AERO', child_state, __RC__)
+
 !       ! set RH for aerosol optics
         call ESMF_AttributeGet(child_state, name='relative_humidity_for_aerosol_optics', value=fld_name, __RC__)
 
@@ -806,7 +779,6 @@ if (mapl_am_i_root()) print*, trim(COMP_NAME),' RUN2 END'
             AS_PTR_3D = RH
         end if
 
-
 !       ! set PLE for aerosol optics
         call ESMF_AttributeGet(child_state, name='air_pressure_for_aerosol_optics', value=fld_name, __RC__)
 
@@ -814,7 +786,6 @@ if (mapl_am_i_root()) print*, trim(COMP_NAME),' RUN2 END'
             call MAPL_GetPointer(child_state, AS_PTR_3D, trim(fld_name), __RC__)
             AS_PTR_3D = PLE
         end if
-
 
         call ESMF_AttributeSet(child_state, name='band_for_aerosol_optics', value=band, __RC__)
 
@@ -826,8 +797,6 @@ if (mapl_am_i_root()) print*, trim(COMP_NAME),' RUN2 END'
         if (fld_name /= '') then
             call MAPL_GetPointer(child_state, ext_, trim(fld_name), __RC__)
         end if
-
-!if (mapl_am_i_root()) print*,'GOCARTng aerosol_optics ext_ =',ext_
 
 !       ! SSA from AERO_PROVIDER
         call ESMF_AttributeGet(child_state, name='single_scattering_albedo_of_ambient_aerosol', value=fld_name, __RC__)
