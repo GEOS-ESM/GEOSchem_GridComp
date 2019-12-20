@@ -49,7 +49,6 @@
    public  Chem_MieQueryAllBand3D
    public  Chem_MieQueryAllBand4D
    public  Chem_MieQueryIdx        ! Query the index of the mie table given the qname
-   public  getNumbands_
 !
 ! !DESCRIPTION:
 !
@@ -1069,11 +1068,6 @@ end subroutine Chem_MieDestroy
    end if
 
    do iq = 1, this%nq
-
-if (mapl_am_i_root()) print*,'chem_miequerybychar NAME = ',trim(name)
-if (mapl_am_i_root()) print*,'chem_miequerybychar idx = ',trim(idx)
-if (mapl_am_i_root()) print*,'chem_miequerybychar this%vname = ',trim(this%vname(iq))
-
       if( uppercase(trim(NAME)) == uppercase(trim(this%vname(iq)))) then
          call  Chem_MieQueryByInt( this, iq, channel, q_mass, rh,     &
                              tau, ssa, gasym, bext, bsca, bbck, &
@@ -1288,15 +1282,13 @@ if (mapl_am_i_root()) print*,'chem_miequerybychar this%vname = ',trim(this%vname
 !
 ! !INTERFACE:
 !
-  function Chem_MieCreateng ( cf, COMP_NAME, rc ) result(this)
+  function Chem_MieCreateng ( cf, NUM_BANDS, rc ) result(this)
 
 ! !INPUT PARAMETERS:
    type (ESMF_Config)             :: cf          ! Mie table file name
-   character (len=ESMF_MAXSTR)    :: COMP_NAME   ! GC COMP_NAME
-!   integer                        :: NUM_BANDS   ! number of bands
+   integer                        :: NUM_BANDS   ! Number of radiation bands
 
 ! !OUTPUT PARAMETERS:
-
    type (Chem_Mie) this
    integer, intent(out) ::  rc
 
@@ -1314,9 +1306,9 @@ if (mapl_am_i_root()) print*,'chem_miequerybychar this%vname = ',trim(this%vname
 !
 !EOP
 !-------------------------------------------------------------------------
-
-   integer                        :: NUM_BANDS   ! number of bands
-   integer        :: iq, i, nCols
+   
+   type (ESMF_Config)    :: cfg
+   integer               :: iq, i, nCols
    __Iam__('Chem_MieCreateng')
 
 
@@ -1338,22 +1330,11 @@ if (mapl_am_i_root()) print*,'chem_miequerybychar this%vname = ',trim(this%vname
 
 !  Get file names for the optical tables
 !  -------------------------------------
-   call ESMF_ConfigGetAttribute( CF, this%optics_file, Label="OPTICS_FILE:" , &
-                                 default='ExtData/g5chem/x/opticsBands_'//COMP_NAME(1:2)//'.nc', &
-                                 RC = status )
-
-!  this accounts for BRC, and future GC names with a 3 character prefix
-   if (RC /= 0 ) then
-       call ESMF_ConfigGetAttribute( CF, this%optics_file, Label="OPTICS_FILE:" , &
-                                 default='ExtData/g5chem/x/opticsBands_'//COMP_NAME(1:3)//'.nc', &
-                                 __RC__ )
-   end if
+   call ESMF_ConfigGetAttribute( CF, this%optics_file, Label="OPTICS_FILE:", __RC__ )
 
 !  Set the number of bands and channels
 !  -------------------------------------
-   call getNumbands_(NUM_BANDS, __RC__)
-
-   this%nch = NUM_BANDS
+  this%nch = NUM_BANDS
 
 !  Make chanel = number of bands
 !  --------------------------------------------------------------------
@@ -1372,18 +1353,6 @@ if (mapl_am_i_root()) print*,'chem_miequerybychar this%vname = ',trim(this%vname
 !  This part is hard-coded for now!
 !  ---------------------------------------------------------
    do iq = 1, this%nq
-!          ~~~~~~~~~~~~~~~~~~~~
-!          UPDATE FOR SU AND NI
-!          ~~~~~~~~~~~~~~~~~~~~
-!       if (COMP_NAME(1:2) == 'SU') then
-!           name = trim(this%vname(iq))
-!          Only sulfate aerosol species have entries in the Mie table
-!           if(name(1:3) == 'so4' .or. name(1:3) == 'SO4' .or. &
-!              name(1:3) == 'sul' .or. name(1:3) == 'SUL') then
-!               blah blah blah
-!           end if
-!        else.....
-
        this%vtable(iq) = this%mie_aerosol
    end do
 
@@ -1396,92 +1365,6 @@ if (mapl_am_i_root()) print*,'chem_miequerybychar this%vname = ',trim(this%vname
 
 
 !-----------------------------------------------------------------------------------
-  subroutine getNumbands_(NUM_BANDS, RC)
-
-    !ARGUMENTS:
-!   type (MAPL_MetaComp),         intent(inout)    :: MAPL
-   integer,                      intent(  out)    :: NUM_BANDS   ! number of bands
-   integer, optional,            intent(  out)    :: RC          ! Error code:
-
-   !Locals
-   type (ESMF_Config)                          :: CF
-
-   logical                              :: USE_RRTMGP, USE_RRTMGP_SORAD
-   logical                              :: USE_RRTMG , USE_RRTMG_SORAD
-   logical                              :: USE_CHOU  , USE_CHOU_SORAD
-   real                                 :: RFLAG
-
-   integer, parameter                   :: NB_CHOU   = 10        ! Number of bands in IRRAD calcs for Chou
-   integer, parameter                   :: NB_RRTMG  = 16        ! Number of bands in IRRAD calcs for RRTMG
-   integer, parameter                   :: NB_RRTMGP = 16        ! Number of bands in IRRAD calcs for RRTMGP
-
-   integer, parameter                   :: NB_CHOU_SORAD   = 8   ! Number of bands in SORAD calcs for Chou
-   integer, parameter                   :: NB_RRTMG_SORAD  = 14  ! Number of bands in SORAD calcs for RRTMG
-   integer, parameter                   :: NB_RRTMGP_SORAD = 14  ! Number of bands in SORAD calcs for RRTMGP
-
-   __Iam__('getNumbands_')
-
-!   Description: Get number of bands for Mie table creation
-
-!   Begin...
-
-
-      CF = ESMF_ConfigCreate (__RC__)
-      call ESMF_ConfigLoadFile (CF, 'AGCM.rc', __RC__)
-
-
-!     Get number of bands for aerosol Mie tables
-!     ------------------------------------------
-      ! first for IRRAD bands
-      USE_RRTMGP = .false.
-      USE_RRTMG  = .false.
-      USE_CHOU   = .false.
-      call ESMF_ConfigGetAttribute(CF, RFLAG, label='USE_RRTMGP_IRRAD:', DEFAULT=0.0, __RC__)
-      USE_RRTMGP = RFLAG /= 0.0
-      if (.not. USE_RRTMGP) then
-          call ESMF_ConfigGetAttribute(CF, RFLAG, label='USE_RRTMG_IRRAD:', DEFAULT=0.0, __RC__)
-          USE_RRTMG = RFLAG /= 0.0
-          USE_CHOU  = .not.USE_RRTMG
-      end if
-
-
-   ! then SOLAR
-      USE_RRTMGP_SORAD = .false.
-      USE_RRTMG_SORAD  = .false.
-      USE_CHOU_SORAD   = .false.
-      call ESMF_ConfigGetAttribute(CF, RFLAG, label='USE_RRTMGP_SORAD:', DEFAULT=0.0, __RC__)
-      USE_RRTMGP_SORAD = RFLAG /= 0.0
-      if (.not. USE_RRTMGP_SORAD) then
-          call ESMF_ConfigGetAttribute(CF, RFLAG, label='USE_RRTMG_SORAD:', DEFAULT=0.0, __RC__)
-          USE_RRTMG_SORAD = RFLAG /= 0.0
-          USE_CHOU_SORAD  = .not.USE_RRTMG_SORAD
-      end if
-
-     call ESMF_ConfigDestroy(CF, __RC__)
-
-      ! Set the offset for the IRRAD aerosol bands
-      if (USE_RRTMGP_SORAD) then
-          NUM_BANDS = NB_RRTMGP_SORAD
-      else if (USE_RRTMG_SORAD) then
-          NUM_BANDS = NB_RRTMG_SORAD
-      else
-          NUM_BANDS = NB_CHOU_SORAD
-      end if
-
-      ! Set number of IRRAD bands for aerosol optics
-      if (USE_RRTMGP) then
-          NUM_BANDS = NB_RRTMGP + NUM_BANDS
-      else if (USE_RRTMG) then
-          NUM_BANDS = NB_RRTMG + NUM_BANDS
-      else
-          NUM_BANDS = NB_CHOU + NUM_BANDS
-      end if
-
-
-      RETURN_(ESMF_SUCCESS)
-
-  end subroutine getNumbands_
-
 
 
  end module Chem_MieMod
