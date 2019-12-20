@@ -23,7 +23,7 @@ MODULE History_Mod
   PRIVATE
 !
 ! !PUBLIC MEMBER FUNCTIONS:
-! 
+!
   PUBLIC  :: History_Init
   PUBLIC  :: History_SetTime
   PUBLIC  :: History_Update
@@ -38,20 +38,11 @@ MODULE History_Mod
   PRIVATE :: History_Close_AllFiles
 !
 ! !REMARKS:
-!  
+!
 !
 ! !REVISION HISTORY:
 !  06 Jan 2015 - R. Yantosca - Initial version
-!  02 Aug 2017 - R. Yantosca - Added History_Update routine
-!  14 Aug 2017 - R. Yantosca - Now read the "acc_interval" field for
-!                              time-averaged data collections
-!  16 Aug 2017 - R. Yantosca - Add subroutine TestTimeForAction to avoid
-!                              duplicating similar code
-!  16 Aug 2017 - R. Yantosca - Now close all netCDF files in routine
-!                              History_Close_AllFiles
-!  18 Aug 2017 - R. Yantosca - Added routine History_SetTime
-!  02 Oct 2017 - R. Yantosca - Added CollectionFileName
-!  01 Nov 2017 - R. Yantosca - Moved ReadOneLine, CleanText to charpak_mod.F90
+!  See the subsequent Git history with the gitk browser!
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -62,15 +53,19 @@ MODULE History_Mod
   INTEGER                              :: CollectionCount
 
   ! Strings
-  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionName       (:)
-  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionFileName   (:)
-  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionTemplate   (:)
-  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionSubsetDims (:)
-  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionFormat     (:)
-  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionFrequency  (:)
-  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionAccInterval(:)
-  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionDuration   (:)
-  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionMode       (:)
+  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionName       (:  )
+  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionFileName   (:  )
+  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionTemplate   (:  )
+  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionFormat     (:  )
+  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionFrequency  (:  )
+  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionAccInterval(:  )
+  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionDuration   (:  )
+  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionMode       (:  )
+  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionLonRange   (:  )
+  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionLatRange   (:  )
+  INTEGER,                 ALLOCATABLE :: CollectionSubsetInd  (:,:)
+  CHARACTER(LEN=255),      ALLOCATABLE :: CollectionLevels     (:  )
+  INTEGER,                 ALLOCATABLE :: CollectionLevelInd   (:,:)
 
   ! Objects
   TYPE(MetaHistContainer), POINTER     :: CollectionList
@@ -92,7 +87,7 @@ CONTAINS
 ! !DESCRIPTION: Reads the HISTORY.rc file and creates the linked list of
 !  collections (i.e. netCDF diagnostic files containing several data fields
 !  with a specified update frequency).  The list of fields belonging to
-!  each collection is also determined.  
+!  each collection is also determined.
 !\\
 !\\
 !  Each collection is described by a HISTORY CONTAINER object, which also
@@ -115,14 +110,13 @@ CONTAINS
 ! !USES:
 !
     USE ErrCode_Mod
-    USE History_Netcdf_Mod, ONLY : History_Netcdf_Init
     USE History_Util_Mod
     USE Input_Opt_Mod,      ONLY : OptInput
     USE State_Chm_Mod ,     ONLY : ChmState
     USE State_Diag_Mod,     ONLY : DgnState
     USE State_Met_Mod,      ONLY : MetState
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
     LOGICAL,          INTENT(IN)  :: am_I_Root
     TYPE(OptInput),   INTENT(IN)  :: Input_Opt
@@ -130,7 +124,7 @@ CONTAINS
     TYPE(DgnState),   INTENT(IN)  :: State_Diag
     TYPE(MetState),   INTENT(IN)  :: State_Met
 !
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
     INTEGER,          INTENT(OUT) :: RC
 !
@@ -140,8 +134,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  06 Jan 2015 - R. Yantosca - Initial version
-!  06 Nov 2017 - R. Yantosca - Reorder arguments for consistency (Input_Opt, 
-!                              then State_Met, State_Chm, State_Diag).
+!  See the subsequent Git history with the gitk browser!
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -160,31 +153,24 @@ CONTAINS
      ' -> at History_Init (in module History/history_mod.F90)'
 
     !=======================================================================
-    ! Initialize the history_netcdf_mod.F90 module
-    !=======================================================================
-    CALL History_Netcdf_Init( am_I_Root, RC )
-    IF ( RC /= GC_SUCCESS ) THEN
-       ErrMsg = 'Error encountered in "History_NetCdf_Init"!'
-       CALL GC_Error( ErrMsg, RC, ThisLoc )
-       RETURN
-    ENDIF
-
-    !=======================================================================
     ! First initialize the list of collections
     ! ("collection" = a netCDF file with a specific update frequency)
     !=======================================================================
-    CALL History_ReadCollectionNames( am_I_root,  Input_Opt, State_Chm,      &
-                                      State_Diag, State_Met, RC             )
+    IF ( .not. Input_Opt%DryRun ) THEN
+       CALL History_ReadCollectionNames( am_I_root,  Input_Opt, State_Chm,   &
+                                         State_Diag, State_Met, RC          )
 
-    ! Trap potential errors
-    IF ( RC /= GC_SUCCESS ) THEN
-       ErrMsg = 'Error encountered in "History_ReadCollectionNames"!'
-       CALL GC_Error( ErrMsg, RC, ThisLoc )
-       RETURN
+       ! Trap potential errors
+       IF ( RC /= GC_SUCCESS ) THEN
+          ErrMsg = 'Error encountered in "History_ReadCollectionNames"!'
+          CALL GC_Error( ErrMsg, RC, ThisLoc )
+          RETURN
+       ENDIF
     ENDIF
 
     !=======================================================================
     ! Then determine the fields that will be saved to each collection
+    ! NOTE: For dry-run, enter to print out file name & status
     !=======================================================================
     CALL History_ReadCollectionData( am_I_root,  Input_Opt, State_Chm,       &
                                      State_Diag, State_Met, RC              )
@@ -206,7 +192,7 @@ CONTAINS
 ! !IROUTINE: History_Read_Collection_Names
 !
 ! !DESCRIPTION: Reads the History input file (e.g. HISTORY.rc) and determines
-!  the names of each individual diagnostic collection.  It stores this 
+!  the names of each individual diagnostic collection.  It stores this
 !  information in module variables for use in the next step.
 !\\
 !\\
@@ -227,7 +213,7 @@ CONTAINS
     USE State_Diag_Mod,    ONLY : DgnState
     USE State_Met_Mod,     ONLY : MetState
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
     LOGICAL,          INTENT(IN)  :: am_I_Root    ! Are we on the root CPU?
     TYPE(OptInput),   INTENT(IN)  :: Input_Opt    ! Input Options object
@@ -235,7 +221,7 @@ CONTAINS
     TYPE(DgnState),   INTENT(IN)  :: State_Diag   ! Diagnostic State object
     TYPE(MetState),   INTENT(IN)  :: State_Met    ! Meteorology State object
 !
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
     INTEGER,          INTENT(OUT) :: RC           ! Success or failure?
 !
@@ -244,10 +230,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  16 Jun 2017 - R. Yantosca - Initial version
-!  15 Aug 2017 - R. Yantosca - Now initialize string arrays to UNDEFINED_STR
-!  02 Oct 2017 - R. Yantosca - Now initialize CollectionFileName
-!  28 Feb 2018 - R. Yantosca - Now use the CollList object from diaglist_mod
-!                              to get the collection names
+!  See the subsequent Git history with the gitk browser!
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -256,12 +239,12 @@ CONTAINS
 !
     ! Scalars
     LOGICAL                :: EOF
-    INTEGER                :: fId,    IOS      
+    INTEGER                :: fId,    IOS
     INTEGER                :: N,      nSubs1,  nSubs2
 
     ! Strings
     CHARACTER(LEN=255)     :: ErrMsg, ThisLoc, Line,  Line2
-    
+
     ! String arrays
     CHARACTER(LEN=255)     :: Subs1(255)
     CHARACTER(LEN=255)     :: Subs2(255)
@@ -291,7 +274,7 @@ CONTAINS
     ! querying the collection list object (CollList, from diaglist_mod.F90).
     !
     ! NOTE: We are importing CollList from diaglist_mod.F90 via a USE
-    ! association.  This might not be the best way to share data (it 
+    ! association.  This might not be the best way to share data (it
     ! violates data encapsulation).  But it works for now.  Maybe figure
     ! out a more elegant method later. (bmy, 2/28/18)
     !=======================================================================
@@ -303,11 +286,11 @@ CONTAINS
     Current => CollList%Head
 
     ! While we are not at the end of the collection list
-    DO WHILE ( ASSOCIATED( Current ) ) 
-       
+    DO WHILE ( ASSOCIATED( Current ) )
+
        ! Increment the collection count
        CollectionCount = CollectionCount + 1
-       
+
        ! Save the collection name in a temporary arrayu
        TmpCollectionName(CollectionCount) = TRIM( Current%CName )
 
@@ -320,14 +303,14 @@ CONTAINS
     Current => NULL()
 
     !=======================================================================
-    ! Now that we now the number of diagnostic collections, we can 
+    ! Now that we now the number of diagnostic collections, we can
     ! allocate the arrays that will hold various collection attributes
     !=======================================================================
 
     ! Allocate CollectionName
     IF ( .not. ALLOCATED( CollectionName ) ) THEN
        ALLOCATE( CollectionName( CollectionCount ), STAT=RC )
-       IF ( RC /= GC_SUCCESS ) THEN 
+       IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Could not allocate "CollectionName"!'
           CALL GC_Error( ErrMsg, RC, ThisLoc )
           RETURN
@@ -339,11 +322,11 @@ CONTAINS
     DO N = 1, CollectionCount
        CollectionName(N) = TmpCollectionName(CollectionCount-N+1)
     ENDDO
-    
+
     ! Allocate CollectionFileName
     IF ( .not. ALLOCATED( CollectionFileName ) ) THEN
        ALLOCATE( CollectionFileName( CollectionCount ), STAT=RC )
-       IF ( RC /= GC_SUCCESS ) THEN 
+       IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Could not allocate "CollectionFileName"!'
           CALL GC_Error( ErrMsg, RC, ThisLoc )
           RETURN
@@ -354,7 +337,7 @@ CONTAINS
     ! Allocate CollectionTemplate
     IF ( .not. ALLOCATED( CollectionTemplate ) ) THEN
        ALLOCATE( CollectionTemplate( CollectionCount ), STAT=RC )
-       IF ( RC /= GC_SUCCESS ) THEN 
+       IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Could not allocate "CollectionTemplate"!'
           CALL GC_Error( ErrMsg, RC, ThisLoc )
           RETURN
@@ -365,7 +348,7 @@ CONTAINS
     ! Allocate CollectionFormat
     IF ( .not. ALLOCATED( CollectionFormat ) ) THEN
        ALLOCATE( CollectionFormat( CollectionCount ), STAT=RC )
-       IF ( RC /= GC_SUCCESS ) THEN 
+       IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Could not allocate "CollectionFormat"!'
           CALL GC_Error( ErrMsg, RC, ThisLoc )
           RETURN
@@ -376,7 +359,7 @@ CONTAINS
     ! Allocate CollectionFrequency
     IF ( .not. ALLOCATED( CollectionFrequency ) ) THEN
        ALLOCATE( CollectionFrequency( CollectionCount ), STAT=RC )
-       IF ( RC /= GC_SUCCESS ) THEN 
+       IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Could not allocate "CollectionFrequency"!'
           CALL GC_Error( ErrMsg, RC, ThisLoc )
           RETURN
@@ -387,7 +370,7 @@ CONTAINS
     ! Allocate CollectionAccInterval
     IF ( .not. ALLOCATED( CollectionAccInterval ) ) THEN
        ALLOCATE( CollectionAccInterval( CollectionCount ), STAT=RC )
-       IF ( RC /= GC_SUCCESS ) THEN 
+       IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Could not allocate "CollectionAccInterval"!'
           CALL GC_Error( ErrMsg, RC, ThisLoc )
           RETURN
@@ -398,7 +381,7 @@ CONTAINS
     ! Allocate CollectionDuration
     IF ( .not. ALLOCATED( CollectionDuration ) ) THEN
        ALLOCATE( CollectionDuration( CollectionCount ), STAT=RC )
-       IF ( RC /= GC_SUCCESS ) THEN 
+       IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Could not allocate "CollectionDuration"!'
           CALL GC_Error( ErrMsg, RC, ThisLoc )
           RETURN
@@ -406,26 +389,70 @@ CONTAINS
        CollectionDuration = UNDEFINED_STR
     ENDIF
 
-    ! Allocate CollectionSubsetDims
-    IF ( .not. ALLOCATED( CollectionSubsetDims ) ) THEN
-       ALLOCATE( CollectionSubSetDims( CollectionCount ), STAT=RC )
-       IF ( RC /= GC_SUCCESS ) THEN 
-          ErrMsg = 'Could not allocate "CollectionSubsetDims"!'
-          CALL GC_Error( ErrMsg, RC, ThisLoc )
-          RETURN
-       ENDIF
-       CollectionSubsetDims = UNDEFINED_STR
-    ENDIF
-
     ! Allocate CollectionMode
     IF ( .not. ALLOCATED( CollectionMode ) ) THEN
        ALLOCATE( CollectionMode( CollectionCount ), STAT=RC )
-       IF ( RC /= GC_SUCCESS ) THEN 
+       IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Could not allocate "CollectionMode"!'
           CALL GC_Error( ErrMsg, RC, ThisLoc )
           RETURN
        ENDIF
        CollectionMode = UNDEFINED_STR
+    ENDIF
+
+    ! Allocate CollectionLonRange
+    IF ( .not. ALLOCATED( CollectionLonRange ) ) THEN
+       ALLOCATE( CollectionLonRange( CollectionCount ), STAT=RC )
+       IF ( RC /= GC_SUCCESS ) THEN
+          ErrMsg = 'Could not allocate "CollectionLonRange"!'
+          CALL GC_Error( ErrMsg, RC, ThisLoc )
+          RETURN
+       ENDIF
+       CollectionLonRange = UNDEFINED_STR
+    ENDIF
+
+    ! Allocate CollectionLatRange
+    IF ( .not. ALLOCATED( CollectionLatRange ) ) THEN
+       ALLOCATE( CollectionLatRange( CollectionCount ), STAT=RC )
+       IF ( RC /= GC_SUCCESS ) THEN
+          ErrMsg = 'Could not allocate "CollectionLatRange"!'
+          CALL GC_Error( ErrMsg, RC, ThisLoc )
+          RETURN
+       ENDIF
+       CollectionLatRange = UNDEFINED_STR
+    ENDIF
+
+    ! Allocate CollectionSubsetInd
+    IF ( .not. ALLOCATED( CollectionSubsetInd ) ) THEN
+       ALLOCATE( CollectionSubsetInd( 4, CollectionCount ), STAT=RC )
+       IF ( RC /= GC_SUCCESS ) THEN
+          ErrMsg = 'Could not allocate "CollectionSubsetInd"!'
+          CALL GC_Error( ErrMsg, RC, ThisLoc )
+          RETURN
+       ENDIF
+       CollectionSubsetInd = UNDEFINED_INT
+    ENDIF
+
+    ! Allocate CollectionLevels
+    IF ( .not. ALLOCATED( CollectionLevels ) ) THEN
+       ALLOCATE( CollectionLevels( CollectionCount ), STAT=RC )
+       IF ( RC /= GC_SUCCESS ) THEN
+          ErrMsg = 'Could not allocate "CollectionLevels"!'
+          CALL GC_Error( ErrMsg, RC, ThisLoc )
+          RETURN
+       ENDIF
+       CollectionLevels = UNDEFINED_STR
+    ENDIF
+
+    ! Allocate CollectionLevelInd
+    IF ( .not. ALLOCATED( CollectionLevelInd ) ) THEN
+       ALLOCATE( CollectionLevelInd( 2, CollectionCount ), STAT=RC )
+       IF ( RC /= GC_SUCCESS ) THEN
+          ErrMsg = 'Could not allocate "CollectionLevelInt"!'
+          CALL GC_Error( ErrMsg, RC, ThisLoc )
+          RETURN
+       ENDIF
+       CollectionLevelInd = UNDEFINED_INT
     ENDIF
 
   END SUBROUTINE History_ReadCollectionNames
@@ -446,13 +473,14 @@ CONTAINS
 ! !INTERFACE:
 !
   SUBROUTINE History_ReadCollectionData( am_I_Root,  Input_Opt, State_Chm,   &
-                                         State_Diag, State_Met, RC          ) 
+                                         State_Diag, State_Met, RC          )
 !
 ! !USES:
 !
     USE Charpak_Mod
     USE DiagList_Mod,          ONLY : CollList, Search_CollList
     USE ErrCode_Mod
+    USE Grid_Registry_Mod,     ONLY : Lookup_Grid
     USE HistContainer_Mod
     USE HistItem_Mod
     USE History_Util_Mod
@@ -465,7 +493,7 @@ CONTAINS
     USE State_Diag_Mod
     USE State_Met_Mod
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
     LOGICAL,          INTENT(IN)  :: am_I_Root    ! Are we on the root CPU?
     TYPE(OptInput),   INTENT(IN)  :: Input_Opt    ! Input Options object
@@ -473,7 +501,7 @@ CONTAINS
     TYPE(DgnState),   INTENT(IN)  :: State_Diag   ! Diagnostic State object
     TYPE(MetState),   INTENT(IN)  :: State_Met    ! Meteorology State object
 !
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
     INTEGER,          INTENT(OUT) :: RC           ! Success or failure?
 !
@@ -482,18 +510,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  16 Jun 2017 - R. Yantosca - Initial version
-!  03 Aug 2017 - R. Yantosca - Pass OPERATION to History_AddItemToCollection
-!  14 Aug 2017 - R. Yantosca - FileWrite{Ymd,Hms} and FileClose{Ymd,Hms} are
-!                              now computed properly, w/r/t acc_interval
-!  30 Aug 2017 - R. Yantosca - Now write collection info only on the root CPU
-!  18 Sep 2017 - R. Yantosca - Don't allow acc_interval for inst collections
-!  29 Sep 2017 - R. Yantosca - Now get the starting and ending date/time info
-!                              from the Input_Opt object
-!  24 Jan 2018 - E. Lundgren - Allow diagnostic names to include input params
-!  06 Feb 2018 - E. Lundgren - Change TS_DYN units from minutes to seconds
-!   9 Mar 2018 - R. Yantosca - Now accept "YYYYMMDD hhmmss" as the long format
-!                              for collection frequency and duration attrs
-!  12 Oct 2018 - M. Sulprizio- Add 'End' option for frequency and duration
+!  See the subsequent Git history with the gitk browser!
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -501,16 +518,18 @@ CONTAINS
 ! !LOCAL VARIABLES:
 !
      ! Scalars
-    LOGICAL                      :: EOF,            Found   
+    LOGICAL                      :: EOF,            Found
+    LOGICAL                      :: FileExists
     INTEGER                      :: yyyymmdd,       hhmmss
     INTEGER                      :: yyyymmdd_end,   hhmmss_end
     INTEGER                      :: DeltaYMD,       DeltaHMS
+    INTEGER                      :: X,              Y
     INTEGER                      :: C,              N,             W
     INTEGER                      :: nX,             nY,            nZ
     INTEGER                      :: fId,            IOS,           LineNum
     INTEGER                      :: nSubs1,         nSubs2
     INTEGER                      :: Ind1,           Ind2
-    INTEGER                      :: UpdateYmd,      UpdateHms    
+    INTEGER                      :: UpdateYmd,      UpdateHms
     INTEGER                      :: FileCloseYmd,   FileCloseHms
     INTEGER                      :: FileWriteYmd,   FileWriteHms
     INTEGER                      :: ItemCount,      SpaceDim,      Operation
@@ -542,10 +561,11 @@ CONTAINS
     CHARACTER(LEN=255)           :: TmpMode,        Contact
     CHARACTER(LEN=255)           :: Pattern,        ItemPrefix
     CHARACTER(LEN=255)           :: tagId,          tagName
-    CHARACTER(LEN=512)           :: ErrMsg
+    CHARACTER(LEN=512)           :: ErrMsg,         FileMsg
 
     ! Arrays
-    INTEGER                      :: SubsetDims(3)
+    REAL(f8)                     :: Subset(2)
+    INTEGER                      :: Levels(200)
     CHARACTER(LEN=255)           :: Subs1(255)
     CHARACTER(LEN=255)           :: Subs2(255)
     CHARACTER(LEN=255)           :: SubStrs(255)
@@ -556,8 +576,12 @@ CONTAINS
     TYPE(Species),       POINTER :: ThisSpc
 
     ! Pointer arrays
-    REAL(fp),            POINTER :: Ptr3d  (:,:,:)
-    REAL(f4),            POINTER :: Ptr3d_4(:,:,:)
+    REAL(f8),            POINTER :: Grid_Lat (:    )
+    REAL(f8),            POINTER :: Grid_LatE(:    )
+    REAL(f8),            POINTER :: Grid_Lon (:    )
+    REAL(f8),            POINTER :: Grid_LonE(:    )
+    REAL(fp),            POINTER :: Ptr3d    (:,:,:)
+    REAL(f4),            POINTER :: Ptr3d_4  (:,:,:)
 
     !=======================================================================
     ! Initialize
@@ -566,91 +590,170 @@ CONTAINS
     ! Assume success
     RC             =  GC_SUCCESS
 
-    ! Initialize variables
-    EOF            =  .FALSE.
-    IOS            =  0   
-    UpdateYmd      =  0 
-    UpdateHms      =  0
-    FileCloseYmd   =  0
-    FileCloseHms   =  0
-    FileWriteYmd   =  0
-    FileWriteHms   =  0
-    LineNum        =  0
-    SpaceDim       =  0
-    SubsetDims     =  0 
-    HeartBeatDtSec =  DBLE( Input_Opt%TS_DYN )
-    yyyymmdd       =  Input_Opt%NymdB
-    hhmmss         =  Input_Opt%NhmsB
-    yyyymmdd_end   =  Input_Opt%NymdE
-    hhmmss_end     =  Input_Opt%NhmsE
+    ! Skip for GEOS-Chem dry-run simulations
+    IF ( .not. Input_Opt%DryRun ) THEN
 
-    ! Compute the YMD and HMS intervals for collections specified with "End",
-    ! such as for restart files.  NOTE: This algorithm should work with most
-    ! common model simulation intervals, but there might be some edge cases
-    ! that will cause it to fail.  It is still an improvement. (bmy, 2/26/19)
-    CALL Compute_DeltaYmdHms_For_End( yyyymmdd,     hhmmss,                  &
-                                      yyyymmdd_end, hhmmss_end,              &
-                                      deltaYMD,     deltaHMS                )
+       ! Initialize variables
+       EOF            =  .FALSE.
+       IOS            =  0
+       UpdateYmd      =  0
+       UpdateHms      =  0
+       FileCloseYmd   =  0
+       FileCloseHms   =  0
+       FileWriteYmd   =  0
+       FileWriteHms   =  0
+       LineNum        =  0
+       SpaceDim       =  0
+       HeartBeatDtSec =  DBLE( Input_Opt%TS_DYN )
+       yyyymmdd       =  Input_Opt%NymdB
+       hhmmss         =  Input_Opt%NhmsB
+       yyyymmdd_end   =  Input_Opt%NymdE
+       hhmmss_end     =  Input_Opt%NhmsE
+       Subset         =  UNDEFINED_DBL
+       Levels         =  UNDEFINED_INT
 
-    ! Convert the HeartBeatDtSec into hours:minutes:seconds
-    ! for defining the Update interval for time-averaged collections
-    HbMin          = HeartBeatDtSec / 60
-    HbHrs          = HbMin / 60
-    HbSec          = HeartBeatDtSec - ( HbMin * 60 ) - ( HbHrs * 3600 )
-    HeartBeatHms   = ( HbHrs * 10000 ) + ( HbMin * 100 ) + HbSec
+       ! Compute the YMD and HMS intervals for collections specified with "End",
+       ! such as for restart files.  NOTE: This algorithm should work with most
+       ! common model simulation intervals, but there might be some edge cases
+       ! that will cause it to fail.  It is still an improvement. (bmy, 2/26/19)
+       CALL Compute_DeltaYmdHms_For_End( yyyymmdd,     hhmmss,               &
+                                         yyyymmdd_end, hhmmss_end,           &
+                                         deltaYMD,     deltaHMS             )
 
-    ! Initialize objects and pointers
-    Container      => NULL()
-    Item           => NULL()
-    Ptr3d          => NULL()
-    Ptr3d_4        => NULL()
-    ThisSpc        => NULL()
+       ! Convert the HeartBeatDtSec into hours:minutes:seconds
+       ! for defining the Update interval for time-averaged collections
+       HbMin          = HeartBeatDtSec / 60
+       HbHrs          = HbMin / 60
+       HbSec          = HeartBeatDtSec - ( HbMin * 60 ) - ( HbHrs * 3600 )
+       HeartBeatHms   = ( HbHrs * 10000 ) + ( HbMin * 100 ) + HbSec
 
-    ! Initialize Strings
-    Description    =  ''
-    ErrMsg         =  ''
-    Contact        =  &
-     'GEOS-Chem Support Team (geos-chem-support@as.harvard.edu)'
-    Reference      =  'www.geos-chem.org; wiki.geos-chem.org'
-    ThisLoc        =  &
-     ' -> at History_ReadCollectionData (in module History/history_mod.F90)'
-    Units          =  ''
-    FileExpId      =  ''
+       ! Initialize objects and pointers
+       Container      => NULL()
+       Item           => NULL()
+       Ptr3d          => NULL()
+       Ptr3d_4        => NULL()
+       ThisSpc        => NULL()
+       Grid_Lat       => NULL()
+       Grid_LatE      => NULL()
+       Grid_Lon       => NULL()
+       Grid_LonE      => NULL()
 
-    ! Create the timestamp at the start of the simulation
-    WRITE( DStr,          '(i8.8)' ) yyyymmdd
-    WRITE( TStr,          '(i6.6)' ) hhmmss
-    WRITE( StartTimeStamp, 300     ) DStr(1:4), DStr(5:6), DStr(7:8),          &
-                                     TStr(1:2), TStr(3:4), TStr(5:6)
-    
-    ! Create the timestamp at the end of the simulation
-    WRITE( DStr,        '(i8.8)' ) yyyymmdd_end
-    WRITE( TStr,        '(i6.6)' ) hhmmss_end
-    WRITE( EndTimeStamp, 300     ) DStr(1:4), DStr(5:6), DStr(7:8),            &
-                                   TStr(1:2), TStr(3:4), TStr(5:6)
-    ! Format string
-300 FORMAT( a4, '-', a2, '-', a2, ' ', a2, ':', a2, ':', a2, 'z' )
+       ! Initialize Strings
+       Description    =  ''
+       ErrMsg         =  ''
+       Contact        =  &
+         'GEOS-Chem Support Team (geos-chem-support@as.harvard.edu)'
+       Reference      =  'www.geos-chem.org; wiki.geos-chem.org'
+       ThisLoc        =  &
+         ' -> at History_ReadCollectionData (in module History/history_mod.F90)'
+       Units          =  ''
+       FileExpId      =  ''
 
-    ! Compute the Astronomical Julian Date corresponding to the yyyymmdd 
-    ! and hhmmss values at the start and end of the simulation, which are
-    ! needed below.  This can be done outside of the DO loop below.
-    CALL Compute_Julian_Date( yyyymmdd,     hhmmss,     JulianDate    )
-    CALL Compute_Julian_Date( yyyymmdd_end, hhmmss_end, JulianDateEnd )
+       ! Create the timestamp at the start of the simulation
+       WRITE( DStr,          '(i8.8)' ) yyyymmdd
+       WRITE( TStr,          '(i6.6)' ) hhmmss
+       WRITE( StartTimeStamp, 300     ) DStr(1:4), DStr(5:6), DStr(7:8),       &
+                                        TStr(1:2), TStr(3:4), TStr(5:6)
 
-    ! Compute the length of the simulation, in elapsed seconds
-    SimLengthSec   = NINT( ( JulianDateEnd - JulianDate ) * SECONDS_PER_DAY )
+       ! Create the timestamp at the end of the simulation
+       WRITE( DStr,        '(i8.8)' ) yyyymmdd_end
+       WRITE( TStr,        '(i6.6)' ) hhmmss_end
+       WRITE( EndTimeStamp, 300     ) DStr(1:4), DStr(5:6), DStr(7:8),         &
+                                      TStr(1:2), TStr(3:4), TStr(5:6)
+
+       ! Format string
+ 300   FORMAT( a4, '-', a2, '-', a2, ' ', a2, ':', a2, ':', a2, 'z' )
+
+       ! Compute the Astronomical Julian Date corresponding to the yyyymmdd
+       ! and hhmmss values at the start and end of the simulation, which are
+       ! needed below.  This can be done outside of the DO loop below.
+       CALL Compute_Julian_Date( yyyymmdd,     hhmmss,     JulianDate    )
+       CALL Compute_Julian_Date( yyyymmdd_end, hhmmss_end, JulianDateEnd )
+
+       ! Compute the length of the simulation, in elapsed seconds
+       SimLengthSec   = NINT( ( JulianDateEnd - JulianDate ) * SECONDS_PER_DAY )
+
+       !====================================================================
+       ! Get pointers to the grid longitudes and latitudes
+       !====================================================================
+
+       ! Lookup latitude centers
+       CALL Lookup_Grid( am_I_Root = am_I_Root,  Variable  = 'GRID_LAT',     &
+                         Ptr1d_8   = Grid_Lat,   RC        = RC             )
+       IF ( RC /= GC_SUCCESS ) THEN
+          ErrMsg = 'Could not get pointer to latitudes (aka GRID_LAT)!'
+          CALL GC_Error( ErrMsg, RC, ThisLoc )
+          RETURN
+       ENDIF
+
+       ! Lookup latitude edges
+       CALL Lookup_Grid( am_I_Root = am_I_Root,  Variable  = 'GRID_LATE',    &
+                         Ptr1d_8   = Grid_LatE,  RC        = RC             )
+       IF ( RC /= GC_SUCCESS ) THEN
+          ErrMsg = 'Could not get pointer to latitude edges (aka GRID_LATE)!'
+          CALL GC_Error( ErrMsg, RC, ThisLoc )
+          RETURN
+       ENDIF
+
+       ! Lookup longitude centers
+       CALL Lookup_Grid( am_I_Root = am_I_Root,  Variable  = 'GRID_LON',     &
+                         Ptr1d_8   = Grid_Lon,   RC        = RC             )
+       IF ( RC /= GC_SUCCESS ) THEN
+          ErrMsg = 'Could not get pointer to longitudes (aka GRID_LON)!'
+          CALL GC_Error( ErrMsg, RC, ThisLoc)
+          RETURN
+       ENDIF
+
+       ! Lookup longitude edges
+       CALL Lookup_Grid( am_I_Root = am_I_Root,  Variable  = 'GRID_LONE',    &
+                         Ptr1d_8   = Grid_LonE,  RC        = RC             )
+       IF ( RC /= GC_SUCCESS ) THEN
+          ErrMsg = 'Could not get pointer to longitude edges (aka GRID_LONE)!'
+          CALL GC_Error( ErrMsg, RC, ThisLoc)
+          RETURN
+       ENDIF
+    ENDIF
 
     !=======================================================================
     ! Open the file containing the list of requested diagnostics
     !=======================================================================
 
+    ! Test if the file exists
+    INQUIRE( FILE=TRIM( Input_Opt%HistoryInputFile ), EXIST=FileExists )
+
+    ! Test if the file exists and define an output string
+    IF ( FileExists ) THEN
+       FileMsg = 'HISTORY (INIT): Opening'
+    ELSE
+       FileMsg = 'HISTORY (INIT): REQUIRED FILE NOT FOUND'
+    ENDIF
+
+    ! Write message to stdout for both regular and dry-run simulations
+    IF ( Input_Opt%AmIRoot ) THEN
+       WRITE( 6, 350 ) TRIM( FileMsg ), TRIM( Input_Opt%HistoryInputFile )
+ 350   FORMAT( a, ' ', a )
+    ENDIF
+
+    ! For dry-run simulations, return to calling program.
+    ! For regular simulations, throw an error if we can't find the file.
+    IF ( Input_Opt%DryRun ) THEN
+       RETURN
+    ELSE
+       IF ( .not. FileExists ) THEN
+          WRITE( ErrMsg, 350 ) TRIM( FileMsg                    ),           &
+                               TRIM( Input_Opt%HistoryInputFile )
+          CALL GC_Error( ErrMsg, RC, ThisLoc )
+          RETURN
+       ENDIF
+    ENDIF
+
     ! Find a free file unit
     fId     = FindFreeLun()
 
-    ! Open the filei
+    ! Open the file
     OPEN( fId, FILE=TRIM(Input_Opt%HistoryInputFile), STATUS='OLD', IOSTAT=RC )
     IF ( RC /= GC_SUCCESS ) THEN
-       ErrMsg = 'Could not open "' //TRIM(Input_Opt%HistoryInputFile) // '"!'
+       ErrMsg = 'Error opening "' //TRIM(Input_Opt%HistoryInputFile) // '"!'
        CALL GC_Error( ErrMsg, RC, ThisLoc )
        RETURN
     ENDIF
@@ -730,8 +833,8 @@ CONTAINS
        !   etc.
        !
        ! where in this example, "instantaneous" is the collection name
-       ! and "filename', "template", "format", "frequency", "duration" 
-       ! are the metadata fields.  
+       ! and "filename', "template", "format", "frequency", "duration"
+       ! are the metadata fields.
        !
        ! Get the metadata belonging to each collection and store them
        ! in the proper arrays for later use.  NOTE: this method does not
@@ -739,21 +842,21 @@ CONTAINS
        ! are listed under the COLLECTIONS section.
        !====================================================================
 
-       ! "filename": Specifies the full filename path 
+       ! "filename": Specifies the full filename path
        ! Can be omitted if "template" is specified
        Pattern = 'filename'
-       IF ( INDEX( TRIM( Line ), TRIM( Pattern ) ) > 0 ) THEN 
+       IF ( INDEX( TRIM( Line ), TRIM( Pattern ) ) > 0 ) THEN
           CALL GetCollectionMetaData( Line, Pattern, MetaData, C )
           IF ( C > 0 ) CollectionFileName(C) = Metadata
-       ENDIF   
+       ENDIF
 
        ! "template": Specifies the year/month/day/hr/min/sec in filenames
        ! Can be omitted if "filename" is specified
        Pattern = 'template'
-       IF ( INDEX( TRIM( Line ), TRIM( Pattern ) ) > 0 ) THEN 
+       IF ( INDEX( TRIM( Line ), TRIM( Pattern ) ) > 0 ) THEN
           CALL GetCollectionMetaData( Line, Pattern, MetaData, C )
           IF ( C > 0 ) CollectionTemplate(C) = Metadata
-       ENDIF       
+       ENDIF
 
        ! "format": Specifies the file output format (e.g. netCDF-4, CFIO)
        Pattern = 'format'
@@ -767,7 +870,7 @@ CONTAINS
        Pattern = 'frequency'
        IF ( INDEX( TRIM( Line ), TRIM( Pattern ) ) > 0 ) THEN
           CALL GetCollectionMetaData( Line, Pattern, MetaData, C )
-          IF ( C > 0 ) THEN 
+          IF ( C > 0 ) THEN
              IF ( LEN_TRIM( MetaData ) == 6     .or.                         &
                   LEN_TRIM( MetaData ) == 14    .or.                         &
                   TRIM(     MetaData ) == 'End' .or.                         &
@@ -787,9 +890,9 @@ CONTAINS
        ENDIF
 
        ! "acc_interval": Specifies how often time-averaged diagnostics
-       ! are updated.   ! Must be either in "YYYYMMDD hhmmss" or "hhmmss" 
+       ! are updated.   ! Must be either in "YYYYMMDD hhmmss" or "hhmmss"
        ! format.   If omitted, "acc_interval" will be set from "frequency"
-       !%%%%% NOTE: The "acc_interval" attribute is not really needed; 
+       !%%%%% NOTE: The "acc_interval" attribute is not really needed;
        !%%%%% we only really need "frequency" and "duration".  We will
        !%%%%% leave this as an "undocumented feature". (bmy, 3/26/18)
        Pattern = 'acc_interval'
@@ -862,27 +965,156 @@ CONTAINS
           ENDIF
        ENDIF
 
-       ! "subsetdims": Specifies a subset of the data grid
-       ! NOTE: Currently not used at the present time
-       Pattern = 'subsetdims'
+       ! "LON_RANGE": Specifies a longitude range for subsetting
+       ! the data grid. The required order is: lonMin, lonMax
+       Pattern = 'LON_RANGE'
+       Subset  =  UNDEFINED_DBL
        IF ( INDEX( TRIM( Line ), TRIM( Pattern ) ) > 0 ) THEN
-          
+
           ! First split the line by colon
           CALL StrSplit( Line, ":", Subs1, nSubs1 )
           IF ( C > 0 ) THEN
-             CollectionSubsetDims(C) = Subs1(2)
-          
+
+             ! Replace any commas with spaces
+             CALL StrRepl( Subs1(2), ",", " " )
+             CollectionLonRange(C) = Subs1(2)
+
              ! Then split by spaces and convert to INTEGER
-             CALL StrSplit( CollectionSubsetDims(C), " ", Subs2, nSubs2 )
-             IF ( nSubs2 > 0 ) THEN
+             CALL StrSplit( CollectionLonRange(C), " ", Subs2, nSubs2 )
+             IF ( nSubs2 == 2 ) THEN
                 DO N = 1, nSubs2
-                   READ( Subs2(N), '(i10)' ) SubsetDims(N)
+                   READ( Subs2(N), '(f13.6)' ) Subset(N)
                 ENDDO
-          
-                ! Define the number of dimensions
-                SpaceDim = nSubs2
-                IF ( SpaceDim == 2 ) SubsetDims(3) = 1
+             ELSE
+                ErrMsg = 'Subsets must be specified as: lonmin, lonmax!'
+                WRITE( ErrorLine, 250 ) LineNum
+                CALL GC_Error( ErrMsg, RC, ThisLoc, ErrorLine )
+                RETURN
              ENDIF
+
+             ! Find the longitude indices for lonMin and lonMax values
+             DO X = 1, SIZE( Grid_LonE )-1
+                IF ( Grid_LonE(X  ) <= Subset(1)  .and.                      &
+                     Grid_LonE(X+1) >  Subset(1) ) THEN
+                   CollectionSubsetInd(1,C) = X
+                ENDIF
+                IF ( Grid_LonE(X  ) <= Subset(2)  .and.                      &
+                     Grid_LonE(X+1) >  Subset(2) ) THEN
+                   CollectionSubsetInd(2,C) = X
+                ENDIF
+             ENDDO
+
+             ! Error check longitudes
+             DO N = 1, 2
+                IF ( CollectionSubsetInd(N,C) < -180.0_f8  .or.              &
+                     CollectionSubsetInd(N,C) >  180.0_f8 ) THEN
+                   ErrMsg = 'Invalid longitude subset values for '   //      &
+                            'collection "'// TRIM(CollectionName(C)) // '"!'
+                   WRITE( ErrorLine, 250 ) LineNum
+                   CALL GC_Error( ErrMsg, RC, ThisLoc, ErrorLine )
+                   RETURN
+                ENDIF
+             ENDDO
+          ENDIF
+       ENDIF
+
+       ! "LON_RANGE": Specifies a latitude range for subsetting
+       ! the data grid. The required order is: latMin, latMax
+       Pattern = 'LAT_RANGE'
+       Subset  =  UNDEFINED_DBL
+       IF ( INDEX( TRIM( Line ), TRIM( Pattern ) ) > 0 ) THEN
+
+          ! First split the line by colon
+          CALL StrSplit( Line, ":", Subs1, nSubs1 )
+          IF ( C > 0 ) THEN
+
+             ! Replace any commas with spaces
+             CALL StrRepl( Subs1(2), ",", " " )
+             CollectionLatRange(C) = Subs1(2)
+
+             ! Then split by spaces and convert to INTEGER
+             CALL StrSplit( CollectionLatRange(C), " ", Subs2, nSubs2 )
+             IF ( nSubs2 == 2 ) THEN
+                DO N = 1, nSubs2
+                   READ( Subs2(N), '(f13.6)' ) Subset(N)
+                ENDDO
+             ELSE
+                ErrMsg = 'Subsets must be specified as: latMin, latMax!'
+                WRITE( ErrorLine, 250 ) LineNum
+                CALL GC_Error( ErrMsg, RC, ThisLoc, ErrorLine )
+                RETURN
+             ENDIF
+
+             ! Find the latitude indices for latMin and latMax values
+             DO Y = 1, SIZE( Grid_LatE )-1
+                IF ( Grid_LatE(Y  ) <= Subset(1)  .and.                      &
+                     Grid_LatE(Y+1) >  Subset(1) ) THEN
+                   CollectionSubsetInd(3,C) = Y
+                ENDIF
+                IF ( Grid_LatE(Y  ) <= Subset(2)  .and.                      &
+                     Grid_LatE(Y+1) >  Subset(2) ) THEN
+                   CollectionSubsetInd(4,C) = Y
+                ENDIF
+             ENDDO
+
+             ! Error check latitudes
+             DO N = 3, 4
+                IF ( CollectionSubsetInd(N,C) < -90.0_f8  .or.               &
+                     CollectionSubsetInd(N,C) >  90.0_f8 ) THEN
+                   ErrMsg = 'Invalid latitude subset values for '     //     &
+                            'collection " '// TRIM(CollectionName(C)) // '"!'
+                   WRITE( ErrorLine, 250 ) LineNum
+                   CALL GC_Error( ErrMsg, RC, ThisLoc, ErrorLine )
+                   RETURN
+                ENDIF
+             ENDDO
+          ENDIF
+       ENDIF
+
+       ! "levels: Specifies a vertical subset of the data grid
+       Pattern  = 'levels'
+       IF ( INDEX( TRIM( Line ), TRIM( Pattern ) ) > 0 ) THEN
+
+          ! First split the line by colon
+          CALL StrSplit( Line, ":", Subs1, nSubs1 )
+          IF ( C > 0 ) THEN
+
+             ! Replace any commas with spaces
+             CALL StrRepl( Subs1(2), ",", " " )
+             CollectionLevels(C) = Subs1(2)
+
+             ! Then split by spaces and convert to INTEGER
+             ! Also compute the min and max level
+             CALL StrSplit( CollectionLevels(C), " ", Subs2, nSubs2 )
+             IF ( nSubs2 <= SIZE( Levels ) ) THEN
+                DO N = 1, nSubs2
+                   READ( Subs2(N), '(i10)' ) Levels(N)
+                   IF ( Levels(N) < 0 ) THEN
+                      ErrMsg = TRIM( CollectionName(C) ) // '.levels '    // &
+                               'must not have any negative values!'
+                      WRITE( ErrorLine, 250 ) LineNum
+                      CALL GC_Error( ErrMsg, RC, ThisLoc, ErrorLine )
+                      RETURN
+                   ENDIF
+                ENDDO
+             ELSE
+                ErrMsg = 'Too many levels specified for collection "'     // &
+                          TRIM( CollectionName(C) ) // '" Must be <= 200.'
+                WRITE( ErrorLine, 250 ) LineNum
+                CALL GC_Error( ErrMsg, RC, ThisLoc, ErrorLine )
+                RETURN
+             ENDIF
+
+             ! Of all the levels that are specified, store the min and max
+             ! in the CollectionLevelInd array.  We will save out all of
+             ! the levels between the min and max.
+             ! NOTE: GCHP HISTORY can archive out individual levels, but
+             ! this is trickier to implement in GC "Classic".  It is easier
+             ! to point to a contiguous array subslice, so we will just
+             ! archive everything between the min and max level for the
+             ! time being. (bmy, 7/18/19)
+             CollectionLevelInd(1,C) = MINVAL( Levels(1:nSubs2) )
+             CollectionLevelInd(2,C) = MAXVAL( Levels(1:nSubs2) )
           ENDIF
        ENDIF
 
@@ -903,7 +1135,7 @@ CONTAINS
 
              !--------------------------------------------------------------
              ! If the collection corresponding to this ".fields" tag is
-             ! not active, then keep reading lines from HISTORY.rc 
+             ! not active, then keep reading lines from HISTORY.rc
              ! until we reach the next collection definition section.
              ! then cycle back to the top of the loop.
              !--------------------------------------------------------------
@@ -923,16 +1155,16 @@ CONTAINS
                    IF ( TRIM( Line ) == '::' ) GOTO 500
                 ENDDO
              ENDIF
-             
+
              !--------------------------------------------------------------
-             ! If we get to this point, then there is a true error 
+             ! If we get to this point, then there is a true error
              ! condition.  Print an error message asking the user to
              ! check the HISTORY.rc file for inconsistencies.
              !--------------------------------------------------------------
 
              ! List the defined collections
              WRITE( 6, '(/,a)' ) REPEAT( '=', 79 )
-             WRITE( 6, 200   ) 
+             WRITE( 6, 200   )
  200         FORMAT( 'GEOS-Chem ERROR: One or more collection ',             &
                      'attributes do not correspond', /                       &
                      'to any of these defined collection names '             &
@@ -943,19 +1175,19 @@ CONTAINS
  210            FORMAT( i3, ') ', a )
              ENDDO
 
-             WRITE( 6, 220 ) 
+             WRITE( 6, 220 )
  220         FORMAT( /, 'Please check the HISTORY.rc file for any ',         &
                      'missing ":" or "," characters', /,                     &
                      'in the collection attributes.'                        )
              WRITE( 6, '(a,/)' ) REPEAT( '=', 79 )
-             
+
              ! Write error message and then return
              ErrMsg = 'Inconsistency in collection names and attributes!' // &
                       ' Please check "HISTORY.rc" for typos.'
              WRITE( ErrorLine, 250 ) LineNum
              CALL GC_Error( ErrMsg, RC, ThisLoc, ErrorLine )
              RETURN
-          ENDIF 
+          ENDIF
 
           !=================================================================
           ! At this point we are sure that the collection has been
@@ -970,8 +1202,8 @@ CONTAINS
                    TRIM( CollectionName(C) )
 
           !-----------------------------------------------------------------
-          ! Determine the operation code (i.e. copy or accumulate from the 
-          ! source pointer to Item's data array for further analysis), 
+          ! Determine the operation code (i.e. copy or accumulate from the
+          ! source pointer to Item's data array for further analysis),
           ! based on the value of CollectionMode.
           !-----------------------------------------------------------------
           TmpMode = CollectionMode(C)
@@ -989,7 +1221,7 @@ CONTAINS
                    ErrMsg = 'Acc_interval cannot be defined for '         // &
                             'instantaneous collection: "'                 // &
                             TRIM( CollectionName(C) )                     // &
-                            '"!' 
+                            '"!'
                    WRITE( ErrorLine, 250 ) LineNum
                    CALL GC_Error( ErrMsg, RC, ThisLoc, ErrorLine )
                    RETURN
@@ -1003,12 +1235,12 @@ CONTAINS
           ! Define the "File Write" interval
           !
           ! The ".frequency" tag in HISTORY.rc specifies the interval at
-          ! which data will be written to the netCDF file.  Thus, we can 
+          ! which data will be written to the netCDF file.  Thus, we can
           ! set FileWriteYmd and FileWriteHms from CollectionFrequency.
-          ! 
-          ! NOTE: If CollectionFrequency is 6 digits long, then assume 
-          ! that to be FileWriteHms.  If longer, then assume that it is 
-          ! both FileWriteYmd and FileWriteHms.  This is a hack that we 
+          !
+          ! NOTE: If CollectionFrequency is 6 digits long, then assume
+          ! that to be FileWriteHms.  If longer, then assume that it is
+          ! both FileWriteYmd and FileWriteHms.  This is a hack that we
           ! introduced for GEOS-Chem "Classic" only, as this feature is
           ! not yet supported in MAPL.  (sde, bmy, 8/4/17, 10/26/17)
           !
@@ -1021,7 +1253,7 @@ CONTAINS
           ! (mps, 10/12/18)
           !-----------------------------------------------------------------
           IF ( LEN_TRIM( CollectionFrequency(C) ) == 6 ) THEN
-             READ( CollectionFrequency(C), '(i6.6)'  ) FileWriteHms           
+             READ( CollectionFrequency(C), '(i6.6)'  ) FileWriteHms
           ELSE IF ( LEN_TRIM( CollectionFrequency(C) ) == 14 ) THEN
              READ( CollectionFrequency(C), '(i8,i6)' ) FileWriteYmd,         &
                                                        FileWriteHms
@@ -1047,19 +1279,19 @@ CONTAINS
           ! each new netCDF file will be produced.  Thus, we can set
           ! FileCloseYmd and FileCloseHms from CollectionDuration.
           !
-          ! If ".duration" is not specified in HISTORY.rc, then both 
+          ! If ".duration" is not specified in HISTORY.rc, then both
           ! FileCloseYmd and FileCloseHms will both be defined from
           ! the ".frequency" tag (stored in CollectionFrequency).
           !
-          ! NOTE: If CollectionDuration is 6 digits long, then assume 
-          ! that to be FileCloseHms.  If longer, then assume that it is 
-          ! both FileCloseYmd and FileCloseHms.  This is a hack that we 
+          ! NOTE: If CollectionDuration is 6 digits long, then assume
+          ! that to be FileCloseHms.  If longer, then assume that it is
+          ! both FileCloseYmd and FileCloseHms.  This is a hack that we
           ! introduced for GEOS-Chem "Classic" only, as this feature is
           ! not yet supported in MAPL.  (sde, bmy, 8/4/17, 10/26/17)
           !
           ! Add capability to set duration to 'End'. In that case, the
           ! netCDF file will be closed at the end of the simulation.
-          ! This is especially useful for the Restart collection 
+          ! This is especially useful for the Restart collection
           ! for saving fields needed for subsequent GEOS-Chem runs.
           ! FileCloseYmd and FileCloseHms will be computed as the amount
           ! of time between the start and end of the simulation.
@@ -1093,9 +1325,9 @@ CONTAINS
              !
              ! Define the "Update" interval
              !
-             ! Because there is no time-averaging, each field is written to 
-             ! the netCDF file as soon as it is updated.  Thus, we can set 
-             ! UpdateYmd and UpdateHms from the ".frequency" tag in 
+             ! Because there is no time-averaging, each field is written to
+             ! the netCDF file as soon as it is updated.  Thus, we can set
+             ! UpdateYmd and UpdateHms from the ".frequency" tag in
              ! HISTORY.rc (stored in CollectionFrequency).
              !--------------------------------------------------------------
              UpdateYmd = FileWriteYmd
@@ -1112,14 +1344,14 @@ CONTAINS
              ! the "heartbeat" timestep of the simulation in seconds.
              !
              ! If the ".acc_interval" tag is specified in HISTORY.rc,
-             ! then we will set UpdateYmd and UpdateHms from 
+             ! then we will set UpdateYmd and UpdateHms from
              ! CollectionAccInterval.  But if using this option, note
              ! that the ".acc_interval" tag must not specify an interval
              ! that is longer than the interval specified by ".frequency".
              !
-             ! NOTE: If CollectionAccInterval is 6 digits long, then assume 
-             ! that to be UpdateHms.  If longer, then assume that it is 
-             ! both UpdateYmd and UpdateHms.  This is a hack that we 
+             ! NOTE: If CollectionAccInterval is 6 digits long, then assume
+             ! that to be UpdateHms.  If longer, then assume that it is
+             ! both UpdateYmd and UpdateHms.  This is a hack that we
              ! introduced for GEOS-Chem "Classic" only, as this feature is
              ! not supported in MAPL.  (sde, bmy, 8/4/17, 10/26/17)
              !--------------------------------------------------------------
@@ -1128,7 +1360,7 @@ CONTAINS
                 ! Set UpdateYmd and UpdateHms from the HeartBeat timestep
                 UpdateYmd = 00000000
                 UpdateHms = HeartBeatHms
-             
+
                 ! SPECIAL CASE: If FileWriteYmd is 240000 then set
                 ! and set FileWriteYmd=000001 and FileWriteHms=000000
                 IF ( UpdateHms == 240000 ) THEN
@@ -1137,7 +1369,7 @@ CONTAINS
                 ENDIF
 
              ELSE
-                
+
                 ! Set UpdateYmd and UpdateHms from the ".acc_interval" tag
                 IF ( LEN_TRIM( CollectionAccInterval(C) ) == 6 ) THEN
                    READ( CollectionAccInterval(C), '(i6.6)'  ) UpdateHms
@@ -1158,7 +1390,7 @@ CONTAINS
                                + ( DBLE( UpdateHms    )            )
 
                 ! Combine FileWriteYmd and FileWriteHms
-                FileWriteCheck = ( DBLE( FileWriteYmd ) * 1.0e6_f8 )         & 
+                FileWriteCheck = ( DBLE( FileWriteYmd ) * 1.0e6_f8 )         &
                                + ( DBLE( FileWriteHMs )            )
 
                 ! Error check: If using acc_interval, then the Update interval
@@ -1166,7 +1398,7 @@ CONTAINS
                 IF ( UpdateCheck > FileWriteCheck ) THEN
                    ErrMsg = 'Update interval is greater than File Write ' // &
                             'interval for collection: '                   // &
-                            TRIM( CollectionName(C) ) 
+                            TRIM( CollectionName(C) )
                    WRITE( ErrorLine, 250 ) LineNum
                    CALL GC_Error( ErrMsg, RC, ThisLoc, ErrorLine )
                    RETURN
@@ -1175,11 +1407,11 @@ CONTAINS
              ENDIF
 
           ENDIF
-          
+
           !=================================================================
           ! Create a HISTORY CONTAINER object for this collection
           !=================================================================
-          
+
           ! Create the HISTORY CONTAINER object itself.
           ! This will also define the alarm intervals and initial alarm times
           CALL HistContainer_Create( am_I_Root      = am_I_Root,             &
@@ -1201,7 +1433,7 @@ CONTAINS
                                      FileCloseHms   = FileCloseHms,          &
                                      Conventions    = 'COARDS',              &
                                      FileName       = CollectionFileName(C), &
-                                     FileTemplate   = CollectionTemplate(C), & 
+                                     FileTemplate   = CollectionTemplate(C), &
                                      NcFormat       = CollectionFormat(C),   &
                                      Reference      = Reference,             &
                                      Title          = Title,                 &
@@ -1216,7 +1448,7 @@ CONTAINS
           ! Trap potential error
           IF ( RC /= GC_SUCCESS ) THEN
              ErrMsg = 'Could not create Collection: ' // &
-                      TRIM( CollectionName(C) ) 
+                      TRIM( CollectionName(C) )
              WRITE( ErrorLine, 250 ) LineNum
              CALL GC_Error( ErrMsg, RC, ThisLoc, ErrorLine )
              RETURN
@@ -1232,7 +1464,7 @@ CONTAINS
           ! Trap potential error
           IF ( RC /= GC_SUCCESS ) THEN
              ErrMsg = 'Error encountered in "HistContainer_SetTime"'      // &
-                      ' for collection: ' // TRIM( CollectionName(C) ) 
+                      ' for collection: ' // TRIM( CollectionName(C) )
              WRITE( ErrorLine, 250 ) LineNum
              CALL GC_Error( ErrMsg, RC, ThisLoc, ErrorLine )
              RETURN
@@ -1240,7 +1472,7 @@ CONTAINS
 
           !-----------------------------------------------------------------
           ! ERROR CHECK: Make sure that the length of the simulation is
-          ! not shorter than the requested "File Write" interval.  This 
+          ! not shorter than the requested "File Write" interval.  This
           ! will prevent simulations without diagnostic output.
           !-----------------------------------------------------------------
           IF ( SimLengthSec < Container%FileWriteAlarm ) THEN
@@ -1266,7 +1498,7 @@ CONTAINS
           ! Create a list of HISTORY ITEMS that will be contained in this
           ! collection, for each entry under the "fields" tag.
           !=================================================================
-          DO 
+          DO
 
              IF ( ItemCount == 0 ) THEN
 
@@ -1291,7 +1523,7 @@ CONTAINS
                 Line    = ReadOneLine( fId, EOF, IOS, Squeeze=.TRUE. )
                 LineNum = LineNum + 1
 
-                ! IF we have hit the end of file then 
+                ! IF we have hit the end of file then
                 iF ( EOF ) GOTO 999
 
                 ! If it's a real I/O error, quit w/ error message
@@ -1302,9 +1534,9 @@ CONTAINS
                    CALL GC_Error( ErrMsg, RC, ThisLoc, ErrorLine )
                    RETURN
                 ENDIF
-                             
+
                 ! Remove commas, spaces, and tabs
-                Line = CleanText( Line )    
+                Line = CleanText( Line )
 
                 ! Skip if the line is commented out
                 IF ( Line(1:1) == "#"  ) CYCLE
@@ -1319,7 +1551,7 @@ CONTAINS
              ENDIF
 
              !--------------------------------------------------------------
-             ! Create the a HISTORY ITEM object for each diagnostic 
+             ! Create the a HISTORY ITEM object for each diagnostic
              ! entry read from HISTORY.rc and add to the given COLLECTION
              !--------------------------------------------------------------
 
@@ -1329,7 +1561,7 @@ CONTAINS
              ItemTemplateUC = To_UpperCase( ItemTemplate )
 
              ! Test if there are wildcards present, otherwise skip
-             IF ( INDEX( ItemTemplate, '?' ) >  0 ) THEN 
+             IF ( INDEX( ItemTemplate, '?' ) >  0 ) THEN
 
                 ! Split the name to get wildcard and string prior to wildcard
                 CALL StrSplit( ItemTemplate, '?', SubStrs, N )
@@ -1346,7 +1578,7 @@ CONTAINS
                    CALL GC_Error( ErrMsg, RC, ThisLoc, ErrorLine )
                    RETURN
                 ENDIF
-                
+
                 ! Add each tagged name as a separate item in the collection
                 DO N = 1, nTags
                    ! Construct the item name
@@ -1370,7 +1602,7 @@ CONTAINS
 
                    ! Increment the item count
                    ItemCount   = ItemCount + 1
-                   
+
                    ! Create the a HISTORY ITEM object for this diagnostic
                    ! and add it to the given DIAGNOSTIC COLLECTION
                    CALL History_AddItemToCollection(                         &
@@ -1381,16 +1613,17 @@ CONTAINS
                             State_Met    = State_Met,                        &
                             Collection   = Container,                        &
                             CollectionId = C,                                &
-                           !SubsetDims   = CollectionSubsetDims(C),          &
+                            SubsetInd    = CollectionSubsetInd(:,C),         &
+                            LevelInd     = CollectionLevelInd(:,C),          &
                             ItemName     = OutputName,                       &
                             ItemCount    = ItemCount,                        &
                             RC           = RC                               )
-                
+
                    ! Error checking
                    IF ( RC /= GC_SUCCESS ) THEN
                       ErrMsg = 'Could not add diagnostic "'               // &
                                TRIM( OutputName ) // '" to collection: '  // &
-                               TRIM( CollectionName(C) ) 
+                               TRIM( CollectionName(C) )
                       WRITE( ErrorLine, 250 ) LineNum
                       CALL GC_Error( ErrMsg, RC, ThisLoc, ErrorLine )
                       RETURN
@@ -1419,15 +1652,16 @@ CONTAINS
                          State_Met    = State_Met,                           &
                          Collection   = Container,                           &
                          CollectionId = C,                                   &
-                        !SubsetDims   = CollectionSubsetDims(C),             &
+                         SubsetInd    = CollectionSubsetInd(:,C),            &
+                         LevelInd     = CollectionLevelInd(:,C),             &
                          ItemName     = OutputName,                          &
                          ItemCount    = ItemCount,                           &
                          RC           = RC                                  )
 
                 ! Trap potential error
                 IF ( RC /= GC_SUCCESS ) THEN
-                   ErrMsg = 'Could not add diagnostic "' // TRIM( OutputName ) &
-                            // '" to collection: ' // TRIM( CollectionName(C) ) 
+                   ErrMsg = 'Could not add diagnostic "' // TRIM(OutputName) &
+                            // '" to collection: ' // TRIM( CollectionName(C) )
                    WRITE( ErrorLine, 250 ) LineNum
                    CALL GC_Error( ErrMsg, RC, ThisLoc, ErrorLine )
                    RETURN
@@ -1457,16 +1691,16 @@ CONTAINS
        ELSE
 
           !=================================================================
-          ! If the we have gotten this far tthrough a collection definition 
-          ! section, but still haven't found the ".fields" tag, then we 
+          ! If the we have gotten this far tthrough a collection definition
+          ! section, but still haven't found the ".fields" tag, then we
           ! need to do some further error checking.
           !=================================================================
           IF ( C == UNDEFINED_INT ) THEN
 
-             !-------------------------------------------------------------- 
+             !--------------------------------------------------------------
              ! First, check if the collection isn't activated.  If that
-             ! is the case, then skip over all of the lines in the 
-             ! collection definition section until we hit the "::" 
+             ! is the case, then skip over all of the lines in the
+             ! collection definition section until we hit the "::"
              ! termination character.  Then cycle up to the top of the
              ! loop to read the next collection definition section.
              !--------------------------------------------------------------
@@ -1487,15 +1721,15 @@ CONTAINS
                 ENDDO
              ENDIF
 
-             !-------------------------------------------------------------- 
-             ! If we have gotten down to this point, then a true error 
-             ! condition exists.  Print an error message asking the user 
+             !--------------------------------------------------------------
+             ! If we have gotten down to this point, then a true error
+             ! condition exists.  Print an error message asking the user
              ! to check the HISTORY.rc file for inconsistencies.
-             !-------------------------------------------------------------- 
+             !--------------------------------------------------------------
 
              ! List the defined collections
              WRITE( 6, '(/,a)' ) REPEAT( '=', 79 )
-             WRITE( 6, 200   ) 
+             WRITE( 6, 200   )
              DO N = 1, CollectionCount
                 WRITE( 6, 210 ) N, TRIM( CollectionName(N) )
              ENDDO
@@ -1512,11 +1746,17 @@ CONTAINS
        ENDIF
 
     ENDDO
-       
+
     !=======================================================================
     ! Cleanup and quit
     !=======================================================================
 999 CONTINUE
+
+    ! Free pointers
+    Grid_Lat  => NULL()
+    Grid_LatE => NULL()
+    Grid_Lon  => NULL()
+    Grid_LonE => NULL()
 
     ! Close the file
     CLOSE( fId )
@@ -1532,10 +1772,25 @@ CONTAINS
           print*, '  -> FileName     ', TRIM( CollectionFileName   (C) )
           print*, '  -> Format       ', TRIM( CollectionFormat     (C) )
           print*, '  -> Frequency    ', TRIM( CollectionFrequency  (C) )
-          print*, '  -> Acc_Interval ', TRIM( CollectionAccInterval(C) )
+          IF ( CollectionAccInterval(C) /= UNDEFINED_STR ) THEN
+             print*, '  -> Acc_Interval ', TRIM( CollectionAccInterval(C) )
+          ENDIF
           print*, '  -> Duration     ', TRIM( CollectionDuration   (C) )
-!         print*, '  -> Subset Dims  ', TRIM( CollectionSubsetDims (C) )
           print*, '  -> Mode         ', TRIM( CollectionMode       (C) )
+          IF ( CollectionLonRange(C) /= UNDEFINED_STR ) THEN
+             print*, '  -> LON_RANGE    ',                                   &
+                  TRIM(ADJUSTL(ADJUSTR( CollectionLonRange(C) )))
+             print*, '     -> X0 X1  ', ((CollectionSubsetInd(N,C)), N=1,2)
+          ENDIF
+          IF ( CollectionLatRange(C) /= UNDEFINED_STR ) THEN
+             print*, '  -> LAT_RANGE    ',                                   &
+                  TRIM(ADJUSTL(ADJUSTR( CollectionLatRange(C) )))
+             print*, '     -> Y0 Y1  ', ((CollectionSubsetInd(N,C)), N=3,4)
+          ENDIF
+          IF ( CollectionLevels(C) /= UNDEFINED_STR ) THEN
+             print*, '  -> Levels    ' , TRIM( CollectionLevels(C) )
+             print*, '     -> Z0 Z1  ', ((CollectionLevelInd(N,C)), N=1,2)
+          ENDIF
 
           ! Trap error if the collection frequency is undefined
           ! This indicates an error in parsing the file
@@ -1555,7 +1810,7 @@ CONTAINS
     ENDIF
 
     ! Write spacer
-    WRITE( 6, '(a,/)' ) REPEAT( '=', 79 )   
+    WRITE( 6, '(a,/)' ) REPEAT( '=', 79 )
 
   END SUBROUTINE History_ReadCollectionData
 !EOC
@@ -1578,8 +1833,8 @@ CONTAINS
                                           State_Chm,    State_Diag,          &
                                           State_Met,    Collection,          &
                                           CollectionId, ItemName,            &
-                                          ItemCount,    SubsetDims,          &
-                                          RC                                )
+                                          ItemCount,    SubsetInd,           &
+                                          LevelInd,     RC                  )
 !
 ! !USES:
 !
@@ -1596,7 +1851,7 @@ CONTAINS
     USE State_Diag_Mod
     USE State_Met_Mod
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
     ! Required arguments
     LOGICAL,             INTENT(IN)  :: am_I_Root      ! Are we on the root CPU?
@@ -1605,18 +1860,18 @@ CONTAINS
     TYPE(DgnState),      INTENT(IN)  :: State_Diag     ! Diagnostic State
     TYPE(MetState),      INTENT(IN)  :: State_Met      ! Meteorology State
     INTEGER,             INTENT(IN)  :: CollectionID   ! Collection ID number
-    CHARACTER(LEN=255),  INTENT(IN)  :: ItemName       ! Name of HISTORY ITEM 
+    CHARACTER(LEN=255),  INTENT(IN)  :: ItemName       ! Name of HISTORY ITEM
     INTEGER,             INTENT(IN)  :: ItemCount      ! Index of HISTORY ITEM
 
     ! Optional arguments
-    INTEGER,             OPTIONAL    :: SubsetDims(3)  ! Dimensions specified
-                                                       !  by the collection
+    INTEGER,             OPTIONAL    :: SubsetInd(4)    ! X0,X1,Y0,Y1 indices
+    INTEGER,             OPTIONAL    :: LevelInd(2)     ! Z0,Z1 indices
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
     TYPE(HistContainer), POINTER     :: Collection     ! Diagnostic Collection
 !
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
     INTEGER,             INTENT(OUT) :: RC             ! Success or failure?
 !
@@ -1625,10 +1880,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  06 Jan 2015 - R. Yantosca - Initial version
-!  03 Aug 2017 - R. Yantosca - Inherit operation code from the Collection
-!  26 Sep 2017 - E. Lundgren - Replace Lookup_State_xx calls with direct
-!                              calls to Registry_Lookup
-!  01 Nov 2017 - R. Yantosca - Make the registry lookup case-insensitive
+!  See the subsequent Git history with the gitk browser!
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1639,11 +1891,16 @@ CONTAINS
     LOGICAL                      :: OnLevelEdges
     INTEGER                      :: KindVal
     INTEGER                      :: Rank
-    INTEGER                      :: NX, NY, NZ
+    INTEGER                      :: NX, X0, X1
+    INTEGER                      :: NY, Y0, Y1
+    INTEGER                      :: NZ, Z0, Z1
 
     ! Arrays
     INTEGER                      :: Dimensions(3)
     INTEGER                      :: ItemDims(3)
+    INTEGER                      :: Subset_X(2)
+    INTEGER                      :: Subset_Y(2)
+    INTEGER                      :: Subset_Z(2)
 
     ! Strings
     CHARACTER(LEN=4  )           :: StateMetUC
@@ -1710,7 +1967,7 @@ CONTAINS
     !=======================================================================
     ! For each HISTORY ITEM, find the matching entry in the relevant
     ! registry (in State_Chm, State_Diag, State_Met) and get a pointer
-    ! to the data source 
+    ! to the data source
     !=======================================================================
     IF ( ItemNameUC(1:5) == StateChmUC ) THEN
 
@@ -1797,7 +2054,7 @@ CONTAINS
     ELSE
 
        !--------------------------------------------------------------------
-       ! Diagnostic State 
+       ! Diagnostic State
        !--------------------------------------------------------------------
        CALL Registry_Lookup( am_I_Root    = am_I_Root,                       &
                              Registry     = State_Diag%Registry,             &
@@ -1837,20 +2094,88 @@ CONTAINS
     ENDIF
 
     !=======================================================================
-    ! If the optional SUBSETDIMS argument is passed, then use that to
-    ! size the data arrays.  Otherwise assume the data arrays will be
-    ! the same size as the pointer to the data source (as will be true
-    ! in most cases.) 
+    ! If the optional SUBSETS and/or LEVELS arguments are passed, then use
+    ! these to size the data arrays.  Otherwise assume the data arrays will
+    ! be the same size as the pointer to the data source (as will be true
+    ! in most cases.)
     !=======================================================================
-    IF ( PRESENT( SubsetDims ) ) THEN
-       NX = SubsetDims(1)
-       NY = SubsetDims(2)
-       NZ = SubsetDims(3)
-    ELSE
-       NX = Dimensions(1)
-       NY = Dimensions(2)
-       NZ = Dimensions(3)
+
+    !-------------------------
+    ! Default values
+    !-------------------------
+
+    ! By default, use the size of the data array to define the
+    ! X0, Y0, X1, Y1, Z0, and Z1 indices for the subset region.
+    X0 = 1
+    X1 = MAX( Dimensions(1), 1 )
+    Y0 = 1
+    Y1 = MAX( Dimensions(2), 1 )
+    Z0 = 1
+    Z1 = MAX( Dimensions(3), 1 )
+
+    !-------------------------
+    ! Horizontal subsetting
+    !-------------------------
+
+    ! If SubsetInd has valid values, use them to redefine X0, Y0, X1, and Y1.
+    IF ( PRESENT( SubsetInd ) ) THEN
+       IF ( SubsetInd(1) /= UNDEFINED_INT ) X0 = SubsetInd(1)
+       IF ( SubsetInd(2) /= UNDEFINED_INT ) X1 = SubsetInd(2)
+       IF ( SubsetInd(3) /= UNDEFINED_INT ) Y0 = SubsetInd(3)
+       IF ( SubsetInd(4) /= UNDEFINED_INT ) Y1 = SubsetInd(4)
     ENDIF
+
+    !-------------------------
+    ! Vertical subsetting
+    !-------------------------
+
+    ! If LevelInd has valid values, use them to redefine Z0 and Z1.
+    IF ( PRESENT( LevelInd ) ) THEN
+       IF ( LevelInd(1) /= UNDEFINED_INT ) Z0 = LevelInd(1)
+       IF ( LevelInd(2) /= UNDEFINED_INT ) Z1 = LevelInd(2)
+    ENDIF
+
+    ! Error check X-dimension indices
+    IF ( X1 < X0 ) THEN
+       WRITE( ErrMsg, 100 ) X0, X1, TRIM( Collection%Name )
+ 100   FORMAT(  'Invalid X-dimension indices: ', 2i6, ' for collection', a )
+       CALL GC_Error( ErrMsg, RC, ThisLoc )
+       RETURN
+    ENDIF
+
+    ! Error-check Y-dimension indices
+    IF ( Y1 < Y0 ) THEN
+       WRITE( ErrMsg, 110 ) Y0, Y1, TRIM( Collection%Name )
+ 110   FORMAT(  'Invalid Y-dimension indices: ', 2i6, ' for collection', a )
+       CALL GC_Error( ErrMsg, RC, ThisLoc )
+       RETURN
+    ENDIF
+
+    ! Error-check Z-dimension indices
+    IF ( Z1 < Z0 ) THEN
+       WRITE( ErrMsg, 120 ) Z0, Z1, TRIM( Collection%Name )
+ 120   FORMAT(  'Invalid Y-dimension indices: ', 2i6, ' for collection', a )
+       CALL GC_Error( ErrMsg, RC, ThisLoc )
+       RETURN
+    ENDIF
+
+    ! Compute dimension extent
+    NX = X1 - X0 + 1
+    NY = Y1 - Y0 + 1
+    NZ = Z1 - Z0 + 1
+
+    ! Indices for subsetting the data
+    Subset_X = (/ X0, X1 /)
+    Subset_Y = (/ Y0, Y1 /)
+    Subset_Z = (/ Z0, Z1 /)
+
+    ! Save the subsets to the collection
+    Collection%X0 = X0
+    Collection%X1 = X1
+    Collection%Y0 = Y0
+    Collection%Y1 = Y1
+    Collection%Z0 = Z0
+    !NOTE: Z1 is not needed, we compute that later!
 
     !=======================================================================
     ! Now that we have obtained information (and pointers to the data)
@@ -1859,7 +2184,7 @@ CONTAINS
     !=======================================================================
     CALL HistItem_Create( am_I_Root      = am_I_Root,                        &
                           Item           = Item,                             &
-                          Id             = ItemCount,                        & 
+                          Id             = ItemCount,                        &
                           ContainerId    = CollectionId,                     &
                           Name           = ItemName,                         &
                           LongName       = Description,                      &
@@ -1867,6 +2192,9 @@ CONTAINS
                           OnLevelEdges   = OnLevelEdges,                     &
                           SpaceDim       = Rank,                             &
                           Operation      = Collection%Operation,             &
+                          Subset_X       = Subset_X,                         &
+                          Subset_Y       = Subset_Y,                         &
+                          Subset_Z       = Subset_Z,                         &
                           Source_KindVal = KindVal,                          &
                           Source_0d_8    = Ptr0d_8,                          &
                           Source_1d      = Ptr1d,                            &
@@ -1892,8 +2220,8 @@ CONTAINS
     ENDIF
 
     !=======================================================================
-    ! Attach this HISTORY ITEM to the METAHISTORY ITEM (aka list of HISTORY 
-    ! ITEMS) belonging to the HISTORY CONTAINER object for the given 
+    ! Attach this HISTORY ITEM to the METAHISTORY ITEM (aka list of HISTORY
+    ! ITEMS) belonging to the HISTORY CONTAINER object for the given
     ! diagnostic collection.
     !
     ! In other words, we are adding this diagnostic quantity to the list
@@ -1920,7 +2248,7 @@ CONTAINS
     ! and also whether vertical data is on the level centers or edges
     !=======================================================================
 
-    ! Define the X dimension of the collection from the 
+    ! Define the X dimension of the collection from the
     ! first HISTORY ITEM that has an X dimension
     IF ( Collection%NX == UNDEFINED_INT ) THEN
        SELECT CASE( Item%DimNames )
@@ -1944,7 +2272,7 @@ CONTAINS
        END SELECT
     ENDIF
 
-    ! Define the Z dimension of the collection from the first HISTORY ITEM 
+    ! Define the Z dimension of the collection from the first HISTORY ITEM
     ! that has a Z dimension. Also define whether the collection will
     ! contain data that is centered or edged on vertical levels.
     IF ( Collection%NZ == UNDEFINED_INT ) THEN
@@ -1963,9 +2291,9 @@ CONTAINS
     ENDIF
 
     !=======================================================================
-    ! Make sure that all the HISTORY ITEMS in this collection are 
+    ! Make sure that all the HISTORY ITEMS in this collection are
     ! placed on the level centers or edges, but not both.  The netCDF
-    ! COARDS/CF conventions do not allow for data on more than one 
+    ! COARDS/CF conventions do not allow for data on more than one
     ! vertical dimension per file.
     !=======================================================================
     IF ( Item%SpaceDim == 3 ) THEN
@@ -2019,13 +2347,13 @@ CONTAINS
 ! !IROUTINE: History_SetTime
 !
 ! !DESCRIPTION: Sets the time values for each HISTORY CONTAINER object
-!  that specifies a diagnostic collection. 
+!  that specifies a diagnostic collection.
 !\\
 !\\
 ! !INTERFACE:
 !
   SUBROUTINE History_SetTime( am_I_Root, RC )
-! 
+!
 ! !USES:
 !
     USE ErrCode_Mod
@@ -2033,11 +2361,11 @@ CONTAINS
     USE History_Util_Mod
     USE MetaHistContainer_Mod, ONLY : MetaHistContainer
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
     LOGICAL,  INTENT(IN)  :: am_I_Root        ! Are we on the root CPU?
 !
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
     INTEGER,  INTENT(OUT) :: RC               ! Success or failure
 !
@@ -2047,8 +2375,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  18 Aug 2017 - R. Yantosca - Initial version
-!  29 Aug 2017 - R. Yantosca - Remove HeartBeatDtMin as an argument; now the
-!                              Container object contains heartbeat timesteps
+!  See the subsequent Git history with the gitk browser!
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -2068,7 +2395,7 @@ CONTAINS
     RC         =  GC_SUCCESS
     Collection => NULL()
     ErrMsg     =  ''
-    ThisLoc    =  ' -> at History_SetTime (in History/history_mod.F90)' 
+    ThisLoc    =  ' -> at History_SetTime (in History/history_mod.F90)'
 
     !=======================================================================
     ! Loop through each DIAGNOSTIC COLLECTION in the master list
@@ -2076,9 +2403,9 @@ CONTAINS
 
     ! Point to the first COLLECTION in the master collection list
     Collection => CollectionList
-    
+
     ! As long as this current COLLECTION is valid ...
-    DO WHILE( ASSOCIATED( Collection ) ) 
+    DO WHILE( ASSOCIATED( Collection ) )
 
        ! Update the time settings for the next timestep
        CALL HistContainer_SetTime( am_I_Root   = am_I_Root,                  &
@@ -2114,14 +2441,14 @@ CONTAINS
 ! !IROUTINE: History_Update
 !
 ! !DESCRIPTION: For each HISTORY ITEM belonging to a diagnostic COLLECTION,
-!  the data from the target variable is copied or accumulated into the 
+!  the data from the target variable is copied or accumulated into the
 !  HISTORY ITEM's data field for further analysis.
 !\\
 !\\
 ! !INTERFACE:
 !
   SUBROUTINE History_Update( am_I_Root, RC )
-! 
+!
 ! !USES:
 !
     USE ErrCode_Mod
@@ -2133,26 +2460,21 @@ CONTAINS
     USE MetaHistItem_Mod,      ONLY : MetaHistItem
     USE Registry_Params_Mod
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
     LOGICAL, INTENT(IN)  :: am_I_Root  ! Are we on the root CPU?
 !
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
     INTEGER, INTENT(OUT) :: RC         ! Success or failure
 !
 ! !REMARKS:
-!  This routine is called from the main program at the end of each 
+!  This routine is called from the main program at the end of each
 !  "heartbeat" timestep.
 !
 ! !REVISION HISTORY:
 !  03 Aug 2017 - R. Yantosca - Initial version
-!  11 Aug 2017 - R. Yantosca - Remove references to 0d pointers, data arrays
-!  16 Aug 2017 - R. Yantosca - Now call TestTimeForAction to test if it is
-!                              time to update the diagnostic collection.
-!  21 Aug 2017 - R. Yantosca - Now get yyyymmdd, hhmmss from the container
-!  05 Mar 2019 - R. Yantosca - Call HistContainer_UpdateIvalSet to recompute
-!                              the UpdateAlarm interval for intervals > 1 mon.
+!  See the subsequent Git history with the gitk browser!
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -2161,7 +2483,7 @@ CONTAINS
 !
     ! Scalars
     LOGICAL                          :: DoUpdate
-    
+
     ! Strings
     CHARACTER(LEN=255)               :: ErrMsg
     CHARACTER(LEN=255)               :: ThisLoc
@@ -2182,7 +2504,7 @@ CONTAINS
     Current    => NULL()
     Item       => NULL()
     ErrMsg     =  ''
-    ThisLoc    =  ' -> at History_Update (in History/history_mod.F90)' 
+    ThisLoc    =  ' -> at History_Update (in History/history_mod.F90)'
 
     !=======================================================================
     ! Loop through each DIAGNOSTIC COLLECTION in the master list, and
@@ -2192,9 +2514,9 @@ CONTAINS
 
     ! Point to the first COLLECTION in the master collection list
     Collection => CollectionList
-    
+
     ! As long as this current COLLECTION is valid ...
-    DO WHILE( ASSOCIATED( Collection ) ) 
+    DO WHILE( ASSOCIATED( Collection ) )
 
        ! Point to the HISTORY CONTAINER object in this COLLECTION
        Container => Collection%Container
@@ -2217,7 +2539,7 @@ CONTAINS
        ! Debug output
        IF ( am_I_Root ) THEN
           WRITE( 6, 100 ) Container%Name
- 100      FORMAT( '     - Updating collection: ', a20 ) 
+ 100      FORMAT( '     - Updating collection: ', a20 )
        ENDIF
 #endif
 
@@ -2227,7 +2549,7 @@ CONTAINS
        ! data from the source pointer into the HISTORY ITEM's data array.
        !--------------------------------------------------------------------
 
-       ! Point to the first HISTORY ITEM belonging to the 
+       ! Point to the first HISTORY ITEM belonging to the
        ! HISTORY CONTAINER object for the current COLLECTION
        Current => Container%HistItems
 
@@ -2239,7 +2561,7 @@ CONTAINS
           Item => Current%Item
 
           ! Test the rank of the data
-          SELECT CASE( Item%SpaceDim ) 
+          SELECT CASE( Item%SpaceDim )
 
              !--------------------------------------------------------------
              ! Update 3-D data field
@@ -2303,7 +2625,7 @@ CONTAINS
                    IF ( Item%Operation == COPY_FROM_SOURCE ) THEN
                       Item%Data_2d  = Item%Source_2d
                       Item%nUpdates = 1.0_f8
-                   ELSE 
+                   ELSE
                       Item%Data_2d  = Item%Data_2d  + Item%Source_2d
                       Item%nUpdates = Item%nUpdates + 1.0_f8
                    ENDIF
@@ -2316,7 +2638,7 @@ CONTAINS
                       Item%nUpdates = 1.0_f8
                    ELSE
                       Item%Data_2d  = Item%Data_2d + Item%Source_2d_8
-                      Item%nUpdates = Item%nUpdates + 1.0_f8 
+                      Item%nUpdates = Item%nUpdates + 1.0_f8
                    ENDIF
 
                 ! 4-byte floating point
@@ -2327,7 +2649,7 @@ CONTAINS
                       Item%nUpdates = 1.0_f8
                    ELSE
                       Item%Data_2d  = Item%Data_2d + Item%Source_2d_4
-                      Item%nUpdates = Item%nUpdates + 1.0_f8 
+                      Item%nUpdates = Item%nUpdates + 1.0_f8
                    ENDIF
 
                 ! Integer
@@ -2336,9 +2658,9 @@ CONTAINS
                    IF ( Item%Operation == COPY_FROM_SOURCE ) THEN
                       Item%Data_2d  = Item%Source_2d_I
                       Item%nUpdates = 1.0_f8
-                   ELSE 
+                   ELSE
                       Item%Data_2d  = Item%Data_2d  + Item%Source_2d_I
-                      Item%nUpdates = Item%nUpdates + 1.0_f8 
+                      Item%nUpdates = Item%nUpdates + 1.0_f8
                    ENDIF
 
                 ENDIF
@@ -2354,9 +2676,9 @@ CONTAINS
                    IF ( Item%Operation == COPY_FROM_SOURCE ) THEN
                       Item%Data_1d  = Item%Source_1d
                       Item%nUpdates = 1.0_f8
-                   ELSE 
+                   ELSE
                       Item%Data_1d  = Item%Data_1d  + Item%Source_1d
-                      Item%nUpdates = Item%nUpdates + 1.0_f8 
+                      Item%nUpdates = Item%nUpdates + 1.0_f8
                    ENDIF
 
                 ! 8-byte floating point
@@ -2365,9 +2687,9 @@ CONTAINS
                    IF ( Item%Operation == COPY_FROM_SOURCE ) THEN
                       Item%Data_1d  = Item%Source_1d_8
                       Item%nUpdates = 1.0_f8
-                   ELSE 
+                   ELSE
                       Item%Data_1d  = Item%Data_1d  + Item%Source_1d_8
-                      Item%nUpdates = Item%nUpdates + 1.0_f8  
+                      Item%nUpdates = Item%nUpdates + 1.0_f8
                    ENDIF
 
                 ! 4-byte floating point
@@ -2376,9 +2698,9 @@ CONTAINS
                    IF ( Item%Operation == COPY_FROM_SOURCE ) THEN
                       Item%Data_1d  = Item%Source_1d_4
                       Item%nUpdates = 1.0_f8
-                   ELSE 
+                   ELSE
                       Item%Data_1d  = Item%Data_1d  + Item%Source_1d_4
-                      Item%nUpdates = Item%nUpdates + 1.0_f8  
+                      Item%nUpdates = Item%nUpdates + 1.0_f8
                    ENDIF
 
                 ! Integer
@@ -2386,10 +2708,10 @@ CONTAINS
 
                    IF ( Item%Operation == COPY_FROM_SOURCE ) THEN
                       Item%Data_1d  = Item%Source_1d_I
-                      Item%nUpdates = 1.0_f8 
+                      Item%nUpdates = 1.0_f8
                    ELSE
                       Item%Data_1d  = Item%Data_1d  + Item%Source_1d_I
-                      Item%nUpdates = Item%nUpdates + 1.0_f8 
+                      Item%nUpdates = Item%nUpdates + 1.0_f8
                    ENDIF
 
                 ENDIF
@@ -2405,9 +2727,9 @@ CONTAINS
                    IF ( Item%Operation == COPY_FROM_SOURCE ) THEN
                       Item%Data_0d  = Item%Source_0d_8
                       Item%nUpdates = 1.0_f8
-                   ELSE 
+                   ELSE
                       Item%Data_0d  = Item%Data_0d  + Item%Source_0d_8
-                      Item%nUpdates = Item%nUpdates + 1.0_f8 
+                      Item%nUpdates = Item%nUpdates + 1.0_f8
                    ENDIF
 
                 ENDIF
@@ -2415,7 +2737,7 @@ CONTAINS
           END SELECT
 
 ! Uncomment more detailed debug output if you need it!
-!#if defined( DEBUG ) 
+!#if defined( DEBUG )
 !          ! Debug output
 !          IF ( am_I_Root ) THEN
 !             WRITE( 6, 110 ) TRIM(Container%Name),                        &
@@ -2433,7 +2755,7 @@ CONTAINS
 
        !------------------------------------------------------------------
        ! Prepare to go to the next collection
-       !------------------------------------------------------------------ 
+       !------------------------------------------------------------------
 
        ! Recompute the update alarm interval if it 1 month or longer,
        ! as we will have to take into account leap years, etc.
@@ -2453,7 +2775,7 @@ CONTAINS
        Collection => Collection%Next
     ENDDO
 
-    !=======================================================================   
+    !=======================================================================
     ! Cleanup and quit
     !=======================================================================
 
@@ -2473,7 +2795,7 @@ CONTAINS
 ! !IROUTINE: History_Write
 !
 ! !DESCRIPTION: For each HISTORY ITEM belonging to a diagnostic COLLECTION,
-!  the data from the target variable is copied or accumulated into the 
+!  the data from the target variable is copied or accumulated into the
 !  HISTORY ITEM's data field for further analysis.
 !\\
 !\\
@@ -2492,25 +2814,22 @@ CONTAINS
     USE MetaHistItem_Mod,      ONLY : MetaHistItem
     USE Registry_Params_Mod
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
     LOGICAL,          INTENT(IN)  :: am_I_Root   ! Are we on the root CPU?
-    CHARACTER(LEN=*), INTENT(IN)  :: Spc_Units   ! Units of SC%Species array 
+    CHARACTER(LEN=*), INTENT(IN)  :: Spc_Units   ! Units of SC%Species array
 !
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
     INTEGER,          INTENT(OUT) :: RC          ! Success or failure
 !
 ! !REMARKS:
-!  This routine is called from the main program at the end of each 
+!  This routine is called from the main program at the end of each
 !  "heartbeat" timestep.
 !
 ! !REVISION HISTORY:
 !  03 Aug 2017 - R. Yantosca - Initial version
-!  21 Aug 2017 - R. Yantosca - Now get yyyymmdd, hhmmss from the container
-!  28 Aug 2017 - R. Yantosca - Now save the species units to the container
-!  06 Sep 2017 - R. Yantosca - Now recompute the file write and file close
-!                               intervals, if they are 1 month or longer
+!  See the subsequent Git history with the gitk browser!
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -2540,7 +2859,7 @@ CONTAINS
     Collection => NULL()
     Current    => NULL()
     ErrMsg     =  ''
-    ThisLoc    =  ' -> at History_Write (in History/history_mod.F90)' 
+    ThisLoc    =  ' -> at History_Write (in History/history_mod.F90)'
 
     !=======================================================================
     ! Loop through each DIAGNOSTIC COLLECTION in the master list, and
@@ -2549,9 +2868,9 @@ CONTAINS
 
     ! Point to the first COLLECTION in the master collection list
     Collection => CollectionList
-    
+
     ! As long as this current COLLECTION is valid ...
-    DO WHILE( ASSOCIATED( Collection ) ) 
+    DO WHILE( ASSOCIATED( Collection ) )
 
        ! Point to the HISTORY CONTAINER object in this COLLECTION
        Container => Collection%Container
@@ -2573,14 +2892,14 @@ CONTAINS
        !====================================================================
        IF ( DoClose ) THEN
 
-          ! Save the units of State_Chm%Species in the container, 
+          ! Save the units of State_Chm%Species in the container,
           ! so that we can redefine the unit string from "TBD".
           ! Copy into a temp variable so that Gfortran won't choke.
           TmpUnits            = Spc_Units
           Container%Spc_Units = TmpUnits
-         
+
           !-----------------------------------------------------------------
-          ! If the netCDF file specified by this collection is open, 
+          ! If the netCDF file specified by this collection is open,
           ! then close it and undefine all relevant object fields.
           !-----------------------------------------------------------------
           CALL History_Netcdf_Close( am_I_Root = am_I_Root,                  &
@@ -2596,7 +2915,7 @@ CONTAINS
 
           !-----------------------------------------------------------------
           ! Create the netCDF file for this HISTORY CONTAINER object,
-          ! Defines each variable, saves global attributes, and writes 
+          ! Defines each variable, saves global attributes, and writes
           ! the index variable data to the file.
           !-----------------------------------------------------------------
           CALL History_Netcdf_Define( am_I_Root  = am_I_Root,                &
@@ -2634,7 +2953,7 @@ CONTAINS
        IF ( DoWrite ) THEN
 
           !-----------------------------------------------------------------
-          ! Write the HISTORY ITEMS for this collection to the netCDF file.  
+          ! Write the HISTORY ITEMS for this collection to the netCDF file.
           !-----------------------------------------------------------------
           CALL History_Netcdf_Write( am_I_Root = am_I_Root,                  &
                                      Container = Container,                  &
@@ -2696,7 +3015,7 @@ CONTAINS
     USE DiagList_Mod,     ONLY: CollList,  Search_CollList
     USE History_Util_Mod
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
     CHARACTER(LEN=*),   INTENT(IN)  :: Line          ! Line to be searched
     CHARACTER(LEN=*),   INTENT(IN)  :: Pattern       ! Search pattern
@@ -2706,15 +3025,9 @@ CONTAINS
     CHARACTER(LEN=255), INTENT(OUT) :: MetaData      ! Metadata value
     INTEGER,            INTENT(OUT) :: nCollection   ! Collection Id
 !
-!
 ! !REVISION HISTORY:
-!  06 Jan 2015 - R. Yantosca - Initial version
-!  03 Aug 2017 - R. Yantosca - Make search algorithm more robust
-!  14 Aug 2017 - R. Yantosca - Initialize MetaData and nCollection
-!  15 Aug 2017 - R. Yantosca - Bug fix: TRIM string arguments to INDEX, and
-!                              initialize output arguments to undefined values
-!  01 Nov 2017 - R. Yantosca - Now get CleanText from charpak_mod.F90
-!  18 Jan 2018 - R. Yantosca - Bug fix: now DO N = 1, CollectionCount
+!  16 Aug 2017 - R. Yantosca - Initial version
+!  See the subsequent Git history with the gitk browser!
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -2741,7 +3054,7 @@ CONTAINS
 
     ! The collection name is between column 1 and the first "." character
     Ind  = INDEX( TRIM( Line ), '.' )
-    Name = Line(1:Ind-1) 
+    Name = Line(1:Ind-1)
 
     ! Exit if the collection name is not in the list of active collections
     CALL Search_CollList( .TRUE., CollList, Name, Found, RC )
@@ -2775,7 +3088,7 @@ CONTAINS
           ! If there are 2 substrings ...
           IF ( nSubStr == 2 ) THEN
 
-             ! Make sure the first substring matches the name 
+             ! Make sure the first substring matches the name
              ! of the metadata field we would like to obtain.
              ! if it does, then we have found a match, and so return
              IF ( SubStr(1)(N+2:P+N+1) == Pattern(1:P) ) THEN
@@ -2810,11 +3123,11 @@ CONTAINS
     USE History_Netcdf_Mod,    ONLY : History_Netcdf_Close
     USE MetaHistContainer_Mod, ONLY : MetaHistContainer
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
     LOGICAL, INTENT(IN)  :: am_I_Root   ! Are we on the root CPU?
 !
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
     INTEGER, INTENT(OUT) :: RC          ! Success or failure
 !
@@ -2824,6 +3137,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  16 Aug 2017 - R. Yantosca - Initial version
+!  See the subsequent Git history with the gitk browser!
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -2868,7 +3182,7 @@ CONTAINS
           Current => NULL()
           RETURN
        ENDIF
-       
+
        ! Go to the next entry in the list of HISTORY CONTAINERS
        Current => Current%Next
     ENDDO
@@ -2900,23 +3214,19 @@ CONTAINS
 ! !USES:
 !
     USE ErrCode_Mod
-    USE History_Netcdf_Mod,    ONLY : History_Netcdf_Cleanup
     USE MetaHistContainer_Mod, ONLY : MetaHistContainer_Destroy
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
      LOGICAL, INTENT(IN)  :: am_I_Root
 !
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
      INTEGER, INTENT(OUT) :: RC
 !
 ! !REVISION HISTORY:
 !  16 Jun 2017 - R. Yantosca - Initial version
-!  14 Aug 2017 - R. Yantosca - Call History_Netcdf_Close to close open files
-!  16 Aug 2017 - R. Yantosca - Move netCDF close code to History_Close_AllFiles
-!  26 Sep 2017 - R. Yantosca - Now call MetaHistItem_Destroy to finalize the
-!                              ContainerList object, instead of DEALLOCATE
+!  See the subsequent Git history with the gitk browser!
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -2948,16 +3258,6 @@ CONTAINS
      ENDIF
 
      !======================================================================
-     ! Then finalize the history_netcdf_mod.F90 module
-     !======================================================================
-     CALL History_Netcdf_Cleanup( am_I_Root, RC )
-     IF ( RC /= GC_SUCCESS ) THEN
-        ErrMsg = 'Error returned from "History_Netcdf_Cleanup"!'
-        CALL GC_Error( ErrMsg, RC, ThisLoc )
-        RETURN
-     ENDIF
-
-     !======================================================================
      ! And deallocate variables belonging to history_mod.F90
      !======================================================================
      IF ( ASSOCIATED( CollectionList ) ) THEN
@@ -2966,7 +3266,7 @@ CONTAINS
            ErrMsg = 'Could not destroy "CollectionList"!'
            CALL GC_Error( ErrMsg, RC, ThisLoc )
            RETURN
-        ENDIF        
+        ENDIF
      ENDIF
 
      IF ( ALLOCATED( CollectionName ) ) THEN
@@ -2986,20 +3286,11 @@ CONTAINS
            RETURN
         ENDIF
      ENDIF
-     
+
      IF ( ALLOCATED( CollectionTemplate ) ) THEN
         DEALLOCATE( CollectionTemplate, STAT=RC )
         IF ( RC /= GC_SUCCESS ) THEN
            ErrMsg = 'Could not deallocate "CollectionTemplate"!'
-           CALL GC_Error( ErrMsg, RC, ThisLoc )
-           RETURN
-        ENDIF
-     ENDIF
-
-     IF ( ALLOCATED( CollectionSubsetDims ) ) THEN
-        DEALLOCATE( CollectionSubsetDims, STAT=RC )
-        IF ( RC /= GC_SUCCESS ) THEN
-           ErrMsg = 'Could not deallocate "CollectionSubsetDims"!'
            CALL GC_Error( ErrMsg, RC, ThisLoc )
            RETURN
         ENDIF
@@ -3045,6 +3336,51 @@ CONTAINS
         DEALLOCATE( CollectionMode, STAT=RC )
         IF ( RC /= GC_SUCCESS ) THEN
            ErrMsg = 'Could not deallocate "CollectionMode"!'
+           CALL GC_Error( ErrMsg, RC, ThisLoc )
+           RETURN
+        ENDIF
+     ENDIF
+
+     IF ( ALLOCATED( CollectionLonRange ) ) THEN
+        DEALLOCATE( CollectionLonRange, STAT=RC )
+        IF ( RC /= GC_SUCCESS ) THEN
+           ErrMsg = 'Could not deallocate "CollectionLonRange"!'
+           CALL GC_Error( ErrMsg, RC, ThisLoc )
+           RETURN
+        ENDIF
+     ENDIF
+
+     IF ( ALLOCATED( CollectionLatRange ) ) THEN
+        DEALLOCATE( CollectionLatRange, STAT=RC )
+        IF ( RC /= GC_SUCCESS ) THEN
+           ErrMsg = 'Could not deallocate "CollectionLatRange"!'
+           CALL GC_Error( ErrMsg, RC, ThisLoc )
+           RETURN
+        ENDIF
+     ENDIF
+
+     IF ( ALLOCATED( CollectionSubsetInd ) ) THEN
+        DEALLOCATE( CollectionSubsetInd, STAT=RC )
+        IF ( RC /= GC_SUCCESS ) THEN
+           ErrMsg = 'Could not deallocate "CollectionSubsetInd"!'
+           CALL GC_Error( ErrMsg, RC, ThisLoc )
+           RETURN
+        ENDIF
+     ENDIF
+
+     IF ( ALLOCATED( CollectionLevels ) ) THEN
+        DEALLOCATE( CollectionLevels, STAT=RC )
+        IF ( RC /= GC_SUCCESS ) THEN
+           ErrMsg = 'Could not deallocate "CollectionLevels"!'
+           CALL GC_Error( ErrMsg, RC, ThisLoc )
+           RETURN
+        ENDIF
+     ENDIF
+
+     IF ( ALLOCATED( CollectionLevelInd ) ) THEN
+        DEALLOCATE( CollectionLevelInd, STAT=RC )
+        IF ( RC /= GC_SUCCESS ) THEN
+           ErrMsg = 'Could not deallocate "CollectionLevelInd"!'
            CALL GC_Error( ErrMsg, RC, ThisLoc )
            RETURN
         ENDIF

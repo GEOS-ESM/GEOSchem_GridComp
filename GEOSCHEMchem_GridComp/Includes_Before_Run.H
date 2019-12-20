@@ -1,3 +1,4 @@
+
 !EOC
 !------------------------------------------------------------------------------
 !     NASA/GSFC, Global Modeling and Assimilation Office, Code 910.1 and      !
@@ -112,21 +113,21 @@
   State_Met%PS1_WET(:,:) = PS(:,:) * 1.0e-2  ! Pa -> hPa
   State_Met%PS2_WET(:,:) = PS(:,:) * 1.0e-2  ! Pa -> hPa
 
-  ! MODIS LAI (GEOS-only. GCHP uses 3D XLAIMULTI rather than 2D input fields)
-  Ptr2d => NULL()
-  DO TT = 1, NSURFTYPE
-     landTypeInt = TT-1
-     WRITE ( landTypeStr, '(I2.2)' ) landTypeInt
-     importName = 'XLAI' // TRIM(landTypeStr)
-     CALL MAPL_GetPointer ( IMPORT, Ptr2D, TRIM(importName), __RC__ )
-     State_Met%XLAI_NATIVE(:,:,TT) = Ptr2D(:,:)
-     Ptr2D => NULL()
-  END DO
+!  ! MODIS LAI (GEOS-only. GCHP uses 3D XLAIMULTI rather than 2D input fields)
+!  Ptr2d => NULL()
+!  DO TT = 1, NSURFTYPE
+!     landTypeInt = TT-1
+!     WRITE ( landTypeStr, '(I2.2)' ) landTypeInt
+!     importName = 'XLAI' // TRIM(landTypeStr)
+!     CALL MAPL_GetPointer ( IMPORT, Ptr2D, TRIM(importName), __RC__ )
+!     State_Met%XLAI_NATIVE(:,:,TT) = Ptr2D(:,:)
+!     Ptr2D => NULL()
+!  END DO
   ! GCHP uses 3D field on level edges (one level per land type):
   ! Read MODIS leaf area index (LAI) from imports of post-processed MODIS files.
   ! The third dimension is land type and not level, possible to do with MAPL
   ! only because the # of land types is the same as # of level edges.
-  !State_Met%XLAI_NATIVE(:,:,:) = XLAIMULTI
+  State_Met%XLAI_NATIVE(:,:,:) = XLAIMULTI
 
   ! Get UV albedo for photolysis
   CALL MAPL_GetPointer ( IMPORT, Ptr2D, 'UV_ALBEDO', &

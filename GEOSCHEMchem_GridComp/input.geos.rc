@@ -1,7 +1,7 @@
 ------------------------+------------------------------------------------------
 %%% SIMULATION MENU %%% :
-Start YYYYMMDD, hhmmss  : 20130701 000000
-End   YYYYMMDD, hhmmss  : 20130801 000000
+Start YYYYMMDD, hhmmss  : 20160701 000000
+End   YYYYMMDD, hhmmss  : 20160701 010000
 Run directory           : ./
 Root data directory     : /discover/nobackup/cakelle2/data
 Met field               : geosfp
@@ -208,19 +208,9 @@ Turn on PBL Mixing?     : F
 %%% EMISSIONS MENU %%%  :
 Turn on emissions?      : T
 HEMCO Input file        : HEMCO_Config.rc
- => 1ppt MBL BRO Sim.?  : F
 Switches for UCX        :---
  => Use CH4 emissions?  : F
- => Turn on surface BCs :---
-    => CH4?             : F
-    => OCS?             : T
-    => CFCs?            : T
-    => Cl species?      : T
-    => Br species?      : T
-    => N2O?             : T
- => Set initial glob MRs:---
-    => strat. H2O?      : F
- => CFC emission year   : 0
+ => Set init. strat. H2O: F
 ------------------------+------------------------------------------------------
 %%% AEROSOL MENU %%%    :
 Online SULFATE AEROSOLS : T
@@ -229,7 +219,6 @@ Online CARBON  AEROSOLS : T
  => Use Brown Carbon?   : F
 Online COMPLEX SOA      : T
  => Semivolatile POA?   : F
-Spatial & seasonal OM/OC: F
 Online DUST    AEROSOLS : T
  => Acidic uptake ?     : F
 Online SEASALT AEROSOLS : T
@@ -283,8 +272,6 @@ Calculate SW fluxes?    : F
 Clear-sky flux?         : F
 All-sky flux?           : F
 Radiation Timestep [sec]: 10800
-------------------------+------------------------------------------------------
-------------------------+------------------------------------------------------
 ------------------------+------------------------------------------------------
 END OF FILE             :
 ------------------------+------------------------------------------------------

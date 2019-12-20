@@ -108,6 +108,7 @@
   LFR                |   s-1km-2   | xy  |   |    |   |   |     |      |    | lightning_flash_rate_density
   LFR_OFFLINE        |   s-1km-2   | xy  |   |    |   |   |     |      |    | lightning_flash_rate_density_from_offline_source
   CCTH               |      m      | xy  |   |    |   |   |     |      |    | convective_cloud_top_height
+  XLAIMULTI          | cm2_cm-2    | xyz | E |    |   |   |	|      | LAI_by_
 #===========
 # GCHP only:
 #===========
