@@ -870,7 +870,7 @@ if (mapl_am_i_root()) print*,trim(COMP_NAME),' Run_data END'
     ! local
     integer                               :: STATUS
     character (len=ESMF_MAXSTR)           :: Iam = 'DUng::aerosol_optics::mie_'
-    integer                               :: l, na
+    integer                               :: l, na, idx
 
 
     real(kind=8) :: bext_ (size(ext,1),size(ext,2),size(ext,3))
@@ -885,8 +885,9 @@ if (mapl_am_i_root()) print*,trim(COMP_NAME),' Run_data END'
      bssa_  = 0.0d0
      gasym_ = 0.0d0
 
-     do l = 1, na 
-         call Chem_MieQuery(mie_table, l, real(offset+1.), q(:,:,:,l), rh, bext, gasym=gasym, ssa=bssa)
+     do l = 1, na
+         idx = Chem_MieQueryIdx(mie_table, trim(aerosol_names(l)), __RC__)
+         call Chem_MieQuery(mie_table, idx, real(offset+1.), q(:,:,:,l), rh, bext, gasym=gasym, ssa=bssa)
 
          bext_  = bext_  +             bext     ! total extinction due to dust
          bssa_  = bssa_  +       (bssa*bext)    ! total scattering
