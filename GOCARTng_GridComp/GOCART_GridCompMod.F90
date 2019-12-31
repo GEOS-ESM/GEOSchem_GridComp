@@ -28,7 +28,6 @@ module GOCARTng_GridCompMod
 
 ! !PUBLIC MEMBER FUNCTIONS:
    PUBLIC  SetServices
-!   PUBLIC  Initialize
 
 ! Private State
   type GOCARTng_State
@@ -101,7 +100,7 @@ contains
 ! \newline
 
 ! !REVISION HISTORY: 
-!  14oct2019  E.Sherman  First attempt at refactoring for ESMF compatibility
+!  14oct2019  Sherman, da Silva, Darmenov, Clune - First attempt at refactoring for ESMF compatibility
 
 
 !EOP
@@ -131,8 +130,6 @@ contains
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) // '::' //  'SetServices'
 
-
-    if (mapl_am_i_root()) print*,'GOCARTng SetServices BEGIN'
 
 !   Wrap internal state for storing in GC
 !   -------------------------------------
@@ -227,14 +224,10 @@ contains
 
 
 
-
 !   Set generic services
 !   ----------------------------------
     call MAPL_GenericSetServices (GC, __RC__)
 
-
-
-    if (mapl_am_i_root()) print*,'GOCARTng SetServices END'
 
     RETURN_(ESMF_SUCCESS)
 
@@ -341,8 +334,6 @@ contains
 !   ---------------------------
     call getAERO_ (self, AEROlist, __RC__)
 
-if (mapl_am_i_root()) print*, trim(COMP_NAME), ' AEROlist = ', AEROlist
-
     call ESMF_AttributeSet(AERO, name='active_aerosol_instances', valueList=AEROlist, itemCount=size(AEROlist), __RC__)
 
 
@@ -367,13 +358,6 @@ if (mapl_am_i_root()) print*, trim(COMP_NAME), ' AEROlist = ', AEROlist
             end if
         end do     
     end do
-
-
-!   Verify that childen's states are properly added - for testing to be deleted
-    if(mapl_am_i_root()) print*,'GOCARTng AERO print state = '
-    if(mapl_am_i_root()) then
-        call esmf_stateprint(AERO, nestedFlag=.true.,__RC__)
-    end if
 
 
     ! state of the atmosphere
@@ -554,8 +538,6 @@ if (mapl_am_i_root()) print*, trim(COMP_NAME), ' AEROlist = ', AEROlist
     Iam = trim(COMP_NAME) // Iam
 
 
-if (mapl_am_i_root()) print*, trim(COMP_NAME),' RUN2 BEGIN'
-
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
     call MAPL_GetObjectFromGC ( GC, MAPL, RC=STATUS )
@@ -567,15 +549,9 @@ if (mapl_am_i_root()) print*, trim(COMP_NAME),' RUN2 BEGIN'
 
 !   Run the children
 !   -----------------
-!    do i = 1, size(GCS)
-!      call ESMF_GridCompRun (GCS(i), importState=GIM(i), exportState=GEX(i), clock=CLOCK, __RC__)
-!    end do
-
-! only run for DU.data for testing purposes
-    call ESMF_GridCompRun (GCS(1), importState=GIM(1), exportState=GEX(1), phase=2, clock=CLOCK, __RC__)
-
-
-if (mapl_am_i_root()) print*, trim(COMP_NAME),' RUN2 END'
+    do i = 1, size(GCS)
+      call ESMF_GridCompRun (GCS(i), importState=GIM(i), exportState=GEX(i), phase=2, clock=CLOCK, __RC__)
+    end do
 
     RETURN_(ESMF_SUCCESS)
 
@@ -746,8 +722,6 @@ if (mapl_am_i_root()) print*, trim(COMP_NAME),' RUN2 END'
 !   ------------------------
     call ESMF_AttributeGet(state, name='air_pressure_for_aerosol_optics', value=fld_name, __RC__)
     call MAPL_GetPointer(state, PLE, trim(fld_name), __RC__)
-
-!f(mapl_am_i_root()) print*,'GOCARTng aerosol_optics ple =',ple
 
     i1 = lbound(ple, 1); i2 = ubound(ple, 1)
     j1 = lbound(ple, 2); j2 = ubound(ple, 2)
