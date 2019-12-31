@@ -13,7 +13,7 @@ module DUng_GridCompMod
    USE ESMF
    USE MAPL_Mod
 
-   USE Chem_MieMod
+   USE Chem_MieMod2G
 
    implicit none
    private
