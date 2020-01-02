@@ -536,7 +536,7 @@ contains
      end if
 
         call MAPL_AddImportSpec(GC, &
-                                SHORT_NAME = 'CO_BIOMASS',  &
+                                SHORT_NAME = 'CO_BIOMASS_VOC',  &
                                 LONG_NAME  = 'CO Biomass Burning Emissions',  &
                                 UNITS      = 'kg m-2 s-1', &
                                 DIMS       = MAPL_DimsHorzOnly,    &
@@ -544,7 +544,7 @@ contains
                                 __RC__)
 
          call MAPL_AddImportSpec(GC, &
-                                SHORT_NAME = 'CO_BF',  &
+                                SHORT_NAME = 'CO_BF_VOC',  &
                                 LONG_NAME  = 'CO Biofuel Emissions',  &
                                 UNITS      = 'kg m-2 s-1', &
                                 DIMS       = MAPL_DimsHorzOnly,    &
@@ -552,7 +552,7 @@ contains
                                 __RC__)
     
          call MAPL_AddImportSpec(GC, &
-                                SHORT_NAME = 'CO_FS',  &
+                                SHORT_NAME = 'CO_FS_VOC',  &
                                 LONG_NAME  = 'CO Fossil Fuel Emissions',  &
                                 UNITS      = 'kg m-2 s-1', &
                                 DIMS       = MAPL_DimsHorzOnly,    &
@@ -1393,9 +1393,9 @@ contains
            call MAPL_GetPointer(import, q_OH,       'OH',         __RC__)
        end if
 
-       call MAPL_GetPointer(import, co_biomass_voc, 'CO_BIOMASS', __RC__)
-       call MAPL_GetPointer(import, co_bf_voc,      'CO_BF',      __RC__)
-       call MAPL_GetPointer(import, co_fs_voc,      'CO_FS',      __RC__)
+       call MAPL_GetPointer(import, co_biomass_voc, 'CO_BIOMASS_VOC', __RC__)
+       call MAPL_GetPointer(import, co_bf_voc,      'CO_BF_VOC',      __RC__)
+       call MAPL_GetPointer(import, co_fs_voc,      'CO_FS_VOC',      __RC__)
    end if
 
 !  Get Exports
