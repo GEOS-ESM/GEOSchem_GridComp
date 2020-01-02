@@ -41,7 +41,7 @@ H2O2                   'mol mol-1'          N        N               0          
 SOAG_EMIS              'm-2 s-1'            Y        N               0             none none     soag         /home/adarmeno/projects/SOAG/SOAG.emiss.x144_y91_t12.1990.nc4
 
 # CO emissions for VOC
-CO_BIOMASS_VOC         'kg m-2 s-1'         N        Y     %y4-%m2-%d2t12:00:00Z   none none     biomass       ExtData/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_so2.006.%y4%m2%d2.nc4
+CO_BIOMASS_VOC         'kg m-2 s-1'         N        Y     %y4-%m2-%d2t12:00:00Z   none none     biomass       ExtData/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_co.006.%y4%m2%d2.nc4
 CO_BF_VOC              'kg m-2 s-1'         Y        Y     %y4-%m2-%d2t12:00:00Z   none none     emcobf        ExtData/PIESA/sfc/co_biofuel_v2.x360_y181_t12.2001.nc
 CO_FS_VOC              'kg m-2 s-1'         Y        Y     %y4-%m2-%d2t12:00:00Z   none none     emcofs        ExtData/PIESA/sfc/co_fossilfuel_v2.x360_y181_t12.2001.nc
 
