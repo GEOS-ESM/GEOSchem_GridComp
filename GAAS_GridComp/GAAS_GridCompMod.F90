@@ -399,9 +399,11 @@ CONTAINS
     type(ESMF_Config)             :: CF          ! Universal Config 
     type(ESMF_Time)               :: Time     ! Current time
     type(ESMF_Alarm)              :: Alarm
+    type(ESMF_Alarm)              :: Predictor_Alarm
 
     integer                       :: nymd, nhms, i550nm, izAOD, iyAOD
     logical                       :: analysis_time, fexists 
+    logical                       :: PREDICTOR_STEP
 
     character(len=ESMF_MAXSTR)    :: comp_name
 
@@ -440,6 +442,9 @@ CONTAINS
    analysis_time = ESMF_AlarmIsRinging(Alarm,__RC__)
 #endif
 
+   call ESMF_ClockGetAlarm(Clock,'PredictorActive',Predictor_Alarm,__RC__)
+   PREDICTOR_STEP = ESMF_AlarmIsRinging( Predictor_Alarm,__RC__)
+
 !  For some reason the alarm above is not working.
 !  For now, hardwire this...
 !  -----------------------------------------------
@@ -454,7 +459,7 @@ CONTAINS
 
 !  Stop here if it is NOT analysis time
 !  -------------------------------------
-   if ( .not. analysis_time ) then
+   if ( PREDICTOR_STEP .or. (.not. analysis_time) ) then
       RETURN_(ESMF_SUCCESS)
    end if
 
