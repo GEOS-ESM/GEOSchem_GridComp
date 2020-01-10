@@ -295,7 +295,7 @@ contains
 
 ! Provide GOCART2G's AERO state
 ! -----------------------------
-  call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO2G',    &
+  call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO2G_RAD',    &
                                 CHILD_ID = GOCART2G, __RC__  )
 
 
@@ -760,7 +760,7 @@ contains
    type (ESMF_State)                   :: INTERNAL
    type (ESMF_State),          pointer :: GEX(:)
    type (ESMF_FieldBundle)             :: fBUNDLE
-   type (ESMF_State)                   :: AERO, AERO2G
+   type (ESMF_State)                   :: AERO, AERO2G_RAD
    type (ESMF_State)                   :: AERO_ACI
    type (ESMF_Config)                  :: CF, myCF
 
