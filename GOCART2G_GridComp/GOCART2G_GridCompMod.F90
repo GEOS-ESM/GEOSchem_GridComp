@@ -11,8 +11,9 @@ module GOCART2G_GridCompMod
 
 ! !USES:
 
-   USE ESMF
-   USE MAPL_Mod
+   use ESMF
+   use MAPL_Mod
+   use Chem_AeroGeneric
 
 ! !Establish the Childen's SetServices
 ! !-----------------------------------
@@ -27,7 +28,7 @@ module GOCART2G_GridCompMod
    private
 
 ! !PUBLIC MEMBER FUNCTIONS:
-   PUBLIC  SetServices
+   public  SetServices
 
 ! Private State
   type GOCART_State
@@ -38,12 +39,12 @@ module GOCART2G_GridCompMod
      character (len=ESMF_MAXSTR), pointer    :: instances_BC(:) => null()
      character (len=ESMF_MAXSTR), pointer    :: instances_OC(:) => null()
      character (len=ESMF_MAXSTR), pointer    :: instances_NI(:) => null()
-     integer                                 :: active_instances_DU = 0
-     integer                                 :: active_instances_SS = 0
-     integer                                 :: active_instances_SU = 0
-     integer                                 :: active_instances_BC = 0
-     integer                                 :: active_instances_OC = 0
-     integer                                 :: active_instances_NI = 0
+     integer                                 :: active_DU = 0
+     integer                                 :: active_SS = 0
+     integer                                 :: active_SU = 0
+     integer                                 :: active_BC = 0
+     integer                                 :: active_OC = 0
+     integer                                 :: active_NI = 0
   end type GOCART_State
 
   type wrap_
@@ -61,7 +62,7 @@ module GOCART2G_GridCompMod
 !
 !  25feb2005  da Silva   First crack.
 !  19jul2006  da Silva   First separate GOCART component.
-!  14Oct2019  E.Sherman, A.Darmenov, da Silva  First attempt at refactoring. 
+!  14Oct2019  E.Sherman, A.Darmenov, A. da Silva, T. Clune  First attempt at refactoring. 
 !
 !EOP
 !-------------------------------------------------------------------------
@@ -103,17 +104,14 @@ contains
 
 !****************************************************************************
 !
-! ErrLog Variables
-    character (len=ESMF_MAXSTR)                   :: IAm
-    integer                                       :: STATUS
-    character (len=ESMF_MAXSTR)                   :: COMP_NAME
-
 ! Locals
+    character (len=ESMF_MAXSTR)                   :: COMP_NAME 
     type (ESMF_Config)                            :: myCF
     type (GOCART_State), pointer                  :: self
     type (wrap_)                                  :: wrap
-
     integer                                       :: i,nq
+
+    __Iam__('SetServices')
 
 !****************************************************************************
 
@@ -122,7 +120,8 @@ contains
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
-    Iam = trim(COMP_NAME) // '::' //  'SetServices'
+
+    Iam = trim(COMP_NAME)//'::'//'SetServices'
 
 
 !   Wrap internal state for storing in GC
@@ -132,9 +131,9 @@ contains
 
 !   Set the Initialize, Run, Finalize entry points
 !   ------------------------------------------------
-    call MAPL_GridCompSetEntryPoint (GC, ESMF_METHOD_INITIALIZE,  Initialize,  __RC__)
-    call MAPL_GridCompSetEntryPoint (GC, ESMF_METHOD_RUN,  Run1, __RC__)
-    call MAPL_GridCompSetEntryPoint (GC, ESMF_METHOD_RUN,  Run2, __RC__)
+    call MAPL_GridCompSetEntryPoint (GC, ESMF_Method_Initialize,  Initialize,  __RC__)
+    call MAPL_GridCompSetEntryPoint (GC, ESMF_Method_Run,  Run1, __RC__)
+    call MAPL_GridCompSetEntryPoint (GC, ESMF_Method_Run,  Run2, __RC__)
 
 !   Store internal state in GC
 !   --------------------------
@@ -146,64 +145,42 @@ contains
     myCF = ESMF_ConfigCreate (__RC__)
     call ESMF_ConfigLoadFile (myCF, 'GOCART2G_GridComp.rc', __RC__)
 
-    call getInstances_('DU', myCF, instances=self%instances_DU, active_instances=self%active_instances_DU, __RC__)
-    call getInstances_('SS', myCF, instances=self%instances_SS, active_instances=self%active_instances_SS, __RC__)
-!    call getInstances_('SU', myCF, instances=self%instances_SU, active_instances=self%active_instances_SU, __RC__)
-!    call getInstances_('BC', myCF, instances=self%instances_BC, active_instances=self%active_instances_BC, __RC__)
-!    call getInstances_('OC', myCF, instances=self%instances_OC, active_instances=self%active_instances_OC, __RC__)
-!    call getInstances_('NI', myCF, instances=self%instances_NI, active_instances=self%active_instances_NI, __RC__)
+    call getInstances_('DU', myCF, instances=self%instances_DU, active_instances=self%active_DU, __RC__)
+    call getInstances_('SS', myCF, instances=self%instances_SS, active_instances=self%active_SS, __RC__)
+!    call getInstances_('SU', myCF, instances=self%instances_SU, active_instances=self%active_SU, __RC__)
+!    call getInstances_('BC', myCF, instances=self%instances_BC, active_instances=self%active_BC, __RC__)
+!    call getInstances_('OC', myCF, instances=self%instances_OC, active_instances=self%active_OC, __RC__)
+!    call getInstances_('NI', myCF, instances=self%instances_NI, active_instances=self%active_NI, __RC__)
 
     call ESMF_ConfigDestroy(myCF, __RC__)
 
 !   Create children`s gridded components and invoke their SetServices
+!   Active instances are created first
 !   -----------------------------------------------------------------
-    do i = 1, size(self%instances_DU)
-        DU2G = MAPL_AddChild(GC, NAME=trim(self%instances_DU(i)), SS=DU2GSetServices, __RC__)
-    end do
-
-    do i = 1, size(self%instances_SS)
-        SSng = MAPL_AddChild(GC, NAME=trim(self%instances_SS(i)), SS=SSngSetServices, __RC__)
-    end do
-
-!    do i = 1, size(self%instances_SU)
-!        SUng = MAPL_AddChild(GC, NAME=trim(self%instances_SU(i)), SS=SUngSetServices, __RC__)
-!    end do
-
-!    do i = 1, size(self%instances_BC)
-!        BCng = MAPL_AddChild(GC, NAME=trim(self%instances_BC(i)), SS=BCngSetServices, __RC__)
-!    end do
-
-!    do i = 1, size(self%instances_OC)
-!        OCng = MAPL_AddChild(GC, NAME=trim(self%instances_OC(i)), SS=OCngSetServices, __RC__)
-!    end do
-
-!    do i = 1, size(self%instances_NI)
-!        NIng = MAPL_AddChild(GC, NAME=trim(self%instances_(i)), SS=NIngSetServices, __RC__)
-!    end do
-
+    call createInstances_(self, GC, __RC__)
 
 !   Define EXPORT states
 !   This state is needed by radiation - It will contain 
 !   aerosols and aerosol optics
 !   --------------------------------------------------------
     call MAPL_AddExportSpec(GC,                       &
-       SHORT_NAME = 'AERO2G',                         &
-       LONG_NAME  = 'aerosol_mass_mixing_ratios_ng',  &
-       UNITS      = 'kg kg-1',                        &
-       DIMS       = MAPL_DimsHorzVert,                &
-       VLOCATION  = MAPL_VLocationCenter,             &
-       DATATYPE   = MAPL_StateItem, __RC__)
+       short_name = 'AERO2G_RAD',                         &
+       long_name  = 'aerosol_mass_mixing_ratios_ng',  &
+       units      = 'kg kg-1',                        &
+       dims       = MAPL_DimsHorzVert,                &
+       vlocation  = MAPL_VLocationCenter,             &
+       datatype   = MAPL_StateItem, __RC__)
 
 !   This state is needed by MOIST - It will contain
 !   aerosols
 !   --------------------------------------------------------
     call MAPL_AddExportSpec(GC,                       &
-       SHORT_NAME = 'AERO2G_ACI',                     &
-       LONG_NAME  = 'aerosol_cloud_interaction_ng',   &
-       UNITS      = 'kg kg-1',                        &
-       DIMS       = MAPL_DimsHorzVert,                &
-       VLOCATION  = MAPL_VLocationCenter,             &
-       DATATYPE   = MAPL_StateItem, __RC__)
+       short_name = 'AERO2G_ACI',                     &
+       long_name  = 'aerosol_cloud_interaction_ng',   &
+       units      = 'kg kg-1',                        &
+       dims       = MAPL_DimsHorzVert,                &
+       vlocation  = MAPL_VLocationCenter,             &
+       datatype   = MAPL_StateItem, __RC__)
 
 !   This bundle is needed by surface for snow albedo modification
 !   by aerosol settling and deposition
@@ -211,11 +188,11 @@ contains
 !                         This will require refactoring Radiation
 !   --------------------------------------------------------
     call MAPL_AddExportSpec(GC,                       &
-       SHORT_NAME = 'AERO2G_DP',                      &
-       LONG_NAME  = 'aerosol_deposition_ng',          &
-       UNITS      = 'kg m-2 s-1',                     &
-       DIMS       = MAPL_DimsHorzOnly,                &
-       DATATYPE   = MAPL_BundleItem, __RC__)
+       short_name = 'AERO2G_DP',                      &
+       long_name  = 'aerosol_deposition_ng',          &
+       units      = 'kg m-2 s-1',                     &
+       dims       = MAPL_DimsHorzOnly,                &
+       datatype   = MAPL_BundleItem, __RC__)
 
 
 
@@ -236,14 +213,14 @@ contains
 
 ! !INTERFACE:
 
-  subroutine Initialize (GC, IMPORT, EXPORT, CLOCK, RC)
+  subroutine Initialize (GC, import, export, clock, RC)
 
 ! !ARGUMENTS:
 
     type (ESMF_GridComp), intent(inout) :: GC     ! Gridded component 
-    type (ESMF_State),    intent(inout) :: IMPORT ! Import state
-    type (ESMF_State),    intent(inout) :: EXPORT ! Export state
-    type (ESMF_Clock),    intent(inout) :: CLOCK  ! The clock
+    type (ESMF_State),    intent(inout) :: import ! Import state
+    type (ESMF_State),    intent(inout) :: export ! Export state
+    type (ESMF_Clock),    intent(inout) :: clock  ! The clock
     integer, optional,    intent(  out) :: RC     ! Error code
 
 ! !DESCRIPTION:  This initializes the GOCART Grid Component. It primarily creates
@@ -257,20 +234,17 @@ contains
 
 !****************************************************************************
 ! ErrLog Variables
-
-    character (len=ESMF_MAXSTR)              :: IAm
-    integer                                  :: STATUS
-    character (len=ESMF_MAXSTR)              :: COMP_NAME
+    character (len=ESMF_MAXSTR)              :: COMP_NAME 
 
 ! Local derived type aliases
     type (MAPL_MetaComp),       pointer      :: MAPL
-    type (ESMF_GridComp),       pointer      :: GCS(:)
-    type (ESMF_State),          pointer      :: GEX(:)
-    type (ESMF_State)                        :: INTERNAL
+    type (ESMF_GridComp),       pointer      :: gcs(:)
+    type (ESMF_State),          pointer      :: gex(:)
+    type (ESMF_State)                        :: internal
     type (ESMF_Grid)                         :: grid
 
-    type (ESMF_State)                        :: AERO, AERO_ACI
-    type (ESMF_FieldBundle)                  :: AERO_DP, child_bundle
+    type (ESMF_State)                        :: aero, aero_aci
+    type (ESMF_FieldBundle)                  :: aero_dp, child_bundle
     type (ESMF_State)                        :: child_state
     type (ESMF_Field), allocatable           :: fieldList(:)
     type (ESMF_Field)                        :: field
@@ -279,10 +253,13 @@ contains
     type (GOCART_State),      pointer        :: self
     type (wrap_)                             :: wrap
 
-    character (len=ESMF_MAXSTR)              :: CHILD_NAME
-    character (len=ESMF_MAXSTR), allocatable :: AEROlist(:)
+    character (len=ESMF_MAXSTR)              :: child_name
+    character (len=ESMF_MAXSTR), allocatable :: aeroList(:)
 
     integer                                  :: i, j, k, fieldCount
+    integer                                  :: tot_active_inst
+
+    __Iam__('Initialize')
 
 !****************************************************************************
 
@@ -291,9 +268,9 @@ contains
 !   Get the target components name and set-up traceback handle.
 !   -----------------------------------------------------------
     call ESMF_GridCompGet (GC, grid=grid, name=COMP_NAME, __RC__)
-    Iam = trim(COMP_NAME) // '::' // 'Initialize'
+    Iam = trim(COMP_NAME)//'::'//'Initialize'
 
-   if (MAPL_AM_I_ROOT()) then
+   if (mapl_am_i_root()) then
        print *, TRIM(Iam)//': Starting...'
        print *,' '
    end if
@@ -304,7 +281,7 @@ contains
 
 !   Call Generic Initialize
 !   ----------------------------------------
-    call MAPL_GenericInitialize (GC, IMPORT, EXPORT, CLOCK, __RC__)
+    call MAPL_GenericInitialize (GC, import, export, clock, __RC__)
 
 !   Get my internal state
 !   ---------------------
@@ -314,100 +291,53 @@ contains
 
 !   Get children and their export states from my generic state
 !   -----------------------------------------------------------
-    call MAPL_Get (MAPL, GCS=GCS, GEX=GEX, __RC__ )
+    call MAPL_Get (MAPL, gcs=gcs, gex=gex, __RC__ )
 
-!   Fill AERO, AERO_ACI, and AERO_DP with the children's states
+
+!   Fill AERO2G_RAD, AERO2G_ACI, and AERO2G_DP with the children's states
 !   ------------------------------------------------------------
-    call ESMF_StateGet (EXPORT, 'AERO2G'     , AERO     , __RC__)
-    call ESMF_StateGet (EXPORT, 'AERO2G_ACI' , AERO_ACI , __RC__)
-    call ESMF_StateGet (EXPORT, 'AERO2G_DP'  , AERO_DP  , __RC__)
+    call ESMF_StateGet (export, 'AERO2G_RAD' , aero     , __RC__)
+    call ESMF_StateGet (export, 'AERO2G_ACI' , aero_aci , __RC__)
+    call ESMF_StateGet (export, 'AERO2G_DP'  , aero_dp  , __RC__)
 
 
 !   Add children's AERO states to GOCART2G's AERO states
-!   -----------------------------------------------------
-    do i = 1, size(GCS)
-        call ESMF_GridCompGet (GCS(i), NAME=CHILD_NAME, __RC__ )
-                
-        call ESMF_StateGet (GEX(i), trim(CHILD_NAME)//'_AERO', child_state, __RC__)
-        call ESMF_StateAdd (AERO, (/child_state/), __RC__)
+!   Only active instances are passed to radiation
+!   ------------------------------------------------------
+!   Active instances were created before passive instance. Summing the number of 
+!   active instances will provide the last index for active instances within gcs
+!   -----------------------------------------------------------------------   
+    tot_active_inst = self%active_DU + self%active_SS + self%active_SU + &
+                      self%active_BC + self%active_OC + self%active_NI
 
-        call ESMF_StateGet (GEX(i), trim(CHILD_NAME)//'_AERO_ACI', child_state, __RC__)
-        call ESMF_StateAdd (AERO_ACI, (/child_state/), __RC__)
+    do i = 1, tot_active_inst
+        call ESMF_GridCompGet (gcs(i), NAME=child_name, __RC__ )
 
-        call ESMF_StateGet (GEX(i), 'AERO_DP', child_bundle, __RC__)
+        call ESMF_StateGet (gex(i), trim(child_name)//'_AERO', child_state, __RC__)
+        call ESMF_StateAdd (aero, [child_state], __RC__)
+
+        call ESMF_StateGet (gex(i), trim(child_name)//'_AERO_ACI', child_state, __RC__)
+        call ESMF_StateAdd (aero_ACI, [child_state], __RC__)
+
+        call ESMF_StateGet (gex(i), 'AERO_DP', child_bundle, __RC__)
         call ESMF_FieldBundleGet (child_bundle, fieldCount=fieldCount, __RC__)
         allocate (fieldList(FieldCount), __STAT__)
         call ESMF_FieldBundleGet (child_bundle, fieldList=fieldList, __RC__)
-        call ESMF_FieldBundleAdd (AERO_DP, fieldList, __RC__)
+        call ESMF_FieldBundleAdd (aero_dp, fieldList, __RC__)
         deallocate(fieldList, __STAT__)
     end do
 
 
-    ! This attribute indicates if the aerosol optics method is implemented or not. 
-    ! Radiation will not call the aerosol optics method unless this attribute is 
-    ! explicitly set to true.
-    call ESMF_AttributeSet(aero, name='implements_aerosol_optics_method', value=.true., __RC__)
+    ! Add variables to AERO_RAD state. Used in aerosol optics calculations
+    call addAero (aero, label='air_pressure_for_aerosol_optics',             label2='PLE', grid=grid, __RC__)
+    call addAero (aero, label='relative_humidity_for_aerosol_optics',        label2='RH',  grid=grid, __RC__)
+    call addAero (aero, label='band_for_aerosol_optics',                     label2='0',   grid=grid, __RC__)
+    call addAero (aero, label='extinction_in_air_due_to_ambient_aerosol',    label2='EXT', grid=grid, __RC__)
+    call addAero (aero, label='single_scattering_albedo_of_ambient_aerosol', label2='SSA', grid=grid, __RC__)
+    call addAero (aero, label='asymmetry_parameter_of_ambient_aerosol',      label2='ASY', grid=grid, __RC__)
 
-    ! set list of active aerosol instances 
-    call getAERO_ (self, AEROlist, __RC__)
-    call ESMF_AttributeSet(AERO, name='active_aerosol_instances', valueList=AEROlist, itemCount=size(AEROlist), __RC__)
-
-    ! state of the atmosphere
-    call ESMF_AttributeSet(AERO, name='air_pressure_for_aerosol_optics',             value='PLE', __RC__)
-    call ESMF_AttributeSet(AERO, name='relative_humidity_for_aerosol_optics',        value='RH',  __RC__)
-
-    ! aerosol optics
-    call ESMF_AttributeSet(AERO, name='band_for_aerosol_optics',                     value=0,     __RC__)
-    call ESMF_AttributeSet(AERO, name='extinction_in_air_due_to_ambient_aerosol',    value='EXT', __RC__)
-    call ESMF_AttributeSet(AERO, name='single_scattering_albedo_of_ambient_aerosol', value='SSA', __RC__)
-    call ESMF_AttributeSet(AERO, name='asymmetry_parameter_of_ambient_aerosol',      value='ASY', __RC__)
-
-    ! add PLE to aero state
-    call ESMF_AttributeGet(AERO, name='air_pressure_for_aerosol_optics', value=field_name, __RC__)
-    if (field_name /= '') then
-        field = MAPL_FieldCreateEmpty(trim(field_name), grid, __RC__)
-
-        call MAPL_FieldAllocCommit(field, dims=MAPL_DimsHorzVert, location=MAPL_VLocationEdge, typekind=MAPL_R4, hw=0, __RC__)
-        call MAPL_StateAdd(AERO, field, __RC__)
-    end if
-
-    ! add RH to Aero state
-    call ESMF_AttributeGet(AERO, name='relative_humidity_for_aerosol_optics', value=field_name, __RC__)
-    if (field_name /= '') then
-        field = MAPL_FieldCreateEmpty(trim(field_name), grid, __RC__)
-
-        call MAPL_FieldAllocCommit(field, dims=MAPL_DimsHorzVert, location=MAPL_VLocationCenter, typekind=MAPL_R4, hw=0, __RC__)
-        call MAPL_StateAdd(AERO, field, __RC__)
-    end if
-
-    ! add EXT to aero state
-    call ESMF_AttributeGet(AERO, name='extinction_in_air_due_to_ambient_aerosol', value=field_name, __RC__)
-    if (field_name /= '') then
-        field = MAPL_FieldCreateEmpty(trim(field_name), grid, __RC__)
-
-        call MAPL_FieldAllocCommit(field, dims=MAPL_DimsHorzVert, location=MAPL_VLocationCenter, typekind=MAPL_R4, hw=0, __RC__)
-        call MAPL_StateAdd(AERO, field, __RC__)
-    end if
-
-    ! add SSA to aero state
-    call ESMF_AttributeGet(AERO, name='single_scattering_albedo_of_ambient_aerosol', value=field_name, __RC__)
-    if (field_name /= '') then
-        field = MAPL_FieldCreateEmpty(trim(field_name), grid, __RC__)
-
-        call MAPL_FieldAllocCommit(field, dims=MAPL_DimsHorzVert, location=MAPL_VLocationCenter, typekind=MAPL_R4, hw=0, __RC__)
-        call MAPL_StateAdd(AERO, field, __RC__)
-    end if
-
-    ! add ASY to aero state
-    call ESMF_AttributeGet(AERO, name='asymmetry_parameter_of_ambient_aerosol', value=field_name, RC=STATUS)
-    if (field_name /= '') then
-        field = MAPL_FieldCreateEmpty(trim(field_name), grid, __RC__)
-
-        call MAPL_FieldAllocCommit(field, dims=MAPL_DimsHorzVert, location=MAPL_VLocationCenter, typekind=MAPL_R4, hw=0, __RC__)
-        call MAPL_StateAdd(AERO, field, __RC__)
-    end if
-    ! attach the aerosol optics method
-    call ESMF_MethodAdd(AERO, label='run_aerosol_optics', userRoutine=run_aerosol_optics, __RC__)
+    ! Attach the aerosol optics method
+    call ESMF_MethodAdd (aero, label='run_aerosol_optics', userRoutine=run_aerosol_optics, __RC__)
 
 
     RETURN_(ESMF_SUCCESS)
@@ -416,50 +346,45 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !BOP
-! !IROUTINE: RUN -- Run method for the CONVECT component
+! !IROUTINE: RUN -- Run method for GOCART2G 
 
 ! !INTERFACE:
 
-  subroutine Run1 (GC, IMPORT, EXPORT, CLOCK, RC)
+  subroutine Run1 (GC, import, export, clock, RC)
 
-    ! !ARGUMENTS:
-
+! !ARGUMENTS:
     type (ESMF_GridComp), intent(inout) :: GC     ! Gridded component 
-    type (ESMF_State),    intent(inout) :: IMPORT ! Import state
-    type (ESMF_State),    intent(inout) :: EXPORT ! Export state
-    type (ESMF_Clock),    intent(inout) :: CLOCK  ! The clock
+    type (ESMF_State),    intent(inout) :: import ! Import state
+    type (ESMF_State),    intent(inout) :: export ! Export state
+    type (ESMF_Clock),    intent(inout) :: clock  ! The clock
     integer, optional,    intent(  out) :: RC     ! Error code:
 
-! !DESCRIPTION: This version uses the MAPL\_GenericSetServices. This function sets
-!                the Initialize and Finalize services, as well as allocating
+! !DESCRIPTION: Run method 
 
 !EOP
 
 !****************************************************************************
 ! ErrLog Variables
-
-    character(len=ESMF_MAXSTR)          :: IAm
-    integer                             :: STATUS
     character(len=ESMF_MAXSTR)          :: COMP_NAME
 
 ! Local derived type aliases
-
     type (MAPL_MetaComp),      pointer  :: MAPL
-    type (ESMF_GridComp),      pointer  :: GCS(:)
-    type (ESMF_State),         pointer  :: GIM(:)
-    type (ESMF_State),         pointer  :: GEX(:)
-    type (ESMF_State)                   :: INTERNAL
+    type (ESMF_GridComp),      pointer  :: gcs(:)
+    type (ESMF_State),         pointer  :: gim(:)
+    type (ESMF_State),         pointer  :: gex(:)
+    type (ESMF_State)                   :: internal
 
     integer                             :: i
+
+    __Iam__('Run1')
 
 !****************************************************************************
 ! Begin... 
 
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
-    Iam = 'Run1'
     call ESMF_GridCompGet( GC, NAME=COMP_NAME, __RC__ )
-    Iam = trim(COMP_NAME) // Iam
+    Iam = trim(COMP_NAME)//'::'//Iam
 
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
@@ -468,12 +393,12 @@ contains
 
 !   Get parameters from generic state.
 !   -----------------------------------
-    call MAPL_Get ( MAPL, GCS=GCS, GIM=GIM, GEX=GEX, INTERNAL_ESMF_STATE=INTERNAL, __RC__ )
+    call MAPL_Get ( MAPL, gcs=gcs, gim=gim, gex=gex, INTERNAL_ESMF_STATE=internal, __RC__ )
 
 !   Run the children
 !   -----------------
-    do i = 1, size(GCS)
-      call ESMF_GridCompRun (GCS(i), importState=GIM(i), exportState=GEX(i), clock=CLOCK, __RC__)
+    do i = 1, size(gcs)
+      call ESMF_GridCompRun (gcs(i), importState=gim(i), exportState=gex(i), phase=1, clock=clock, __RC__)
     end do
 
 
@@ -484,18 +409,17 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !BOP
-! !IROUTINE: RUN -- Run method for the CONVECT component
+! !IROUTINE: RUN2 -- Run2 method for GOCART2G component
 
 ! !INTERFACE:
 
-  subroutine Run2 (GC, IMPORT, EXPORT, CLOCK, RC)
+  subroutine Run2 (GC, import, export, clock, RC)
 
-    ! !ARGUMENTS:
-
+! !ARGUMENTS:
     type (ESMF_GridComp), intent(inout) :: GC     ! Gridded component 
-    type (ESMF_State),    intent(inout) :: IMPORT ! Import state
-    type (ESMF_State),    intent(inout) :: EXPORT ! Export state
-    type (ESMF_Clock),    intent(inout) :: CLOCK  ! The clock
+    type (ESMF_State),    intent(inout) :: import ! Import state
+    type (ESMF_State),    intent(inout) :: export ! Export state
+    type (ESMF_Clock),    intent(inout) :: clock  ! The clock
     integer, optional,    intent(  out) :: RC     ! Error code:
 
 ! !DESCRIPTION: This version uses the MAPL\_GenericSetServices. This function sets
@@ -505,29 +429,26 @@ contains
 
 !****************************************************************************
 ! ErrLog Variables
-
-    character(len=ESMF_MAXSTR)          :: IAm
-    integer                             :: STATUS
     character(len=ESMF_MAXSTR)          :: COMP_NAME
 
 ! Local derived type aliases
-
     type (MAPL_MetaComp),      pointer  :: MAPL
-    type (ESMF_GridComp),      pointer  :: GCS(:)
-    type (ESMF_State),         pointer  :: GIM(:)
-    type (ESMF_State),         pointer  :: GEX(:)
-    type (ESMF_State)                   :: INTERNAL
+    type (ESMF_GridComp),      pointer  :: gcs(:)
+    type (ESMF_State),         pointer  :: gim(:)
+    type (ESMF_State),         pointer  :: gex(:)
+    type (ESMF_State)                   :: internal
 
     integer                             :: i
+
+    __Iam__('Run2')
 
 !****************************************************************************
 ! Begin... 
 
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
-    Iam = 'Run2'
     call ESMF_GridCompGet( GC, NAME=COMP_NAME, __RC__ )
-    Iam = trim(COMP_NAME) // Iam
+    Iam = trim(COMP_NAME)//'::'//Iam
 
 
 !   Get my internal MAPL_Generic state
@@ -537,12 +458,12 @@ contains
 
 !   Get parameters from generic state.
 !   -----------------------------------
-    call MAPL_Get ( MAPL, GCS=GCS, GIM=GIM, GEX=GEX, INTERNAL_ESMF_STATE=INTERNAL, __RC__ )
+    call MAPL_Get ( MAPL, gcs=gcs, gim=gim, gex=gex, INTERNAL_ESMF_STATE=internal, __RC__ )
 
 !   Run the children
 !   -----------------
-    do i = 1, size(GCS)
-      call ESMF_GridCompRun (GCS(i), importState=GIM(i), exportState=GEX(i), phase=2, clock=CLOCK, __RC__)
+    do i = 1, size(gcs)
+      call ESMF_GridCompRun (gcs(i), importState=gim(i), exportState=gex(i), phase=2, clock=clock, __RC__)
     end do
 
     RETURN_(ESMF_SUCCESS)
@@ -566,11 +487,11 @@ contains
     character (len=ESMF_MAXSTR), pointer             :: instances(:)
 
 !   locals
-    integer                                          :: STATUS
-    character (len=ESMF_MAXSTR)                      :: Iam = 'GOCART2G::getInstances_'
-
     integer                                          :: i, n_inst_act, n_inst_pass
     character (len=ESMF_MAXSTR)                      :: inst_name
+
+    __Iam__('GOCART2G::getInstances_')
+
 !--------------------------------------------------------------------------------------
 
 !   Begin...
@@ -598,75 +519,56 @@ contains
 
 
 !====================================================================================
-  
-  subroutine getAERO_ (self, AEROlist, rc)
+  subroutine createInstances_ (self, GC, rc)
 
-!   Description: Fills the AEROlist with all active instances of each GOCART2G child.
-!                Active instances are defined in 'ACTIVE_INSTANCES_XX:' in GOCART2G_GridComp.rc 
-!                If additional GOCART2g children are added, this subroutine will need to be updated.
-
+!   Description: Creates GOCART2G children. Active instances must be created first. If
+!     additional GOCART2g children are added, this subroutine will need to be updated.
 
     implicit none
 
-    type (GOCART_State), pointer,                   intent(in   )     :: self
-    character (len=ESMF_MAXSTR), allocatable,       intent(inout)     :: AEROlist(:)  !names of active instances 
-    integer,                                        intent(  out)     :: rc
+    type (GOCART_State), pointer,            intent(in   )     :: self
+    type (ESMF_GridComp),                    intent(inout)     :: GC
+    integer,                                 intent(  out)     :: rc
 
-!   locals
-    integer                                              :: STATUS
-    character (len=ESMF_MAXSTR)                          :: Iam = 'GOCART2G::getAERO_'
-    integer                                              :: i, ind, tot_active_inst
-!--------------------------------------------------------------------------------------
+    ! locals
+    integer                                                    :: i
 
+    __Iam__('GOCART2G::createInstances_')
+
+!-----------------------------------------------------------------------------------
 !   Begin...
 
-!   !Get total number of active instances
-    tot_active_inst = self%active_instances_DU + self%active_instances_SS + self%active_instances_SU + &
-                      self%active_instances_BC + self%active_instances_OC + self%active_instances_NI
-
-    allocate (AEROlist(tot_active_inst), __STAT__)
-
-    ind = 1
-
-!   !Fill the AEROlist with names of the active instances        
-    do i = 1, self%active_instances_DU
-        AEROlist(ind) = self%instances_DU(i)
-        ind = ind + 1
+!   Active instances must be created first! This ordering is necessary for
+!   filing the AERO states that are passed to radiation.
+    do i = 1, self%active_DU
+        DU2G = MAPL_AddChild(GC, NAME=trim(self%instances_DU(i)), SS=DU2GSetServices, __RC__)
     end do
 
-    do i = 1, self%active_instances_SS
-        AEROlist(ind) = self%instances_SS(i)
-        ind = ind + 1
+    do i = 1, self%active_SS
+        SSng = MAPL_AddChild(GC, NAME=trim(self%instances_SS(i)), SS=SSngSetServices, __RC__)
     end do
 
-    do i = 1, self%active_instances_SU
-        AEROlist(ind) = self%instances_SU(i)
-        ind = ind + 1
-    end do
+!   Create passive instances after active instances
+    if ((size(self%instances_DU)) >= (self%active_DU+1)) then
+        do i = self%active_DU+1, size(self%instances_DU)
+            DU2G = MAPL_AddChild(GC, NAME=trim(self%instances_DU(i)), SS=DU2GSetServices, __RC__)
+        end do
+    end if
 
-    do i = 1, self%active_instances_BC
-        AEROlist(ind) = self%instances_BC(i)
-        ind = ind + 1
-    end do
+    if ((size(self%instances_SS)) >= (self%active_SS+1)) then
+        do i = self%active_SS+1, size(self%instances_SS)
+            DU2G = MAPL_AddChild(GC, NAME=trim(self%instances_SS(i)), SS=SSngSetServices, __RC__)
+        end do
+    end if
 
-    do i = 1, self%active_instances_OC
-        AEROlist(ind) = self%instances_OC(i)
-        ind = ind + 1
-    end do
-
-    do i = 1, self%active_instances_NI
-        AEROlist(ind) = self%instances_NI(i)
-        ind = ind + 1
-    end do
 
     RETURN_(ESMF_SUCCESS)
 
-  end subroutine getAERO_
+  end subroutine createInstances_
 
 
-!====================================================================================
-
-  subroutine run_aerosol_optics(state, rc)
+!===================================================================================
+  subroutine run_aerosol_optics (state, rc)
 
     implicit none
 
@@ -684,15 +586,16 @@ contains
     real, dimension(:,:,:),pointer                   :: ext_, ssa_, asy_      ! (lon:,lat:,lev:,band:)
     real, dimension(:,:,:), allocatable              :: ext,  ssa,  asy       ! (lon:,lat:,lev:,band:)
 
-    integer                                          :: i 
+    integer                                          :: i, n, b, j
     integer                                          :: i1, j1, i2, j2, km
     integer                                          :: band
     integer, parameter                               :: n_bands = 1
 
-    character (len=ESMF_MAXSTR), allocatable         :: AEROlist(:)
+    character (len=ESMF_MAXSTR), allocatable         :: itemList(:), aeroList(:)
     type (ESMF_State)                                :: child_state
-    real, pointer,     dimension(:,:,:)              :: AS_PTR_3D
+    real, pointer,     dimension(:,:,:)              :: as_ptr_3d
 
+    type (ESMF_StateItem_Flag), allocatable          :: itemTypes(:)
 
     __Iam__('GOCART2G::run_aerosol_optics')
 
@@ -723,64 +626,88 @@ contains
              asy(i1:i2,j1:j2,km), __STAT__)
 
 
-    call ESMF_AttributeGet (state, name='active_aerosol_instances', itemCount=i, __RC__)
-    allocate (AEROlist(i), __STAT__)
-    call ESMF_AttributeGet (state, name='active_aerosol_instances', valueList=AEROlist, __RC__)
+!   Get list of child states within state and add to aeroList
+!   ---------------------------------------------------------
+    call ESMF_StateGet (state, itemCount=n, __RC__)
+    allocate (itemList(n), __STAT__)
+    allocate (itemTypes(n), __STAT__)
+    call ESMF_StateGet (state, itemNameList=itemList, itemTypeList=itemTypes, __RC__)
+
+    b=0
+    do i = 1, n
+        if (itemTypes(i) == ESMF_StateItem_State) then
+            b = b + 1
+        end if
+    end do
+
+    allocate (aeroList(b), __STAT__)
+
+    j = 1
+    do i = 1, n
+        if (itemTypes(i) == ESMF_StateItem_State) then
+            aeroList(j) = trim(itemList(i))
+            j = j + 1
+        end if
+    end do
 
     ext = 0.0d0
     ssa = 0.0d0
     asy = 0.0d0
 
 
-   do i = 1, size(AEROlist)
-        call ESMF_StateGet(state, trim(AEROlist(i))//'_AERO', child_state, __RC__)
 
-!       ! set RH for aerosol optics
+!  ! Get aerosol optic properties from children
+   do i = 1, size(aeroList)
+        call ESMF_StateGet(state, trim(aeroList(i)), child_state, __RC__)
+
+!       ! set RH in child's aero state
         call ESMF_AttributeGet(child_state, name='relative_humidity_for_aerosol_optics', value=fld_name, __RC__)
 
         if (fld_name /= '') then
-            call MAPL_GetPointer(child_state, AS_PTR_3D, trim(fld_name), __RC__)
-            AS_PTR_3D = RH
+            call MAPL_GetPointer(child_state, as_ptr_3d, trim(fld_name), __RC__)
+            as_ptr_3d = rh
         end if
 
-!       ! set PLE for aerosol optics
+!       ! set PLE in child's aero state
         call ESMF_AttributeGet(child_state, name='air_pressure_for_aerosol_optics', value=fld_name, __RC__)
 
         if (fld_name /= '') then
-            call MAPL_GetPointer(child_state, AS_PTR_3D, trim(fld_name), __RC__)
-            AS_PTR_3D = PLE
+            call MAPL_GetPointer(child_state, as_ptr_3d, trim(fld_name), __RC__)
+            as_ptr_3d = ple
         end if
 
+!       ! set band in child's aero state
         call ESMF_AttributeSet(child_state, name='band_for_aerosol_optics', value=band, __RC__)
 
-!       ! execute the aero provider's optics method
+!       ! execute the aerosol optics method
         call ESMF_MethodExecute(child_state, label="aerosol_optics", __RC__)
 
-!       ! EXT from AERO_PROVIDER
+!       ! Retrieve EXT from each child
         call ESMF_AttributeGet(child_state, name='extinction_in_air_due_to_ambient_aerosol', value=fld_name, __RC__)
         if (fld_name /= '') then
             call MAPL_GetPointer(child_state, ext_, trim(fld_name), __RC__)
         end if
 
-!       ! SSA from AERO_PROVIDER
+!       ! Retrieve SSA from each child
         call ESMF_AttributeGet(child_state, name='single_scattering_albedo_of_ambient_aerosol', value=fld_name, __RC__)
         if (fld_name /= '') then
             call MAPL_GetPointer(child_state, ssa_, trim(fld_name), __RC__)
         end if
 
-!       ! ASY from AERO_PROVIDER
+!       ! Retrieve ASY from each child
         call ESMF_AttributeGet(child_state, name='asymmetry_parameter_of_ambient_aerosol', value=fld_name, __RC__)
         if (fld_name /= '') then
             call MAPL_GetPointer(child_state, asy_, trim(fld_name), __RC__)
         end if
 
+!       ! Sum aerosol optic properties from each child
         ext = ext + ext_
         ssa = ssa + ssa_
         asy = asy + asy_
     end do
 
 
-
+!   ! Set ext, ssa, asy to equal the sum of ext, ssa, asy from the children. This is what is passed to radiation.
     call ESMF_AttributeGet(state, name='extinction_in_air_due_to_ambient_aerosol', value=fld_name, __RC__)
     if (fld_name /= '') then
         call MAPL_GetPointer(state, var, trim(fld_name), __RC__)
