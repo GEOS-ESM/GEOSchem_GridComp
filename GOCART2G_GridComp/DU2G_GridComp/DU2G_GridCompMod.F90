@@ -10,10 +10,10 @@
 module DU2G_GridCompMod
 
 !  !USES:
-   USE ESMF
-   USE MAPL_Mod
-
-   USE Chem_MieMod2G
+   use ESMF
+   use MAPL_Mod
+   use Chem_MieMod2G
+   use Chem_AeroGeneric
 
    implicit none
    private
@@ -23,7 +23,7 @@ module DU2G_GridCompMod
    integer, parameter :: instanceData          = 2
 
 ! !PUBLIC MEMBER FUNCTIONS:
-   PUBLIC  SetServices
+   public  SetServices
 
 
 ! !DESCRIPTION: This module implements GOCART2G's Dust (DU) Gridded Component.
@@ -62,27 +62,25 @@ contains
 
 !****************************************************************************
 !
-! ErrLog Variables
-    character (len=ESMF_MAXSTR)                 :: IAm
-    integer                                     :: STATUS
+!   Locals
     character (len=ESMF_MAXSTR)                 :: COMP_NAME
-
     type (ESMF_Config)                          :: cfg
 
     character (len=ESMF_MAXSTR)                 :: field_name
     character (len=ESMF_MAXSTR), allocatable    :: aerosol_names(:)
 
-
     integer                                     :: n, i, nCols, aero_n
     real                                        :: DEFVAL
     logical                                     :: data_driven = .true.
+    integer, parameter                          :: bins = 5
+
+    __Iam__('SetServices')
 
 !****************************************************************************
 !   Begin...
 
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
-    Iam = 'SetServices'
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) //'::'// Iam
 
@@ -110,9 +108,9 @@ contains
 
 !   Set entry points
 !   ------------------------
-    call MAPL_GridCompSetEntryPoint (GC, ESMF_METHOD_INITIALIZE,  Initialize, __RC__)
-    call MAPL_GridCompSetEntryPoint (GC, ESMF_METHOD_RUN, Run1, __RC__)
-    call MAPL_GridCompSetEntryPoint (GC, ESMF_METHOD_RUN, Run2, __RC__)
+    call MAPL_GridCompSetEntryPoint (GC, ESMF_Method_Initialize,  Initialize, __RC__)
+    call MAPL_GridCompSetEntryPoint (GC, ESMF_Method_Run, Run1, __RC__)
+    call MAPL_GridCompSetEntryPoint (GC, ESMF_Method_Run, Run2, __RC__)
 
 !   Is DU data driven?
 !   ------------------
@@ -121,7 +119,7 @@ contains
 
 !   INTERNAL STATE
 !   ---------------
-!   Default INTERNAL state values
+!   Default internal state values
 !   -----------------------------
     DEFVAL = 0.0
 
@@ -129,73 +127,73 @@ contains
 !   ---------------------------------
     do i = 1, aero_n
         call MAPL_AddInternalSpec(GC,                                    &
-          SHORT_NAME = trim(COMP_NAME)//'::'//trim(aerosol_names(i)),    &
-          LONG_NAME  = 'Dust Mixing Ratio (bin '//trim(field_name)//')', &
-          UNITS      = 'kg kg-1',                                        &
-          RESTART    = MAPL_RestartOptional,                             &
-          DEFAULT    = DEFVAL,                                           &
-          DIMS       = MAPL_DimsHorzVert,                                &
-          VLOCATION  = MAPL_VLocationCenter, __RC__)
+          short_name = trim(COMP_NAME)//'::'//trim(aerosol_names(i)),    &
+          long_name  = 'Dust Mixing Ratio (bin '//trim(field_name)//')', &
+          units      = 'kg kg-1',                                        &
+          restart    = MAPL_RestartOptional,                             &
+          default    = DEFVAL,                                           &
+          dims       = MAPL_DimsHorzVert,                                &
+          vlocation  = MAPL_VLocationCenter, __RC__)
     end do
 
 
 !   IMPORT STATE
 !   -------------
     if (data_driven) then
-       do i = 1, 5 
+       do i = 1, bins 
            write (field_name, '(A, I0.3)') '', i
             call MAPL_AddImportSpec(GC,                                     &
-              SHORT_NAME = 'climdu'//trim(field_name),                        &
-              LONG_NAME  = 'Dust Mixing Ratio (bin '//trim(field_name)//')',  &
-              UNITS      = 'kg kg-1',                                         &
-              RESTART    = MAPL_RestartSkip,                                  &
-              DIMS       = MAPL_DimsHorzVert,                                 &
-              VLOCATION  = MAPL_VLocationCenter, __RC__)
+              short_name = 'climdu'//trim(field_name),                        &
+              long_name  = 'Dust Mixing Ratio (bin '//trim(field_name)//')',  &
+              units      = 'kg kg-1',                                         &
+              restart    = MAPL_RestartSkip,                                  &
+              dims       = MAPL_DimsHorzVert,                                 &
+              vlocation  = MAPL_VLocationCenter, __RC__)
 
 !           ! dry deposition
             call MAPL_AddImportSpec(GC,                                       &
-              SHORT_NAME = 'climDUDP'//trim(field_name),                      &
-              LONG_NAME  = 'Dust Mixing Ratio (bin '//trim(field_name)//')',  &
-              UNITS      = 'kg kg-1',                                         &
-              DIMS       = MAPL_DimsHorzOnly,                                 &
-              VLOCATION  = MAPL_VLocationCenter,                              &
-              RESTART    = MAPL_RestartSkip, __RC__)
+              short_name = 'climDUDP'//trim(field_name),                      &
+              long_name  = 'Dust Mixing Ratio (bin '//trim(field_name)//')',  &
+              units      = 'kg kg-1',                                         &
+              dims       = MAPL_DimsHorzOnly,                                 &
+              vlocation  = MAPL_VLocationCenter,                              &
+              restart    = MAPL_RestartSkip, __RC__)
 
 !           ! wet deposition    
             call MAPL_AddImportSpec(GC,                                       &
-               SHORT_NAME = 'climDUWT'//trim(field_name),                     &
-               LONG_NAME  = 'Dust Mixing Ratio (bin '//trim(field_name)//')', &
-               UNITS      = 'kg kg-1',                                        &
-               DIMS       = MAPL_DimsHorzOnly,                                &
-               VLOCATION  = MAPL_VLocationCenter,                             &
-               RESTART    = MAPL_RestartSkip, __RC__)
+               short_name = 'climDUWT'//trim(field_name),                     &
+               long_name  = 'Dust Mixing Ratio (bin '//trim(field_name)//')', &
+               units      = 'kg kg-1',                                        &
+               dims       = MAPL_DimsHorzOnly,                                &
+               vlocation  = MAPL_VLocationCenter,                             &
+               restart    = MAPL_RestartSkip, __RC__)
 
 !           ! gravitational settling
             call MAPL_AddImportSpec(GC,                                       &
-               SHORT_NAME = 'climDUSD'//trim(field_name),                     &
-               LONG_NAME  = 'Dust Mixing Ratio (bin '//trim(field_name)//')', &
-               UNITS      = 'kg kg-1',                                        &
-               DIMS       = MAPL_DimsHorzOnly,                                &
-               VLOCATION  = MAPL_VLocationCenter,                             &
-               RESTART    = MAPL_RestartSkip, __RC__)
+               short_name = 'climDUSD'//trim(field_name),                     &
+               long_name  = 'Dust Mixing Ratio (bin '//trim(field_name)//')', &
+               units      = 'kg kg-1',                                        &
+               dims       = MAPL_DimsHorzOnly,                                &
+               vlocation  = MAPL_VLocationCenter,                             &
+               restart    = MAPL_RestartSkip, __RC__)
 
 !           convective scavenging
             call MAPL_AddImportSpec(GC,                                       &
-               SHORT_NAME = 'climDUSV'//trim(field_name),                     &
-               LONG_NAME  = 'Dust Mixing Ratio (bin '//trim(field_name)//')', &
-               UNITS      = 'kg kg-1',                                        &
-               DIMS       = MAPL_DimsHorzOnly,                                &
-               VLOCATION  = MAPL_VLocationCenter,                             &
-               RESTART    = MAPL_RestartSkip, __RC__)
+               short_name = 'climDUSV'//trim(field_name),                     &
+               long_name  = 'Dust Mixing Ratio (bin '//trim(field_name)//')', &
+               units      = 'kg kg-1',                                        &
+               dims       = MAPL_DimsHorzOnly,                                &
+               vlocation  = MAPL_VLocationCenter,                             &
+               restart    = MAPL_RestartSkip, __RC__)
         end do
 !  else
 !       call MAPL_AddImportSpec(GC,                                       &
-!          SHORT_NAME = 'DU_SRC',             &
-!          LONG_NAME  = 'erod'  ,                                         &
-!          UNITS      = '1',                                              &
-!          DIMS       = MAPL_DimsHorzOnly,                                &
-!          VLOCATION  = MAPL_VLocationNone,                               &
-!          RESTART    = MAPL_RestartSkip, __RC__)
+!          short_name = 'DU_SRC',             &
+!          long_name  = 'erod'  ,                                         &
+!          units      = '1',                                              &
+!          dims       = MAPL_DimsHorzOnly,                                &
+!          vlocation  = MAPL_VLocationNone,                               &
+!          restart    = MAPL_RestartSkip, __RC__)
     end if ! (data_driven)
 
 
@@ -208,22 +206,22 @@ contains
 !   This state holds fields needed by radiation
 !   ---------------------------------------------
     call MAPL_AddExportSpec (GC,                             &
-       SHORT_NAME = trim(COMP_NAME)//'_AERO',                &
-       LONG_NAME  = 'aerosols_from_'//trim(COMP_NAME),       &
-       UNITS      = 'kg kg-1',                               &
-       DIMS       = MAPL_DimsHorzVert,                       &
-       VLOCATION  = MAPL_VLocationCenter,                    &
-       DATATYPE   = MAPL_StateItem, __RC__)
+       short_name = trim(COMP_NAME)//'_AERO',                &
+       long_name  = 'aerosols_from_'//trim(COMP_NAME),       &
+       units      = 'kg kg-1',                               &
+       dims       = MAPL_DimsHorzVert,                       &
+       vlocation  = MAPL_VLocationCenter,                    &
+       datatype   = MAPL_StateItem, __RC__)
 
 !   This state is needed by MOIST - It will contain aerosols
 !   ----------------------------------------------------------
     call MAPL_AddExportSpec (GC,                                                  &
-       SHORT_NAME = trim(COMP_NAME)//'_AERO_ACI',                                 &
-       LONG_NAME  = 'aerosol_cloud_interaction_aerosols_from_'//trim(COMP_NAME),  &
-       UNITS      = 'kg kg-1',                                                    &
-       DIMS       = MAPL_DimsHorzVert,                                            &
-       VLOCATION  = MAPL_VLocationCenter,                                         &
-       DATATYPE   = MAPL_StateItem, __RC__)
+       short_name = trim(COMP_NAME)//'_AERO_ACI',                                 &
+       long_name  = 'aerosol_cloud_interaction_aerosols_from_'//trim(COMP_NAME),  &
+       units      = 'kg kg-1',                                                    &
+       dims       = MAPL_DimsHorzVert,                                            &
+       vlocation  = MAPL_VLocationCenter,                                         &
+       datatype   = MAPL_StateItem, __RC__)
 
 !   This bundle is needed by surface for snow albedo modification
 !   by aerosol settling and deposition
@@ -231,11 +229,11 @@ contains
 !                         This will require refactoring Radiation
 !   ---------------------------------------------------------------
     call MAPL_AddExportSpec (GC,                                  &
-       SHORT_NAME = 'AERO_DP',                                    &
-       LONG_NAME  = 'aerosol_deposition_from_'//trim(COMP_NAME),  &
-       UNITS      = 'kg m-2 s-1',                                 &
-       DIMS       = MAPL_DimsHorzOnly,                            &
-       DATATYPE   = MAPL_BundleItem, __RC__)
+       short_name = 'AERO_DP',                                    &
+       long_name  = 'aerosol_deposition_from_'//trim(COMP_NAME),  &
+       units      = 'kg m-2 s-1',                                 &
+       dims       = MAPL_DimsHorzOnly,                            &
+       datatype   = MAPL_BundleItem, __RC__)
 
 
 !   Set generic services
@@ -254,14 +252,14 @@ contains
 
 ! !INTERFACE:
 
-  subroutine Initialize (GC, IMPORT, EXPORT, CLOCK, RC)
+  subroutine Initialize (GC, import, export, clock, RC)
 
 ! !ARGUMENTS:
 
     type (ESMF_GridComp), intent(inout) :: GC     ! Gridded component 
-    type (ESMF_State),    intent(inout) :: IMPORT ! Import state
-    type (ESMF_State),    intent(inout) :: EXPORT ! Export state
-    type (ESMF_Clock),    intent(inout) :: CLOCK  ! The clock
+    type (ESMF_State),    intent(inout) :: import ! Import state
+    type (ESMF_State),    intent(inout) :: export ! Export state
+    type (ESMF_Clock),    intent(inout) :: clock  ! The clock
     integer, optional,    intent(  out) :: RC     ! Error code
 
 ! !DESCRIPTION: This initializes DU's Grid Component. It primaryily fills 
@@ -273,17 +271,12 @@ contains
 !EOP
 
 !****************************************************************************
-! ErrLog Variables
-    character (len=ESMF_MAXSTR)          :: IAm
-    integer                              :: STATUS
+! Locals
     character (len=ESMF_MAXSTR)          :: COMP_NAME
-
-! Local derived type aliases
-
     type (MAPL_MetaComp),       pointer  :: MAPL
     type (ESMF_Grid)                     :: grid
-    type (ESMF_State)                    :: INTERNAL
-    type (ESMF_State)                    :: AERO, AERO_ACI
+    type (ESMF_State)                    :: internal
+    type (ESMF_State)                    :: aero, aero_aci
     type (ESMF_State)                    :: providerState
     type (ESMF_Config)                   :: cfg
     type (ESMF_FieldBundle)              :: Bundle_DP
@@ -297,14 +290,13 @@ contains
     logical                              :: data_driven
 
     integer                              :: NUM_BANDS
-
+    __Iam__('Initialize')
 !****************************************************************************
 
 !   Begin... 
 
 !   Get the target components name and set-up traceback handle.
 !   -----------------------------------------------------------
-    Iam = "Initialize"
     call ESMF_GridCompGet (GC, grid=grid, name=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) // trim(Iam)
 
@@ -334,49 +326,49 @@ contains
     end do
 
 
-!   Call Generic Initialize for DU2G GC
-!   ----------------------------------------
-    call MAPL_GenericInitialize (GC, IMPORT, EXPORT, CLOCK, __RC__)
+!   Call Generic Initialize 
+!   ------------------------
+    call MAPL_GenericInitialize (GC, import, export, clock, __RC__)
 
 !   Get parameters from generic state.
 !   -----------------------------------
-    call MAPL_Get (MAPL, INTERNAL_ESMF_STATE=INTERNAL, __RC__)
+    call MAPL_Get (MAPL, INTERNAL_ESMF_STATE=internal, __RC__)
 
 !   Is DU data driven?
 !   ------------------
     call data_driven_ (COMP_NAME, data_driven, __RC__)
 
 
-!   If using GOCART.data, the data is provided in the import
-!   state via ExtData versus the actual GOCART children
-!   -------------------------------------------------------- 
+!   If this is a data component, the data is provided in the import
+!   state via ExtData instead of the actual GOCART children
+!   ---------------------------------------------------------------- 
     if ( data_driven ) then
-        providerState = IMPORT
+        providerState = import
         prefix = 'clim'
     else
-        providerState = EXPORT
+        providerState = export
         prefix = ''
     end if
 
 
 !   Fill AERO States with dust fields
 !   ------------------------------------
-    call ESMF_StateGet (EXPORT, trim(COMP_NAME)//'_AERO'    , AERO    , __RC__)
-    call ESMF_StateGet (EXPORT, trim(COMP_NAME)//'_AERO_ACI', AERO_ACI, __RC__)
-    call ESMF_StateGet (EXPORT, 'AERO_DP' , Bundle_DP, __RC__)
+    call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO'    , aero    , __RC__)
+    call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO_ACI', aero_aci, __RC__)
+    call ESMF_StateGet (export, 'AERO_DP' , Bundle_DP, __RC__)
 
 !   Add list of aerosol names to AERO state 
-    call ESMF_AttributeSet(AERO, name='aerosol_names', valueList=aerosol_names, itemCount=size(aerosol_names), __RC__)
+    call ESMF_AttributeSet(aero, name='aerosol_names', valueList=aerosol_names, itemCount=size(aerosol_names), __RC__)
 
 
-!   Fill EXPORT States and Bundle
+!   Fill AERO States and Bundle
 !   ------------------------------
     do i = 1, size(aerosol_names)
         write (field_name, '(A, I0.3)') '', i
-        call ESMF_StateGet (INTERNAL, trim(COMP_NAME)//'::'//trim(aerosol_names(i)), field, __RC__)
+        call ESMF_StateGet (internal, trim(COMP_NAME)//'::'//trim(aerosol_names(i)), field, __RC__)
         fld = MAPL_FieldCreate (field, name='du'//trim(field_name), __RC__)
-        call MAPL_StateAdd (AERO    , fld, __RC__)
-        call MAPL_StateAdd (AERO_ACI, fld, __RC__)
+        call MAPL_StateAdd (aero    , fld, __RC__)
+        call MAPL_StateAdd (aero_aci, fld, __RC__)
 
 !       Dry deposition
 !       ---------------
@@ -412,70 +404,22 @@ contains
     end if
 
 
-    call MAPL_GetResource(MAPL, NUM_BANDS, 'NUM_BANDS:', __RC__)
-    gocart2GMieTable(instance) = Chem_MieCreateng(cfg, NUM_BANDS,__RC__)
-
+    call MAPL_GetResource (MAPL, NUM_BANDS, 'NUM_BANDS:', __RC__)
+    gocart2GMieTable(instance) = Chem_MieCreateng (cfg, NUM_BANDS,__RC__)
 
     ! Mie Table instance/index
-    call ESMF_AttributeSet(AERO, name='mie_table_instance', value=instance, __RC__)
+    call ESMF_AttributeSet (aero, name='mie_table_instance', value=instance, __RC__)
 
-    ! state of the atmosphere
-    call ESMF_AttributeSet(AERO, name='air_pressure_for_aerosol_optics',             value='PLE', __RC__)
-    call ESMF_AttributeSet(AERO, name='relative_humidity_for_aerosol_optics',        value='RH',  __RC__)
-
-    ! aerosol optics
-    call ESMF_AttributeSet(AERO, name='band_for_aerosol_optics',                     value=0,     __RC__)
-    call ESMF_AttributeSet(AERO, name='extinction_in_air_due_to_ambient_aerosol',    value='EXT', __RC__)
-    call ESMF_AttributeSet(AERO, name='single_scattering_albedo_of_ambient_aerosol', value='SSA', __RC__)
-    call ESMF_AttributeSet(AERO, name='asymmetry_parameter_of_ambient_aerosol',      value='ASY', __RC__)
-
-    ! add PLE to aero state
-    call ESMF_AttributeGet(AERO, name='air_pressure_for_aerosol_optics', value=field_name, __RC__)
-    if (field_name /= '') then
-        field = MAPL_FieldCreateEmpty(trim(field_name), grid, __RC__)
-
-        call MAPL_FieldAllocCommit(field, dims=MAPL_DimsHorzVert, location=MAPL_VLocationEdge, typekind=MAPL_R4, hw=0, __RC__)
-        call MAPL_StateAdd(AERO, field, __RC__)
-    end if
-
-    ! add RH to Aero state
-    call ESMF_AttributeGet(AERO, name='relative_humidity_for_aerosol_optics', value=field_name, __RC__)
-    if (field_name /= '') then
-        field = MAPL_FieldCreateEmpty(trim(field_name), grid, __RC__)
-
-        call MAPL_FieldAllocCommit(field, dims=MAPL_DimsHorzVert, location=MAPL_VLocationCenter, typekind=MAPL_R4, hw=0, __RC__)
-        call MAPL_StateAdd(AERO, field, __RC__)
-    end if
-
-    ! add EXT to aero state
-    call ESMF_AttributeGet(AERO, name='extinction_in_air_due_to_ambient_aerosol', value=field_name, __RC__)
-    if (field_name /= '') then
-        field = MAPL_FieldCreateEmpty(trim(field_name), grid, __RC__)
-
-        call MAPL_FieldAllocCommit(field, dims=MAPL_DimsHorzVert, location=MAPL_VLocationCenter, typekind=MAPL_R4, hw=0, __RC__)
-        call MAPL_StateAdd(AERO, field, __RC__)
-    end if
-
-    ! add SSA to aero state
-    call ESMF_AttributeGet(AERO, name='single_scattering_albedo_of_ambient_aerosol', value=field_name, __RC__)
-    if (field_name /= '') then
-        field = MAPL_FieldCreateEmpty(trim(field_name), grid, __RC__)
-
-        call MAPL_FieldAllocCommit(field, dims=MAPL_DimsHorzVert, location=MAPL_VLocationCenter, typekind=MAPL_R4, hw=0, __RC__)
-        call MAPL_StateAdd(AERO, field, __RC__)
-    end if
-
-    ! add ASY to aero state
-    call ESMF_AttributeGet(AERO, name='asymmetry_parameter_of_ambient_aerosol', value=field_name, RC=STATUS)
-    if (field_name /= '') then
-        field = MAPL_FieldCreateEmpty(trim(field_name), grid, __RC__)
-
-        call MAPL_FieldAllocCommit(field, dims=MAPL_DimsHorzVert, location=MAPL_VLocationCenter, typekind=MAPL_R4, hw=0, __RC__)
-        call MAPL_StateAdd(AERO, field, __RC__)
-    end if
+    ! Add variables to DU instance's AERO state. This is used in aerosol optics calculations
+    call addAero (aero, label='air_pressure_for_aerosol_optics',             label2='PLE', grid=grid, __RC__)
+    call addAero (aero, label='relative_humidity_for_aerosol_optics',        label2='RH',  grid=grid, __RC__)
+    call addAero (aero, label='band_for_aerosol_optics',                     label2='0',   grid=grid, __RC__)
+    call addAero (aero, label='extinction_in_air_due_to_ambient_aerosol',    label2='EXT', grid=grid, __RC__)
+    call addAero (aero, label='single_scattering_albedo_of_ambient_aerosol', label2='SSA', grid=grid, __RC__)
+    call addAero (aero, label='asymmetry_parameter_of_ambient_aerosol',      label2='ASY', grid=grid, __RC__)
 
     ! attach the aerosol optics method
-    call ESMF_MethodAdd(AERO, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
+    call ESMF_MethodAdd (aero, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
 
 
     RETURN_(ESMF_SUCCESS)
@@ -489,14 +433,14 @@ contains
 
 ! !INTERFACE:
 
-  subroutine Run1 (GC, IMPORT, EXPORT, CLOCK, RC)
+  subroutine Run1 (GC, import, export, clock, RC)
 
     ! !ARGUMENTS:
 
     type (ESMF_GridComp), intent(inout) :: GC     ! Gridded component 
-    type (ESMF_State),    intent(inout) :: IMPORT ! Import state
-    type (ESMF_State),    intent(inout) :: EXPORT ! Export state
-    type (ESMF_Clock),    intent(inout) :: CLOCK  ! The clock
+    type (ESMF_State),    intent(inout) :: import ! Import state
+    type (ESMF_State),    intent(inout) :: export ! Export state
+    type (ESMF_Clock),    intent(inout) :: clock  ! The clock
     integer, optional,    intent(  out) :: RC     ! Error code:
 
 ! !DESCRIPTION: Run method for the Dust Grid Component. Determines whether to run
@@ -505,24 +449,20 @@ contains
 !EOP
 
 !****************************************************************************
-! ErrLog Variables
-
-    character (len=ESMF_MAXSTR)       :: IAm
-    integer                           :: STATUS
+! Locals
     character (len=ESMF_MAXSTR)       :: COMP_NAME
-
-
     type (MAPL_MetaComp), pointer     :: MAPL
-    type (ESMF_State)                 :: INTERNAL
+    type (ESMF_State)                 :: internal
 
     logical                           :: data_driven
+
+    __Iam__('Run1')
 
 !*****************************************************************************
 !   Begin... 
 
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
-    Iam = 'Run1'
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) //'::'// Iam
 
@@ -532,7 +472,7 @@ contains
 
 !   Get parameters from generic state.
 !   -----------------------------------
-    call MAPL_Get (MAPL, INTERNAL_ESMF_STATE=INTERNAL, __RC__)
+    call MAPL_Get (MAPL, INTERNAL_ESMF_STATE=internal, __RC__)
 
 !   Is DU data driven?
 !   ------------------
@@ -541,9 +481,9 @@ contains
 !   Update INTERNAL state variables with ExtData
 !   ---------------------------------------------
     if (data_driven) then
-      call Run_data (GC, IMPORT, EXPORT, INTERNAL, __RC__)
+      call Run_data (GC, import, export, internal, __RC__)
     else
-       call Run2 (GC, IMPORT, EXPORT, CLOCK, __RC__)
+       call Run2 (GC, import, export, clock, __RC__)
     end if
 
 
@@ -557,14 +497,14 @@ contains
 
 ! !INTERFACE:
 
-  subroutine Run2 (GC, IMPORT, EXPORT, CLOCK, RC)
+  subroutine Run2 (GC, import, export, clock, RC)
 
     ! !ARGUMENTS:
 
     type (ESMF_GridComp), intent(inout) :: GC     ! Gridded component 
-    type (ESMF_State),    intent(inout) :: IMPORT ! Import state
-    type (ESMF_State),    intent(inout) :: EXPORT ! Export state
-    type (ESMF_Clock),    intent(inout) :: CLOCK  ! The clock
+    type (ESMF_State),    intent(inout) :: import ! Import state
+    type (ESMF_State),    intent(inout) :: export ! Export state
+    type (ESMF_Clock),    intent(inout) :: clock  ! The clock
     integer, optional,    intent(  out) :: RC     ! Error code:
 
 ! !DESCRIPTION: Run2 method for the Dust Grid Component.
@@ -572,24 +512,20 @@ contains
 !EOP
 
 !****************************************************************************
-! ErrLog Variables
-
-    character (len=ESMF_MAXSTR)       :: IAm
-    integer                           :: STATUS
+! Locals
     character (len=ESMF_MAXSTR)       :: COMP_NAME
-
-
     type (MAPL_MetaComp), pointer     :: MAPL
-    type (ESMF_State)                 :: INTERNAL
+    type (ESMF_State)                 :: internal
 
     logical                           :: data_driven
+
+    __Iam__('Run2')
 
 !*****************************************************************************
 !   Begin... 
 
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
-    Iam = 'Run2'
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) // '::' // Iam
 
@@ -600,7 +536,7 @@ contains
 
 !   Get parameters from generic state.
 !   -----------------------------------
-!    call MAPL_Get (MAPL, INTERNAL_ESMF_STATE=INTERNAL, __RC__)
+!    call MAPL_Get (MAPL, INTERNAL_ESMF_STATE=internal, __RC__)
 
 
 
@@ -614,14 +550,14 @@ contains
 
 ! !INTERFACE:
 
-  subroutine Run_data (GC, IMPORT, EXPORT, INTERNAL, RC)
+  subroutine Run_data (GC, import, export, internal, RC)
 
     ! !ARGUMENTS:
 
     type (ESMF_GridComp), intent(inout) :: GC       ! Gridded component 
-    type (ESMF_State),    intent(inout) :: IMPORT   ! Import state
-    type (ESMF_State),    intent(inout) :: EXPORT   ! Export state
-    type (ESMF_State),    intent(inout) :: INTERNAL ! Interal state
+    type (ESMF_State),    intent(inout) :: import   ! Import state
+    type (ESMF_State),    intent(inout) :: export   ! Export state
+    type (ESMF_State),    intent(inout) :: internal ! Interal state
     integer, optional,    intent(  out) :: RC       ! Error code:
 
 ! !DESCRIPTION: Updates pointers in Internal state with fields from ExtData. 
@@ -629,15 +565,10 @@ contains
 !EOP
 
 !****************************************************************************
-! ErrLog Variables
-
-    character (len=ESMF_MAXSTR)        :: IAm
-    integer                            :: STATUS
+! Locals
     character (len=ESMF_MAXSTR)        :: COMP_NAME
-
-
     type (MAPL_MetaComp), pointer      :: MAPL
-    type (ESMF_State)                  :: AERO
+    type (ESMF_State)                  :: aero 
 
     integer                            :: i, n
     character (len=ESMF_MAXSTR)        :: field_name
@@ -645,23 +576,25 @@ contains
     real, pointer, dimension(:,:,:)    :: ptr3d_int
     real, pointer, dimension(:,:,:)    :: ptr3d_imp
 
+    __Iam__('Run_data')
+
+
 !*****************************************************************************
 !   Begin... 
 
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
-    Iam = 'Run_data'
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
 
-    call ESMF_StateGet (EXPORT, trim(COMP_NAME)//'_AERO', AERO, __RC__)
-    call ESMF_AttributeGet (AERO, name='aerosol_names', itemCount=n, __RC__)
+    call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO', aero, __RC__)
+    call ESMF_AttributeGet (aero, name='aerosol_names', itemCount=n, __RC__)
 
 !   Update interal data pointers with ExtData
 !   -----------------------------------------
     do i = 1, n
     write (field_name, '(A, I0.3)') 'du', i
-        call MAPL_GetPointer (INTERNAL, NAME=trim(COMP_NAME)//'::'//trim(field_name), ptr=ptr3d_int, __RC__)
-        call MAPL_GetPointer (IMPORT,  NAME='clim'//trim(field_name), ptr=ptr3d_imp, __RC__)
+        call MAPL_GetPointer (internal, NAME=trim(COMP_NAME)//'::'//trim(field_name), ptr=ptr3d_int, __RC__)
+        call MAPL_GetPointer (import,  NAME='clim'//trim(field_name), ptr=ptr3d_imp, __RC__)
 
         ptr3d_int = ptr3d_imp
     end do
@@ -709,13 +642,12 @@ contains
 
 !   Begin... 
 
-
 !   Mie Table instance/index
 !   ------------------------
     call ESMF_AttributeGet (state, name='mie_table_instance', value=instance, __RC__)
 
-!   Get aerosol names
-!   -----------------
+!   Get aerosol names in this state
+!   -------------------------------
     call ESMF_AttributeGet (state, name='aerosol_names', itemCount=n, __RC__)
     allocate (aerosol_names(n), __STAT__)
     call ESMF_AttributeGet (state, name='aerosol_names', valueList=aerosol_names, __RC__)
