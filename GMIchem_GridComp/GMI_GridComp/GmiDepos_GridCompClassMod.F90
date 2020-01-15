@@ -185,7 +185,6 @@ CONTAINS
 
    CHARACTER(LEN=*), PARAMETER :: IAm = 'GmiDepos_GridCompInitialize'
    CHARACTER(LEN=255) :: rcfilen = 'GMI_GridComp.rc'
-   CHARACTER(LEN=255) :: kineticsTextFile
    CHARACTER(LEN=255) :: importRestartFile
    CHARACTER(LEN=255) :: string
    
@@ -247,11 +246,6 @@ CONTAINS
       VERIFY_(STATUS)
 
       call ESMF_ConfigLoadFile(gmiConfigFile, TRIM(rcfilen), rc=STATUS )
-      VERIFY_(STATUS)
-
-      call ESMF_ConfigGetAttribute(gmiConfigFile, kineticsTextFile, &
-     &                label   = "kineticsTextFile:", &
-     &                default = ' ', rc=STATUS )
       VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, importRestartFile, &

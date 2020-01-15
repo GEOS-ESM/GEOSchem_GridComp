@@ -17,8 +17,7 @@
       use GmiGrid_mod                  , only : Get_julo, Get_jhi
       use GmiGrid_mod                  , only : Get_ilong, Get_ivert
       use GmiPrintError_mod            , only : GmiPrintError
-      use GmiEmissionMethod_mod        , only : t_Emission, Get_iuse, Get_xlai
-      use GmiEmissionMethod_mod        , only : Get_ireg, Get_iland
+      use GmiEmissionMethod_mod        , only : t_Emission
       use GmiESMFrcFileReading_mod     , only : rcEsmfReadTable
       use GmiESMFrcFileReading_mod     , only : rcEsmfReadLogical
       use GmiArrayBundlePointer_mod    , only : t_GmiArrayBundle
@@ -259,8 +258,7 @@
 ! Run method for the Dry Deposition component
 !
 ! !LOCAL VARIABLES:
-      integer, allocatable :: iland(:,:,:), iuse(:,:,:), ireg(:,:)
-      real*8 , allocatable :: dry_depos (:,:,:), xlai(:,:,:)
+      real*8 , allocatable :: dry_depos (:,:,:)
       real*8  :: tdt8
       integer :: i1, i2, ju1, j2, k1, k2, ilong
       integer :: ilo, ihi, julo, jhi
@@ -286,20 +284,11 @@
 
       call Get_concentration(SpeciesConcentration, concentration)
 
-      allocate(ireg (i1:i2, ju1:j2))
-      allocate(iland(i1:i2, ju1:j2, NTYPE))
-      allocate(iuse (i1:i2, ju1:j2, NTYPE))
-      allocate(xlai (i1:i2, ju1:j2, NTYPE))
-
-      call Get_ireg  (Emission, ireg )
-      call Get_iland (Emission, iland)
-      call Get_iuse  (Emission, iuse )
-      call Get_xlai  (Emission, xlai )
-
       call Update_Drydep (pr_dry_depos, lwi_flags, mcor, cosSolarZenithAngle,  &
      &           fracCloudCover, radswg, surf_air_temp, surf_rough, ustar,     &
      &           mass, concentration, self%dry_depos, diffaer, s_radius,       &
-     &           s_velocity, BoxHeightEdge, ireg, iland, iuse, xlai, pr_diag,  &
+     &           s_velocity, BoxHeightEdge, Emission%ireg, Emission%iland,     &
+     &           Emission%iuse, Emission%xlai, pr_diag,                        &
      &           loc_proc, chem_opt, tdt8, i1, i2, ju1, j2, k1, k2, ilong, ilo,&
      &           ihi, julo, jhi, mw, numSpecies)
 
@@ -310,11 +299,6 @@
       end if
 
       call Set_concentration(SpeciesConcentration, concentration)
-
-      deallocate(ireg)
-      deallocate(iland)
-      deallocate(iuse)
-      deallocate(xlai)
 
       return
 

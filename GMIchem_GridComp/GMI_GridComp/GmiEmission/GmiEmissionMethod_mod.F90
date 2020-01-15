@@ -35,44 +35,13 @@
       public  :: RunEmission
       public  :: FinalizeEmission
     
-      public  :: Set_emissionArray
-      public  :: Set_emiss_isop  , Set_emiss_monot, Set_emiss_nox
-      public  :: Set_emiss_o3    , Set_emiss_hno3
-      public  :: Set_lightning_NO, Set_flashrate
-      public  :: Set_emissDust   , Set_emissAero
-      public  :: Set_emissDust_t , Set_emissAero_t
-      public  :: Set_isop_scale  , Set_aerosolSurfEmiss, Set_aerosolEmiss3D
-      public  :: Set_emiss_3d_out, Set_surf_emiss_out  , Set_surf_emiss_out2
-
-      public  :: Get_emissionArray
-      public  :: Get_emiss_isop          , Get_emiss_monot , Get_emiss_nox
-      public  :: Get_emiss_o3            , Get_emiss_hno3
-      public  :: Get_emiss_opt           , Get_emiss_in_opt
-      public  :: Get_emiss_map           , Get_emiss_timpyr
-      public  :: Get_lightning_NO        , Get_flashrate
-      public  :: Get_emissDust           , Get_emissAero
-      public  :: Get_emissDust_t         , Get_emissAero_t
-      public  :: Get_fertscal_infile_name
-      public  :: Get_lai_infile_name     , Get_precip_infile_name
-      public  :: Get_soil_infile_name    , Get_veg_infile_name
-      public  :: Get_isopconv_infile_name, Get_monotconv_infile_name
+!     public  :: Get_emissionArray
       public  :: Get_lightning_opt       , Get_emiss_aero_opt
       public  :: Get_emiss_dust_opt      , Get_num_emiss
       public  :: Get_ndust               , Get_naero
-      public  :: Get_nst_dust            , Get_nt_dust 
-      public  :: Get_emiss_map_dust      , Get_emiss_map_aero
-      public  :: Get_isop_scale          , Get_do_gcr
-      public  :: Get_do_semiss_inchem    , Get_do_ShipEmission, Get_doMEGANemission
-      public  :: Get_doReadDailyEmiss
-      public  :: Get_lightNOampFactor    , Get_numberNOPerFlash, Get_minDeepCloudTop
-      public  :: Get_begDailyEmissRec    , Get_endDailyEmissRec
-      public  :: Get_aerosolSurfEmiss    , Get_aerosolSurfEmissMap, Get_aerosolEmiss3D
-      public  :: Get_emiss_3d_out        , Get_surf_emiss_out     , Get_surf_emiss_out2
-      public  :: Get_ireg        , Get_iuse
-      public  :: Get_iland       , Get_ncon_soil
-      public  :: Get_xlai        , Get_xlai2
-      public  :: Get_base_isop   , Get_base_monot
-      public  :: Get_coeff_isop  , Get_convert_isop, Get_convert_monot
+      public  :: Get_do_gcr
+      public  :: Get_do_semiss_inchem
+      public  :: Get_lightNOampFactor    , Get_numberNOPerFlash
 !
 ! !PUBLIC MEMBER DATA:
       public  :: t_Emission
@@ -123,16 +92,9 @@
     logical             :: do_gcr 
                            ! ! Galactic Cosmic Ray  input file name
     character (len=MAX_LENGTH_FILE_NAME) :: gcr_infile_name 
-    character (len=MAX_LENGTH_FILE_NAME) :: fertscal_infile_name          ! fertilizer scale     input file name
-    character (len=MAX_LENGTH_FILE_NAME) :: lai_infile_name               ! leaf area index      input file name
-    character (len=MAX_LENGTH_FILE_NAME) :: precip_infile_name            ! precipitation        input file name
     character (len=MAX_LENGTH_FILE_NAME) :: soil_infile_name              ! soil type            input file name
-    character (len=MAX_LENGTH_FILE_NAME) :: veg_infile_name               ! vegetation type      input file name
     character (len=MAX_LENGTH_FILE_NAME) :: isopconv_infile_name          ! isoprene convert     input file name
     character (len=MAX_LENGTH_FILE_NAME) :: monotconv_infile_name         ! monoterpene convert  input file name
-    character (len=MAX_LENGTH_FILE_NAME) :: GOCARTerod_infile_name
-    character (len=MAX_LENGTH_FILE_NAME) :: GOCARTocean_infile_name
-    character (len=MAX_LENGTH_FILE_NAME) :: GOCARTerod_mod_infile_name
     real*8              :: isop_scale (12)               ! array of monthly isoprene scaling coefficients
 
     CHARACTER(LEN=64):: emissionSpeciesNames(MAX_NUM_CONST)  ! Names of emssions on netCDF/hdf file #
@@ -160,16 +122,13 @@
     integer          :: nt_dust                   ! ending   index for dust
     logical          :: do_ShipEmission           ! do ship emissions?
     logical          :: doMEGANemission           ! do MEGAN emissions?
-    character (len=MAX_LENGTH_FILE_NAME) :: laiMEGAN_InfileName    ! Inpuf file name for AVHRR
-                                                  ! leaf-area-indices
-    character (len=MAX_LENGTH_FILE_NAME) :: aefMboMEGAN_InfileName ! Annual emission factor for
-                                                  ! methyl butenol input file name
-    character (len=MAX_LENGTH_FILE_NAME) :: aefIsopMEGAN_InfileName ! Annual emission factor for
-                                                   ! isoprene input file name
-    character (len=MAX_LENGTH_FILE_NAME) :: aefMonotMEGAN_InfileName ! Annual emission factor for
-                                                    ! monoterpenes input file name
-    character (len=MAX_LENGTH_FILE_NAME) :: aefOvocMEGAN_InfileName ! Annual emission factor for other
-                                                   ! biogenic VOCs input file name
+    logical          :: doMEGANviaHEMCO           ! use HEMCO for MEGAN? 
+
+    character (len=MAX_LENGTH_FILE_NAME) ::      laiMEGAN_InfileName ! Inpuf file name for AVHRR leaf-area-indices
+    character (len=MAX_LENGTH_FILE_NAME) ::   aefMboMEGAN_InfileName ! Annual emission factor for methyl butenol input file name
+    character (len=MAX_LENGTH_FILE_NAME) ::  aefIsopMEGAN_InfileName ! Annual emission factor for isoprene input file name
+    character (len=MAX_LENGTH_FILE_NAME) :: aefMonotMEGAN_InfileName ! Annual emission factor for monoterpenes input file name
+    character (len=MAX_LENGTH_FILE_NAME) ::  aefOvocMEGAN_InfileName ! Annual emission factor for other biogenic VOCs input file name
     integer          :: days_btw_m     ! days between midmonths in the LAI data
     real*8 , pointer :: isoLai    (:,:) => null()  ! AVHRR LAI data for the current day
     real*8 , pointer :: isoLaiPrev(:,:) => null()  ! AVHRR LAI data for the previous month
@@ -219,9 +178,6 @@
     real*8 , pointer :: xlai        (:,:,:) => null()  ! leaf area index of land type for month #1
     real*8 , pointer :: xlai2       (:,:,:) => null()  ! leaf area index of land type for month #2
     type(t_GmiArrayBundle), pointer :: emissionArray(:)
-
-    logical       :: doReadDailyEmiss
-    integer       :: begDailyEmissRec, endDailyEmissRec
 
     real*8 , pointer    :: surf_emiss_out     (:,:,:)     => null()
     real*8 , pointer    :: surf_emiss_out2    (:,:,:)     => null()
@@ -388,24 +344,6 @@
       call rcEsmfReadTable(config, self%emissionSpeciesLayers, &
      &                     "emissionSpeciesLayers::", rc=STATUS)
 
-    !---------------------------------------
-    ! Reading of daily emission file options
-    !---------------------------------------
-
-      call rcEsmfReadLogical(config, self%doReadDailyEmiss, &
-     &           "doReadDailyEmiss:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
-
-      call ESMF_ConfigGetAttribute(config, self%begDailyEmissRec, &
-     &                label   = "begDailyEmissRec:", &
-     &                default = 1, rc=STATUS )
-      VERIFY_(STATUS)
-
-      call ESMF_ConfigGetAttribute(config, self%endDailyEmissRec, &
-     &                label   = "endDailyEmissRec:", &
-     &                default = 366, rc=STATUS )
-      VERIFY_(STATUS)
-      
     ! --------------------------------------
     ! Aerosols and Sulfur from Penner et al.
     ! --------------------------------------
@@ -514,25 +452,6 @@
       call rcEsmfReadTable(config, self%isop_scale, &
      &                     "isop_scale::", rc=STATUS)
      
-    !     --------------------------------------
-    !     Aerosols and Sulfur from GOCART
-    !     --------------------------------------
-      
-      call ESMF_ConfigGetAttribute(config, self%GOCARTerod_infile_name, &
-     &                label   = "GOCARTerod_infile_name:", &
-     &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS)
-     
-      call ESMF_ConfigGetAttribute(config, self%GOCARTocean_infile_name, &
-     &                label   = "GOCARTocean_infile_name:", &
-     &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS)
-      
-      call ESMF_ConfigGetAttribute(config, self%GOCARTerod_mod_infile_name, &
-     &                label   = "GOCARTerod_mod_infile_name:", &
-     &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS)
-    
     !... do Galactic Cosmic Rays source of NOx?
     
       ! turn on Galactic Cosmic ray emmission of N and NO
@@ -554,6 +473,10 @@
 
       call rcEsmfReadLogical(config, self%doMEGANemission, &
      &           "doMEGANemission:", default=.false., rc=STATUS)
+      VERIFY_(STATUS)
+
+      call rcEsmfReadLogical(config, self%doMEGANviaHEMCO, &  
+     &           "doMEGANviaHEMCO:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%MEGAN_infile_name, &
@@ -586,29 +509,9 @@
      &                default = ' ', rc=STATUS )
       VERIFY_(STATUS)
      
-      call ESMF_ConfigGetAttribute(config, self%fertscal_infile_name, &
-     &                label   = "fertscal_infile_name:", &
-     &                default = 'fertscale_4x5_dao.asc', rc=STATUS )
-      VERIFY_(STATUS)
-
-      call ESMF_ConfigGetAttribute(config, self%lai_infile_name, &
-     &                label   = "lai_infile_name:", &
-     &                default = 'lai_4x5_dao.asc', rc=STATUS )
-      VERIFY_(STATUS)
-
-      call ESMF_ConfigGetAttribute(config, self%precip_infile_name, &
-     &                label   = "precip_infile_name:", &
-     &                default = 'precip_4x5_dao.asc', rc=STATUS )
-      VERIFY_(STATUS)
-
       call ESMF_ConfigGetAttribute(config, self%soil_infile_name, &
      &                label   = "soil_infile_name:", &
      &                default = 'soiltype.asc', rc=STATUS )
-      VERIFY_(STATUS)
-
-      call ESMF_ConfigGetAttribute(config, self%veg_infile_name, &
-     &                label   = "veg_infile_name:", &
-     &                default = 'vegtype_4x5_dao.asc', rc=STATUS )
       VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%isopconv_infile_name, &
@@ -811,7 +714,6 @@
                      pr_diag)
 !
 ! !USES:
-      use ReadOtherEmissionData_mod, only : readFertilizerData, readPrecipitationData
 
 ! !INPUT PARAMETERS:
       logical,           intent(in) :: pr_diag
@@ -962,10 +864,10 @@
      CALL Allocate_isoLaiPrev  (self, i1, i2, ju1, j2)
      CALL Allocate_isoLaiNext  (self, i1, i2, ju1, j2)
      CALL Allocate_isoLaiYear  (self, i1, i2, ju1, j2)
-     CALL Allocate_aefMbo  (self, i1, i2, ju1, j2)
-     CALL Allocate_aefIsop (self, i1, i2, ju1, j2)
-     CALL Allocate_aefOvoc (self, i1, i2, ju1, j2)
-     CALL Allocate_aefMonot(self, i1, i2, ju1, j2)
+     CALL Allocate_aefMbo      (self, i1, i2, ju1, j2)
+     CALL Allocate_aefIsop     (self, i1, i2, ju1, j2)
+     CALL Allocate_aefOvoc     (self, i1, i2, ju1, j2)
+     CALL Allocate_aefMonot    (self, i1, i2, ju1, j2)
     ELSE
      CALL Allocate_base_isop  (self, i1, i2, ju1, j2)
      CALL Allocate_base_monot (self, i1, i2, ju1, j2)
@@ -1140,8 +1042,7 @@
 
       character (len=128) err_msg
       integer       :: ydummy, thisDay, thisMonth, thisDate, ddummy, ic, curRecord
-      logical       :: doReadDailyEmiss, rootProc
-      integer       :: begDailyEmissRec, endDailyEmissRec
+      logical       :: rootProc
       integer       :: nymd, num_time_steps, ndt
       real*8        :: tdt8
       integer       :: i1, i2, ju1, j2, k, k1, k2, ilo, ihi, julo, jhi
@@ -1186,8 +1087,10 @@
 
      if (self%emiss_opt == 2) then
         self%emiss_monot = 0.0d0
-        self%emiss_isop  = 0.0d0
         self%emiss_nox   = 0.0d0
+        IF ( .not. self%doMEGANviaHEMCO ) THEN 
+           self%emiss_isop  = 0.0d0 
+        END IF
      end if
 
 ! For GOCART emission
@@ -1228,8 +1131,8 @@
      &           mw, tdt8, ndt, self%emiss_timpyr, self%num_emiss,             &
      &           self%isop_scale, i1, i2, ju1, j2, k1, k2, ilo, ihi, julo, jhi,&
      &           i1_gl, i2_gl, ju1_gl, j2_gl, ilong, numSpecies,               &
-     &           self%doMEGANemission, self%aefIsop, self%aefMbo,              &
-     &           self%aefMonot, self%isoLaiPrev, self%isoLaiCurr,              &
+     &           self%doMEGANemission, self%doMEGANviaHEMCO, self%aefIsop,     &
+     &           self%aefMbo, self%aefMonot, self%isoLaiPrev, self%isoLaiCurr, &
      &           self%isoLaiNext, pardif, pardir, T_15_AVG,                    &
      &           self%emissionSpeciesLayers, self%exp_fac, mixPBL)
 
@@ -1486,21 +1389,14 @@
     return
   end subroutine Allocate_emissionArray
 !-------------------------------------------------------------------------
-  subroutine Get_emissionArray (self, emissionArray)
-!    type (t_GmiArrayBundle), pointer, intent(out) :: emissionArray (:)
-    type (t_GmiArrayBundle), pointer :: emissionArray (:)
-    type (t_Emission), intent(in)   :: self
-!    emissionArray(:) = self%emissionArray(:)
-    emissionArray => self%emissionArray
-    return
-  end subroutine Get_emissionArray
-!-------------------------------------------------------------------------
-  subroutine Set_emissionArray (self, emissionArray)
-    type (t_GmiArrayBundle), pointer :: emissionArray (:)
-    type (t_Emission), intent(inOut) :: self
-    self%emissionArray => emissionArray
-    return
-  end subroutine Set_emissionArray
+!!   subroutine Get_emissionArray (self, emissionArray)
+!! !    type (t_GmiArrayBundle), pointer, intent(out) :: emissionArray (:)
+!!     type (t_GmiArrayBundle), pointer :: emissionArray (:)
+!!     type (t_Emission), intent(in)   :: self
+!! !    emissionArray(:) = self%emissionArray(:)
+!!     emissionArray => self%emissionArray
+!!     return
+!!   end subroutine Get_emissionArray
 !-------------------------------------------------------------------------
   subroutine Allocate_base_isop (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
@@ -1510,20 +1406,6 @@
     return
   end subroutine Allocate_base_isop
 !-------------------------------------------------------------------------
-  subroutine Get_base_isop (self, base_isop)
-    real*8          , intent(out)  :: base_isop (:,:,:)
-    type (t_Emission), intent(in)   :: self
-    base_isop(:,:,:) = self%base_isop(:,:,:)
-    return
-  end subroutine Get_base_isop
-!-------------------------------------------------------------------------
-  subroutine Set_base_isop (self, base_isop)
-    real*8          , intent(in)  :: base_isop (:,:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%base_isop(:,:,:) = base_isop(:,:,:)
-    return
-  end subroutine Set_base_isop
-!-------------------------------------------------------------------------
   subroutine Allocate_base_monot (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
     type (t_Emission), intent(inOut) :: self
@@ -1531,20 +1413,6 @@
     self%base_monot = 0.0d0
     return
   end subroutine Allocate_base_monot
-!-------------------------------------------------------------------------
-  subroutine Get_base_monot (self, base_monot)
-    real*8          , intent(out)  :: base_monot (:,:,:)
-    type (t_Emission), intent(in)   :: self
-    base_monot(:,:,:) = self%base_monot(:,:,:)
-    return
-  end subroutine Get_base_monot
-!-------------------------------------------------------------------------
-  subroutine Set_base_monot (self, base_monot)
-    real*8          , intent(in)  :: base_monot (:,:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%base_monot(:,:,:) = base_monot(:,:,:)
-    return
-  end subroutine Set_base_monot
 !-------------------------------------------------------------------------
   subroutine Allocate_xlai (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
@@ -1554,20 +1422,6 @@
     return
   end subroutine Allocate_xlai
 !-------------------------------------------------------------------------
-  subroutine Get_xlai (self, xlai)
-    real*8          , intent(out)  :: xlai (:,:,:)
-    type (t_Emission), intent(in)   :: self
-    xlai(:,:,:) = self%xlai(:,:,:)
-    return
-  end subroutine Get_xlai
-!-------------------------------------------------------------------------
-  subroutine Set_xlai (self, xlai)
-    real*8          , intent(in)  :: xlai (:,:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%xlai(:,:,:) = xlai(:,:,:)
-    return
-  end subroutine Set_xlai
-!-------------------------------------------------------------------------
   subroutine Allocate_xlai2 (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
     type (t_Emission), intent(inOut) :: self
@@ -1575,62 +1429,6 @@
     self%xlai2 = 0.0d0
     return
   end subroutine Allocate_xlai2
-!-------------------------------------------------------------------------
-  subroutine Get_xlai2 (self, xlai2)
-    real*8          , intent(out)  :: xlai2 (:,:,:)
-    type (t_Emission), intent(in)   :: self
-    xlai2(:,:,:) = self%xlai2(:,:,:)
-    return
-  end subroutine Get_xlai2
-!-------------------------------------------------------------------------
-  subroutine Set_xlai2 (self, xlai2)
-    real*8          , intent(in)  :: xlai2 (:,:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%xlai2(:,:,:) = xlai2(:,:,:)
-    return
-  end subroutine Set_xlai2
-!-------------------------------------------------------------------------
-  subroutine Get_coeff_isop (self, coeff_isop)
-    real*8          , intent(out)  :: coeff_isop (:)
-    type (t_Emission), intent(in)   :: self
-    coeff_isop(:) = self%coeff_isop(:)
-    return
-  end subroutine Get_coeff_isop
-!-------------------------------------------------------------------------
-  subroutine Set_coeff_isop (self, coeff_isop)
-    real*8          , intent(in)  :: coeff_isop (:)
-    type (t_Emission), intent(inOut) :: self
-    self%coeff_isop(:) = coeff_isop(:)
-    return
-  end subroutine Set_coeff_isop
-!-------------------------------------------------------------------------
-  subroutine Get_convert_isop (self, convert_isop)
-    real*8          , intent(out)  :: convert_isop (:)
-    type (t_Emission), intent(in)   :: self
-    convert_isop(:) = self%convert_isop(:)
-    return
-  end subroutine Get_convert_isop
-!-------------------------------------------------------------------------
-  subroutine Set_convert_isop (self, convert_isop)
-    real*8           , intent(in)  :: convert_isop (:)
-    type (t_Emission), intent(inOut) :: self
-    self%convert_isop(:) = convert_isop(:)
-    return
-  end subroutine Set_convert_isop
-!-------------------------------------------------------------------------
-  subroutine Get_convert_monot (self, convert_monot)
-    real*8           , intent(out)  :: convert_monot (:)
-    type (t_Emission), intent(in)   :: self
-    convert_monot(:) = self%convert_monot(:)
-    return
-  end subroutine Get_convert_monot
-!-------------------------------------------------------------------------
-  subroutine Set_convert_monot (self, convert_monot)
-    real*8           , intent(in)  :: convert_monot (:)
-    type (t_Emission), intent(inOut) :: self
-    self%convert_monot(:) = convert_monot(:)
-    return
-  end subroutine Set_convert_monot
 !-------------------------------------------------------------------------
   subroutine Allocate_iland (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
@@ -1640,20 +1438,6 @@
     return
   end subroutine Allocate_iland
 !-------------------------------------------------------------------------
-  subroutine Get_iland (self, iland)
-    integer          , intent(out)  :: iland (:,:,:)
-    type (t_Emission), intent(in)   :: self
-    iland(:,:,:) = self%iland(:,:,:)
-    return
-  end subroutine Get_iland
-!-------------------------------------------------------------------------
-  subroutine Set_iland (self, iland)
-    integer          , intent(in)  :: iland (:,:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%iland(:,:,:) = iland(:,:,:)
-    return
-  end subroutine Set_iland
-!-------------------------------------------------------------------------
   subroutine Allocate_iuse (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
     type (t_Emission), intent(inOut) :: self
@@ -1661,20 +1445,6 @@
     self%iuse = 0
     return
   end subroutine Allocate_iuse
-!-------------------------------------------------------------------------
-  subroutine Get_iuse (self, iuse)
-    integer          , intent(out)  :: iuse (:,:,:)
-    type (t_Emission), intent(in)   :: self
-    iuse(:,:,:) = self%iuse(:,:,:)
-    return
-  end subroutine Get_iuse
-!-------------------------------------------------------------------------
-  subroutine Set_iuse (self, iuse)
-    integer          , intent(in)  :: iuse (:,:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%iuse(:,:,:) = iuse(:,:,:)
-    return
-  end subroutine Set_iuse
 !-------------------------------------------------------------------------
   subroutine Allocate_ireg (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
@@ -1684,34 +1454,6 @@
     return
   end subroutine Allocate_ireg
 !-------------------------------------------------------------------------
-  subroutine Get_ireg (self, ireg)
-    integer          , intent(out)  :: ireg (:,:)
-    type (t_Emission), intent(in)   :: self
-    ireg(:,:) = self%ireg(:,:)
-    return
-  end subroutine Get_ireg
-!-------------------------------------------------------------------------
-  subroutine Set_ireg (self, ireg)
-    integer          , intent(in)  :: ireg (:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%ireg(:,:) = ireg(:,:)
-    return
-  end subroutine Set_ireg
-!-------------------------------------------------------------------------
-  subroutine Get_ncon_soil (self, ncon_soil)
-    integer          , intent(out)  :: ncon_soil (:)
-    type (t_Emission), intent(in)   :: self
-    ncon_soil(:) = self%ncon_soil(:)
-    return
-  end subroutine Get_ncon_soil
-!-------------------------------------------------------------------------
-  subroutine Set_ncon_soil (self, ncon_soil)
-    integer          , intent(in)  :: ncon_soil (:)
-    type (t_Emission), intent(inOut) :: self
-    self%ncon_soil(:) = ncon_soil(:)
-    return
-  end subroutine Set_ncon_soil
-!-------------------------------------------------------------------------
   subroutine Allocate_emissAero (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
     type (t_Emission)       , intent(inOut) :: self
@@ -1719,20 +1461,6 @@
     self%emissAero = 0.0d0
     return
   end subroutine Allocate_emissAero
-!-------------------------------------------------------------------------
-  subroutine Get_emissAero (self, emiss_aero)
-    real*8          , intent(out)  :: emiss_aero (:,:,:)
-    type (t_Emission), intent(in)   :: self
-    emiss_aero(:,:,:) = self%emissAero(:,:,:)
-    return
-  end subroutine Get_emissAero
-!-------------------------------------------------------------------------
-  subroutine Set_emissAero (self, emiss_aero)
-    real*8          , intent(in)  :: emiss_aero (:,:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%emissAero(:,:,:) = emiss_aero(:,:,:) 
-    return
-  end subroutine Set_emissAero
 !-------------------------------------------------------------------------
   subroutine Allocate_emissDust (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
@@ -1742,20 +1470,6 @@
     return
   end subroutine Allocate_emissDust
 !-------------------------------------------------------------------------
-  subroutine Get_emissDust (self, emiss_dust)
-    real*8           , intent(out)  :: emiss_dust (:,:,:)
-    type (t_Emission), intent(in )  :: self
-    emiss_dust(:,:,:) = self%emissDust(:,:,:)
-    return
-  end subroutine Get_emissDust
-!-------------------------------------------------------------------------
-  subroutine Set_emissDust (self, emiss_dust)
-    real*8           , intent(in   ) :: emiss_dust (:,:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%emissDust(:,:,:) = emiss_dust(:,:,:) 
-    return
-  end subroutine Set_emissDust
-!-------------------------------------------------------------------------
   subroutine Allocate_lightning_NO (self, i1, i2, ju1, j2, k1, k2)
     integer          , intent(in   ) :: i1, i2, ju1, j2, k1, k2
     type (t_Emission)      , intent(inOut) :: self
@@ -1763,20 +1477,6 @@
     self%lightning_NO = 0.0d0
     return
   end subroutine Allocate_lightning_NO
-!-------------------------------------------------------------------------
-  subroutine Get_lightning_NO (self, lightning_NO)
-    real*8          , intent(out)  :: lightning_NO (:,:,:)
-    type (t_Emission), intent(in)   :: self
-    lightning_NO(:,:,:) = self%lightning_NO(:,:,:)
-    return
-  end subroutine Get_lightning_NO
-!-------------------------------------------------------------------------
-  subroutine Set_lightning_NO (self, lightning_NO)
-    real*8          , intent(in)  :: lightning_NO (:,:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%lightning_NO(:,:,:) = lightning_NO(:,:,:) 
-    return
-  end subroutine Set_lightning_NO
 !-------------------------------------------------------------------------
   subroutine Allocate_emiss_isop (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
@@ -1786,20 +1486,6 @@
     return
   end subroutine Allocate_emiss_isop
 !-------------------------------------------------------------------------
-  subroutine Get_emiss_isop (self, emiss_isop)
-    real*8          , intent(out)  :: emiss_isop (:,:)
-    type (t_Emission), intent(in)   :: self
-    emiss_isop(:,:) = self%emiss_isop(:,:)
-    return
-  end subroutine Get_emiss_isop
-!-------------------------------------------------------------------------
-  subroutine Set_emiss_isop (self, emiss_isop)
-    real*8          , intent(in)  :: emiss_isop (:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%emiss_isop(:,:) = emiss_isop(:,:)
-    return
-  end subroutine Set_emiss_isop
-!-------------------------------------------------------------------------
   subroutine Allocate_emiss_monot (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
     type (t_Emission)      , intent(inOut) :: self
@@ -1807,20 +1493,6 @@
     self%emiss_monot = 0.0d0
     return
   end subroutine Allocate_emiss_monot
-!-------------------------------------------------------------------------
-  subroutine Get_emiss_monot (self, emiss_monot)
-    real*8          , intent(out)  :: emiss_monot (:,:)
-    type (t_Emission), intent(in)   :: self
-    emiss_monot(:,:) = self%emiss_monot(:,:)
-    return
-  end subroutine Get_emiss_monot
-!-------------------------------------------------------------------------
-  subroutine Set_emiss_monot (self, emiss_monot)
-    real*8          , intent(in)  :: emiss_monot (:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%emiss_monot(:,:) = emiss_monot(:,:)
-    return
-  end subroutine Set_emiss_monot
 !-------------------------------------------------------------------------
   subroutine Allocate_emiss_nox (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
@@ -1830,20 +1502,6 @@
     return
   end subroutine Allocate_emiss_nox
 !-------------------------------------------------------------------------
-  subroutine Get_emiss_nox (self, emiss_nox)
-    real*8          , intent(out)  :: emiss_nox (:,:)
-    type (t_Emission), intent(in)   :: self
-    emiss_nox(:,:) = self%emiss_nox(:,:)
-    return
-  end subroutine Get_emiss_nox
-!-------------------------------------------------------------------------
-  subroutine Set_emiss_nox (self, emiss_nox)
-    real*8          , intent(in)  :: emiss_nox (:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%emiss_nox(:,:) = emiss_nox(:,:)
-    return
-  end subroutine Set_emiss_nox
-!-------------------------------------------------------------------------
   subroutine Allocate_emiss_hno3 (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
     type (t_Emission)      , intent(inOut) :: self
@@ -1851,20 +1509,6 @@
     self%emiss_hno3 = 0.0d0
     return
   end subroutine Allocate_emiss_hno3
-!-------------------------------------------------------------------------
-  subroutine Get_emiss_hno3 (self, emiss_hno3)
-    real*8          , intent(out)  :: emiss_hno3 (:,:)
-    type (t_Emission), intent(in)   :: self
-    emiss_hno3(:,:) = self%emiss_hno3(:,:)
-    return
-  end subroutine Get_emiss_hno3
-!-------------------------------------------------------------------------
-  subroutine Set_emiss_hno3 (self, emiss_hno3)
-    real*8          , intent(in)  :: emiss_hno3 (:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%emiss_hno3(:,:) = emiss_hno3(:,:)
-    return
-  end subroutine Set_emiss_hno3
 !-------------------------------------------------------------------------
   subroutine Allocate_emiss_o3 (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
@@ -1874,20 +1518,6 @@
     return
   end subroutine Allocate_emiss_o3
 !-------------------------------------------------------------------------
-  subroutine Get_emiss_o3 (self, emiss_o3)
-    real*8          , intent(out)  :: emiss_o3 (:,:)
-    type (t_Emission), intent(in)   :: self
-    emiss_o3(:,:) = self%emiss_o3(:,:)
-    return
-  end subroutine Get_emiss_o3
-!-------------------------------------------------------------------------
-  subroutine Set_emiss_o3 (self, emiss_o3)
-    real*8          , intent(in)  :: emiss_o3 (:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%emiss_o3(:,:) = emiss_o3(:,:)
-    return
-  end subroutine Set_emiss_o3
-!-------------------------------------------------------------------------
   subroutine Allocate_surf_emiss_out (self, i1, i2, ju1, j2, numSpecies)
     integer          , intent(in   ) :: i1, i2, ju1, j2, numSpecies
     type (t_Emission)      , intent(inOut) :: self
@@ -1895,20 +1525,6 @@
     self%surf_emiss_out = 0.0d0
     return
   end subroutine Allocate_surf_emiss_out
-!-------------------------------------------------------------------------
-  subroutine Get_surf_emiss_out (self, surf_emiss_out)
-    real*8          , intent(out)  :: surf_emiss_out (:,:,:)
-    type (t_Emission), intent(in)   :: self
-    surf_emiss_out(:,:,:) = self%surf_emiss_out(:,:,:)
-    return
-  end subroutine Get_surf_emiss_out
-!-------------------------------------------------------------------------
-  subroutine Set_surf_emiss_out (self, surf_emiss_out)
-    real*8          , intent(in)  :: surf_emiss_out (:,:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%surf_emiss_out(:,:,:) = surf_emiss_out(:,:,:)
-    return
-  end subroutine Set_surf_emiss_out
 !-------------------------------------------------------------------------
   subroutine Allocate_surf_emiss_out2 (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
@@ -1918,20 +1534,6 @@
     return
   end subroutine Allocate_surf_emiss_out2
 !-------------------------------------------------------------------------
-  subroutine Get_surf_emiss_out2 (self, surf_emiss_out2)
-    real*8          , intent(out)  :: surf_emiss_out2 (:,:,:)
-    type (t_Emission), intent(in)   :: self
-    surf_emiss_out2(:,:,:) = self%surf_emiss_out2(:,:,:)
-    return
-  end subroutine Get_surf_emiss_out2
-!-------------------------------------------------------------------------
-  subroutine Set_surf_emiss_out2 (self, surf_emiss_out2)
-    real*8          , intent(in)  :: surf_emiss_out2 (:,:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%surf_emiss_out2(:,:,:) = surf_emiss_out2(:,:,:)
-    return
-  end subroutine Set_surf_emiss_out2
-!-------------------------------------------------------------------------
   subroutine Allocate_emiss_3d_out (self, i1, i2, ju1, j2, k1, k2, numSpecies)
     integer          , intent(in   ) :: i1, i2, ju1, j2, k1, k2, numSpecies
     type (t_Emission), intent(inOut) :: self
@@ -1940,20 +1542,6 @@
     return
   end subroutine Allocate_emiss_3d_out
 !-------------------------------------------------------------------------
-  subroutine Get_emiss_3d_out (self, emiss_3d_out)
-    real*8          , intent(out)  :: emiss_3d_out (:,:,:,:)
-    type (t_Emission), intent(in)   :: self
-    emiss_3d_out(:,:,:,:) = self%emiss_3d_out(:,:,:,:)
-    return
-  end subroutine Get_emiss_3d_out
-!-------------------------------------------------------------------------
-  subroutine Set_emiss_3d_out (self, emiss_3d_out)
-    real*8          , intent(in)  :: emiss_3d_out (:,:,:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%emiss_3d_out(:,:,:,:) = emiss_3d_out(:,:,:,:)
-    return
-  end subroutine Set_emiss_3d_out
-!-------------------------------------------------------------------------
   subroutine Allocate_aerosolEmiss3D (self, i1, i2, ju1, j2, k1, k2)
     integer          , intent(in   ) :: i1, i2, ju1, j2, k1, k2
     type (t_Emission)      , intent(inOut) :: self
@@ -1961,20 +1549,6 @@
     self%aerosolEmiss3D = 0.0d0
     return
   end subroutine Allocate_aerosolEmiss3D
-!-------------------------------------------------------------------------
-  subroutine Get_aerosolEmiss3D (self, aerosolEmiss3D)
-    real*8          , intent(out)  :: aerosolEmiss3D (:,:,:,:)
-    type (t_Emission), intent(in)   :: self
-    aerosolEmiss3D(:,:,:,:) = self%aerosolEmiss3D(:,:,:,:)
-    return
-  end subroutine Get_aerosolEmiss3D
-!-------------------------------------------------------------------------
-  subroutine Set_aerosolEmiss3D (self, aerosolEmiss3D)
-    real*8          , intent(in)  :: aerosolEmiss3D (:,:,:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%aerosolEmiss3D(:,:,:,:) = aerosolEmiss3D(:,:,:,:)
-    return
-  end subroutine Set_aerosolEmiss3D
 !-------------------------------------------------------------------------
   subroutine Allocate_aerosolSurfEmiss (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
@@ -1985,33 +1559,12 @@
     return
   end subroutine Allocate_aerosolSurfEmiss
 !-------------------------------------------------------------------------
-  subroutine Get_aerosolSurfEmiss (self, aerosolSurfEmiss)
-    real*8          , intent(out)  :: aerosolSurfEmiss (:,:,:)
-    type (t_Emission), intent(in)   :: self
-    aerosolSurfEmiss(:,:,:) = self%aerosolSurfEmiss(:,:,:)
-    return
-  end subroutine Get_aerosolSurfEmiss
-!-------------------------------------------------------------------------
-  subroutine Set_aerosolSurfEmiss (self, aerosolSurfEmiss)
-    real*8          , intent(in)  :: aerosolSurfEmiss (:,:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%aerosolSurfEmiss(:,:,:) = aerosolSurfEmiss(:,:,:)
-    return
-  end subroutine Set_aerosolSurfEmiss
-!-------------------------------------------------------------------------
   subroutine Allocate_aerosolSurfEmissMap (self)
     type (t_Emission)      , intent(inOut) :: self
     Allocate(self%aerosolSurfEmissMap &
         (self%ndust + self%naero + 5))
     return
   end subroutine Allocate_aerosolSurfEmissMap
-!-------------------------------------------------------------------------
-  subroutine Get_aerosolSurfEmissMap (self, aerosolSurfEmissMap)
-    integer          , intent(out)  :: aerosolSurfEmissMap (:)
-    type (t_Emission), intent(in)   :: self
-    aerosolSurfEmissMap(:) = self%aerosolSurfEmissMap(:)
-    return
-  end subroutine Get_aerosolSurfEmissMap
 !-------------------------------------------------------------------------
   subroutine Allocate_flashrate (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
@@ -2020,20 +1573,6 @@
     self%flashrate = 0.0d0
     return
   end subroutine Allocate_flashrate
-!-------------------------------------------------------------------------
-  subroutine Get_flashrate (self, flashrate)
-    real*8          , intent(out)  :: flashrate (:,:)
-    type (t_Emission), intent(in)   :: self
-    flashrate(:,:) = self%flashrate(:,:)
-    return
-  end subroutine Get_flashrate
-!-------------------------------------------------------------------------
-  subroutine Set_flashrate (self, flashrate)
-    real*8          , intent(in)  :: flashrate (:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%flashrate(:,:) = flashrate(:,:) 
-    return
-  end subroutine Set_flashrate
 !-------------------------------------------------------------------------
   subroutine Allocate_emissDust_t (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
@@ -2047,20 +1586,6 @@
     return
   end subroutine Allocate_emissDust_t
 !-------------------------------------------------------------------------
-  subroutine Get_emissDust_t (self, emiss_dust_t)
-    real*8          , intent(out)  :: emiss_dust_t (:,:,:,:)
-    type (t_Emission), intent(in)   :: self
-    emiss_dust_t(:,:,:,:) = self%emissDust_t(:,:,:,:)
-    return
-  end subroutine Get_emissDust_t
-!-------------------------------------------------------------------------
-  subroutine Set_emissDust_t (self, emiss_dust_t)
-    real*8          , intent(in)  :: emiss_dust_t (:,:,:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%emissDust_t(:,:,:,:) = emiss_dust_t(:,:,:,:)
-    return
-  end subroutine Set_emissDust_t
-!-------------------------------------------------------------------------
   subroutine Allocate_emissAero_t (self, i1, i2, ju1, j2)
     integer          , intent(in   ) :: i1, i2, ju1, j2
     type (t_Emission), intent(inOut) :: self
@@ -2071,42 +1596,6 @@
     self%emissAero_t = 0.0d0
     return
   end subroutine Allocate_emissAero_t
-!-------------------------------------------------------------------------
-  subroutine Get_emissAero_t (self, emiss_aero_t)
-    real*8          , intent(out)  :: emiss_aero_t (:,:,:,:)
-    type (t_Emission), intent(in)   :: self
-    emiss_aero_t(:,:,:,:) = self%emissAero_t(:,:,:,:)
-    return
-  end subroutine Get_emissAero_t
-!-------------------------------------------------------------------------
-  subroutine Set_emissAero_t (self, emiss_aero_t)
-    real*8          , intent(in)  :: emiss_aero_t (:,:,:,:)
-    type (t_Emission), intent(inOut) :: self
-    self%emissAero_t(:,:,:,:) = emiss_aero_t(:,:,:,:)
-    return
-  end subroutine Set_emissAero_t
-!-------------------------------------------------------------------------
-  subroutine Get_emiss_map (self, emiss_map, numSpecies)
-    integer        , intent(in )  :: numSpecies
-    integer        , intent(out)  :: emiss_map (:)
-    type (t_Emission), intent(in)   :: self
-    emiss_map(1:numSpecies) = self%emiss_map(1:numSpecies)
-    return
-  end subroutine Get_emiss_map
-!-------------------------------------------------------------------------
-  subroutine Get_emiss_timpyr (self, emiss_timpyr)
-    integer        , intent(out)  :: emiss_timpyr 
-    type (t_Emission), intent(in)   :: self
-    emiss_timpyr = self%emiss_timpyr
-    return
-  end subroutine Get_emiss_timpyr
-!-------------------------------------------------------------------------
-  subroutine Set_emiss_timpyr (self, emiss_timpyr)
-    integer        , intent(in)  :: emiss_timpyr 
-    type (t_Emission), intent(inOut) :: self
-    self%emiss_timpyr = emiss_timpyr
-    return
-  end subroutine Set_emiss_timpyr
 !-------------------------------------------------------------------------
   subroutine Get_do_gcr (self, do_gcr)
     logical        , intent(out)  :: do_gcr
@@ -2121,20 +1610,6 @@
     do_semiss_inchem = self%do_semiss_inchem
     return
   end subroutine Get_do_semiss_inchem
-!-------------------------------------------------------------------------
-  subroutine Get_do_ShipEmission (self, do_ShipEmission)
-    logical        , intent(out)  :: do_ShipEmission
-    type (t_Emission), intent(in)   :: self
-    do_ShipEmission = self%do_ShipEmission
-    return
-  end subroutine Get_do_ShipEmission
-!-------------------------------------------------------------------------
-  subroutine Get_doMEGANemission (self, doMEGANemission)
-    logical        , intent(out)  :: doMEGANemission
-    type (t_Emission), intent(in)   :: self
-    doMEGANemission = self%doMEGANemission
-    return
-  end subroutine Get_doMEGANemission
 !-------------------------------------------------------------------------
   subroutine Allocate_isoLaiNext(self, i1, i2, ju1, j2)
     integer, intent(in) :: i1, i2, ju1, j2
@@ -2176,13 +1651,6 @@
     return
   end subroutine Allocate_aefMbo
 !-------------------------------------------------------------------------
-  subroutine Get_aefMbo(self, aefMbo)
-    real*8 , intent(out) :: aefMbo(:,:)
-    type (t_Emission), intent(in)   :: self
-    aefMbo(:,:) = self%aefMbo(:,:)
-    return
-  end subroutine Get_aefMbo
-!-------------------------------------------------------------------------
   subroutine Allocate_aefIsop(self, i1, i2, ju1, j2)
     integer, intent(in) :: i1, i2, ju1, j2
     type (t_Emission), intent(inOut)   :: self
@@ -2190,13 +1658,6 @@
     self%aefIsop = 0.0d0
     return
   end subroutine Allocate_aefIsop
-!-------------------------------------------------------------------------
-  subroutine Get_aefIsop(self, aefIsop)
-    real*8 , intent(out) :: aefIsop(:,:)
-    type (t_Emission), intent(in)   :: self
-    aefIsop(:,:) = self%aefIsop(:,:)
-    return
-  end subroutine Get_aefIsop
 !-------------------------------------------------------------------------
   subroutine Allocate_aefOvoc(self, i1, i2, ju1, j2)
     integer, intent(in) :: i1, i2, ju1, j2
@@ -2206,13 +1667,6 @@
     return
   end subroutine Allocate_aefOvoc
 !-------------------------------------------------------------------------
-  subroutine Get_aefOvoc(self, aefOvoc)
-    real*8 , intent(out) :: aefOvoc(:,:)
-    type (t_Emission), intent(in)   :: self
-    aefOvoc(:,:) = self%aefOvoc(:,:)
-    return
-  end subroutine Get_aefOvoc
-!-------------------------------------------------------------------------
   subroutine Allocate_aefMonot(self, i1, i2, ju1, j2)
     integer, intent(in) :: i1, i2, ju1, j2
     type (t_Emission), intent(inOut)   :: self
@@ -2220,27 +1674,6 @@
     self%aefMonot = 0.0d0
     return
   end subroutine Allocate_aefMonot
-!-------------------------------------------------------------------------
-  subroutine Get_aefMonot(self, aefMonot)
-    real*8 , intent(out) :: aefMonot(:,:)
-    type (t_Emission), intent(in)   :: self
-    aefMonot(:,:) = self%aefMonot(:,:)
-    return
-  end subroutine Get_aefMonot
-!-------------------------------------------------------------------------
-  subroutine Get_emiss_in_opt (self, emiss_in_opt)
-    integer        , intent(out)  :: emiss_in_opt 
-    type (t_Emission), intent(in)   :: self
-    emiss_in_opt = self%emiss_in_opt
-    return
-  end subroutine Get_emiss_in_opt
-!-------------------------------------------------------------------------
-  subroutine Get_emiss_opt (self, emiss_opt)
-    integer        , intent(out)  :: emiss_opt 
-    type (t_Emission), intent(in)   :: self
-    emiss_opt = self%emiss_opt
-    return
-  end subroutine Get_emiss_opt
 !-------------------------------------------------------------------------
   subroutine Get_lightning_opt (self, lightning_opt)
     integer        , intent(out)  :: lightning_opt
@@ -2284,106 +1717,6 @@
     return
   end subroutine Get_naero
 !-------------------------------------------------------------------------
-  subroutine Get_nst_dust (self, nst_dust)
-    integer        , intent(out)  :: nst_dust
-    type (t_Emission), intent(in)   :: self
-    nst_dust = self%nst_dust
-    return
-  end subroutine Get_nst_dust
-!-------------------------------------------------------------------------
-  subroutine Get_nt_dust (self, nt_dust)
-    integer        , intent(out)  :: nt_dust
-    type (t_Emission), intent(in)   :: self
-    nt_dust = self%nt_dust
-    return
-  end subroutine Get_nt_dust
-!-------------------------------------------------------------------------
-  subroutine Get_emiss_map_dust (self, emiss_map_dust, ndust)
-    integer        , intent(in )  :: ndust
-    integer        , intent(out)  :: emiss_map_dust(:)
-    type (t_Emission), intent(in)   :: self
-    emiss_map_dust(1:ndust) = self%emiss_map_dust(1:ndust)
-    return
-  end subroutine Get_emiss_map_dust
-!-------------------------------------------------------------------------
-  subroutine Get_emiss_map_aero (self, emiss_map_aero, naero)
-    integer        , intent(in )  :: naero
-    integer        , intent(out)  :: emiss_map_aero(:)
-    type (t_Emission), intent(in)   :: self
-    emiss_map_aero(1:naero) = self%emiss_map_aero(1:naero)
-    return
-  end subroutine Get_emiss_map_aero
-!-------------------------------------------------------------------------
-  subroutine Get_fertscal_infile_name (self, fertscal_infile_name)
-    character (len=MAX_LENGTH_FILE_NAME), intent(out)  :: fertscal_infile_name
-    type (t_Emission)    , intent(in)   :: self
-    fertscal_infile_name = self%fertscal_infile_name
-    return
-  end subroutine Get_fertscal_infile_name
-!-------------------------------------------------------------------------
-  subroutine Get_lai_infile_name (self, lai_infile_name)
-    character (len=MAX_LENGTH_FILE_NAME), intent(out)  :: lai_infile_name
-    type (t_Emission)    , intent(in)   :: self
-    lai_infile_name = self%lai_infile_name
-    return
-  end subroutine Get_lai_infile_name
-!-------------------------------------------------------------------------
-  subroutine Get_precip_infile_name (self, precip_infile_name)
-    character (len=MAX_LENGTH_FILE_NAME), intent(out)  :: precip_infile_name
-    type (t_Emission)    , intent(in)   :: self
-    precip_infile_name = self%precip_infile_name
-    return
-  end subroutine Get_precip_infile_name
-!-------------------------------------------------------------------------
-  subroutine Get_soil_infile_name (self, soil_infile_name)
-    character (len=MAX_LENGTH_FILE_NAME), intent(out)  :: soil_infile_name
-    type (t_Emission)    , intent(in)   :: self
-    soil_infile_name = self%soil_infile_name
-    return
-  end subroutine Get_soil_infile_name
-!-------------------------------------------------------------------------
-  subroutine Get_veg_infile_name (self, veg_infile_name)
-    character (len=MAX_LENGTH_FILE_NAME), intent(out)  :: veg_infile_name
-    type (t_Emission)    , intent(in)   :: self
-    veg_infile_name = self%veg_infile_name
-    return
-  end subroutine Get_veg_infile_name
-!-------------------------------------------------------------------------
-  subroutine Get_isopconv_infile_name (self, isopconv_infile_name)
-    character (len=MAX_LENGTH_FILE_NAME), intent(out)  :: isopconv_infile_name
-    type (t_Emission)    , intent(in)   :: self
-    isopconv_infile_name = self%isopconv_infile_name
-    return
-  end subroutine Get_isopconv_infile_name
-!-------------------------------------------------------------------------
-  subroutine Get_monotconv_infile_name (self, monotconv_infile_name)
-    character (len=MAX_LENGTH_FILE_NAME), intent(out)  :: monotconv_infile_name
-    type (t_Emission)    , intent(in)   :: self
-    monotconv_infile_name = self%monotconv_infile_name
-    return
-  end subroutine Get_monotconv_infile_name
-!-------------------------------------------------------------------------
-  subroutine Get_GOCARTerod_infile_name (self, GOCARTerod_infile_name)
-    character (len=MAX_LENGTH_FILE_NAME), intent(out)  :: GOCARTerod_infile_name
-    type (t_Emission)    , intent(in)   :: self
-    GOCARTerod_infile_name = self%GOCARTerod_infile_name
-    return
-  end subroutine Get_GOCARTerod_infile_name
-!-------------------------------------------------------------------------
-  subroutine Get_GOCARTocean_infile_name (self, GOCARTocean_infile_name)
-    character (len=MAX_LENGTH_FILE_NAME), intent(out)  :: GOCARTocean_infile_name
-    type (t_Emission)    , intent(in)   :: self
-    GOCARTocean_infile_name = self%GOCARTocean_infile_name
-    return
-  end subroutine Get_GOCARTocean_infile_name
-!-------------------------------------------------------------------------
-  subroutine Get_GOCARTerod_mod_infile_name (self, GOCARTerod_mod_infile_name)
-    character (len=MAX_LENGTH_FILE_NAME), intent(out)  :: GOCARTerod_mod_infile_name
-    type (t_Emission)    , intent(in)   :: self
-    GOCARTerod_mod_infile_name = self%GOCARTerod_mod_infile_name
-    return
-  end subroutine Get_GOCARTerod_mod_infile_name
-!-------------------------------------------------------------------------
   subroutine Get_lightNOampFactor (self, lightNOampFactor)
     implicit none
     real           , intent(out)  :: lightNOampFactor
@@ -2399,48 +1732,5 @@
     numberNOperFlash = self%numberNOperFlash
     return
   end subroutine Get_numberNOperFlash
-!-------------------------------------------------------------------------
-  subroutine Get_minDeepCloudTop (self, minDeepCloudTop)
-    implicit none
-    real           , intent(out)  :: minDeepCloudTop
-    type (t_Emission), intent(in)   :: self
-    minDeepCloudTop = self%minDeepCloudTop
-    return
-  end subroutine Get_minDeepCloudTop
-!-------------------------------------------------------------------------
-  subroutine Get_isop_scale (self, isop_scale)
-    real*8         , intent(out)  :: isop_scale(:)
-    type (t_Emission), intent(in)   :: self
-    isop_scale(:) = self%isop_scale(:)
-    return
-  end subroutine Get_isop_scale
-!-------------------------------------------------------------------------
-  subroutine Set_isop_scale (self, isop_scale)
-    real*8         , intent(in   )  :: isop_scale(:)
-    type (t_Emission), intent(inOut)  :: self
-    self%isop_scale(:) = isop_scale(:)
-    return
-  end subroutine Set_isop_scale
-!-------------------------------------------------------------------------
-  subroutine Get_begDailyEmissRec (self, begDailyEmissRec)
-    integer          , intent(out)  :: begDailyEmissRec 
-    type (t_Emission), intent(in)   :: self
-    begDailyEmissRec = self%begDailyEmissRec
-    return
-  end subroutine Get_begDailyEmissRec
-!-------------------------------------------------------------------------
-  subroutine Get_endDailyEmissRec (self, endDailyEmissRec)
-    integer          , intent(out)  :: endDailyEmissRec 
-    type (t_Emission), intent(in)   :: self
-    endDailyEmissRec = self%endDailyEmissRec
-    return
-  end subroutine Get_endDailyEmissRec
-!-------------------------------------------------------------------------
-  subroutine Get_doReadDailyEmiss (self, doReadDailyEmiss)
-    logical          , intent(out)  :: doReadDailyEmiss 
-    type (t_Emission), intent(in)   :: self
-    doReadDailyEmiss = self%doReadDailyEmiss
-    return
-  end subroutine Get_doReadDailyEmiss
 !-------------------------------------------------------------------------
   end module GmiEmissionMethod_mod

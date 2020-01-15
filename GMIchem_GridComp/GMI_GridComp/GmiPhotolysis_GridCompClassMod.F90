@@ -112,7 +112,6 @@
 ! Useful character strings
 ! ------------------------
    CHARACTER(LEN=255) :: chem_mecha
-   character(len=ESMF_MAXSTR) :: qj_labels(MAX_NUM_QJ) ! qj (photolysis) string labels
 
 ! Variables for Ship Emissions
 ! ----------------------------
@@ -279,7 +278,6 @@ CONTAINS
 
    CHARACTER(LEN=*), PARAMETER :: IAm = 'GmiPhotolysis_GridCompInitialize'
    CHARACTER(LEN=255) :: rcfilen = 'GMI_GridComp.rc'
-   CHARACTER(LEN=255) :: kineticsTextFile
    CHARACTER(LEN=255) :: importRestartFile
    CHARACTER(LEN=255) :: string
    
@@ -297,7 +295,6 @@ CONTAINS
    INTEGER :: ilo_gl, ihi_gl, julo_gl, jvlo_gl, jhi_gl
    INTEGER :: gmi_nborder
    INTEGER :: numSpecies
-   INTEGER :: LogicalUnitNum
    INTEGER :: inyr,inmon,iscyr
    REAL, dimension(2628)     :: s_cycle_dates    ! 2628 months : 1882 - 2100
    REAL, dimension(NW,2628)  :: s_cycle          ! 2628 months : 1882 - 2100
@@ -306,7 +303,7 @@ CONTAINS
 
    INTEGER :: loc_proc, locGlobProc, commu_slaves
    LOGICAL :: one_proc, rootProc
-   LOGICAL :: exists,open,found
+   LOGICAL :: found
    
    REAL :: qmin, qmax, tokgCPerBox
 
@@ -360,11 +357,6 @@ CONTAINS
       VERIFY_(STATUS)
 
       call ESMF_ConfigLoadFile(gmiConfigFile, TRIM(rcfilen), rc=STATUS )
-      VERIFY_(STATUS)
-
-      call ESMF_ConfigGetAttribute(gmiConfigFile, kineticsTextFile, &
-     &                label   = "kineticsTextFile:", &
-     &                default = ' ', rc=STATUS )
       VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, importRestartFile, &
@@ -858,37 +850,46 @@ CONTAINS
     VERIFY_(STATUS)
    END IF
 
-! Photolysis reaction list.  Read from kinetics
-! text file after finding an available logical unit.
-! --------------------------------------------------
-   found = .FALSE.
-   i = 11
-   DO WHILE (.NOT. found .AND. i <= 99)
-    INQUIRE(UNIT=i,EXIST=exists,OPENED=open)
-    IF(exists .AND. .NOT. open) THEN
-     found = .TRUE.
-     LogicalUnitNum = i
-    END IF
-    i = i+1
-   END DO
-   IF(.NOT. found) THEN
-    IF( MAPL_AM_I_ROOT() ) THEN
-     PRINT *,TRIM(IAm),": Unable to find an OPEN logical unit to read qj_labels."
-    END IF
-    rc = 62
-    RETURN
-   END IF
-
-   OPEN(UNIT=LogicalUnitNum,FILE=TRIM(kineticsTextFile),STATUS='old', &
-        ACTION='read',FORM='formatted')
-   DO
-    READ(LogicalUnitNum,FMT="(A)") string
-    IF(TRIM(string) == 'Photolyses:') EXIT
-   END DO
-   DO ic=1,NUM_J
-    READ(LogicalUnitNum,FMT="(5X,A)") string
-    self%qj_labels(ic)=TRIM(string)
-   END DO
+!!
+!! Previously we used RC/setkin_chem_mech.txt___.rc :
+!!
+!! Photolysis reaction list.  Read from kinetics
+!! text file after finding an available logical unit.
+!! --------------------------------------------------
+!!
+!!   INTEGER :: LogicalUnitNum
+!!   LOGICAL :: exists,open
+!!
+!!   found = .FALSE.
+!!   i = 11
+!!   DO WHILE (.NOT. found .AND. i <= 99)
+!!    INQUIRE(UNIT=i,EXIST=exists,OPENED=open)
+!!    IF(exists .AND. .NOT. open) THEN
+!!     found = .TRUE.
+!!     LogicalUnitNum = i
+!!    END IF
+!!    i = i+1
+!!   END DO
+!!   IF(.NOT. found) THEN
+!!    IF( MAPL_AM_I_ROOT() ) THEN
+!!     PRINT *,TRIM(IAm),": Unable to find an OPEN logical unit to read qj_labels."
+!!    END IF
+!!    rc = 62
+!!    RETURN
+!!   END IF
+!!
+!!   OPEN(UNIT=LogicalUnitNum,FILE=TRIM(kineticsTextFile),STATUS='old', &
+!!        ACTION='read',FORM='formatted')
+!!   DO
+!!    READ(LogicalUnitNum,FMT="(A)") string
+!!    IF(TRIM(string) == 'Photolyses:') EXIT
+!!   END DO
+!!   DO ic=1,NUM_J
+!!    READ(LogicalUnitNum,FMT="(5X,A)") string
+!!    self%qj_labels(ic)=TRIM(string)
+!!   END DO
+!!
+!!   CLOSE???
 
 ! Allocate space, etc., but the initialization of the
 ! species from the internal state is left to the run method.
@@ -949,7 +950,7 @@ CONTAINS
             !=======
                 call initializeFastJX65 (k1, k2, self%chem_mask_khi, NUM_J,    &
                                   self%cross_section_file,                     &
-                               self%rate_file, self%T_O3_climatology_file, rootproc)
+                                  self%T_O3_climatology_file, rootproc)
 !                    call initializeFastJX65 (k1, k2, self%chem_mask_khi, NUM_J,    &
 !                               self%aerosolOpticalData_file,                   &
 !                               self%cross_section_file,                        &
@@ -1029,7 +1030,7 @@ CONTAINS
       VERIFY_(STATUS)
       var(:,:,:)  = 0.0d0
 
-      call addTracerToBundle (qjBundle, var, w_c%grid_esmf, self%qj_labels(ib))
+      call addTracerToBundle (qjBundle, var, w_c%grid_esmf, lqjchem(ib))
    end do
 
    ! Sanity check
@@ -1094,9 +1095,9 @@ CONTAINS
          do ic=1, NUM_J
             if (TRIM(self%chem_mecha) ==         'strat_trop' .OR. &
 	        TRIM(self%chem_mecha) == 'strat_trop_aerosol') THEN
-               if (Trim(self%qj_labels(ic)) =='NO2 + hv = NO + O') self%jno2num = ic
+               if (Trim(lqjchem(ic)) =='NO2 + hv = NO + O') self%jno2num = ic
             else if (TRIM(self%chem_mecha) == 'troposphere') then
-               if (Trim(self%qj_labels(ic)) =='NO2 + hv = NO + O3') self%jno2num = ic
+               if (Trim(lqjchem(ic)) =='NO2 + hv = NO + O3') self%jno2num = ic
             endif
          end do
          if (self%jno2num .eq. badIndex) then

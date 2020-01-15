@@ -21,6 +21,7 @@
    USE m_chars, ONLY : uppercase
    USE Chem_GroupMod                            ! For Family Transport
    USE OVP,     ONLY:  OVP_init, OVP_end_of_timestep_hms, OVP_mask, OVP_apply_mask
+   USE GmiESMFrcFileReading_mod, only : rcEsmfReadLogical
 
    IMPLICIT NONE
    PRIVATE
@@ -138,6 +139,11 @@ CONTAINS
 
     LOGICAL :: do_ShipEmission
     TYPE(ESMF_Config)  :: gmiConfig
+
+    ! HEMCO isoprene related -sas
+    CHARACTER(LEN=255) :: gmi_rcfilen = 'GMI_GridComp.rc'
+    TYPE (ESMF_Config) :: gmi_config
+    LOGICAL :: doMEGANviaHEMCO
 
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
@@ -317,6 +323,24 @@ CONTAINS
         UNITS      = 'mol mol-1',                          &
         DIMS       = MAPL_DimsHorzVert,                    &
         VLOCATION  = MAPL_VLocationCenter,   __RC__) 
+
+     ! add MEGAN emission imports -sas 
+     ! note: might change this later to use GMICHEM_ImportSpec___.h
+     gmi_config = ESMF_ConfigCreate(__RC__ )
+     call ESMF_ConfigLoadFile(gmi_config, TRIM(gmi_rcfilen), __RC__ )
+     call rcEsmfReadLogical(gmi_config, doMEGANviaHEMCO, "doMEGANviaHEMCO:", default=.false., __RC__ )
+
+     IF ( doMEGANviaHEMCO ) THEN
+        call MAPL_AddImportSpec(GC, &
+             SHORT_NAME = 'GMI_ISOPRENE', &
+             LONG_NAME  = 'isoprene emissions'  , &
+             UNITS      = 'kgC/m2/s',                &
+             DIMS       = MAPL_DimsHorzOnly,  &
+             VLOCATION  = MAPL_VLocationNone, &
+             RESTART    = MAPL_RestartSkip,   &
+             RC         = STATUS)
+        VERIFY_(STATUS)
+     END IF
 
 #include "GMICHEM_ImportSpec___.h"
 
@@ -1611,6 +1635,8 @@ CONTAINS
    TYPE(ESMF_Alarm)                  :: PredictorIsActive
    LOGICAL                           :: doingPredictorNow
 
+   LOGICAL                           :: RAS_NO_NEG  ! Whether RAS will guard against negatives
+
 !  Get my name and set-up traceback handle
 !  ---------------------------------------
    CALL ESMF_GridCompGet(GC, NAME=COMP_NAME, CONFIG=CF, GRID=grid, __RC__)
@@ -1654,9 +1680,20 @@ CONTAINS
 
 !  Assure non-negative volumetric mixing ratios [mole fractions]
 !  -------------------------------------------------------------
-   DO n = ChemReg%i_GMI, ChemReg%j_GMI
-    CALL Chem_UtilNegFiller(w_c%qa(n)%data3d, DELP, i2, j2, QMIN=TINY(1.0))
-   END DO
+   CALL ESMF_ConfigGetAttribute( CF, RAS_NO_NEG, Label='RAS_NO_NEG:', default=.FALSE. , __RC__)
+   IF ( .NOT. RAS_NO_NEG ) THEN
+     DO n = ChemReg%i_GMI, ChemReg%j_GMI
+! original approach - make all values no less than a tiny positive number:
+       CALL Chem_UtilNegFiller(w_c%qa(n)%data3d, DELP, i2, j2, QMIN=TINY(1.0))
+! debug print:
+!      IF(  ANY(w_c%qa(n)%data3d < 1.0e-30) ) THEN
+!        m = COUNT( w_c%qa(n)%data3d < 1.0e-30 )
+!        PRINT*,'GMI SPECIES TOO SMALL (species,count):', n-ChemReg%i_GMI+1, m
+!      ENDIF
+! first take:
+!     WHERE(w_c%qa(n)%data3d < 1.0e-30) w_c%qa(n)%data3d=1.0e-30
+     END DO
+   END IF
 
 !  Occasionally, MAPL_UNDEFs appear in the imported tropopause pressures,
 !  TROPP. To avoid encountering them, save the most recent valid tropopause 

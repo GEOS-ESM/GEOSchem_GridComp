@@ -246,7 +246,6 @@ CONTAINS
    CHARACTER(LEN=*), PARAMETER :: IAm = 'GmiEmiss_GridCompInitialize'
    CHARACTER(LEN=255) :: rcfilen = 'GMI_GridComp.rc'
    CHARACTER(LEN=255) :: namelistFile
-   CHARACTER(LEN=255) :: kineticsTextFile
    CHARACTER(LEN=255) :: importRestartFile
    CHARACTER(LEN=255) :: string, fieldName
    
@@ -323,11 +322,6 @@ CONTAINS
       VERIFY_(STATUS)
 
       call ESMF_ConfigLoadFile(gmiConfigFile, TRIM(rcfilen), rc=STATUS )
-      VERIFY_(STATUS)
-
-      call ESMF_ConfigGetAttribute(gmiConfigFile, kineticsTextFile, &
-     &                label   = "kineticsTextFile:", &
-     &                default = ' ', rc=STATUS )
       VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, importRestartFile, &
@@ -771,11 +765,8 @@ CONTAINS
    USE GmiTimeControl_mod,            ONLY : Set_gmiSeconds, GetSecondsFromJanuary1
    USE GmiSpcConcentrationMethod_mod, ONLY : resetFixedConcentration
    USE GmiSolar_mod,                  ONLY : CalcCosSolarZenithAngle
-   USE GmiEmissionMethod_mod,         ONLY : RunEmission, Get_emiss_monot
-   USE GmiEmissionMethod_mod,         ONLY : Get_emiss_opt, Get_emiss_isop, Get_emiss_nox
-   USE GmiEmissionMethod_mod,         ONLY : Get_surf_emiss_out2, Set_surf_emiss_out2
-   USE GmiEmissionMethod_mod,         ONLY : Get_emiss_3d_out, Set_emiss_3d_out
-   USE GmiEmissionMethod_mod,         ONLY : Get_lightning_opt, Set_flashrate, Get_lightning_no
+   USE GmiEmissionMethod_mod,         ONLY : RunEmission
+   USE GmiEmissionMethod_mod,         ONLY : Get_lightning_opt
 
    IMPLICIT none
 
@@ -840,7 +831,7 @@ CONTAINS
 
 !  Local
 !  -----
-   INTEGER :: cymd, dymd, emiss_opt, hms
+   INTEGER :: cymd, dymd, hms
    INTEGER :: i, i1, i2, ic, idehyd_num, im, iXj
    INTEGER :: j, j1, j2, jm
    INTEGER :: k, km, kReverse
@@ -902,8 +893,6 @@ CONTAINS
    REAL(KIND=DBL), ALLOCATABLE :: flashRate(:,:)
 
    REAL(KIND=DBL), ALLOCATABLE :: var2dDBL(:,:)
-   REAL(KIND=DBL), ALLOCATABLE :: var3dDBL(:,:,:)
-   REAL(KIND=DBL), ALLOCATABLE :: var4dDBL(:,:,:,:)
 
    REAL(KIND=DBL), ALLOCATABLE :: mass(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: press3c(:,:,:)
@@ -1102,23 +1091,9 @@ CONTAINS
 ! ------------------------------------------------------------------------
    IF(self%do_emission .AND. self%gotImportRst) THEN
 
-    IF(self%pr_emiss_3d) THEN
-     ALLOCATE(var4dDBL(i1:i2,j1:j2,1:km,1:NSP),STAT=STATUS)
-     VERIFY_(STATUS)
-     var4dDBL(i1:i2,j1:j2,1:km,1:NSP) = 0.00D+00
-     Call Set_emiss_3d_out(self%Emission, var4dDBL)
-     DEALLOCATE(var4dDBL, STAT=STATUS)
-     VERIFY_(STATUS)
-    END IF
+    IF(self%pr_emiss_3d)   self%Emission%emiss_3d_out    = 0.00D+00
 
-    IF(self%pr_surf_emiss) THEN
-     ALLOCATE(var3dDBL(i1:i2,j1:j2,1:NSP),STAT=STATUS)
-     VERIFY_(STATUS)
-     var3dDBL(i1:i2,j1:j2,1:NSP) = 0.00D+00
-     Call Set_surf_emiss_out2(self%Emission, var3dDBL)
-     DEALLOCATE(var3dDBL, STAT=STATUS)
-     VERIFY_(STATUS)
-    END IF
+    IF(self%pr_surf_emiss) self%Emission%surf_emiss_out2 = 0.00D+00
 
 ! Grab lightning option, and pass flash rates to Emission
 !  0: Prescribed emission, NO_lgt
@@ -1126,7 +1101,7 @@ CONTAINS
 !  2: None
 ! --------------------------------------------------------
     CALL Get_lightning_opt(self%Emission, lightning_opt)
-    IF(lightning_opt == 1) CALL Set_flashrate(self%Emission, flashRate)
+    IF(lightning_opt == 1) self%Emission%flashrate(:,:) = flashRate(:,:)
 
     IF (self%Emission%do_ShipEmission) THEN
 
@@ -1263,6 +1238,8 @@ CONTAINS
   REAL, POINTER, DIMENSION(:,:,:) :: PTR3D
 
   REAL, PARAMETER :: VEG_MIN_VALID = 1.0
+
+  REAL :: qmin, qmax
   
   rc = 0
   IAm = "Acquire_Clims"
@@ -1355,6 +1332,15 @@ CONTAINS
 ! Read emission factors and convert from [micrograms C m^{-2} hr^{-1}] to [kg C box^{-1} dt^{-1}]
 ! -----------------------------------------------------------------------------------------------
    tokgCPerBox = tdt*1.00E-09/3600.00
+
+   IF(self%Emission%doMEGANviaHEMCO) THEN 
+   ! get MEGAN emissions pointers from HEMCO  (already kgC/m2/s)
+      CALL MAPL_GetPointer(impChem,   PTR2D, 'GMI_ISOPRENE', RC=STATUS)
+      VERIFY_(STATUS)
+      CALL pmaxmin('emiss_isop ptr in gmiEmiss:', PTR2D, qmin, qmax, iXj, 1, 1. )
+      self%Emission%emiss_isop(:,:) = PTR2D(:,:)
+      NULLIFY(PTR2D)
+   END IF
 
    importName = 'MEGAN_ISOP'
    CALL MAPL_GetPointer(impChem, PTR2D, TRIM(importName), RC=STATUS)
@@ -1606,6 +1592,8 @@ CONTAINS
 !---------------------------------------------------------------------------
   type(ESMF_FieldBundle)      :: sadBundle
   real(rPrec), pointer        :: ptr3D(:,:,:)
+  REAL                        :: qmin, qmax           ! for pmaxmin
+  real*4                      :: tmpisop(i1:i2,j1:j2) ! for pmaxmin
 
   CHARACTER(LEN=255) :: IAm
   rc = 0
@@ -1618,45 +1606,29 @@ CONTAINS
 ! Surface emissions.  GmiEmission says that
 ! these are kg s^{-1}. Convert to kg m^{-2} s^{-1}.
 ! -------------------------------------------------
-   CALL Get_emiss_opt(self%Emission, emiss_opt)
-   IF(self%do_emission .AND. emiss_opt == 2) THEN
-    ALLOCATE(var2dDBL(i1:i2,j1:j2), STAT=STATUS)
-    VERIFY_(STATUS)
+   IF(self%do_emission .AND. self%Emission%emiss_opt == 2) THEN
+     IF(ASSOCIATED(emNOx))         emNOx(:,:) = self%Emission%emiss_nox(  :,:)/self%cellArea(:,:)
+     IF(ASSOCIATED(emMonot))     emMonot(:,:) = self%Emission%emiss_monot(:,:)/self%cellArea(:,:)
+     IF(ASSOCIATED(emIsopSfc)) emIsopSfc(:,:) = self%Emission%emiss_isop( :,:)/self%cellArea(:,:)
 
-    IF(ASSOCIATED(emIsopSfc)) THEN
-     CALL Get_emiss_isop(self%Emission, var2dDBL)
-     emIsopSfc(i1:i2,j1:j2) = var2dDBL(i1:i2,j1:j2)/self%cellArea(i1:i2,j1:j2)
-    END IF
-    IF(ASSOCIATED(emNOx)) THEN
-     CALL Get_emiss_nox(self%Emission, var2dDBL)
-     emNOx(i1:i2,j1:j2) = var2dDBL(i1:i2,j1:j2)/self%cellArea(i1:i2,j1:j2)
-    END IF
-    IF(ASSOCIATED(emMonot)) THEN
-     CALL Get_emiss_monot(self%Emission, var2dDBL)
-     emMonot(i1:i2,j1:j2) = var2dDBL(i1:i2,j1:j2)/self%cellArea(i1:i2,j1:j2)
-    END IF
-
-    DEALLOCATE(var2dDBL, STAT=STATUS)
-    VERIFY_(STATUS)
+     IF(ASSOCIATED(emIsopSfc)) THEN
+       tmpisop = emIsopSfc(i1:i2,j1:j2) 
+       CALL pmaxmin('emIsopSfc in gmiEmiss:',tmpisop(:,:),qmin, qmax, iXj, 1, 1. ) 
+     END IF
    END IF
 
 ! Biogenic CO, soil NOx, and surface ship emissions.  GmiEmission says 
 ! that these are kg m^{-2} per time step.  Convert to kg m^{-2} s^{-1}.
 ! ---------------------------------------------------------------------
    IF(self%do_emission .AND. self%pr_surf_emiss) THEN
-    ALLOCATE(var3dDBL(i1:i2,j1:j2,6), STAT=STATUS)
-    VERIFY_(STATUS)
-    CALL Get_surf_emiss_out2(self%Emission, var3dDBL)
-    IF(ASSOCIATED( emBioCOMeth))   emBioCOMeth(i1:i2,j1:j2) = var3dDBL(i1:i2,j1:j2,1)*OneOverDt
-    IF(ASSOCIATED(emBioCOMonot))  emBioCOMonot(i1:i2,j1:j2) = var3dDBL(i1:i2,j1:j2,2)*OneOverDt
-    IF(ASSOCIATED(emBioPropene))  emBioPropene(i1:i2,j1:j2) = var3dDBL(i1:i2,j1:j2,3)*OneOverDt
-    IF(ASSOCIATED(   emSoilNOx))     emSoilNOx(i1:i2,j1:j2) = var3dDBL(i1:i2,j1:j2,4)*OneOverDt
+    IF(ASSOCIATED( emBioCOMeth))   emBioCOMeth(:,:) = self%Emission%surf_emiss_out2(:,:,1)*OneOverDt
+    IF(ASSOCIATED(emBioCOMonot))  emBioCOMonot(:,:) = self%Emission%surf_emiss_out2(:,:,2)*OneOverDt
+    IF(ASSOCIATED(emBioPropene))  emBioPropene(:,:) = self%Emission%surf_emiss_out2(:,:,3)*OneOverDt
+    IF(ASSOCIATED(   emSoilNOx))     emSoilNOx(:,:) = self%Emission%surf_emiss_out2(:,:,4)*OneOverDt
     IF(self%Emission%do_ShipEmission) THEN
-     IF(ASSOCIATED(  emShipHNO3))   emShipHNO3(i1:i2,j1:j2) = var3dDBL(i1:i2,j1:j2,5)*OneOverDt
-     IF(ASSOCIATED(    emShipO3))     emShipO3(i1:i2,j1:j2) = var3dDBL(i1:i2,j1:j2,6)*OneOverDt
+     IF(ASSOCIATED(  emShipHNO3))   emShipHNO3(:,:) = self%Emission%surf_emiss_out2(:,:,5)*OneOverDt
+     IF(ASSOCIATED(    emShipO3))     emShipO3(:,:) = self%Emission%surf_emiss_out2(:,:,6)*OneOverDt
     END IF
-    DEALLOCATE(var3dDBL, STAT=STATUS)
-    VERIFY_(STATUS)
    END IF
 
 ! EM_ emissions. Reverse in vertical and convert units if necessary.
@@ -1666,9 +1638,6 @@ CONTAINS
 
     ALLOCATE(var2dDBL(i1:i2,j1:j2), STAT=STATUS)
     VERIFY_(STATUS)
-    ALLOCATE(var4dDBL(i1:i2,j1:j2,km,NSP), STAT=STATUS)
-    VERIFY_(STATUS)
-    CALL Get_emiss_3d_out(self%Emission, var4dDBL)
 
 ! For each EM_ export ...
 ! -----------------------
@@ -1689,11 +1658,6 @@ CONTAINS
       IF(TRIM(fieldName) == "EM_LGTNO") THEN
 
        CALL Get_lightning_opt(self%Emission,lightning_opt)
-       IF(lightning_opt == 1) THEN
-        ALLOCATE(var3dDBL(i1:i2,j1:j2,1:km), STAT=STATUS)
-        VERIFY_(STATUS)
-        CALL Get_lightning_no(self%Emission, var3dDBL)
-       END IF
 
        DO k = 1,km 
         kReverse = km-k+1
@@ -1705,7 +1669,7 @@ CONTAINS
 	 EM_pointer(i1:i2,j1:j2,kReverse) = self%Emission%emissionArray(self%ic_NO_lgt)%pArray3D(i1:i2,j1:j2,k)/ &
 	                                    (gridBoxThickness(:,:,k)*self%cellArea(:,:))
 	CASE (1)
-         EM_pointer(i1:i2,j1:j2,kReverse) = var3dDBL(i1:i2,j1:j2,k)
+         EM_pointer(i1:i2,j1:j2,kReverse) = self%Emission%lightning_NO(i1:i2,j1:j2,k)
         CASE DEFAULT
 	 EM_pointer(i1:i2,j1:j2,k) = 0.00
         END SELECT
@@ -1728,11 +1692,6 @@ CONTAINS
 
        END DO
       
-       IF(lightning_opt == 1) THEN
-        DEALLOCATE(var3dDBL, STAT=STATUS)
-        VERIFY_(STATUS)
-       END IF
-
 !      Record the Overpass values   (note: AddExport done in GMIchem_GridCompMod.F90)
 !      ------------------------------------------------------------------------------
 
@@ -1761,12 +1720,12 @@ CONTAINS
 ! -----------------------------------------------------------
         SELECT CASE (unitsName)
         CASE ("kg m-2 s-1")
-         EM_pointer(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k,ic)*OneOverDt
+         EM_pointer(:,:,kReverse) = self%Emission%emiss_3d_out(:,:,k,ic)*OneOverDt
         CASE ("kg m-3 s-1")
-         EM_pointer(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k,ic)*OneOverDt/gridBoxThickness(:,:,k)
+         EM_pointer(:,:,kReverse) = self%Emission%emiss_3d_out(:,:,k,ic)*OneOverDt/gridBoxThickness(:,:,k)
         CASE ("mol mol-1 s-1")
-         var2dDBL(i1:i2,j1:j2) = OneOverDt*MAPL_AIRMW/(AIRDENS(:,:,kReverse)*mw*gridBoxThickness(:,:,k))
-         EM_pointer(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k,ic)*var2dDBL(i1:i2,j1:j2)
+         var2dDBL(:,:) = OneOverDt*MAPL_AIRMW/(AIRDENS(:,:,kReverse)*mw*gridBoxThickness(:,:,k))
+         EM_pointer(:,:,kReverse) = self%Emission%emiss_3d_out(:,:,k,ic)*var2dDBL(:,:)
         CASE DEFAULT
          PRINT *,TRIM(Iam)//": Modifications needed to export  "//TRIM(unitsName)//" for "//TRIM(fieldName)
          STATUS = -1 
@@ -1824,8 +1783,6 @@ CONTAINS
 
 ! Clean up
 ! --------
-    DEALLOCATE(var4dDBL, STAT=STATUS)
-    VERIFY_(STATUS)
     DEALLOCATE(var2dDBL, STAT=STATUS)
     VERIFY_(STATUS)
 
