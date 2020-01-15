@@ -329,12 +329,13 @@ contains
 
 
     ! Add variables to AERO_RAD state. Used in aerosol optics calculations
-    call addAero (aero, label='air_pressure_for_aerosol_optics',             label2='PLE', grid=grid, __RC__)
-    call addAero (aero, label='relative_humidity_for_aerosol_optics',        label2='RH',  grid=grid, __RC__)
-    call addAero (aero, label='band_for_aerosol_optics',                     label2='0',   grid=grid, __RC__)
-    call addAero (aero, label='extinction_in_air_due_to_ambient_aerosol',    label2='EXT', grid=grid, __RC__)
-    call addAero (aero, label='single_scattering_albedo_of_ambient_aerosol', label2='SSA', grid=grid, __RC__)
-    call addAero (aero, label='asymmetry_parameter_of_ambient_aerosol',      label2='ASY', grid=grid, __RC__)
+    call addAero (aero, label='air_pressure_for_aerosol_optics',             label2='PLE', grid=grid, typekind=MAPL_R4, __RC__)
+    call addAero (aero, label='relative_humidity_for_aerosol_optics',        label2='RH',  grid=grid, typekind=MAPL_R4, __RC__)
+    call addAero (aero, label='extinction_in_air_due_to_ambient_aerosol',    label2='EXT', grid=grid, typekind=MAPL_R4, __RC__)
+    call addAero (aero, label='single_scattering_albedo_of_ambient_aerosol', label2='SSA', grid=grid, typekind=MAPL_R4, __RC__)
+    call addAero (aero, label='asymmetry_parameter_of_ambient_aerosol',      label2='ASY', grid=grid, typekind=MAPL_R4, __RC__)
+
+    call ESMF_AttributeSet(aero, name='band_for_aerosol_optics',             value=0,     __RC__)
 
     ! Attach the aerosol optics method
     call ESMF_MethodAdd (aero, label='run_aerosol_optics', userRoutine=run_aerosol_optics, __RC__)
@@ -540,29 +541,49 @@ contains
 
 !   Active instances must be created first! This ordering is necessary for
 !   filing the AERO states that are passed to radiation.
-    do i = 1, self%active_DU
-        DU2G = MAPL_AddChild(GC, NAME=trim(self%instances_DU(i)), SS=DU2GSetServices, __RC__)
-    end do
 
-    do i = 1, self%active_SS
-        SSng = MAPL_AddChild(GC, NAME=trim(self%instances_SS(i)), SS=SSngSetServices, __RC__)
-    end do
+    call addChild__ (gc, names=self%instances_DU(1:self%active_DU), SS=DU2GSetServices, instInt=DU2G, __RC__)
+    call addChild__ (gc, names=self%instances_SS(1:self%active_SS), SS=SSngSetServices, instInt=SSng, __RC__)
+
 
 !   Create passive instances after active instances
     if ((size(self%instances_DU)) >= (self%active_DU+1)) then
-        do i = self%active_DU+1, size(self%instances_DU)
-            DU2G = MAPL_AddChild(GC, NAME=trim(self%instances_DU(i)), SS=DU2GSetServices, __RC__)
-        end do
+        call addChild__ (gc, names=self%instances_DU(self%active_DU+1:size(self%instances_DU)), SS=DU2GSetServices, instInt=DU2G, __RC__)
+
     end if
 
     if ((size(self%instances_SS)) >= (self%active_SS+1)) then
-        do i = self%active_SS+1, size(self%instances_SS)
-            DU2G = MAPL_AddChild(GC, NAME=trim(self%instances_SS(i)), SS=SSngSetServices, __RC__)
-        end do
+        call addChild__ (gc, names=self%instances_SS(self%active_SS+1:size(self%instances_SS)), SS=SSngSetServices, instInt=SSng, __RC__)
+
     end if
 
 
     RETURN_(ESMF_SUCCESS)
+
+    contains
+        
+        subroutine addChild__ (gc, names, SS, instInt, rc)
+        
+          type (ESMF_GridComp),            intent(inout)     :: gc
+!         type (GOCART_State), pointer,    intent(in   )     :: self
+          character (len=*),               intent(in   )     :: names(:)
+          external                                           :: SS
+          integer,                         intent(inout)     :: instInt
+          integer,                         intent(  out)     :: rc
+
+          __Iam__('GOCART2G::createInstances_::addChild__')
+
+if(mapl_am_i_root())print*,'addChild__ size(names) = ',size(names)
+if(mapl_am_i_root())print*,'addChild__ names = ',names
+
+ 
+            do i = 1, size(names)
+                instInt = MAPL_AddChild(gc, name=trim(names(i)), SS=SS, __RC__)
+            end do
+
+        RETURN_(ESMF_SUCCESS)
+
+        end subroutine addChild__
 
   end subroutine createInstances_
 
@@ -583,8 +604,8 @@ contains
 
     character (len=ESMF_MAXSTR)                      :: fld_name
 
-    real, dimension(:,:,:),pointer                   :: ext_, ssa_, asy_      ! (lon:,lat:,lev:,band:)
-    real, dimension(:,:,:), allocatable              :: ext,  ssa,  asy       ! (lon:,lat:,lev:,band:)
+    real(kind=8), dimension(:,:,:),pointer                   :: ext_, ssa_, asy_      ! (lon:,lat:,lev:)
+    real(kind=8), dimension(:,:,:), allocatable              :: ext,  ssa,  asy       ! (lon:,lat:,lev:)
 
     integer                                          :: i, n, b, j
     integer                                          :: i1, j1, i2, j2, km
@@ -654,7 +675,7 @@ contains
     ssa = 0.0d0
     asy = 0.0d0
 
-
+!if(mapl_am_I_root())print*,'GOCART2G aeroList = ',aeroList
 
 !  ! Get aerosol optic properties from children
    do i = 1, size(aeroList)
@@ -704,7 +725,30 @@ contains
         ext = ext + ext_
         ssa = ssa + ssa_
         asy = asy + asy_
+
+!        this produces NANs for ssa and asy, ext works
+!        ext = ext + ext_
+!        ssa = (ssa + ssa_*ext_)/ext_
+!        asy = (asy + asy_*(ssa_*ext_))/ext_
+
+!        this produces NANs for ssa and asy, ext works
+!        ext = ext + ext_
+!        ssa = ssa + ((ssa_*ext_)/ext)
+!        asy = asy + ((asy_*(ssa_*ext_))/ext)
+
+!        ext = ext + ext_
+
+!       ssa way too big. see slurm-36734433.out
+!       ssa = ssa + ssa_
+!       asy = asy + (asy_/ssa)
+
+!       ssa = ssa + (ssa_*ext_)
+!       asy = asy + (asy_*ssa_*ext_)
+
     end do
+
+
+!if (mapl_am_i_root()) print*,'GOCART2G MIE sum(ext) = ',sum(ext)
 
 
 !   ! Set ext, ssa, asy to equal the sum of ext, ssa, asy from the children. This is what is passed to radiation.
