@@ -72,7 +72,7 @@ contains
     integer                                     :: n, i, nCols, aero_n
     real                                        :: DEFVAL
     logical                                     :: data_driven = .true.
-    integer, parameter                          :: bins = 5
+    integer, parameter                          :: bins = 5  ! This should equal the number of bins. Is this how we want to handle this?
 
     __Iam__('SetServices')
 
@@ -411,12 +411,13 @@ contains
     call ESMF_AttributeSet (aero, name='mie_table_instance', value=instance, __RC__)
 
     ! Add variables to DU instance's AERO state. This is used in aerosol optics calculations
-    call addAero (aero, label='air_pressure_for_aerosol_optics',             label2='PLE', grid=grid, __RC__)
-    call addAero (aero, label='relative_humidity_for_aerosol_optics',        label2='RH',  grid=grid, __RC__)
-    call addAero (aero, label='band_for_aerosol_optics',                     label2='0',   grid=grid, __RC__)
-    call addAero (aero, label='extinction_in_air_due_to_ambient_aerosol',    label2='EXT', grid=grid, __RC__)
-    call addAero (aero, label='single_scattering_albedo_of_ambient_aerosol', label2='SSA', grid=grid, __RC__)
-    call addAero (aero, label='asymmetry_parameter_of_ambient_aerosol',      label2='ASY', grid=grid, __RC__)
+    call addAero (aero, label='air_pressure_for_aerosol_optics',             label2='PLE', grid=grid, typekind=MAPL_R4, __RC__)
+    call addAero (aero, label='relative_humidity_for_aerosol_optics',        label2='RH',  grid=grid, typekind=MAPL_R4, __RC__)
+    call addAero (aero, label='extinction_in_air_due_to_ambient_aerosol',    label2='EXT', grid=grid, typekind=MAPL_R8, __RC__)
+    call addAero (aero, label='single_scattering_albedo_of_ambient_aerosol', label2='SSA', grid=grid, typekind=MAPL_R8, __RC__)
+    call addAero (aero, label='asymmetry_parameter_of_ambient_aerosol',      label2='ASY', grid=grid, typekind=MAPL_R8, __RC__)
+
+    call ESMF_AttributeSet(aero, name='band_for_aerosol_optics',             value=0,     __RC__)
 
     ! attach the aerosol optics method
     call ESMF_MethodAdd (aero, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
@@ -617,7 +618,7 @@ contains
 !   !Local
     real, dimension(:,:,:), pointer                  :: ple
     real, dimension(:,:,:), pointer                  :: rh
-    real, dimension(:,:,:), pointer                  :: var
+    real(kind=8), dimension(:,:,:), pointer                  :: var
     real, dimension(:,:,:), pointer                  :: q
     real, dimension(:,:,:,:), pointer                :: q_4d
 
@@ -626,7 +627,7 @@ contains
     character (len=ESMF_MAXSTR)                      :: COMP_NAME
     character (len=ESMF_MAXSTR), allocatable         :: aerosol_names(:)
 
-    real, dimension(:,:,:), allocatable              :: ext, ssa, asy  ! (lon:,lat:,lev:)
+    real(kind = 8), dimension(:,:,:), allocatable              :: ext, ssa, asy  ! (lon:,lat:,lev:)
 
     integer                                          :: instance
     integer                                          :: n
@@ -724,7 +725,7 @@ contains
 
   contains
 
-    subroutine mie_(mie_table, aerosol_names, nb, offset, q, rh, bext, bssa, gasym, rc)
+    subroutine mie_(mie_table, aerosol_names, nb, offset, q, rh, bext_, bssa_, gasym_, rc)
 
     implicit none
 
@@ -735,9 +736,10 @@ contains
     real,                          intent(in )   :: q(:,:,:,:)       ! aerosol mass mixing ratio, kg kg-1
     real,                          intent(in )   :: rh(:,:,:)        ! relative humidity
 
-    real,                          intent(  out) :: bext(:,:,:)      ! extinction
-    real,                          intent(  out) :: bssa(:,:,:)      ! SSA
-    real,                          intent(  out) :: gasym(:,:,:)     ! asymmetry parameter
+
+    real(kind=8), intent(  out) :: bext_ (size(ext,1),size(ext,2),size(ext,3))
+    real(kind=8), intent(  out) :: bssa_ (size(ext,1),size(ext,2),size(ext,3))
+    real(kind=8), intent(  out) :: gasym_(size(ext,1),size(ext,2),size(ext,3))
 
     integer,                       intent(  out) :: rc
 
@@ -747,9 +749,9 @@ contains
     integer                               :: l, na, idx
 
 
-    real(kind=8) :: bext_ (size(ext,1),size(ext,2),size(ext,3))
-    real(kind=8) :: bssa_ (size(ext,1),size(ext,2),size(ext,3))
-    real(kind=8) :: gasym_(size(ext,1),size(ext,2),size(ext,3))
+    real                           :: bext (size(ext,1),size(ext,2),size(ext,3))     ! extinction
+    real                           :: bssa (size(ext,1),size(ext,2),size(ext,3))     ! SSA
+    real                           :: gasym(size(ext,1),size(ext,2),size(ext,3))     ! asymmetry parameter
 
      na = size(aerosol_names)
 
@@ -766,11 +768,17 @@ contains
          bext_  = bext_  +             bext     ! total extinction due to dust
          bssa_  = bssa_  +       (bssa*bext)    ! total scattering
          gasym_ = gasym_ + gasym*(bssa*bext)    ! sum of (asy * sca)
+
+!         bext_  = bext_  +             bext     ! total extinction due to dust
+!         bssa_  = bssa_  +             bssa     ! total scattering
+!         gasym_ = gasym_ +             gasym    ! sum of (asy * sca)
      end do
 
-     bext  = bext_
-     bssa  = bssa_
-     gasym = gasym_
+!     bext  = bext_
+!     bssa  = bssa_
+!     gasym = gasym_
+
+!if (mapl_am_i_root()) print*,'MIE sum(bext) = ',sum(bext)
 
 
      RETURN_(ESMF_SUCCESS)
