@@ -3330,15 +3330,15 @@ contains
      do l = 1, na
 
         idx = Chem_MieQueryIdx(mie_table, trim(aerosol(l)), __RC__)
-if ( (trim(aerosol(l)) == 'du001') .OR. (trim(aerosol(l)) == 'du002') .OR. (trim(aerosol(l)) == 'du003') &
-     .OR. (trim(aerosol(l)) == 'du004') .OR. (trim(aerosol(l)) == 'du005') .OR. (trim(aerosol(l)) == 'ss001') .OR. &
-(trim(aerosol(l)) == 'ss002') .OR. (trim(aerosol(l)) == 'ss003') .OR. (trim(aerosol(l)) == 'ss004') .OR. (trim(aerosol(l)) == 'ss005')) then
+!if ( (trim(aerosol(l)) == 'du001') .OR. (trim(aerosol(l)) == 'du002') .OR. (trim(aerosol(l)) == 'du003') &
+!     .OR. (trim(aerosol(l)) == 'du004') .OR. (trim(aerosol(l)) == 'du005') .OR. (trim(aerosol(l)) == 'ss001') .OR. &
+!(trim(aerosol(l)) == 'ss002') .OR. (trim(aerosol(l)) == 'ss003') .OR. (trim(aerosol(l)) == 'ss004') .OR. (trim(aerosol(l)) == 'ss005')) then
 
 !if ( (trim(aerosol(l)) == 'ss001') .OR. &
 !(trim(aerosol(l)) == 'ss002') .OR. (trim(aerosol(l)) == 'ss003') .OR. (trim(aerosol(l)) == 'ss004') .OR. (trim(aerosol(l)) == 'ss005')) then
 
-!if ( (trim(aerosol(l)) == 'du001') .OR. &
-!(trim(aerosol(l)) == 'du002') .OR. (trim(aerosol(l)) == 'du003') .OR. (trim(aerosol(l)) == 'du004') .OR. (trim(aerosol(l)) == 'du005')) then
+if ( (trim(aerosol(l)) == 'du001') .OR. &
+(trim(aerosol(l)) == 'du002') .OR. (trim(aerosol(l)) == 'du003') .OR. (trim(aerosol(l)) == 'du004') .OR. (trim(aerosol(l)) == 'du005')) then
 
         call Chem_MieQueryAllBand4D(mie_table, idx, nb, offset, q(:,:,:,l), rh, ext, ssa, asy, __RC__)
 
