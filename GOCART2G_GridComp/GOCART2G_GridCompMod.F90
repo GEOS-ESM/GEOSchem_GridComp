@@ -726,29 +726,7 @@ if(mapl_am_i_root())print*,'addChild__ names = ',names
         ssa = ssa + ssa_
         asy = asy + asy_
 
-!        this produces NANs for ssa and asy, ext works
-!        ext = ext + ext_
-!        ssa = (ssa + ssa_*ext_)/ext_
-!        asy = (asy + asy_*(ssa_*ext_))/ext_
-
-!        this produces NANs for ssa and asy, ext works
-!        ext = ext + ext_
-!        ssa = ssa + ((ssa_*ext_)/ext)
-!        asy = asy + ((asy_*(ssa_*ext_))/ext)
-
-!        ext = ext + ext_
-
-!       ssa way too big. see slurm-36734433.out
-!       ssa = ssa + ssa_
-!       asy = asy + (asy_/ssa)
-
-!       ssa = ssa + (ssa_*ext_)
-!       asy = asy + (asy_*ssa_*ext_)
-
     end do
-
-
-!if (mapl_am_i_root()) print*,'GOCART2G MIE sum(ext) = ',sum(ext)
 
 
 !   ! Set ext, ssa, asy to equal the sum of ext, ssa, asy from the children. This is what is passed to radiation.
