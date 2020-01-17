@@ -1683,6 +1683,7 @@ CONTAINS
           LONG_NAME          = 'OLSON_land_by_type',                &
           UNITS              = 'unitless',                          &
           DIMS               = MAPL_DimsHorzOnly,                   &
+          RESTART            = MAPL_RestartSkip,                    &
                                                             __RC__ )
     ENDDO
 

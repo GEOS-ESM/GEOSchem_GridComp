@@ -86,10 +86,6 @@
   State_Met%Z0         = Z0H                                 ! m
   State_Met%CNV_FRC    = CNV_FRC                             ! 1 
 
-  ! Quantities needed for lightning emissions
-  State_Met%FLASH_DENS = LFR_OFFLINE                         ! km-2s-1 
-  State_Met%CONV_DEPTH = CCTH                                ! m
-
   ! Calculate the Monin-Obukhov Length
 !  WHERE(ABS(SH) > 1.00E-32)
 !    State_Met%MOLENGTH(:,:) = -AIRDENS(:,:,LM) * MAPL_CP * TS * ustar**3. / (MAPL_KARMAN * MAPL_GRAV * SH)
