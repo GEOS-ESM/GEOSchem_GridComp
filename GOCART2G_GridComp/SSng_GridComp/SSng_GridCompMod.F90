@@ -12,7 +12,6 @@ module SSng_GridCompMod
 ! !USES:
    USE ESMF
    USE MAPL_Mod
-!   USE Chem_MieMod
    use Chem_MieMod2G
    use Chem_AeroGeneric
 
@@ -160,6 +159,28 @@ if (mapl_am_i_root()) print*,'GOCARTng SS COMP_NAME = ', trim(COMP_NAME) ! for t
 !   IMPORT STATE
 !   -------------
     if (data_driven) then
+
+!      Pressure at layer edges
+!      -----------------------
+       call MAPL_AddImportSpec(GC,                            &
+          SHORT_NAME = 'PLE',                                 &
+          LONG_NAME  = 'air_pressure',                        &
+          UNITS      = 'Pa',                                  &
+          DIMS       = MAPL_DimsHorzVert,                     &
+          VLOCATION  = MAPL_VLocationEdge,                    &
+          RESTART    = MAPL_RestartSkip,     __RC__)
+
+!      RH: is between 0 and 1
+!      ----------------------
+       call MAPL_AddImportSpec(GC,                            &
+          SHORT_NAME = 'RH2',                                 &
+          LONG_NAME  = 'Rel_Hum_after_moist',                 &
+          UNITS      = '1',                                   &
+          DIMS       = MAPL_DimsHorzVert,                     &
+          VLOCATION  = MAPL_VLocationCenter,                  &
+          RESTART    = MAPL_RestartSkip,     __RC__)
+
+
         do i = 1, n_bins
             write(field_name, '(A, I0.3)') '', i
             call MAPL_AddImportSpec(GC,                                           &
