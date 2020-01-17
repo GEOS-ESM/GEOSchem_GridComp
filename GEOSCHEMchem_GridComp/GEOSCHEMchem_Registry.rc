@@ -104,6 +104,7 @@
   CNV_FRC            |      1      | xy  |   |    |   |   |     |      | x  | convective_fraction 
   Q10M               |   kg/kg     | xy  |   |    |   |   |	|      |    | 10m_specific_humidity
   Q2M                |   kg/kg     | xy  |   |    |   |   |	|      |    | 2m_specific_humidity
+  XLAIMULTI          | cm2_cm-2    | xyz | E |    |   |   |	|      | LAI_by_
 #===========
 # GCHP only:
 #===========

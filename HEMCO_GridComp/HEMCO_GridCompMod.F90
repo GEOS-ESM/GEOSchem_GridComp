@@ -903,7 +903,7 @@ CONTAINS
     Inst%HcoState%Options%Field2Diagn    = .FALSE.  
 
     ! Set ESMF flag to TRUE
-    Inst%HcoState%isESMF = .TRUE.
+    Inst%HcoState%Options%isESMF = .TRUE.
 
     ! ------------------------------------------------------------------
     ! Initialize HEMCO internal lists and variables. All data

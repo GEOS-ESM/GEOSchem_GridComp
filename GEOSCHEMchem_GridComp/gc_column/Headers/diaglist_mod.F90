@@ -9,15 +9,16 @@
 !  and subroutines used for reading and storing user-configured diagnostic
 !  information from the history configuration file, specifically names
 !  and information derived from the names. The diagnostics list is
-!  used to allocate diagnostics stored in container State\_Diag and to 
+!  used to allocate diagnostics stored in container State\_Diag and to
 !  declare exports in GCHP. It does not store collection information. A
 !  module-level collection list containing names all collections that
 !  are declared in HISTORY.rc with names not commented out is also in
-!  this module. This is used to prevent adding diagnostics to the 
+!  this module. This is used to prevent adding diagnostics to the
 !  diagnostic list that are in collections not turned on in HISTORY.rc,
-!  thereby preventing their analogous State\_Diag array initialization 
+!  thereby preventing their analogous State\_Diag array initialization
 !  in GEOS-Chem.
-! 
+!\\
+!\\
 ! !INTERFACE:
 !
 MODULE DiagList_Mod
@@ -65,7 +66,7 @@ MODULE DiagList_Mod
   ! Derived type for Diagnostics Item (unique name in HISTORY.rc)
   !=========================================================================
   TYPE, PUBLIC :: DgnItem
-     CHARACTER(LEN=63)      :: name 
+     CHARACTER(LEN=63)      :: name
      CHARACTER(LEN=63)      :: state
      CHARACTER(LEN=63)      :: metadataID
      CHARACTER(LEN=63)      :: registryID
@@ -80,10 +81,11 @@ MODULE DiagList_Mod
   !=========================================================================
   ! Configurable Settings Used for Diagnostic Names at Run-time
   !=========================================================================
-  CHARACTER(LEN=5), PUBLIC  :: RadWL(3)      ! Wavelengths in radiation menu
-  CHARACTER(LEN=2), PUBLIC  :: RadFlux(12)   ! Names of RRTMG flux outputs
-  INTEGER,          PUBLIC  :: nRadFlux      ! # of selected RRTMG flux outputs
-  LOGICAL,          PUBLIC  :: IsFullChem    ! Is this a fullchem simulation?
+  CHARACTER(LEN=5),  PUBLIC  :: RadWL(3)     ! Wavelengths in radiation menu
+  CHARACTER(LEN=2),  PUBLIC  :: RadFlux(12)  ! Names of RRTMG flux outputs
+  INTEGER,           PUBLIC  :: nRadFlux     ! # of selected RRTMG flux outputs
+  LOGICAL,           PUBLIC  :: IsFullChem   ! Is this a fullchem simulation?
+  CHARACTER(LEN=10), PUBLIC  :: AltAboveSfc  ! Alt for O3, HNO3 diagnostics
 
   !=========================================================================
   ! Derived type for Collections List
@@ -96,7 +98,7 @@ MODULE DiagList_Mod
   ! Derived type for Collections Item (uncommented in HISTORY.rc)
   !=========================================================================
   TYPE, PUBLIC :: ColItem
-     CHARACTER(LEN=63)      :: cname 
+     CHARACTER(LEN=63)      :: cname
      TYPE(ColItem), POINTER :: next
   END TYPE ColItem
 !
@@ -120,10 +122,10 @@ CONTAINS
 !------------------------------------------------------------------------------
 !BOP
 !
-! !IROUTINE: Init_DiagList 
+! !IROUTINE: Init_DiagList
 !
-! !DESCRIPTION: Reads the HISTORY.rc and input.geos input files to get 
-!  determine which GEOS-Chem diagnostics have been requested.  Then it 
+! !DESCRIPTION: Reads the HISTORY.rc and input.geos input files to get
+!  determine which GEOS-Chem diagnostics have been requested.  Then it
 !  uses this information to initialize the master list of diagnostics,
 !  aka, the DiagList object.
 !\\
@@ -233,9 +235,9 @@ CONTAINS
        CALL GC_Error( 'Could not open input.geos!', RC, ThisLoc )
        RETURN
     ENDIF
-    
+
     ! Read data from the input.geos file
-    DO    
+    DO
        ! Read line and strip leading/trailing spaces
        Line = ReadOneLine( fId, EOF, IOS, Squeeze=.TRUE. )
        IF ( EOF ) EXIT
@@ -244,11 +246,27 @@ CONTAINS
           CALL GC_Error( ErrMsg, RC, ThisLoc )
           RETURN
        ENDIF
-    
+
        ! Find out if this is a full-chemistry simulation
-       IF ( INDEX( Line, 'Type of simulation' ) > 0 ) THEN
+       IF ( INDEX( Line, 'Simulation name' ) > 0 ) THEN
           CALL StrSplit( Line, ':', SubStrs, N )
-          IsFullChem = ( TRIM( ADJUSTL( SubStrs(2) ) ) == '3' )
+          SELECT CASE( To_UpperCase( ADJUSTL( SubStrs(2) ) ) )
+             CASE( 'ACIDUPTAKE', 'APM',              'BENCHMARK',            &
+                   'COMPLEXSOA', 'COMPLEXSOA_SVPOA', 'HEMCO',                &
+                   'MARINEPOA',  'RRTMG',            'STANDARD',             &
+                   'TROPCHEM',   'TOMAS12',          'TOMAS15',              &
+                   'TOMAS30',    'TOMAS40'                                  )
+                IsFullChem = .TRUE.
+             CASE DEFAULT
+                IsFullChem = .FALSE.
+          END SELECT
+       ENDIF
+
+       ! Find the altitude above thes surface for O3, HNO3 diagnostics
+       IF ( INDEX( Line, 'Diag alt above sfc [m]' ) > 0 ) THEN
+          CALL StrSplit( Line, ':', SubStrs, N )
+          AltAboveSfc = TRIM( ADJUSTL( SubStrs(2) ) ) // 'm'
+          found       = .TRUE.
        ENDIF
 
        ! Update wavelength(s) with string in file
@@ -261,13 +279,14 @@ CONTAINS
           ENDDO
 
           ! Exit the search
-          EXIT
+          IF ( found ) EXIT
        ENDIF
     ENDDO
-    
+
     ! Close the file
     CLOSE( fId )
-    
+    found = .FALSE.
+
     !=======================================================================
     ! Read data from the HISTORY.rc configuration file
     !=======================================================================
@@ -288,7 +307,7 @@ CONTAINS
     ! Read history config file line by line in a loop
     !====================================================================
     DO
-    
+
        ! Read line and strip leading/trailing spaces. Skip if commented out
        Line    = ReadOneLine( fId, EOF, IOS, Squeeze=.TRUE. )
        LineNum = LineNum + 1
@@ -316,7 +335,7 @@ CONTAINS
 
           ! Read through file until end of COLLECTIONS section
           DO WHILE ( INDEX( Line, '::' ) .le. 0 )
- 
+
              ! Add name to collection list if not commented out
              IF ( collname(1:1) /= "#"  ) THEN
                 CALL Init_ColItem( am_I_Root, NewCollItem, collname )
@@ -337,7 +356,7 @@ CONTAINS
              ENDIF
 
              ! Get next collection name
-             collname = CleanText( Line )    
+             collname = CleanText( Line )
 
           ENDDO
           CALL Print_ColList( am_I_Root, CollList, RC )
@@ -347,7 +366,8 @@ CONTAINS
        !====================================================================
        ! Skip collection section if not in collection name list
        !====================================================================
-       IF ( INDEX( Line, '.template' ) .gt. 0 ) THEN
+       IF ( INDEX( Line, '.template' ) .gt. 0 .or. &
+            INDEX( Line, '.filename' ) .gt. 0 ) THEN
 
           ! Check if collection was uncommented in the COLLECTIONS section
           CALL CStrip( Line, KeepSpaces=.TRUE. )
@@ -357,7 +377,7 @@ CONTAINS
 
           ! Skip this collection if not found in list
           IF ( .NOT. Found ) THEN
-             DO WHILE ( INDEX( Line, '::' ) .le. 0 ) 
+             DO WHILE ( INDEX( Line, '::' ) .le. 0 )
                 Line    = ReadOneLine( fId, EOF, IOS, Squeeze=.TRUE. )
                 LineNum = LineNum + 1
                 IF ( IOS > 0 .OR. EOF ) THEN
@@ -372,9 +392,9 @@ CONTAINS
           ENDIF
        ENDIF
 
-#if !defined( MODEL_GEOS )  
+#if !defined( MODEL_GEOS )
        !====================================================================
-       ! Add some extra error checks for collections that are in the 
+       ! Add some extra error checks for collections that are in the
        ! collection name list (and therefore will be archived)
        !====================================================================
 
@@ -392,22 +412,22 @@ CONTAINS
        IF ( INDEX( Line, '.' ) > 0 ) THEN
 
           ! Denote that we are in the definition section
-          InDefSection = .TRUE. 
-          
+          InDefSection = .TRUE.
+
           ! Split the line into substrings
           CALL StrSplit( Line, " ", SubStrs, N )
           AttName  = SubStrs(1)           ! Attribute name
           AttValue = SubStrs(2)           ! Attribute value
           AttComp  = Substrs(3)           ! Gridded component name (for GCHP)
 
-          ! If the .fields tag is found, then denote that we are 
+          ! If the .fields tag is found, then denote that we are
           ! in the section where collection fields are defined
           ! we have entered into th
-          IF ( INDEX( Line, '.fields' ) > 0 ) THEN 
+          IF ( INDEX( Line, '.fields' ) > 0 ) THEN
              InFieldsSection = .TRUE.
              LastCollName    = collName
           ENDIF
-        
+
           ! We expect at least 2 substrings
           IF ( LEN_TRIM( AttValue ) == 0 ) THEN
              ErrMsg = 'The value of attribute "'// TRIM( AttName )        // &
@@ -499,8 +519,8 @@ CONTAINS
        IF ( InFieldsSection ) THEN
 
           ! Extract the current collection name, which forms the first
-          ! part of the attribute name (up to the "." character.  If this 
-          ! does not match the expected collection name, then we have a 
+          ! part of the attribute name (up to the "." character.  If this
+          ! does not match the expected collection name, then we have a
           ! missing separator ("::") somewhere.  Stop with an error.
           C = INDEX( AttName, '.' )
           IF ( AttName(1:C-1) /= TRIM( LastCollName ) ) THEN
@@ -515,9 +535,9 @@ CONTAINS
              RETURN
           ENDIF
 
-          ! Throw an error if we cannot find the gridcomp name 
+          ! Throw an error if we cannot find the gridcomp name
           ! (e.g. "'GIGCchem',").  GCHP will choke if this isn't found.
-          G = INDEX( Line, "'GIGCchem'," ) 
+          G = INDEX( Line, "'GIGCchem'," )
           IF ( G == 0 ) THEN
              ErrMsg = 'The name of the GCHP gridded component '           // &
                       "(e.g. 'GIGCchem') for attribute "  // '" '         // &
@@ -532,7 +552,7 @@ CONTAINS
           ! Save into LineSq the text of the line, skipping over
           ! the attribute name (if we are on the first line),
           ! as well as the gridcomp name
-          F = INDEX( Line, '.fields' )             
+          F = INDEX( Line, '.fields' )
           IF ( F > 0 ) THEN
              C = INDEX( Line, ':' )
              FieldName = Line(C+1:G-1)
@@ -570,8 +590,8 @@ CONTAINS
 
        !====================================================================
        ! Add unique diagnostic names to diag list
-       !==================================================================== 
-   
+       !====================================================================
+
        ! Skip line if GIGCchem not present
        ! GEOS-Chem is names 'GEOSCHEMCHEM' on NCCS discover,
        ! scan accordingly (ckeller, 12/29/17)
@@ -625,7 +645,7 @@ CONTAINS
           state = 'DIAG'
        ENDIF
 
-       ! Get wildcard, if any 
+       ! Get wildcard, if any
        ! NOTE: Must be prefaced with single underscore in HISTORY.rc!
        isWildcard = .FALSE.
        wildcard   = ''
@@ -668,7 +688,7 @@ CONTAINS
        ENDIF
        ! Then strip off the wildcard, if any
        IF ( isWildcard ) THEN
-          I = INDEX( TRIM(registryID), '_' ) 
+          I = INDEX( TRIM(registryID), '_' )
           IF ( I .le. 0 ) THEN
              ErrMsg = 'Error setting registryID. Single underscore must' &
                       // ' precede wildcard in HISTORY.rc!'
@@ -682,11 +702,11 @@ CONTAINS
        metadataID = registryID
        ! Then strip off the tag suffix, if any
        IF ( isTagged ) THEN
-          I = INDEX( TRIM(metadataID), '_' ) 
+          I = INDEX( TRIM(metadataID), '_' )
           metadataID = metadataID(1:I-1)
        ENDIF
 
-       ! For registryID and metdataID, handle special case of AOD wavelength 
+       ! For registryID and metdataID, handle special case of AOD wavelength
        ! Update registryID
        IWL(1) = INDEX( TRIM(registryID), 'WL1' )
        IWL(2) = INDEX( TRIM(registryID), 'WL2' )
@@ -695,7 +715,7 @@ CONTAINS
        IF ( IWLMAX > 0 ) THEN
           IWLMAXLOC = MAXLOC(IWL)
           registryIDprefix = registryID(1:IWL(IWLMAXLOC(1))-1) // &
-                             TRIM(RadWL(IWLMAXLOC(1))) // 'nm'
+                             TRIM(RadWL(IWLMAXLOC(1))) // 'NM'
           I = INDEX( TRIM(registryID), '_' )
           IF ( I > 0 ) THEN
              registryID = TRIM(registryIDprefix) // registryID(I:)
@@ -711,7 +731,7 @@ CONTAINS
        IF ( IWLMAX > 0 ) THEN
           IWLMAXLOC = MAXLOC(IWL(:))
           metadataID = metadataID(1:IWL(IWLMAXLOC(1))-1) //  &
-                       TRIM(RadWL(IWLMAXLOC(1))) // 'nm'
+                       TRIM(RadWL(IWLMAXLOC(1))) // 'NM'
        ENDIF
 
        ! Special handling for the RRTMG diagnostic flux outputs
@@ -732,7 +752,7 @@ CONTAINS
 
           ELSE
 
-             ! If a tag is not explicity stated, then manually define all 
+             ! If a tag is not explicity stated, then manually define all
              ! slots of the RadFlux array (and update nRadFlux accordingly)
              ! See: wiki.geos-chem.org/Coupling_GEOS-Chem_with_RRTMG
              RadFlux(1 ) = 'O3'
@@ -749,6 +769,23 @@ CONTAINS
              nRadFlux    = 11
 
           ENDIF
+       ENDIF
+
+       ! Special handling for diagnostics at a specific height
+       ! (e.g. rename O3CONCATALT --> O3CONCAT10M)
+       IWL(1) = INDEX( TRIM(registryID), 'ALT1' )
+       IF ( IWL(1) > 0 ) THEN
+          registryIDprefix = registryID(1:IWL(1)-1) // TRIM( AltAboveSfc )
+          I = INDEX( TRIM(registryID), '_' )
+          IF ( I > 0 ) THEN
+             registryID = TRIM(registryIDprefix) // registryID(I:)
+          ELSE
+             registryID = registryIDprefix
+          ENDIF
+       ENDIF
+       IWL(2) = INDEX( TRIM(metadataID), 'ALT1' )
+       IF ( IWL(2) > 0 ) THEN
+          metadataID = metadataID(1:IWL(2)-1) // TRIM( AltAboveSfc )
        ENDIF
 
        !====================================================================
@@ -769,7 +806,7 @@ CONTAINS
           CALL GC_Error( ErrMsg, RC, ThisLoc )
           RETURN
        ENDIF
-    
+
        !====================================================================
        ! Add new DiagItem to linked list
        !====================================================================
@@ -777,7 +814,7 @@ CONTAINS
        IF ( RC /= GC_SUCCESS ) RETURN
 
     ENDDO
-    
+
     !====================================================================
     ! Close the file
     !====================================================================
@@ -946,7 +983,7 @@ CONTAINS
 !          CollItem = current
 !          EXIT
 !       ENDIF
-!       current => current%next    
+!       current => current%next
 !    ENDDO
 !    current => NULL()
 !
@@ -1005,7 +1042,7 @@ CONTAINS
           IF ( PRESENT( Found ) ) Found = .TRUE.
           EXIT
        ENDIF
-       current => current%next    
+       current => current%next
     ENDDO
 
     ! Exit with error if no collection matches the input name
@@ -1024,7 +1061,7 @@ CONTAINS
 !------------------------------------------------------------------------------
 !BOP
 !
-! !IROUTINE: InsertBeginning_DiagList 
+! !IROUTINE: InsertBeginning_DiagList
 !
 ! !DESCRIPTION: Inserts a new node at the beginning of the DiagList linked
 !  list object.
@@ -1077,7 +1114,7 @@ CONTAINS
 !------------------------------------------------------------------------------
 !BOP
 !
-! !IROUTINE: InsertBeginning_ColList 
+! !IROUTINE: InsertBeginning_ColList
 !
 ! !DESCRIPTION: Inserts a new node at the beginning of the ColList linked
 !  list object.
@@ -1149,7 +1186,7 @@ CONTAINS
 ! !OUTPUT PARAMETERS:
 !
     LOGICAL,           INTENT(OUT) :: found
-    INTEGER,           INTENT(OUT) :: RC 
+    INTEGER,           INTENT(OUT) :: RC
 !
 ! !REVISION HISTORY:
 !  22 Sep 2017 - E. Lundgren - Initial version
@@ -1174,7 +1211,7 @@ CONTAINS
           current=> NULL()
           EXIT
        ENDIF
-       current => current%next    
+       current => current%next
     ENDDO
     current => NULL()
 
@@ -1204,7 +1241,7 @@ CONTAINS
 ! !OUTPUT PARAMETERS:
 !
     LOGICAL,           INTENT(OUT) :: found
-    INTEGER,           INTENT(OUT) :: RC 
+    INTEGER,           INTENT(OUT) :: RC
 !
 ! !REVISION HISTORY:
 !  25 Jan 2018 - E. Lundgren - Initial version
@@ -1228,7 +1265,7 @@ CONTAINS
           found = .TRUE.
           EXIT
        ENDIF
-       current => current%next    
+       current => current%next
     ENDDO
     current => NULL()
 
@@ -1241,7 +1278,7 @@ CONTAINS
 !
 ! !IROUTINE: Check_DiagList
 !
-! !DESCRIPTION: Returns TRUE if a diagnostic name (or just a substring of a 
+! !DESCRIPTION: Returns TRUE if a diagnostic name (or just a substring of a
 !  diagnostic name) is found in the DiagList diagnostic list object.
 !\\
 !\\
@@ -1337,11 +1374,11 @@ CONTAINS
              found = .TRUE.
              EXIT
           ENDIF
-         
+
        ENDIF
 
        ! Move to next diagnostic in the linked list
-       current => current%next    
+       current => current%next
     ENDDO
 
     ! Free pointer
@@ -1354,7 +1391,7 @@ CONTAINS
 !------------------------------------------------------------------------------
 !BOP
 !
-! !IROUTINE: Print_DiagList 
+! !IROUTINE: Print_DiagList
 !
 ! !DESCRIPTION: Subroutine Print\_DiagList prints information for all
 !  DiagItem members in a DiagList linked list.
@@ -1416,7 +1453,7 @@ CONTAINS
        ENDIF
 
        ! Set up for next item
-       current => current%next    
+       current => current%next
     ENDDO
 
     ! cleanup
@@ -1430,7 +1467,7 @@ CONTAINS
 !------------------------------------------------------------------------------
 !BOP
 !
-! !IROUTINE: Print_ColList 
+! !IROUTINE: Print_ColList
 !
 ! !DESCRIPTION: Subroutine Print\_ColList prints information for all
 !  ColItem members in a ColList linked list.
@@ -1478,9 +1515,9 @@ CONTAINS
        IF ( am_I_Root ) THEN
           PRINT *, TRIM(current%cname)
        ENDIF
-          
+
        ! Set up for next item
-       current => current%next    
+       current => current%next
     ENDDO
 
     ! cleanup
@@ -1494,7 +1531,7 @@ CONTAINS
 !------------------------------------------------------------------------------
 !BOP
 !
-! !IROUTINE: Cleanup_DiagList 
+! !IROUTINE: Cleanup_DiagList
 !
 ! !DESCRIPTION: Subroutine Cleanup\_DiagList deallocates a DiagList
 !  object and all of its member objects including the linked list of
@@ -1559,7 +1596,7 @@ CONTAINS
 !------------------------------------------------------------------------------
 !BOP
 !
-! !IROUTINE: Cleanup_ColList 
+! !IROUTINE: Cleanup_ColList
 !
 ! !DESCRIPTION: Subroutine Cleanup\_ColList deallocates a ColList
 !  object and all of its member objects including the linked list of
@@ -1613,7 +1650,7 @@ CONTAINS
     ! Final cleanup
     current => NULL()
     next    => NULL()
-    
+
   END SUBROUTINE Cleanup_ColList
 !EOC
 END MODULE DiagList_Mod
