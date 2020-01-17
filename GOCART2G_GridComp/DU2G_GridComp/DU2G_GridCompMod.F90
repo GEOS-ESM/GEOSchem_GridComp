@@ -14,6 +14,7 @@ module DU2G_GridCompMod
    use MAPL_Mod
    use Chem_MieMod2G
    use Chem_AeroGeneric
+   use GEOS_UtilsMod
 
    implicit none
    private
@@ -140,6 +141,27 @@ contains
 !   IMPORT STATE
 !   -------------
     if (data_driven) then
+
+!      Pressure at layer edges
+!      -----------------------
+       call MAPL_AddImportSpec(GC,                            &
+          SHORT_NAME = 'PLE',                                 &
+          LONG_NAME  = 'air_pressure',                        &
+          UNITS      = 'Pa',                                  &
+          DIMS       = MAPL_DimsHorzVert,                     &
+          VLOCATION  = MAPL_VLocationEdge,                    &
+          RESTART    = MAPL_RestartSkip,     __RC__)
+
+!      RH: is between 0 and 1
+!      ----------------------
+       call MAPL_AddImportSpec(GC,                            &
+          SHORT_NAME = 'RH2',                                 &
+          LONG_NAME  = 'Rel_Hum_after_moist',                 &
+          UNITS      = '1',                                   &
+          DIMS       = MAPL_DimsHorzVert,                     &
+          VLOCATION  = MAPL_VLocationCenter,                  &
+          RESTART    = MAPL_RestartSkip,     __RC__)
+
        do i = 1, bins 
            write (field_name, '(A, I0.3)') '', i
             call MAPL_AddImportSpec(GC,                                     &
@@ -413,6 +435,13 @@ contains
     ! Add variables to DU instance's AERO state. This is used in aerosol optics calculations
     call addAero (aero, label='air_pressure_for_aerosol_optics',             label2='PLE', grid=grid, typekind=MAPL_R4, __RC__)
     call addAero (aero, label='relative_humidity_for_aerosol_optics',        label2='RH',  grid=grid, typekind=MAPL_R4, __RC__)
+!   call ESMF_StateGet (import, 'PLE', field, __RC__)
+!   call MAPL_StateAdd (aero, field, __RC__)
+
+!   call ESMF_StateGet (import, 'RH2', field, __RC__)
+!   call MAPL_StateAdd (aero, field, __RC__)
+
+
     call addAero (aero, label='extinction_in_air_due_to_ambient_aerosol',    label2='EXT', grid=grid, typekind=MAPL_R8, __RC__)
     call addAero (aero, label='single_scattering_albedo_of_ambient_aerosol', label2='SSA', grid=grid, typekind=MAPL_R8, __RC__)
     call addAero (aero, label='asymmetry_parameter_of_ambient_aerosol',      label2='ASY', grid=grid, typekind=MAPL_R8, __RC__)
@@ -616,9 +645,9 @@ contains
     integer,            intent(out)                  :: rc
 
 !   !Local
-    real, dimension(:,:,:), pointer                  :: ple
-    real, dimension(:,:,:), pointer                  :: rh
-    real(kind=8), dimension(:,:,:), pointer                  :: var
+    integer, parameter                               :: DP=kind(1.0d0)
+    real, dimension(:,:,:), pointer                  :: ple, rh
+    real(kind=DP), dimension(:,:,:), pointer          :: var
     real, dimension(:,:,:), pointer                  :: q
     real, dimension(:,:,:,:), pointer                :: q_4d
 
@@ -627,7 +656,7 @@ contains
     character (len=ESMF_MAXSTR)                      :: COMP_NAME
     character (len=ESMF_MAXSTR), allocatable         :: aerosol_names(:)
 
-    real(kind = 8), dimension(:,:,:), allocatable              :: ext, ssa, asy  ! (lon:,lat:,lev:)
+    real(kind=DP), dimension(:,:,:), allocatable              :: ext, ssa, asy  ! (lon:,lat:,lev:)
 
     integer                                          :: instance
     integer                                          :: n
@@ -666,14 +695,19 @@ contains
     call ESMF_AttributeGet (state, name='air_pressure_for_aerosol_optics', value=fld_name, __RC__)
     call MAPL_GetPointer (state, ple, trim(fld_name), __RC__)
 
+!    call MAPL_GetPointer (state, ple, 'PLE', __RC__)
+
     i1 = lbound(ple, 1); i2 = ubound(ple, 1)
     j1 = lbound(ple, 2); j2 = ubound(ple, 2)
                          km = ubound(ple, 3)
+
 
 !   Relative humidity
 !   -----------------
     call ESMF_AttributeGet (state, name='relative_humidity_for_aerosol_optics', value=fld_name, __RC__)
     call MAPL_GetPointer (state, rh, trim(fld_name), __RC__)
+
+!    call MAPL_GetPointer (state, rh, 'RH2', __RC__)
 
 
     allocate(ext(i1:i2, j1:j2, km), &
@@ -737,9 +771,9 @@ contains
     real,                          intent(in )   :: rh(:,:,:)        ! relative humidity
 
 
-    real(kind=8), intent(  out) :: bext_ (size(ext,1),size(ext,2),size(ext,3))
-    real(kind=8), intent(  out) :: bssa_ (size(ext,1),size(ext,2),size(ext,3))
-    real(kind=8), intent(  out) :: gasym_(size(ext,1),size(ext,2),size(ext,3))
+    real(kind=DP), intent(  out) :: bext_ (size(ext,1),size(ext,2),size(ext,3))
+    real(kind=DP), intent(  out) :: bssa_ (size(ext,1),size(ext,2),size(ext,3))
+    real(kind=DP), intent(  out) :: gasym_(size(ext,1),size(ext,2),size(ext,3))
 
     integer,                       intent(  out) :: rc
 
@@ -768,17 +802,7 @@ contains
          bext_  = bext_  +             bext     ! total extinction due to dust
          bssa_  = bssa_  +       (bssa*bext)    ! total scattering
          gasym_ = gasym_ + gasym*(bssa*bext)    ! sum of (asy * sca)
-
-!         bext_  = bext_  +             bext     ! total extinction due to dust
-!         bssa_  = bssa_  +             bssa     ! total scattering
-!         gasym_ = gasym_ +             gasym    ! sum of (asy * sca)
      end do
-
-!     bext  = bext_
-!     bssa  = bssa_
-!     gasym = gasym_
-
-!if (mapl_am_i_root()) print*,'MIE sum(bext) = ',sum(bext)
 
 
      RETURN_(ESMF_SUCCESS)
