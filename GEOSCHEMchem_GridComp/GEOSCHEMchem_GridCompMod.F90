@@ -648,6 +648,11 @@ CONTAINS
     VERIFY_(STATUS)
 #endif
 
+    ! Define imports to fill met fields needed for lightning
+#if defined( MODEL_GEOS )
+    CALL MetVars_For_Lightning_Init( GC, MyState%myCF, __RC__ )
+#endif
+
 !
 ! !INTERNAL STATE:
 !
@@ -3199,6 +3204,9 @@ CONTAINS
     REAL, POINTER     :: PTR_GCCTO3 (:,:) => NULL()
     REAL, POINTER     :: PTR_GCCTTO3(:,:) => NULL()
 
+    ! Lightning
+    REAL, POINTER     :: LFR(:,:) => NULL()
+
 #else
     ! GCHP only local variables
     INTEGER                      :: trcID, RST
@@ -3786,6 +3794,9 @@ CONTAINS
 #endif
 
 #if defined( MODEL_GEOS )
+       CALL MetVars_For_Lightning_Run( GC, Import=IMPORT, Export=EXPORT, &
+             State_Met=State_Met, State_Grid=State_Grid, __RC__ )
+
        ! Eventually initialize species concentrations from external field. 
        IF ( InitFromFile ) THEN 
           IsFirst = ( FIRST .OR. FIRSTREWIND )
@@ -4487,8 +4498,7 @@ CONTAINS
     ENDIF
 
     !=======================================================================
-    ! Lightning potential (from GEOS lightning flash rates and convective 
-    ! fraction) 
+    ! FJX diagnostics 
     !=======================================================================
     if ( phase /= 1 ) then
        CALL MAPL_GetPointer( EXPORT, Ptr2D, 'FJX_EXTRAL_NLEVS', &
@@ -4509,8 +4519,8 @@ CONTAINS
                              NotFoundOk=.TRUE., __RC__ )
        IF ( ASSOCIATED(Ptr2D) ) THEN
           ASSERT_(ASSOCIATED(LWI))      ! Land-Water-Ice flag
-          ASSERT_(ASSOCIATED(LFR))      ! GEOS lightning flash rate
           ASSERT_(ASSOCIATED(CNV_FRC))  ! Convective fraction
+          CALL MAPL_GetPointer( IMPORT, LFR, 'LFR', __RC__ )
           CALL MAPL_GetPointer( EXPORT, PtrEmis, 'EMIS_NO_LGHT',  &
                                 NotFoundOk=.TRUE., __RC__ )
           Ptr2D = 0.0
@@ -7435,7 +7445,301 @@ CONTAINS
 
   END SUBROUTINE SetAnaO3_ 
 !EOC
+!------------------------------------------------------------------------------
+!     NASA/GSFC, Global Modeling and Assimilation Office, Code 910.1 and      !
+!          Harvard University Atmospheric Chemistry Modeling Group            !
+!------------------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: MetVars_For_Lightning_Init
+!
+! !DESCRIPTION: Initialize the imports to fill the met variables needed for
+!               lightning NOx computation 
+!\\
+!\\
+! !INTERFACE:
+!
+  SUBROUTINE MetVars_For_Lightning_Init( GC, CF, RC )
+!
+! !INPUT/OUTPUT PARAMETERS:
+!
+    TYPE(ESMF_GridComp), INTENT(INOUT)         :: GC        ! Ref. to this GridComp
+    TYPE(ESMF_Config),   INTENT(INOUT)         :: CF        ! GEOSCHEM*.rc
+!
+! !OUTPUT PARAMETERS:
+!
+    INTEGER,             INTENT(OUT)           :: RC        ! Success or failure?
+!
+! !REMARKS:
+!
+! !REVISION HISTORY:
+!  20 Jan 2020 - C. Keller   - Initial version
+!EOP
+!------------------------------------------------------------------------------
+!BOC
+!
+! LOCAL VARIABLES:
+!
+    CHARACTER(LEN=31)  :: LfrSrc, CnvSrc
 
+    __Iam__('MetVars_For_Lightning_Init')
+
+    ! Get source for lightning fields
+    CALL MetVars_For_Lightning_Run( GC, DryRun=.TRUE., CF=CF, &
+                                    LfrSrc=LfrSrc, CnvSrc=CnvSrc, __RC__ )
+
+    ! LFR import - always pass LFR and LFR_GCC. Depending on specification, 
+    ! also provide import from external file
+    call MAPL_AddImportSpec(GC,                     &
+               SHORT_NAME='LFR',                    &
+               LONG_NAME ='lightning_flash_rate',   &
+               UNITS     ='km-2 s-1',               &
+               DIMS      = MAPL_DimsHorzOnly,       &
+               VLOCATION = MAPL_VLocationNone,      &
+                                              __RC__ ) 
+
+    call MAPL_AddImportSpec(GC,                     &
+               SHORT_NAME='LFR_GCC',                &
+               LONG_NAME ='lightning_flash_rate',   &
+               UNITS     ='km-2 s-1',               &
+               DIMS      = MAPL_DimsHorzOnly,       &
+               VLOCATION = MAPL_VLocationNone,      &
+                                              __RC__ ) 
+
+    IF ( (TRIM(LfrSrc)/='LFR') .AND. &
+         (TRIM(LfrSrc)/='LFR_GCC')    ) THEN
+       call MAPL_AddImportSpec(GC,                     &
+                  SHORT_NAME=TRIM(LfrSrc),             &
+                  LONG_NAME ='lightning_flash_rate',   &
+                  UNITS     ='km-2 s-1',               &
+                  DIMS      = MAPL_DimsHorzOnly,       &
+                  VLOCATION = MAPL_VLocationNone,      &
+                                                 __RC__ ) 
+    ENDIF
+
+    ! Import fields needed to compute convective height, depending on specification
+    SELECT CASE ( TRIM(CnvSrc) )
+       CASE ( 'CNV_MFC' )
+          ! CNV_MFC is always imported, nothing to do here
+          !CONTINUE
+
+       CASE ( 'BYNCY' )
+          call MAPL_AddImportSpec(GC,                   &
+             SHORT_NAME = 'BYNCY',                      &
+             LONG_NAME  ='buoyancy_of surface_parcel',  &
+             UNITS      ='m s-2',                       &
+             DIMS       = MAPL_DimsHorzVert,            &
+             VLOCATION  = MAPL_VLocationCenter,         &
+                                                  __RC__ )
+
+       CASE DEFAULT
+          call MAPL_AddImportSpec(GC,                       &
+               SHORT_NAME=TRIM(CnvSrc),                     &
+               LONG_NAME ='convective_cloud_top_from_file', &
+               UNITS     ='m',                              &
+               DIMS      = MAPL_DimsHorzOnly,               &
+               VLOCATION = MAPL_VLocationNone,              &
+                                                      __RC__ ) 
+
+    END SELECT
+
+    ! Also add export for CONV_DEPTH_GCC & LFR diagnostics
+    call MAPL_AddExportSpec(GC,                                    &
+               SHORT_NAME='GCD_CONV_DEPTH',                        &
+               LONG_NAME ='Convective_depth_seen_by_GEOSCHEMchem', &
+               UNITS     ='m',                                     &
+               DIMS      = MAPL_DimsHorzOnly,                      &
+               VLOCATION = MAPL_VLocationNone,                     &
+                                                             __RC__ ) 
+
+    call MAPL_AddExportSpec(GC,                                     &
+               SHORT_NAME='GCD_LFR',                                &
+               LONG_NAME ='Lightning_flash_rate_seen_GEOSCHEMchem', &
+               UNITS     ='km-2 s-1',                               &
+               DIMS      = MAPL_DimsHorzOnly,                       &
+               VLOCATION = MAPL_VLocationNone,                      &
+                                                              __RC__ ) 
+
+
+    RETURN_(ESMF_SUCCESS)
+
+  END SUBROUTINE MetVars_For_Lightning_Init
+!EOC
+!------------------------------------------------------------------------------
+!     NASA/GSFC, Global Modeling and Assimilation Office, Code 910.1 and      !
+!          Harvard University Atmospheric Chemistry Modeling Group            !
+!------------------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: MetVars_For_Lightning_Run
+!
+! !DESCRIPTION: Fill the State_Met variables needed for lightning NOx calculation 
+!\\
+!\\
+! !INTERFACE:
+!
+  SUBROUTINE MetVars_For_Lightning_Run( GC, Import, Export, State_Met, State_Grid, &
+                                        DryRun, CF, LfrSrc, CnvSrc, RC )
+!
+! !INPUT/OUTPUT PARAMETERS:
+!
+    TYPE(ESMF_GridComp), INTENT(INOUT)           :: GC         ! Ref. to this GridComp
+    TYPE(ESMF_State),    INTENT(INOUT), OPTIONAL :: Import     ! Import State
+    TYPE(ESMF_State),    INTENT(INOUT), OPTIONAL :: Export     ! Export State
+    TYPE(MetState),      INTENT(INOUT), OPTIONAL :: State_Met  ! Met. state object
+    TYPE(GrdState),      INTENT(IN),    OPTIONAL :: State_Grid ! Grid state 
+    LOGICAL,             INTENT(IN),    OPTIONAL :: DryRun     ! Don't fill fields 
+    TYPE(ESMF_Config),   INTENT(INOUT), OPTIONAL :: CF         ! GEOSCHEM*.rc
+!
+! !OUTPUT PARAMETERS:
+!
+    CHARACTER(LEN=*),    INTENT(OUT), OPTIONAL   :: LfrSrc     ! Lightning flash rate source ID
+    CHARACTER(LEN=*),    INTENT(OUT), OPTIONAL   :: CnvSrc     ! Convective height source ID
+    INTEGER,             INTENT(OUT)             :: RC         ! Success or failure?
+!
+! !REMARKS:
+!
+! !REVISION HISTORY:
+!  20 Jan 2020 - C. Keller   - Initial version
+!EOP
+!------------------------------------------------------------------------------
+!BOC
+!
+! LOCAL VARIABLES:
+!
+  INTEGER                       :: I,J,L
+  INTEGER                       :: LTOP
+  LOGICAL                       :: am_I_Root
+  LOGICAL                       :: Skip 
+  CHARACTER(LEN=31), SAVE       :: LFR_SOURCE = ""
+  CHARACTER(LEN=31), SAVE       :: CNV_SOURCE = ""
+  INTEGER, SAVE                 :: CNV_ID = -1 
+  REAL, POINTER                 :: Ptr2d(:,:)
+  REAL, POINTER                 :: BYNCY(:,:,:)
+
+  __Iam__('MetVars_For_Lightning_Run')
+  am_I_Root = MAPL_Am_I_Root()
+
+!-LFR source 
+  IF ( TRIM(LFR_SOURCE)=="" .OR. CNV_ID<0 ) THEN
+     ASSERT_(PRESENT(CF))
+     CALL ESMF_ConfigGetAttribute( CF, LFR_SOURCE,                     &
+                                 Label="LIGHTNING_FLASH_RATE_SOURCE:", &
+                                 Default="LFR_GCC",                    &
+                                 __RC__                                 )
+     ! Verbose
+     IF (am_I_Root) THEN
+        WRITE(*,*) 'GEOSCHEMchem lightning flash rate source: ',TRIM(LFR_SOURCE)
+     ENDIF
+
+!----Convective height source 
+     CALL ESMF_ConfigGetAttribute( CF, CNV_SOURCE,                         &
+                                 Label="LIGHTNING_CONVECTIVE_TOP_SOURCE:", &
+                                 Default="CNV_MFC",                        &
+                                 __RC__                                     )
+     SELECT CASE ( TRIM(CNV_SOURCE) )
+        CASE ( "CNV_MFC" )
+           CNV_ID = 0    
+        CASE ( "BYNCY" )
+           CNV_ID = 1    
+        CASE DEFAULT 
+           CNV_ID = 2
+     END SELECT
+
+     ! Verbose
+     IF (am_I_Root) THEN
+        WRITE(*,*) 'GEOSCHEMchem lightning convective height source: ',TRIM(CNV_SOURCE)
+     ENDIF
+
+  ENDIF
+
+!-Fill state met
+  IF ( PRESENT(DryRun) ) THEN
+     Skip = DryRun
+  ELSE
+     Skip = .FALSE.
+  ENDIF
+  IF ( .NOT. Skip ) THEN
+
+!----Lightning flash rate density [km-2 s-1]
+     call MAPL_GetPointer ( IMPORT, Ptr2D, TRIM(LFR_SOURCE), __RC__ )
+     State_Met%FLASH_DENS = Ptr2D 
+
+     ! Eventually add to Export
+     Ptr2D => NULL()
+     call MAPL_GetPointer ( EXPORT, Ptr2D, 'GCD_LFR', NotFoundOk=.TRUE., __RC__ )
+     IF ( ASSOCIATED(Ptr2D) ) Ptr2D = State_Met%FLASH_DENS
+
+!----Convective depth [m]
+     SELECT CASE ( CNV_ID )
+        ! Convective mass flux
+        ! Get highest level with positive convective mass flux. CNV_MFC is on
+        ! GEOS coordinates (--> 1=top of atmosphere) and on level edges.
+        CASE ( 0 )
+           DO J=1,State_Grid%NY
+           DO I=1,State_Grid%NX
+              LTOP = 0
+              DO L = 2,State_Grid%NZ+1
+                 IF ( CNV_MFC(I,J,L) > 0.0 ) THEN
+                    LTOP = (State_Grid%NZ+1) - L + 1
+                    EXIT
+                 ENDIF
+              ENDDO
+              IF ( LTOP > 0 ) THEN
+                 State_Met%CONV_DEPTH(I,J) = SUM(State_Met%BXHEIGHT(I,J,1:LTOP))
+              ELSE
+                 State_Met%CONV_DEPTH(I,J) = 0.0
+              ENDIF
+           ENDDO
+           ENDDO
+
+        ! Buoyancy and convective fraction
+        ! Get highest level with positive buoyancy and where convective fraction
+        ! is non-zero. BYNCY is on GEOS coordinates (--> 1=top of atmosphere) and 
+        ! on level mid-points. LM captures the dimension of CNV_MFC, which is on 
+        ! level edges.
+        CASE ( 1 )
+           call MAPL_GetPointer ( IMPORT, BYNCY, 'BYNCY', __RC__ )
+           ASSERT_(ASSOCIATED(CNV_FRC))
+           DO J=1,State_Grid%NY
+           DO I=1,State_Grid%NX
+              LTOP = 0
+              IF ( CNV_FRC(I,J) > 0.0 ) THEN
+                 DO L = 1,State_Grid%NZ
+                    IF ( BYNCY(I,J,L) > 0.0 ) THEN
+                       LTOP = State_Grid%NZ - L + 1
+                       EXIT
+                    ENDIF
+                 ENDDO
+              ENDIF
+              IF ( LTOP > 0 ) THEN
+                 State_Met%CONV_DEPTH(I,J) = SUM(State_Met%BXHEIGHT(I,J,1:LTOP))
+              ELSE
+                 State_Met%CONV_DEPTH(I,J) = 0.0
+              ENDIF
+           ENDDO
+           ENDDO
+
+        ! Offline file 
+        CASE ( 2 )
+           call MAPL_GetPointer ( IMPORT, Ptr2D, TRIM(CNV_SOURCE), __RC__ )
+           State_Met%CONV_DEPTH = Ptr2D 
+     END SELECT
+
+     ! Eventually add to Export
+     Ptr2D => NULL()
+     call MAPL_GetPointer ( EXPORT, Ptr2D, 'GCD_CONV_DEPTH', NotFoundOk=.TRUE., __RC__ )
+     IF ( ASSOCIATED(Ptr2D) ) Ptr2D = State_Met%CONV_DEPTH 
+
+  ENDIF ! Skip
+
+!-Cleanup 
+  IF ( PRESENT(LfrSrc) ) LfrSrc = LFR_SOURCE 
+  IF ( PRESENT(CnvSrc) ) CnvSrc = CNV_SOURCE 
+  RETURN_(ESMF_SUCCESS)
+
+  END SUBROUTINE MetVars_For_Lightning_Run
+!EOC
 !------------------------------------------------------------------------------
 !     NASA/GSFC, Global Modeling and Assimilation Office, Code 910.1 and      !
 !          Harvard University Atmospheric Chemistry Modeling Group            !
