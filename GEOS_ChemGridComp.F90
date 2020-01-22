@@ -403,7 +403,7 @@ contains
                                   'GOCART::SO4      ' /), & 
                    DST_NAME  = (/ 'du001    ', 'du002    ', 'du003    ', 'du004    ', 'du005    ', &
                                   'ss001    ', 'ss002    ', 'ss003    ', 'ss004    ', 'ss005    ', &
-                                  'ni001    ', 'ni002    ', 'ni003    ', &
+                                  'NO3an1   ', 'NO3an2   ', 'NO3an3   ', &
 !                                 'BRCphobic', 'BRCphilic', &
                                   'OCphobic ', 'OCphilic ', &
                                   'BCphobic ', 'BCphilic ', &

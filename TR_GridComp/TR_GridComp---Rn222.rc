@@ -72,7 +72,7 @@
 # GMI_treat_as_hno3:    FALSE
 
 # GOCART_wet_removal: FALSE
-# GOCART_convection:  TRUE
+# GOCART_convection:  FALSE
 
 # GOCART_species:     Rn222
 # GOCART_aero_flag:   FALSE
