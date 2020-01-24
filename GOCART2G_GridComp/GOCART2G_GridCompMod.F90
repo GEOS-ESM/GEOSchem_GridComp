@@ -16,7 +16,7 @@ module GOCART2G_GridCompMod
    use Chem_AeroGeneric
 
 ! !Establish the Childen's SetServices
-! !-----------------------------------
+ !-----------------------------------
    use DU2G_GridCompMod,    only   : DU2GSetServices  => SetServices
    use SSng_GridCompMod,    only   : SSngSetServices  => SetServices
 !   use SUng_GridCompMod,    only   : SUngSetServices  => SetServices
@@ -508,6 +508,7 @@ contains
     do i = 1, n_inst_act
         call ESMF_ConfigGetAttribute (myCF, instances(i), __RC__)
     end do
+
 !   !Now fill instances list with passive instances
     call ESMF_ConfigFindLabel (myCF, 'PASSIVE_INSTANCES_'//trim(aerosol)//':', __RC__)
     do i = n_inst_act+1, n_inst_act+n_inst_pass
@@ -565,7 +566,6 @@ contains
         subroutine addChild__ (gc, names, SS, instInt, rc)
         
           type (ESMF_GridComp),            intent(inout)     :: gc
-!         type (GOCART_State), pointer,    intent(in   )     :: self
           character (len=*),               intent(in   )     :: names(:)
           external                                           :: SS
           integer,                         intent(inout)     :: instInt
@@ -573,10 +573,6 @@ contains
 
           __Iam__('GOCART2G::createInstances_::addChild__')
 
-if(mapl_am_i_root())print*,'addChild__ size(names) = ',size(names)
-if(mapl_am_i_root())print*,'addChild__ names = ',names
-
- 
             do i = 1, size(names)
                 instInt = MAPL_AddChild(gc, name=trim(names(i)), SS=SS, __RC__)
             end do
@@ -604,8 +600,8 @@ if(mapl_am_i_root())print*,'addChild__ names = ',names
 
     character (len=ESMF_MAXSTR)                      :: fld_name
 
-    real(kind=8), dimension(:,:,:),pointer                   :: ext_, ssa_, asy_      ! (lon:,lat:,lev:)
-    real(kind=8), dimension(:,:,:), allocatable              :: ext,  ssa,  asy       ! (lon:,lat:,lev:)
+    real(kind=8), dimension(:,:,:),pointer           :: ext_, ssa_, asy_      ! (lon:,lat:,lev:)
+    real(kind=8), dimension(:,:,:), allocatable      :: ext,  ssa,  asy       ! (lon:,lat:,lev:)
 
     integer                                          :: i, n, b, j
     integer                                          :: i1, j1, i2, j2, km
@@ -703,19 +699,19 @@ if(mapl_am_i_root())print*,'addChild__ names = ',names
 !       ! execute the aerosol optics method
         call ESMF_MethodExecute(child_state, label="aerosol_optics", __RC__)
 
-!       ! Retrieve EXT from each child
+!       ! Retrieve extinction from each child
         call ESMF_AttributeGet(child_state, name='extinction_in_air_due_to_ambient_aerosol', value=fld_name, __RC__)
         if (fld_name /= '') then
             call MAPL_GetPointer(child_state, ext_, trim(fld_name), __RC__)
         end if
 
-!       ! Retrieve SSA from each child
+!       ! Retrieve scattering extinction from each child
         call ESMF_AttributeGet(child_state, name='single_scattering_albedo_of_ambient_aerosol', value=fld_name, __RC__)
         if (fld_name /= '') then
             call MAPL_GetPointer(child_state, ssa_, trim(fld_name), __RC__)
         end if
 
-!       ! Retrieve ASY from each child
+!       ! Retrieve asymetry parameter multiplied by scatering extiction from each child
         call ESMF_AttributeGet(child_state, name='asymmetry_parameter_of_ambient_aerosol', value=fld_name, __RC__)
         if (fld_name /= '') then
             call MAPL_GetPointer(child_state, asy_, trim(fld_name), __RC__)
