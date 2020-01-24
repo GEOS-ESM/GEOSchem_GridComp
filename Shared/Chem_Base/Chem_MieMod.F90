@@ -109,7 +109,10 @@
   
   interface Chem_MieQuery
      module procedure Chem_MieQueryByInt
+     module procedure Chem_MieQueryByInt_withpmom
+
      module procedure Chem_MieQueryByChar
+     module procedure Chem_MieQueryByChar_withpmom
   end interface
 
 
@@ -973,6 +976,47 @@ end subroutine Chem_MieDestroy
       return
 
  end subroutine Chem_MieQueryByInt
+
+!-------------------------------------------------------------------------
+!     NASA/GSFC, Global Modeling and Assimilation Office, Code 900.3     !
+!-------------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE:  Chem_MieQuery --- Return Tau, SSA, etc (scalar version)
+!
+!
+! !INTERFACE:
+!
+   impure elemental subroutine Chem_MieQueryByInt_withpmom ( this, idx, channel, q_mass, rh, pmom, rc)
+
+! !INPUT PARAMETERS:
+
+   type(Chem_Mie), target, intent(in ) :: this
+   integer,                intent(in ) :: idx     ! variable index on Chem_Mie
+   real,                   intent(in ) :: channel ! channel number
+   real,                   intent(in ) :: q_mass  ! aerosol mass [kg/m2],
+   real,                   intent(in ) :: rh      ! relative himidity
+
+! !OUTPUT PARAMETERS:
+
+   real,    optional,      intent(out) :: pmom(:,:)
+   integer, optional,      intent(out) :: rc    ! error code
+
+! !DESCRIPTION:
+!
+!   Returns requested parameters from the Mie tables, as a function 
+!   of species, relative humidity, and channel
+
+
+
+      if(present(pmom)) then
+         pmom(:,:) = TABLE%pmom(irh  ,ichannel,TYPE,:,:) * (1.-arh) &
+                   + TABLE%pmom(irhp1,ichannel,TYPE,:,:) * arh
+      endif
+
+   end subroutine Chem_MieQueryByInt_withpmom
+
+
 
 
    subroutine Chem_MieQueryTauList ( this, idx, channel, q_mass, rh, tau, rc )
