@@ -186,3 +186,15 @@ LIGHTNING_FLASH_RATE_SOURCE: LFR_GCC
 #
 LIGHTNING_CONVECTIVE_TOP_SOURCE: CNV_MFC
 #
+
+# Turn off heterogenous reactions in stratosphere?
+# If true, the following heterogeneous reactions are disabled (in the stratosphere):
+# ClNO3(g) + HBr(l,s) --> BrCl + HNO3
+# BrNO3(g) + HCl(l,s) --> BrCl + HNO3
+# HOCl(g) + HBr(l,s) --> BrCl + H2O
+TurnOffHetRates: 1
+
+#
+# Enable Bry and Cly family transport
+#
+Bry_Cly_Family_Transport: 1

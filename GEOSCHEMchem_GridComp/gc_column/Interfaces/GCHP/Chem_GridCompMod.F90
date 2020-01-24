@@ -729,7 +729,7 @@ CONTAINS
           IF ( .NOT. FOUND ) FullName = TRIM(SUBSTRS(1))
 
           call MAPL_AddInternalSpec(GC, &
-               SHORT_NAME         = TRIM(TPFX)//TRIM(SUBSTRS(1)), &
+               SHORT_NAME         = TRIM(SPFX)//TRIM(SUBSTRS(1)), &
                LONG_NAME          = TRIM(FullName)//                &
                                     ' mass mixing ratio total air', &
                UNITS              = 'kg kg-1',                &
@@ -743,7 +743,7 @@ CONTAINS
           
           ! verbose
           if(MAPL_am_I_Root()) write(*,*) &
-                   'GCC added to internal: TRC_'//TRIM(SUBSTRS(1)), &
+                   'GCC added to internal: '//TRIM(SPFX)//TRIM(SUBSTRS(1)), &
                    '; Friends: ', TRIM(MYFRIENDLIES)
 #else
           call MAPL_AddInternalSpec(GC, &
@@ -802,8 +802,8 @@ CONTAINS
              ! Error trap for POx and LOx. Their species names in the internal
              ! state must be all caps
              ! (ckeller, 3/11/19)
-             IF ( TRIM(SpcName) == 'POx' ) SpcName = 'POX'
-             IF ( TRIM(SpcName) == 'LOx' ) SpcName = 'LOX'
+             !IF ( TRIM(SpcName) == 'POx' ) SpcName = 'POX'
+             !IF ( TRIM(SpcName) == 'LOx' ) SpcName = 'LOX'
 
              ! Set some long names manually ...
              SELECT CASE ( TRIM(SpcName) )
@@ -927,7 +927,7 @@ CONTAINS
 !-- Add two extra advected species for use in family transport  (Manyin)
 
           CALL MAPL_AddInternalSpec(GC,                                    &
-             SHORT_NAME         = 'TRC_Bry',                               &
+             SHORT_NAME         = 'SPC_Bry',                               &
              LONG_NAME          = 'Bromine group for use in transport',    &
              UNITS              = 'kg kg-1',                               &
 !!!          PRECISION          = ESMF_KIND_R8,                            &
@@ -939,7 +939,7 @@ CONTAINS
           if(MAPL_am_I_Root()) write(*,*) 'GCC added to internal: TRC_Bry; Friendly to: DYNAMICS'
 
           CALL MAPL_AddInternalSpec(GC,                                    &
-             SHORT_NAME         = 'TRC_Cly',                               &
+             SHORT_NAME         = 'SPC_Cly',                               &
              LONG_NAME          = 'Chlorine group for use in transport',   &
              UNITS              = 'kg kg-1',                               &
 !!!          PRECISION          = ESMF_KIND_R8,                            &
@@ -2406,6 +2406,9 @@ CONTAINS
        ! Pass tracer name
 #if defined( MODEL_GEOS )
        Int2Spc(I)%Name = TRIM(SpcInfo%Name)
+       ! POx and LOx name error
+       IF ( TRIM(Int2Spc(I)%Name) == 'POX' ) Int2Spc(I)%Name = 'POx'
+       IF ( TRIM(Int2Spc(I)%Name) == 'LOX' ) Int2Spc(I)%Name = 'LOx'
 #else
        Int2Spc(I)%TrcName = TRIM(ThisSpc%Name)
 #endif
@@ -2734,7 +2737,15 @@ CONTAINS
     ENDIF
 
     ! Turn on Family Transport
-    CALL Init_GCC_Chem_Groups()
+    CALL ESMF_ConfigGetAttribute( GeosCF, DoIt, & 
+          Label="Bry_Cly_Family_Transport:", Default=1, __RC__ )
+    SELECT CASE ( DoIt )
+       CASE ( 1 )
+          CALL Init_GCC_Chem_Groups()
+          IF ( am_I_Root ) WRITE(*,*) 'GCC: Bry and Cly family transport enabled'
+       CASE DEFAULT 
+          IF ( am_I_Root ) WRITE(*,*) 'GCC: Bry and Cly family transport disabled'
+    END SELECT
 
     !=======================================================================
     ! CH4 error checks 
@@ -3355,7 +3366,7 @@ CONTAINS
 ! GCHP ends the (if FIRST) block and then links HEMCO state to GC objects:
 !    ENDIF
 
-    CALL MAPL_GetPointer( INTSTATE, PTR_O3, 'TRC_O3', NotFoundOk=.TRUE., __RC__ )
+    CALL MAPL_GetPointer( INTSTATE, PTR_O3, 'SPC_O3', NotFoundOk=.TRUE., __RC__ )
 
     ! Get pointers to analysis OX exports
     IF ( DoANOX ) THEN
@@ -3373,12 +3384,12 @@ CONTAINS
        CALL MAPL_GetPointer ( EXPORT,    CFC11, 'CFC11'    , __RC__ )
        CALL MAPL_GetPointer ( EXPORT,    CFC12, 'CFC12'    , __RC__ )
        CALL MAPL_GetPointer ( EXPORT,   HCFC22, 'HCFC22'   , __RC__ )
-       CALL MAPL_GetPointer( INTSTATE,    PTR_CH4, 'TRC_CH4',    __RC__ )
-       CALL MAPL_GetPointer( INTSTATE,    PTR_N2O, 'TRC_N2O',    __RC__ )
-       CALL MAPL_GetPointer( INTSTATE,  PTR_CFC11, 'TRC_CFC11',  __RC__ )
-       CALL MAPL_GetPointer( INTSTATE,  PTR_CFC12, 'TRC_CFC12',  __RC__ )
-       CALL MAPL_GetPointer( INTSTATE, PTR_HCFC22, 'TRC_HCFC22', __RC__ )
-       CALL MAPL_GetPointer( INTSTATE,    PTR_H2O, 'TRC_H2O',    __RC__ )
+       CALL MAPL_GetPointer( INTSTATE,    PTR_CH4, 'SPC_CH4',    __RC__ )
+       CALL MAPL_GetPointer( INTSTATE,    PTR_N2O, 'SPC_N2O',    __RC__ )
+       CALL MAPL_GetPointer( INTSTATE,  PTR_CFC11, 'SPC_CFC11',  __RC__ )
+       CALL MAPL_GetPointer( INTSTATE,  PTR_CFC12, 'SPC_CFC12',  __RC__ )
+       CALL MAPL_GetPointer( INTSTATE, PTR_HCFC22, 'SPC_HCFC22', __RC__ )
+       CALL MAPL_GetPointer( INTSTATE,    PTR_H2O, 'SPC_H2O',    __RC__ )
    ENDIF
 
    ! Link HEMCO state to gridcomp objects
@@ -3807,28 +3818,6 @@ CONTAINS
           ENDIF
        ENDIF
 
-#if defined( MODEL_GEOS )
-       !=======================================================================
-       ! Also make sure that radiation fields are available. State_Met%OPTD is
-       ! a good proxy since it is composed of three imports from RADIATION.
-       ! (ckeller, 11/25/2015)
-       ! GlobalSum does not seem to work properly anymore, skip this error
-       ! trap (ckeller, 8/27/2019).
-       !=======================================================================
-       !DFPAR_MAX = GlobalSum( GC, DataPtr2D=DFPAR, maximum=.TRUE., __RC__ )
-       !IF ( DFPAR_MAX == 0.0 ) THEN
-       !   Input_Opt%haveImpRst = .FALSE. 
-       !
-       !   ! Warning message
-       !   IF ( am_I_Root ) THEN
-       !      write(*,*) ' '
-       !      write(*,*)    &
-       !            'All GEOS-Chem radiation imports are zero - skip time step'
-       !      write(*,*) ' '
-       !   ENDIF
-       !ENDIF
-#endif
-
        !=======================================================================
        ! Handling of species/tracer initialization. Default practice is to take
        ! whatever values are in the restarts. However, it is possible to
@@ -4098,9 +4087,9 @@ CONTAINS
        ! Perturb O3 by random amount if specified so
        !=======================================================================
        IF ( PHASE /= 1 .AND. ( PerturbO3 .OR. PerturbCO ) ) THEN 
-          CALL MAPL_GetPointer( INTSTATE, Ptr3DA, 'TRC_O3', NotFoundOk=.TRUE.,&
+          CALL MAPL_GetPointer( INTSTATE, Ptr3DA, 'SPC_O3', NotFoundOk=.TRUE.,&
                                  __RC__ )
-          CALL MAPL_GetPointer( INTSTATE, Ptr3DB, 'TRC_CO', NotFoundOk=.TRUE.,&
+          CALL MAPL_GetPointer( INTSTATE, Ptr3DB, 'SPC_CO', NotFoundOk=.TRUE.,&
                                  __RC__ )
           IF ( ASSOCIATED(Ptr3DA) .OR. ASSOCIATED(Ptr3DB) ) THEN
              DO L=1,State_Grid%NZ
@@ -4260,7 +4249,7 @@ CONTAINS
     ! NO2 columns
     !=======================================================================
     IF ( PHASE /= 1 ) THEN
-       CALL MAPL_GetPointer( INTSTATE, PTR_NO2, 'TRC_NO2',      &
+       CALL MAPL_GetPointer( INTSTATE, PTR_NO2, 'SPC_NO2',      &
                              NotFoundOk=.TRUE., __RC__ )
        CALL MAPL_GetPointer( EXPORT, TNO2, 'NO2_TROPCOLUMN',    &
                              NotFoundOk=.TRUE., __RC__ )
@@ -5724,7 +5713,7 @@ CONTAINS
            CYCLE 
    
        ! Get species from internal state
-       CALL MAPL_GetPointer ( INTSTATE, IntSpc, 'TRC_'//TRIM(ISPEC), __RC__ )
+       CALL MAPL_GetPointer ( INTSTATE, IntSpc, 'SPC_'//TRIM(ISPEC), __RC__ )
    
        ! Lower bound of PLE 3rd dim
        LB = LBOUND(PLE,3)
@@ -6500,14 +6489,11 @@ CONTAINS
        IF ( ASSOCIATED(Ptr3D)  .OR. IsNOy .OR. ASSOCIATED(Ptr2m) .OR. &
             ASSOCIATED(Ptr10m) ) RunMe = .TRUE.
        IF ( RunMe ) THEN
-
+          FieldName = 'SPC_'//TRIM(SpcName)
           MW = SpcInfo%EmMW_g
-          IF ( MW > 0.0 ) THEN
-             FieldName = 'TRC_'//TRIM(SpcName)
-          ELSE
+          IF ( MW < 0.0 ) THEN
              ! Get species and set MW to 1.0. This is ok because the internal
              ! state uses a MW of 1.0 for all species
-             FieldName = 'SPC_'//TRIM(SpcName)
              MW = 1.0
              ! Cannot add to NOy if MW is unknown because it would screw up 
              ! unit conversion
@@ -6524,20 +6510,10 @@ CONTAINS
              !      ' to v/v dry but MW is unknown: ', TRIM(SpcName)
              !ENDIF
           ENDIF
-          CALL MAPL_GetPointer( INTSTATE, PtrTmp, FieldName, NotFoundOK=.TRUE., RC=STATUS )
-          ! On first fail try field with other prefix
-          !IF ( STATUS /= ESMF_SUCCESS ) THEN
-          IF ( .NOT. ASSOCIATED(PtrTmp) ) THEN
-             IF ( FieldName(1:4)=='TRC_' ) THEN
-                FieldName = 'SPC_'//TRIM(SpcName)
-             ELSE
-                FieldName = 'TRC_'//TRIM(SpcName)
-             ENDIF
-             CALL MAPL_GetPointer( INTSTATE, PtrTmp, FieldName, RC=STATUS )
-             IF ( STATUS /= ESMF_SUCCESS ) THEN
-                WRITE(*,*) 'Error reading ',TRIM(SpcName)
-                VERIFY_(STATUS)
-             ENDIF
+          CALL MAPL_GetPointer( INTSTATE, PtrTmp, FieldName, RC=STATUS )
+          IF ( STATUS /= ESMF_SUCCESS ) THEN
+             WRITE(*,*) 'Error reading ',TRIM(SpcName)
+             VERIFY_(STATUS)
           ENDIF
 
           !====================================================================
