@@ -14,7 +14,6 @@ module DU2G_GridCompMod
    use MAPL_Mod
    use Chem_MieMod2G
    use Chem_AeroGeneric
-   use GEOS_UtilsMod
 
    implicit none
    private
@@ -34,6 +33,25 @@ module DU2G_GridCompMod
 
 !EOP
 !===========================================================================
+
+   integer, parameter         :: NHRES = 6  ! DEV NOTE!!! should this be allocatable, and not a parameter?
+
+   type aerosol_state
+       real, allocatable      :: radius(:)      ! particle effective radius [um]
+       real, allocatable      :: rlow(:)        ! particle effective radius lower bound [um]
+       real, allocatable      :: rup(:)         ! particle effective radius upper bound [um]
+       real, allocatable      :: sfrac(:)       ! fraction of total source
+       real, allocatable      :: rhop(:)        ! soil class density [kg m-3]
+       real                   :: Ch_DU(NHRES)   ! dust emission tuning coefficient [kg s2 m-5].
+       real, allocatable      :: fscav(:)       ! scavenging efficiency
+       real, allocatable      :: molwght(:)     ! molecular weight
+       real, allocatable      :: fnum(:)        ! number of particles per kg mass
+       real                   :: maringFlag     ! maring settling velocity correction
+   end type aerosol_state
+
+   type wrap_
+      type (aerosol_state), pointer     :: PTR => null()
+   end type wrap_
 
 contains
 
@@ -66,6 +84,8 @@ contains
 !   Locals
     character (len=ESMF_MAXSTR)                 :: COMP_NAME
     type (ESMF_Config)                          :: cfg
+    type (wrap_)                                :: wrap
+    type (aerosol_state), pointer               :: self
 
     character (len=ESMF_MAXSTR)                 :: field_name
     character (len=ESMF_MAXSTR), allocatable    :: aerosol_names(:)
@@ -74,6 +94,7 @@ contains
     real                                        :: DEFVAL
     logical                                     :: data_driven = .true.
     integer, parameter                          :: bins = 5  ! This should equal the number of bins. Is this how we want to handle this?
+
 
     __Iam__('SetServices')
 
@@ -84,6 +105,13 @@ contains
 !   ---------------------------------------
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) //'::'// Iam
+
+
+!   Wrap internal state for storing in GC
+!   -------------------------------------
+    allocate (self, __STAT__)
+    wrap%ptr => self
+
 
 !   Load resource file  
 !   -------------------
@@ -105,6 +133,22 @@ contains
         call ESMF_ConfigNextLine( cfg, __RC__ )
         call ESMF_ConfigGetAttribute( cfg, aerosol_names(i), __RC__ )
     end do
+
+!   Fill aero_state with aerosol parameters from the config
+!   -------------------------------------------------------
+    allocate(self%radius(aero_n), self%rlow(aero_n), self%rup(aero_n), self%sfrac(aero_n), &
+             self%rhop(aero_n), self%fscav(aero_n), self%molwght(aero_n), self%fnum(aero_n), __STAT__)
+
+    call ESMF_ConfigGetAttribute (cfg, self%radius,     label='particle_radius:', __RC__)
+    call ESMF_ConfigGetAttribute (cfg, self%rlow,       label='radius_lower:', __RC__)
+    call ESMF_ConfigGetAttribute (cfg, self%rup,        label='radius_upper:', __RC__)
+    call ESMF_ConfigGetAttribute (cfg, self%sfrac,      label='source_fraction:', __RC__)
+    call ESMF_ConfigGetAttribute (cfg, self%rhop,       label='soil_density:', __RC__)
+    call ESMF_ConfigGetAttribute (cfg, self%Ch_DU,      label='Ch_DU:', __RC__)
+    call ESMF_ConfigGetAttribute (cfg, self%fscav,      label='fscav:', __RC__)
+    call ESMF_ConfigGetAttribute (cfg, self%molwght,    label='molecular_weight:', __RC__)
+    call ESMF_ConfigGetAttribute (cfg, self%fnum,       label='fnum:', __RC__)
+    call ESMF_ConfigGetAttribute (cfg, self%maringFlag, label='maringFlag:', __RC__)
 
 
 !   Set entry points
@@ -647,7 +691,7 @@ contains
 !   !Local
     integer, parameter                               :: DP=kind(1.0d0)
     real, dimension(:,:,:), pointer                  :: ple, rh
-    real(kind=DP), dimension(:,:,:), pointer          :: var
+    real(kind=DP), dimension(:,:,:), pointer         :: var
     real, dimension(:,:,:), pointer                  :: q
     real, dimension(:,:,:,:), pointer                :: q_4d
 
@@ -656,7 +700,7 @@ contains
     character (len=ESMF_MAXSTR)                      :: COMP_NAME
     character (len=ESMF_MAXSTR), allocatable         :: aerosol_names(:)
 
-    real(kind=DP), dimension(:,:,:), allocatable              :: ext, ssa, asy  ! (lon:,lat:,lev:)
+    real(kind=DP), dimension(:,:,:), allocatable     :: ext_s, ssa_s, asy_s  ! (lon:,lat:,lev:)
 
     integer                                          :: instance
     integer                                          :: n
@@ -710,9 +754,9 @@ contains
 !    call MAPL_GetPointer (state, rh, 'RH2', __RC__)
 
 
-    allocate(ext(i1:i2, j1:j2, km), &
-             ssa(i1:i2, j1:j2, km), &
-             asy(i1:i2, j1:j2, km), __STAT__)
+    allocate(ext_s(i1:i2, j1:j2, km), &
+             ssa_s(i1:i2, j1:j2, km), &
+             asy_s(i1:i2, j1:j2, km), __STAT__)
 
     allocate(q_4d(i1:i2, j1:j2, km, size(aerosol_names)), __STAT__)
 
@@ -731,35 +775,36 @@ contains
     end do
 
 
-    call mie_ (gocart2GMieTable(instance), aerosol_names, n_bands, offset, q_4d, rh, ext, ssa, asy, __RC__)
+    call mie_ (gocart2GMieTable(instance), aerosol_names, n_bands, offset, q_4d, rh, ext_s, ssa_s, asy_s, __RC__)
 
     call ESMF_AttributeGet (state, name='extinction_in_air_due_to_ambient_aerosol', value=fld_name, __RC__)
     if (fld_name /= '') then
         call MAPL_GetPointer (state, var, trim(fld_name), __RC__)
-        var = ext(:,:,:)
+        var = ext_s(:,:,:)
     end if
 
     call ESMF_AttributeGet (state, name='single_scattering_albedo_of_ambient_aerosol', value=fld_name, __RC__)
     if (fld_name /= '') then
         call MAPL_GetPointer (state, var, trim(fld_name), __RC__)
-        var = ssa(:,:,:)
+        var = ssa_s(:,:,:)
     end if
 
     call ESMF_AttributeGet (state, name='asymmetry_parameter_of_ambient_aerosol', value=fld_name, __RC__)
     if (fld_name /= '') then
         call MAPL_GetPointer (state, var, trim(fld_name), __RC__)
-        var = asy(:,:,:)
+        var = asy_s(:,:,:)
     end if
 
 
-    deallocate(ext, ssa, asy, __STAT__)
+    deallocate(ext_s, ssa_s, asy_s, __STAT__)
 
 
     RETURN_(ESMF_SUCCESS)
 
   contains
 
-    subroutine mie_(mie_table, aerosol_names, nb, offset, q, rh, bext_, bssa_, gasym_, rc)
+!    subroutine mie_(mie_table, aerosol_names, nb, offset, q, rh, bext_, bssa_, gasym_, rc)
+    subroutine mie_(mie_table, aerosol_names, nb, offset, q, rh, bext_s, bssa_s, basym_s, rc)
 
     implicit none
 
@@ -769,39 +814,37 @@ contains
     integer,                       intent(in )   :: offset           ! bands offset 
     real,                          intent(in )   :: q(:,:,:,:)       ! aerosol mass mixing ratio, kg kg-1
     real,                          intent(in )   :: rh(:,:,:)        ! relative humidity
-
-
-    real(kind=DP), intent(  out) :: bext_ (size(ext,1),size(ext,2),size(ext,3))
-    real(kind=DP), intent(  out) :: bssa_ (size(ext,1),size(ext,2),size(ext,3))
-    real(kind=DP), intent(  out) :: gasym_(size(ext,1),size(ext,2),size(ext,3))
-
+    real(kind=DP), intent(  out) :: bext_s (size(ext_s,1),size(ext_s,2),size(ext_s,3))
+    real(kind=DP), intent(  out) :: bssa_s (size(ext_s,1),size(ext_s,2),size(ext_s,3))
+    real(kind=DP), intent(  out) :: basym_s(size(ext_s,1),size(ext_s,2),size(ext_s,3))
     integer,                       intent(  out) :: rc
 
     ! local
-    integer                               :: STATUS
-    character (len=ESMF_MAXSTR)           :: Iam = 'DU2G::aerosol_optics::mie_'
-    integer                               :: l, na, idx
+!   integer                               :: STATUS
+!   character (len=ESMF_MAXSTR)           :: Iam = 'DU2G::aerosol_optics::mie_'
+    integer                               :: l, n_bins, idx
+    real                              :: bext (size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! extinction
+    real                              :: bssa (size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! SSA
+    real                              :: gasym(size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! asymmetry parameter
+
+    __Iam__('DU2G::aerosol_optics::mie_')
 
 
-    real                           :: bext (size(ext,1),size(ext,2),size(ext,3))     ! extinction
-    real                           :: bssa (size(ext,1),size(ext,2),size(ext,3))     ! SSA
-    real                           :: gasym(size(ext,1),size(ext,2),size(ext,3))     ! asymmetry parameter
+     n_bins = size(aerosol_names)
 
-     na = size(aerosol_names)
+     ASSERT_ (n_bins == size(q,4))
 
-     ASSERT_ (na == size(q,4))
+     bext_s  = 0.0d0
+     bssa_s  = 0.0d0
+     basym_s = 0.0d0
 
-     bext_  = 0.0d0
-     bssa_  = 0.0d0
-     gasym_ = 0.0d0
-
-     do l = 1, na
+     do l = 1, n_bins
          idx = Chem_MieQueryIdx(mie_table, trim(aerosol_names(l)), __RC__)
          call Chem_MieQuery(mie_table, idx, real(offset+1.), q(:,:,:,l), rh, bext, gasym=gasym, ssa=bssa)
 
-         bext_  = bext_  +             bext     ! total extinction due to dust
-         bssa_  = bssa_  +       (bssa*bext)    ! total scattering
-         gasym_ = gasym_ + gasym*(bssa*bext)    ! sum of (asy * sca)
+         bext_s  = bext_s  +             bext     ! extinction
+         bssa_s  = bssa_s  +       (bssa*bext)    ! scattering extinction
+         basym_s = basym_s + gasym*(bssa*bext)    ! asymetry parameter multiplied by scatering extiction 
      end do
 
 
