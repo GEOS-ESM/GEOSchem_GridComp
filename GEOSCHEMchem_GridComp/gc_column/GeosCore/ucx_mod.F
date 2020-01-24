@@ -4638,7 +4638,7 @@
          WRITE(   NOON_FILE_ROOT,'(a,a,a)')
      &        TRIM(Input_Opt%CHEM_INPUTS_DIR),
 #if defined( MODEL_GEOS )
-     &        'UCX_201710/NoonTime/', TRIM(GRIDSPEC)
+     &        'UCX_201902/NoonTime/', TRIM(GRIDSPEC)
 #else
      &        'UCX_201403/NoonTime/', TRIM(GRIDSPEC)
 #endif
