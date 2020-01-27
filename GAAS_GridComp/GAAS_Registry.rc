@@ -38,9 +38,9 @@ COMP_NAME: GAAS
    ss004   |  kg/kg     | xyz | C |    |   |   |     |      | Sea Salt Mixing Ratio Bin 4
    ss005   |  kg/kg     | xyz | C |    |   |   |     |      | Sea Salt Mixing Ratio Bin 5
 #
-   ni001   |  kg/kg     | xyz | C |    |   |   |     |      | Nitrate Mixing Ratio Bin 1
-   ni002   |  kg/kg     | xyz | C |    |   |   |     |      | Nitrate Mixing Ratio Bin 3
-   ni003   |  kg/kg     | xyz | C |    |   |   |     |      | Nitrate Mixing Ratio Bin 4
+   NO3an1  |  kg/kg     | xyz | C |    |   |   |     |      | Nitrate Mixing Ratio Bin 1
+   NO3an2  |  kg/kg     | xyz | C |    |   |   |     |      | Nitrate Mixing Ratio Bin 3
+   NO3an3  |  kg/kg     | xyz | C |    |   |   |     |      | Nitrate Mixing Ratio Bin 4
 #
     SO4    |  kg/kg     | xyz | C |    |   |   |     |      | SO4 Mixing Ratio
 #
