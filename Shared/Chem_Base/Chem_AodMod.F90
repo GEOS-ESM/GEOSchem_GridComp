@@ -113,7 +113,14 @@ CONTAINS
   do iq = 1, x%n3d
 
      idxTable = Chem_MieQueryIdx(Mie,x%r3(iq)%name,rc)
-     if(idxTable == -1) cycle
+
+     if (idxTable == -1) then
+         if (verbose_) &
+          print *, '[-] Skipping '//trim(x%r3(iq)%name)//' contribution'
+
+         cycle
+     end if
+
      if ( rc/=0 ) then
         __raise__(MAPL_RC_ERROR,"cannot get Mie index for "//trim(x%r3(iq)%name))
      end if

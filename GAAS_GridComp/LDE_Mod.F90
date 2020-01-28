@@ -1482,7 +1482,7 @@ merid:     do j = 1, JM_World
          
      if ( ESMF_UtilStringUpperCase(name(1:2))=='DU'       .OR.  &
           ESMF_UtilStringUpperCase(name(1:2))=='SS'       .OR.  &
-          ESMF_UtilStringUpperCase(name(1:2))=='NI'       .OR.  &
+          ESMF_UtilStringUpperCase(name(1:5))=='NO3AN'    .OR.  &
           ESMF_UtilStringUpperCase(name)     =='SO4'      .OR.  &
           ESMF_UtilStringUpperCase(name)     =='BCPHOBIC' .OR.  &
           ESMF_UtilStringUpperCase(name)     =='BCPHILIC' .OR.  &
