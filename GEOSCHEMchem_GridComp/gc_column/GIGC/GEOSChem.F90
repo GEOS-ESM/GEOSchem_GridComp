@@ -13,7 +13,7 @@
 Program GIGC_Main
 
 
-   use MAPL_Mod
+   use MAPL
    use GIGC_GridCompMod, only:  ROOT_SetServices => SetServices
 
    implicit none

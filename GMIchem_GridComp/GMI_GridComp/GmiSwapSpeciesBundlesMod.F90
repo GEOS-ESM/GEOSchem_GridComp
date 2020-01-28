@@ -9,7 +9,7 @@ module GmiSwapSpeciesBundlesMod
 !
 ! !USES:
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
 
       use GmiStringManipulation_mod, only : stringLowerCase
       use GmiArrayBundlePointer_mod, only : t_GmiArrayBundle

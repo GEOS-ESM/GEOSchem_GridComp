@@ -17,8 +17,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
-   USE MAPL_NewArthParserMod, ONLY : LowCase
+   USE MAPL
    USE Chem_Mod
    USE Chem_UtilMod
 
@@ -571,7 +570,7 @@ CONTAINS
 !
 !         call ESMF_FieldBundleGet(surfEmissBundle, fieldCount=numVars , rc=STATUS)
 !         VERIFY_(STATUS)
-!         ASSERT_(NSP == numVars)
+!         _ASSERT(NSP == numVars,'needs informative message')
 !     END IF
 
     !---------------------------------------------------------------
@@ -1920,7 +1919,7 @@ CONTAINS
 
       call ESMF_FieldBundleGet(surfEmissBundle, fieldCount=numVars, rc=STATUS)
       VERIFY_(STATUS)
-      ASSERT_(numVars == NSP)
+      _ASSERT(numVars == NSP,'needs informative message')
 
       do ib = 1, numVars
          ptr2D(:,:) = surfEmissForChem(:,:,ib)

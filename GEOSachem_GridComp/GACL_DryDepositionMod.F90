@@ -15,7 +15,7 @@
 !
 ! !USES:
 !
-   use MAPL_Mod
+   use MAPL
 
    use GACL_ConstantsMod
 

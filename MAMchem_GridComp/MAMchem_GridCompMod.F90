@@ -14,9 +14,7 @@
 ! !USES:
 !
    use ESMF
-   use MAPL_Mod
-
-   use MAPL_SimpleBundleMod
+   use MAPL
 
    use Chem_UtilMod,        only: Chem_UtilResVal
 
@@ -1034,7 +1032,7 @@ contains
   
     COUPLING_TO_CLOUD_MICROPHYSICS: if (implements_aap_method) then
 
-        ASSERT_(self%scheme%n_modes > 0)
+        _ASSERT(self%scheme%n_modes > 0,'needs informative message')
 
         allocate(aero_aci_modes(self%scheme%n_modes), __STAT__)
 
@@ -3123,8 +3121,8 @@ contains
 !   --------------------------
     rc = ESMF_SUCCESS
 
-    ASSERT_(attachment_state == 'interstitial' .or. attachment_state == 'cloud-borne')
-    ASSERT_(type == 'number' .or. type == 'mass')
+    _ASSERT(attachment_state == 'interstitial' .or. attachment_state == 'cloud-borne','needs informative message')
+    _ASSERT(type == 'number' .or. type == 'mass','needs informative message')
     
 
     if (type == 'number') then
@@ -3225,7 +3223,7 @@ contains
 !   --------------------------
     rc = ESMF_SUCCESS
 
-    ASSERT_(self%id == MAM7_SCHEME) 
+    _ASSERT(self%id == MAM7_SCHEME,'needs informative message') 
  
 
 !   Get Imports
@@ -3408,7 +3406,7 @@ contains
 !   --------------------------
     rc = ESMF_SUCCESS
 
-    ASSERT_(self%id == MAM7_SCHEME .or. self%id == MAM3_SCHEME) 
+    _ASSERT(self%id == MAM7_SCHEME .or. self%id == MAM3_SCHEME,'needs informative message') 
  
 
 !   Get Imports
@@ -3540,7 +3538,7 @@ contains
 !   --------------------------
     rc = ESMF_SUCCESS
 
-    ASSERT_(self%id == MAM7_SCHEME .or. self%id == MAM3_SCHEME) 
+    _ASSERT(self%id == MAM7_SCHEME .or. self%id == MAM3_SCHEME,'needs informative message') 
  
 
 !   Get Imports

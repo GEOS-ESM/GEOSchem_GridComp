@@ -20,7 +20,7 @@ MODULE GIGC_GEOS5Exports_Mod
   USE DiagList_Mod
   USE ErrCode_Mod
   USE Precision_Mod
-  USE MAPL_Mod
+  USE MAPL
 
   IMPLICIT NONE
   PRIVATE
