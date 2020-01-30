@@ -152,6 +152,7 @@ MODULE State_Chm_Mod
      !----------------------------------------------------------------------
      REAL(fp),          POINTER :: pHCloud    (:,:,:  ) ! Cloud pH [-]
      REAL(fp),          POINTER :: isCloud    (:,:,:  ) ! Cloud presence [-]
+     REAL(fp),          POINTER :: QLxpHCloud (:,:,:  ) ! Cloud pH * QL[-]
 
      !----------------------------------------------------------------------
      ! Fields for KPP solver
@@ -412,9 +413,10 @@ CONTAINS
     State_Chm%KHETI_SLA         => NULL()
 
     ! pH/alkalinity
-    State_Chm%pHCloud           => NULL()
-    State_Chm%isCloud           => NULL()
-    State_Chm%SSAlk             => NULL()
+    State_Chm%pHCloud       => NULL()
+    State_Chm%QLxpHCloud    => NULL()
+    State_Chm%isCloud       => NULL()
+    State_Chm%SSAlk         => NULL()
 
     ! Fields for sulfate chemistry
     State_Chm%H2O2AfterChem     => NULL()
@@ -1338,6 +1340,20 @@ CONTAINS
        IF ( RC /= GC_SUCCESS ) RETURN
 
        !--------------------------------------------------------------------
+       ! QLxphCloud
+       ! jmm 3/7/19
+       !--------------------------------------------------------------------
+       chmId = 'QLxpHCloud'
+       ALLOCATE( State_Chm%QLxpHCloud( IM, JM, LM ), STAT=RC )
+       CALL GC_CheckVar( 'State_Chm%QLxpHCloud', 0, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Chm%QLxpHCloud = 0.0_fp
+       CALL Register_ChmField( am_I_Root, chmID, State_Chm%QLxpHCloud,       &
+                               State_Chm, RC                                )
+       CALL GC_CheckVar( 'State_Chm%QLxpHCloud', 1, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+
+       !--------------------------------------------------------------------
        ! isCloud
        ! jmm 3/1/19
        !--------------------------------------------------------------------
@@ -1350,7 +1366,6 @@ CONTAINS
                                State_Chm, RC                                )
        CALL GC_CheckVar( 'State_Chm%isCloud', 1, RC )
        IF ( RC /= GC_SUCCESS ) RETURN
-
        !--------------------------------------------------------------------
        ! SSAlk
        !--------------------------------------------------------------------
@@ -2142,6 +2157,13 @@ CONTAINS
        CALL GC_CheckVar( 'State_Chm%pHCloud', 2, RC )
        IF ( RC /= GC_SUCCESS ) RETURN
        State_Chm%pHCloud => NULL()
+    ENDIF
+
+    IF ( ASSOCIATED( State_Chm%QLxpHCloud ) ) THEN
+       DEALLOCATE( State_Chm%QLxpHCloud, STAT=RC )
+       CALL GC_CheckVar( 'State_Chm%QLxpHCloud', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Chm%QLxpHCloud => NULL()
     ENDIF
 
     IF ( ASSOCIATED( State_Chm%isCloud ) ) THEN
@@ -2961,6 +2983,11 @@ CONTAINS
 
        CASE( 'PHCLOUD' )
           IF ( isDesc  ) Desc  = 'Cloud pH'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  =  3
+
+       CASE( 'QLXPHCLOUD' )
+          IF ( isDesc  ) Desc  = 'Cloud pH * Met_QL'
           IF ( isUnits ) Units = '1'
           IF ( isRank  ) Rank  =  3
 

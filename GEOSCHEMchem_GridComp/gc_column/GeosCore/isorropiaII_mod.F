@@ -191,6 +191,7 @@
 !                               (Activate this with the #ifdef block above.)
 !  10 Mar 2017 - C. Keller    - Add print out statement after initialization.
 !  02 Nov 2017 - R. Yantosca  - Now accept State_Diag as an argument
+!  5  Dec 2018 - J. Moch      - Put in HMS do be a part of 'sulfate'
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -214,6 +215,7 @@
       LOGICAL, SAVE            :: FIRST = .TRUE.
       INTEGER, SAVE            :: id_HNO3, id_NH3,  id_NH4
       INTEGER, SAVE            :: id_NIT,  id_SALA, id_SO4
+      INTEGER, SAVE            :: id_HMS ! jmm 12/5/18
 
       ! Scalars
       INTEGER                  :: I,    J,    L,    N
@@ -303,10 +305,16 @@
          id_NIT  = Ind_('NIT' )
          id_SALA = Ind_('SALA')
          id_SO4  = Ind_('SO4' )
+         id_HMS  = Ind_('HMS' )
 
          ! Make sure certain tracers are defined
          IF ( id_SO4 <= 0 ) THEN
             ErrMsg = 'SO4 is an undefined species!'
+            CALL GC_Error( ErrMsg, RC, ThisLoc )
+            RETURN
+         ENDIF
+         IF ( id_HMS <= 0 ) THEN
+            ErrMsg = 'HMS is an undefined species!'
             CALL GC_Error( ErrMsg, RC, ThisLoc )
             RETURN
          ENDIF
@@ -442,7 +450,9 @@
          !---------------------------------
 
          ! Total SO4 [mole/m3]
-         TSO4 = Spc(I,J,L,id_SO4) * 1.e+3_fp / ( 96.e+0_fp * VOL )
+         ! include HMS as 0.5 sulfate b/c half charge (jmm 12/5/18)
+         TSO4 = Spc(I,J,L,id_SO4) * 1.e+3_fp / ( 96.e+0_fp * VOL ) +
+     &          Spc(I,J,L,id_HMS) * 0.5e+3_fp / ( 111.e+0_fp * VOL) 
 
          ! Total NH3 [mole/m3]
          TNH3 = Spc(I,J,L,id_NH4) * 1.e+3_fp / (18.e+0_fp * VOL ) +

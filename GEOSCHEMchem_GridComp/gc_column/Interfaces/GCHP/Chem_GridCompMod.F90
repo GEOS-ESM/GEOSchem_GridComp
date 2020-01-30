@@ -6455,7 +6455,7 @@ CONTAINS
              CASE ( 'NH4', 'NIT' )
                 IsNi  = .TRUE.
                 RunMe = .TRUE.
-             CASE ( 'SO4' )
+             CASE ( 'SO4', 'HMS' )
                 IsSu  = .TRUE.
                 RunMe = .TRUE.
              CASE ( 'BCPI', 'BCPO' ) 
