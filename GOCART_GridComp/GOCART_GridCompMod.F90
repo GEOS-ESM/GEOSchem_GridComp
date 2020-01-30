@@ -30,10 +30,31 @@
    character(len=*), parameter :: H2O2_RECYCLE_ALARM = 'GOCART::RECYCLE_H2O2'
    character(len=*), parameter :: HNO3_RECYCLE_ALARM = 'GOCART::RECYCLE_HNO3'
 
+   ! Parameters for mapping GEOS-Chem to GOCART aerosol bins
+   real, parameter    :: MW_CO             = 28.01
+   real, parameter    :: GC_SALA_wt002     = 9.33620187E-1
+   real, parameter    :: GC_SALA_wt003     = 7.79190769E-5
+   real, parameter    :: GC_SALA_wt004     = 6.23457497E-12
+   real, parameter    :: GC_SALA_wt005     = 1.10718846E-20
+   real, parameter    :: GC_SALC_wt001     = 1.45211913E-6
+   real, parameter    :: GC_SALC_wt002     = 2.47132379E-2
+   real, parameter    :: GC_SALC_wt003     = 6.74214749E-1
+   real, parameter    :: GC_SALC_wt004     = 2.61575483E-1
+   real, parameter    :: GC_fracSALA_wt002 = 7.79190831E-5
+   real, parameter    :: GC_fracSALA_wt003 = 1.10718846E-20
+   real, parameter    :: GC_fracSALC_wt001 = 2.471469E-2
+   real, parameter    :: GC_fracSALC_wt002 = 9.3579023E-1
+
 !
 ! !PUBLIC MEMBER FUNCTIONS:
 
    public SetServices
+
+!
+! !PRIVATE MEMBER FUNCTIONS:
+
+   PRIVATE copy_geoschem_to_intstate_forbundle_
+   PRIVATE validate_intstate_forbundle_
 !
 ! !DESCRIPTION: 
 !
@@ -560,6 +581,203 @@ else
         RESTART    = MAPL_RestartSkip,     __RC__)
 
     end if GMI_on
+
+!   GEOS-CHEM species
+!   ---------------
+    GEOSCHEM_on: if (state%chemReg%pass_GEOSCHEM) then
+
+!   GEOSCHEM species - BC
+!   ---------------------
+    GEOSCHEM_BC_on: if (r%pass_GEOSCHEM_BC) then
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_BCPO',                                     &
+        LONG_NAME  = 'Hydrophobic Black Carbon from GEOS-Chem',           &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_BCPI',                                     &
+        LONG_NAME  = 'Hydrophilic Black Carbon from GEOS-Chem',           &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+    end if GEOSCHEM_BC_on
+
+!   GEOSCHEM species - CO
+!   ---------------------
+    GEOSCHEM_CO_on: if (r%pass_GEOSCHEM_CO) then
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_CO',                                       &
+        LONG_NAME  = 'Carbon Monoxide from GEOS-Chem',                    &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+    end if GEOSCHEM_CO_on
+
+!   GEOSCHEM species - DU
+!   ---------------------
+    GEOSCHEM_DU_on: if (r%pass_GEOSCHEM_DU) then
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_DST1',                                     &
+        LONG_NAME  = 'Dust Mixing Ratio (bin 1) from GEOS-Chem',          &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_DST2',                                     &
+        LONG_NAME  = 'Dust Mixing Ratio (bin 2) from GEOS-Chem',          &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_DST3',                                     &
+        LONG_NAME  = 'Dust Mixing Ratio (bin 3) from GEOS-Chem',          &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_DST4',                                     &
+        LONG_NAME  = 'Dust Mixing Ratio (bin 4) from GEOS-Chem',          &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+
+    end if GEOSCHEM_DU_on
+
+!   GEOSCHEM species - NI
+!   ---------------------
+    GEOSCHEM_NI_on: if (r%pass_GEOSCHEM_NI) then
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_NH3',                                      &
+        LONG_NAME  = 'NH3 from GEOS-Chem',                                &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_NH4',                                      &
+        LONG_NAME  = 'NH4 from GEOS-Chem',                                &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_NO3',                                      &
+        LONG_NAME  = 'NO3 from GEOS-Chem',                                &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_NIT',                                      &
+        LONG_NAME  = 'NIT from GEOS-Chem',                                &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_NITs',                                     &
+        LONG_NAME  = 'NITs from GEOS-Chem',                               &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+
+    end if GEOSCHEM_NI_on
+
+!   GEOSCHEM species - OC
+!   ---------------------
+    GEOSCHEM_OC_on: if (r%pass_GEOSCHEM_OC) then
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_OCPO',                                     &
+        LONG_NAME  = 'Hydrophobic Organic Carbon from GEOS-Chem',         &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_OCPI',                                     &
+        LONG_NAME  = 'Hydrophilic Organic Carbon from GEOS-Chem',         &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+    end if GEOSCHEM_OC_on
+
+!   GEOSCHEM species - SS
+!   ---------------------
+    GEOSCHEM_SS_on: if (r%pass_GEOSCHEM_SS) then
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_SALA',                                     &
+        LONG_NAME  = 'Sea Salt Mixing Ratio from GEOS-Chem',              &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_SALC',                                     &
+        LONG_NAME  = 'Sea Salt Mixing Ratio (coarse) from GEOS-Chem',     &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+
+    end if GEOSCHEM_SS_on
+
+!   GEOSCHEM species - SU
+!   ---------------------
+    GEOSCHEM_SU_on: if (r%pass_GEOSCHEM_SU) then
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_DMS',                                      &
+        LONG_NAME  = 'Dimethylsulphide from GEOS-Chem',                   &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_SO2',                                      &
+        LONG_NAME  = 'Sulphur dioxide from GEOS-Chem',                    &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_SO4',                                      &
+        LONG_NAME  = 'Sulphate aerosol from GEOS-Chem',                   &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_MSA',                                      &
+        LONG_NAME  = 'Methanesulphonic acid from GEOS-Chem',              &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
+    end if GEOSCHEM_SU_on
+
+    end if GEOSCHEM_on
 
 !    Pressure at layer edges
 !    -----------------------
@@ -1119,6 +1337,20 @@ if ( r%doing_GOCART ) then
           DIMS       = MAPL_DimsHorzVert,          &
           VLOCATION  = MAPL_VLocationCenter, __RC__)
 
+       !   Create duplicate internal state for storing values for
+       !   aerosol bundle exported to Radiation. Note that not all
+       !   species are necessarily added to the bundle. Look at the
+       !   code for adding fields to the bundle to determine what
+       !   are actually added. (ewl, 10/25/19)
+       call MAPL_AddInternalSpec(GC,               &
+          SHORT_NAME = trim(COMP_NAME)//'::'//trim(r%vname(n))//'_ForBundle', &
+          LONG_NAME  = r%vtitle(n),                &
+          UNITS      = r%vunits(n),                &
+          RESTART    = MAPL_RestartOptional,       &
+          DIMS       = MAPL_DimsHorzVert,          &
+          FRIENDLYTO = trim(COMP_NAME),            &
+          VLOCATION  = MAPL_VLocationCenter, __RC__)
+
     end do
 
 !   This state is needed by radiation - It will contain 
@@ -1397,6 +1629,7 @@ end if ! doing GOCART
    character(len=ESMF_MAXSTR)      :: fld_name
    integer                         :: n_aerosols
    integer                         :: n_modes
+   integer                         :: n_spec
    integer, parameter              :: n_gocart_modes = 13
    character(len=ESMF_MAXSTR)      :: aero_aci_modes(n_gocart_modes)
    character(len=ESMF_MAXSTR)      :: short_name
@@ -1673,9 +1906,11 @@ end if ! doing GOCART
              short_name .eq. 'SO4'      .or. &
              short_name .eq. 'SO4V'     )    &
         then
-           call ESMF_StateGet(INTERNAL,                     &
-                              trim(COMP_NAME) // '::'//     &
-                              trim(ChemReg%vname(n)),       &
+           ! Point the AEROSOLS export bundle to the internal state
+           ! fields "_ForBundle"
+           call ESMF_StateGet(INTERNAL,                               &
+                              trim(COMP_NAME) // '::'//               &
+                              trim(ChemReg%vname(n)) // '_ForBundle', &
                               FIELD, __RC__ )
 
            fld = MAPL_FieldCreate(FIELD, name=ChemReg%vname(n), __RC__)
@@ -2364,7 +2599,6 @@ CONTAINS
    character(len=ESMF_MAXSTR)      :: IAm
    integer                         :: STATUS
    character(len=ESMF_MAXSTR)      :: COMP_NAME
-
    type(Chem_Registry), pointer    :: chemReg
    type(Aero_GridComp), pointer    :: gcChem      ! Grid Component
    type(Chem_Bundle), pointer      :: w_c         ! Chemical tracer fields     
@@ -2390,10 +2624,14 @@ CONTAINS
    real, pointer                   :: rh2(:,:,:)
    integer                         :: in, jn
 
+
+   character(len=ESMF_MAXSTR)      :: int_name
    type(ESMF_State)                :: internal
    type(GOCART_state), pointer     :: myState
    real, pointer, dimension(:,:,:) :: ptr3d_int
+   real, pointer, dimension(:,:,:) :: ptr3d_intfb
    real, pointer, dimension(:,:,:) :: ptr3d_imp
+   real, pointer, dimension(:,:,:) :: ptr3d_exp
    
    logical                         :: run_alarm
    logical                         :: alarm_is_ringing
@@ -2569,6 +2807,30 @@ CONTAINS
       call ESMF_AlarmRingerOff(ALARM, __RC__)
    end if
 
+!  Set the 'ForBundle' internal state fields to the tracer internal state
+!  values by default. If passing GEOS-Chem then call subroutine to copy
+!  mapped import values to 'ForBundle' intstate. Note that not all
+!  '_ForBundle' fields are passed to Radiation. See code for adding
+!  fields to the AEROSOLS bundle to determine what fields are actually
+!  added (ewl, 10/25/19)
+!  ---------------------
+   call MAPL_Get ( ggSTATE, INTERNAL_ESMF_STATE=internal, __RC__ )
+   do n = ChemReg%i_GOCART, ChemReg%j_GOCART
+      int_name = trim(COMP_NAME)//'::'//trim(chemReg%vname(n))
+      CALL MAPL_GetPointer(internal, ptr3d_int,     &
+                           trim(int_name), __RC__ )
+      CALL MAPL_GetPointer(internal, ptr3d_intfb,     &
+                           trim(int_name)//'_ForBundle', __RC__ )
+      ptr3d_intfb = ptr3d_int
+      nullify(ptr3d_int)
+      nullify(ptr3d_intfb)
+   end do
+   if ( w_c%reg%pass_GEOSCHEM ) then
+      ! Set verbose to FALSE to turn off print messages
+      call copy_geoschem_to_intstate_forbundle_(w_c, impChem, internal, &
+                                                verbose=.TRUE., rc=rc)
+   endif
+
 !  Get the diagnostics
    call MAPL_GetPointer (expChem, totexttau, 'TOTEXTTAU', __RC__)
    call MAPL_GetPointer (expChem, totscatau, 'TOTSCATAU', __RC__)
@@ -2610,6 +2872,7 @@ CONTAINS
    if(associated(pm25_rh50)) pm25_rh50(:,:) = 0.
 
    if(associated(rh2x))      rh2x           = w_c%rh
+
    if(associated(delpx))     delpx          = w_c%delp
 
    if(associated(pso4t))     pso4t(:,:,:)   = 0.
@@ -3836,6 +4099,990 @@ contains
     end subroutine ocean_correction_
 
 end subroutine aerosol_activation_properties
+
+!-------------------------------------------------------------------------
+!     NASA/GSFC, Global Modeling and Assimilation Office, Code 900.3     !
+!-------------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE:  copy_geoschem_to_intstate_forbundle_
+!
+! !INTERFACE:
+!
+
+   subroutine copy_geoschem_to_intstate_forbundle_ ( w_c,      impChem, &
+                                                     internal, verbose, rc )
+
+! !USES:
+
+  implicit NONE
+
+! !INPUT/OUTPUT PARAMETERS:
+
+   type(Chem_Bundle), intent(inout)   :: w_c      ! Chemical tracer fields
+   type(ESMF_State), intent(inout)    :: impChem  ! Import State
+   type(ESMF_State), intent(inout)    :: internal ! Internal state
+   logical, optional                  :: verbose  ! True = turn on prints
+
+! !OUTPUT PARAMETERS:
+
+   integer, optional                  :: RC  ! return code
+
+! !DESCRIPTION:
+!
+! !REVISION HISTORY:
+!
+!  19Jun2019 E. Lundgren   Initial version
+!
+!EOP
+!-------------------------------------------------------------------------
+
+   character(len=63) :: Iam, int_name
+   integer           :: status, km, N, I, J, L
+   logical           :: is_verbose
+   real, allocatable :: GC_FracSALA(:,:,:), GC_FracSALC(:,:,:)
+   real, pointer     :: ptr3d_int    (:,:,:) => null()
+   real, pointer     :: ptr3d_GC     (:,:,:) => null()
+   real, pointer     :: ptr3d_GC_SALA(:,:,:) => null()
+   real, pointer     :: ptr3d_GC_SALC(:,:,:) => null()
+   real, pointer     :: ptr3d_GC_NO3 (:,:,:) => null()
+   real, pointer     :: ptr3d_GC_NH3 (:,:,:) => null()
+   real, pointer     :: ptr3d_GC_NH4 (:,:,:) => null()
+   real, pointer     :: ptr3d_GC_NIT (:,:,:) => null()
+   real, pointer     :: ptr3d_GC_NITs(:,:,:) => null()
+
+   Iam = 'copy_geoschem_to_intstate_forbundle_'
+
+   ! Optional global sum prints
+   if ( present(verbose) ) then
+      is_verbose = verbose
+   else
+      is_verbose = .FALSE.
+   endif
+
+   ! Get # vertical levels
+   km = w_c%grid%km
+
+   !---
+   ! BC
+   if ( w_c%reg%pass_GEOSCHEM_BC ) then
+      if ( mapl_am_i_root() .and. is_verbose ) &
+         write(*,*) "Using GEOS-Chem for GOCART AERO bundle BC values: BCPO, BCPI"
+
+      ! BCPO
+      int_name = 'GOCART::BCphobic_ForBundle'
+      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_BCPO',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_Int = ptr3d_GC
+
+      ! BCPI
+      int_name = 'GOCART::BCphilic_ForBundle'
+      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_BCPI',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_Int = ptr3d_GC
+
+   endif
+
+   !---
+   ! BRC
+   if ( w_c%reg%pass_GEOSCHEM_BRC .and. mapl_am_i_root() ) &
+         write(*,*) "WARNING: Cannot use GEOS-Chem for GOCART AERO bundle BRC values: connection not implemented"
+
+   !---
+   ! CFC
+   if ( w_c%reg%pass_GEOSCHEM_CFC .and. mapl_am_i_root() ) &
+         write(*,*) "WARNING: Cannot use GEOS-Chem for GOCART AERO bundle CFC values: connection not implemented"
+
+   !---
+   ! CH4
+   if ( w_c%reg%pass_GEOSCHEM_CH4 .and. mapl_am_i_root() ) &
+         write(*,*) "WARNING: Cannot use GEOS-Chem for GOCART AERO bundle CH4 values: connection not implemented"
+
+   !---
+   ! CO2
+   if ( w_c%reg%pass_GEOSCHEM_CO2 .and. mapl_am_i_root() ) &
+         write(*,*) "WARNING: Cannot use GEOS-Chem for GOCART AERO bundle CO2 values: connection not implemented"
+
+   !---
+   ! CO - still need unit conversion from kg/kg moist to mol/mol moist
+   if ( w_c%reg%pass_GEOSCHEM_CO ) then
+      if ( mapl_am_i_root() .and. is_verbose ) &
+         write(*,*) "Using GEOS-Chem for GOCART AERO bundle CO values: CO"
+
+      ! CO
+      int_name = 'GOCART::CO_ForBundle'
+      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_CO',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_Int = ptr3d_GC * MAPL_AIRMW / MW_CO  ! for now approx w/ dry air MW
+
+   endif
+
+   !---
+   ! DU
+   if ( w_c%reg%pass_GEOSCHEM_DU ) then
+      if ( mapl_am_i_root() .and. is_verbose ) &
+         write(*,*) "Using GEOS-Chem for GOCART AERO bundle DU values: du001-du005"
+
+      ! dust 1
+      int_name = 'GOCART::du001_ForBundle'
+      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_DST1',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_Int = ptr3d_GC
+
+      ! dust 2
+      int_name = 'GOCART::du002_ForBundle'
+      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_DST2',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_Int = ptr3d_GC
+
+      ! dust 3
+      int_name = 'GOCART::du003_ForBundle'
+      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_DST3',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_Int = ptr3d_GC
+
+      ! dust 4
+      int_name = 'GOCART::du004_ForBundle'
+      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_DST4',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_Int = ptr3d_GC
+
+      ! dust 5
+      int_name = 'GOCART::du005_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_Int = 0.0
+
+   endif
+
+   !---
+   ! NI
+   if ( w_c%reg%pass_GEOSCHEM_NI ) then
+      if ( mapl_am_i_root() .and. is_verbose ) &
+         write(*,*) "Using GEOS-Chem for GOCART AERO bundle NI values: NH4, NH4a, NO3an1-NO3an3"
+
+      ! Get GEOS-Chem imports
+      call MAPL_GetPointer(impChem,ptr3d_GC_NH3,'GEOSCHEM_NH3',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(impChem,ptr3d_GC_NH4,'GEOSCHEM_NH4',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(impChem,ptr3d_GC_NO3,'GEOSCHEM_NO3',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(impChem,ptr3d_GC_NIT,'GEOSCHEM_NIT',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(impChem,ptr3d_GC_NITs,'GEOSCHEM_NITs',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(impChem,ptr3d_GC_SALA,'GEOSCHEM_SALA',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(impChem,ptr3d_GC_SALC,'GEOSCHEM_SALC',rc=status)
+      VERIFY_(STATUS)
+
+      ! Calculate fraction SALA and fraction SALC
+      allocate(GC_FracSALA(size(ptr3d_GC_SALA,1),  &
+                           size(ptr3d_GC_SALA,2),  &
+                           size(ptr3d_GC_SALA,3)), &
+                           __STAT__)
+      allocate(GC_FracSALC(size(ptr3d_GC_SALC,1),  &
+                           size(ptr3d_GC_SALC,2),  &
+                           size(ptr3d_GC_SALC,3)), &
+                           __STAT__)
+      do L = 1,size(ptr3d_GC_SALA,3)
+      do J = 1,size(ptr3d_GC_SALA,2)
+      do I = 1,size(ptr3d_GC_SALA,1)
+         if ( ( ptr3d_GC_SALA(I,J,L) + ptr3d_GC_SALC(I,J,L) ) < 1E-31 ) then
+            GC_FracSALA(I,J,L) = 0.5
+            GC_FracSALC(I,J,L) = 0.5
+         else
+              GC_FracSALA(I,J,L) = ptr3d_GC_SALA(I,J,L) / &
+                                 ( ptr3d_GC_SALA(I,J,L) + ptr3d_GC_SALC(I,J,L) )
+              GC_FracSALC(I,J,L) = ptr3d_GC_SALC(I,J,L) / &
+                                 ( ptr3d_GC_SALA(I,J,L) + ptr3d_GC_SALC(I,J,L) )
+         endif
+      enddo
+      enddo
+      enddo
+
+      ! NH3
+      int_name = 'GOCART::NH3_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_int = ptr3d_GC_NH3
+
+      ! NH4a
+      int_name = 'GOCART::NH4a_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_int = ptr3d_GC_NH4
+
+      ! NO3an1
+      int_name = 'GOCART::NO3an1_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_int = ptr3d_GC_NIT + ptr3d_GC_NITS *                              &
+              ( GC_FracSALA * ( 1 - GC_FracSALA_wt002 - GC_FracSALA_wt003 ) + &
+                GC_FracSALC * GC_FracSALC_wt001 )
+
+      ! NO3an2
+      int_name = 'GOCART::NO3an2_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_int = ptr3d_GC_NITS *      &
+                  ( GC_FracSALA * GC_FracSALA_wt002 + &
+                    GC_FracSALC * GC_FracSALC_wt002 )
+
+      ! NO3an3
+      int_name = 'GOCART::NO3an3_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_int = ptr3d_GC_NITS *     &
+               ( GC_FracSALA *  GC_FracSALA_wt003 +  &
+                 GC_FracSALC * ( 1 - GC_FracSALC_wt001 - GC_FracSALC_wt002 ) )
+
+      ! Clean up
+      if ( allocated(GC_FracSALA) ) deallocate(GC_FracSALA)
+      if ( allocated(GC_FracSALC) ) deallocate(GC_FracSALC)
+   endif
+
+   !---
+   ! O3
+   if ( w_c%reg%pass_GEOSCHEM_O3 .and. mapl_am_i_root() ) &
+         write(*,*) "WARNING: Cannot use GEOS-Chem for GOCART AERO bundle O3 values: connection not implemented"
+
+   !---
+   ! OC
+   if ( w_c%reg%pass_GEOSCHEM_OC ) then
+      if ( mapl_am_i_root() .and. is_verbose ) &
+         write(*,*) "Using GEOS-Chem for GOCART AERO bundle OC values: OCPO, OCPI"
+
+      ! OCPO
+      int_name = 'GOCART::OCphobic_ForBundle'
+      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_OCPO',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_Int = ptr3d_GC
+
+      ! OCPI
+      int_name = 'GOCART::OCphilic_ForBundle'
+      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_OCPI',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_Int = ptr3d_GC
+
+   endif
+
+   !---
+   ! Rn
+   if ( w_c%reg%pass_GEOSCHEM_Rn .and. mapl_am_i_root() ) &
+         write(*,*) "WARNING: Cannot use GEOS-Chem for GOCART AERO bundle Rn values: connection not implemented"
+
+   !---
+   ! SS
+   if ( w_c%reg%pass_GEOSCHEM_SS ) then
+      if ( mapl_am_i_root() .and. is_verbose ) &
+         write(*,*) "Using GEOS-Chem for GOCART AERO bundle SS values: ss001-ss005"
+
+      ! Get GEOS-Chem imports
+      call MAPL_GetPointer(impChem,ptr3d_GC_SALA,'GEOSCHEM_SALA',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(impChem,ptr3d_GC_SALC,'GEOSCHEM_SALC',rc=status)
+      VERIFY_(STATUS)
+
+      ! ss001
+      int_name = 'GOCART::ss001_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_int = ptr3d_GC_SALA * ( 1.0 - GC_SALA_wt002 -           &
+                  GC_SALA_wt003 - GC_SALA_wt004 - GC_SALA_wt005 ) + &
+                  GC_SALC_wt001 * ptr3d_GC_SALC
+
+      ! ss002
+      int_name = 'GOCART::ss002_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_int = GC_SALA_wt002 * ptr3d_GC_SALA + &
+                  GC_SALC_wt002 * ptr3d_GC_SALC
+
+      ! ss003
+      int_name = 'GOCART::ss003_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_int = GC_SALA_wt003 * ptr3d_GC_SALA + &
+                  GC_SALC_wt003 * ptr3d_GC_SALC
+
+      ! ss004
+      int_name = 'GOCART::ss004_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_int = GC_SALA_wt004 * ptr3d_GC_SALA + &
+                  GC_SALC_wt004 * ptr3d_GC_SALC
+
+      ! ss005
+      int_name = 'GOCART::ss005_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_int =  GC_SALA_wt005 * ptr3d_GC_SALA +         &
+                   ptr3d_GC_SALC * ( 1.0 - GC_SALC_wt001 - &
+                   GC_SALC_wt002 - GC_SALC_wt003 - GC_SALC_wt004 )
+
+   endif
+
+   !---
+   ! SU
+   if ( w_c%reg%pass_GEOSCHEM_SU ) then
+      if ( mapl_am_i_root() .and. is_verbose ) &
+         write(*,*) "Using GEOS-Chem for GOCART AERO bundle SU values: DMS, SO2, SO4, MSA"
+
+      ! DMS
+      int_name = 'GOCART::DMS_ForBundle'
+      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_DMS',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_Int = ptr3d_GC
+
+      ! SO2
+      1int_name = 'GOCART::SO2_ForBundle'
+      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_SO2',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_Int = ptr3d_GC
+
+      ! SO4
+      int_name = 'GOCART::SO4_ForBundle'
+      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_SO4',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_Int = ptr3d_GC
+
+      ! MSA
+      int_name = 'GOCART::MSA_ForBundle'
+      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_MSA',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_Int = ptr3d_GC
+
+   endif
+
+   ! clean up
+   if ( associated( ptr3d_GC      ) ) nullify(ptr3d_GC     )
+   if ( associated( ptr3d_GC_SALA ) ) nullify(ptr3d_GC_SALA)
+   if ( associated( ptr3d_GC_SALC ) ) nullify(ptr3d_GC_SALC)
+   if ( associated( ptr3d_GC_NO3  ) ) nullify(ptr3d_GC_NO3 )
+   if ( associated( ptr3d_GC_NH3  ) ) nullify(ptr3d_GC_NH3 )
+   if ( associated( ptr3d_GC_NH4  ) ) nullify(ptr3d_GC_NH4 )
+   if ( associated( ptr3d_GC_NIT  ) ) nullify(ptr3d_GC_NIT )
+   if ( associated( ptr3d_GC_NITs ) ) nullify(ptr3d_GC_NITs)
+   if ( associated( ptr3d_int     ) ) nullify(ptr3d_int    )
+
+   ! Sanity check prints
+   if ( is_verbose ) then
+      call validate_intstate_forbundle_(w_c, impChem, internal, rc=rc)
+   endif
+
+   RETURN_(ESMF_SUCCESS)
+
+ end subroutine copy_geoschem_to_intstate_forbundle_
+!-------------------------------------------------------------------------
+!     NASA/GSFC, Global Modeling and Assimilation Office, Code 900.3     !
+!-------------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE:  validate_intstate_forbundle_
+!
+! !INTERFACE:
+!
+
+   subroutine validate_intstate_forbundle_ (w_c, impChem, internal, rc )
+
+! !USES:
+
+  implicit NONE
+
+! !INPUT/OUTPUT PARAMETERS:
+
+   type(Chem_Bundle), intent(inout)   :: w_c      ! Chemical tracer fields
+   type(ESMF_State), intent(inout)    :: impChem  ! Import State
+   type(ESMF_State), intent(inout)    :: internal ! Internal state
+
+! !OUTPUT PARAMETERS:
+
+   integer, optional                  :: RC  ! return code
+
+! !DESCRIPTION:
+!  This subroutine prints the sum of internal state values for the root
+!  thread as a sanity check. The following are printed: the internal
+!  state aerosols calculated by GOCART, the internal state aerosols to be
+!  used for AERO bundle (which may be GOCART or GEOS-Chem based values
+!  depending on config settings), the Chem bundle passed around GOCART,
+!  and GEOS-Chem import species concentrations used to derive the AERO
+!  bundle values, if used.
+!
+! !REVISION HISTORY:
+!
+!  19Jun2019 E. Lundgren   Initial version
+!
+!EOP
+!-------------------------------------------------------------------------
+
+   character(len=63) :: Iam, int_name, intfb_name
+   character(len=63) :: gc_name
+   character(len=63) :: gc_sala, gc_salc
+   character(len=63) :: gc_no3, gc_nh3, gc_nh4, gc_nit, gc_nits
+   integer           :: status, km, N
+   real, pointer     :: ptr3d_int     (:,:,:) => null()
+   real, pointer     :: ptr3d_intfb   (:,:,:) => null()
+   real, pointer     :: ptr3d_GC      (:,:,:) => null()
+   real, pointer     :: ptr3d_GC_SALA (:,:,:) => null()
+   real, pointer     :: ptr3d_GC_SALC (:,:,:) => null()
+   real, pointer     :: ptr3d_GC_NO3  (:,:,:) => null()
+   real, pointer     :: ptr3d_GC_NH3  (:,:,:) => null()
+   real, pointer     :: ptr3d_GC_NH4  (:,:,:) => null()
+   real, pointer     :: ptr3d_GC_NIT  (:,:,:) => null()
+   real, pointer     :: ptr3d_GC_NITs (:,:,:) => null()
+
+   Iam = 'validate_intstate_forbundle_'
+
+   ! Get # vertical levels
+   km = w_c%grid%km
+
+   ! NOTE: Sum is printed for root thread only but this subroutine could
+   ! be reworked to printed global sum.
+
+   !---
+   ! BC
+   if ( mapl_am_i_root() ) then
+      write(*,*) "BC"
+
+      ! BCPO internal state and w_c
+      int_name = 'GOCART::BCphobic'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> ", trim(w_c%reg%vname(w_c%reg%i_BC))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_BC)%data3d:",&
+                            SUM(w_c%qa(w_c%reg%i_BC)%data3d(:,:,1:km))
+
+      ! BCPO GEOS-Chem
+      if ( w_c%reg%pass_GEOSCHEM_BC ) then
+         gc_name = 'GEOSCHEM_BCPO'
+         call MAPL_GetPointer(impChem,ptr3d_GC,trim(gc_name),rc=status)
+         VERIFY_(STATUS)
+         write(*,'(a45,es16.7)') trim(gc_name)//':',SUM(ptr3d_GC(:,:,1:km))
+      endif
+
+      ! BCPI internal state and w_c
+      int_name = 'GOCART::BCphilic'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_BC+1))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_BC+1)%data3d:", &
+                            SUM(w_c%qa(w_c%reg%i_BC+1)%data3d(:,:,1:km))
+
+      ! BCPI GEOS-Chem
+      if ( w_c%reg%pass_GEOSCHEM_BC ) then
+         gc_name = 'GEOSCHEM_BCPI'
+         call MAPL_GetPointer(impChem,ptr3d_GC,trim(gc_name),rc=status)
+         VERIFY_(STATUS)
+         write(*,'(a45,es16.7)') trim(gc_name)//':',SUM(ptr3d_GC(:,:,1:km))
+      endif
+
+   endif
+
+   !---
+   ! CO
+   if ( mapl_am_i_root() ) then
+      write(*,*) "CO"
+
+      ! CO internal state and w_c
+      int_name = 'GOCART::CO'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_CO))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_CO)%data3d:",&
+                           SUM(w_c%qa(w_c%reg%i_CO)%data3d(:,:,1:km))
+
+      ! CO GEOS-Chem
+      if ( w_c%reg%pass_GEOSCHEM_CO ) then
+         gc_name = 'GEOSCHEM_CO'
+         call MAPL_GetPointer(impChem,ptr3d_GC,trim(gc_name),rc=status)
+         VERIFY_(STATUS)
+         write(*,'(a45,es16.7)') trim(gc_name)//':',SUM(ptr3d_GC(:,:,1:km))
+      endif
+
+   endif
+
+   !---
+   ! DU
+   if ( mapl_am_i_root() ) then
+      write(*,*) "DU"
+
+      ! du001 internal state and w_c
+      int_name = 'GOCART::du001'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_DU))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_DU)%data3d:",&
+                           SUM(w_c%qa(w_c%reg%i_DU)%data3d(:,:,1:km))
+
+      ! DST1 GEOS-Chem
+      if ( w_c%reg%pass_GEOSCHEM_DU ) then
+         gc_name = 'GEOSCHEM_DST1'
+         call MAPL_GetPointer(impChem,ptr3d_GC,trim(gc_name),rc=status)
+         VERIFY_(STATUS)
+         write(*,'(a45,es16.7)') trim(gc_name)//':',SUM(ptr3d_GC(:,:,1:km))
+      endif
+
+      ! du002 internal state and w_c
+      int_name = 'GOCART::du002'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_DU+1))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_DU+1)%data3d:",&
+                           SUM(w_c%qa(w_c%reg%i_DU+1)%data3d(:,:,1:km))
+
+      ! DST2 GEOS-Chem
+      if ( w_c%reg%pass_GEOSCHEM_DU ) then
+         gc_name = 'GEOSCHEM_DST2'
+         call MAPL_GetPointer(impChem,ptr3d_GC,trim(gc_name),rc=status)
+         VERIFY_(STATUS)
+         write(*,'(a45,es16.7)') trim(gc_name)//':',SUM(ptr3d_GC(:,:,1:km))
+      endif
+
+      ! du003 internal state and w_c
+      int_name = 'GOCART::du003'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_DU+2))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_DU+2)%data3d:",&
+                           SUM(w_c%qa(w_c%reg%i_DU+2)%data3d(:,:,1:km))
+
+      ! DST3 GEOS-Chem
+      if ( w_c%reg%pass_GEOSCHEM_DU ) then
+         gc_name = 'GEOSCHEM_DST3'
+         call MAPL_GetPointer(impChem,ptr3d_GC,trim(gc_name),rc=status)
+         VERIFY_(STATUS)
+         write(*,'(a45,es16.7)') trim(gc_name)//':',SUM(ptr3d_GC(:,:,1:km))
+      endif
+
+
+      ! du004 internal state and w_c
+      int_name = 'GOCART::du004'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_DU+3))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_DU+3)%data3d:",&
+                           SUM(w_c%qa(w_c%reg%i_DU+3)%data3d(:,:,1:km))
+
+      ! DST4 GEOS-Chem
+      if ( w_c%reg%pass_GEOSCHEM_DU ) then
+         gc_name = 'GEOSCHEM_DST4'
+         call MAPL_GetPointer(impChem,ptr3d_GC,trim(gc_name),rc=status)
+         VERIFY_(STATUS)
+         write(*,'(a45,es16.7)') trim(gc_name)//':',SUM(ptr3d_GC(:,:,1:km))
+      endif
+
+      ! du005 internal state and w_c
+      int_name = 'GOCART::du005'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_DU+4))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_DU+4)%data3d:",&
+                                 SUM(w_c%qa(w_c%reg%i_DU+4)%data3d(:,:,1:km))
+   endif
+
+   !---
+   ! NI
+   if ( mapl_am_i_root() ) then
+      write(*,*) "NI"
+
+      ! NH3, NH4, NO3, NIT, NITs GEOS-Chem
+      if ( w_c%reg%pass_GEOSCHEM_NI ) then
+         gc_nh3  = 'GEOSCHEM_NH3'
+         gc_nh4  = 'GEOSCHEM_NH4'
+         gc_no3  = 'GEOSCHEM_NO3'
+         gc_nit  = 'GEOSCHEM_NIT'
+         gc_nits = 'GEOSCHEM_NITs'
+         call MAPL_GetPointer(impChem,ptr3d_GC_NH3,trim(gc_nh3),rc=status)
+         VERIFY_(STATUS)
+         call MAPL_GetPointer(impChem,ptr3d_GC_NH4,trim(gc_nh4),rc=status)
+         VERIFY_(STATUS)
+         call MAPL_GetPointer(impChem,ptr3d_GC_NO3,trim(gc_no3),rc=status)
+         VERIFY_(STATUS)
+         call MAPL_GetPointer(impChem,ptr3d_GC_NIT,trim(gc_nit),rc=status)
+         VERIFY_(STATUS)
+         call MAPL_GetPointer(impChem,ptr3d_GC_NITs,trim(gc_nits),rc=status)
+         VERIFY_(STATUS)
+         write(*,'(a45,es16.7)') trim(gc_nh3)//':',SUM(ptr3d_GC_NH3(:,:,1:km))
+         write(*,'(a45,es16.7)') trim(gc_nh4)//':',SUM(ptr3d_GC_NH4(:,:,1:km))
+         write(*,'(a45,es16.7)') trim(gc_no3)//':',SUM(ptr3d_GC_NO3(:,:,1:km))
+         write(*,'(a45,es16.7)') trim(gc_nit)//':',SUM(ptr3d_GC_NIT(:,:,1:km))
+         write(*,'(a45,es16.7)') trim(gc_nits)//':',SUM(ptr3d_GC_NITs(:,:,1:km))
+      endif
+
+      ! NH3 internal state and w_c
+      int_name = 'GOCART::NH3'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_NI))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_NI)%data3d:",&
+                                 SUM(w_c%qa(w_c%reg%i_NI)%data3d(:,:,1:km))
+
+      ! NH4a internal state and w_c
+      int_name = 'GOCART::NH4a'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_NI+1))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_NI+1)%data3d:",&
+                                    SUM(w_c%qa(w_c%reg%i_NI+1)%data3d(:,:,1:km))
+
+      ! NO3an1 internal state and w_c
+      int_name = 'GOCART::NO3an1'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_NI+2))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_NI+2)%data3d:",&
+                                 SUM(w_c%qa(w_c%reg%i_NI+2)%data3d(:,:,1:km))
+
+      ! NO3an2 internal state and w_c
+      int_name = 'GOCART::NO3an2'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_NI+3))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_NI+3)%data3d:",&
+                                 SUM(w_c%qa(w_c%reg%i_NI+3)%data3d(:,:,1:km))
+
+      ! NO3an1 internal state and w_c
+      int_name = 'GOCART::NO3an3'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_NI+4))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_NI+4)%data3d:",&
+                                 SUM(w_c%qa(w_c%reg%i_NI+4)%data3d(:,:,1:km))
+
+   endif
+
+   !---
+   ! OC
+   if ( w_c%reg%pass_GEOSCHEM_OC .and. mapl_am_i_root() ) then
+      write(*,*) "OC"
+
+      ! OCPO internal state and w_c
+      int_name = 'GOCART::OCphobic'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_OC))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_OC)%data3d:",&
+                           SUM(w_c%qa(w_c%reg%i_OC)%data3d(:,:,1:km))
+
+      ! OCPO GEOS-Chem
+      if ( w_c%reg%pass_GEOSCHEM_OC ) then
+         gc_name = 'GEOSCHEM_OCPO'
+         call MAPL_GetPointer(impChem,ptr3d_GC,trim(gc_name),rc=status)
+         VERIFY_(STATUS)
+         write(*,'(a45,es16.7)') trim(gc_name)//':',SUM(ptr3d_GC(:,:,1:km))
+      endif
+
+      ! OCPI internal state and w_c
+      int_name = 'GOCART::OCphilic'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_OC+1))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_OC+1)%data3d:",&
+                            SUM(w_c%qa(w_c%reg%i_OC+1)%data3d(:,:,1:km))
+
+      ! OCPI GEOS-Chem
+      if ( w_c%reg%pass_GEOSCHEM_OC ) then
+         gc_name = 'GEOSCHEM_OCPI'
+         call MAPL_GetPointer(impChem,ptr3d_GC,trim(gc_name),rc=status)
+         VERIFY_(STATUS)
+         write(*,'(a45,es16.7)') trim(gc_name)//':',SUM(ptr3d_GC(:,:,1:km))
+      endif
+
+   endif
+
+   !---
+   ! SS
+   if ( mapl_am_i_root() ) then
+      write(*,*) "SS"
+
+      ! SALA, SALC GEOS-Chem
+      if ( w_c%reg%pass_GEOSCHEM_SS ) then
+         gc_sala = 'GEOSCHEM_SALA'
+         gc_salc = 'GEOSCHEM_SALC'
+         call MAPL_GetPointer(impChem,ptr3d_GC_SALA,trim(gc_sala),rc=status)
+         VERIFY_(STATUS)
+         call MAPL_GetPointer(impChem,ptr3d_GC_SALC,trim(gc_salc),rc=status)
+         VERIFY_(STATUS)
+         write(*,'(a45,es16.7)') trim(gc_sala)//':',SUM(ptr3d_GC_SALA(:,:,1:km))
+         write(*,'(a45,es16.7)') trim(gc_salc)//':',SUM(ptr3d_GC_SALC(:,:,1:km))
+      endif
+
+      ! ss001 internal state and w_c
+      int_name = 'GOCART::ss001'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_SS))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_SS)%data3d:",&
+                            SUM(w_c%qa(w_c%reg%i_SS)%data3d(:,:,1:km))
+
+      ! ss002 internal state and w_c
+      int_name = 'GOCART::ss002'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_SS+1))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_SS+1)%data3d:",&
+                            SUM(w_c%qa(w_c%reg%i_SS+1)%data3d(:,:,1:km))
+
+      ! ss003 internal state and w_c
+      int_name = 'GOCART::ss003'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_SS+2))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_SS+2)%data3d:",&
+                            SUM(w_c%qa(w_c%reg%i_SS+2)%data3d(:,:,1:km))
+
+      ! ss004 internal state and w_c
+      int_name = 'GOCART::ss004'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_SS+3))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_SS+3)%data3d:",&
+                            SUM(w_c%qa(w_c%reg%i_SS+3)%data3d(:,:,1:km))
+
+      ! print internal state and w_c values - sea salt 5
+      int_name = 'GOCART::ss005'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_SS+4))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_SS+4)%data3d:",&
+                            SUM(w_c%qa(w_c%reg%i_SS+4)%data3d(:,:,1:km))
+
+   endif
+
+   !---
+   ! SU
+   if ( w_c%reg%pass_GEOSCHEM_SU .and. mapl_am_i_root() ) then
+      write(*,*) "SU"
+
+      ! DMS internal state and w_c
+      int_name = 'GOCART::DMS'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_SU))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_SU)%data3d:",&
+                            SUM(w_c%qa(w_c%reg%i_SU)%data3d(:,:,1:km))
+
+      ! DMS GEOS-Chem
+      if ( w_c%reg%pass_GEOSCHEM_SU ) then
+         gc_name = 'GEOSCHEM_DMS'
+         call MAPL_GetPointer(impChem,ptr3d_GC,trim(gc_name),rc=status)
+         VERIFY_(STATUS)
+         write(*,'(a45,es16.7)') trim(gc_name)//':',SUM(ptr3d_GC(:,:,1:km))
+      endif
+
+      ! SO2 internal state and w_c
+      int_name = 'GOCART::SO2'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_SU+1))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_SU+1)%data3d:",&
+                            SUM(w_c%qa(w_c%reg%i_SU+1)%data3d(:,:,1:km))
+
+      ! SO2 GEOS-Chem
+      if ( w_c%reg%pass_GEOSCHEM_SU ) then
+         gc_name = 'GEOSCHEM_SO2'
+         call MAPL_GetPointer(impChem,ptr3d_GC,trim(gc_name),rc=status)
+         VERIFY_(STATUS)
+         write(*,'(a45,es16.7)') trim(gc_name)//':',SUM(ptr3d_GC(:,:,1:km))
+      endif
+
+      ! SO4 internal state and w_c
+      int_name = 'GOCART::SO4'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_SU+2))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_SU+2)%data3d:",&
+                            SUM(w_c%qa(w_c%reg%i_SU+2)%data3d(:,:,1:km))
+
+      ! SO4 GEOS-Chem
+      if ( w_c%reg%pass_GEOSCHEM_SU ) then
+         gc_name = 'GEOSCHEM_SO4'
+         call MAPL_GetPointer(impChem,ptr3d_GC,trim(gc_name),rc=status)
+         VERIFY_(STATUS)
+         write(*,'(a45,es16.7)') trim(gc_name)//':',SUM(ptr3d_GC(:,:,1:km))
+      endif
+
+      ! MSA internal state and w_c
+      int_name = 'GOCART::MSA'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_SU+3))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_SU+3)%data3d:",&
+                            SUM(w_c%qa(w_c%reg%i_SU+3)%data3d(:,:,1:km))
+
+      ! MSA GEOS-Chem
+      if ( w_c%reg%pass_GEOSCHEM_SU ) then
+        gc_name = 'GEOSCHEM_MSA'
+        call MAPL_GetPointer(impChem,ptr3d_GC,trim(gc_name),rc=status)
+        VERIFY_(STATUS)
+        write(*,'(a45,es16.7)') trim(gc_name)//':',SUM(ptr3d_GC(:,:,1:km))
+      endif
+
+   endif
+
+   ! Clean up
+   if ( associated( ptr3d_int     ) ) nullify(ptr3d_int     )
+   if ( associated( ptr3d_intfb   ) ) nullify(ptr3d_intfb   )
+   if ( associated( ptr3d_GC      ) ) nullify(ptr3d_GC      )
+   if ( associated( ptr3d_GC_SALA ) ) nullify(ptr3d_GC_SALA )
+   if ( associated( ptr3d_GC_SALC ) ) nullify(ptr3d_GC_SALC )
+   if ( associated( ptr3d_GC_NO3  ) ) nullify(ptr3d_GC_NO3  )
+   if ( associated( ptr3d_GC_NH3  ) ) nullify(ptr3d_GC_NH3  )
+   if ( associated( ptr3d_GC_NH4  ) ) nullify(ptr3d_GC_NH4  )
+   if ( associated( ptr3d_GC_NIT  ) ) nullify(ptr3d_GC_NIT  )
+   if ( associated( ptr3d_GC_NITs ) ) nullify(ptr3d_GC_NITs )
+
+   RETURN_(ESMF_SUCCESS)
+
+ end subroutine validate_intstate_forbundle_
 
 end module GOCART_GridCompMod
 

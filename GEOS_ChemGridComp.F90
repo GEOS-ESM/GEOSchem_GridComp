@@ -686,6 +686,88 @@ contains
 
   END IF
 
+! GOCART <=> GEOSCHEM connections ...
+! -----------------------------------
+  ! Set connectivity whenever both GEOSCHEM and GOCART are enabled
+  IF(myState%enable_GEOSCHEM .AND. myState%enable_GOCART ) THEN
+
+!    ... For GOCART::BC (black carbon)
+!    -----------------------------
+     IF(chemReg%doing_BC) THEN
+        ! GEOSCHEM connections to GOCART
+        CALL MAPL_AddConnectivity ( GC,                       &
+          SRC_NAME  = (/ "TRC_BCPO",      "TRC_BCPI"      /), &
+          DST_NAME  = (/ "GEOSCHEM_BCPO", "GEOSCHEM_BCPI" /), &
+          DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__)
+     ENDIF
+
+!    ... For GOCART::CO (carbon monoxide)
+!    -----------------------------
+     IF(chemReg%doing_CO) THEN
+        ! GEOSCHEM connections to GOCART
+        CALL MAPL_AddConnectivity ( GC,               &
+          SRC_NAME  = (/ "TRC_CO"                 /), &
+          DST_NAME  = (/ "GEOSCHEM_CO"            /), &
+          DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__)
+     ENDIF
+
+!    ... For GOCART::DU (mineral dust)
+!    -----------------------------
+     IF(chemReg%doing_DU) THEN
+        ! GEOSCHEM connections to GOCART
+        CALL MAPL_AddConnectivity ( GC,                         &
+          SRC_NAME  = (/ "TRC_DST1",      "TRC_DST2",           &
+                         "TRC_DST3",      "TRC_DST4"        /), &
+          DST_NAME  = (/ "GEOSCHEM_DST1", "GEOSCHEM_DST2",      &
+                         "GEOSCHEM_DST3", "GEOSCHEM_DST4"   /), &
+          DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__)
+     ENDIF
+
+!    ... For GOCART::NI (nitrate)
+!    -----------------------------
+     IF(chemReg%doing_NI) THEN
+        ! GEOSCHEM connections to GOCART
+        CALL MAPL_AddConnectivity ( GC,                                       &
+          SRC_NAME  = (/ "TRC_NH3",      "TRC_NH4",      "TRC_NO3" ,          &
+                          "TRC_NIT",     "TRC_NITs"                     /),   &
+          DST_NAME  = (/ "GEOSCHEM_NH3", "GEOSCHEM_NH4", "GEOSCHEM_NO3",      &
+                         "GEOSCHEM_NIT", "GEOSCHEM_NITs"                /),   &
+          DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__)
+     ENDIF
+
+!    ... For GOCART::OC (organice carbon)
+!    -----------------------------
+     IF(chemReg%doing_OC) THEN
+        ! GEOSCHEM connections to GOCART
+        CALL MAPL_AddConnectivity ( GC,                       &
+          SRC_NAME  = (/ "TRC_OCPO",      "TRC_OCPI"      /), &
+          DST_NAME  = (/ "GEOSCHEM_OCPO", "GEOSCHEM_OCPI" /), &
+          DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__)
+     ENDIF
+
+!    ... For GOCART::SS (sea salt)
+!    -----------------------------
+     IF(chemReg%doing_SS) THEN
+        ! GEOSCHEM connections to GOCART
+        CALL MAPL_AddConnectivity ( GC,                        &
+          SRC_NAME  = (/ "TRC_SALA",      "TRC_SALC"      /),  &
+          DST_NAME  = (/ "GEOSCHEM_SALA", "GEOSCHEM_SALC" /),  &
+          DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__)
+     ENDIF
+
+!    ... For GOCART::SU (sulfate)
+!    -----------------------------
+     IF(chemReg%doing_SU) THEN
+        ! GEOSCHEM connections to GOCART
+        CALL MAPL_AddConnectivity ( GC,                     &
+          SRC_NAME  = (/ "TRC_DMS",      "TRC_SO2",         &
+                         "TRC_SO4",      "TRC_MSA"      /), &
+          DST_NAME  = (/ "GEOSCHEM_DMS", "GEOSCHEM_SO2",    &
+                         "GEOSCHEM_SO4", "GEOSCHEM_MSA" /), &
+          DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__)
+     ENDIF
+
+  ENDIF
 
 ! PCHEM connections to GEOSCHEM
 ! -----------------------------

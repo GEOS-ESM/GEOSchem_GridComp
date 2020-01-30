@@ -51,6 +51,7 @@
 !                      - Added PC and GMI families
 !                      - removed concept of fixed tracers
 !  29Jun2016 Nielsen   Nullified creation of pc001 in vname list
+!  07May2019 ELundgren Added GEOS-Chem pass-through hooks.
 !
 !EOP
 !-------------------------------------------------------------------------
@@ -167,6 +168,22 @@
 
      real, pointer    :: Hcts(:,:)   ! (4,nq), four Henrys Law Cts
 
+!    Whether to pass GEOS-CHEM values to GOCART Chem_Bundle
+!    ------------------------------------------------------
+     logical :: pass_GEOSCHEM       ! any
+     logical :: pass_GEOSCHEM_BC    ! black carbon
+     logical :: pass_GEOSCHEM_BRC   ! brown carbon
+     logical :: pass_GEOSCHEM_CFC   ! CFCs
+     logical :: pass_GEOSCHEM_CH4   ! methane
+     logical :: pass_GEOSCHEM_CO2   ! carbon dioxide
+     logical :: pass_GEOSCHEM_CO    ! carbon monoxide
+     logical :: pass_GEOSCHEM_DU    ! mineral dust
+     logical :: pass_GEOSCHEM_NI    ! nitrate
+     logical :: pass_GEOSCHEM_O3    ! ozone
+     logical :: pass_GEOSCHEM_OC    ! organic carbon
+     logical :: pass_GEOSCHEM_Rn    ! radon
+     logical :: pass_GEOSCHEM_SS    ! sea salt
+     logical :: pass_GEOSCHEM_SU    ! sulfates
 
   end type Chem_Registry
 
@@ -209,6 +226,7 @@ CONTAINS
 !  03Sep2004 da Silva  Added stratospheric chemistry hooks.
 !   4Oct2004 Nielsen   Added stratospheric species' names.
 !  19Oct2005 da Silva  Added CO2
+!  27Mar2019 Lundgren  added GEOS-Chem pass-through hooks.
 !
 !EOP
 !-------------------------------------------------------------------------
@@ -346,6 +364,48 @@ CONTAINS
                    this%units_OCS,  this%i_OCS, this%j_OCS )
    call setmeta_ ( this%doing_TR,  'TR', 'Passive Tracers', &
                    this%units_TR,  this%i_TR, this%j_TR )
+
+!  Set hooks for passing GEOS-Chem through GOCART to aerosol bundle
+!  ------------------------------------------------
+   if ( this%doing_BC ) then
+      call parserc_gc_ ( 'BC', this%pass_GEOSCHEM, this%pass_GEOSCHEM_BC )
+   endif
+   if ( this%doing_BRC ) then
+      call parserc_gc_ ( 'BRC', this%pass_GEOSCHEM, this%pass_GEOSCHEM_BRC )
+   endif
+   if ( this%doing_CFC ) then
+      call parserc_gc_ ( 'CFC', this%pass_GEOSCHEM, this%pass_GEOSCHEM_CFC )
+   endif
+   if ( this%doing_CH4 ) then
+      call parserc_gc_ ( 'CH4', this%pass_GEOSCHEM, this%pass_GEOSCHEM_CH4 )
+   endif
+   if ( this%doing_CO2 ) then
+      call parserc_gc_ ( 'CO2', this%pass_GEOSCHEM, this%pass_GEOSCHEM_CO2 )
+   endif
+   if ( this%doing_CO ) then
+      call parserc_gc_ ( 'CO', this%pass_GEOSCHEM, this%pass_GEOSCHEM_CO )
+   endif
+   if ( this%doing_DU ) then
+      call parserc_gc_ ( 'DU', this%pass_GEOSCHEM, this%pass_GEOSCHEM_DU )
+   endif
+   if ( this%doing_NI ) then
+      call parserc_gc_ ( 'NI', this%pass_GEOSCHEM, this%pass_GEOSCHEM_NI )
+   endif
+   if ( this%doing_O3 ) then
+      call parserc_gc_ ( 'O3', this%pass_GEOSCHEM, this%pass_GEOSCHEM_O3 )
+   endif
+   if ( this%doing_OC ) then
+      call parserc_gc_ ( 'OC', this%pass_GEOSCHEM, this%pass_GEOSCHEM_OC )
+   endif
+   if ( this%doing_Rn ) then
+      call parserc_gc_ ( 'Rn', this%pass_GEOSCHEM, this%pass_GEOSCHEM_Rn )
+   endif
+   if ( this%doing_SS ) then
+      call parserc_gc_ ( 'SS', this%pass_GEOSCHEM, this%pass_GEOSCHEM_SS )
+   endif
+   if ( this%doing_SU ) then
+      call parserc_gc_ ( 'SU', this%pass_GEOSCHEM, this%pass_GEOSCHEM_SU )
+   endif
 		   
    call I90_Release()
 
@@ -453,7 +513,33 @@ CONTAINS
       end if
 
       end subroutine parserc_ 
-      
+
+      subroutine parserc_gc_ ( name, pass_gc, pass_this_gc )  ! parses rc file
+!     -------------------   ! to determine whether GEOS-Chem is a pass-through
+      character(len=*), intent(in) :: name
+      logical, intent(inout)       :: pass_gc
+      logical, intent(out)         :: pass_this_gc
+
+      character(len=255) :: answer
+      integer ier
+
+!     Defaults
+!     --------
+      pass_gc = .false.
+
+!     Use GEOS-Chem? Allow entry to be missing from rcfile
+!     ----------------------------------------------------
+      call i90_label ( 'pass_GEOSCHEM_'//trim(name)//':', ier )
+      if ( ier .eq. 0 ) then
+         call i90_gtoken ( answer, ier )
+         if ( ier .eq. 0 ) then
+            if ( answer(1:1) .eq. 'y' .or. answer(1:1) .eq. 'Y' ) &
+                 pass_this_gc = .true.
+                 if ( pass_gc == .false. ) pass_gc = .true.
+         end if
+      end if
+
+      end subroutine
 
       subroutine setidx_ ( doing_it, n_tt, i_tt, j_tt ) ! set tracer indices
 !     ------------------
@@ -582,6 +668,7 @@ RealNames: IF( ier .EQ. 0 ) THEN
 !
 !  22Jul2003 da Silva  First crack.
 !  03Sep2004 da Silva  Added stratospheric chemistry hooks.
+!  27Mar2019 Lundgren  Added GEOS-Chem pass-through hooks.
 !
 !EOP
 !-------------------------------------------------------------------------
@@ -609,6 +696,22 @@ RealNames: IF( ier .EQ. 0 ) THEN
    this%doing_NI = .false.    ! Nitrate
    this%doing_GMI = .false.   ! GMI chemistry (GEOS-5)
    this%doing_TR = .false.    ! passive tracers
+
+   this%pass_GEOSCHEM     = .false.  ! any
+   this%pass_GEOSCHEM_BC  = .false.  ! black carbon
+   this%pass_GEOSCHEM_BRC = .false.  ! brown carbon
+   this%pass_GEOSCHEM_CFC = .false.  ! CFCs
+   this%pass_GEOSCHEM_CH4 = .false.  ! methane
+   this%pass_GEOSCHEM_CO2 = .false.  ! carbon dioxide
+   this%pass_GEOSCHEM_CO  = .false.  ! carbon monoxide
+   this%pass_GEOSCHEM_DU  = .false.  ! mineral dust
+   this%pass_GEOSCHEM_NI  = .false.  ! nitrate
+   this%pass_GEOSCHEM_O3  = .false.  ! ozone
+   this%pass_GEOSCHEM_OC  = .false.  ! organic carbon
+   this%pass_GEOSCHEM_Rn  = .false.  ! radon
+   this%pass_GEOSCHEM_SS  = .false.  ! sea salt
+   this%pass_GEOSCHEM_SU  = .false.  ! sulfates
+
    deallocate ( this%vname, this%vtitle, this%vunits, this%fscav, &
                 this%rhop, this%molwght, this%rlow, this%rup, this%rmed, &
                 this%sigma, this%fNum, this%Hcts, stat=ios )
