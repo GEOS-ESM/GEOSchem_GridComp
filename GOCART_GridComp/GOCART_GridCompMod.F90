@@ -2838,7 +2838,7 @@ CONTAINS
    if ( w_c%reg%pass_GEOSCHEM ) then
       ! Set verbose to FALSE to turn off print messages
       call copy_geoschem_to_intstate_forbundle_(w_c, impChem, internal, &
-                                                verbose=.TRUE., rc=rc)
+                                                verbose=w_c%reg%pass_GEOSCHEM_verbose, rc=rc)
    endif
 
 !  Get the diagnostics

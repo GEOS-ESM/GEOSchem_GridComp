@@ -170,20 +170,22 @@
 
 !    Whether to pass GEOS-CHEM values to GOCART Chem_Bundle
 !    ------------------------------------------------------
-     logical :: pass_GEOSCHEM       ! any
-     logical :: pass_GEOSCHEM_BC    ! black carbon
-     logical :: pass_GEOSCHEM_BRC   ! brown carbon
-     logical :: pass_GEOSCHEM_CFC   ! CFCs
-     logical :: pass_GEOSCHEM_CH4   ! methane
-     logical :: pass_GEOSCHEM_CO2   ! carbon dioxide
-     logical :: pass_GEOSCHEM_CO    ! carbon monoxide
-     logical :: pass_GEOSCHEM_DU    ! mineral dust
-     logical :: pass_GEOSCHEM_NI    ! nitrate
-     logical :: pass_GEOSCHEM_O3    ! ozone
-     logical :: pass_GEOSCHEM_OC    ! organic carbon
-     logical :: pass_GEOSCHEM_Rn    ! radon
-     logical :: pass_GEOSCHEM_SS    ! sea salt
-     logical :: pass_GEOSCHEM_SU    ! sulfates
+     logical :: pass_GEOSCHEM         ! any
+     logical :: pass_GEOSCHEM_BC      ! black carbon
+     logical :: pass_GEOSCHEM_BC      ! black carbon
+     logical :: pass_GEOSCHEM_BRC     ! brown carbon
+     logical :: pass_GEOSCHEM_CFC     ! CFCs
+     logical :: pass_GEOSCHEM_CH4     ! methane
+     logical :: pass_GEOSCHEM_CO2     ! carbon dioxide
+     logical :: pass_GEOSCHEM_CO      ! carbon monoxide
+     logical :: pass_GEOSCHEM_DU      ! mineral dust
+     logical :: pass_GEOSCHEM_NI      ! nitrate
+     logical :: pass_GEOSCHEM_O3      ! ozone
+     logical :: pass_GEOSCHEM_OC      ! organic carbon
+     logical :: pass_GEOSCHEM_Rn      ! radon
+     logical :: pass_GEOSCHEM_SS      ! sea salt
+     logical :: pass_GEOSCHEM_SU      ! sulfates
+     logical :: pass_GEOSCHEM_verbose ! turn on print statements 
 
   end type Chem_Registry
 
@@ -236,6 +238,7 @@ CONTAINS
    type(Chem_Registry) :: this
    character(len=255) :: rcfilen
    integer :: nq, ios, ier, n
+   logical :: foo_bool
    logical, allocatable :: isGOCART(:)
 
    rc = 0
@@ -367,6 +370,7 @@ CONTAINS
 
 !  Set hooks for passing GEOS-Chem through GOCART to aerosol bundle
 !  ------------------------------------------------
+   this%pass_GEOSCHEM = .FALSE.
    if ( this%doing_BC ) then
       call parserc_gc_ ( 'BC', this%pass_GEOSCHEM, this%pass_GEOSCHEM_BC )
    endif
@@ -406,7 +410,10 @@ CONTAINS
    if ( this%doing_SU ) then
       call parserc_gc_ ( 'SU', this%pass_GEOSCHEM, this%pass_GEOSCHEM_SU )
    endif
-		   
+   ! verbose mode
+   foo_bool = .FALSE.
+   call parserc_gc_ ( 'verbose', foo_bool, this%pass_GEOSCHEM_verbose )
+
    call I90_Release()
 
 !  Set indices for the GOCART family: from CO to OC
@@ -525,7 +532,9 @@ CONTAINS
 
 !     Defaults
 !     --------
-      pass_gc = .false.
+      ! cakelle2: turn off default - this would force pass_gc to false even if
+      ! the original value is true but the given species is not turned on.
+      !!!pass_gc = .false.
 
 !     Use GEOS-Chem? Allow entry to be missing from rcfile
 !     ----------------------------------------------------
