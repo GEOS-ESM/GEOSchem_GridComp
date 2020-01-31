@@ -14,8 +14,11 @@ du004      'kg kg-1'    'Dust Mixing Ratio (bin004)'
 du005      'kg kg-1'    'Dust Mixing Ratio (bin005)'
 ::
 
-OPTICS_FILE: ExtData/MERRA2/x/opticsBands_DU.v15_3.RRTMG.nc
+#OPTICS_FILE: ExtData/MERRA2/x/opticsBands_DU.v15_3.RRTMG.nc
+radiation_optics: ExtData/MERRA2/x/opticsBands_DU.v15_3.RRTMG.nc
+#monochromatic_optics: look in aod_registry.rc and fill this later
 
+monochromatic_wavelengths: 4.7e-7 5.5e-7 6.7e-7 8.7e-7 # in meters
 
 particle_radius: 0.73 1.4 2.4 4.5 8.0
 
@@ -38,8 +41,6 @@ molecular_weight: 0.1  0.1  0.1  0.1  0.1
 
 # Number of particles per kg mass
 fnum: 2.45e14  3.28e13  6.52e12  9.89e11 1.76e11
-
-rhFlag: 0
 
 # Maring settling velocity correction
 maringFlag: 1
