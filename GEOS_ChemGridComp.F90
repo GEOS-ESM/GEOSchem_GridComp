@@ -378,12 +378,11 @@ contains
           DST_ID = GOCARTdata, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
-!  IF ((myState%enable_GOCART2G) .AND. (myState%enable_GOCART)) then  !GOCART REFACTOR TEST
-!     call MAPL_AddConnectivity (GC, &
-!          SHORT_NAME = [ 'AERO' ], &
-!          DST_ID = GOCART2G, SRC_ID = GOCART, __RC__)
-!  endif
-
+  IF(myState%enable_GOCART2G) then
+     CALL MAPL_AddConnectivity ( GC, &
+          SHORT_NAME  = (/'DELP       '/), &
+          DST_ID = GOCART2G, SRC_ID = CHEMENV, __RC__  )
+  ENDIF
 
 
   IF(myState%enable_GAAS) then
