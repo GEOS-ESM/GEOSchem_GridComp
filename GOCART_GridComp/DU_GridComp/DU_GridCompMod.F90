@@ -695,6 +695,10 @@ CONTAINS
    end if
 !                          -------
 
+if(mapl_am_i_root()) print*,'gcDU%sfrac = ',gcDU%sfrac
+
+
+
 !  Soil Density
 !  ---------------
    call i90_label ( 'soil_density:', ier(1) )
@@ -776,6 +780,8 @@ CONTAINS
       call final_(50)
       return
    end if
+
+if(mapl_am_i_root()) print*,'gcDU%Ch_DU = ',gcDU%Ch_DU
 
 !  Settling velocity correction following Maring et al, 2003
 !  ---------------
@@ -1034,6 +1040,9 @@ CONTAINS
                                 emissions, rc )
 
        dqa = gcDU%Ch_DU * gcDU%sfrac(n)*gcDU%src * emissions * cdt * grav / w_c%delp(:,:,km)
+
+if(mapl_am_i_root()) print*,'DU sum(dqa) = ',sum(dqa)
+
 
        w_c%qa(n1+n-1)%data3d(:,:,km) = w_c%qa(n1+n-1)%data3d(:,:,km) + dqa
 
