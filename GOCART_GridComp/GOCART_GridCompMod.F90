@@ -1763,10 +1763,11 @@ end if ! doing GOCART
 !  ----------------------------------------------------
    allocate(w_c%delp(i1:i2,j1:j2,km), w_c%rh(i1:i2,j1:j2,km), __STAT__)
 
-   _ASSERT( size(InternalSpec) == chemReg%n_GOCART, 'needs informative message' )
+   n_spec = size(InternalSpec) / 2
+   _ASSERT( n_spec == chemReg%n_GOCART, 'needs informative message' )
+   !_ASSERT( size(InternalSpec) == chemReg%n_GOCART, 'needs informative message' )
 
-   do L = 1, size(InternalSpec)
-
+   do L = 1, n_spec
       call MAPL_VarSpecGet(InternalSpec(L), SHORT_NAME=short_name, __RC__)
 
       N = chemReg%i_GOCART + L - 1
