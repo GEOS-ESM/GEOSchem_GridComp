@@ -14,11 +14,14 @@ module DU2G_GridCompMod
    use MAPL_Mod
    use Chem_MieMod2G
    use Chem_AeroGeneric
+   use iso_c_binding, only: c_loc, c_f_pointer, c_ptr
 
+!   use Chem_UtilMod          ! I/O
+!   use DustEmissionMod       ! Emissions
+   
    implicit none
    private
 
-   type(Chem_Mie), dimension(2), save :: gocart2GMieTable
    integer, parameter :: instanceComputational = 1
    integer, parameter :: instanceData          = 2
 
@@ -36,7 +39,9 @@ module DU2G_GridCompMod
 
    integer, parameter         :: NHRES = 6  ! DEV NOTE!!! should this be allocatable, and not a parameter?
 
-   type aerosol_state
+!  Dust private state
+   type DU2G_GridComp
+       type(Chem_Mie), dimension(2)    :: rad_MieTable, diag_MieTable
        real, allocatable      :: radius(:)      ! particle effective radius [um]
        real, allocatable      :: rlow(:)        ! particle effective radius lower bound [um]
        real, allocatable      :: rup(:)         ! particle effective radius upper bound [um]
@@ -47,11 +52,12 @@ module DU2G_GridCompMod
        real, allocatable      :: molwght(:)     ! molecular weight
        real, allocatable      :: fnum(:)        ! number of particles per kg mass
        real                   :: maringFlag     ! maring settling velocity correction
-   end type aerosol_state
+   end type DU2G_GridComp
 
    type wrap_
-      type (aerosol_state), pointer     :: PTR => null()
+      type (DU2G_GridComp), pointer     :: PTR => null()
    end type wrap_
+! DEV NOTE !!!! CHANGE all aerosol_state to DU2G_GridComp
 
 contains
 
@@ -85,12 +91,12 @@ contains
     character (len=ESMF_MAXSTR)                 :: COMP_NAME
     type (ESMF_Config)                          :: cfg
     type (wrap_)                                :: wrap
-    type (aerosol_state), pointer               :: self
+    type (DU2G_GridComp), pointer               :: self
 
     character (len=ESMF_MAXSTR)                 :: field_name
     character (len=ESMF_MAXSTR), allocatable    :: aerosol_names(:)
 
-    integer                                     :: n, i, nCols, aero_n
+    integer                                     :: n, i, nCols, n_bins
     real                                        :: DEFVAL
     logical                                     :: data_driven = .true.
     integer, parameter                          :: bins = 5  ! This should equal the number of bins. Is this how we want to handle this?
@@ -106,12 +112,13 @@ contains
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) //'::'// Iam
 
+if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAME)
+
 
 !   Wrap internal state for storing in GC
 !   -------------------------------------
     allocate (self, __STAT__)
     wrap%ptr => self
-
 
 !   Load resource file  
 !   -------------------
@@ -125,19 +132,19 @@ contains
 
 !   Get names of aerosols and write to aerosol_names to add to AERO State
 !   ----------------------------------------------------------------------
-    call ESMF_ConfigGetDim (cfg, aero_n, nCols, label=('variable_table::'), __RC__ )
-    allocate (aerosol_names(aero_n), __STAT__)
+    call ESMF_ConfigGetDim (cfg, n_bins, nCols, label=('variable_table::'), __RC__ )
+    allocate (aerosol_names(n_bins), __STAT__)
     call ESMF_ConfigFindLabel (cfg, 'variable_table::', __RC__ )
 
-    do i = 1, aero_n
+    do i = 1, n_bins
         call ESMF_ConfigNextLine( cfg, __RC__ )
         call ESMF_ConfigGetAttribute( cfg, aerosol_names(i), __RC__ )
     end do
 
-!   Fill aero_state with aerosol parameters from the config
-!   -------------------------------------------------------
-    allocate(self%radius(aero_n), self%rlow(aero_n), self%rup(aero_n), self%sfrac(aero_n), &
-             self%rhop(aero_n), self%fscav(aero_n), self%molwght(aero_n), self%fnum(aero_n), __STAT__)
+!   Parse config file into private internal state
+!   ----------------------------------------------
+    allocate(self%radius(n_bins), self%rlow(n_bins), self%rup(n_bins), self%sfrac(n_bins), &
+             self%rhop(n_bins), self%fscav(n_bins), self%molwght(n_bins), self%fnum(n_bins), __STAT__)
 
     call ESMF_ConfigGetAttribute (cfg, self%radius,     label='particle_radius:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%rlow,       label='radius_lower:', __RC__)
@@ -154,7 +161,7 @@ contains
 !   Set entry points
 !   ------------------------
     call MAPL_GridCompSetEntryPoint (GC, ESMF_Method_Initialize,  Initialize, __RC__)
-    call MAPL_GridCompSetEntryPoint (GC, ESMF_Method_Run, Run1, __RC__)
+    call MAPL_GridCompSetEntryPoint (GC, ESMF_Method_Run, Run, __RC__)
     call MAPL_GridCompSetEntryPoint (GC, ESMF_Method_Run, Run2, __RC__)
 
 !   Is DU data driven?
@@ -170,7 +177,7 @@ contains
 
 !   Aerosol Tracers to be transported
 !   ---------------------------------
-    do i = 1, aero_n
+    do i = 1, n_bins
         call MAPL_AddInternalSpec(GC,                                    &
           short_name = trim(COMP_NAME)//'::'//trim(aerosol_names(i)),    &
           long_name  = 'Dust Mixing Ratio (bin '//trim(field_name)//')', &
@@ -184,6 +191,18 @@ contains
 
 !   IMPORT STATE
 !   -------------
+
+!     Pressure thickness
+!     ------------------
+       call MAPL_AddImportSpec(GC,                            &
+          SHORT_NAME = 'DELP',                                &
+          LONG_NAME  = 'pressure_thickness',                  &
+          UNITS      = 'Pa',                                  &
+          DIMS       = MAPL_DimsHorzVert,                     &
+          VLOCATION  = MAPL_VLocationCenter,                  &
+          RESTART    = MAPL_RestartSkip,     __RC__)
+
+
     if (data_driven) then
 
 !      Pressure at layer edges
@@ -252,14 +271,64 @@ contains
                vlocation  = MAPL_VLocationCenter,                             &
                restart    = MAPL_RestartSkip, __RC__)
         end do
-!  else
-!       call MAPL_AddImportSpec(GC,                                       &
-!          short_name = 'DU_SRC',             &
-!          long_name  = 'erod'  ,                                         &
-!          units      = '1',                                              &
-!          dims       = MAPL_DimsHorzOnly,                                &
-!          vlocation  = MAPL_VLocationNone,                               &
-!          restart    = MAPL_RestartSkip, __RC__)
+    else
+
+       call MAPL_AddImportSpec(GC,                                       &
+          short_name = 'DU_SRC',                        &
+          long_name  = 'erod'  ,                                         &
+          units      = '1',                                              &
+          dims       = MAPL_DimsHorzOnly,                                &
+          vlocation  = MAPL_VLocationNone,                               &
+          restart    = MAPL_RestartSkip, __RC__)
+
+!      FRACLAKE
+!      --------
+       call MAPL_AddImportSpec(GC,                           &
+          SHORT_NAME = 'FRLAKE',                             &
+          LONG_NAME  = 'fraction_of_lake',                   &
+          UNITS      = '1',                                  &
+          DIMS       = MAPL_DimsHorzOnly,                    &
+          VLOCATION  = MAPL_VLocationNone,                   &
+          RESTART    = MAPL_RestartSkip,    __RC__)
+
+!      GWETTOP
+!      -------
+       call MAPL_AddImportSpec(GC,                           &
+          SHORT_NAME = 'WET1',                               &
+          LONG_NAME  = 'surface_soil_wetness',               &
+          UNITS      = '1',                                  &
+          DIMS       = MAPL_DimsHorzOnly,                    &
+          VLOCATION  = MAPL_VLocationNone, __RC__)
+
+!      LWI
+!      ---
+       call MAPL_AddImportSpec(GC,                           &
+          SHORT_NAME = 'LWI',                                &
+          LONG_NAME  = 'land-ocean-ice_mask',                &
+          UNITS      = '1',                                  &
+          DIMS       = MAPL_DimsHorzOnly,                    &
+          VLOCATION  = MAPL_VLocationNone,                   &
+                                          __RC__)
+!      U10M
+!      ----
+       call MAPL_AddImportSpec(GC,                           &
+          SHORT_NAME = 'U10M',                               &
+          LONG_NAME  = '10-meter_eastward_wind',             &
+          UNITS      = 'm s-1',                              &
+          DIMS       = MAPL_DimsHorzOnly,                    &
+          VLOCATION  = MAPL_VLocationNone,                   &
+          RESTART    = MAPL_RestartSkip,   __RC__)
+
+!      V10M
+!      ----
+       call MAPL_AddImportSpec(GC,                           &
+          SHORT_NAME = 'V10M',                               &
+          LONG_NAME  = '10-meter_northward_wind',            &
+          UNITS      = 'm s-1',                              &
+          DIMS       = MAPL_DimsHorzOnly,                    &
+          VLOCATION  = MAPL_VLocationNone,                   &
+          RESTART    = MAPL_RestartSkip,   __RC__)
+
     end if ! (data_driven)
 
 
@@ -295,7 +364,7 @@ contains
 !                         This will require refactoring Radiation
 !   ---------------------------------------------------------------
     call MAPL_AddExportSpec (GC,                                  &
-       short_name = 'AERO_DP',                                    &
+       short_name = trim(COMP_NAME)//'_AERO_DP',                                    &
        long_name  = 'aerosol_deposition_from_'//trim(COMP_NAME),  &
        units      = 'kg m-2 s-1',                                 &
        dims       = MAPL_DimsHorzOnly,                            &
@@ -346,8 +415,11 @@ contains
     type (ESMF_State)                    :: providerState
     type (ESMF_Config)                   :: cfg
     type (ESMF_FieldBundle)              :: Bundle_DP
+    type (wrap_)                         :: wrap
+    type (DU2G_GridComp), pointer        :: self
 
-    integer                              :: i, aero_n, nCols
+    integer, allocatable                 :: mieTable_pointer(:)
+    integer                              :: i, n_bins, nCols
     integer                              :: instance
     type (ESMF_Field)                    :: field, fld
     character (len=ESMF_MAXSTR)          :: field_name, prefix
@@ -364,11 +436,20 @@ contains
 !   Get the target components name and set-up traceback handle.
 !   -----------------------------------------------------------
     call ESMF_GridCompGet (GC, grid=grid, name=COMP_NAME, __RC__)
-    Iam = trim(COMP_NAME) // trim(Iam)
+    Iam = trim(COMP_NAME) // '::' //trim(Iam)
+
+
+if (mapl_am_I_root()) print*,trim(comp_name),' INIT BEGIN'
+
 
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
     call MAPL_GetObjectFromGC (GC, MAPL, __RC__)
+
+!   Wrap internal state for storing in GC
+!   -------------------------------------
+    allocate (self, __STAT__)
+    wrap%ptr => self
 
 !   Load resource file  
 !   -------------------
@@ -382,11 +463,11 @@ contains
 
 !   Get names of aerosols and write to list to add to AERO State
 !   -------------------------------------------------------------
-    call ESMF_ConfigGetDim (cfg, aero_n, nCols, label=('variable_table::'), __RC__ )
-    allocate (aerosol_names(aero_n), __STAT__)
+    call ESMF_ConfigGetDim (cfg, n_bins, nCols, label=('variable_table::'), __RC__ )
+    allocate (aerosol_names(n_bins), __STAT__)
     call ESMF_ConfigFindLabel (cfg, 'variable_table::', __RC__ )
 
-    do i = 1, aero_n
+    do i = 1, n_bins
         call ESMF_ConfigNextLine (cfg, __RC__ )
         call ESMF_ConfigGetAttribute (cfg, aerosol_names(i), __RC__ )
     end do
@@ -416,12 +497,14 @@ contains
         prefix = ''
     end if
 
+if(mapl_am_i_root()) print*,'DU2G INIT data_driven = ',data_driven
+
 
 !   Fill AERO States with dust fields
 !   ------------------------------------
     call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO'    , aero    , __RC__)
     call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO_ACI', aero_aci, __RC__)
-    call ESMF_StateGet (export, 'AERO_DP' , Bundle_DP, __RC__)
+    call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO_DP' , Bundle_DP, __RC__)
 
 !   Add list of aerosol names to AERO state 
     call ESMF_AttributeSet(aero, name='aerosol_names', valueList=aerosol_names, itemCount=size(aerosol_names), __RC__)
@@ -471,7 +554,7 @@ contains
 
 
     call MAPL_GetResource (MAPL, NUM_BANDS, 'NUM_BANDS:', __RC__)
-    gocart2GMieTable(instance) = Chem_MieCreateng (cfg, NUM_BANDS,__RC__)
+    self%rad_MieTable(instance) = Chem_MieCreateng (cfg, NUM_BANDS,__RC__)
 
     ! Mie Table instance/index
     call ESMF_AttributeSet (aero, name='mie_table_instance', value=instance, __RC__)
@@ -492,9 +575,16 @@ contains
 
     call ESMF_AttributeSet(aero, name='band_for_aerosol_optics',             value=0,     __RC__)
 
+!    mieTable_pointer = transfer(c_loc(DU2G_GridComp), [1])
+    mieTable_pointer = transfer(c_loc(self), [1])
+
+    call ESMF_AttributeSet(aero, name='mieTable_pointer', valueList=mieTable_pointer, itemCount=size(mieTable_pointer), __RC__)
+
+
     ! attach the aerosol optics method
     call ESMF_MethodAdd (aero, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
 
+if (mapl_am_I_root()) print*,trim(comp_name),' INIT END'
 
     RETURN_(ESMF_SUCCESS)
 
@@ -503,11 +593,11 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !BOP
-! !IROUTINE: Run1 
+! !IROUTINE: Run 
 
 ! !INTERFACE:
 
-  subroutine Run1 (GC, import, export, clock, RC)
+  subroutine Run (GC, import, export, clock, RC)
 
     ! !ARGUMENTS:
 
@@ -530,7 +620,7 @@ contains
 
     logical                           :: data_driven
 
-    __Iam__('Run1')
+    __Iam__('Run')
 
 !*****************************************************************************
 !   Begin... 
@@ -539,6 +629,9 @@ contains
 !   ---------------------------------------
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) //'::'// Iam
+
+if (mapl_am_I_root()) print*,trim(comp_name),' Run BEGIN'
+
 
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
@@ -555,15 +648,180 @@ contains
 !   Update INTERNAL state variables with ExtData
 !   ---------------------------------------------
     if (data_driven) then
-      call Run_data (GC, import, export, internal, __RC__)
+        call Run_data (GC, import, export, internal, __RC__)
     else
-       call Run2 (GC, import, export, clock, __RC__)
+        call Run1 (GC, import, export, clock, __RC__)
     end if
+
+if (mapl_am_I_root()) print*,trim(comp_name),'Run END'
+
+    RETURN_(ESMF_SUCCESS)
+
+  end subroutine Run
+
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!BOP
+! !IROUTINE: Run1 
+
+! !INTERFACE:
+
+  subroutine Run1 (GC, import, export, clock, RC)
+
+    ! !ARGUMENTS:
+
+    type (ESMF_GridComp), intent(inout) :: GC     ! Gridded component 
+    type (ESMF_State),    intent(inout) :: import ! Import state
+    type (ESMF_State),    intent(inout) :: export ! Export state
+    type (ESMF_Clock),    intent(inout) :: clock  ! The clock
+    integer, optional,    intent(  out) :: RC     ! Error code:
+
+! !DESCRIPTION:  Computes emissions/sources for Dust
+
+!EOP
+
+!****************************************************************************
+! Locals
+    character (len=ESMF_MAXSTR)       :: COMP_NAME
+    type (MAPL_MetaComp), pointer     :: mapl
+    type (ESMF_State)                 :: internal
+    type (ESMF_Grid)                  :: grid
+    type (wrap_)                      :: wrap
+    type (DU2G_GridComp), pointer     :: self
+
+    logical                           :: data_driven
+    integer                           :: n_bins, dims(3)
+    integer                           :: i1=1, i2, ig=0, im  ! dist grid indices
+    integer                           :: j1=1, j2, jg=0, jm  ! dist grid indices
+    integer                           :: km, nq              ! dist grid indices
+    real                              :: CDT         ! chemistry timestep (secs)
+    integer                           :: HDT         ! model     timestep (secs)
+
+    real, pointer, dimension(:,:,:)    :: delp
+    real, pointer, dimension(:,:)     :: frlake, gwettop, oro, u10m, v10m
+    real, pointer                     :: DU_radius(:), DU_rhop(:)
+    real, pointer                     :: emissions(:,:), dqa(:,:)
+    real, pointer, dimension(:,:)     :: du_src 
+
+
+    real, parameter ::  GRAV   = 9.80616 ! USE MAPL_GRAV????
+
+
+   type(MAPL_VarSpec), pointer     :: InternalSpec(:)
+   character(len=ESMF_MAXSTR)      :: short_name
+   integer :: L, n
+
+
+    __Iam__('Run1')
+    
+
+!*****************************************************************************
+!   Begin... 
+
+
+!   Get my name and set-up traceback handle
+!   ---------------------------------------
+    call ESMF_GridCompGet (GC, grid=grid, NAME=COMP_NAME, __RC__)
+    Iam = trim(COMP_NAME) //'::'// Iam
+
+if (mapl_am_I_root()) print*,trim(comp_name),' Run1 BEGIN'
+
+!   Get my internal MAPL_Generic state
+!   -----------------------------------
+    call MAPL_GetObjectFromGC (GC, MAPL, __RC__)
+
+!   Get parameters from generic state.
+!   -----------------------------------
+    call MAPL_Get (mapl, INTERNAL_ESMF_STATE=internal, __RC__)
+
+!#include "DU2G_GetPointer___.h"
+
+!   Wrap internal state for storing in GC
+!   -------------------------------------
+    allocate (self, __STAT__)
+    wrap%ptr => self
+
+    n_bins = size(self%radius)
+
+!   Get DT
+!   ------
+    call MAPL_GetResource( mapl, HDT, Label='RUN_DT:',                                   __RC__ )
+    call MAPL_GetResource( mapl, CDT, Label='GOCART_DT:',             default=real(HDT), __RC__ )
+
+
+!--------------------------
+! DOING POINT EMISSIONS???
+!---------------------------
+
+
+!   Get 2D Imports
+!   --------------
+    call MAPL_GetPointer ( import, frlake,   'FRLAKE',   __RC__ )
+    call MAPL_GetPointer ( import, gwettop,  'WET1',     __RC__ )
+    call MAPL_GetPointer ( import, oro,      'LWI',      __RC__ )
+    call MAPL_GetPointer ( import, u10m,     'U10M',     __RC__ )
+    call MAPL_GetPointer ( import, v10m,     'V10M',     __RC__ )
+    call MAPL_GetPointer ( import, du_src, 'DU_SRC',     __RC__ )
+
+
+! Local sizes of three dimensions
+!--------------------------------
+    call MAPL_GridGet ( grid, globalCellCountPerDim=dims, __RC__ )
+
+    i2 = dims(1)
+    j2 = dims(2)
+    km = dims(3)
+
+
+!   Dust particle radius [m] and density [kg m-3]
+!   ---------------------------------------------
+    allocate( DU_radius(n_bins), DU_rhop(n_bins), __STAT__ )
+    DU_radius = 1.e-6*self%radius
+    DU_rhop   = self%rhop
+    allocate( emissions(i1:i2,j1:j2), dqa(i1:i2,j1:j2), __STAT__)
+
+
+    call MAPL_Get(MAPL, INTERNALSPEC = internalSpec, __RC__)
+
+   do L = 1, size(InternalSpec)
+    call MAPL_VarSpecGet(InternalSpec(L), SHORT_NAME=short_name, __RC__)
+    if(mapl_am_i_root()) print*,'DU2G internal spec shortname = ',trim(short_name)
+   end do
+
+!#if 0
+!   Dust Source
+!   -----------
+    do n = 1, n_bins
+        emissions = 0.0
+        dqa = 0.0
+
+        call DustEmissionGOCART( i1, i2, j1, j2, km, DU_radius(n), &
+                                 frlake, gwettop, oro, u10m, v10m, &
+                                 emissions, rc )
+
+!        dqa = self%Ch_DU * self%sfrac(n) * du_src * emissions * CDT * GRAV / delp(:,:,km)
+        dqa = 6.9999999E-11 * self%sfrac(n) * du_src * emissions * CDT * GRAV / delp(:,:,km)
+
+if(mapl_am_i_root()) print*,'DU2G sum(dqa) = ',sum(dqa)
+
+!        w_c%qa(n1+n-1)%data3d(:,:,km) = w_c%qa(n1+n-1)%data3d(:,:,km) + dqa
+
+!        if (associated(DU_emis(n)%data2d)) then
+!            DU_emis(n)%data2d = gcDU%Ch_DU*gcDU%sfrac(n)*gcDU%src * emissions
+!        end if
+    end do
+!#endif
+
+
+if (mapl_am_I_root()) print*,trim(comp_name), ' Run1 END'
 
 
     RETURN_(ESMF_SUCCESS)
 
   end subroutine Run1
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !BOP
@@ -660,6 +918,9 @@ contains
 !   ---------------------------------------
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
 
+if (mapl_am_I_root()) print*,trim(comp_name),' Run_data BEGIN'
+
+
     call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO', aero, __RC__)
     call ESMF_AttributeGet (aero, name='aerosol_names', itemCount=n, __RC__)
 
@@ -672,6 +933,9 @@ contains
 
         ptr3d_int = ptr3d_imp
     end do
+
+
+if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
 
 
     RETURN_(ESMF_SUCCESS)
@@ -694,6 +958,9 @@ contains
     real(kind=DP), dimension(:,:,:), pointer         :: var
     real, dimension(:,:,:), pointer                  :: q
     real, dimension(:,:,:,:), pointer                :: q_4d
+    integer, allocatable                             :: opaque_self(:)
+    type(C_PTR)                                      :: address
+    type(DU2G_GridComp), pointer                     :: self
 
     character (len=ESMF_MAXSTR)                      :: fld_name
     type(ESMF_Field)                                 :: fld
@@ -775,7 +1042,18 @@ contains
     end do
 
 
-    call mie_ (gocart2GMieTable(instance), aerosol_names, n_bands, offset, q_4d, rh, ext_s, ssa_s, asy_s, __RC__)
+
+    call ESMF_AttributeGet(state, name='mieTable_pointer', itemCount=n, __RC__)
+    allocate (opaque_self(n), __STAT__)
+    call ESMF_AttributeGet(state, name='mieTable_pointer', valueList=opaque_self, __RC__)
+
+    address = transfer(opaque_self, address)
+    call c_f_pointer(address,  self)
+
+
+!    call mie_ (DU2G_GridComp%rad_MieTable(instance), aerosol_names, n_bands, offset, q_4d, rh, ext_s, ssa_s, asy_s, __RC__)
+    call mie_ (self%rad_MieTable(instance), aerosol_names, n_bands, offset, q_4d, rh, ext_s, ssa_s, asy_s, __RC__)
+
 
     call ESMF_AttributeGet (state, name='extinction_in_air_due_to_ambient_aerosol', value=fld_name, __RC__)
     if (fld_name /= '') then
@@ -820,9 +1098,7 @@ contains
     integer,                       intent(  out) :: rc
 
     ! local
-!   integer                               :: STATUS
-!   character (len=ESMF_MAXSTR)           :: Iam = 'DU2G::aerosol_optics::mie_'
-    integer                               :: l, n_bins, idx
+    integer                           :: l, n_bins, idx
     real                              :: bext (size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! extinction
     real                              :: bssa (size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! SSA
     real                              :: gasym(size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! asymmetry parameter
