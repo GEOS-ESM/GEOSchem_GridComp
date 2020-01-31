@@ -696,7 +696,7 @@ contains
      IF(chemReg%doing_BC) THEN
         ! GEOSCHEM connections to GOCART
         CALL MAPL_AddConnectivity ( GC,                       &
-          SRC_NAME  = (/ "TRC_BCPO",      "TRC_BCPI"      /), &
+          SRC_NAME  = (/ "SPC_BCPO",      "SPC_BCPI"      /), &
           DST_NAME  = (/ "GEOSCHEM_BCPO", "GEOSCHEM_BCPI" /), &
           DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__)
      ENDIF
@@ -706,7 +706,7 @@ contains
      IF(chemReg%doing_CO) THEN
         ! GEOSCHEM connections to GOCART
         CALL MAPL_AddConnectivity ( GC,               &
-          SRC_NAME  = (/ "TRC_CO"                 /), &
+          SRC_NAME  = (/ "SPC_CO"                 /), &
           DST_NAME  = (/ "GEOSCHEM_CO"            /), &
           DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__)
      ENDIF
@@ -716,8 +716,8 @@ contains
      IF(chemReg%doing_DU) THEN
         ! GEOSCHEM connections to GOCART
         CALL MAPL_AddConnectivity ( GC,                         &
-          SRC_NAME  = (/ "TRC_DST1",      "TRC_DST2",           &
-                         "TRC_DST3",      "TRC_DST4"        /), &
+          SRC_NAME  = (/ "SPC_DST1",      "SPC_DST2",           &
+                         "SPC_DST3",      "SPC_DST4"        /), &
           DST_NAME  = (/ "GEOSCHEM_DST1", "GEOSCHEM_DST2",      &
                          "GEOSCHEM_DST3", "GEOSCHEM_DST4"   /), &
           DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__)
@@ -728,8 +728,8 @@ contains
      IF(chemReg%doing_NI) THEN
         ! GEOSCHEM connections to GOCART
         CALL MAPL_AddConnectivity ( GC,                                       &
-          SRC_NAME  = (/ "TRC_NH3",      "TRC_NH4",      "TRC_NO3" ,          &
-                          "TRC_NIT",     "TRC_NITs"                     /),   &
+          SRC_NAME  = (/ "SPC_NH3",      "SPC_NH4",      "SPC_NO3" ,          &
+                         "SPC_NIT",      "SPC_NITs"                     /),   &
           DST_NAME  = (/ "GEOSCHEM_NH3", "GEOSCHEM_NH4", "GEOSCHEM_NO3",      &
                          "GEOSCHEM_NIT", "GEOSCHEM_NITs"                /),   &
           DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__)
@@ -740,7 +740,7 @@ contains
      IF(chemReg%doing_OC) THEN
         ! GEOSCHEM connections to GOCART
         CALL MAPL_AddConnectivity ( GC,                       &
-          SRC_NAME  = (/ "TRC_OCPO",      "TRC_OCPI"      /), &
+          SRC_NAME  = (/ "SPC_OCPO",      "SPC_OCPI"      /), &
           DST_NAME  = (/ "GEOSCHEM_OCPO", "GEOSCHEM_OCPI" /), &
           DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__)
      ENDIF
@@ -750,7 +750,7 @@ contains
      IF(chemReg%doing_SS) THEN
         ! GEOSCHEM connections to GOCART
         CALL MAPL_AddConnectivity ( GC,                        &
-          SRC_NAME  = (/ "TRC_SALA",      "TRC_SALC"      /),  &
+          SRC_NAME  = (/ "SPC_SALA",      "SPC_SALC"      /),  &
           DST_NAME  = (/ "GEOSCHEM_SALA", "GEOSCHEM_SALC" /),  &
           DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__)
      ENDIF
@@ -760,10 +760,12 @@ contains
      IF(chemReg%doing_SU) THEN
         ! GEOSCHEM connections to GOCART
         CALL MAPL_AddConnectivity ( GC,                     &
-          SRC_NAME  = (/ "TRC_DMS",      "TRC_SO2",         &
-                         "TRC_SO4",      "TRC_MSA"      /), &
+          SRC_NAME  = (/ "SPC_DMS",      "SPC_SO2",         &
+                         "SPC_SO4",      "SPC_MSA",         &
+                         "SPC_HMS"                      /), &
           DST_NAME  = (/ "GEOSCHEM_DMS", "GEOSCHEM_SO2",    &
-                         "GEOSCHEM_SO4", "GEOSCHEM_MSA" /), &
+                         "GEOSCHEM_SO4", "GEOSCHEM_MSA",    &
+                         "GEOSCHEM_HMS"                 /), &
           DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__)
      ENDIF
 
@@ -790,7 +792,7 @@ contains
   IF(myState%enable_GOCART .AND. myState%enable_GEOSCHEM) then
    IF ( .NOT. myState%enable_PCHEM ) THEN
     CALL MAPL_AddConnectivity ( GC, &
-       SRC_NAME  = (/"TRC_O3"/), &
+       SRC_NAME  = (/"SPC_O3"/), &
        DST_NAME  = (/"O3"/), &
        DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__  )
    ENDIF

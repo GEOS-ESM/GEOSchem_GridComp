@@ -775,6 +775,14 @@ else
         DIMS       = MAPL_DimsHorzVert,                                   &
         VLOCATION  = MAPL_VLocationCenter,                                &
         RESTART    = MAPL_RestartSkip,     __RC__)
+
+     call MAPL_AddImportSpec(GC,                                          &
+        SHORT_NAME = 'GEOSCHEM_HMS',                                      &
+        LONG_NAME  = 'Hydroxymethane sulfonate from GEOS-Chem',           &
+        UNITS      = 'kg/kg',                                             &
+        DIMS       = MAPL_DimsHorzVert,                                   &
+        VLOCATION  = MAPL_VLocationCenter,                                &
+        RESTART    = MAPL_RestartSkip,     __RC__)
     end if GEOSCHEM_SU_on
 
     end if GEOSCHEM_on
@@ -1310,6 +1318,7 @@ if ( r%doing_GOCART ) then
                short_name(1:3) .eq. 'SO2'   .or. &
                short_name(1:3) .eq. 'SO4'   .or. &
                short_name(1:3) .eq. 'MSA'   .or. &
+               short_name(1:3) .eq. 'HMS'   .or. &
                short_name(1:3) .eq. 'NH3'   .or. &
                short_name(1:4) .eq. 'NH4A'  .or. &
                short_name(1:5) .eq. 'NO3AN' ) then
@@ -4447,7 +4456,7 @@ end subroutine aerosol_activation_properties
    ! SU
    if ( w_c%reg%pass_GEOSCHEM_SU ) then
       if ( mapl_am_i_root() .and. is_verbose ) &
-         write(*,*) "Using GEOS-Chem for GOCART AERO bundle SU values: DMS, SO2, SO4, MSA"
+         write(*,*) "Using GEOS-Chem for GOCART AERO bundle SU values: DMS, SO2, SO4, MSA, HMS"
 
       ! DMS
       int_name = 'GOCART::DMS_ForBundle'
@@ -4476,6 +4485,14 @@ end subroutine aerosol_activation_properties
       ! MSA
       int_name = 'GOCART::MSA_ForBundle'
       call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_MSA',rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      ptr3d_Int = ptr3d_GC
+
+      ! HMS
+      int_name = 'GOCART::HMS_ForBundle'
+      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_HMS',rc=status)
       VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
@@ -5062,6 +5079,27 @@ end subroutine aerosol_activation_properties
       ! MSA GEOS-Chem
       if ( w_c%reg%pass_GEOSCHEM_SU ) then
         gc_name = 'GEOSCHEM_MSA'
+        call MAPL_GetPointer(impChem,ptr3d_GC,trim(gc_name),rc=status)
+        VERIFY_(STATUS)
+        write(*,'(a45,es16.7)') trim(gc_name)//':',SUM(ptr3d_GC(:,:,1:km))
+      endif
+
+      ! HMS internal state and w_c
+      int_name = 'GOCART::HMS'
+      intfb_name = trim(int_name)//'_ForBundle'
+      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
+      VERIFY_(STATUS)
+      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
+      VERIFY_(STATUS)
+      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_SU+3))
+      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
+      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
+      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_SU+3)%data3d:",&
+                            SUM(w_c%qa(w_c%reg%i_SU+3)%data3d(:,:,1:km))
+
+      ! HMS GEOS-Chem
+      if ( w_c%reg%pass_GEOSCHEM_SU ) then
+        gc_name = 'GEOSCHEM_HMS'
         call MAPL_GetPointer(impChem,ptr3d_GC,trim(gc_name),rc=status)
         VERIFY_(STATUS)
         write(*,'(a45,es16.7)') trim(gc_name)//':',SUM(ptr3d_GC(:,:,1:km))
