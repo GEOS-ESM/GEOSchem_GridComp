@@ -64,7 +64,7 @@
 # mw: 7.0
 
 # GOCART_wet_removal: TRUE
-# GOCART_convection:  TRUE
+# GOCART_convection:  FALSE
 
 # GOCART_species:     Be7
 # GOCART_aero_flag:   TRUE

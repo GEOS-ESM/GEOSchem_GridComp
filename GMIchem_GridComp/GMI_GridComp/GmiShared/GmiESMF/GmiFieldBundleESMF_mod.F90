@@ -71,7 +71,7 @@
 ! !INPUT PARAMETERS:
       real(r8), pointer :: PTR(:,:,:)
       type (ESMF_Grid),           intent(in) :: grid
-      character(len=ESMF_MAXSTR), intent(in) :: fieldName
+      character(len=*),           intent(in) :: fieldName
 !
 ! !INPUT/OUTPUT PARAMETERS:
       type (ESMF_FieldBundle), intent(inOut) :: bundle
@@ -108,7 +108,7 @@
 ! !INPUT PARAMETERS:
       real(r4), pointer :: PTR(:,:,:)
       type (ESMF_Grid),           intent(in) :: grid
-      character(len=ESMF_MAXSTR), intent(in) :: fieldName
+      character(len=*),           intent(in) :: fieldName
 !
 ! !INPUT/OUTPUT PARAMETERS:
       type (ESMF_FieldBundle), intent(inOut) :: bundle
@@ -144,7 +144,7 @@
 !
 ! !INPUT PARAMETERS:
       real(r8), pointer :: PTR(:,:,:)
-      character(len=ESMF_MAXSTR), intent(in) :: fieldName
+      character(len=*), intent(in) :: fieldName
 !
 ! !INPUT/OUTPUT PARAMETERS:
       type (ESMF_FieldBundle), intent(inOut) :: bundle
@@ -186,7 +186,7 @@
 !
 ! !INPUT PARAMETERS:
       real(r4), pointer :: PTR(:,:,:)
-      character(len=ESMF_MAXSTR), intent(in) :: fieldName
+      character(len=*), intent(in) :: fieldName
 !
 ! !INPUT/OUTPUT PARAMETERS:
       type (ESMF_FieldBundle), intent(inOut) :: bundle
@@ -311,7 +311,7 @@
       subroutine obtainTracerFromBundle_ByName3D_r8(bundle, PTR, fieldName)
 !
 ! !INPUT PARAMETERS:
-      character(len=ESMF_MAXSTR), intent(in) :: fieldName
+      character(len=*), intent(in) :: fieldName
 !
 ! !OUTPUT PARAMETERS:
       real(r8), pointer :: PTR(:,:,:)
@@ -352,7 +352,7 @@
       subroutine obtainTracerFromBundle_ByName3D_r4(bundle, PTR, fieldName)
 !
 ! !INPUT PARAMETERS:
-      character(len=ESMF_MAXSTR), intent(in) :: fieldName
+      character(len=*), intent(in) :: fieldName
 !
 ! !OUTPUT PARAMETERS:
       real(r4), pointer :: PTR(:,:,:)
@@ -477,7 +477,7 @@
 ! !INPUT PARAMETERS:
       real(r8), pointer :: PTR(:,:)
       type (ESMF_Grid),           intent(in) :: grid
-      character(len=ESMF_MAXSTR), intent(in) :: fieldName
+      character(len=*),           intent(in) :: fieldName
 !
 ! !INPUT/OUTPUT PARAMETERS:
       type (ESMF_FieldBundle), intent(inOut) :: bundle
@@ -514,7 +514,7 @@
 ! !INPUT PARAMETERS:
       real(r4), pointer :: PTR(:,:)
       type (ESMF_Grid),           intent(in) :: grid
-      character(len=ESMF_MAXSTR), intent(in) :: fieldName
+      character(len=*),           intent(in) :: fieldName
 !
 ! !INPUT/OUTPUT PARAMETERS:
       type (ESMF_FieldBundle), intent(inOut) :: bundle
@@ -550,7 +550,7 @@
 !
 ! !INPUT PARAMETERS:
       real(r8), pointer :: PTR(:,:)
-      character(len=ESMF_MAXSTR), intent(in) :: fieldName
+      character(len=*), intent(in) :: fieldName
 !
 ! !INPUT/OUTPUT PARAMETERS:
       type (ESMF_FieldBundle), intent(inOut) :: bundle
@@ -592,7 +592,7 @@
 !
 ! !INPUT PARAMETERS:
       real(r4), pointer :: PTR(:,:)
-      character(len=ESMF_MAXSTR), intent(in) :: fieldName
+      character(len=*), intent(in) :: fieldName
 !
 ! !INPUT/OUTPUT PARAMETERS:
       type (ESMF_FieldBundle), intent(inOut) :: bundle
@@ -717,7 +717,7 @@
       subroutine obtainTracerFromBundle_ByName2D_r8(bundle, PTR, fieldName)
 !
 ! !INPUT PARAMETERS:
-      character(len=ESMF_MAXSTR), intent(in) :: fieldName
+      character(len=*), intent(in) :: fieldName
 !
 ! !OUTPUT PARAMETERS:
       real(r8), pointer :: PTR(:,:)
@@ -758,7 +758,7 @@
       subroutine obtainTracerFromBundle_ByName2D_r4(bundle, PTR, fieldName)
 !
 ! !INPUT PARAMETERS:
-      character(len=ESMF_MAXSTR), intent(in) :: fieldName
+      character(len=*), intent(in) :: fieldName
 !
 ! !OUTPUT PARAMETERS:
       real(r4), pointer :: PTR(:,:)

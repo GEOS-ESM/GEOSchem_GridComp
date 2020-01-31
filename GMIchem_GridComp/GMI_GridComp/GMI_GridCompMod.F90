@@ -151,6 +151,8 @@
 
       CALL GmiChemistry_GridCompInitialize (gcGMI%gcChem,      w_c, impChem, expChem, nymd, nhms, cdt,            __RC__)
 
+      CALL GmiEmiss_initSurfEmissBundle    (gcGMI%gcEmiss,     w_c,          expChem,                             __RC__)
+
       RETURN
 
       END SUBROUTINE GMI_GridCompInitialize

@@ -19,6 +19,7 @@ set (srcs
   GmiEmissUtils.F90
   Henrys_Law_cts.F90
   Chem_GroupMod.F90
+  Bundle_IncrementMod.F90
   )
 
 if (DOING_GEOS5)
@@ -41,5 +42,9 @@ file (COPY gmi_emiss_constants.h DESTINATION ${include_${this}})
 file (COPY gmi_phys_constants.h DESTINATION ${include_${this}})
 file (COPY gmi_time_constants.h DESTINATION ${include_${this}})
 
+install(
+  PROGRAMS bundleParser.py
+  DESTINATION bin
+)
   
   

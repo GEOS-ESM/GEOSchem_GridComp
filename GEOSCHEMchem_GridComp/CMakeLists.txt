@@ -13,6 +13,7 @@ set (src_directories
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/KPP/Standard
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/ObsPack
   )
 
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/gc_column/Headers)
@@ -40,6 +41,12 @@ list (REMOVE_ITEM srcs
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/rrtmg_rad_transfer_mod.F
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/tomas_mod.F
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/exchange_mod.F
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/get_met_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/flexgrid_read_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/aero_drydep.F
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/exchange_mod.F
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/YuIMN_Code.F
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC/gigc_manualexports_mod.F90
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC/GIGC_GridCompMod.F90
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC/Chem_GridCompMod.F90
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC/GEOS_ctmEnvGridComp.F90

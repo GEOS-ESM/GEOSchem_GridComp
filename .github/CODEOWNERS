@@ -3,6 +3,27 @@
 # Order is important; the last matching pattern takes the most
 # precedence.
 
+# This makes all files here owned by the Chem Gatekeepers by default
+*                        @GEOS-ESM/chemistry-gatekeepers
+
+# The Aerosol Team is CODEOWNER of some directories along with Chem Gatekeepers
+DNA_GridComp/            @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
+GAAS_GridComp/           @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
+GEOSachem_GridComp/      @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
+GOCART_GridComp/         @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
+MAMchem_GridComp/        @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
+MATRIXchem_GridComp/     @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
+
+Shared/Chem_Base/        @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
+Shared/Chem_Shared/      @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
+GEOS_ChemEnvGridComp.F90 @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
+GEOS_ChemGridComp.F90    @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
+
+# The GEOSCHEMchem team should be CODEOWNER of GCC and HEMCO
+GEOSCHEMchem_GridComp/   @GEOS-ESM/geoschemchem-team @GEOS-ESM/chemistry-gatekeepers
+HEMCO_GridComp/          @GEOS-ESM/geoschemchem-team @GEOS-ESM/chemistry-gatekeepers
+Shared/HEMCO/            @GEOS-ESM/geoschemchem-team @GEOS-ESM/chemistry-gatekeepers
+
 # The GEOS CMake Team is the CODEOWNER for the CMakeLists.txt files in this repository
-CMakeLists.txt @GEOS-ESM/cmake-team
+CMakeLists.txt           @GEOS-ESM/cmake-team
 

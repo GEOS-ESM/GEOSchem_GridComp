@@ -768,7 +768,6 @@ CONTAINS
    INTEGER :: ihi, julo, jhi, ju1,  k1, k2, ilong, ilat
    INTEGER :: loc_proc
    INTEGER :: n
-   INTEGER :: num_emiss, shipEmissRecNum
    INTEGER :: STATUS
 
    INTEGER, PARAMETER :: ToGMI = 1

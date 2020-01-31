@@ -21,7 +21,7 @@ MODULE State_Diag_Mod
 !
 ! USES:
 
-  USE CMN_Size_Mod,    ONLY : IIPAR, JJPAR, LLPAR, NDUST
+  USE CMN_Size_Mod,    ONLY : NDUST
   USE DiagList_Mod
   USE ErrCode_Mod
   USE Precision_Mod
@@ -59,6 +59,10 @@ MODULE State_Diag_Mod
      REAL(f8),  POINTER :: SpeciesRst      (:,:,:,:) ! Spc Conc for GC restart
      LOGICAL :: Archive_SpeciesRst
 
+     ! Boundary condition fields
+     REAL(f8),  POINTER :: SpeciesBC       (:,:,:,:) ! Spc Conc for BCs
+     LOGICAL :: Archive_SpeciesBC
+     
      ! Concentrations
      REAL(f8),  POINTER :: SpeciesConc     (:,:,:,:) ! Spc Conc for diag output
      LOGICAL :: Archive_SpeciesConc
@@ -141,6 +145,7 @@ MODULE State_Diag_Mod
      ! Chemistry
      REAL(f4),  POINTER :: JVal            (:,:,:,:) ! J-values, instantaneous
      REAL(f4),  POINTER :: JNoon           (:,:,:,:) ! Noon J-values
+     REAL(f4),  POINTER :: JNoonFrac       (:,:    ) ! Frac of when it was noon
      REAL(f4),  POINTER :: RxnRates        (:,:,:,:) ! Reaction rates from KPP
      REAL(f4),  POINTER :: UVFluxDiffuse   (:,:,:  ) ! Diffuse UV flux per bin
      REAL(f4),  POINTER :: UVFluxDirect    (:,:,:  ) ! Direct UV flux per bin
@@ -153,6 +158,7 @@ MODULE State_Diag_Mod
      REAL(f4),  POINTER :: Prod            (:,:,:,:) ! Chemical prod of species
      LOGICAL :: Archive_JVal            
      LOGICAL :: Archive_JNoon           
+     LOGICAL :: Archive_JNoonFrac
      LOGICAL :: Archive_RxnRates        
      LOGICAL :: Archive_UVFluxDiffuse   
      LOGICAL :: Archive_UVFluxDirect    
@@ -402,6 +408,12 @@ MODULE State_Diag_Mod
      LOGICAL :: Archive_LossCH4byOHinTrop
      LOGICAL :: Archive_LossCH4inStrat
 
+     ! CO specialty simulation
+     REAL(f4), POINTER :: ProdCOfromCH4 (:,:,:)
+     REAL(f4), POINTER :: ProdCOfromNMVOC (:,:,:)
+     LOGICAL :: Archive_ProdCOfromCH4
+     LOGICAL :: Archive_ProdCOfromNMVOC
+
      ! Persistent Organic Pollutants (POPS) specialty simulation
      REAL(f4), POINTER :: EmisPOPG                (:,:  )
      REAL(f4), POINTER :: EmisPOPPOCPO            (:,:  )
@@ -552,14 +564,17 @@ MODULE State_Diag_Mod
      LOGICAL :: Archive_ReactiveGaseousHg      
 
      ! Radiation simulation (RRTMG)
-     REAL(f4),  POINTER :: RadAllSkyLWSurf(:,:) ! All-sky LW rad @ surface
-     REAL(f4),  POINTER :: RadAllSkyLWTOA (:,:) ! All-sky LW rad @ atm top
-     REAL(f4),  POINTER :: RadAllSkySWSurf(:,:) ! All-sky SW rad @ surface
-     REAL(f4),  POINTER :: RadAllSkySWTOA (:,:) ! All-sky SW rad @ atm top
-     REAL(f4),  POINTER :: RadClrSkyLWSurf(:,:) ! Clr-sky SW rad @ surface
-     REAL(f4),  POINTER :: RadClrSkyLWTOA (:,:) ! Clr-sky LW rad @ atm top
-     REAL(f4),  POINTER :: RadClrSkySWSurf(:,:) ! Clr-sky SW rad @ surface
-     REAL(f4),  POINTER :: RadClrSkySWTOA (:,:) ! Clr-sky SW rad @ atm top
+     INTEGER                   :: nRadFlux
+     INTEGER,          POINTER :: RadFluxInd(:)
+     CHARACTER(LEN=2), POINTER :: RadFluxName(:)
+     REAL(f4),         POINTER :: RadAllSkyLWSurf(:,:,:)
+     REAL(f4),         POINTER :: RadAllSkyLWTOA (:,:,:)
+     REAL(f4),         POINTER :: RadAllSkySWSurf(:,:,:)
+     REAL(f4),         POINTER :: RadAllSkySWTOA (:,:,:)
+     REAL(f4),         POINTER :: RadClrSkyLWSurf(:,:,:)
+     REAL(f4),         POINTER :: RadClrSkyLWTOA (:,:,:)
+     REAL(f4),         POINTER :: RadClrSkySWSurf(:,:,:)
+     REAL(f4),         POINTER :: RadClrSkySWTOA (:,:,:)
      LOGICAL :: Archive_RadAllSkyLWSurf 
      LOGICAL :: Archive_RadAllSkyLWTOA  
      LOGICAL :: Archive_RadAllSkySWSurf 
@@ -568,6 +583,48 @@ MODULE State_Diag_Mod
      LOGICAL :: Archive_RadClrSkyLWTOA  
      LOGICAL :: Archive_RadClrSkySWSurf 
      LOGICAL :: Archive_RadClrSkySWTOA  
+
+     !----------------------------------------------------------------------
+     ! Variables for the ObsPack diagnostic
+     ! NOTE: ObsPack archives point data, so don't register these
+     ! as the ObsPack file format won't be COARDS-compliant!
+     !----------------------------------------------------------------------
+
+     ! ObsPack File variables
+     LOGICAL                      :: Do_ObsPack
+     INTEGER                      :: ObsPack_fId
+     CHARACTER(LEN=1024)          :: ObsPack_InFile
+     CHARACTER(LEN=1024)          :: ObsPack_OutFile
+
+     ! ObsPack Inputs
+     INTEGER                      :: ObsPack_nObs
+     CHARACTER(LEN=200 ), POINTER :: ObsPack_Id           (:  )
+     INTEGER,             POINTER :: ObsPack_nSamples     (:  )
+     INTEGER,             POINTER :: ObsPack_Strategy     (:  )
+     REAL(f4),            POINTER :: ObsPack_Latitude     (:  )
+     REAL(f4),            POINTER :: ObsPack_Longitude    (:  )
+     REAL(f4),            POINTER :: ObsPack_Altitude     (:  )
+
+     ! ObsPack time and averaging interval variables
+     REAL(f8)                     :: ObsPack_Ival_Length
+     REAL(f8),            POINTER :: ObsPack_Ival_Start   (:  )
+     REAL(f8),            POINTER :: ObsPack_Ival_Center  (:  )
+     REAL(f8),            POINTER :: ObsPack_Ival_End     (:  )
+
+     ! ObsPack outputs (add more if necessary)
+     REAL(f4),            POINTER :: ObsPack_P            (:  )
+     REAL(f4),            POINTER :: ObsPack_U            (:  )
+     REAL(f4),            POINTER :: ObsPack_V            (:  )
+     REAL(f4),            POINTER :: ObsPack_BLH          (:  )
+     REAL(f4),            POINTER :: ObsPack_Q            (:  )
+     REAL(f4),            POINTER :: ObsPack_T            (:  )
+
+     ! ObsPack species and metadata variables
+     INTEGER                      :: ObsPack_nSpecies
+     REAL(f4),            POINTER :: ObsPack_Species      (:,:)
+     INTEGER,             POINTER :: ObsPack_Species_Ind  (:  )
+     CHARACTER(LEN=31 ),  POINTER :: ObsPack_Species_Name (:  )
+     CHARACTER(LEN=80 ),  POINTER :: ObsPack_Species_LName(:  )
 
      !----------------------------------------------------------------------
      ! Registry of variables contained within State_Diag
@@ -623,20 +680,21 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE Init_State_Diag( am_I_Root, Input_Opt,  State_Chm, &
-                              Diag_List, State_Diag, RC )
+  SUBROUTINE Init_State_Diag( am_I_Root,  Input_Opt, State_Chm, &
+                              State_Grid, Diag_List, State_Diag, RC )
 !
 ! !USES:
 !
-    USE Input_Opt_Mod, ONLY : OptInput
+    USE Input_Opt_Mod,  ONLY : OptInput
+    USE State_Grid_Mod, ONLY : GrdState
 !
 ! !INPUT PARAMETERS:
 ! 
     LOGICAL,        INTENT(IN)    :: am_I_Root   ! Is this the root CPU?
     TYPE(OptInput), INTENT(IN)    :: Input_Opt   ! Input Options object
     TYPE(ChmState), INTENT(IN)    :: State_Chm   ! Chemistry state object
+    TYPE(GrdState), INTENT(IN)    :: State_Grid  ! Grid state object
     TYPE(DgnList),  INTENT(IN)    :: Diag_List   ! Diagnostics list object
-
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
@@ -670,7 +728,7 @@ CONTAINS
     INTEGER                :: N,        IM,      JM,      LM
     INTEGER                :: nSpecies, nAdvect, nDryDep, nKppSpc
     INTEGER                :: nWetDep,  nPhotol, nProd,   nLoss
-    INTEGER                :: nHygGrth
+    INTEGER                :: nHygGrth, nRad
     LOGICAL                :: EOF,      Found,   Found2
 
     !=======================================================================
@@ -688,9 +746,9 @@ CONTAINS
     Is_UCX    = Input_Opt%LUCX
     
     ! Shorten grid parameters for readability
-    IM        = IIPAR ! # latitudes
-    JM        = JJPAR ! # longitudes
-    LM        = LLPAR ! # levels
+    IM        = State_Grid%NX ! # latitudes
+    JM        = State_Grid%NY ! # longitudes
+    LM        = State_Grid%NZ ! # levels
 
     ! Number of species per category
     nSpecies  = State_Chm%nSpecies
@@ -708,6 +766,10 @@ CONTAINS
     ! Restart file fields
     State_Diag%SpeciesRst                          => NULL()
     State_Diag%Archive_SpeciesRst                  = .FALSE.
+
+    ! Boundary condition fields
+    State_Diag%SpeciesBC                           => NULL()
+    State_Diag%Archive_SpeciesBC                   = .FALSE.
 
     ! Species concentration diagnostics
     State_Diag%SpeciesConc                         => NULL()
@@ -784,6 +846,7 @@ CONTAINS
     ! Chemistry, J-value, Prod/Loss diagnostics
     State_Diag%JVal                                => NULL()
     State_Diag%JNoon                               => NULL()
+    State_Diag%JNoonFrac                           => NULL()
     State_Diag%RxnRates                            => NULL()
     State_Diag%UVFluxDiffuse                       => NULL()
     State_Diag%UVFluxDirect                        => NULL()
@@ -796,6 +859,7 @@ CONTAINS
     State_Diag%Prod                                => NULL()
     State_Diag%Archive_JVal                        = .FALSE.
     State_Diag%Archive_JNoon                       = .FALSE.
+    State_Diag%Archive_JNoonFrac                   = .FALSE.
     State_Diag%Archive_RxnRates                    = .FALSE.
     State_Diag%Archive_UVFluxDiffuse               = .FALSE.
     State_Diag%Archive_UVFluxDirect                = .FALSE.
@@ -1023,6 +1087,9 @@ CONTAINS
     State_Diag%Archive_RadDecay                    = .FALSE.
 
     ! RRTMG simulation diagnostics
+    State_Diag%nRadFlux                            =  0
+    State_Diag%RadFluxInd                          => NULL()
+    State_Diag%RadFluxName                         => NULL()
     State_Diag%RadAllSkyLWSurf                     => NULL()
     State_Diag%RadAllSkyLWTOA                      => NULL()
     State_Diag%RadAllSkySWSurf                     => NULL()
@@ -1109,6 +1176,12 @@ CONTAINS
     State_Diag%Archive_LossCH4byClinTrop           = .FALSE.
     State_Diag%Archive_LossCH4byOHinTrop           = .FALSE.
     State_Diag%Archive_LossCH4inStrat              = .FALSE.
+
+    ! CO specialtiy simulation diagnostics
+    State_Diag%ProdCOfromCH4                          => NULL()
+    State_Diag%ProdCOfromNMVOC                        => NULL()
+    State_Diag%Archive_ProdCOfromCH4                  = .FALSE.
+    State_Diag%Archive_ProdCOfromNMVOC                = .FALSE.
 
     ! Hg specialty simulation diagnostics
     !  -- emissions quantities (e.g. for HEMCO manual diagnostics)
@@ -1201,7 +1274,32 @@ CONTAINS
     State_Diag%Archive_ParticulateBoundHg          = .FALSE.
     State_Diag%Archive_ReactiveGaseousHg           = .FALSE.
 
-#if defined( NC_DIAG )
+    ! ObsPack diagnostic quantities
+    State_Diag%Do_ObsPack                          = .FALSE.
+    State_Diag%ObsPack_fId                         =  0
+    State_Diag%ObsPack_InFile                      =  ''
+    State_Diag%ObsPack_OutFile                     =  ''
+    State_Diag%ObsPack_nObs                        =  0
+    State_Diag%ObsPack_Id                          => NULL()
+    State_Diag%ObsPack_nSamples                    => NULL()
+    State_Diag%ObsPack_Strategy                    => NULL()
+    State_Diag%ObsPack_Latitude                    => NULL()
+    State_Diag%ObsPack_Longitude                   => NULL()
+    State_Diag%ObsPack_Altitude                    => NULL()
+    State_Diag%ObsPack_Ival_Start                  => NULL()
+    State_Diag%ObsPack_Ival_Center                 => NULL()
+    State_Diag%ObsPack_Ival_End                    => NULL()
+    State_Diag%ObsPack_P                           => NULL()
+    State_Diag%ObsPack_U                           => NULL()
+    State_Diag%ObsPack_V                           => NULL()
+    State_Diag%ObsPack_BLH                         => NULL()
+    State_Diag%ObsPack_Q                           => NULL()
+    State_Diag%ObsPack_T                           => NULL()
+    State_Diag%ObsPack_nSpecies                    =  0
+    State_Diag%ObsPack_Species                     => NULL()
+    State_Diag%ObsPack_Species_Ind                 => NULL()
+    State_Diag%ObsPack_Species_Name                => NULL()
+    State_Diag%ObsPack_Species_LName               => NULL()
 
     ! Write header
     IF ( am_I_Root ) THEN
@@ -1228,6 +1326,24 @@ CONTAINS
        IF ( RC /= GC_SUCCESS ) RETURN
     ENDIF
 
+    !------------------------------------------------------------------------
+    ! Species Concentration for boundary conditions
+    !------------------------------------------------------------------------
+    arrayID = 'State_Diag%SpeciesBC'
+    diagID  = 'SpeciesBC'
+    CALL Check_DiagList( am_I_Root, Diag_List, diagID, Found, RC )
+    IF ( Found ) THEN
+       IF ( am_I_Root ) WRITE(6,20) ADJUSTL( arrayID ), TRIM( diagID )
+       ALLOCATE( State_Diag%SpeciesBC( IM, JM, LM, nSpecies ), STAT=RC )
+       CALL GC_CheckVar( arrayId, 0, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Diag%SpeciesBC = 0.0_f8
+       State_Diag%Archive_SpeciesBC = .TRUE.
+       CALL Register_DiagField( am_I_Root, diagID, State_Diag%SpeciesBC, &
+                                State_Chm, State_Diag, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+    ENDIF
+    
     !------------------------------------------------------------------------
     ! Species Concentration
     !------------------------------------------------------------------------
@@ -1986,7 +2102,7 @@ CONTAINS
     !=======================================================================
     ! The following diagnostic quantities are only relevant for:
     !
-    ! THE Rn-Pb-Be-PASV SPECIALTY SIMULATION
+    ! THE Rn-Pb-Be-Passive SPECIALTY SIMULATION
     !=======================================================================
     IF ( Input_Opt%ITS_A_RnPbBe_SIM ) THEN
 
@@ -2033,7 +2149,7 @@ CONTAINS
        !-------------------------------------------------------------------
        ! Halt with an error message if any of the following quantities
        ! have been requested as diagnostics in simulations other than
-       ! the Rn-Pb-Be-PASV simulation.
+       ! the Rn-Pb-Be-Passive simulation.
        !
        ! This will prevent potential errors caused by the quantities
        ! being requested as diagnostic output when the corresponding
@@ -2055,7 +2171,7 @@ CONTAINS
                                Found,     RC,        exact=.TRUE. )
           IF ( Found ) THEN
              ErrMsg = TRIM( diagId ) // ' is a requested diagnostic, '    // &
-                      'but this is only appropriate for Rn-Pb-Be-PASV '   // &
+                      'but this is only appropriate for Rn-Pb-Be-Passive '// &
                       'simulations.' 
              CALL GC_Error( ErrMsg, RC, ThisLoc )
              RETURN
@@ -2072,6 +2188,33 @@ CONTAINS
     IF ( Input_Opt%LRAD ) THEN
 
        !--------------------------------------------------------------------
+       ! RRTMG: Define index arrays
+       !--------------------------------------------------------------------
+
+       ! Number of requested RRTMG flux outputs
+       State_Diag%nRadFlux = nRadFlux
+
+       ! Exit if no flux ouptuts have been selected
+       IF ( State_Diag%nRadFlux == 0 ) THEN
+          ErrMsg = 'No RRTMG diagnostic flux outputs have been requested!'
+          CALL GC_Error( ErrMsg, RC, ThisLoc )
+          RETURN
+       ENDIF
+
+       ! Array to contain the RRTMG indices for each requested flux output
+       ALLOCATE( State_Diag%RadFluxInd( State_Diag%nRadFlux ), STAT=RC )
+       CALL GC_CheckVar( 'State_Diag%RadFluxInd', 0, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+
+       ! Array to contain the names of each requested flux output
+       ALLOCATE( State_Diag%RadFluxName( State_Diag%nRadFlux ), STAT=RC )
+       CALL GC_CheckVar( 'State_Diag%RadFluxName', 0, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+
+       ! Populate the index arrays for RRTMG
+       CALL Init_RRTMG_Indices( am_I_Root, Input_Opt, State_Diag, RC )
+
+       !--------------------------------------------------------------------
        ! RRTMG: All-sky LW rad @ surface
        !--------------------------------------------------------------------
        arrayID = 'State_Diag%RadAllSkyLWSurf'
@@ -2079,7 +2222,7 @@ CONTAINS
        CALL Check_DiagList( am_I_Root, Diag_List, diagID, Found, RC )
        IF ( Found ) THEN
           IF ( am_I_Root ) WRITE(6,20) ADJUSTL( arrayID ), TRIM( diagID )
-          ALLOCATE( State_Diag%RadAllSkyLWSurf( IM, JM ), STAT=RC )
+          ALLOCATE( State_Diag%RadAllSkyLWSurf( IM, JM, nRadFlux ), STAT=RC )
           CALL GC_CheckVar( arrayID, 0, RC )
           IF ( RC /= GC_SUCCESS ) RETURN
           State_Diag%RadAllSkyLWSurf = 0.0_f4
@@ -2098,7 +2241,7 @@ CONTAINS
        CALL Check_DiagList( am_I_Root, Diag_List, diagID, Found, RC )
        IF ( Found ) THEN
           IF ( am_I_Root ) WRITE(6,20) ADJUSTL( arrayID ), TRIM( diagID )
-          ALLOCATE( State_Diag%RadAllSkyLWTOA( IM, JM ), STAT=RC )
+          ALLOCATE( State_Diag%RadAllSkyLWTOA( IM, JM, nRadFlux ), STAT=RC )
           CALL GC_CheckVar( arrayID, 0, RC )
           IF ( RC /= GC_SUCCESS ) RETURN
           State_Diag%RadAllSkyLWTOA = 0.0_f4
@@ -2117,7 +2260,7 @@ CONTAINS
        CALL Check_DiagList( am_I_Root, Diag_List, diagID, Found, RC )
        IF ( Found ) THEN
           IF ( am_I_Root ) WRITE(6,20) ADJUSTL( arrayID ), TRIM( diagID )
-          ALLOCATE( State_Diag%RadAllSkySWSurf( IM, JM ), STAT=RC )
+          ALLOCATE( State_Diag%RadAllSkySWSurf( IM, JM, nRadFlux ), STAT=RC )
           CALL GC_CheckVar( arrayID, 0, RC )
           IF ( RC /= GC_SUCCESS ) RETURN
           State_Diag%RadAllSkySWSurf = 0.0_f4
@@ -2136,7 +2279,7 @@ CONTAINS
        CALL Check_DiagList( am_I_Root, Diag_List, diagID, Found, RC )
        IF ( Found ) THEN
           IF ( am_I_Root ) WRITE(6,20) ADJUSTL( arrayID ), TRIM( diagID )
-          ALLOCATE( State_Diag%RadAllSkySWTOA( IM, JM ), STAT=RC )
+          ALLOCATE( State_Diag%RadAllSkySWTOA( IM, JM, nRadFlux ), STAT=RC )
           CALL GC_CheckVar( arrayID, 0, RC )
           IF ( RC /= GC_SUCCESS ) RETURN
           State_Diag%RadAllSkySWTOA = 0.0_f4
@@ -2155,7 +2298,7 @@ CONTAINS
        CALL Check_DiagList( am_I_Root, Diag_List, diagID, Found, RC )
        IF ( Found ) THEN
           IF ( am_I_Root ) WRITE(6,20) ADJUSTL( arrayID ), TRIM( diagID )
-          ALLOCATE( State_Diag%RadClrSkyLWSurf( IM, JM ), STAT=RC )
+          ALLOCATE( State_Diag%RadClrSkyLWSurf( IM, JM, nRadFlux ), STAT=RC )
           CALL GC_CheckVar( arrayID, 0, RC )
           IF ( RC /= GC_SUCCESS ) RETURN
           State_Diag%RadClrSkyLWSurf = 0.0_f4
@@ -2174,7 +2317,7 @@ CONTAINS
        CALL Check_DiagList( am_I_Root, Diag_List, diagID, Found, RC )
        IF ( Found ) THEN
           IF ( am_I_Root ) WRITE(6,20) ADJUSTL( arrayID ), TRIM( diagID )
-          ALLOCATE( State_Diag%RadClrSkyLWTOA( IM, JM ), STAT=RC )
+          ALLOCATE( State_Diag%RadClrSkyLWTOA( IM, JM, nRadFlux ), STAT=RC )
           CALL GC_CheckVar( arrayID, 0, RC )
           IF ( RC /= GC_SUCCESS ) RETURN
           State_Diag%RadClrSkyLWTOA = 0.0_f4
@@ -2193,7 +2336,7 @@ CONTAINS
        CALL Check_DiagList( am_I_Root, Diag_List, diagID, Found, RC )
        IF ( Found ) THEN
           IF ( am_I_Root ) WRITE(6,20) ADJUSTL( arrayID ), TRIM( diagID )
-          ALLOCATE( State_Diag%RadClrSkySWSurf( IM, JM ), STAT=RC )
+          ALLOCATE( State_Diag%RadClrSkySWSurf( IM, JM, nRadFlux ), STAT=RC )
           CALL GC_CheckVar( arrayID, 0, RC )
           IF ( RC /= GC_SUCCESS ) RETURN
           State_Diag%RadClrSkySWSurf = 0.0_f4
@@ -2212,7 +2355,7 @@ CONTAINS
        CALL Check_DiagList( am_I_Root, Diag_List, diagID, Found, RC )
        IF ( Found ) THEN
           IF ( am_I_Root ) WRITE(6,20) ADJUSTL( arrayID ), TRIM( diagID )
-          ALLOCATE( State_Diag%RadClrSkySWTOA( IM, JM ), STAT=RC )
+          ALLOCATE( State_Diag%RadClrSkySWTOA( IM, JM, nRadFlux ), STAT=RC )
           CALL GC_CheckVar( arrayID, 0, RC )
           IF ( RC /= GC_SUCCESS ) RETURN
           State_Diag%RadClrSkySWTOA = 0.0_f4
@@ -2339,6 +2482,24 @@ CONTAINS
           State_Diag%JNoon = 0.0_f4
           State_Diag%Archive_JNoon = .TRUE.
           CALL Register_DiagField( am_I_Root, diagID,     State_Diag%JNoon,  &
+                                   State_Chm, State_Diag, RC                )
+          IF ( RC /= GC_SUCCESS ) RETURN
+       ENDIF
+
+       ! Counter array for noontime J-value boxes
+       ! Must be saved in conjunction with State_Diag%JNoon
+       arrayID = 'State_Diag%JNoonFrac'
+       diagID  = 'JNoonFrac'
+       CALL Check_DiagList( am_I_Root, Diag_List, diagID, Found, RC )
+       IF ( Found ) THEN
+          IF ( am_I_Root ) WRITE( 6, 20 ) ADJUSTL( arrayID ), TRIM( diagID )
+          ALLOCATE( State_Diag%JNoonFrac( IM, JM ), STAT=RC )
+          CALL GC_CheckVar( arrayID, 0, RC )
+          IF ( RC /= GC_SUCCESS ) RETURN
+          State_Diag%JNoonFrac = 0.0_f4
+          State_Diag%Archive_JNoonFrac = .TRUE.
+          CALL Register_DiagField( am_I_Root, diagID,                        &
+                                   State_Diag%JNoonFrac,                     &
                                    State_Chm, State_Diag, RC                )
           IF ( RC /= GC_SUCCESS ) RETURN
        ENDIF
@@ -2830,7 +2991,7 @@ CONTAINS
        ! being requested as diagnostic output when the corresponding
        ! array has not been allocated.
        !-------------------------------------------------------------------
-       DO N = 1, 25
+       DO N = 1, 26
           
           ! Select the diagnostic ID
           SELECT CASE( N )
@@ -2841,48 +3002,50 @@ CONTAINS
              CASE( 3  ) 
                 diagID = 'JNoon'
              CASE( 4  ) 
-                diagID = 'UvFluxDiffuse'
+                diagID = 'JNoonFrac'
              CASE( 5  ) 
-                diagID = 'UvFluxDirect'
+                diagID = 'UvFluxDiffuse'
              CASE( 6  ) 
+                diagID = 'UvFluxDirect'
+             CASE( 7  ) 
                 diagID = 'UvFluxNet'
-             CASE( 7  )
-                diagID = 'HO2concAfterChem'
              CASE( 8  )
-                diagID = 'O1DconcAfterChem'
+                diagID = 'HO2concAfterChem'
              CASE( 9  )
-                diagID = 'O3PconcAfterChem'
+                diagID = 'O1DconcAfterChem'
              CASE( 10 )
-                diagID = 'ProdSO4fromHOBrInCloud'
+                diagID = 'O3PconcAfterChem'
              CASE( 11 )
-                diagID = 'ProdSO4fromSRHOBr'
+                diagID = 'ProdSO4fromHOBrInCloud'
              CASE( 12 )
-                diagID = 'AerMassASOA'
+                diagID = 'ProdSO4fromSRHOBr'
              CASE( 13 )
-                diagID = 'AerMassINDIOL'
+                diagID = 'AerMassASOA'
              CASE( 14 )
-                diagID = 'AerMassISN1OA'
+                diagID = 'AerMassINDIOL'
              CASE( 15 )
-                diagID = 'AerMassISOA'
+                diagID = 'AerMassISN1OA'
              CASE( 16 )
-                diagID = 'AerMassLVOCOA'
+                diagID = 'AerMassISOA'
              CASE( 17 )
-                diagID = 'AerMassOPOA'
+                diagID = 'AerMassLVOCOA'
              CASE( 18 )
-                diagID = 'AerMassPOA'
+                diagID = 'AerMassOPOA'
              CASE( 19 )
-                diagID = 'AerMassSOAGX'
+                diagID = 'AerMassPOA'
              CASE( 20 )
-                diagID = 'AerMassSOAIE'
+                diagID = 'AerMassSOAGX'
              CASE( 21 )
-                diagID = 'AerMassSOAME'
+                diagID = 'AerMassSOAIE'
              CASE( 22 )
-                diagID = 'AerMassSOAMG'
+                diagID = 'AerMassSOAME'
              CASE( 23 )
-                diagID = 'AerMassTSOA'
+                diagID = 'AerMassSOAMG'
              CASE( 24 )
-                diagID = 'BetaNO'      
+                diagID = 'AerMassTSOA'
              CASE( 25 )
+                diagID = 'BetaNO'
+             CASE( 26 )
                 diagID = 'TotalBiogenicOA'
           END SELECT
 
@@ -5120,6 +5283,85 @@ CONTAINS
     ENDIF
 
     !=======================================================================
+    ! These diagnostics are only relevant for:
+    !
+    ! THE CO SPECIALTY SIMULATION
+    !=======================================================================
+    IF ( Input_Opt%ITS_A_TAGCO_SIM ) THEN
+
+       !--------------------------------------------------------------------
+       ! Production of CO from CH4
+       !--------------------------------------------------------------------
+       arrayID = 'State_Diag%ProdCOfromCH4'
+       diagID  = 'ProdCOfromCH4'
+       CALL Check_DiagList( am_I_Root, Diag_List, diagID, Found, RC )
+       IF ( Found ) THEN
+          IF ( am_I_Root ) WRITE( 6, 20 ) ADJUSTL( arrayID ), TRIM( diagID )
+          ALLOCATE( State_Diag%ProdCOfromCH4(IM,JM,LM), STAT=RC )
+          CALL GC_CheckVar( arrayID, 0, RC )
+          IF ( RC /= GC_SUCCESS ) RETURN
+          State_Diag%ProdCOfromCH4 = 0.0_f4
+          State_Diag%Archive_ProdCOfromCH4 = .TRUE.
+          CALL Register_DiagField( am_I_Root, diagID,                        &
+                                   State_Diag%ProdCOfromCH4,             &
+                                   State_Chm, State_Diag, RC )
+          IF ( RC /= GC_SUCCESS ) RETURN
+       ENDIF
+
+       !--------------------------------------------------------------------
+       ! Production of CO from NMVOC
+       !--------------------------------------------------------------------
+       arrayID = 'State_Diag%ProdCOfromNMVOC'
+       diagID  = 'ProdCOfromNMVOC'
+       CALL Check_DiagList( am_I_Root, Diag_List, diagID, Found, RC )
+       IF ( Found ) THEN
+          IF ( am_I_Root ) WRITE( 6, 20 ) ADJUSTL( arrayID ), TRIM( diagID )
+          ALLOCATE( State_Diag%ProdCOfromNMVOC(IM,JM,LM), STAT=RC )
+          CALL GC_CheckVar( arrayID, 0, RC )
+          IF ( RC /= GC_SUCCESS ) RETURN
+          State_Diag%ProdCOfromNMVOC = 0.0_f4
+          State_Diag%Archive_ProdCOfromNMVOC = .TRUE.
+          CALL Register_DiagField( am_I_Root, diagID,                        &
+                                   State_Diag%ProdCOfromNMVOC,             &
+                                   State_Chm, State_Diag, RC )
+          IF ( RC /= GC_SUCCESS ) RETURN
+       ENDIF
+
+    ELSE
+       !-------------------------------------------------------------------
+       ! Halt with an error message if any of the following quantities
+       ! have been requested as diagnostics in simulations other than
+       ! Persistent Organic Pollutants (POPS).
+       !
+       ! This will prevent potential errors caused by the quantities
+       ! being requested as diagnostic output when the corresponding
+       ! array has not been allocated.
+       !-------------------------------------------------------------------
+       DO N = 1, 2
+
+          SELECT CASE( N )
+             CASE( 1  )
+                diagID = 'ProdCOfromCH4'
+             CASE( 2  )
+                diagID = 'ProdCOfromNMVOC'
+          END SELECT
+
+          ! Exit if any of the above are in the diagnostic list
+          ! Force an exact string match to avoid namespace confusion
+          CALL Check_DiagList( am_I_Root, Diag_List, diagID,                 &
+                               Found,     RC,        exact=.TRUE.           )
+          IF ( Found ) THEN
+             ErrMsg = TRIM( diagId ) // ' is a requested diagnostic, '    // &
+                      'but this is only appropriate for the '             // &
+                      'tagged CO specialty simulations.'
+             CALL GC_Error( ErrMsg, RC, ThisLoc )
+             RETURN
+          ENDIF
+       ENDDO
+
+    ENDIF
+
+    !=======================================================================
     ! The production and loss diagnostics are only relevant for:
     !
     ! THE Hg and TAGGED Hg SPECIALTY SIMULATIONS
@@ -6149,8 +6391,6 @@ CONTAINS
        RETURN
     ENDIF
 
-#endif
-
   END SUBROUTINE Init_State_Diag
 !EOC
 !------------------------------------------------------------------------------
@@ -6209,6 +6449,13 @@ CONTAINS
        CALL GC_CheckVar( 'State_Diag%SpeciesRst', 2, RC )
        IF ( RC /= GC_SUCCESS ) RETURN
        State_Diag%SpeciesRst => NULL()
+    ENDIF
+
+    IF ( ASSOCIATED( State_Diag%SpeciesBC ) ) THEN
+       DEALLOCATE( State_Diag%SpeciesBC, STAT=RC )
+       CALL GC_CheckVar( 'State_Diag%SpeciesBC', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Diag%SpeciesBC => NULL()
     ENDIF
 
     IF ( ASSOCIATED( State_Diag%SpeciesConc ) ) THEN
@@ -6437,6 +6684,13 @@ CONTAINS
        CALL GC_CheckVar( 'State_Diag%JNoon', 2, RC )
        IF ( RC /= GC_SUCCESS ) RETURN
        State_Diag%JNoon => NULL()
+    ENDIF
+
+    IF ( ASSOCIATED( State_Diag%JNoonFrac ) ) THEN
+       DEALLOCATE( State_Diag%JNoonFrac, STAT=RC )
+       CALL GC_CheckVar( 'State_Diag%JNoonFrac', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Diag%JNoonFrac => NULL()
     ENDIF
 
     IF ( ASSOCIATED( State_Diag%RxnRates ) ) THEN
@@ -7442,6 +7696,20 @@ CONTAINS
        State_Diag%LossCH4inStrat => NULL()
     ENDIF
 
+    IF ( ASSOCIATED( State_Diag%ProdCOfromCH4 ) ) THEN
+       DEALLOCATE( State_Diag%ProdCOfromCH4, STAT=RC )
+       CALL GC_CheckVar( 'State_Diag%ProdCOfromCH4', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Diag%ProdCOfromCH4 => NULL()
+    ENDIF 
+
+    IF ( ASSOCIATED( State_Diag%ProdCOfromNMVOC ) ) THEN
+       DEALLOCATE( State_Diag%ProdCOfromNMVOC, STAT=RC )
+       CALL GC_CheckVar( 'State_Diag%ProdCOfromNMVOC', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Diag%ProdCOfromNMVOC => NULL()
+    ENDIF 
+
     IF ( ASSOCIATED( State_Diag%EmisHg0anthro ) ) THEN
        DEALLOCATE( State_Diag%EmisHg0anthro, STAT=RC )
        CALL GC_CheckVar( 'State_Diag%EmisHg0anthro', 2, RC )
@@ -7867,6 +8135,13 @@ CONTAINS
        IF ( isTagged  ) TagId = 'ALL'
        IF ( isType    ) Type  = KINDVAL_F8
 
+    ELSE IF ( TRIM( Name_AllCaps ) == 'SPECIESBC' ) THEN
+       IF ( isDesc    ) Desc  = 'Dry mixing ratio of species'
+       IF ( isUnits   ) Units = 'mol mol-1 dry'
+       IF ( isRank    ) Rank  = 3
+       IF ( isTagged  ) TagId = 'ALL'
+       IF ( isType    ) Type  = KINDVAL_F8
+
     ELSE IF ( TRIM( Name_AllCaps ) == 'SPECIESCONC' ) THEN
        IF ( isDesc    ) Desc  = 'Dry mixing ratio of species'
        IF ( isUnits   ) Units = 'mol mol-1 dry'
@@ -8081,6 +8356,11 @@ CONTAINS
        IF ( isRank    ) Rank  = 3
        IF ( isTagged  ) TagId = 'PHO'
 
+    ELSE IF ( TRIM( Name_AllCaps ) == 'JNOONFRAC' ) THEN
+       IF ( isDesc    ) Desc  = 'Fraction of the time when local noon occurred at each surface location' 
+       IF ( isUnits   ) Units = '1'
+       IF ( isRank    ) Rank  = 2
+
     ELSE IF ( TRIM( Name_AllCaps ) == 'RXNRATES' ) THEN
        IF ( isDesc    ) Desc  = 'placeholder'
        IF ( isUnits   ) Units = 'placeholder'
@@ -8212,45 +8492,53 @@ CONTAINS
        IF ( isDesc    ) Desc  = 'All-sky long-wave radiation at surface'
        IF ( isUnits   ) Units = 'W m-2'
        IF ( isRank    ) Rank  = 2
+       IF ( isTagged  ) TagId = 'RRTMG'
 
     ELSE IF ( TRIM( Name_AllCaps ) == 'RADALLSKYLWTOA' ) THEN
        IF ( isDesc    ) Desc  = 'All-sky long-wave radiation at top of ' // &
                                 'atmosphere'
        IF ( isUnits   ) Units = 'W m-2'
        IF ( isRank    ) Rank  = 2
+       IF ( isTagged  ) TagId = 'RRTMG'
 
     ELSEIF ( TRIM( Name_AllCaps ) == 'RADALLSKYSWSURF' ) THEN
        IF ( isDesc    ) Desc  = 'All-sky short-wave radiation at surface'
        IF ( isUnits   ) Units = 'W m-2'
        IF ( isRank    ) Rank  = 2
+       IF ( isTagged  ) TagId = 'RRTMG'
 
     ELSE IF ( TRIM( Name_AllCaps ) == 'RADALLSKYSWTOA ' ) THEN
        IF ( isDesc    ) Desc  = 'All-sky short-wave radiation at top of ' // &
                                 'atmosphere'
        IF ( isUnits   ) Units = 'W m-2'
        IF ( isRank    ) Rank  = 2
+       IF ( isTagged  ) TagId = 'RRTMG'
 
     ELSE IF ( TRIM( Name_AllCaps ) == 'RADCLRSKYLWSURF' ) THEN
        IF ( isDesc    ) Desc  = 'Clear-sky long-wave radiation at surface'
        IF ( isUnits   ) Units = 'W m-2'
        IF ( isRank    ) Rank  = 2
+       IF ( isTagged  ) TagId = 'RRTMG'
 
     ELSE IF ( TRIM( Name_AllCaps ) == 'RADCLRSKYLWTOA ' ) THEN
        IF ( isDesc    ) Desc  = 'Clear-sky long-wave radiation at top of ' // &
                                 'atmosphere'
        IF ( isUnits   ) Units = 'W m-2'
        IF ( isRank    ) Rank  = 2
+       IF ( isTagged  ) TagId = 'RRTMG'
 
     ELSE IF ( TRIM( Name_AllCaps ) == 'RADCLRSKYSWSURF' ) THEN
        IF ( isDesc    ) Desc  = 'Clear-sky short-wave radiation at surface'
        IF ( isUnits   ) Units = 'W m-2'
        IF ( isRank    ) Rank  = 2
+       IF ( isTagged  ) TagId = 'RRTMG'
 
     ELSE IF ( TRIM( Name_AllCaps ) == 'RADCLRSKYSWTOA' ) THEN
        IF ( isDesc    ) Desc  = 'Clear-sky short-wave radiation at top ' // &
                                 'of atmosphere'
        IF ( isUnits   ) Units = 'W m-2'
        IF ( isRank    ) Rank  = 2
+       IF ( isTagged  ) TagId = 'RRTMG'
 
     ELSE IF ( TRIM( Name_AllCaps ) == 'PRODBCPIFROMBCPO' ) THEN
        IF ( isDesc    ) Desc  = 'Production of hydrophilic black carbon ' // &
@@ -8920,6 +9208,16 @@ CONTAINS
        IF ( isUnits   ) Units = 'kg s-1'
        IF ( isRank    ) Rank  =  3
 
+    ELSE IF ( TRIM( Name_AllCaps ) == 'PRODCOFROMCH4' ) THEN
+       IF ( isDesc    ) Desc  = 'Porduction of CO by CH4'
+       IF ( isUnits   ) Units = 'kg s-1'
+       IF ( isRank    ) Rank  =  3
+
+    ELSE IF ( TRIM( Name_AllCaps ) == 'PRODCOFROMNMVOC' ) THEN
+       IF ( isDesc    ) Desc  = 'Porduction of CO by NMVOC'
+       IF ( isUnits   ) Units = 'kg s-1'
+       IF ( isRank    ) Rank  =  3 
+
     ELSE IF ( TRIM( Name_AllCaps ) == 'EMISHG0ANTHRO' ) THEN
        IF ( isDesc    ) Desc  = 'Anthropogenic emissions of Hg0'
        IF ( isUnits   ) Units = 'kg s-1'
@@ -9167,7 +9465,6 @@ CONTAINS
 !
 ! !USES:
 !
-!
 ! !INPUT PARAMETERS:
 ! 
     LOGICAL,            INTENT(IN)  :: am_I_Root   ! Is this the root CPU?
@@ -9262,6 +9559,8 @@ CONTAINS
           numTags = State_Chm%nPhotol+2  ! NOTE: Extra slots for diagnostics
        CASE( 'PRD'     )
           numTags = State_Chm%nProd
+       CASE( 'RRTMG'   )
+          numTags = nRadFlux
        CASE( 'VAR'     )
           numTags = State_Chm%nKppVar
        CASE( 'WET'     )
@@ -9296,7 +9595,7 @@ CONTAINS
     ! Get mapping index
     !=======================================================================
     SELECT CASE( TRIM( tagID ) )
-       CASE( 'ALL', 'ADV', 'DUSTBIN', 'PRD', 'LOS' )
+       CASE( 'ALL', 'ADV', 'DUSTBIN', 'PRD', 'LOS', 'RRTMG' )
           D = N
        CASE( 'AER'  )
           D = State_Chm%Map_Aero(N)
@@ -9391,6 +9690,10 @@ CONTAINS
              tagName = State_Chm%SpcData(D)%Info%Name
              
           ENDIF
+
+       ! RRTMG requested output fluxes
+       CASE( 'RRTMG' )
+          tagName = RadFlux(D)
 
        ! Default tag name is the name in the species database
        CASE DEFAULT
@@ -10332,5 +10635,164 @@ CONTAINS
     ENDDO
 
   END SUBROUTINE Register_DiagField_R8_4D
+!EOC
+!------------------------------------------------------------------------------
+!                  GEOS-Chem Global Chemical Transport Model                  !
+!------------------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: Init_RRTMG_Indices
+!
+! !DESCRIPTION: Populates fields of State\_Diag that are used to keep track
+!  of the requested RRTMG flux outputs and their indices.  These are needed
+!  to be able to pass the proper flux output (and corresponding index for
+!  the appropriate netCDF diagnostic arrays) to DO\_RRTMG\_RAD\_TRANSFER.
+!\\
+!\\
+! !INTERFACE:
+!
+  SUBROUTINE Init_RRTMG_Indices( am_I_Root, Input_Opt, State_Diag, RC )
+!
+! !USES:
+!
+    USE ErrCode_Mod
+    USE Input_Opt_Mod,  ONLY : OptInput
+    USE DiagList_Mod,   ONLY : RadFlux, nRadFlux
+!
+! !INPUT PARAMETERS:
+!
+    LOGICAL,        INTENT(IN)    :: am_I_Root   ! Are we on the root core?
+    TYPE(OptInput), INTENT(IN)    :: Input_Opt   ! Input Options object
+!
+! !INPUT/OUTPUT PARAMETERS:
+!
+    TYPE(DgnState), INTENT(INOUT) :: State_Diag  ! Diagnostics State object
+!
+! !OUTPUT PARAMETERS:
+!
+    INTEGER,        INTENT(OUT)   :: RC          ! Success or failure
+!
+! !REMARKS:
+!  The index fields State_Diag%nRadFlux, State_Diag%RadFluxName, and
+!  State_Diag%RadFluxInd are populated from information obtained in
+!  Headers/diaglist_mod.F90.
+!
+! !REVISION HISTORY:
+!  08 Nov 2018 - R. Yantosca - Initial version
+!EOP
+!------------------------------------------------------------------------------
+!BOC
+!
+! !LOCAL VARIABLES:
+!
+    ! Scalars
+    INTEGER            :: N
+
+    ! Strings
+    CHARACTER(LEN=255) :: ErrMsg, ThisLoc, FluxStr, TmpStr
+
+    !=======================================================================
+    ! Init_RRTMG_Indices begins here
+    !=======================================================================
+
+    ! Assume success )
+    RC      = GC_SUCCESS
+
+    ! Return if RRTMG isn't turned on
+    IF ( .not. Input_Opt%LRAD ) RETURN
+
+    ! Initialze
+    FluxStr = ''
+    TmpStr  = ''
+    ErrMsg  = ''
+    ThisLoc = ' -> at Init_RRTMG_Indices (in module Headers/state_diag_mod.F)'
+
+    !=======================================================================
+    ! Loop over all possible types of RRTMG flux outputs and store the name
+    ! of each flux output in State_Diag%RadFluxName and its expected index
+    ! value in State_Diag%RadFluxInd.
+    !
+    ! Flux outputs are requested in HISTORY.rc.  The expected
+    ! index corresponding to each flux output type is:
+    !
+    !   0=BA  1=O3  2=ME  3=SU   4=NI  5=AM
+    !   6=BC  7=OA  8=SS  9=DU  10=PM  11=ST (UCX only)
+    !
+    ! See wiki.geos-chem.org/Coupling_GEOS-Chem_with_RRTMG.
+    !
+    ! This is a bit convoluted but we need to do this in order to keep
+    ! track of the slot of the netCDF diagnostic arrays in State_Diag in
+    ! which to archive the various flux outputs. This also lets us keep
+    ! backwards compatibility with the existing code to the greatest extent.
+    !=======================================================================
+
+    ! Loop over all of the flux outputs requested in HISTORY.rc
+    DO N = 1, State_Diag%nRadFlux
+
+       ! Save the name of the requested flux output
+       State_Diag%RadFluxName(N) = RadFlux(N)
+
+       ! Determine the RRTMG-expected index
+       ! corresponding to each flux output name
+       SELECT CASE( State_Diag%RadFluxName(N) )
+          CASE( 'BA' )
+             State_Diag%RadFluxInd(N) = 0
+          CASE( 'O3' )
+             State_Diag%RadFluxInd(N) = 1
+          CASE( 'ME' )
+             State_Diag%RadFluxInd(N) = 2
+          CASE( 'SU' )
+             State_Diag%RadFluxInd(N) = 3
+          CASE( 'NI' )
+             State_Diag%RadFluxInd(N) = 4
+          CASE( 'AM' )
+             State_Diag%RadFluxInd(N) = 5
+          CASE( 'BC' )
+             State_Diag%RadFluxInd(N) = 6
+          CASE( 'OA' )
+             State_Diag%RadFluxInd(N) = 7
+          CASE( 'SS' )
+             State_Diag%RadFluxInd(N) = 8
+          CASE( 'DU' )
+             State_Diag%RadFluxInd(N) = 9
+          CASE( 'PM' )
+             State_Diag%RadFluxInd(N) = 10
+          CASE( 'ST' )
+             IF ( Input_Opt%LUCX ) THEN
+                State_Diag%RadFluxInd(N) = 11
+             ELSE
+                ErrMsg = 'RRTMG flux output "ST (strat aerosol is '       // &
+                         'selected, but the UCX mechanism is off!'
+                CALL GC_Error( ErrMsg, RC, ThisLoc )
+                RETURN
+             ENDIF
+          CASE DEFAULT
+             ! Nothing
+       END SELECT
+
+       ! Create a string with the requested flux outputs
+       WRITE( TmpStr, 100 ) State_Diag%RadFluxName(N),                       &
+                            State_Diag%RadFluxInd(N)
+
+       ! Append to the resultant string
+       IF ( N == 1 ) THEN
+          FluxStr = TRIM( TmpStr )
+       ELSE
+          FluxStr = TRIM( FluxStr ) // '  ' // TRIM( TmpStr )
+       ENDIF
+    ENDDO
+
+    ! Print to screen
+    IF ( am_I_Root ) THEN
+       WRITE( 6, '(/,a)' ) 'INIT_RRTMG_INDICES'
+       WRITE( 6, '(  a)' ) '------------------'
+       WRITE( 6, 110 ) 'Requested RRTMG fluxes : ', TRIM( FluxStr )
+    ENDIF
+
+    ! FORMAT statements
+100 FORMAT( a, ' (=', i2.2, ')' )
+110 FORMAT( a, a                )
+
+  END SUBROUTINE Init_RRTMG_Indices
 !EOC
 END MODULE State_Diag_Mod

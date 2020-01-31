@@ -292,8 +292,8 @@ HFC125     'mol mol-1'  CHF2CF3
 HFC134A    'mol mol-1'  CH2FCF3
 HFC143A    'mol mol-1'  CF3CH3
 HFC152A    'mol mol-1'  CH2CHF2
-CO2B       'mol mol-1'  Lat-depedent CO2  
-SF6B       'mol mol-1'  Sulfur hexafluoride
+CO2        'mol mol-1'  Lat-depedent CO2  
+SF6        'mol mol-1'  Sulfur hexafluoride
 AOADAYS     days        Age-of-air
 ::
 
@@ -579,6 +579,7 @@ CO_RBU    'mol mol-1'   CO 50 day tracer Russia & Belarus & Ukraine CMIP6+M2G
 CO_CAS    'mol mol-1'   CO 50 day tracer Central Asia CMIP6+M2G
 CO_ARC    'mol mol-1'   CO 50 day tracer Arctic CMIP6+M2G
 CO_from_CH4 'mol mol-1' CO from global average CH4 oxidation
+aoa_bl       days       Age of air above boundary layer
 ::
 
 

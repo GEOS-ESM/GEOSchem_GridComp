@@ -67,7 +67,7 @@
 
 ! !PUBLIC MEMBER FUNCTIONS:
 
-   PUBLIC  GmiEmiss_GridCompInitialize
+   PUBLIC  GmiEmiss_GridCompInitialize, GmiEmiss_initSurfEmissBundle
    PUBLIC  GmiEmiss_GridCompRun
    PUBLIC  GmiEmiss_GridCompFinalize
 
@@ -283,8 +283,6 @@ CONTAINS
 ! ----------
    REAL, ALLOCATABLE :: var2D(:,:)
    REAL, ALLOCATABLE :: var3D(:,:,:)
-
-   INTEGER, ALLOCATABLE :: flag(:)
 
    real(rPrec), pointer :: var(:,:)
    type(ESMF_FieldBundle)      :: surfEmissBundle
@@ -553,28 +551,28 @@ CONTAINS
       CALL initReadEmission(self%Emission, self%gmiClock, self%gmiGrid,     &
      &               self%cellArea, loc_proc, self%pr_diag)
 
-      !-----------------------------------
-      ! Initialize Surface Emission Bundle
-      !-----------------------------------
-      IF (self%Emission%do_semiss_inchem) THEN
-          call ESMF_StateGet(expChem, 'surfEmissForChem' , surfEmissBundle,   RC=STATUS)
-          VERIFY_(STATUS)
-
-          do ib = 1, NSP
-             allocate( var(i1:i2, j1:j2), STAT=STATUS)
-             VERIFY_(STATUS)
-             var(:,:)  = 0.0d0
-
-             write (binName ,'(i4.4)') ib
-             varName = 'surfEmiss'//binName
-
-             call addTracerToBundle (surfEmissBundle, var, w_c%grid_esmf, varName)
-          end do
-
-          call ESMF_FieldBundleGet(surfEmissBundle, fieldCount=numVars , rc=STATUS)
-          VERIFY_(STATUS)
-          ASSERT_(NSP == numVars)
-      END IF
+!     !-----------------------------------
+!     ! Initialize Surface Emission Bundle
+!     !-----------------------------------
+!     IF (self%Emission%do_semiss_inchem) THEN
+!         call ESMF_StateGet(expChem, 'surfEmissForChem' , surfEmissBundle,   RC=STATUS)
+!         VERIFY_(STATUS)
+!
+!         do ib = 1, NSP
+!            allocate( var(i1:i2, j1:j2), STAT=STATUS)
+!            VERIFY_(STATUS)
+!            var(:,:)  = 0.0d0
+!
+!            write (binName ,'(i4.4)') ib
+!            varName = 'surfEmiss'//binName
+!
+!            call addTracerToBundle (surfEmissBundle, var, w_c%grid_esmf, varName)
+!         end do
+!
+!         call ESMF_FieldBundleGet(surfEmissBundle, fieldCount=numVars , rc=STATUS)
+!         VERIFY_(STATUS)
+!         ASSERT_(NSP == numVars)
+!     END IF
 
     !---------------------------------------------------------------
     ! Create and populate the array that maps GMI species indices to
@@ -664,23 +662,9 @@ CONTAINS
 ! Use this space to hold the daily biomass burning emissions between
 ! Chem_UtilMPRead updates. The emissions are assumed to be singly layered.
 ! -----------------------------------------------------------------------
-   i = SIZE(self%Emission%emiss_map)
-   ALLOCATE(flag(i), STAT=STATUS)
-   VERIFY_(STATUS)
-   flag(:) = 0
-
-   WHERE(self%Emission%emiss_map /= 0) flag = 1
-   num_emiss = SUM(flag)
-
-   DEALLOCATE(flag, STAT=STATUS)
-   VERIFY_(STATUS)
-
-   IF (self%Emission%do_ShipEmission) THEN
-      self%ship_thisRecord = -1
-      self%ship_curRecord  = -1
-   END IF
 
    self%veg_fraction_done = .FALSE.
+
 !   Set up Overpass Masks
 !   --------------------
     CALL OVP_init ( GC, "GMICHEM_DT:", LONS, OVP_RUN_DT, OVP_GC_DT, __RC__ ) !  Get LONS, timesteps
@@ -699,6 +683,73 @@ CONTAINS
   RETURN
    
   END SUBROUTINE GmiEmiss_GridCompInitialize
+
+!-------------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: GmiEmiss_initSurfEmissBundle
+!
+! !INTERFACE:
+!
+            SUBROUTINE GmiEmiss_initSurfEmissBundle (self, w_c, expChem, rc)
+!
+! !INPUT PARAMETERS:
+   TYPE(Chem_Bundle), INTENT(in) :: w_c                ! Chemical tracer fields, delp
+
+! !OUTPUT PARAMETERS:
+      INTEGER, INTENT(out) ::  rc                  ! Error return code:
+                                                !  0 - all is well
+                                                !  1 - 
+!
+! !INPUT/OUTPUT PARAMETERS:
+      TYPE(GmiEmiss_GridComp), INTENT(INOUT)  :: self      ! Grid Component
+      TYPE(ESMF_State),        INTENT(INOUT)  :: expChem    ! Export State
+!
+! !DESCRIPTION: Initializes the surface emission bundle that is used
+!      inside Chemistry. This is only done if the user wants surface
+!      emission calculations to be done inside Chemistry.
+!
+! !REVISION HISTORY:
+!    11May2017 Kouatchou   First crack.
+!
+! !LOCAL VARIABLES:
+      INTEGER                    :: numVars, ib
+      INTEGER                    :: STATUS
+      character(len=4)           :: binName
+      character(len=ESMF_MAXSTR) :: varName
+      real(rPrec), pointer       :: var(:,:)
+      type(ESMF_FieldBundle)     :: surfEmissBundle
+      CHARACTER(LEN=*), PARAMETER :: IAm = 'GmiEmiss_initSurfEmissBundle'
+!
+!EOP
+!-------------------------------------------------------------------------
+!BOC
+      RC = 0
+      IF (self%Emission%do_semiss_inchem) THEN
+         call ESMF_StateGet(expChem, 'surfEmissForChem' , surfEmissBundle, RC=STATUS)
+         VERIFY_(STATUS)
+
+         do ib = 1, NSP
+            allocate( var(self%i1:self%i2, self%j1:self%j2), STAT=STATUS)
+            VERIFY_(STATUS)
+            var(:,:)  = 0.0d0
+
+            write (binName ,'(i4.4)') ib
+            varName = 'surfEmiss'//binName
+
+            call addTracerToBundle (surfEmissBundle, var, w_c%grid_esmf, varName)
+         end do
+
+         call ESMF_FieldBundleGet(surfEmissBundle, fieldCount=numVars , rc=STATUS)
+         VERIFY_(STATUS)
+         ASSERT_(NSP == numVars)
+
+         RC = STATUS
+      END IF
+      
+      END SUBROUTINE GmiEmiss_initSurfEmissBundle
+!EOC
+!-------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------
 !NASA/GSFC, Global Modeling and Assimilation Office, Code 610.1, GEOS/DAS!
@@ -784,6 +835,7 @@ CONTAINS
 
    REAL, POINTER, DIMENSION(:,:,:) :: EM_pointer
 
+   REAL, POINTER, DIMENSION(:,:) :: ship_no
    REAL, POINTER, DIMENSION(:,:) :: jNO2val_phot
 
 !  Local
@@ -794,7 +846,7 @@ CONTAINS
    INTEGER :: k, km, kReverse
    INTEGER :: lightning_opt, loc_proc
    INTEGER :: m, n, STATUS
-   INTEGER :: num_emiss, shipEmissRecNum
+!  INTEGER :: num_emiss
 
    INTEGER, PARAMETER :: ToGMI = 1
    INTEGER, PARAMETER :: FromGMI = -1
@@ -862,7 +914,6 @@ CONTAINS
    REAL(KIND=DBL), ALLOCATABLE :: dtrn(:,:,:)
 
    REAL(KIND=DBL), ALLOCATABLE :: surfEmissForChem(:,:,:)
-   REAL(KIND=DBL), ALLOCATABLE :: jNO2val(:,:)
    INTEGER :: curRecord
 
    REAL, POINTER, DIMENSION(:,:,:) :: DATA_FOR_OVP_3D => NULL()
@@ -902,6 +953,11 @@ CONTAINS
 
 !  We need lots of pointers!
 !  -------------------------
+   if (self%Emission%do_ShipEmission) then
+      ALLOCATE(jNO2val_phot(i1:i2,j1:j2),STAT=STATUS)
+      VERIFY_(STATUS)
+   endif
+
    CALL FindPointers(rc)
 
 !  Reserve some local work space
@@ -969,7 +1025,7 @@ CONTAINS
    ALLOCATE(              dtrn(i1:i2,j1:j2,1:km),STAT=STATUS)
    VERIFY_(STATUS)
 
-   IF (self%Emission%do_ShipEmission) THEN
+   IF (self%Emission%do_semiss_inchem) THEN
       ALLOCATE(surfEmissForChem(i1:i2,j1:j2,1:NSP),STAT=STATUS)
       VERIFY_(STATUS)
    END IF
@@ -1013,17 +1069,6 @@ CONTAINS
     VERIFY_(STATUS)
    END IF
    T_15_AVG(i1:i2,j1:j2) = w_c%qa(w_c%reg%j_XX)%data3d(i1:i2,j1:j2,1)
-
-! Ship emissions
-! --------------
-   shipEmissRecNum = -1
-   IF(self%Emission%do_ShipEmission) THEN
-    IF( MAPL_AM_I_ROOT() ) THEN
-     PRINT *,TRIM(IAm),': Code not ready for do_ShipEmission =',self%Emission%do_ShipEmission
-    END IF
-    rc = 61
-    RETURN
-   END IF
 
 ! Grab imports and do units conversions
 ! -------------------------------------
@@ -1083,6 +1128,23 @@ CONTAINS
     CALL Get_lightning_opt(self%Emission, lightning_opt)
     IF(lightning_opt == 1) CALL Set_flashrate(self%Emission, flashRate)
 
+    IF (self%Emission%do_ShipEmission) THEN
+
+       CALL MAPL_GetPointer(impChem, ship_no, 'SHIP_NO', __RC__)
+
+       call calcShipEmission (self%Emission%emiss_o3, &
+                              self%Emission%emiss_hno3, &
+                latDeg, jNO2val_phot, &
+                self%Emission%emissionArray, ship_no,     &
+                self%Emission%ship_o3_index, &
+                self%Emission%ship_hno3_index, &
+                self%cellArea, &
+                self%gmiGrid%i1, self%gmiGrid%i2, self%gmiGrid%ju1, &
+                self%gmiGrid%j2, self%Emission%num_emiss)
+       DEALLOCATE(jNO2val_phot)
+
+    END IF
+
     CALL RunEmission(self%Emission, self%SpeciesConcentration, self%gmiClock,  &
                      self%gmiGrid,                                             &
                      loc_proc, cosSolarZenithAngle, latdeg, self%cellArea,     &
@@ -1098,23 +1160,6 @@ CONTAINS
                      self%pr_diag, self%pr_const, self%pr_surf_emiss,          &
                      self%pr_emiss_3d, self%metdata_name_org,                  &
                      self%metdata_name_model, tdt, mixPBL)
-
-!     For Ship Emission computations
-      if ((self%Emission%do_ShipEmission) .and. (self%Emission%do_semiss_inchem)) then
-         self%ship_curRecord = -1  ! SHOULD DETERMINE THIS VARIABLE (current month or day)
-
-         allocate(jNO2val(i1:i2, j1:j2))
-         jNO2val(i1:i2, j1:j2)  = jNO2val_phot(i1:i2, j1:j2)
-
-         call calcShipEmission (self%Emission%emiss_o3, self%ship_thisRecord, &
-                  self%ship_curRecord, latDeg, jNO2val, &
-                  self%Emission%emissionArray, self%Emission%emiss_ozone,     &
-                  self%Emission%o3_index, &
-                  self%gmiGrid%i1, self%gmiGrid%i2, self%gmiGrid%ju1, &
-                  self%gmiGrid%j2, self%gmiGrid%k1, self%gmiGrid%k2,  &
-                  self%gmiGrid%ju1_gl, self%gmiGrid%j2_gl, self%Emission%num_emiss)
-
-      end if
 
       if (self%Emission%do_semiss_inchem) then
         call updateSurfEmissionInChemistry (self%pr_surf_emiss, self%pr_emiss_3d, &
@@ -1164,7 +1209,7 @@ CONTAINS
               STAT=STATUS)
    VERIFY_(STATUS)
 
-   IF (self%Emission%do_ShipEmission) THEN
+   IF (self%Emission%do_semiss_inchem) THEN
       DEALLOCATE(surfEmissForChem, STAT=STATUS)
       VERIFY_(STATUS)
    END IF
@@ -1457,6 +1502,11 @@ CONTAINS
   DO i = 1,num_emiss
 
     speciesName = TRIM(self%Emission%emissionSpeciesNames(i))
+
+!   IF(MAPL_AM_I_ROOT()) PRINT *, 'Handling emissions for '//TRIM(speciesName)
+
+    ! Parameterized ship emissions are handled elsewhere (calcShipEmission)
+    IF ( TRIM(speciesName) == '*shipO3*' .OR. TRIM(speciesName) == '*shipHNO3*' )  CYCLE
 
     IF ( self%Emission%emiss_map(i) < 1 ) THEN
      PRINT *, ' '
@@ -2012,8 +2062,8 @@ CONTAINS
 
 ! Ship Emisssions
 ! ---------------
-   if ((self%Emission%do_ShipEmission) .and. (self%Emission%do_semiss_inchem)) then
-      CALL getDataFromStateField(expChem, jNO2val_phot, 'jNO2val')
+   if (self%Emission%do_ShipEmission) then
+      jNO2val_phot(i1:i2,j1:j2) = w_c%qa(w_c%reg%j_XX)%data3d(i1:i2,j1:j2,km-1)
    end if
 
   RETURN
@@ -2144,7 +2194,8 @@ CONTAINS
 !       2-15  Respective days' average T2M, with 15 being the most recent
 !             and 2 being the least recent.
 !         16  Today's average, which is being computed
-!   17->km-1  Unused, but available for up to km-2 days
+!   17->km-2  Unused, but available for up to km-2 days
+!       km-1  Place holder jNO2val
 !         km  Place holder for most recent valid tropopause pressures (Pa)
 
 !  When the day number changes, the values in position 16 must be 
@@ -2194,7 +2245,8 @@ CONTAINS
 
 ! Sanity check
 ! ------------
-  IF(km < 17) THEN
+  IF(km < 18) THEN
+   ! Unable to do 15 day avg and store the other items we need
    IF( MAPL_AM_I_ROOT() ) THEN
     PRINT *,"GMICHEM::"//TRIM(IAm)//": Unable to perform 15 days average of T2M."
     PRINT *," "

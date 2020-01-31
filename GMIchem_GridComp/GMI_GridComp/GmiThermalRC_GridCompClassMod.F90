@@ -571,7 +571,6 @@ CONTAINS
    INTEGER :: loc_proc
    INTEGER :: num_time_steps
    INTEGER :: n, STATUS
-   INTEGER :: num_emiss, shipEmissRecNum
 
    INTEGER, PARAMETER :: ToGMI = 1
    INTEGER, PARAMETER :: FromGMI = -1
