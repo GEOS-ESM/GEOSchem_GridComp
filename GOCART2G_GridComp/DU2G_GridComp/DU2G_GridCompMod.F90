@@ -790,7 +790,7 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run1 BEGIN'
     if(mapl_am_i_root()) print*,'DU2G internal spec shortname = ',trim(short_name)
    end do
 
-!#if 0
+#if 0
 !   Dust Source
 !   -----------
     do n = 1, n_bins
@@ -812,7 +812,7 @@ if(mapl_am_i_root()) print*,'DU2G sum(dqa) = ',sum(dqa)
 !            DU_emis(n)%data2d = gcDU%Ch_DU*gcDU%sfrac(n)*gcDU%src * emissions
 !        end if
     end do
-!#endif
+#endif
 
 
 if (mapl_am_I_root()) print*,trim(comp_name), ' Run1 END'
