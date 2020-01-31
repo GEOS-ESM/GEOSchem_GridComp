@@ -152,6 +152,11 @@ contains
 !    call getInstances_('OC', myCF, instances=self%instances_OC, active_instances=self%active_OC, __RC__)
 !    call getInstances_('NI', myCF, instances=self%instances_NI, active_instances=self%active_NI, __RC__)
 
+
+if (mapl_am_I_root()) print*,'GOCART2G self%instances_DU = ',self%instances_DU
+if (mapl_am_I_root()) print*,'GOCART2G self%active_DU = ',self%active_DU
+
+
     call ESMF_ConfigDestroy(myCF, __RC__)
 
 !   Create children`s gridded components and invoke their SetServices
@@ -319,11 +324,11 @@ contains
         call ESMF_StateGet (gex(i), trim(child_name)//'_AERO_ACI', child_state, __RC__)
         call ESMF_StateAdd (aero_ACI, [child_state], __RC__)
 
-        call ESMF_StateGet (gex(i), 'AERO_DP', child_bundle, __RC__)
+        call ESMF_StateGet (gex(i), trim(child_name)//'_AERO_DP', child_bundle, __RC__)
         call ESMF_FieldBundleGet (child_bundle, fieldCount=fieldCount, __RC__)
         allocate (fieldList(FieldCount), __STAT__)
         call ESMF_FieldBundleGet (child_bundle, fieldList=fieldList, __RC__)
-        call ESMF_FieldBundleAdd (aero_dp, fieldList, __RC__)
+        call ESMF_FieldBundleAdd (aero_dp, fieldList, multiflag=.true., __RC__)
         deallocate(fieldList, __STAT__)
     end do
 
@@ -515,6 +520,9 @@ contains
         call ESMF_ConfigGetAttribute (myCF, instances(i), __RC__)
     end do
 
+
+if(mapl_am_i_root()) print*,'getInstances_ instances(:) = ', instances(:)
+
     RETURN_(ESMF_SUCCESS)
 
   end subroutine getInstances_
@@ -575,6 +583,7 @@ contains
 
             do i = 1, size(names)
                 instInt = MAPL_AddChild(gc, name=trim(names(i)), SS=SS, __RC__)
+if(mapl_am_i_root()) print*,'addChild__ names(i) = ', trim(names(i))
             end do
 
         RETURN_(ESMF_SUCCESS)
