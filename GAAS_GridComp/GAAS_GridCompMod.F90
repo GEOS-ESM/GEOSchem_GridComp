@@ -399,9 +399,11 @@ CONTAINS
     type(ESMF_Config)             :: CF          ! Universal Config 
     type(ESMF_Time)               :: Time     ! Current time
     type(ESMF_Alarm)              :: Alarm
+    type(ESMF_Alarm)              :: Predictor_Alarm
 
     integer                       :: nymd, nhms, i550nm, izAOD, iyAOD
     logical                       :: analysis_time, fexists 
+    logical                       :: PREDICTOR_STEP
 
     character(len=ESMF_MAXSTR)    :: comp_name
 
@@ -440,6 +442,9 @@ CONTAINS
    analysis_time = ESMF_AlarmIsRinging(Alarm,__RC__)
 #endif
 
+   call ESMF_ClockGetAlarm(Clock,'PredictorActive',Predictor_Alarm,__RC__)
+   PREDICTOR_STEP = ESMF_AlarmIsRinging( Predictor_Alarm,__RC__)
+
 !  For some reason the alarm above is not working.
 !  For now, hardwire this...
 !  -----------------------------------------------
@@ -454,7 +459,7 @@ CONTAINS
 
 !  Stop here if it is NOT analysis time
 !  -------------------------------------
-   if ( .not. analysis_time ) then
+   if ( PREDICTOR_STEP .or. (.not. analysis_time) ) then
       RETURN_(ESMF_SUCCESS)
    end if
 
@@ -550,7 +555,7 @@ CONTAINS
 !  -------------------------------------------
    if ( associated(duinc) ) duinc = du001+du002+du003+du004+du005
    if ( associated(ssinc) ) ssinc = ss001+ss002+ss003+ss004+ss005
-   if ( associated(niinc) ) niinc = ni001+ni002+ni003
+   if ( associated(niinc) ) niinc = no3an1+no3an2+no3an3
    if ( associated(bcinc) ) bcinc = bcphobic + bcphilic
    if ( associated(ocinc) ) ocinc = ocphobic + ocphilic
    if ( associated(suinc) ) suinc = so4
@@ -571,14 +576,14 @@ CONTAINS
 !  -----------------
    if ( associated(duana) ) duana = du001+du002+du003+du004+du005
    if ( associated(ssana) ) ssana = ss001+ss002+ss003+ss004+ss005
-   if ( associated(niana) ) niana = ni001+ni002+ni003
+   if ( associated(niana) ) niana = no3an1+no3an2+no3an3
    if ( associated(bcana) ) bcana = bcphobic + bcphilic
    if ( associated(ocana) ) ocana = ocphobic + ocphilic
    if ( associated(suana) ) suana = so4
 
    if ( associated(duinc) ) duinc = du001+du002+du003+du004+du005 - duinc
    if ( associated(ssinc) ) ssinc = ss001+ss002+ss003+ss004+ss005 - ssinc
-   if ( associated(niinc) ) niinc = ni001+ni002+ni003 - niinc
+   if ( associated(niinc) ) niinc = no3an1+no3an2+no3an3 - niinc
    if ( associated(bcinc) ) bcinc = bcphobic + bcphilic - bcinc
    if ( associated(ocinc) ) ocinc = ocphobic + ocphilic - ocinc
    if ( associated(suinc) ) suinc = so4 - suinc

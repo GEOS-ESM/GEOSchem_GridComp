@@ -104,6 +104,9 @@
   CNV_FRC            |      1      | xy  |   |    |   |   |     |      | x  | convective_fraction 
   Q10M               |   kg/kg     | xy  |   |    |   |   |	|      |    | 10m_specific_humidity
   Q2M                |   kg/kg     | xy  |   |    |   |   |	|      |    | 2m_specific_humidity
+  LFR                |   s-1km-2   | xy  |   |    |   |   |     |      |    | lightning_flash_rate_density
+  LFR_OFFLINE        |   s-1km-2   | xy  |   |    |   |   |     |      |    | lightning_flash_rate_density_from_offline_source
+  CCTH               |      m      | xy  |   |    |   |   |     |      |    | convective_cloud_top_height
 #===========
 # GCHP only:
 #===========

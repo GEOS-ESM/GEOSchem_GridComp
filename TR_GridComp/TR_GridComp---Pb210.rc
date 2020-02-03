@@ -63,7 +63,7 @@
 # mw: 210
 
 # GOCART_wet_removal: TRUE
-# GOCART_convection:  TRUE
+# GOCART_convection:  FALSE
 
 # GOCART_species:     Pb210
 # GOCART_aero_flag:   TRUE

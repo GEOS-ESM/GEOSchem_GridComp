@@ -49,14 +49,25 @@ LINOZ_NFIELDS:         7
 LINOZ_NLAT            18
 LINOZ_NLEVELS:        25
 LINOZ_NMONTHS:        12
-LLSTRAT:              59
+
+# Maximum level used for chemistry. If not extending to the top of the atmosphere,
+# production and loss rates from an offline GMI simulation will be applied to the 
+# remaining levels (based on GEOS-Chem's linearized stratospheric chemistry scheme). 
+# It is recommended to do full chemistry over the entire column, so that LLSTRAT = LM.
+# This is the default.
+#LLSTRAT:              72
 
 #
-# %%% FAST-JX options %%%
-#
-LLFASTJX:             601 
-FJX_EXTRAL_ITERMAX:   1 
-FJX_EXTRAL_ERR:       1
+# FAST-JX options:
+# LLFASTJX are the number of levels used for FAST-JX. The default value for a simulation
+# on 72 model levels is 601, and 1201 if running on 132 model levels. 
+# FJX_EXTRAL_ITERMAX (defaults: 1 and 5 for 72 and 132 model levels, respectively) and 
+# FJX_EXTRAL_ERR (default = 1) are fine tuning parameter that can be used
+# to get more control over the FAST-JX calculations. Increase FJX_EXTRAL_ITERMAX if 
+# you encounter problems with FAST-JX, e.g. at 132 model levels.
+#LLFASTJX:             601 
+#FJX_EXTRAL_ITERMAX:   1 
+#FJX_EXTRAL_ERR:       1
 
 #
 # %%% Run phases (1 or 2. 2 recommended) %%% 
