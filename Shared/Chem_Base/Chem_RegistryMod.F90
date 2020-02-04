@@ -172,7 +172,6 @@
 !    ------------------------------------------------------
      logical :: pass_GEOSCHEM         ! any
      logical :: pass_GEOSCHEM_BC      ! black carbon
-     logical :: pass_GEOSCHEM_BC      ! black carbon
      logical :: pass_GEOSCHEM_BRC     ! brown carbon
      logical :: pass_GEOSCHEM_CFC     ! CFCs
      logical :: pass_GEOSCHEM_CH4     ! methane
