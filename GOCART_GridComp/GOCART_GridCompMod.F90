@@ -4160,6 +4160,7 @@ end subroutine aerosol_activation_properties
    real, pointer     :: ptr3d_GC_NH4 (:,:,:) => null()
    real, pointer     :: ptr3d_GC_NIT (:,:,:) => null()
    real, pointer     :: ptr3d_GC_NITs(:,:,:) => null()
+   real, pointer     :: ptr3d_GC_HMS (:,:,:) => null()
 
    Iam = 'copy_geoschem_to_intstate_forbundle_'
 
@@ -4474,13 +4475,17 @@ end subroutine aerosol_activation_properties
       VERIFY_(STATUS)
       ptr3d_Int = ptr3d_GC
 
+      ! HMS
+      call MAPL_GetPointer(impChem,ptr3d_GC_HMS,'GEOSCHEM_HMS',rc=status)
+      VERIFY_(STATUS)
+
       ! SO4
       int_name = 'GOCART::SO4_ForBundle'
       call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_SO4',rc=status)
       VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      ptr3d_Int = ptr3d_GC + ( ptr3d_GC_HMS * 96.0 / 111.0 )
 
       ! MSA
       int_name = 'GOCART::MSA_ForBundle'
@@ -4490,13 +4495,6 @@ end subroutine aerosol_activation_properties
       VERIFY_(STATUS)
       ptr3d_Int = ptr3d_GC
 
-      ! HMS
-      int_name = 'GOCART::HMS_ForBundle'
-      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_HMS',rc=status)
-      VERIFY_(STATUS)
-      call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
-      VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
 
    endif
 
@@ -4509,6 +4507,7 @@ end subroutine aerosol_activation_properties
    if ( associated( ptr3d_GC_NH4  ) ) nullify(ptr3d_GC_NH4 )
    if ( associated( ptr3d_GC_NIT  ) ) nullify(ptr3d_GC_NIT )
    if ( associated( ptr3d_GC_NITs ) ) nullify(ptr3d_GC_NITs)
+   if ( associated( ptr3d_GC_HMS  ) ) nullify(ptr3d_GC_HMS )
    if ( associated( ptr3d_int     ) ) nullify(ptr3d_int    )
 
    ! Sanity check prints
@@ -5083,19 +5082,6 @@ end subroutine aerosol_activation_properties
         VERIFY_(STATUS)
         write(*,'(a45,es16.7)') trim(gc_name)//':',SUM(ptr3d_GC(:,:,1:km))
       endif
-
-      ! HMS internal state and w_c
-      int_name = 'GOCART::HMS'
-      intfb_name = trim(int_name)//'_ForBundle'
-      call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
-      VERIFY_(STATUS)
-      call MAPL_GetPointer(internal,ptr3d_intfb,trim(intfb_name),rc=status)
-      VERIFY_(STATUS)
-      write(*,*) "  >> "//trim(w_c%reg%vname(w_c%reg%i_SU+3))
-      write(*,'(a45,es16.7)') trim(int_name)//":",SUM(ptr3d_Int(:,:,1:km))
-      write(*,'(a45,es16.7)') trim(intfb_name)//":",SUM(ptr3d_intfb(:,:,1:km))
-      write(*,'(a45,es16.7)') "w_c%qa(w_c%reg%i_SU+3)%data3d:",&
-                            SUM(w_c%qa(w_c%reg%i_SU+3)%data3d(:,:,1:km))
 
       ! HMS GEOS-Chem
       if ( w_c%reg%pass_GEOSCHEM_SU ) then
