@@ -192,6 +192,95 @@ XLAIMULTI cm2_cm-2 N Y %y4-%m2-%d2T00:00:00 none none XLAIMULTI /gpfsm/dnb31/ewl
 # Not used in GEOS
 
 #==============================================================================
+# --- MEIC China  --- 
+#==============================================================================
+MEIC_NO_AGR     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none NO_agriculture	   /discover/nobackup/jmoch/MEIC/MEIC_NO.05x0666.nc
+MEIC_NO_IND     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none NO_industry    /discover/nobackup/jmoch/MEIC/MEIC_NO.05x0666.nc 
+MEIC_NO_POW     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none NO_power    /discover/nobackup/jmoch/MEIC/MEIC_NO.05x0666.nc
+MEIC_NO_RES     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none NO_residential    /discover/nobackup/jmoch/MEIC/MEIC_NO.05x0666.nc
+MEIC_NO_TRA     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none NO_transportation    /discover/nobackup/jmoch/MEIC/MEIC_NO.05x0666.nc
+MEIC_CO_AGR     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none CO_agriculture    /discover/nobackup/jmoch/MEIC/MEIC_CO.05x0666.nc
+MEIC_CO_IND     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none CO_industry    /discover/nobackup/jmoch/MEIC/MEIC_CO.05x0666.nc
+MEIC_CO_POW     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none CO_power    /discover/nobackup/jmoch/MEIC/MEIC_CO.05x0666.nc
+MEIC_CO_RES     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none CO_residential    /discover/nobackup/jmoch/MEIC/MEIC_CO.05x0666.nc
+MEIC_CO_TRA     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none CO_transportation    /discover/nobackup/jmoch/MEIC/MEIC_CO.05x0666.nc
+MEIC_SO2_AGR     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none SO2_agriculture   /discover/nobackup/jmoch/MEIC/MEIC_SO2.05x0666.nc
+MEIC_SO2_IND     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none SO2_industry   /discover/nobackup/jmoch/MEIC/MEIC_SO2.05x0666.nc
+MEIC_SO2_POW     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none SO2_power   /discover/nobackup/jmoch/MEIC/MEIC_SO2.05x0666.nc
+MEIC_SO2_RES     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none SO2_residential   /discover/nobackup/jmoch/MEIC/MEIC_SO2.05x0666.nc
+MEIC_SO2_TRA     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none SO2_transportation   /discover/nobackup/jmoch/MEIC/MEIC_SO2.05x0666.nc
+MEIC_NH3_AGR     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none NH3_agriculture   /discover/nobackup/jmoch/MEIC/MEIC_NH3.05x0666.nc
+MEIC_NH3_IND     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none NH3_industry   /discover/nobackup/jmoch/MEIC/MEIC_NH3.05x0666.nc
+MEIC_NH3_POW     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none NH3_power   /discover/nobackup/jmoch/MEIC/MEIC_NH3.05x0666.nc
+MEIC_NH3_RES     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none NH3_residential   /discover/nobackup/jmoch/MEIC/MEIC_NH3.05x0666.nc
+MEIC_NH3_TRA     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none NH3_transportation   /discover/nobackup/jmoch/MEIC/MEIC_NH3.05x0666.nc
+MEIC_BCPI_AGR     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none BC_agriculture    /discover/nobackup/jmoch/MEIC/MEIC_BC.05x0666.nc
+MEIC_BCPI_IND     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none BC_industry    /discover/nobackup/jmoch/MEIC/MEIC_BC.05x0666.nc
+MEIC_BCPI_POW     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none BC_power    /discover/nobackup/jmoch/MEIC/MEIC_BC.05x0666.nc
+MEIC_BCPI_RES     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none BC_residential    /discover/nobackup/jmoch/MEIC/MEIC_BC.05x0666.nc
+MEIC_BCPI_TRA     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none BC_transportation    /discover/nobackup/jmoch/MEIC/MEIC_BC.05x0666.nc
+MEIC_OCPI_AGR     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none OC_agriculture    /discover/nobackup/jmoch/MEIC/MEIC_OC.05x0666.nc
+MEIC_OCPI_IND     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none OC_industry    /discover/nobackup/jmoch/MEIC/MEIC_OC.05x0666.nc
+MEIC_OCPI_POW     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none OC_power    /discover/nobackup/jmoch/MEIC/MEIC_OC.05x0666.nc
+MEIC_OCPI_RES     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none OC_residential    /discover/nobackup/jmoch/MEIC/MEIC_OC.05x0666.nc
+MEIC_OCPI_TRA     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none OC_transportation    /discover/nobackup/jmoch/MEIC/MEIC_OC.05x0666.nc
+MEIC_ACET_AGR     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ACET_agriculture  /discover/nobackup/jmoch/MEIC/MEIC_ACET.05x0666.nc
+MEIC_ACET_IND     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ACET_industry  /discover/nobackup/jmoch/MEIC/MEIC_ACET.05x0666.nc
+MEIC_ACET_POW     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ACET_power  /discover/nobackup/jmoch/MEIC/MEIC_ACET.05x0666.nc
+MEIC_ACET_RES     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ACET_residential  /discover/nobackup/jmoch/MEIC/MEIC_ACET.05x0666.nc
+MEIC_ACET_TRA     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ACET_transportation  /discover/nobackup/jmoch/MEIC/MEIC_ACET.05x0666.nc 
+MEIC_CCHO_AGR     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none CCHO_agriculture  /discover/nobackup/jmoch/MEIC/MEIC_CCHO.05x0666.nc
+MEIC_CCHO_IND     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none CCHO_industry  /discover/nobackup/jmoch/MEIC/MEIC_CCHO.05x0666.nc
+MEIC_CCHO_POW     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none CCHO_power  /discover/nobackup/jmoch/MEIC/MEIC_CCHO.05x0666.nc
+MEIC_CCHO_RES     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none CCHO_residential  /discover/nobackup/jmoch/MEIC/MEIC_CCHO.05x0666.nc
+MEIC_CCHO_TRA     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none CCHO_transportation  /discover/nobackup/jmoch/MEIC/MEIC_CCHO.05x0666.nc
+MEIC_ALK1_AGR     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK1_agriculture  /discover/nobackup/jmoch/MEIC/MEIC_ALK1.05x0666.nc
+MEIC_ALK1_IND     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK1_industry  /discover/nobackup/jmoch/MEIC/MEIC_ALK1.05x0666.nc
+MEIC_ALK1_POW     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK1_power  /discover/nobackup/jmoch/MEIC/MEIC_ALK1.05x0666.nc
+MEIC_ALK1_RES     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK1_residential  /discover/nobackup/jmoch/MEIC/MEIC_ALK1.05x0666.nc
+MEIC_ALK1_TRA     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK1_transportation  /discover/nobackup/jmoch/MEIC/MEIC_ALK1.05x0666.nc
+MEIC_ALK2_AGR     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK2_agriculture  /discover/nobackup/jmoch/MEIC/MEIC_ALK2.05x0666.nc
+MEIC_ALK2_IND     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK2_industry  /discover/nobackup/jmoch/MEIC/MEIC_ALK2.05x0666.nc
+MEIC_ALK2_POW     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK2_power  /discover/nobackup/jmoch/MEIC/MEIC_ALK2.05x0666.nc
+MEIC_ALK2_RES     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK2_residential  /discover/nobackup/jmoch/MEIC/MEIC_ALK2.05x0666.nc
+MEIC_ALK2_TRA     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK2_transportation  /discover/nobackup/jmoch/MEIC/MEIC_ALK2.05x0666.nc
+MEIC_ALK3_AGR     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK3_agriculture  /discover/nobackup/jmoch/MEIC/MEIC_ALK3.05x0666.nc
+MEIC_ALK3_IND     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK3_industry  /discover/nobackup/jmoch/MEIC/MEIC_ALK3.05x0666.nc
+MEIC_ALK3_POW     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK3_power  /discover/nobackup/jmoch/MEIC/MEIC_ALK3.05x0666.nc
+MEIC_ALK3_RES     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK3_residential  /discover/nobackup/jmoch/MEIC/MEIC_ALK3.05x0666.nc
+MEIC_ALK3_TRA     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK3_transportation  /discover/nobackup/jmoch/MEIC/MEIC_ALK3.05x0666.nc
+MEIC_ALK4_AGR     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK4_agriculture  /discover/nobackup/jmoch/MEIC/MEIC_ALK4.05x0666.nc
+MEIC_ALK4_IND     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK4_industry  /discover/nobackup/jmoch/MEIC/MEIC_ALK4.05x0666.nc
+MEIC_ALK4_POW     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK4_power  /discover/nobackup/jmoch/MEIC/MEIC_ALK4.05x0666.nc
+MEIC_ALK4_RES     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK4_residential  /discover/nobackup/jmoch/MEIC/MEIC_ALK4.05x0666.nc
+MEIC_ALK4_TRA     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK4_transportation  /discover/nobackup/jmoch/MEIC/MEIC_ALK4.05x0666.nc
+MEIC_ALK5_AGR     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK5_agriculture  /discover/nobackup/jmoch/MEIC/MEIC_ALK5.05x0666.nc
+MEIC_ALK5_IND     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK5_industry  /discover/nobackup/jmoch/MEIC/MEIC_ALK5.05x0666.nc
+MEIC_ALK5_POW     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK5_power  /discover/nobackup/jmoch/MEIC/MEIC_ALK5.05x0666.nc
+MEIC_ALK5_RES     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK5_residential  /discover/nobackup/jmoch/MEIC/MEIC_ALK5.05x0666.nc
+MEIC_ALK5_TRA     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none ALK5_transportation  /discover/nobackup/jmoch/MEIC/MEIC_ALK5.05x0666.nc
+MEIC_HCHO_AGR     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none HCHO_agriculture  /discover/nobackup/jmoch/MEIC/MEIC_HCHO.05x0666.nc
+MEIC_HCHO_IND     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none HCHO_industry  /discover/nobackup/jmoch/MEIC/MEIC_HCHO.05x0666.nc
+MEIC_HCHO_POW     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none HCHO_power  /discover/nobackup/jmoch/MEIC/MEIC_HCHO.05x0666.nc
+MEIC_HCHO_RES     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none HCHO_residential  /discover/nobackup/jmoch/MEIC/MEIC_HCHO.05x0666.nc
+MEIC_HCHO_TRA     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none HCHO_transportation  /discover/nobackup/jmoch/MEIC/MEIC_HCHO.05x0666.nc
+MEIC_MEK_AGR      'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none MEK_agriculture   /discover/nobackup/jmoch/MEIC/MEIC_MEK.05x0666.nc
+MEIC_MEK_IND      'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none MEK_industry   /discover/nobackup/jmoch/MEIC/MEIC_MEK.05x0666.nc
+MEIC_MEK_POW      'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none MEK_power   /discover/nobackup/jmoch/MEIC/MEIC_MEK.05x0666.nc
+MEIC_MEK_RES      'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none MEK_residential   /discover/nobackup/jmoch/MEIC/MEIC_MEK.05x0666.nc
+MEIC_MEK_TRA      'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none MEK_transportation   /discover/nobackup/jmoch/MEIC/MEIC_MEK.05x0666.nc
+MEIC_OLE1_AGR     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none OLE1_agriculture  /discover/nobackup/jmoch/MEIC/MEIC_OLE1.05x0666.nc 
+MEIC_OLE1_IND     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none OLE1_industry  /discover/nobackup/jmoch/MEIC/MEIC_OLE1.05x0666.nc 
+MEIC_OLE1_POW     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none OLE1_power  /discover/nobackup/jmoch/MEIC/MEIC_OLE1.05x0666.nc 
+MEIC_OLE1_RES     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none OLE1_residential  /discover/nobackup/jmoch/MEIC/MEIC_OLE1.05x0666.nc 
+MEIC_OLE1_TRA     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none OLE1_transportation  /discover/nobackup/jmoch/MEIC/MEIC_OLE1.05x0666.nc 
+MEIC_OLE2_AGR     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none OLE2_agriculture  /discover/nobackup/jmoch/MEIC/MEIC_OLE2.05x0666.nc 
+MEIC_OLE2_IND     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none OLE2_industry  /discover/nobackup/jmoch/MEIC/MEIC_OLE2.05x0666.nc 
+MEIC_OLE2_POW     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none OLE2_power  /discover/nobackup/jmoch/MEIC/MEIC_OLE2.05x0666.nc 
+MEIC_OLE2_RES     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none OLE2_residential  /discover/nobackup/jmoch/MEIC/MEIC_OLE2.05x0666.nc 
+MEIC_OLE2_TRA     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none OLE2_transportation  /discover/nobackup/jmoch/MEIC/MEIC_OLE2.05x0666.nc 
+
+#==============================================================================
 # --- DICE-Africa emission inventory (DICE_Africa) ---
 #==============================================================================
 
@@ -470,7 +559,9 @@ QFED_CH4_FT   'kg_m-2_s-1'     N    Y %y4-%m2-%d1T12:00:00   none     none    bi
 #==============================================================================
 # --- Anthropogenic dust emissions (AFCID)---
 #==============================================================================
-# Not used in GEOS
+DEAD_PM25FINE_1     'kg_m-2_s-1'	Y	Y 2015-%m2-01T00:00:00	none	none PM25FINE  /discover/nobackup/jmoch/MEIC/PM25FINE_ECLIPSE_2015.geos.2x25.nc
+DEAD_PM25FINE_2     'kg_m-2_s-1'	N	Y %y4-%m2-01T00:00:00	none	none PM25FINE  /discover/nobackup/jmoch/MEIC/PM25FINE_MEIC_2000_2017.generic.05x0666.nc
+DEAD_PM25FINE_3     'kg_m-2_s-1'	Y	Y 2013-%m2-01T00:00:00	none	none PM25FINE  /discover/nobackup/jmoch/MEIC/PM25FINE_IITB_2013.generic.025x025.nc
 
 #==============================================================================
 # --- Offline dust emissions (OFFLINE_DUST)---
@@ -774,6 +865,7 @@ BROMOCARB_SEASON     '1'        Y    N 2000-%m2-01T00:01:00   none     none    C
 #==============================================================================
 DEAD_SFC_TYP  NA  N V - none none  SFC_TYP    /discover/nobackup/cakelle2/data/dst_tibds.esmf.2x25.nc
 AF_MASK       NA  N V - none none  LANDMASK   /discover/nobackup/cakelle2/data/DICE/mask/AF_LANDMASK.025x025.nc
+CHINA_MASK    NA  N V - none none  MASK   /discover/nobackup/jmoch/MEIC/China_mask.generic.1x1.nc
 
 %%
 

@@ -79,6 +79,7 @@ Warnings:                    1
     --> NEI2011_MONMEAN        :       false
     --> MIX                    :       false
     --> DICE_Africa            :       true
+    --> MEIC                   :       false
 # ----- GLOBAL INVENTORIES ------------------
     --> CEDS                   :       false
     --> EDGARv43               :       false
@@ -252,6 +253,122 @@ Warnings:                    1
 #==============================================================================
 # MIX emissions turned off; put entry here if turning on
 #==============================================================================
+
+#==============================================================================
+# --- MEIC (China)
+#==============================================================================
+(((MEIC
+0 MEIC_NO_AGR     /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_NO.05x0666.nc    NO_agriculture         2000-2017/1-12/1/0 C xy kg/m2/s  NO    301/306/1009     1/2 50
+0 MEIC_NO_IND     /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_NO.05x0666.nc    NO_industry            2000-2017/1-12/1/0 C xy kg/m2/s  NO    302/307/1009     1/2 50
+0 MEIC_NO_POW     /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_NO.05x0666.nc    NO_power               2000-2017/1-12/1/0 C xy kg/m2/s  NO    303/308/1009     1/2 50
+0 MEIC_NO_RES     /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_NO.05x0666.nc    NO_residential         2000-2017/1-12/1/0 C xy kg/m2/s  NO    304/309/1009     1/2 50
+0 MEIC_NO_TRA     /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_NO.05x0666.nc    NO_transportation      2000-2017/1-12/1/0 C xy kg/m2/s  NO    305/310/1009     1/2 50
+0 MEIC_CO_AGR     /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_CO.05x0666.nc    CO_agriculture         2000-2017/1-12/1/0 C xy kg/m2/s  CO    301/306/1009     1/2 50
+0 MEIC_SOAP_AGR   -                                                                    -                      -                  - -  -        SOAP  301/306/1009/280 1/2 50
+0 MEIC_CO_IND     /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_CO.05x0666.nc    CO_industry            2000-2017/1-12/1/0 C xy kg/m2/s  CO    302/307/1009     1/2 50
+0 MEIC_SOAP_IND   -                                                                    -                      -                  - -  -        SOAP  302/307/1009/280 1/2 50
+0 MEIC_CO_POW     /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_CO.05x0666.nc    CO_power               2000-2017/1-12/1/0 C xy kg/m2/s  CO    303/308/1009     1/2 50
+0 MEIC_SOAP_POW   -                                                                    -                      -                  - -  -        SOAP  303/308/1009/280 1/2 50
+0 MEIC_CO_RES     /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_CO.05x0666.nc    CO_residential         2000-2017/1-12/1/0 C xy kg/m2/s  CO    304/309/1009     1/2 50
+0 MEIC_SOAP_RES   -                                                                    -                      -                  - -  -        SOAP  304/309/1009/280 1/2 50
+0 MEIC_CO_TRA     /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_CO.05x0666.nc    CO_transportation      2000-2017/1-12/1/0 C xy kg/m2/s  CO    305/310/1009     1/2 50
+0 MEIC_SOAP_TRA   -                                                                    -                      -                  - -  -        SOAP  305/310/1009/280 1/2 50
+0 MEIC_SO2_AGR    /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_SO2.05x0666.nc   SO2_agriculture        2000-2017/1-12/1/0 C xy kg/m2/s  SO2   301/306/1009     1/2 50
+0 MEIC_SO4_AGR    -                                                   -                      -                  - -  -                         SO4   301/306/63/1009  1/2 50
+0 MEIC_pFe_AGR    -                                                   -                      -                  - -  -                         pFe   301/306/66/1009  1/2 50
+0 MEIC_SO2_IND    /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_SO2.05x0666.nc   SO2_industry           2000-2017/1-12/1/0 C xy kg/m2/s  SO2   302/307/1009     1/2 50
+0 MEIC_SO4_IND    -                                                   -                      -                  - -  -                         SO4   302/307/63/1009  1/2 50
+0 MEIC_pFe_IND    -                                                   -                      -                  - -  -                         pFe   302/307/66/1009  1/2 50
+0 MEIC_SO2_POW    /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_SO2.05x0666.nc   SO2_power              2000-2017/1-12/1/0 C xy kg/m2/s  SO2   303/308/1009     1/2 50
+0 MEIC_SO4_POW    -                                                   -                      -                  - -  -                         SO4   303/308/63/1009  1/2 50
+0 MEIC_pFe_POW    -                                                   -                      -                  - -  -                         pFe   303/308/66/1009  1/2 50
+0 MEIC_SO2_RES    /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_SO2.05x0666.nc   SO2_residential        2000-2017/1-12/1/0 C xy kg/m2/s  SO2   304/309/1009     1/2 50
+0 MEIC_SO4_RES    -                                                   -                      -                  - -  -                         SO4   304/309/63/1009  1/2 50
+0 MEIC_pFe_RES    -                                                   -                      -                  - -  -                         pFe   304/309/66/1009  1/2 50
+0 MEIC_SO2_TRA    /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_SO2.05x0666.nc   SO2_transportation     2000-2017/1-12/1/0 C xy kg/m2/s  SO2   305/310/1009     1/2 50
+0 MEIC_SO4_TRA    -                                                   -                      -                  - -  -                         SO4   305/310/63/1009  1/2 50
+0 MEIC_pFe_TRA    -                                                   -                      -                  - -  -                         pFe   305/310/66/1009  1/2 50
+0 MEIC_NH3_AGR    /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_NH3.05x0666.nc   NH3_agriculture        2000-2017/1-12/1/0 C xy kg/m2/s  NH3   301/306/1009     1/2 50
+0 MEIC_NH3_IND    /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_NH3.05x0666.nc   NH3_industry           2000-2017/1-12/1/0 C xy kg/m2/s  NH3   302/307/1009     1/2 50
+0 MEIC_NH3_POW    /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_NH3.05x0666.nc   NH3_power              2000-2017/1-12/1/0 C xy kg/m2/s  NH3   303/308/1009     1/2 50
+0 MEIC_NH3_RES    /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_NH3.05x0666.nc   NH3_residential        2000-2017/1-12/1/0 C xy kg/m2/s  NH3   304/309/1009     1/2 50
+0 MEIC_NH3_TRA    /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_NH3.05x0666.nc   NH3_transportation     2000-2017/1-12/1/0 C xy kg/m2/s  NH3   305/310/1009     1/2 50
+0 MEIC_BCPI_AGR   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_BC.05x0666.nc    BC_agriculture         2000-2017/1-12/1/0 C xy kg/m2/s  BCPI  301/306/70/1009 1/2 50
+0 MEIC_BCPO_AGR   -                                                   -                      -                  - -  -                         BCPO  301/306/71/1009 1/2 50
+0 MEIC_BCPI_IND   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_BC.05x0666.nc    BC_industry            2000-2017/1-12/1/0 C xy kg/m2/s  BCPI  302/307/70/1009 1/2 50
+0 MEIC_BCPO_IND   -                                                   -                      -                  - -  -                         BCPO  302/307/71/1009 1/2 50
+0 MEIC_BCPI_POW   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_BC.05x0666.nc    BC_power               2000-2017/1-12/1/0 C xy kg/m2/s  BCPI  303/308/70/1009 1/2 50
+0 MEIC_BCPO_POW   -                                                   -                      -                  - -  -                         BCPO  303/308/71/1009 1/2 50
+0 MEIC_BCPI_RES   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_BC.05x0666.nc    BC_residential         2000-2017/1-12/1/0 C xy kg/m2/s  BCPI  304/309/70/1009 1/2 50
+0 MEIC_BCPO_RES   -                                                   -                      -                  - -  -                         BCPO  304/309/71/1009 1/2 50
+0 MEIC_BCPI_TRA   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_BC.05x0666.nc    BC_transportation      2000-2017/1-12/1/0 C xy kg/m2/s  BCPI  305/310/70/1009 1/2 50
+0 MEIC_BCPO_TRA   -                                                   -                      -                  - -  -                         BCPO  305/310/71/1009 1/2 50
+0 MEIC_OCPI_AGR   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_OC.05x0666.nc    OC_agriculture         2000-2017/1-12/1/0 C xy kg/m2/s  OCPI  301/306/72/1009 1/2 50
+0 MEIC_OCPO_AGR   -                                                   -                      -                  - -  -                         OCPO  301/306/73/1009 1/2 50
+0 MEIC_OCPI_IND   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_OC.05x0666.nc    OC_industry            2000-2017/1-12/1/0 C xy kg/m2/s  OCPI  302/307/72/1009 1/2 50
+0 MEIC_OCPO_IND   -                                                   -                      -                  - -  -                         OCPO  302/307/73/1009 1/2 50
+0 MEIC_OCPI_POW   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_OC.05x0666.nc    OC_power               2000-2017/1-12/1/0 C xy kg/m2/s  OCPI  303/308/72/1009 1/2 50
+0 MEIC_OCPO_POW   -                                                   -                      -                  - -  -                         OCPO  303/308/73/1009 1/2 50
+0 MEIC_OCPI_RES   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_OC.05x0666.nc    OC_residential         2000-2017/1-12/1/0 C xy kg/m2/s  OCPI  304/309/72/1009 1/2 50
+0 MEIC_OCPO_RES   -                                                   -                      -                  - -  -                         OCPO  304/309/73/1009 1/2 50
+0 MEIC_OCPI_TRA   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_OC.05x0666.nc    OC_transportation      2000-2017/1-12/1/0 C xy kg/m2/s  OCPI  305/310/72/1009 1/2 50
+0 MEIC_OCPO_TRA   -                                                   -                      -                  - -  -                         OCPO  305/310/73/1009 1/2 50
+0 MEIC_ACET_AGR   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ACET.05x0666.nc  ACET_agriculture       2000-2017/1-12/1/0 C xy kgC/m2/s ACET  301/306/1009     1/2 50
+0 MEIC_ACET_IND   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ACET.05x0666.nc  ACET_industry          2000-2017/1-12/1/0 C xy kgC/m2/s ACET  302/307/1009     1/2 50
+0 MEIC_ACET_POW   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ACET.05x0666.nc  ACET_power             2000-2017/1-12/1/0 C xy kgC/m2/s ACET  303/308/1009     1/2 50
+0 MEIC_ACET_RES   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ACET.05x0666.nc  ACET_residential       2000-2017/1-12/1/0 C xy kgC/m2/s ACET  304/309/1009     1/2 50
+0 MEIC_ACET_TRA   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ACET.05x0666.nc  ACET_transportation    2000-2017/1-12/1/0 C xy kgC/m2/s ACET  305/310/1009     1/2 50
+0 MEIC_CCHO_AGR   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_CCHO.05x0666.nc  CCHO_agriculture       2000-2017/1-12/1/0 C xy kgC/m2/s ALD2  301/306/1009     1/2 50
+0 MEIC_CCHO_IND   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_CCHO.05x0666.nc  CCHO_industry          2000-2017/1-12/1/0 C xy kgC/m2/s ALD2  302/307/1009     1/2 50
+0 MEIC_CCHO_POW   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_CCHO.05x0666.nc  CCHO_power             2000-2017/1-12/1/0 C xy kgC/m2/s ALD2  303/308/1009     1/2 50
+0 MEIC_CCHO_RES   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_CCHO.05x0666.nc  CCHO_residential       2000-2017/1-12/1/0 C xy kgC/m2/s ALD2  304/309/1009     1/2 50
+0 MEIC_CCHO_TRA   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_CCHO.05x0666.nc  CCHO_transportation    2000-2017/1-12/1/0 C xy kgC/m2/s ALD2  305/310/1009     1/2 50
+0 MEIC_ALK1_AGR   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK1.05x0666.nc  ALK1_agriculture       2000-2017/1-12/1/0 C xy kgC/m2/s C2H6  301/306/1009     1/2 50
+0 MEIC_ALK1_IND   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK1.05x0666.nc  ALK1_industry          2000-2017/1-12/1/0 C xy kgC/m2/s C2H6  302/307/1009     1/2 50
+0 MEIC_ALK1_POW   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK1.05x0666.nc  ALK1_power             2000-2017/1-12/1/0 C xy kgC/m2/s C2H6  303/308/1009     1/2 50
+0 MEIC_ALK1_RES   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK1.05x0666.nc  ALK1_residential       2000-2017/1-12/1/0 C xy kgC/m2/s C2H6  304/309/1009     1/2 50
+0 MEIC_ALK1_TRA   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK1.05x0666.nc  ALK1_transportation    2000-2017/1-12/1/0 C xy kgC/m2/s C2H6  305/310/1009     1/2 50
+0 MEIC_ALK2_AGR   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK2.05x0666.nc  ALK2_agriculture       2000-2017/1-12/1/0 C xy kgC/m2/s C3H8  301/306/1009     1/2 50
+0 MEIC_ALK2_IND   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK2.05x0666.nc  ALK2_industry          2000-2017/1-12/1/0 C xy kgC/m2/s C3H8  302/307/1009     1/2 50
+0 MEIC_ALK2_POW   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK2.05x0666.nc  ALK2_power             2000-2017/1-12/1/0 C xy kgC/m2/s C3H8  303/308/1009     1/2 50
+0 MEIC_ALK2_RES   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK2.05x0666.nc  ALK2_residential       2000-2017/1-12/1/0 C xy kgC/m2/s C3H8  304/309/1009     1/2 50
+0 MEIC_ALK2_TRA   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK2.05x0666.nc  ALK2_transportation    2000-2017/1-12/1/0 C xy kgC/m2/s C3H8  305/310/1009     1/2 50
+0 MEIC_ALK3_AGR   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK3.05x0666.nc  ALK3_agriculture       2000-2017/1-12/1/0 C xy kgC/m2/s ALK4  301/306/1009     1/2 50
+0 MEIC_ALK3_IND   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK3.05x0666.nc  ALK3_industry          2000-2017/1-12/1/0 C xy kgC/m2/s ALK4  302/307/1009     1/2 50
+0 MEIC_ALK3_POW   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK3.05x0666.nc  ALK3_power             2000-2017/1-12/1/0 C xy kgC/m2/s ALK4  303/308/1009     1/2 50
+0 MEIC_ALK3_RES   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK3.05x0666.nc  ALK3_residential       2000-2017/1-12/1/0 C xy kgC/m2/s ALK4  304/309/1009     1/2 50
+0 MEIC_ALK3_TRA   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK3.05x0666.nc  ALK3_transportation    2000-2017/1-12/1/0 C xy kgC/m2/s ALK4  305/310/1009     1/2 50
+0 MEIC_ALK4_AGR   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK4.05x0666.nc  ALK4_agriculture       2000-2017/1-12/1/0 C xy kgC/m2/s ALK4  301/306/1009     1/2 50
+0 MEIC_ALK4_IND   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK4.05x0666.nc  ALK4_industry          2000-2017/1-12/1/0 C xy kgC/m2/s ALK4  302/307/1009     1/2 50
+0 MEIC_ALK4_POW   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK4.05x0666.nc  ALK4_power             2000-2017/1-12/1/0 C xy kgC/m2/s ALK4  303/308/1009     1/2 50
+0 MEIC_ALK4_RES   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK4.05x0666.nc  ALK4_residential       2000-2017/1-12/1/0 C xy kgC/m2/s ALK4  304/309/1009     1/2 50
+0 MEIC_ALK4_TRA   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK4.05x0666.nc  ALK4_transportation    2000-2017/1-12/1/0 C xy kgC/m2/s ALK4  305/310/1009     1/2 50
+0 MEIC_ALK5_AGR   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK5.05x0666.nc  ALK5_agriculture       2000-2017/1-12/1/0 C xy kgC/m2/s ALK4  301/306/1009     1/2 50
+0 MEIC_ALK5_IND   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK5.05x0666.nc  ALK5_industry          2000-2017/1-12/1/0 C xy kgC/m2/s ALK4  302/307/1009     1/2 50
+0 MEIC_ALK5_POW   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK5.05x0666.nc  ALK5_power             2000-2017/1-12/1/0 C xy kgC/m2/s ALK4  303/308/1009     1/2 50
+0 MEIC_ALK5_RES   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK5.05x0666.nc  ALK5_residential       2000-2017/1-12/1/0 C xy kgC/m2/s ALK4  304/309/1009     1/2 50
+0 MEIC_ALK5_TRA   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_ALK5.05x0666.nc  ALK5_transportation    2000-2017/1-12/1/0 C xy kgC/m2/s ALK4  305/310/1009     1/2 50
+0 MEIC_HCHO_AGR   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_HCHO.05x0666.nc  HCHO_agriculture       2000-2017/1-12/1/0 C xy kgC/m2/s CH2O  301/306/1009     1/2 50
+0 MEIC_HCHO_IND   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_HCHO.05x0666.nc  HCHO_industry          2000-2017/1-12/1/0 C xy kgC/m2/s CH2O  302/307/1009     1/2 50
+0 MEIC_HCHO_POW   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_HCHO.05x0666.nc  HCHO_power             2000-2017/1-12/1/0 C xy kgC/m2/s CH2O  303/308/1009     1/2 50
+0 MEIC_HCHO_RES   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_HCHO.05x0666.nc  HCHO_residential       2000-2017/1-12/1/0 C xy kgC/m2/s CH2O  304/309/1009     1/2 50
+0 MEIC_HCHO_TRA   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_HCHO.05x0666.nc  HCHO_transportation    2000-2017/1-12/1/0 C xy kgC/m2/s CH2O  305/310/1009     1/2 50
+0 MEIC_MEK_AGR    /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_MEK.05x0666.nc   MEK_agriculture        2000-2017/1-12/1/0 C xy kgC/m2/s MEK   301/306/1009     1/2 50
+0 MEIC_MEK_IND    /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_MEK.05x0666.nc   MEK_industry           2000-2017/1-12/1/0 C xy kgC/m2/s MEK   302/307/1009     1/2 50
+0 MEIC_MEK_POW    /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_MEK.05x0666.nc   MEK_power              2000-2017/1-12/1/0 C xy kgC/m2/s MEK   303/308/1009     1/2 50
+0 MEIC_MEK_RES    /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_MEK.05x0666.nc   MEK_residential        2000-2017/1-12/1/0 C xy kgC/m2/s MEK   304/309/1009     1/2 50
+0 MEIC_MEK_TRA    /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_MEK.05x0666.nc   MEK_transportation     2000-2017/1-12/1/0 C xy kgC/m2/s MEK   305/310/1009     1/2 50
+0 MEIC_OLE1_AGR   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_OLE1.05x0666.nc  OLE1_agriculture       2000-2017/1-12/1/0 C xy kgC/m2/s PRPE  301/306/1009     1/2 50
+0 MEIC_OLE1_IND   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_OLE1.05x0666.nc  OLE1_industry          2000-2017/1-12/1/0 C xy kgC/m2/s PRPE  302/307/1009     1/2 50
+0 MEIC_OLE1_POW   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_OLE1.05x0666.nc  OLE1_power             2000-2017/1-12/1/0 C xy kgC/m2/s PRPE  303/308/1009     1/2 50
+0 MEIC_OLE1_RES   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_OLE1.05x0666.nc  OLE1_residential       2000-2017/1-12/1/0 C xy kgC/m2/s PRPE  304/309/1009     1/2 50
+0 MEIC_OLE1_TRA   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_OLE1.05x0666.nc  OLE1_transportation    2000-2017/1-12/1/0 C xy kgC/m2/s PRPE  305/310/1009     1/2 50
+0 MEIC_OLE2_AGR   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_OLE2.05x0666.nc  OLE2_agriculture       2000-2017/1-12/1/0 C xy kgC/m2/s PRPE  301/306/1009     1/2 50
+0 MEIC_OLE2_IND   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_OLE2.05x0666.nc  OLE2_industry          2000-2017/1-12/1/0 C xy kgC/m2/s PRPE  302/307/1009     1/2 50
+0 MEIC_OLE2_POW   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_OLE2.05x0666.nc  OLE2_power             2000-2017/1-12/1/0 C xy kgC/m2/s PRPE  303/308/1009     1/2 50
+0 MEIC_OLE2_RES   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_OLE2.05x0666.nc  OLE2_residential       2000-2017/1-12/1/0 C xy kgC/m2/s PRPE  304/309/1009     1/2 50
+0 MEIC_OLE2_TRA   /n/holylfs/LABS/jacob_lab/jmoch/MEIC_emissions/MEIC_OLE2.05x0666.nc  OLE2_transportation    2000-2017/1-12/1/0 C xy kgC/m2/s PRPE  305/310/1009     1/2 50
+)))MEIC
 
 #==============================================================================
 # --- DICE-Africa emission inventory (Marais and Wiedinmyer, ES&T, 2016) ---
@@ -727,6 +844,11 @@ Warnings:                    1
 #==============================================================================
 #  AFCID emissions turned off; put entry here if turning on
 #==============================================================================
+(((AFCID
+105 DEAD_PM25FINE_1 ~data/stuff                     PM25FINE 2015/1-12/1/0      C xy kg/m2/s  DST1 -    1 1
+105 DEAD_PM25FINE_2 ~/data/stuff                    PM25FINE 2000-2017/1-12/1/0 C xy kg/m2/s  DST1 1009 1 2
+#105 DEAD_PM25FINE_3 ~/data/stuff                    PM25FINE 2013/1-12/1/0      C xy kg/m2/s  DST1 1010 1 3
+)))AFCID
 
 #==============================================================================
 #  OFFLINE_DUST emissions turned off; put entry here if turning on
@@ -1796,6 +1918,20 @@ Warnings:                    1
 411 HTAP_MONTHLY_SO2_ENERGY      /see/ExtData.rc emi_so2 2010/1-12/1/0 C xy unitless 1
 412 HTAP_MONTHLY_SO2_RESIDENTIAL /see/ExtData.rc emi_so2 2010/1-12/1/0 C xy unitless 1
 
+#==============================================================================
+# --- MEIC scale factors --- from lushen 2018.5.11
+#==============================================================================
+301 MEIC_DOW_AGR 0.994/1.001/1.001/1.001/1.001/1.001/1.001 - - - xy 1 1
+302 MEIC_DOW_IND 0.539/1.134/1.134/1.134/1.134/1.134/0.791 - - - xy 1 1
+303 MEIC_DOW_POW 0.910/1.029/1.029/1.029/1.029/1.029/0.945 - - - xy 1 1
+304 MEIC_DOW_RES 0.994/1.001/1.001/1.001/1.001/1.001/1.001 - - - xy 1 1
+305 MEIC_DOW_TRA 0.756/1.085/1.085/1.085/1.085/1.085/0.819 - - - xy 1 1
+306 MEIC_TOD_AGR 0.504/0.456/0.456/0.432/0.456/0.504/0.696/0.792/1.128/1.392/1.680/1.872/2.136/1.968/1.920/1.680/1.440/1.056/0.720/0.648/0.552/0.504/0.504/0.504 - - - xy 1 1
+307 MEIC_TOD_IND 0.624/0.168/0.168/0.168/0.168/0.168/0.168/0.696/1.080/1.632/1.632/1.632/1.632/1.632/1.632/1.632/1.632/1.584/1.512/0.888/0.888/0.888/0.888/0.888 - - - xy 1 1
+308 MEIC_TOD_POW 0.780/0.720/0.691/0.682/0.701/0.758/0.850/0.967/1.039/1.097/1.147/1.166/1.186/1.193/1.202/1.200/1.193/1.174/1.145/1.135/1.118/1.056/0.953/0.847 - - - xy 1 1
+309 MEIC_TOD_RES 0.432/0.432/0.432/0.432/0.432/0.912/1.800/1.800/0.912/0.912/0.720/1.080/1.080/0.912/0.720/0.720/0.912/1.800/1.800/1.800/1.800/1.296/0.432/0.432 - - - xy 1 1
+310 MEIC_TOD_TRA 0.415/0.317/0.331/0.360/0.372/0.377/0.696/1.354/1.438/1.416/1.426/1.296/1.202/1.409/1.440/1.488/1.426/1.378/1.337/1.176/1.090/1.001/0.739/0.518 - - - xy 1 1
+
 )))EMISSIONS
 
 #==============================================================================
@@ -1833,10 +1969,10 @@ Warnings:                    1
 1008 AF_MASK     $ROOT/MASKS/v2014-07/AF_LANDMASK.geos.05x0666.nc              LANDMASK 1985/1/1/0 C xy unitless 1 -20/-37/54/40
 )))DICE_Africa
 
-(((AFCID
+(((AFCID.or.MEIC
 1009 CHINA_MASK  $ROOT/MASKS/v2018-09/China_mask.generic.1x1.nc                MASK     2000/1/1/0 C xy 1 1  70/10/150/60
-1010 INDIA_MASK  $ROOT/MASKS/v2019-05/India_mask.generic.1x1.nc                MASK     2000/1/1/0 C xy 1 1  67/7/99/39
-)))AFCID
+#1010 INDIA_MASK  $ROOT/MASKS/v2019-05/India_mask.generic.1x1.nc                MASK     2000/1/1/0 C xy 1 1  67/7/99/39
+)))AFCID.or.MEIC
 
 )))EMISSIONS
 
