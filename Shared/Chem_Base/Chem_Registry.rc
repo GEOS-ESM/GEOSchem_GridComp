@@ -131,6 +131,7 @@ pass_GEOSCHEM_OC:      no  # &YesNo Use GEOS-Chem organic carbon?
 pass_GEOSCHEM_Rn:      no  # &YesNo Use GEOS-Chem radon?
 pass_GEOSCHEM_SS:      no  # &YesNo Use GEOS-Chem sea salt?
 pass_GEOSCHEM_SU:      no  # &YesNo Use GEOS-Chem sulfates?
+pass_GEOSCHEM_ZERO:      no  # &YesNo zero our GEOS-Chem aerosols?
 pass_GEOSCHEM_verbose: no  # &YesNo turn on print statements?
 
 # Variable names to override defaults.  Optional.  Name and Units must 

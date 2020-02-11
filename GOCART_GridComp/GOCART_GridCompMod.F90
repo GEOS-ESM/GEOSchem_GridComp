@@ -4182,19 +4182,27 @@ end subroutine aerosol_activation_properties
 
       ! BCPO
       int_name = 'GOCART::BCphobic_ForBundle'
-      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_BCPO',rc=status)
-      VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_Int = 0.0
+      else
+         call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_BCPO',rc=status)
+         VERIFY_(STATUS)
+         ptr3d_Int = ptr3d_GC
+      endif
 
       ! BCPI
       int_name = 'GOCART::BCphilic_ForBundle'
-      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_BCPI',rc=status)
-      VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_Int = 0.0
+      else
+         call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_BCPI',rc=status)
+         VERIFY_(STATUS)
+         ptr3d_Int = ptr3d_GC
+      endif
 
    endif
 
@@ -4242,37 +4250,56 @@ end subroutine aerosol_activation_properties
 
       ! dust 1
       int_name = 'GOCART::du001_ForBundle'
-      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_DST1',rc=status)
-      VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_Int = 0.0
+      else
+         call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_DST1',rc=status)
+         VERIFY_(STATUS)
+         ptr3d_Int = ptr3d_GC
+      endif
+
 
       ! dust 2
       int_name = 'GOCART::du002_ForBundle'
-      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_DST2',rc=status)
-      VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_Int = 0.0
+      else
+         call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_DST2',rc=status)
+         VERIFY_(STATUS)
+         ptr3d_Int = ptr3d_GC
+      endif
 
       ! dust 3
       int_name = 'GOCART::du003_ForBundle'
-      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_DST3',rc=status)
-      VERIFY_(STATUS)
+      
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_Int = 0.0
+      else
+         call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_DST3',rc=status)
+         VERIFY_(STATUS)
+         ptr3d_Int = ptr3d_GC
+      endif
 
       ! dust 4
       int_name = 'GOCART::du004_ForBundle'
-      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_DST4',rc=status)
-      VERIFY_(STATUS)
+      
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
-
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_Int = 0.0
+      else
+         call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_DST4',rc=status)
+         VERIFY_(STATUS)      
+         ptr3d_Int = ptr3d_GC
+      endif
       ! dust 5
+
       int_name = 'GOCART::du005_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
@@ -4331,37 +4358,57 @@ end subroutine aerosol_activation_properties
       int_name = 'GOCART::NH3_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = ptr3d_GC_NH3
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_int = 0.0
+      else
+         ptr3d_int = ptr3d_GC_NH3
+      endif
 
       ! NH4a
       int_name = 'GOCART::NH4a_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = ptr3d_GC_NH4
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_int = 0.0
+      else
+         ptr3d_int = ptr3d_GC_NH4
+      endif
 
       ! NO3an1
       int_name = 'GOCART::NO3an1_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = ptr3d_GC_NIT + ptr3d_GC_NITS *                              &
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_Int = 0.0
+      else
+         ptr3d_int = ptr3d_GC_NIT + ptr3d_GC_NITS *                              &
               ( GC_FracSALA * ( 1 - GC_FracSALA_wt002 - GC_FracSALA_wt003 ) + &
-                GC_FracSALC * GC_FracSALC_wt001 )
+              GC_FracSALC * GC_FracSALC_wt001 )
+      endif
 
       ! NO3an2
       int_name = 'GOCART::NO3an2_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = ptr3d_GC_NITS *      &
-                  ( GC_FracSALA * GC_FracSALA_wt002 + &
-                    GC_FracSALC * GC_FracSALC_wt002 )
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_Int = 0.0
+      else
+         ptr3d_int = ptr3d_GC_NITS *      &
+              ( GC_FracSALA * GC_FracSALA_wt002 + &
+              GC_FracSALC * GC_FracSALC_wt002 )
+      endif
 
       ! NO3an3
       int_name = 'GOCART::NO3an3_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = ptr3d_GC_NITS *     &
-               ( GC_FracSALA *  GC_FracSALA_wt003 +  &
-                 GC_FracSALC * ( 1 - GC_FracSALC_wt001 - GC_FracSALC_wt002 ) )
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_Int = 0.0
+      else
+         ptr3d_int = ptr3d_GC_NITS *     &
+              ( GC_FracSALA *  GC_FracSALA_wt003 +  &
+              GC_FracSALC * ( 1 - GC_FracSALC_wt001 - GC_FracSALC_wt002 ) )
+      endif
 
       ! Clean up
       if ( allocated(GC_FracSALA) ) deallocate(GC_FracSALA)
@@ -4381,19 +4428,28 @@ end subroutine aerosol_activation_properties
 
       ! OCPO
       int_name = 'GOCART::OCphobic_ForBundle'
-      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_OCPO',rc=status)
-      VERIFY_(STATUS)
+      
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_Int = 0.0
+      else
+         call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_OCPO',rc=status)
+         VERIFY_(STATUS)
+         ptr3d_Int = ptr3d_GC
+      endif
 
       ! OCPI
       int_name = 'GOCART::OCphilic_ForBundle'
-      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_OCPI',rc=status)
-      VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_Int = 0.0
+      else
+         call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_OCPI',rc=status)
+         VERIFY_(STATUS)
+         ptr3d_Int = ptr3d_GC
+      endif
 
    endif
 
@@ -4418,38 +4474,58 @@ end subroutine aerosol_activation_properties
       int_name = 'GOCART::ss001_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = ptr3d_GC_SALA * ( 1.0 - GC_SALA_wt002 -           &
-                  GC_SALA_wt003 - GC_SALA_wt004 - GC_SALA_wt005 ) + &
-                  GC_SALC_wt001 * ptr3d_GC_SALC
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_int = 0.0
+      else
+         ptr3d_int = ptr3d_GC_SALA * ( 1.0 - GC_SALA_wt002 -           &
+              GC_SALA_wt003 - GC_SALA_wt004 - GC_SALA_wt005 ) + &
+              GC_SALC_wt001 * ptr3d_GC_SALC
+      endif
 
       ! ss002
       int_name = 'GOCART::ss002_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = GC_SALA_wt002 * ptr3d_GC_SALA + &
-                  GC_SALC_wt002 * ptr3d_GC_SALC
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_int = 0.0
+      else
+         ptr3d_int = GC_SALA_wt002 * ptr3d_GC_SALA + &
+              GC_SALC_wt002 * ptr3d_GC_SALC
+      endif
 
       ! ss003
       int_name = 'GOCART::ss003_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = GC_SALA_wt003 * ptr3d_GC_SALA + &
-                  GC_SALC_wt003 * ptr3d_GC_SALC
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_int = 0.0
+      else
+         ptr3d_int = GC_SALA_wt003 * ptr3d_GC_SALA + &
+              GC_SALC_wt003 * ptr3d_GC_SALC
+      endif
 
       ! ss004
       int_name = 'GOCART::ss004_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = GC_SALA_wt004 * ptr3d_GC_SALA + &
-                  GC_SALC_wt004 * ptr3d_GC_SALC
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_int = 0.0
+      else
+         ptr3d_int = GC_SALA_wt004 * ptr3d_GC_SALA + &
+              GC_SALC_wt004 * ptr3d_GC_SALC
+      endif
 
       ! ss005
       int_name = 'GOCART::ss005_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int =  GC_SALA_wt005 * ptr3d_GC_SALA +         &
-                   ptr3d_GC_SALC * ( 1.0 - GC_SALC_wt001 - &
-                   GC_SALC_wt002 - GC_SALC_wt003 - GC_SALC_wt004 )
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_int = 0.0
+      else
+         ptr3d_int =  GC_SALA_wt005 * ptr3d_GC_SALA +         &
+              ptr3d_GC_SALC * ( 1.0 - GC_SALC_wt001 - &
+              GC_SALC_wt002 - GC_SALC_wt003 - GC_SALC_wt004 )
+      endif
 
    endif
 
@@ -4461,40 +4537,56 @@ end subroutine aerosol_activation_properties
 
       ! DMS
       int_name = 'GOCART::DMS_ForBundle'
-      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_DMS',rc=status)
-      VERIFY_(STATUS)
+      
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_int = 0.0
+      else
+         call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_DMS',rc=status)
+         VERIFY_(STATUS)      
+         ptr3d_Int = ptr3d_GC
+      endif
 
       ! SO2
       1int_name = 'GOCART::SO2_ForBundle'
-      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_SO2',rc=status)
-      VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_int = 0.0
+      else
+         call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_SO2',rc=status)
+         VERIFY_(STATUS)
+         ptr3d_Int = ptr3d_GC
+      endif
 
-      ! HMS
-      call MAPL_GetPointer(impChem,ptr3d_GC_HMS,'GEOSCHEM_HMS',rc=status)
-      VERIFY_(STATUS)
 
       ! SO4
       int_name = 'GOCART::SO4_ForBundle'
-      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_SO4',rc=status)
-      VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC + ( ptr3d_GC_HMS * 96.0 / 111.0 )
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_int = 0.0
+      else
+         call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_SO4',rc=status)
+         VERIFY_(STATUS)
+         ! HMS
+         call MAPL_GetPointer(impChem,ptr3d_GC_HMS,'GEOSCHEM_HMS',rc=status)
+         VERIFY_(STATUS)
+         ptr3d_Int = ptr3d_GC + ( ptr3d_GC_HMS * 96.0 / 111.0 )
+      endif
 
       ! MSA
       int_name = 'GOCART::MSA_ForBundle'
-      call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_MSA',rc=status)
-      VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
-
+      if (w_c%reg%pass_GEOSCHEM_ZERO ) then
+         ptr3d_int = 0.0
+      else
+         call MAPL_GetPointer(impChem,ptr3d_GC,'GEOSCHEM_MSA',rc=status)
+         VERIFY_(STATUS)
+         ptr3d_Int = ptr3d_GC
+      endif
 
    endif
 
