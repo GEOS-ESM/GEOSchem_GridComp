@@ -4,8 +4,8 @@ PrimaryExports%%
 #  Name        | Units | Clim  | Method |     Time Template    | Factor | Factor |     File    | Template |
 # -------------|-------|-------|--------|----------------------|--------|--------|-------------|----------|
 CO_BIOMASS NA  N Y %y4-%m2-%d2t12:00:00 none 1.11 biomass ExtData/MERRA2/sfc/HFED/v1.0/Y%y4/hfed.emis_co.x576_y361_t14.%y4.nc4
-CO_OH NA  N Y %y4-%m2-%d2t12:00:00 none none oh ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
-CO_CH4 NA  N Y %y4-%m2-%d2t12:00:00 none none ch4 ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
+CO_OH NA  N Y %y4-%m2-%d2t12:00:00 none none OH ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
+CO_CH4 NA  N Y %y4-%m2-%d2t12:00:00 none none CH4 ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
 CO_BF NA  Y Y %y4-%m2-%d2t12:00:00 none 1.19 emcobf /dev/null
 CO_FS NA  N Y %y4-%m2-%d2t12:00:00 none 1.20 emcofs ExtData/MERRA2/sfc/edgar-v42.emis_co.anthropogenic.x1152_y721.19700703T12z_20200703T00z.w1A4.nc4
 CO_ISOP NA  Y Y %y4-%m2-%d2t12:00:00 none 0.2 emcoisop ExtData/AeroCom/sfc/co_biogenic.x288_y181_t12.2006.nc

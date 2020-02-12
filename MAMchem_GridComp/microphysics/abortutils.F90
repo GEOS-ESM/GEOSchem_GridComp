@@ -3,7 +3,7 @@
 module abortutils
 
   use cam_logfile, only: iulog
-  use MAPL_Mod
+  use MAPL
 
   implicit none
   private

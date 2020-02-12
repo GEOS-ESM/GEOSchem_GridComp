@@ -12,7 +12,7 @@
 !
 ! !USES:
       use ESMF
-      use MAPL_Mod
+      use MAPL
 !
       implicit none
 !
@@ -69,14 +69,16 @@
       integer :: STATUS, counter
       integer :: temp
       character(len=ESMF_MAXSTR), parameter :: IAm = "rcEsmfReadTable2ListInt"
+      logical :: isPresent
 !EOP
 !------------------------------------------------------------------------------
 !BOC
-      call ESMF_ConfigFindLabel(config, label=label, rc=STATUS )
+      call ESMF_ConfigFindLabel(config, label=label, isPresent=isPresent, rc=STATUS )
+      VERIFY_(STATUS)
 
       counter = 0
 
-      if (STATUS == ESMF_SUCCESS) then
+      if (isPresent) then
          call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
          VERIFY_(STATUS)
 
@@ -128,14 +130,16 @@
       integer :: STATUS, counter
       real(ESMF_KIND_R8) :: temp
       character(len=ESMF_MAXSTR), parameter :: IAm = "rcEsmfReadTable2ListReal"
+      logical :: isPresent
 !EOP
 !------------------------------------------------------------------------------
 !BOC
-      call ESMF_ConfigFindLabel(config, label=label, rc=STATUS )
+      call ESMF_ConfigFindLabel(config, label=label, isPresent=isPresent, rc=STATUS )
+      VERIFY_(STATUS)
 
       counter = 0
 
-      if (STATUS == ESMF_SUCCESS) then
+      if (isPresent) then
          call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
          VERIFY_(STATUS)
 
@@ -188,14 +192,16 @@
       character(len=1) :: cValue
       character(len=ESMF_MAXSTR) :: temp
       character(len=ESMF_MAXSTR), parameter :: IAm = "rcEsmfReadTable2ListWords"
+      logical :: isPresent
 !EOP
 !------------------------------------------------------------------------------
 !BOC     
-      call ESMF_ConfigFindLabel(config, label=label, rc=STATUS )
+      call ESMF_ConfigFindLabel(config, label=label, isPresent=isPresent, rc=STATUS )
+      VERIFY_(STATUS)
 
       counter = 0
 
-      if (STATUS == ESMF_SUCCESS) then
+      if (isPresent) then
          call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
          VERIFY_(STATUS)
 
@@ -250,16 +256,18 @@
       character(len=1) :: cValue
       character(len=ESMF_MAXSTR) :: tempWord
       character(len=ESMF_MAXSTR), parameter :: IAm = "rcEsmfReadTable2String"
+      logical :: isPresent
 !EOP
 !------------------------------------------------------------------------------
 !BOC     
       firstIter = .true.
 
-      call ESMF_ConfigFindLabel(config, label=label, rc=STATUS )
+      call ESMF_ConfigFindLabel(config, label=label, isPresent=isPresent, rc=STATUS )
+      VERIFY_(STATUS)
             
       value = ''
 
-      if (STATUS == ESMF_SUCCESS) then
+      if (isPresent) then
          call ESMF_ConfigNextLine  (config, tableEnd=endTable, rc=STATUS )
          VERIFY_(STATUS)
             

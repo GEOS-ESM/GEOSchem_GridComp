@@ -15,7 +15,7 @@
 ! !USES:
 
    use ESMF
-   use MAPL_Mod
+   use MAPL
 
    use Chem_Mod              ! Chemistry Base Class
    use Chem_StateMod         ! Chemistry State
@@ -25,7 +25,6 @@
    use Chem_MieMod           ! Aerosol LU Tables, calculator
    use m_inpak90             ! Resource file management
    use m_die, only: die
-   use m_chars, only: lowercase
    USE Henrys_law_ConstantsMod, ONLY: get_HenrysLawCts
 
    use m_StrTemplate
@@ -1263,7 +1262,7 @@ CONTAINS
    IF(gcSU%regionsString(1:2) == "-1") THEN
     NoRegionalConstraint = .TRUE.
    ELSE
-    SELECT CASE (lowercase(gcSU%regionsString(1:2)))
+    SELECT CASE (ESMF_UtilStringLowerCase(gcSU%regionsString(1:2)))
      CASE ("gl") 
       NoRegionalConstraint = .TRUE.
      CASE ("al") 
@@ -3173,7 +3172,7 @@ CONTAINS
 
   Use SU_GridCompMod
   Use ESMF
-  Use MAPL_Mod
+  Use MAPL
   Use Chem_Mod 
 
   IMPLICIT NONE
@@ -3186,7 +3185,7 @@ CONTAINS
      subroutine Method_ (gc, w, imp, exp, ymd, hms, dt, rcode )
        Use SU_GridCompMod
        Use ESMF
-       Use MAPL_Mod
+       Use MAPL
        Use Chem_Mod 
        type(SU_GridComp1),  intent(inout)  :: gc
        type(Chem_Bundle),   intent(in)     :: w

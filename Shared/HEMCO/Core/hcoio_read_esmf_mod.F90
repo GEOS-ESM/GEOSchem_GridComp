@@ -57,7 +57,7 @@ CONTAINS
 ! !USES:
 !
     USE ESMF
-    USE MAPL_mod
+    USE MAPL
     USE HCO_FILEDATA_MOD, ONLY : FileData_ArrInit
 
 # include "MAPL_Generic.h"

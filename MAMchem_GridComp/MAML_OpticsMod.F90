@@ -15,9 +15,7 @@
 ! !USES:
 
    use ESMF
-   use MAPL_Mod
-
-   use MAPL_SimpleBundleMod
+   use MAPL
 
    use MAM_BaseMod
    use MAM_ConstituentsDataMod
@@ -154,7 +152,7 @@ contains
 
 
    ! basic dim-size check
-   ASSERT_(mie_table%n_aerosol_components == nc)
+   _ASSERT(mie_table%n_aerosol_components == nc,'needs informative message')
 
 
    ! short hand and likely to improve data storage
@@ -289,8 +287,8 @@ contains
                     (n_im(i_im+1) - n_im(i_im))
 
 
-               ASSERT_ (tt >= 0 .and. tt <= 1.0)
-               ASSERT_ (uu >= 0 .and. uu <= 1.0)
+               _ASSERT(tt >= 0 .and. tt <= 1.0,'needs informative message')
+               _ASSERT(uu >= 0 .and. uu <= 1.0,'needs informative message')
 
                w00 = (1.0_f - tt) * (1.0_f - uu)     ! weight for f(i_re+0, i_im+0)
                w10 = (        tt) * (1.0_f - uu)     ! weight for f(i_re+1, i_im+0)

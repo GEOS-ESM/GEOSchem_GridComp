@@ -24,7 +24,7 @@
 !     Constants.
 !     ----------
 
-      integer, parameter :: GMI_MAXSTR              = 128
+      integer, parameter :: GMI_MAXSTR              = 256 ! MAT was 128, changed due to change in ESMF_MAXSTR to 256
 
       integer, parameter :: MAX_LENGTH_LABELS       = 80
       integer, parameter :: MAX_NUMBER_SPECIES      = 185

@@ -14,8 +14,7 @@
 ! !USES:
 !
    use ESMF
-   use MAPL_Mod
-   use MAPL_MaxMinMod
+   use MAPL
 
 
    implicit none

@@ -48,7 +48,7 @@ MODULE GEOSCHEMchem_GridCompMod
 !
   USE CMN_Size_Mod
   USE ESMF                                           ! ESMF library
-  USE MAPL_Mod                                       ! MAPL library
+  USE MAPL                                       ! MAPL library
   USE Charpak_Mod                                    ! String functions
   USE Hco_Types_Mod, ONLY : ConfigObj
   USE Input_Opt_Mod                                  ! Input Options obj
@@ -68,7 +68,6 @@ MODULE GEOSCHEMchem_GridCompMod
   USE Time_Mod,      ONLY : ITS_A_NEW_DAY, ITS_A_NEW_MONTH
 
 #if defined( MODEL_GEOS )
-  USE MAPL_ConstantsMod                   ! Doesn't seem to be used. Needed?
   USE Chem_Mod                            ! Chemistry Base Class (chem_mie?)
   USE Chem_GroupMod                       ! For family transport
   USE ERROR_Mod,     ONLY : mpiComm

@@ -9,8 +9,7 @@
 module Chem_SimpleBundleMod
 
    use ESMF
-   use MAPL_Mod
-   use MAPL_SimpleBundleMod ! Base class
+   use MAPL
    use Chem_RegistryMod
    use m_StrTemplate
 

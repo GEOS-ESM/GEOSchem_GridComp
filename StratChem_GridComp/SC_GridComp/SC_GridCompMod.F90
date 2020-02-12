@@ -16,7 +16,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod 	     ! Chemistry Base Class
    USE Chem_StateMod	     ! Chemistry State
    USE Chem_ConstMod, only: undefval => undef         ! Constants !
@@ -25,9 +25,6 @@
    USE WetRemovalMod
    USE ConvectionMod         ! Offline convective mixing/scavenging
 
-
-   USE ESMF_CFIOFileMOD
-   USE MAPL_CFIOMOD
 
    IMPLICIT none
    INTEGER, PARAMETER :: DBL = KIND(0.00D+00)
@@ -45,6 +42,8 @@
    PUBLIC  SC_GridCompInitialize
    PUBLIC  SC_GridCompRun
    PUBLIC  SC_GridCompFinalize
+
+   include "netcdf.inc"
 
 !
 ! !DESCRIPTION:
@@ -909,7 +908,7 @@ CONTAINS
      CASE (2)
       gcSC%numO3 = n
      CASE (3)
-      ASSERT_(n == km)
+      _ASSERT(n == km,'needs informative message')
      CASE (4)
       gcSC%nlam = n
      CASE (5)
@@ -1138,7 +1137,7 @@ CONTAINS
     VERIFY_(status)
    END IF
 
-   ASSERT_(n == gcSC%km)
+   _ASSERT(n == gcSC%km,'needs informative message')
 
 #ifndef H5_HAVE_PARALLEL
 

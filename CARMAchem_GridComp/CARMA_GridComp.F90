@@ -17,11 +17,10 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod
    USE Chem_UtilMod
    USE m_inpak90	     ! Resource file management
-   USE m_chars, only: uppercase
 
 !  Utility Modules
    use DryDepositionMod      ! Aerosol Dry Deposition
@@ -375,8 +374,8 @@ CONTAINS
    do j = 1, reg%NGROUP
     is_sulfate = .false.
 !   Assumes MIXEDP has sulfate as PC
-    if(  uppercase(trim(reg%groupname(j))) == 'SULFATE' .or. &
-         uppercase(trim(reg%groupname(j))) == 'MIXEDP' ) is_sulfate = .true.
+    if(  ESMF_UtilStringUpperCase(trim(reg%groupname(j))) == 'SULFATE' .or. &
+         ESMF_UtilStringUpperCase(trim(reg%groupname(j))) == 'MIXEDP' ) is_sulfate = .true.
     if(reg%ishape(j) .eq. 1) then
      reg%ifallrtn = I_FALLRTN_STD
     else
@@ -429,8 +428,8 @@ CONTAINS
 !  Look for pure groups, mixed group, and sulfuric acid gas
    do i = 1, reg%NELEM
     j = reg%igroup(i)
-    groupname = uppercase(trim(reg%groupname(j)))
-    elemname  = uppercase(trim(reg%elemname(i)))
+    groupname = ESMF_UtilStringUpperCase(trim(reg%groupname(j)))
+    elemname  = ESMF_UtilStringUpperCase(trim(reg%elemname(i)))
     if(groupname == 'SULFATE') then
      reg%igrp_sulfate = j
      if(elemname == 'PC') reg%ielm_sulfate = i
@@ -469,7 +468,7 @@ CONTAINS
    end do
 
    do i = 1, reg%NGAS
-    gasname = uppercase(trim(reg%gasname(i)))
+    gasname = ESMF_UtilStringUpperCase(trim(reg%gasname(i)))
     if(gasname == 'H2SO4') reg%igas_h2so4 = i
     if(gasname == 'H2O'  ) reg%igas_h2o   = i
    end do
@@ -539,8 +538,8 @@ CONTAINS
    if(reg%do_coag) then
     do i = 1, reg%NELEM
      j = reg%igroup(i)
-     groupname = uppercase(trim(reg%groupname(j)))
-     elemname  = uppercase(trim(reg%elemname(i)))
+     groupname = ESMF_UtilStringUpperCase(trim(reg%groupname(j)))
+     elemname  = ESMF_UtilStringUpperCase(trim(reg%elemname(i)))
      if(groupname == 'MIXEDP' .and. elemname == 'SULFATE') reg%mixedcorecomp = reg%icomposition(i)
 
 !    This block adds the self coagulation of the pure sulfate group and the
@@ -579,8 +578,8 @@ CONTAINS
 !   Look for dust aerosol group / element
     do i = 1, reg%NELEM
      j = reg%igroup(i)
-     groupname  = uppercase(trim(reg%groupname(j)))
-     if(groupname == 'DUST' .OR. uppercase(trim(reg%elemname(i))) == 'DUST') then
+     groupname  = ESMF_UtilStringUpperCase(trim(reg%groupname(j)))
+     if(groupname == 'DUST' .OR. ESMF_UtilStringUpperCase(trim(reg%elemname(i))) == 'DUST') then
       allocate(radius_(reg%NBIN), rlow_(reg%NBIN), rup_(reg%NBIN), __STAT__)
       allocate(radius(reg%NBIN),  rlow(reg%NBIN),  rup(reg%NBIN), __STAT__)
       allocate(rhod_(reg%NBIN),  rhog_(reg%NBIN),  __STAT__)
@@ -1232,7 +1231,7 @@ endif
       qa(n+reg%NGAS+igas)%data3d(i,j,:) = satliq_(:,igas)
       qa(n+reg%NGAS+reg%NGAS+igas)%data3d(i,j,:) = satice_(:,igas)
 !     Save h2so4 supersaturation if it's asked for
-      if( uppercase(trim(reg%gasname(igas))) == 'H2SO4' .and. &
+      if( ESMF_UtilStringUpperCase(trim(reg%gasname(igas))) == 'H2SO4' .and. &
           associated(sath2so4) )   sath2so4(i,j,:) = satliq_(:,igas)
      end do
 
@@ -1244,8 +1243,8 @@ endif
 !    Get requested sedimentation flux diagnostics per element
      do ielem = 1, reg%NELEM
       igroup = gcCARMA%CARMAreg%igroup(ielem)
-      groupname = uppercase(trim(gcCARMA%CARMAreg%groupname(igroup)))
-      elemname  = uppercase(trim(gcCARMA%CARMAreg%elemname(ielem)))
+      groupname = ESMF_UtilStringUpperCase(trim(gcCARMA%CARMAreg%groupname(igroup)))
+      elemname  = ESMF_UtilStringUpperCase(trim(gcCARMA%CARMAreg%elemname(ielem)))
       do ibin = 1, reg%NBIN
        n = nCARMAbegin + (ielem-1)*reg%NBIN + ibin - 1
        call CARMASTATE_GetBin(cstate, ielem, ibin, &
@@ -1278,8 +1277,8 @@ endif
    ! of sign change to define positive)
      do ielem = 1, reg%NELEM
       igroup = gcCARMA%CARMAreg%igroup(ielem)
-      groupname = uppercase(trim(gcCARMA%CARMAreg%groupname(igroup)))
-      elemname  = uppercase(trim(gcCARMA%CARMAreg%elemname(ielem)))
+      groupname = ESMF_UtilStringUpperCase(trim(gcCARMA%CARMAreg%groupname(igroup)))
+      elemname  = ESMF_UtilStringUpperCase(trim(gcCARMA%CARMAreg%elemname(ielem)))
       if(ielem /= r%f_group(igroup)%f_ienconc ) cycle
       do ibin = 1, reg%NBIN
        if(groupname == 'SULFATE' .and. associated(suvf(ibin)%data3d)) then
@@ -1313,7 +1312,7 @@ endif
 !    Get the group effective wet radius (m), surface area, and number density
      do ielem = 1, reg%NELEM
       igroup = gcCARMA%CARMAreg%igroup(ielem)
-      groupname = uppercase(trim(gcCARMA%CARMAreg%groupname(igroup)))
+      groupname = ESMF_UtilStringUpperCase(trim(gcCARMA%CARMAreg%groupname(igroup)))
       if(ielem /= r%f_group(igroup)%f_ienconc ) cycle
       reff_num = 0.
       reff_den = 0.

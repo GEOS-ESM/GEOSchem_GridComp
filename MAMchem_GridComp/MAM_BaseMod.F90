@@ -15,8 +15,7 @@
 ! !USES:
 !
 
-   use MAPL_Mod
-   use MAPL_SimpleBundleMod
+   use MAPL
 
    use MAM_ComponentsDataMod
    use MAM_ConstituentsDataMod

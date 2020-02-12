@@ -26,13 +26,7 @@
 ! !USES:
 
    use ESMF
-   use MAPL_Mod
-
-   use MAPL_CommsMod
-   use MAPL_CFIOMod
-   use MAPL_CommsMod
-!  use HorzBinMod
-   use MAPL_ShmemMod
+   use MAPL
 
    use Chem_Mod                  ! Chemistry Base Class
    use mod_diag                  ! fvGCM diagnostics

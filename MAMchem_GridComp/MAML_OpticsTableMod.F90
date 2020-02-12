@@ -16,7 +16,7 @@
 ! !USES:
 
    use ESMF
-   use MAPL_Mod
+   use MAPL
    use m_die, only: die, warn
 
    use netcdf
@@ -322,7 +322,7 @@ contains
    call get_dim_info_(id_nc, 'n_im',      id_dim_n_im,      len_dim_n_im,      __RC__)
    call get_dim_info_(id_nc, 'k',         id_dim_k,         len_dim_k,         __RC__)
 
-   ASSERT_(len_dim_range == 2)
+   _ASSERT(len_dim_range == 2,'needs informative message')
 
    this%n_bands               = len_dim_band
    this%n_aerosol_components  = len_dim_component
@@ -333,10 +333,10 @@ contains
 !  Read lookup table attributes
 !  ----------------------------
    rc = nf90_get_att(id_nc, NF90_GLOBAL, 'aerosol_method', buff_str); VERIFY_(rc)
-   ASSERT_(buff_str == 'modal')
+   _ASSERT(buff_str == 'modal','needs informative message')
  
    rc = nf90_get_att(id_nc, NF90_GLOBAL, 'optics', buff_str); VERIFY_(rc)
-   ASSERT_(buff_str == 'monochromatic' .or. buff_str == 'band averaged')
+   _ASSERT(buff_str == 'monochromatic' .or. buff_str == 'band averaged','needs informative message')
    if (buff_str == 'monochromatic') then
        this%monochromatic = .true.
    else    
@@ -368,8 +368,8 @@ contains
    rc = nf90_inquire_variable(id_nc, id_var, ndims=n_dims); VERIFY_(rc)
    rc = nf90_inquire_variable(id_nc, id_var, dimids=var_dim_ids(:n_dims)); VERIFY_(rc)
 
-   ASSERT_(n_dims == 2)
-   ASSERT_(var_dim_ids(1) == id_dim_chars .and. var_dim_ids(2) == id_dim_component)
+   _ASSERT(n_dims == 2,'needs informative message')
+   _ASSERT(var_dim_ids(1) == id_dim_chars .and. var_dim_ids(2) == id_dim_component,'needs informative message')
 
    allocate(this%component(len_dim_component), __STAT__)
    rc = nf90_get_var(id_nc, id_var, this%component); VERIFY_(rc)
@@ -384,8 +384,8 @@ contains
    rc = nf90_inquire_variable(id_nc, id_var, ndims=n_dims); VERIFY_(rc)
    rc = nf90_inquire_variable(id_nc, id_var, dimids=var_dim_ids(:n_dims)); VERIFY_(rc)
 
-   ASSERT_(n_dims == 2)
-   ASSERT_(var_dim_ids(1) == id_dim_band .and. var_dim_ids(2) == id_dim_component)
+   _ASSERT(n_dims == 2,'needs informative message')
+   _ASSERT(var_dim_ids(1) == id_dim_band .and. var_dim_ids(2) == id_dim_component,'needs informative message')
 
    allocate(this%component_refractive_index_re(len_dim_band, len_dim_component), __STAT__)
    rc = nf90_get_var(id_nc, id_var, this%component_refractive_index_re); VERIFY_(rc)
@@ -400,8 +400,8 @@ contains
    rc = nf90_inquire_variable(id_nc, id_var, ndims=n_dims); VERIFY_(rc)
    rc = nf90_inquire_variable(id_nc, id_var, dimids=var_dim_ids(:n_dims)); VERIFY_(rc)
 
-   ASSERT_(n_dims == 2)
-   ASSERT_(var_dim_ids(1) == id_dim_band .and. var_dim_ids(2) == id_dim_component)
+   _ASSERT(n_dims == 2,'needs informative message')
+   _ASSERT(var_dim_ids(1) == id_dim_band .and. var_dim_ids(2) == id_dim_component,'needs informative message')
 
    allocate(this%component_refractive_index_im(len_dim_band, len_dim_component), __STAT__)
    rc = nf90_get_var(id_nc, id_var, this%component_refractive_index_im); VERIFY_(rc)
@@ -415,14 +415,14 @@ contains
    rc = nf90_inquire_variable(id_nc, id_var, ndims=n_dims); VERIFY_(rc)
    rc = nf90_inquire_variable(id_nc, id_var, dimids=var_dim_ids(:n_dims)); VERIFY_(rc)
 
-   ASSERT_(n_dims == 2)
-   ASSERT_(var_dim_ids(1) == id_dim_band .and. var_dim_ids(2) == id_dim_range)
+   _ASSERT(n_dims == 2,'needs informative message')
+   _ASSERT(var_dim_ids(1) == id_dim_band .and. var_dim_ids(2) == id_dim_range,'needs informative message')
 
    allocate(this%wavelength(len_dim_band, len_dim_range), __STAT__)
    rc = nf90_get_var(id_nc, id_var, this%wavelength); VERIFY_(rc)
 
    if (this%monochromatic) then
-       ASSERT_(maxval(abs(this%wavelength(:,1) - this%wavelength(:,2))) < 1e2*tiny(0.0))
+       _ASSERT(maxval(abs(this%wavelength(:,1) - this%wavelength(:,2))) < 1e2*tiny(0.0),'needs informative message')
    end if
 
 !  Read data - real part of refractive index
@@ -434,8 +434,8 @@ contains
    rc = nf90_inquire_variable(id_nc, id_var, ndims=n_dims); VERIFY_(rc)
    rc = nf90_inquire_variable(id_nc, id_var, dimids=var_dim_ids(:n_dims)); VERIFY_(rc)
 
-   ASSERT_(n_dims == 2)
-   ASSERT_(var_dim_ids(1) == id_dim_band .and. var_dim_ids(2) == id_dim_n_re)
+   _ASSERT(n_dims == 2,'needs informative message')
+   _ASSERT(var_dim_ids(1) == id_dim_band .and. var_dim_ids(2) == id_dim_n_re,'needs informative message')
 
    allocate(this%refractive_index_re(len_dim_band, len_dim_n_re), __STAT__)
    rc = nf90_get_var(id_nc, id_var, this%refractive_index_re); VERIFY_(rc)
@@ -449,8 +449,8 @@ contains
    rc = nf90_inquire_variable(id_nc, id_var, ndims=n_dims); VERIFY_(rc)
    rc = nf90_inquire_variable(id_nc, id_var, dimids=var_dim_ids(:n_dims)); VERIFY_(rc)
 
-   ASSERT_(n_dims == 2)
-   ASSERT_(var_dim_ids(1) == id_dim_band .and. var_dim_ids(2) == id_dim_n_im)
+   _ASSERT(n_dims == 2,'needs informative message')
+   _ASSERT(var_dim_ids(1) == id_dim_band .and. var_dim_ids(2) == id_dim_n_im,'needs informative message')
 
    allocate(this%refractive_index_im(len_dim_band, len_dim_n_im), __STAT__)
    rc = nf90_get_var(id_nc, id_var, this%refractive_index_im); VERIFY_(rc)
@@ -464,8 +464,8 @@ contains
    rc = nf90_inquire_variable(id_nc, id_var, ndims=n_dims); VERIFY_(rc)
    rc = nf90_inquire_variable(id_nc, id_var, dimids=var_dim_ids(:n_dims)); VERIFY_(rc)
 
-   ASSERT_(n_dims == 4)
-   ASSERT_(all(var_dim_ids(:4) .eq. (/id_dim_band, id_dim_n_im, id_dim_n_re, id_dim_k/)))
+   _ASSERT(n_dims == 4,'needs informative message')
+   _ASSERT(all(var_dim_ids(:4) .eq. (/id_dim_band, id_dim_n_im, id_dim_n_re, id_dim_k/)),'needs informative message')
 
    allocate(this%c_ext(len_dim_band, len_dim_n_im, len_dim_n_re, len_dim_k), __STAT__)
    rc = nf90_get_var(id_nc, id_var, this%c_ext); VERIFY_(rc)
@@ -479,8 +479,8 @@ contains
    rc = nf90_inquire_variable(id_nc, id_var, ndims=n_dims); VERIFY_(rc)
    rc = nf90_inquire_variable(id_nc, id_var, dimids=var_dim_ids(:n_dims)); VERIFY_(rc)
 
-   ASSERT_(n_dims == 4)
-   ASSERT_(all(var_dim_ids(:4) .eq. (/id_dim_band, id_dim_n_im, id_dim_n_re, id_dim_k/)))
+   _ASSERT(n_dims == 4,'needs informative message')
+   _ASSERT(all(var_dim_ids(:4) .eq. (/id_dim_band, id_dim_n_im, id_dim_n_re, id_dim_k/)),'needs informative message')
 
    allocate(this%c_sca(len_dim_band, len_dim_n_im, len_dim_n_re, len_dim_k), __STAT__)
    rc = nf90_get_var(id_nc, id_var, this%c_sca); VERIFY_(rc)
@@ -494,8 +494,8 @@ contains
    rc = nf90_inquire_variable(id_nc, id_var, ndims=n_dims); VERIFY_(rc)
    rc = nf90_inquire_variable(id_nc, id_var, dimids=var_dim_ids(:n_dims)); VERIFY_(rc)
 
-   ASSERT_(n_dims == 4)
-   ASSERT_(all(var_dim_ids(:4) .eq. (/id_dim_band, id_dim_n_im, id_dim_n_re, id_dim_k/)))
+   _ASSERT(n_dims == 4,'needs informative message')
+   _ASSERT(all(var_dim_ids(:4) .eq. (/id_dim_band, id_dim_n_im, id_dim_n_re, id_dim_k/)),'needs informative message')
 
    allocate(this%c_asy(len_dim_band, len_dim_n_im, len_dim_n_re, len_dim_k), __STAT__)
    rc = nf90_get_var(id_nc, id_var, this%c_asy); VERIFY_(rc)

@@ -1443,9 +1443,9 @@
       REAL(8), PARAMETER :: EPS_XH2SO4_NCM3   = 1.00D+00                                ! tiny [H2SO4] [#/cm^3] 
       REAL(8), PARAMETER :: EPS_XH2SO4 = EPS_XH2SO4_NCM3 * MW_SO4 * 1.0D+12 / AVO       ! convert to [ugSO4/m^3] 
       REAL(8), PARAMETER :: REDUCTION_FACTOR = 1.2D+00   ! factor by which [H2SO4]ss is reduced each iteration [1] 
-      LOGICAL, PARAMETER :: EARLY_RETURN = .FALSE.       ! flag for no-operation early exit 
+      LOGICAL, PARAMETER :: EARLYRETURN_ = .FALSE.       ! flag for no-operation early exit 
 
-      IF( XH2SO4_SS.LT.XH2SO4_THRES .OR. INUC.NE.3 .OR. EARLY_RETURN ) THEN     ! INUC=3 is the Napari et al. 
+      IF( XH2SO4_SS.LT.XH2SO4_THRES .OR. INUC.NE.3 .OR. EARLYRETURN_ ) THEN     ! INUC=3 is the Napari et al. 
         XH2SO4_SS_WNPF = XH2SO4_SS                                              ! [ugSO4/m^3]
         RETURN
       ENDIF
