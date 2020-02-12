@@ -11,7 +11,7 @@ set (srcs
   Chem_AodMod.F90
   Chem_SimpleBundleMod.F90
   )
-esma_add_library(${this} SRCS ${srcs} DEPENDENCIES GMAO_mpeu MAPL_Base GMAO_gfio_r4)
+esma_add_library(${this} SRCS ${srcs} DEPENDENCIES GMAO_mpeu MAPL GMAO_gfio_r4)
 target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 target_compile_definitions (${this} PRIVATE GEOS5)
 
@@ -21,7 +21,7 @@ include (UseF2Py)
 include_directories (${esma_include}/${this})
 add_f2py_module(MieObs_ SOURCES MieObs_py.F90 
    DESTINATION lib/Python
-   LIBRARIES Chem_Base MAPL_Base GMAO_pFIO GMAO_mpeu ${NETCDF_LIBRARIES} ${ESMF_LIBRARY}
+   LIBRARIES Chem_Base MAPL GMAO_mpeu ${NETCDF_LIBRARIES} ${ESMF_LIBRARY}
    INCLUDEDIRS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR}/lib ${BASEDIR}/lib ${include_${this}} ${INC_NETCDF}
    USE_MPI
    )

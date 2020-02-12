@@ -15,7 +15,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod         ! Chemistry Base Class
    USE Chem_UtilMod
 
@@ -1036,7 +1036,7 @@ CONTAINS
 
    call ESMF_FieldBundleGet(qjBundle, fieldCount=numVars , rc=STATUS)
    VERIFY_(STATUS)
-   ASSERT_(self%num_qjo == numVars)
+   _ASSERT(self%num_qjo == numVars,'needs informative message')
 
    ! eRadius Bundle
 
@@ -1059,7 +1059,7 @@ CONTAINS
 
    call ESMF_FieldBundleGet(eRadiusBundle, fieldCount=numVars , rc=STATUS)
    VERIFY_(STATUS)
-   ASSERT_(nSADdust+nSADaer == numVars)
+   _ASSERT(nSADdust+nSADaer == numVars,'needs informative message')
 
    ! for tArea Bundle
 
@@ -1082,7 +1082,7 @@ CONTAINS
 
    call ESMF_FieldBundleGet(tAreaBundle, fieldCount=numVars , rc=STATUS)
    VERIFY_(STATUS)
-   ASSERT_(nSADdust+nSADaer == numVars)
+   _ASSERT(nSADdust+nSADaer == numVars,'needs informative message')
 
       !------------------------------------
       ! Initial Settings for Ship Emissions
@@ -2303,7 +2303,7 @@ CONTAINS
 
       call ESMF_FieldBundleGet(qjBundle, fieldCount=numVars, rc=STATUS)
       VERIFY_(STATUS)
-      ASSERT_(numVars == self%num_qjo)
+      _ASSERT(numVars == self%num_qjo,'needs informative message')
 
       do ib = 1, numVars
          ptr3D(:,:,:) = self%qjgmi(ib)%pArray3D(:,:,km:1:-1)
@@ -2319,7 +2319,7 @@ CONTAINS
 
       call ESMF_FieldBundleGet(tAreaBundle, fieldCount=numVars, rc=STATUS)
       VERIFY_(STATUS)
-      ASSERT_(numVars == nSADdust+nSADaer)
+      _ASSERT(numVars == nSADdust+nSADaer,'needs informative message')
 
       do ib = 1, numVars
          ptr3D(:,:,:) = self%tArea(:,:,km:1:-1,ib)
@@ -2335,7 +2335,7 @@ CONTAINS
 
       call ESMF_FieldBundleGet(eRadiusBundle, fieldCount=numVars, rc=STATUS)
       VERIFY_(STATUS)
-      ASSERT_(numVars == nSADdust+nSADaer)
+      _ASSERT(numVars == nSADdust+nSADaer,'needs informative message')
 
       do ib = 1, numVars
          ptr3D(:,:,:) = self%eRadius(:,:,km:1:-1,ib)

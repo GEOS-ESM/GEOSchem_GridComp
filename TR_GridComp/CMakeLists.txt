@@ -9,7 +9,7 @@ set (srcs
 
 esma_add_library (${this} 
    SRCS ${srcs} 
-   DEPENDENCIES MAPL_Base GMAO_mpeu Chem_Shared GEOS_Shared
+   DEPENDENCIES MAPL GMAO_mpeu Chem_Shared GEOS_Shared
    INCLUDES ${INC_ESMF} ${INC_NETCDF})
 
 #esma_generate_gocart_code (${this} -F)

@@ -27,9 +27,9 @@ set (srcs
 esma_add_library (
   ${this}
   SRCS ${srcs}
-  DEPENDENCIES Chem_Shared MAPL_Base GMAO_mpeu
+  DEPENDENCIES Chem_Shared MAPL GMAO_mpeu
   )
-target_compile_definitions (${this} PRIVATE MAPL GEOS5)
+target_compile_definitions (${this} PRIVATE MAPL_MODE GEOS5)
 set_target_properties (${this} PROPERTIES COMPILE_FLAGS ${PP})
 target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 

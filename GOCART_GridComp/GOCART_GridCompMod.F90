@@ -14,13 +14,11 @@
 ! !USES:
 !
    use ESMF
-   use MAPL_Mod
-   use MAPL_GenericMod
+   use MAPL
 
    use Chem_Mod              ! Chemistry Base Class
    use Chem_UtilMod, only: Chem_UtilNegFiller
    use Aero_GridCompMod      ! Parent Aerosol component with IRF methods but no SetServices()
-   USE m_chars, ONLY: uppercase
 
    use ConvectionMod, only: Disable_Convection
 
@@ -126,6 +124,7 @@ CONTAINS
     real                            :: DEFVAL_CO2
 
     character(len=ESMF_MAXSTR)      :: field_name
+    character(len=ESMF_MAXSTR)      :: chem_registry_file
 
 !                              ------------
 
@@ -153,7 +152,10 @@ CONTAINS
         state%chemReg = Chem_RegistryCreate(STATUS, rcfile='GOCARTdata_AerRegistry.rc')
         VERIFY_(STATUS)
     else
-        state%chemReg = Chem_RegistryCreate(STATUS, rcfile='Chem_Registry.rc')
+       call ESMF_ConfigGetAttribute(cf, chem_registry_file, label = "Chem_Registry_File:", &
+            default = "Chem_Registry.rc", rc = status)
+       VERIFY_(status)
+       state%chemReg = Chem_RegistryCreate(STATUS, rcfile=chem_registry_file)
         VERIFY_(STATUS)
     end if    
 
@@ -1071,7 +1073,7 @@ if ( r%doing_GOCART ) then
 !         Set aerosol friendly attribute to MOIST as function of Convective Parameterization
 !         ----------------------------------------------------------------------------------
 
-          short_name = uppercase(trim(r%vname(n)))
+          short_name = ESMF_UtilStringUpperCase(trim(r%vname(n)))
           if ( short_name(1:2) .eq. 'DU'    .or. &
                short_name(1:2) .eq. 'SS'    .or. &
                short_name(1:2) .eq. 'OC'    .or. &
@@ -1520,7 +1522,7 @@ end if ! doing GOCART
 !  ----------------------------------------------------
    allocate(w_c%delp(i1:i2,j1:j2,km), w_c%rh(i1:i2,j1:j2,km), __STAT__)
 
-   ASSERT_ ( size(InternalSpec) == chemReg%n_GOCART )
+   _ASSERT( size(InternalSpec) == chemReg%n_GOCART, 'needs informative message' )
 
    do L = 1, size(InternalSpec)
 
@@ -1639,7 +1641,7 @@ end if ! doing GOCART
 
     do n = ChemReg%i_GOCART, ChemReg%j_GOCART
 
-        short_name = uppercase(trim(ChemReg%vname(n)))
+        short_name = ESMF_UtilStringUpperCase(trim(ChemReg%vname(n)))
 
         if ( short_name .eq. 'DU001'    .or. &
              short_name .eq. 'DU002'    .or. &
@@ -1771,7 +1773,7 @@ end if ! doing GOCART
     call MAPL_StateAdd(aero_aci, aero_aci_aerosols, __RC__)
 
     do n = ChemReg%i_GOCART, ChemReg%j_GOCART 
-        short_name = uppercase(trim(ChemReg%vname(n)))
+        short_name = ESMF_UtilStringUpperCase(trim(ChemReg%vname(n)))
 
         if ( short_name .eq. 'DU001'    .or. &
              short_name .eq. 'DU002'    .or. &
@@ -2130,8 +2132,8 @@ end if ! doing GOCART
 
 #endif
 
-    call MAPL_TimerOff(ggState, 'INITIALIZE')
     call MAPL_TimerOff(ggState, 'TOTAL')
+    call MAPL_TimerOff(ggState, 'INITIALIZE')
 
     RETURN_(ESMF_SUCCESS)
 
@@ -2256,11 +2258,7 @@ CONTAINS
 !  ----------------------------------------------------------------------------------------
 !  Assume that DT is always an integral number of seconds
 !  Add a fraction to both (and then truncate to int), to avoid cases like 900 /= 899.999999
-   if (abs(cdt-hdt) > 0.1) then
-     __raise__(234, 'Implementation of GOCART_DT is problematic; set GOCART_DT = HEARTBEAT_DT')
-   endif
-!  With the new MAPL2.0, use this line instead of the 3 above:
-!  _ASSERT(abs(cdt-hdt) < 0.1, 'Implementation of GOCART_DT is problematic; set GOCART_DT = HEARTBEAT_DT')
+   _ASSERT(abs(cdt-hdt) < 0.1, 'Implementation of GOCART_DT is problematic; set GOCART_DT = HEARTBEAT_DT')
 
    allocate(r4ZTH(SIZE(LATS,1), SIZE(LATS,2)), __STAT__)
    allocate(  ZTH(SIZE(LATS,1), SIZE(LATS,2)), __STAT__)
@@ -3279,7 +3277,7 @@ contains
 
      na = size(aerosol)
 
-     ASSERT_ (na == size(q,4))
+     _ASSERT(na == size(q,4), 'needs informative message')
 
      ext_ = 0.0d0
      ssa_ = 0.0d0

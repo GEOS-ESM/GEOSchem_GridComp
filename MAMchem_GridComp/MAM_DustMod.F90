@@ -15,9 +15,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
-
-   USE MAPL_SimpleBundleMod
+   USE MAPL
 
    use Chem_ConstMod,   only: grav
 
@@ -135,7 +133,7 @@ CONTAINS
 !  --------------------------
    rc = 0
 
-   ASSERT_(self%id == MAM7_SCHEME .or. self%id == MAM3_SCHEME) 
+   _ASSERT(self%id == MAM7_SCHEME .or. self%id == MAM3_SCHEME,'needs informative message') 
  
    if (self%id == MAM7_SCHEME) then
        nmodes = size(MAM7_DU_EMISSION_MODE_ID)
@@ -384,7 +382,7 @@ CONTAINS
 !  --------------------------
    rc = 0
 
-   ASSERT_(self%id == MAM7_SCHEME .or. self%id == MAM3_SCHEME) 
+   _ASSERT(self%id == MAM7_SCHEME .or. self%id == MAM3_SCHEME,'needs informative message') 
  
    if (self%id == MAM7_SCHEME) then
        nmodes = size(MAM7_DU_EMISSION_MODE_ID)

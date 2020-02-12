@@ -17,10 +17,8 @@
 ! !USES:
 !
    use ESMF
-   use MAPL_Mod
+   use MAPL
 
-
-   use MAPL_SimpleBundleMod
 
    use MAML_SettlingMod
    use MAML_DryDepositionMod

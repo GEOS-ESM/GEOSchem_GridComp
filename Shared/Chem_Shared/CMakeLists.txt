@@ -32,7 +32,7 @@ endif ()
 
 esma_add_library(${this} 
    SRCS ${srcs} 
-   DEPENDENCIES GMAO_mpeu MAPL_Base Chem_Base)
+   DEPENDENCIES GMAO_mpeu MAPL Chem_Base)
 target_include_directories(${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 #add_definitions(-DDEBUG)
 add_definitions(-DSPMD -DFVCHEM)

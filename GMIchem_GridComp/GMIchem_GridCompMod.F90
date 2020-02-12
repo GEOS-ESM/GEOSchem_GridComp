@@ -14,11 +14,10 @@
 ! !USES:
 !
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod 	                        ! Chemistry Base Class
    USE GMI_GridCompMod                          ! ESMF parent component
    USE Chem_UtilMod, ONLY : Chem_UtilNegFiller  ! Eliminates negative vmr
-   USE m_chars, ONLY : uppercase
    USE Chem_GroupMod                            ! For Family Transport
    USE OVP,     ONLY:  OVP_init, OVP_end_of_timestep_hms, OVP_mask, OVP_apply_mask
 
@@ -215,7 +214,7 @@ CONTAINS
         DO n = state%chemReg%i_GOCART, state%chemReg%j_GOCART
 
          name = TRIM(state%chemReg%vname(n))
-         leadChars = UPPERCASE(name(1:2))
+         leadChars = ESMF_UtilStringUpperCase(name(1:2))
 
          Match: IF(leadChars == aeroID(m)) THEN
 
@@ -2660,7 +2659,7 @@ contains
 
      na = size(aerosol)
 
-     ASSERT_ (na == size(q,4))
+     _ASSERT(na == size(q,4), 'needs informative message')
 
      ext_ = 0.0d0
      ssa_ = 0.0d0

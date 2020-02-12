@@ -69,12 +69,10 @@ endif ()
 
 
 include_directories (${include_Chem_Shared})
-include_directories (${include_MAPL_Base})
-include_directories (${include_MAPL_cfio_r4})
 include_directories (${CMAKE_CURRENT_BINARY_DIR})
 include_directories (${include_GMAO_mpeu})
 
-set (dependencies Chem_Shared MAPL_Base MAPL_cfio_r4 GMAO_mpeu)
+set (dependencies Chem_Shared MAPL MAPL_cfio_r4 GMAO_mpeu)
 esma_add_library (${this} SRCS ${srcs} DEPENDENCIES ${dependencies})
 target_include_directories (${this} PUBLIC ${INC_NETCDF})
 
