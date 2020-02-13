@@ -4148,7 +4148,7 @@ end subroutine aerosol_activation_properties
 !-------------------------------------------------------------------------
 
    character(len=63) :: Iam, int_name
-   integer           :: status, km, N, I, J, L
+   integer           :: status, im, jm, km, lb, N, I, J, L
    logical           :: is_verbose
    real, allocatable :: GC_FracSALA(:,:,:), GC_FracSALC(:,:,:)
    real, pointer     :: ptr3d_int    (:,:,:) => null()
@@ -4161,6 +4161,9 @@ end subroutine aerosol_activation_properties
    real, pointer     :: ptr3d_GC_NIT (:,:,:) => null()
    real, pointer     :: ptr3d_GC_NITs(:,:,:) => null()
    real, pointer     :: ptr3d_GC_HMS (:,:,:) => null()
+   real, allocatable :: aeromask(:,:,:)
+   real, pointer     :: PLE(:,:,:) => NULL()
+   real, pointer     :: TROPP(:,:) => NULL()
 
    Iam = 'copy_geoschem_to_intstate_forbundle_'
 
@@ -4174,6 +4177,24 @@ end subroutine aerosol_activation_properties
    ! Get # vertical levels
    km = w_c%grid%km
 
+   ! Specify mask.
+   call MAPL_GetPointer(impChem, PLE, 'PLE', __RC__)
+   call MAPL_GetPointer(impChem, TROPP, 'TROPP', __RC__ )
+   im = size(tropp,1); jm = size(tropp,2)  
+   lb = lbound(PLE,3)
+   ALLOCATE(aeromask(im,jm,km))
+   aeromask(:,:,:) = 1.0
+ 
+   ! Zero troposphere if specified so
+   if ( w_c%reg%pass_GEOSCHEM_ZERO ) then
+       do l=1,km
+          aeromask(:,:,l) = MAX(0.0,MIN(1.0,                    &
+                                (TROPP(:,:)-PLE(:,:,L+LB-1)) /  &
+                                (PLE(:,:,L+LB)-PLE(:,:,L+LB-1)) &
+                               ))
+       enddo
+   endif
+
    !---
    ! BC
    if ( w_c%reg%pass_GEOSCHEM_BC ) then
@@ -4186,7 +4207,7 @@ end subroutine aerosol_activation_properties
       VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      ptr3d_Int = ptr3d_GC * aeromask
 
       ! BCPI
       int_name = 'GOCART::BCphilic_ForBundle'
@@ -4194,7 +4215,7 @@ end subroutine aerosol_activation_properties
       VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      ptr3d_Int = ptr3d_GC * aeromask
 
    endif
 
@@ -4230,7 +4251,7 @@ end subroutine aerosol_activation_properties
       VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC * MAPL_AIRMW / MW_CO  ! for now approx w/ dry air MW
+      ptr3d_Int = ptr3d_GC * aeromask * MAPL_AIRMW / MW_CO  ! for now approx w/ dry air MW
 
    endif
 
@@ -4246,7 +4267,7 @@ end subroutine aerosol_activation_properties
       VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      ptr3d_Int = ptr3d_GC * aeromask
 
       ! dust 2
       int_name = 'GOCART::du002_ForBundle'
@@ -4254,7 +4275,7 @@ end subroutine aerosol_activation_properties
       VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      ptr3d_Int = ptr3d_GC * aeromask
 
       ! dust 3
       int_name = 'GOCART::du003_ForBundle'
@@ -4262,7 +4283,7 @@ end subroutine aerosol_activation_properties
       VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      ptr3d_Int = ptr3d_GC * aeromask
 
       ! dust 4
       int_name = 'GOCART::du004_ForBundle'
@@ -4270,7 +4291,7 @@ end subroutine aerosol_activation_properties
       VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      ptr3d_Int = ptr3d_GC * aeromask
 
       ! dust 5
       int_name = 'GOCART::du005_ForBundle'
@@ -4331,37 +4352,40 @@ end subroutine aerosol_activation_properties
       int_name = 'GOCART::NH3_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = ptr3d_GC_NH3
+      ptr3d_int = ptr3d_GC_NH3 * aeromask
 
       ! NH4a
       int_name = 'GOCART::NH4a_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = ptr3d_GC_NH4
+      ptr3d_int = ptr3d_GC_NH4 * aeromask
 
       ! NO3an1
       int_name = 'GOCART::NO3an1_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = ptr3d_GC_NIT + ptr3d_GC_NITS *                              &
+      ptr3d_int = aeromask *                                                  &
+                ( ptr3d_GC_NIT + ptr3d_GC_NITS *                              &
               ( GC_FracSALA * ( 1 - GC_FracSALA_wt002 - GC_FracSALA_wt003 ) + &
-                GC_FracSALC * GC_FracSALC_wt001 )
+                GC_FracSALC * GC_FracSALC_wt001 ) )
 
       ! NO3an2
       int_name = 'GOCART::NO3an2_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = ptr3d_GC_NITS *      &
-                  ( GC_FracSALA * GC_FracSALA_wt002 + &
-                    GC_FracSALC * GC_FracSALC_wt002 )
+      ptr3d_int = aeromask *                            & 
+                ( ptr3d_GC_NITS *                       &
+                  ( GC_FracSALA * GC_FracSALA_wt002 +   &
+                    GC_FracSALC * GC_FracSALC_wt002 ) )
 
       ! NO3an3
       int_name = 'GOCART::NO3an3_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = ptr3d_GC_NITS *     &
+      ptr3d_int = aeromask *          &
+                ( ptr3d_GC_NITS *     &
                ( GC_FracSALA *  GC_FracSALA_wt003 +  &
-                 GC_FracSALC * ( 1 - GC_FracSALC_wt001 - GC_FracSALC_wt002 ) )
+                 GC_FracSALC * ( 1 - GC_FracSALC_wt001 - GC_FracSALC_wt002 ) ) )
 
       ! Clean up
       if ( allocated(GC_FracSALA) ) deallocate(GC_FracSALA)
@@ -4385,7 +4409,7 @@ end subroutine aerosol_activation_properties
       VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      ptr3d_Int = ptr3d_GC * aeromask
 
       ! OCPI
       int_name = 'GOCART::OCphilic_ForBundle'
@@ -4393,7 +4417,7 @@ end subroutine aerosol_activation_properties
       VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      ptr3d_Int = ptr3d_GC * aeromask
 
    endif
 
@@ -4418,38 +4442,43 @@ end subroutine aerosol_activation_properties
       int_name = 'GOCART::ss001_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = ptr3d_GC_SALA * ( 1.0 - GC_SALA_wt002 -           &
+      ptr3d_int = aeromask * &
+                ( ptr3d_GC_SALA * ( 1.0 - GC_SALA_wt002 -           &
                   GC_SALA_wt003 - GC_SALA_wt004 - GC_SALA_wt005 ) + &
-                  GC_SALC_wt001 * ptr3d_GC_SALC
+                  GC_SALC_wt001 * ptr3d_GC_SALC )
 
       ! ss002
       int_name = 'GOCART::ss002_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = GC_SALA_wt002 * ptr3d_GC_SALA + &
-                  GC_SALC_wt002 * ptr3d_GC_SALC
+      ptr3d_int = aeromask * &
+                ( GC_SALA_wt002 * ptr3d_GC_SALA + &
+                  GC_SALC_wt002 * ptr3d_GC_SALC )
 
       ! ss003
       int_name = 'GOCART::ss003_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = GC_SALA_wt003 * ptr3d_GC_SALA + &
-                  GC_SALC_wt003 * ptr3d_GC_SALC
+      ptr3d_int = aeromask * &
+                ( GC_SALA_wt003 * ptr3d_GC_SALA + &
+                  GC_SALC_wt003 * ptr3d_GC_SALC )
 
       ! ss004
       int_name = 'GOCART::ss004_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int = GC_SALA_wt004 * ptr3d_GC_SALA + &
-                  GC_SALC_wt004 * ptr3d_GC_SALC
+      ptr3d_int = aeromask * &
+                ( GC_SALA_wt004 * ptr3d_GC_SALA + &
+                  GC_SALC_wt004 * ptr3d_GC_SALC )
 
       ! ss005
       int_name = 'GOCART::ss005_ForBundle'
       call MAPL_GetPointer(internal,ptr3d_Int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_int =  GC_SALA_wt005 * ptr3d_GC_SALA +         &
+      ptr3d_int =  aeromask * & 
+                (  GC_SALA_wt005 * ptr3d_GC_SALA +         &
                    ptr3d_GC_SALC * ( 1.0 - GC_SALC_wt001 - &
-                   GC_SALC_wt002 - GC_SALC_wt003 - GC_SALC_wt004 )
+                   GC_SALC_wt002 - GC_SALC_wt003 - GC_SALC_wt004 ) )
 
    endif
 
@@ -4465,7 +4494,7 @@ end subroutine aerosol_activation_properties
       VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      ptr3d_Int = ptr3d_GC * aeromask
 
       ! SO2
       1int_name = 'GOCART::SO2_ForBundle'
@@ -4473,7 +4502,7 @@ end subroutine aerosol_activation_properties
       VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      ptr3d_Int = ptr3d_GC * aeromask
 
       ! SO4
       int_name = 'GOCART::SO4_ForBundle'
@@ -4484,7 +4513,7 @@ end subroutine aerosol_activation_properties
       ! HMS - added to SO4
       call MAPL_GetPointer(impChem,ptr3d_GC_HMS,'GEOSCHEM_HMS',rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC + ( ptr3d_GC_HMS * 96.0 / 111.0 )
+      ptr3d_Int = aeromask * ( ptr3d_GC + ( ptr3d_GC_HMS * 96.0 / 111.0 ) )
 
       ! MSA
       int_name = 'GOCART::MSA_ForBundle'
@@ -4492,7 +4521,7 @@ end subroutine aerosol_activation_properties
       VERIFY_(STATUS)
       call MAPL_GetPointer(internal,ptr3d_int,trim(int_name),rc=status)
       VERIFY_(STATUS)
-      ptr3d_Int = ptr3d_GC
+      ptr3d_Int = ptr3d_GC * aeromask
    endif
 
    ! clean up
@@ -4506,6 +4535,8 @@ end subroutine aerosol_activation_properties
    if ( associated( ptr3d_GC_NITs ) ) nullify(ptr3d_GC_NITs)
    if ( associated( ptr3d_GC_HMS  ) ) nullify(ptr3d_GC_HMS )
    if ( associated( ptr3d_int     ) ) nullify(ptr3d_int    )
+
+   if ( allocated ( aeromask      ) ) deallocate(aeromask  )
 
    ! Sanity check prints
    if ( is_verbose ) then

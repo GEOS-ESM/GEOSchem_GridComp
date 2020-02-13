@@ -185,6 +185,7 @@
      logical :: pass_GEOSCHEM_SS      ! sea salt
      logical :: pass_GEOSCHEM_SU      ! sulfates
      logical :: pass_GEOSCHEM_verbose ! turn on print statements 
+     logical :: pass_GEOSCHEM_ZERO    ! Zero out passed GC aerosols 
 
   end type Chem_Registry
 
@@ -409,6 +410,9 @@ CONTAINS
    if ( this%doing_SU ) then
       call parserc_gc_ ( 'SU', this%pass_GEOSCHEM, this%pass_GEOSCHEM_SU )
    endif
+   ! zero out aerosols
+   foo_bool = .FALSE.
+   call parserc_gc_ ( 'ZERO', foo_bool, this%pass_GEOSCHEM_ZERO )
    ! verbose mode
    foo_bool = .FALSE.
    call parserc_gc_ ( 'verbose', foo_bool, this%pass_GEOSCHEM_verbose )
@@ -705,20 +709,21 @@ RealNames: IF( ier .EQ. 0 ) THEN
    this%doing_GMI = .false.   ! GMI chemistry (GEOS-5)
    this%doing_TR = .false.    ! passive tracers
 
-   this%pass_GEOSCHEM     = .false.  ! any
-   this%pass_GEOSCHEM_BC  = .false.  ! black carbon
-   this%pass_GEOSCHEM_BRC = .false.  ! brown carbon
-   this%pass_GEOSCHEM_CFC = .false.  ! CFCs
-   this%pass_GEOSCHEM_CH4 = .false.  ! methane
-   this%pass_GEOSCHEM_CO2 = .false.  ! carbon dioxide
-   this%pass_GEOSCHEM_CO  = .false.  ! carbon monoxide
-   this%pass_GEOSCHEM_DU  = .false.  ! mineral dust
-   this%pass_GEOSCHEM_NI  = .false.  ! nitrate
-   this%pass_GEOSCHEM_O3  = .false.  ! ozone
-   this%pass_GEOSCHEM_OC  = .false.  ! organic carbon
-   this%pass_GEOSCHEM_Rn  = .false.  ! radon
-   this%pass_GEOSCHEM_SS  = .false.  ! sea salt
-   this%pass_GEOSCHEM_SU  = .false.  ! sulfates
+   this%pass_GEOSCHEM      = .false.  ! any
+   this%pass_GEOSCHEM_BC   = .false.  ! black carbon
+   this%pass_GEOSCHEM_BRC  = .false.  ! brown carbon
+   this%pass_GEOSCHEM_CFC  = .false.  ! CFCs
+   this%pass_GEOSCHEM_CH4  = .false.  ! methane
+   this%pass_GEOSCHEM_CO2  = .false.  ! carbon dioxide
+   this%pass_GEOSCHEM_CO   = .false.  ! carbon monoxide
+   this%pass_GEOSCHEM_DU   = .false.  ! mineral dust
+   this%pass_GEOSCHEM_NI   = .false.  ! nitrate
+   this%pass_GEOSCHEM_O3   = .false.  ! ozone
+   this%pass_GEOSCHEM_OC   = .false.  ! organic carbon
+   this%pass_GEOSCHEM_Rn   = .false.  ! radon
+   this%pass_GEOSCHEM_SS   = .false.  ! sea salt
+   this%pass_GEOSCHEM_SU   = .false.  ! sulfates
+   this%pass_GEOSCHEM_ZERO = .false.  ! zero out aerosols 
 
    deallocate ( this%vname, this%vtitle, this%vunits, this%fscav, &
                 this%rhop, this%molwght, this%rlow, this%rup, this%rmed, &
