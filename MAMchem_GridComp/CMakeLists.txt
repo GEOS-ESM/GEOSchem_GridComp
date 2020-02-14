@@ -54,7 +54,7 @@ set (srcs
   )
 
 
-set (dependencies MAPL_Base Chem_Shared GMAO_mpeu)
+set (dependencies MAPL Chem_Shared GMAO_mpeu)
 esma_add_library (${this} SRCS ${srcs} DEPENDENCIES ${dependencies})
 target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 target_compile_definitions (${this} PRIVATE GEOS5 MODAL_AERO MODAL_AERO_7MODE GEOS5_PORT)

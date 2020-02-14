@@ -17,7 +17,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod 	     ! Chemistry Base Class
    USE Chem_UtilMod
 
@@ -509,7 +509,7 @@ CONTAINS
 
    CALL ESMF_FieldBundleGet(qqjBundle, fieldCount=numVars , rc=STATUS)
    VERIFY_(STATUS)
-   ASSERT_(NUM_J == numVars)
+   _ASSERT(NUM_J == numVars,'needs informative message')
 
 ! Initialize the qqkBundle
 ! ------------------------
@@ -532,7 +532,7 @@ CONTAINS
 
    CALL ESMF_FieldBundleGet(qqkBundle, fieldCount=numVars , rc=STATUS)
    VERIFY_(STATUS)
-   ASSERT_(NUM_K == numVars)
+   _ASSERT(NUM_K == numVars,'needs informative message')
 
   END IF ! pr_qqjk is .TRUE.
 

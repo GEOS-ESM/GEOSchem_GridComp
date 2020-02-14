@@ -15,7 +15,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
 
    USE Chem_Mod 	     ! Chemistry Base Class
    USE Chem_StateMod	     ! Chemistry State
@@ -24,7 +24,6 @@
 
    USE m_inpak90	     ! Resource file management
    USE m_die, ONLY: die
-   USE m_chars, ONLY: lowercase
 
    IMPLICIT NONE
 
@@ -611,7 +610,7 @@ subroutine RN_GridCompSetServices1_(  gc, chemReg, iname, rc)
    IF(gcRn%regionsString(1:2) == "-1") THEN
     NoRegionalConstraint = .TRUE.
    ELSE
-    SELECT CASE (lowercase(gcRn%regionsString(1:2)))
+    SELECT CASE (ESMF_UtilStringLowerCase(gcRn%regionsString(1:2)))
      CASE ("gl") 
       NoRegionalConstraint = .TRUE.
      CASE ("al") 
@@ -1044,7 +1043,7 @@ CONTAINS
 
   USE Rn_GridCompMod
   USE ESMF
-  USE MAPL_Mod
+  USE MAPL
   USE Chem_Mod 
 
   IMPLICIT NONE
@@ -1057,7 +1056,7 @@ CONTAINS
      SUBROUTINE Method_ (gc, w, imp, exp, ymd, hms, dt, rcode )
        USE Rn_GridCompMod
        USE ESMF
-       USE MAPL_Mod
+       USE MAPL
        USE Chem_Mod 
        TYPE(Rn_GridComp1),  INTENT(INOUT)  :: gc
        TYPE(Chem_Bundle),   INTENT(IN)     :: w

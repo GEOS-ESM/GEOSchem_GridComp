@@ -69,7 +69,7 @@ endif ()
 
 esma_add_library (${this}
    SRCS ${srcs}
-   DEPENDENCIES MAPL_Base MAPL_cfio_r4 Chem_Base Chem_Shared HEMCO
+   DEPENDENCIES MAPL MAPL_cfio_r4 Chem_Base Chem_Shared HEMCO
    )
 
 target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})

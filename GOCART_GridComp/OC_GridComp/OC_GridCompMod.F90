@@ -15,7 +15,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
 
    use Chem_Mod              ! Chemistry Base Class
    use Chem_StateMod         ! Chemistry State
@@ -25,7 +25,6 @@
    use Chem_MieMod           ! Aerosol LU Tables, calculator
    use m_inpak90             ! Resource file management
    use m_die, only: die
-   USE m_chars, only: lowercase
    use Chem_SettlingMod      ! Settling
    use DryDepositionMod      ! Dry Deposition
    use WetRemovalMod         ! Large-scale Wet Removal
@@ -664,6 +663,7 @@ CONTAINS
    ! local
    type(ESMF_Config)  :: cfg
    character(len=255) :: name
+   logical            :: isPresent
    integer            :: status
    character(len=255) :: Iam
 
@@ -679,9 +679,9 @@ CONTAINS
 
    cfg = ESMF_ConfigCreate(__RC__)
    call ESMF_ConfigLoadFile(cfg, trim(name), __RC__)
-   call ESMF_ConfigFindLabel(cfg, 'nei_boundingbox:', rc=status)
+   call ESMF_ConfigFindLabel(cfg, 'nei_boundingbox:', isPresent=isPresent, __RC__)
 
-   if (status == ESMF_SUCCESS) then
+   if (isPresent) then
        result = .true.
    else 
        result = .false.
@@ -999,7 +999,7 @@ CONTAINS
    IF(gcOC%regionsString(1:2) == "-1") THEN
     NoRegionalConstraint = .TRUE.
    ELSE
-    SELECT CASE (lowercase(gcOC%regionsString(1:2)))
+    SELECT CASE (ESMF_UtilStringLowerCase(gcOC%regionsString(1:2)))
      CASE ("gl") 
       NoRegionalConstraint = .TRUE.
      CASE ("al") 
@@ -2723,7 +2723,7 @@ CONTAINS
 
   Use OC_GridCompMod
   Use ESMF
-  Use MAPL_Mod
+  Use MAPL
   Use Chem_Mod 
 
   IMPLICIT NONE
@@ -2736,7 +2736,7 @@ CONTAINS
      subroutine Method_ (gc, w, imp, exp, ymd, hms, dt, rcode )
        Use OC_GridCompMod
        Use ESMF
-       Use MAPL_Mod
+       Use MAPL
        Use Chem_Mod 
        type(OC_GridComp1),  intent(inout)  :: gc
        type(Chem_Bundle),   intent(in)     :: w

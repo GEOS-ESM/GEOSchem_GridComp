@@ -110,14 +110,14 @@ module GEOS_PChemGridCompMod
 ! !USES:
 
   use ESMF
-  use MAPL_Mod
+  use MAPL
   use Chem_Mod
-  use ESMF_CFIOFileMOD
-  use MAPL_CFIOMOD
+
   
   implicit none
   private
 #include "mpif.h"
+  include "netcdf.inc"
 
 ! !PUBLIC MEMBER FUNCTIONS:
 
@@ -875,7 +875,7 @@ contains
        print*, NF_STRERROR(status)
        stop
     endif
-    ASSERT_(PCHEM_STATE%NSPECIES==NSPECIES)
+    _ASSERT(PCHEM_STATE%NSPECIES==NSPECIES,'needs informative message')
 
 ! If multiple climYears, the second record tells us starting and ending year and number of years
 !-----------------------------------------------------------------------------------------------
@@ -1029,8 +1029,8 @@ contains
 #endif
 
 
-    call MAPL_TimerOff (MAPL,"INITIALIZE" )
     call MAPL_TimerOff (MAPL,"TOTAL"      )
+    call MAPL_TimerOff (MAPL,"INITIALIZE" )
 
 ! All Done
 !---------
@@ -1638,11 +1638,11 @@ contains
     if (trim(NAME) == "H2O") then
        call MAPL_GetPointer ( IMPORT,   XX,  'Q', RC=STATUS )
        VERIFY_(STATUS)
-       ASSERT_(associated(XX))
+       _ASSERT(associated(XX),'needs informative message')
     else
        call MAPL_GetPointer ( INTERNAL, XX, NAME, RC=STATUS )
        VERIFY_(STATUS)
-       ASSERT_(associated(XX))
+       _ASSERT(associated(XX),'needs informative message')
        call MAPL_GetResource(MAPL, VALUE,LABEL=trim(NAME)//"_FIXED_VALUE:", default=-1., RC=STATUS)
        VERIFY_(STATUS)
        if(VALUE>=0.0) then
@@ -1672,7 +1672,7 @@ contains
 
     if (TAU<=0.0) then  ! By convention this is the prod(index 1) and loss(index 2) case
 
-       ASSERT_(trim(NAME)/="H2O")
+       _ASSERT(trim(NAME)/="H2O",'needs informative message')
 
        PROD1 = PCHEM_STATE%MNPL(:,:,NN,1,1)*FAC + PCHEM_STATE%MNPL(:,:,NN,1,2)*(1.-FAC)
        LOSS1 = PCHEM_STATE%MNPL(:,:,NN,2,1)*FAC + PCHEM_STATE%MNPL(:,:,NN,2,2)*(1.-FAC)

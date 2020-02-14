@@ -16,7 +16,7 @@
       Use Chem_RegistryMod
       Use Chem_ArrayMod
       Use m_chars, only: uppercase
-      Use MAPL_Mod, only: MAPL_UNDEF
+      Use MAPL, only: MAPL_UNDEF
 
       Implicit NONE
 

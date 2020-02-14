@@ -16,7 +16,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod            ! SAD Base Class
    USE Chem_UtilMod
 
@@ -673,7 +673,7 @@ CONTAINS
    IF (MAPL_AM_I_ROOT()) THEN
       PRINT*,"  Number of fields in the bundle gmiSAD: ", numVars
    END IF
-   ASSERT_(NSAD == numVars)
+   _ASSERT(NSAD == numVars,'needs informative message')
 
     !---------------------------------------------------------------
     ! Create and populate the array that maps GMI species indices to
@@ -1161,7 +1161,7 @@ CONTAINS
       ! Verify that the number of fields in the bundle is equal to the number
       ! of SAD variables.
 
-      ASSERT_(numVars == NSAD)
+      _ASSERT(numVars == NSAD,'needs informative message')
 
       allocate(ptr3Dreal(i1:i2, j1:j2, 1:km))
 

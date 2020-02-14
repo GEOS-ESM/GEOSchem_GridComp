@@ -28,7 +28,7 @@ list (REMOVE_ITEM srcs
 
 esma_add_library (${this} 
    SRCS ${srcs}
-   DEPENDENCIES MAPL_Base
+   DEPENDENCIES MAPL
    )
 
 target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})

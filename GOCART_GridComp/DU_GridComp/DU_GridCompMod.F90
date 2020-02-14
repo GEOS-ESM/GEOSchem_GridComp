@@ -15,7 +15,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
 
    use Chem_Mod              ! Chemistry Base Class
    use Chem_StateMod         ! Chemistry State
@@ -24,7 +24,6 @@
    use Chem_MieMod           ! Aerosol LU Tables, calculator
    use m_inpak90             ! Resource file management
    use m_die, only: die
-   USE m_chars, only: lowercase
    use DustEmissionMod       ! Emissions
    use Chem_SettlingMod      ! Settling
    use DryDepositionMod      ! Dry deposition
@@ -1993,7 +1992,7 @@ CONTAINS
 
   Use DU_GridCompMod
   Use ESMF
-  Use MAPL_Mod
+  Use MAPL
   Use Chem_Mod 
 
   IMPLICIT NONE
@@ -2006,7 +2005,7 @@ CONTAINS
      subroutine Method_ (gc, w, imp, exp, ymd, hms, dt, rcode )
        Use DU_GridCompMod
        Use ESMF
-       Use MAPL_Mod
+       Use MAPL
        Use Chem_Mod 
        type(DU_GridComp1),  intent(inout)  :: gc
        type(Chem_Bundle),   intent(in)     :: w
