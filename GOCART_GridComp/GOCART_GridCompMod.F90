@@ -1346,6 +1346,10 @@ if ( r%doing_GOCART ) then
           DIMS       = MAPL_DimsHorzVert,          &
           VLOCATION  = MAPL_VLocationCenter, __RC__)
 
+    enddo
+
+    do n = r%i_GOCART, r%j_GOCART 
+
        !   Create duplicate internal state for storing values for
        !   aerosol bundle exported to Radiation. Note that not all
        !   species are necessarily added to the bundle. Look at the
@@ -4891,7 +4895,7 @@ end subroutine aerosol_activation_properties
 
    !---
    ! OC
-   if ( w_c%reg%pass_GEOSCHEM_OC .and. mapl_am_i_root() ) then
+   if ( mapl_am_i_root() ) then
       write(*,*) "OC"
 
       ! OCPO internal state and w_c
@@ -5024,7 +5028,7 @@ end subroutine aerosol_activation_properties
 
    !---
    ! SU
-   if ( w_c%reg%pass_GEOSCHEM_SU .and. mapl_am_i_root() ) then
+   if ( mapl_am_i_root() ) then
       write(*,*) "SU"
 
       ! DMS internal state and w_c
