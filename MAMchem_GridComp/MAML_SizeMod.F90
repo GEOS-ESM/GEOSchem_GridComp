@@ -15,7 +15,7 @@
 ! !USES:
 !
 
-   use MAPL_Mod
+   use MAPL
    use MAPL_ConstantsMod, only : MAPL_PI, MAPL_RHOWTR, r8 => MAPL_R8
 
    use modal_aero_wateruptake, only : modal_aero_kohler

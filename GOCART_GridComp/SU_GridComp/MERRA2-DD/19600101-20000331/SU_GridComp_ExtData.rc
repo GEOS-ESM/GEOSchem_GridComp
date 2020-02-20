@@ -21,9 +21,9 @@ SU_AIRCRAFT NA  N Y %y4-%m2-%d2t12:00:00 none none fuel ExtData/AeroCom/L72/Aero
 SU_DMSO NA  Y Y %y4-%m2-%d2t12:00:00 none none conc ExtData/MERRA2/sfc/DMSclim_sfcconcentration.x360_y181_t12.Lana2011.nc4
 
 # H2O2, OH and NO3 mixing ratios
-SU_H2O2 NA  N Y %y4-%m2-%d2t12:00:00 none none h2o2 ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
-SU_OH   NA  N Y %y4-%m2-%d2t12:00:00 none none oh   ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
-SU_NO3  NA  N Y %y4-%m2-%d2t12:00:00 none none no3  ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
+SU_H2O2 NA  N Y %y4-%m2-%d2t12:00:00 none none H2O2 ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
+SU_OH   NA  N Y %y4-%m2-%d2t12:00:00 none none OH   ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
+SU_NO3  NA  N Y %y4-%m2-%d2t12:00:00 none none NO3  ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
 
 # Aviation emissions during the three phases of flight
 SU_AVIATION_LTO NA  N Y %y4-%m2-%d2t12:00:00 none none none /dev/null

@@ -15,7 +15,7 @@
 ! !USES:
 !
 
-   use MAPL_Mod
+   use MAPL
    use MAPL_ConstantsMod, only : MAPL_PI, r8 => MAPL_R8
 
    use MAM_ComponentsDataMod

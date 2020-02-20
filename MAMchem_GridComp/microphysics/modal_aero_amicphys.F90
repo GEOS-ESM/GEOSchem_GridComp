@@ -311,7 +311,7 @@ use phys_control,      only:  phys_getopts
 use chem_mods,         only:  adv_mass
 use constituents,      only:  pcnst, cnst_name, cnst_get_ind
 use MAPL_ConstantsMod, only:  gravit => MAPL_GRAV, mwdry => MAPL_AIRMW, r_universal => MAPL_RUNIV
-use MAPL_Mod,          only:  MAPL_EQSAT
+use MAPL,          only:  MAPL_EQSAT
 #endif
 
 use modal_aero_data,   only:  &

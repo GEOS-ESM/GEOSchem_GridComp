@@ -11,7 +11,7 @@
 !
 ! !USES:
       use ESMF
-      use MAPL_Mod
+      use MAPL
       use GmiESMFrcFileReading_mod, only : rcEsmfReadTable, rcEsmfReadLogical
       use GmiArrayBundlePointer_mod, only : t_GmiArrayBundle, CleanArrayPointer
       use GmiArrayBundlePointer_mod, only : setArrayPointer

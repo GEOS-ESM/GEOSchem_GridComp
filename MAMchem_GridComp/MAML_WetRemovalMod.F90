@@ -16,9 +16,7 @@
 !
 ! !USES:
 !
-   use MAPL_Mod
-
-   use MAPL_ConstantsMod, only: MAPL_GRAV
+   use MAPL
 
    use WetRemovalMod, only: WetRemovalGOCART
 
