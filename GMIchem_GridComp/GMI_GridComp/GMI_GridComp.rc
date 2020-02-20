@@ -6,7 +6,8 @@
         # Where is the GMI mechanism?
         #############################
 
-kineticsTextFile: setkin_chem_mech.txt___.rc
+# File not used, but kept for now as a reference:
+#kineticsTextFile: setkin_chem_mech.txt___.rc
 
         #############################
         # GMI Chemical Mechanism Name
@@ -167,6 +168,7 @@ emissionSpeciesLayers::
 # Ship Emissions requires SHIP_NO in ExtData:
 do_ShipEmission: T
 doMEGANemission: T
+doMEGANviaHEMCO: F
 
 isop_scale::
 1.0d0
@@ -283,9 +285,10 @@ sfalbedo_opt: 3
 # For FastJX & JPL10
 # cross section file: /discover/nobackup/ldoman/fvInput/xsec_jx_jpl10update2_JNOx1_0.dat
 # For FastJX 6.5 & JPL10
-cross_section_file: /discover/nobackup/ldoman/fvInput/fastjx/65/xsec_jx65_jpl10update2_JNOx1_0.dat
+cross_section_file: /discover/nobackup/mmanyin/fvInput/fastjx/65/xsec_jx65_jpl10update2_JNOx1_0.dat
 Prather_jNO_factor: 1.0
-#rate_file: ExtData/g5chem/x/ratec_119spc_jx_gmiv3.dat
+#rate_file not needed for FastJX6.5 and later; new approach only differs by roundoff
+#rate_file: ExtData/g5chem/x/ratec_124spc_jx_gmiv2.dat
 rate_file: /discover/nobackup/mmanyin/CCM/fvInput/fastjx/ratec_119spc_jx_gmiv3.dat
 T_O3_climatology_file: ExtData/g5chem/x/atms_jx_o3andtemp.dat
 do_ozone_inFastJX: F
