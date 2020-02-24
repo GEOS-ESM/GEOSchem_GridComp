@@ -188,7 +188,6 @@ CONTAINS
    CHARACTER(LEN=*), PARAMETER :: IAm    = 'GmiChem_GridCompClassInitialize'
    CHARACTER(LEN=255) :: rcfilen = 'GMI_GridComp.rc'
    CHARACTER(LEN=255) :: namelistFile
-   CHARACTER(LEN=255) :: kineticsTextFile
    CHARACTER(LEN=255) :: importRestartFile
    CHARACTER(LEN=255) :: string
    
