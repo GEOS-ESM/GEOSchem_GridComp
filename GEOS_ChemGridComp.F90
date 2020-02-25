@@ -819,7 +819,7 @@ contains
                                        "doMEGANviaHEMCO:", default=.false., __RC__ )
        
      ! make sure we don't have inconsistent HEMCO flags
-     IF ( GMI_instance_of_HEMCO /= doMEGANviaHEMCO ) THEN
+     IF ( GMI_instance_of_HEMCO .neqv. doMEGANviaHEMCO ) THEN
         PRINT*,'Inconsistency --- HEMCO GMI instance  = ', GMI_instance_of_HEMCO
         PRINT*,'              --- GMI:doMEGANviaHEMCO = ', doMEGANviaHEMCO
         STATUS=98
