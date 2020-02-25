@@ -827,8 +827,8 @@ contains
      END IF
 
      ! make sure we don't have inconsistent MEGAN flags
-     IF ( doMEGANviaHEMCO == .TRUE.    .AND.  &
-          doMEGANemission == .FALSE. ) THEN
+     IF ( doMEGANviaHEMCO .eqv. .TRUE.    .AND.  &
+          doMEGANemission .eqv. .FALSE. ) THEN
         PRINT*,'Inconsistent GMI flags: doMEGANviaHEMCO==T, doMEGANemission==F'
         STATUS=99
         VERIFY_(STATUS)
