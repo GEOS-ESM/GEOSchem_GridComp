@@ -125,8 +125,8 @@ class LUT:
                        scheme=scheme_cs, dir='/home/adarmeno/sandbox/colarco/radiation/gads/optdat/',
                        N_integration_bins=10000, verbose=False):
 
-
-        assert (wavelengths is not None) != (bands is not None)
+        
+        assert (wavelengths is not None) or (bands is not None)
 
         # LUT's parameters
         self.wavelengths = wavelengths                       # monochromatic wavelengths, 'm'
@@ -166,7 +166,7 @@ class LUT:
         print 'Im(n)', n_im_min, n_im_max
         print 'n    =', n 
 
-        if self.bands is not None and self.scheme == scheme_cs:
+        if self.bands is not None and self.scheme is scheme_cs:
             # widths of band 0 and 2
             d0 = self.bands[0][1] - self.bands[0][0]
             d2 = self.bands[2][1] - self.bands[2][0]
