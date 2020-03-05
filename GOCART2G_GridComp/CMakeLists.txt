@@ -22,7 +22,7 @@ install( FILES ${resource_files}
    DESTINATION etc
    )
 
-set (dependencies MAPL_Base Chem_Shared2G)
+set (dependencies MAPL Chem_Shared2G)
 esma_add_library (${this}
   SRCS ${srcs}
   SUBCOMPONENTS ${alldirs}
