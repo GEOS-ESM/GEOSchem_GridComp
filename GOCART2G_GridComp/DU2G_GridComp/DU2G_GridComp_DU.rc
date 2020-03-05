@@ -13,7 +13,7 @@ du004      'kg kg-1'    'Dust Mixing Ratio (bin004)'
 du005      'kg kg-1'    'Dust Mixing Ratio (bin005)'
 ::
 
-OPTICS_FILE: ExtData/MERRA2/x/opticsBands_DU.v15_3.RRTMG.nc
+radiation_optics: ExtData/MERRA2/x/opticsBands_DU.v15_3.RRTMG.nc
 
 particle_radius: 0.73 1.4 2.4 4.5 8.0
 
