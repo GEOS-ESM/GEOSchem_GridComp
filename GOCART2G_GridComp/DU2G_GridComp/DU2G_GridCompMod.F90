@@ -372,6 +372,12 @@ if(mapl_am_i_root()) print*,'DU2G self%Ch_DU',self%Ch_DU
        datatype   = MAPL_BundleItem, __RC__)
 
 
+
+!  Store internal state in GC
+!  --------------------------
+   call ESMF_UserCompSetInternalState ( GC, 'DU2G_GridComp', wrap, STATUS )
+   VERIFY_(STATUS)
+
 !   Set generic services
 !   ----------------------------------
     call MAPL_GenericSetServices (GC, __RC__)
@@ -447,23 +453,19 @@ if (mapl_am_I_root()) print*,trim(comp_name),' INIT BEGIN'
 !   -----------------------------------
     call MAPL_GetObjectFromGC (GC, MAPL, __RC__)
 
-!   Wrap internal state for storing in GC
-!   -------------------------------------
-   allocate (self, __STAT__)
-   wrap%ptr => self
-
-!    call ESMF_UserCompGetInternalState(GC, 'DU2G_GridComp', wrap, STATUS)
-!if (mapl_am_i_root()) print*,'ESMF_UserCompGetInteralState status = ',STATUS
-!  VERIFY_(STATUS)
-!    self => wrap%ptr
+!   Get my internal state
+!   ---------------------
+    call ESMF_UserCompGetInternalState(GC, 'DU2G_GridComp', wrap, STATUS)
+    VERIFY_(STATUS)
+    self => wrap%ptr
 
 if (mapl_am_I_root()) print*,'DU2G Ch_DU before = ', self%Ch_DU
+
     call MAPL_GridGet ( grid, globalCellCountPerDim=dims, __RC__ )
 
 !  Dust emission tuning coefficient [kg s2 m-5]. NOT bin specific.
 !  ---------------------------------------------------------------
-!   self%Ch_DU = Chem_UtilResVal(dims(1), dims(2), self%Ch_DU(:), __RC__)
-   self%Ch_DU = self%Ch_DU * 1.00E-09
+   self%Ch_DU = Chem_UtilResVal(dims(1), dims(2), self%Ch_DU(:), __RC__)
 
 if (mapl_am_I_root()) print*,'DU2G dims(1) = ', dims(1)
 if (mapl_am_I_root()) print*,'DU2G dims(2) = ', dims(2)
@@ -720,12 +722,10 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run END'
 
     real, pointer, dimension(:,:,:)    :: delp
     real, pointer, dimension(:,:)     :: fraclake, gwettop, oro, u10m, v10m
-!    real, pointer                     :: DU_radius(:), DU_rhop(:)
     real, pointer                     :: emissions(:,:,:), dqa(:,:,:)
 
     real, pointer, dimension(:,:)     :: du_src 
-
-    real                      :: radius(5), DU_rhop(5), sfrac(5), Ch_DU
+    real, allocatable                 :: radius(:)
 
     ! REPLACE undef and GRAV WITH MAPL
     real, parameter ::  UNDEF  = 1.e15
@@ -761,13 +761,14 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run1 BEGIN'
 
 !#include "DU2G_GetPointer___.h"
 
-!   Wrap internal state for storing in GC
-!   -------------------------------------
-    allocate (self, __STAT__)
-    wrap%ptr => self
+!   Get my internal state
+!   ---------------------
+    call ESMF_UserCompGetInternalState(GC, 'DU2G_GridComp', wrap, STATUS)
+    VERIFY_(STATUS)
+    self => wrap%ptr
 
-!    n_bins = size(self%radius)
-    n_bins = 5 ! REMOVE ONCE self works!!
+    n_bins = size(self%radius)
+!    n_bins = 5 ! REMOVE ONCE self works!!
 
 !   Get DT
 !   ------
@@ -809,11 +810,9 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run1 BEGIN'
 
 !   Dust particle radius [m] and density [kg m-3]
 !   ---------------------------------------------
-!    allocate( DU_radius(n_bins), DU_rhop(n_bins), __STAT__ )
-!    DU_radius = 1.e-6*self%radius
-!    DU_rhop   = self%rhop
-    radius = (/7.300000E-07, 1.4000000E-06, 2.400000E-06, 4.500000E-06, 8.0000000E-06 /)
-    DU_rhop = (/ 2500.000, 2650.000, 2650.000, 2650.000, 2650.000 /)
+    allocate( radius(n_bins), __STAT__ )
+    radius = 1.e-6 * self%radius
+!   DU_rhop   = self%rhop
     allocate( emissions(i1:i2,j1:j2,n_bins), dqa(i1:i2,j1:j2,n_bins), __STAT__)
 
 !    call MAPL_Get(MAPL, INTERNALSPEC = internalSpec, __RC__)
@@ -823,10 +822,7 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run1 BEGIN'
 !    if(mapl_am_i_root()) print*,'DU2G internal spec shortname = ',trim(short_name)
 !   end do
 
-Ch_DU = 6.9999999E-11
-sfrac = (/ 0.1000000, 0.2500000, 0.2500000, 0.2500000, 0.2500000 /)
 
-!#if 0
 !   Dust Source
 !   -----------
     emissions = 0.0
@@ -834,7 +830,7 @@ sfrac = (/ 0.1000000, 0.2500000, 0.2500000, 0.2500000, 0.2500000 /)
 
     call DustEmissionGOCART2G( i1, i2, j1, j2, n_bins, radius, &
                                fraclake, gwettop, oro, u10m, v10m, &
-                               Ch_DU, sfrac, du_src, GRAV, &
+                               self%Ch_DU(1), self%sfrac, du_src, GRAV, &
                                emissions, rc )
 
 !if(mapl_am_i_root()) print*,'DU2G sum emissions = ',sum(emissions)
