@@ -3337,8 +3337,8 @@ contains
 !if ( (trim(aerosol(l)) == 'ss001') .OR. &
 !(trim(aerosol(l)) == 'ss002') .OR. (trim(aerosol(l)) == 'ss003') .OR. (trim(aerosol(l)) == 'ss004') .OR. (trim(aerosol(l)) == 'ss005')) then
 
-if ( (trim(aerosol(l)) == 'du001') .OR. &
-(trim(aerosol(l)) == 'du002') .OR. (trim(aerosol(l)) == 'du003') .OR. (trim(aerosol(l)) == 'du004') .OR. (trim(aerosol(l)) == 'du005')) then
+!if ( (trim(aerosol(l)) == 'du001') .OR. &
+!(trim(aerosol(l)) == 'du002') .OR. (trim(aerosol(l)) == 'du003') .OR. (trim(aerosol(l)) == 'du004') .OR. (trim(aerosol(l)) == 'du005')) then
 
         call Chem_MieQueryAllBand4D(mie_table, idx, nb, offset, q(:,:,:,l), rh, ext, ssa, asy, __RC__)
 
@@ -3353,7 +3353,7 @@ if ( (trim(aerosol(l)) == 'du001') .OR. &
 !  if (mapl_am_i_root()) print*,'GOCART asy  = ', sum(asy(:,:,:,1))
 !end if
 
-end if ! trim(aerosol(l) == du00x
+!end if ! trim(aerosol(l) == du00x
 
      end do
 
