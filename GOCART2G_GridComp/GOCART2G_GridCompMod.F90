@@ -12,7 +12,7 @@ module GOCART2G_GridCompMod
 ! !USES:
 
    use ESMF
-   use MAPL_Mod
+   use MAPL
    use Chem_AeroGeneric
 
 ! !Establish the Childen's SetServices
