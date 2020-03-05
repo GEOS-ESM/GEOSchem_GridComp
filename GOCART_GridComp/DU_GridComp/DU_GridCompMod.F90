@@ -326,11 +326,11 @@ CONTAINS
    END IF
 
 
-   call ESMF_StateGet( expChem, 'DUMASS', field, RC=status )
+!   call ESMF_StateGet( expChem, 'DUMASS', field, RC=status )
 !  verify_(status)
-   call ESMF_FieldGet( field, farrayPtr=ptr_test, RC=status )
+!   call ESMF_FieldGet( field, farrayPtr=ptr_test, RC=status )
 !  verify_(status)
-   if (mapl_am_i_root()) print*,'DU DUMASS = ', ptr_test
+!   if (mapl_am_i_root()) print*,'DU DUMASS = ', ptr_test
 
    end subroutine DU_GridCompInitialize
 
@@ -694,7 +694,7 @@ CONTAINS
    end if
 !                          -------
 
-if(mapl_am_i_root()) print*,'gcDU%sfrac = ',gcDU%sfrac
+!if(mapl_am_i_root()) print*,'gcDU%sfrac = ',gcDU%sfrac
 
 
 
@@ -780,7 +780,7 @@ if(mapl_am_i_root()) print*,'gcDU%sfrac = ',gcDU%sfrac
       return
    end if
 
-if(mapl_am_i_root()) print*,'gcDU%Ch_DU = ',gcDU%Ch_DU
+!f(mapl_am_i_root()) print*,'gcDU%Ch_DU = ',gcDU%Ch_DU
 
 !  Settling velocity correction following Maring et al, 2003
 !  ---------------
@@ -974,6 +974,7 @@ CONTAINS
 
    endif
 
+if(mapl_am_i_root()) print*,'gcDU%doing_point_emissions =',gcDU%doing_point_emissions
 !  Read any pointwise emissions, if requested
 !  ------------------------------------------
    if(gcDU%doing_point_emissions) then
@@ -992,7 +993,9 @@ CONTAINS
 !  ---------------------------------------------
    allocate( DU_radius(nbins), DU_rhop(nbins) )
    DU_radius = 1.e-6*gcDU%radius
+!if(mapl_am_i_root()) print*,'GOCART DU DU_radius = ', DU_radius
    DU_rhop   = gcDU%rhop
+!if(mapl_am_i_root()) print*,'GOCART DU DU_rhop = ', DU_rhop
    allocate( emissions(i1:i2,j1:j2), dqa(i1:i2,j1:j2), stat=STATUS)
    VERIFY_(STATUS)
 
@@ -1040,8 +1043,11 @@ CONTAINS
 
        dqa = gcDU%Ch_DU * gcDU%sfrac(n)*gcDU%src * emissions * cdt * grav / w_c%delp(:,:,km)
 
-if(mapl_am_i_root()) print*,'DU sum(dqa) = ',sum(dqa)
-
+if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(dqa) = ',sum(dqa)
+!if(mapl_am_i_root()) print*,'DU emissions n = ',n
+!if(mapl_am_i_root()) print*,'DU emissions = ',emissions
+!if(mapl_am_i_root()) print*,'DU n = ',n
+!if(mapl_am_i_root()) print*,'DU dqa = ',dqa
 
        w_c%qa(n1+n-1)%data3d(:,:,km) = w_c%qa(n1+n-1)%data3d(:,:,km) + dqa
 
