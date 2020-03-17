@@ -286,12 +286,6 @@ CONTAINS
 !  --------------------------
    emissions(:,:) = 0.
 
-!if(mapl_am_i_root())print*,'DustEmissionGOCART shape(gwettop) = ', shape(gwettop)
-!if(mapl_am_i_root())print*,'DustEmissionGOCART shape(u10m)    = ', shape(u10m)
-!if(mapl_am_i_root())print*,'DustEmissionGOCART shape(v10m)    = ', shape(v10m)
-
-!if(mapl_am_i_root())print*,'DustEmissionGOCART raidus    = ', radius
-
 !  Calculate the threshold velocity of wind erosion [m/s] for each radius
 !  for a dry soil, as in Marticorena et al. [1997].
 !  The parameterization includes the air density which is assumed 
