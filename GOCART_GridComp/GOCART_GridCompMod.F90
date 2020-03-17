@@ -1111,7 +1111,7 @@ if ( r%doing_GOCART ) then
           DIMS       = MAPL_DimsHorzVert,          &
           VLOCATION  = MAPL_VLocationCenter, __RC__)
 
-   if (mapl_am_i_root()) print*,'internal SHORT_NAME = ',trim(COMP_NAME)//'::'//trim(r%vname(n))
+   if (mapl_am_i_root()) print*,'GOCART internal SHORT_NAME = ',trim(COMP_NAME)//'::'//trim(r%vname(n))
 
     end do
 
@@ -1533,12 +1533,10 @@ end if ! doing GOCART
    _ASSERT( size(InternalSpec) == chemReg%n_GOCART, 'needs informative message' )
 
    do L = 1, size(InternalSpec)
-
       call MAPL_VarSpecGet(InternalSpec(L), SHORT_NAME=short_name, __RC__)
 
       N = chemReg%i_GOCART + L - 1
       call MAPL_GetPointer(internal, NAME=short_name, ptr=w_c%qa(N)%data3d, __RC__)
-
    end do
 
 #ifdef PRINT_STATES
@@ -2284,6 +2282,7 @@ CONTAINS
 !  -----------------------------------------
    call extract_ ( gc, clock, chemReg, gcChem, w_c, nymd, nhms, cdt, STATUS, state=myState )
    VERIFY_(STATUS)
+
 
 !  Until all the gas phase species handle GOCART_DT correctly, we must run at the heartbeat
 !  ----------------------------------------------------------------------------------------
