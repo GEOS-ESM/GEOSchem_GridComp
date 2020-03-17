@@ -931,6 +931,7 @@ CONTAINS
 
 #include "DU_GetPointer___.h"
 
+
 !  Initialize local variables
 !  --------------------------
    rc = 0
@@ -974,7 +975,6 @@ CONTAINS
 
    endif
 
-if(mapl_am_i_root()) print*,'gcDU%doing_point_emissions =',gcDU%doing_point_emissions
 !  Read any pointwise emissions, if requested
 !  ------------------------------------------
    if(gcDU%doing_point_emissions) then
@@ -993,9 +993,7 @@ if(mapl_am_i_root()) print*,'gcDU%doing_point_emissions =',gcDU%doing_point_emis
 !  ---------------------------------------------
    allocate( DU_radius(nbins), DU_rhop(nbins) )
    DU_radius = 1.e-6*gcDU%radius
-!if(mapl_am_i_root()) print*,'GOCART DU DU_radius = ', DU_radius
    DU_rhop   = gcDU%rhop
-!if(mapl_am_i_root()) print*,'GOCART DU DU_rhop = ', DU_rhop
    allocate( emissions(i1:i2,j1:j2), dqa(i1:i2,j1:j2), stat=STATUS)
    VERIFY_(STATUS)
 
@@ -1031,6 +1029,7 @@ if(mapl_am_i_root()) print*,'gcDU%doing_point_emissions =',gcDU%doing_point_emis
 
 #endif
 
+
 !  Dust Source
 !  -----------
    do n = 1, nbins
@@ -1043,12 +1042,8 @@ if(mapl_am_i_root()) print*,'gcDU%doing_point_emissions =',gcDU%doing_point_emis
 
        dqa = gcDU%Ch_DU * gcDU%sfrac(n)*gcDU%src * emissions * cdt * grav / w_c%delp(:,:,km)
 
-if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(dqa) = ',sum(dqa)
-!if(mapl_am_i_root()) print*,'DU emissions n = ',n
-!if(mapl_am_i_root()) print*,'DU emissions = ',emissions
-!if(mapl_am_i_root()) print*,'DU n = ',n
-!if(mapl_am_i_root()) print*,'DU dqa = ',dqa
-
+!if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum emissions = ',sum(emissions)
+!if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(dqa) = ',sum(dqa)
        w_c%qa(n1+n-1)%data3d(:,:,km) = w_c%qa(n1+n-1)%data3d(:,:,km) + dqa
 
        if (associated(DU_emis(n)%data2d)) then
@@ -1073,6 +1068,9 @@ if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(dqa) = ',sum(dqa)
 !    -------------------------------
      allocate(iPoint(gcDU%nPts), jPoint(gcDU%nPts), stat=ios)
 
+!if (mapl_am_I_root()) print*,'DU lon = ',gcDU%pLon/radToDeg
+!if (mapl_am_I_root()) print*,'DU lat = ',gcDU%pLat/radToDeg
+
      call MAPL_GetHorzIJIndex(gcDU%nPts, iPoint, jPoint, &
                               grid = w_c%grid_esmf,      &
                               lon  = gcDU%pLon/radToDeg, &
@@ -1087,6 +1085,7 @@ if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(dqa) = ',sum(dqa)
       if( i<1 .OR. j<1 )              cycle    ! point emission not in this sub-domain
 !      if( gcDU%regionMask(i,j) == 0 ) cycle    ! masked by region mask
 
+
 !     Emissions not occurring in current time step
 !     --------------------------------------------
       if(nhms < gcDU%pStart(ii) .or. nhms >= gcDU%pEnd(ii)) cycle
@@ -1094,11 +1093,14 @@ if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(dqa) = ',sum(dqa)
       call distribute_point_emissions(w_c%delp(i,j,:), rhoa(i,j,:), &
                                       gcDU%pBase(ii), gcDU%pTop(ii), gcDU%pEmis(ii), &
                                       point_column_emissions, km)
-      do n = 1, nbins
 
+!if (sum(point_column_emissions) > 0)
+!  print*,'DU point_column_emissions = ',sum(point_column_emissions)
+!end if
+      do n = 1, nbins
        w_c%qa(n1+n-1)%data3d(i,j,:) = w_c%qa(n1+n-1)%data3d(i,j,:) & 
           + cdt * grav / w_c%delp(i,j,:) &
-                * gcDU%sfrac(n) * point_column_emissions / w_c%grid%cell_area(i,j)
+               * gcDU%sfrac(n) * point_column_emissions / w_c%grid%cell_area(i,j)
       enddo
 
      enddo
@@ -1106,6 +1108,11 @@ if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(dqa) = ',sum(dqa)
      deallocate(iPoint, jPoint, stat=ios)
 
    endif POINTWISE_SOURCES
+
+
+!    do n = 1, nbins
+!       print*,'DU n = ',n,' sum(w_c%qa%data3d) = ',sum( w_c%qa(n1+n-1)%data3d(i,j,:))
+!    end do
 
 
 !  Clean up
