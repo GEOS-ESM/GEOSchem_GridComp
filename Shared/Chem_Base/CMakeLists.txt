@@ -21,7 +21,7 @@ include (UseF2Py)
 include_directories (${esma_include}/${this})
 add_f2py_module(MieObs_ SOURCES MieObs_py.F90 
    DESTINATION lib/Python
-   LIBRARIES Chem_Base MAPL GMAO_mpeu ${NETCDF_LIBRARIES} ${ESMF_LIBRARY}
+   LIBRARIES Chem_Base MAPL_Base GMAO_mpeu ${NETCDF_LIBRARIES} ${ESMF_LIBRARY}
    INCLUDEDIRS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR}/lib ${BASEDIR}/lib ${include_${this}} ${INC_NETCDF}
    USE_MPI
    )
