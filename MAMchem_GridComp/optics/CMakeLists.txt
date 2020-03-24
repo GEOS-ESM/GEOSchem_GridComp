@@ -12,17 +12,18 @@ foreach(flag ${tmp})
 endforeach()
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-include(UseF2Py)
 
-add_f2py_module(optics_
-   SOURCES mie.F90 
-   DESTINATION lib/Python/optics
-   ONLY scattering_lognormal
-   LIBRARIES miev
-   INCLUDEDIRS ${CMAKE_CURRENT_BINARY_DIR}
-   USE_OPENMP DOUBLE_PRECISION
-   )
-add_dependencies(optics_ miev)
+if (F2PY_FOUND)
+   add_f2py_module(optics_
+      SOURCES mie.F90
+      DESTINATION lib/Python/optics
+      ONLY scattering_lognormal
+      LIBRARIES miev
+      INCLUDEDIRS ${CMAKE_CURRENT_BINARY_DIR}
+      USE_OPENMP DOUBLE_PRECISION
+      )
+   add_dependencies(optics_ miev)
+endif (F2PY_FOUND)
 
 install(
    FILES radiation.py gads.py mam7-optics.lut.py
