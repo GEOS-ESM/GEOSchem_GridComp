@@ -398,8 +398,8 @@ HFC125     'mol mol-1'  CHF2CF3
 HFC134A    'mol mol-1'  CH2FCF3
 HFC143A    'mol mol-1'  CF3CH3
 HFC152A    'mol mol-1'  CH2CHF2
-CO2B       'mol mol-1'  Lat-depedent CO2
-SF6B       'mol mol-1'  Sulfur hexafluoride
+CO2        'mol mol-1'  Lat-depedent CO2
+SF6        'mol mol-1'  Sulfur hexafluoride
 RO3OX      "none"       Ozone-to-odd oxygen ratio
 ::
 
