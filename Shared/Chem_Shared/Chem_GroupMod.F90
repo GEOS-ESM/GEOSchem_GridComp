@@ -624,7 +624,11 @@ CONTAINS
      &                               sgrp_fac(im,ig)
         end do
 
-        group_factor(:,:,:)        = qq1(:,:,:) / qq2(:,:,:)
+        where ( qq2(:,:,:) > VERY_SMALL )
+          group_factor(:,:,:)      = qq1(:,:,:) / qq2(:,:,:)
+        elsewhere
+          group_factor(:,:,:)      = -999.0
+        end where
 
         do im                      = 1, MAXGRP_ELEM
           imsgrp                   = sgrp_elem_map(im,ig)
@@ -632,6 +636,18 @@ CONTAINS
      &      x(imsgrp)%p(:,:,:)     = x(imsgrp)%p(:,:,:) *  &
      &                               group_factor(:,:,:)
         end do
+
+!.... In the very rare cases where the species sum is tiny, divide up Cly
+          where( group_factor(:,:,:) == -999.0 )
+            x(iCL    )%p(:,:,:) = (qq1(:,:,:) / 10.0)
+            x(iCL2   )%p(:,:,:) = (qq1(:,:,:) / 10.0) * 2.0
+            x(iCLO   )%p(:,:,:) = (qq1(:,:,:) / 10.0)
+            x(iCL2O2 )%p(:,:,:) = (qq1(:,:,:) / 10.0) * 2.0
+            x(iCLONO2)%p(:,:,:) = (qq1(:,:,:) / 10.0)
+            x(iHCL   )%p(:,:,:) = (qq1(:,:,:) / 10.0)
+            x(iHOCL  )%p(:,:,:) = (qq1(:,:,:) / 10.0)
+            x(iOCLO  )%p(:,:,:) = (qq1(:,:,:) / 10.0)
+          end where
 
       end select
 

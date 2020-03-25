@@ -83,7 +83,7 @@
      &      (emiss_isop, emiss_monot, DAYS_BTW_M, &
      &       aefIsop, aefMbo, aefMonot, isoLai, isoLaiCurr, isoLaiPrev, &
      &       surfTemp, T_15_AVG, pardif, pardir, cosSolarZenithAngle, &
-     &       pr_diag, procID, i1, i2, ju1, j2, PT_15isOK)
+     &       pr_diag, procID, i1, i2, ju1, j2, PT_15isOK, compute_isop)
 !
       implicit none
 
@@ -117,13 +117,12 @@
       real*8 , intent(in) :: pardir              (i1:i2, ju1:j2)
                              ! Cosines of the solar zenith angle
       real*8 , intent(in) :: cosSolarZenithAngle (i1:i2, ju1:j2)
-      LOGICAL, INTENT(IN) :: PT_15isOK ! If .TRUE. use Eq. 5b, 5c for E_OPT and T_OPT
+      LOGICAL, INTENT(IN) :: PT_15isOK    ! If .TRUE. use Eq. 5b, 5c for E_OPT and T_OPT
+      LOGICAL, INTENT(IN) :: compute_isop ! Only set emiss_isop if .TRUE.
 !
 ! !OUTPUT PARAMETERS:
-                              ! isoprene    emissions    (kg/s)
-      real*8 , intent(out) :: emiss_isop (i1:i2, ju1:j2)
-                              ! monoterpene emissions    (kg/s)
-      real*8 , intent(out) :: emiss_monot(i1:i2, ju1:j2)
+      real*8 , intent(out) :: emiss_isop (i1:i2, ju1:j2)  ! isoprene    emissions    (kg/s)
+      real*8 , intent(out) :: emiss_monot(i1:i2, ju1:j2)  ! monoterpene emissions    (kg/s)
 !
 ! !DESCRIPTION:
 ! Updates the MEGAN biogenic emissions (isoprene, monoterpene).
@@ -163,16 +162,17 @@
             isoLaiPrev_ij = isoLaiPrev         (ix, iy)
 
             ! Isoprene
-            emiss_isop (ix,iy) =  GET_EMISOP_MEGAN &
-     &                               (T_15_AVG_ij, SUNCOS, aefIsop_ij, &
-     &                                isoLai_ij, isoLaiCurr_ij, isoLaiPrev_ij, &
-     &                                DAYS_BTW_M, TS_ij, XNUMOL_C, Q_DIR, Q_DIFF, PT_15isOK)
+            if (compute_isop)                                                                   &
+     &        emiss_isop (ix,iy) =  GET_EMISOP_MEGAN                                            &
+     &                                 (T_15_AVG_ij, SUNCOS, aefIsop_ij,                        &
+     &                                  isoLai_ij, isoLaiCurr_ij, isoLaiPrev_ij,                &
+     &                                  DAYS_BTW_M, TS_ij, XNUMOL_C, Q_DIR, Q_DIFF, PT_15isOK)
 
             ! Monoterpenes
-            emiss_monot(ix,iy) = GET_EMMONOT_MEGAN &
-     &                              (T_15_AVG_ij, TS_ij, XNUMOL_C, aefMonot_ij, &
-     &                               isoLai_ij, isoLaiCurr_ij, isoLaiPrev_ij, &
-     &                               DAYS_BTW_M, PT_15isOK)
+              emiss_monot(ix,iy) = GET_EMMONOT_MEGAN                                            &
+     &                                (T_15_AVG_ij, TS_ij, XNUMOL_C, aefMonot_ij,               &
+     &                                 isoLai_ij, isoLaiCurr_ij, isoLaiPrev_ij,                 &
+     &                                 DAYS_BTW_M, PT_15isOK)
 
 !            ! Methyl butenol
 !            emiss_meth (ix,iy) = GET_EMMBO_MEGAN &

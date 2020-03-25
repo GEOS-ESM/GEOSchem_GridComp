@@ -399,10 +399,12 @@ CONTAINS
     type(ESMF_Time)               :: Time     ! Current time
     type(ESMF_Alarm)              :: Alarm
     type(ESMF_Alarm)              :: Predictor_Alarm
+    type(ESMF_Alarm)              :: ReplayShutOff_Alarm
 
     integer                       :: nymd, nhms, i550nm, izAOD, iyAOD
     logical                       :: analysis_time, fexists 
     logical                       :: PREDICTOR_STEP
+    logical                       :: ReplayShutOff
 
     character(len=ESMF_MAXSTR)    :: comp_name
 
@@ -444,6 +446,9 @@ CONTAINS
    call ESMF_ClockGetAlarm(Clock,'PredictorActive',Predictor_Alarm,__RC__)
    PREDICTOR_STEP = ESMF_AlarmIsRinging( Predictor_Alarm,__RC__)
 
+   call ESMF_ClockGetAlarm(Clock,'ReplayShutOff',ReplayShutOff_Alarm,__RC__)
+   ReplayShutOff  = ESMF_AlarmIsRinging( ReplayShutOff_Alarm,__RC__)
+
 !  For some reason the alarm above is not working.
 !  For now, hardwire this...
 !  -----------------------------------------------
@@ -458,7 +463,7 @@ CONTAINS
 
 !  Stop here if it is NOT analysis time
 !  -------------------------------------
-   if ( PREDICTOR_STEP .or. (.not. analysis_time) ) then
+   if ( PREDICTOR_STEP .or. ReplayShutOff .or. (.not. analysis_time) ) then
       RETURN_(ESMF_SUCCESS)
    end if
 
