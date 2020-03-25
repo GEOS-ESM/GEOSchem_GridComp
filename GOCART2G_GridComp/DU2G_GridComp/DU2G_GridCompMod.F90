@@ -52,7 +52,9 @@ module DU2G_GridCompMod
        real, allocatable      :: molwght(:)     ! molecular weight
        real, allocatable      :: fnum(:)        ! number of particles per kg mass
        real                   :: maringFlag     ! maring settling velocity correction
-
+       integer                :: n_bins
+       integer                :: km             ! vertical grid dimension
+       real                   :: CDT            ! chemistry timestep (secs)
 !      !Workspae for point emissions
        logical                :: doing_point_emissions = .FALSE.
        character(len=255)     :: point_emissions_srcfilen   ! filename for pointwise emissions
@@ -109,7 +111,7 @@ contains
     integer                                     :: n, i, nCols, n_bins
     real                                        :: DEFVAL
     logical                                     :: data_driven = .true.
-    integer, parameter                          :: bins = 5  ! This should equal the number of bins. Is this how we want to handle this?
+!    integer, parameter                          :: bins = 5  ! This should equal the number of bins. Is this how we want to handle this?
 
     __Iam__('SetServices')
 
@@ -149,6 +151,8 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
         call ESMF_ConfigNextLine( cfg, __RC__ )
         call ESMF_ConfigGetAttribute( cfg, aerosol_names(i), __RC__ )
     end do
+
+    self%n_bins = n_bins
 
 !   Parse config file into private internal state
 !   ----------------------------------------------
@@ -209,27 +213,12 @@ if(mapl_am_i_root()) print*,'DU2G self%Ch_DU',self%Ch_DU
           friendlyto = trim(comp_name),                                  &
           dims       = MAPL_DimsHorzVert,                                &
           vlocation  = MAPL_VLocationCenter, __RC__)
-
-if(mapl_am_i_root()) print*,'DU2G setservices shortname = ',trim(COMP_NAME)//'::'//trim(aerosol_names(i))
     end do
 
 
 !   IMPORT STATE
 !   -------------
-
-!     Pressure thickness
-!     ------------------
-       call MAPL_AddImportSpec(GC,                            &
-          SHORT_NAME = 'DELP',                                &
-          LONG_NAME  = 'pressure_thickness',                  &
-          UNITS      = 'Pa',                                  &
-          DIMS       = MAPL_DimsHorzVert,                     &
-          VLOCATION  = MAPL_VLocationCenter,                  &
-          RESTART    = MAPL_RestartSkip,     __RC__)
-
-
     if (data_driven) then
-
 !      Pressure at layer edges
 !      -----------------------
        call MAPL_AddImportSpec(GC,                            &
@@ -250,7 +239,7 @@ if(mapl_am_i_root()) print*,'DU2G setservices shortname = ',trim(COMP_NAME)//'::
           VLOCATION  = MAPL_VLocationCenter,                  &
           RESTART    = MAPL_RestartSkip,     __RC__)
 
-       do i = 1, bins 
+       do i = 1, n_bins 
            write (field_name, '(A, I0.3)') '', i
             call MAPL_AddImportSpec(GC,                                     &
               short_name = 'climdu'//trim(field_name),                        &
@@ -296,92 +285,25 @@ if(mapl_am_i_root()) print*,'DU2G setservices shortname = ',trim(COMP_NAME)//'::
                vlocation  = MAPL_VLocationCenter,                             &
                restart    = MAPL_RestartSkip, __RC__)
         end do
-    else
-
-       call MAPL_AddImportSpec(GC,                                       &
-          short_name = 'DU_SRC',                        &
-          long_name  = 'erod'  ,                                         &
-          units      = '1',                                              &
-          dims       = MAPL_DimsHorzOnly,                                &
-          vlocation  = MAPL_VLocationNone,                               &
-          restart    = MAPL_RestartSkip, __RC__)
-
-!      FRACLAKE
-!      --------
-       call MAPL_AddImportSpec(GC,                           &
-          SHORT_NAME = 'FRLAKE',                             &
-          LONG_NAME  = 'fraction_of_lake',                   &
-          UNITS      = '1',                                  &
-          DIMS       = MAPL_DimsHorzOnly,                    &
-          VLOCATION  = MAPL_VLocationNone,                   &
-          RESTART    = MAPL_RestartSkip,    __RC__)
-
-!      GWETTOP
-!      -------
-       call MAPL_AddImportSpec(GC,                           &
-          SHORT_NAME = 'WET1',                               &
-          LONG_NAME  = 'surface_soil_wetness',               &
-          UNITS      = '1',                                  &
-          DIMS       = MAPL_DimsHorzOnly,                    &
-          VLOCATION  = MAPL_VLocationNone, __RC__)
-
-!      LWI
-!      ---
-       call MAPL_AddImportSpec(GC,                           &
-          SHORT_NAME = 'LWI',                                &
-          LONG_NAME  = 'land-ocean-ice_mask',                &
-          UNITS      = '1',                                  &
-          DIMS       = MAPL_DimsHorzOnly,                    &
-          VLOCATION  = MAPL_VLocationNone,                   &
-                                          __RC__)
-!      U10M
-!      ----
-       call MAPL_AddImportSpec(GC,                           &
-          SHORT_NAME = 'U10M',                               &
-          LONG_NAME  = '10-meter_eastward_wind',             &
-          UNITS      = 'm s-1',                              &
-          DIMS       = MAPL_DimsHorzOnly,                    &
-          VLOCATION  = MAPL_VLocationNone,                   &
-          RESTART    = MAPL_RestartSkip,   __RC__)
-
-!      V10M
-!      ----
-       call MAPL_AddImportSpec(GC,                           &
-          SHORT_NAME = 'V10M',                               &
-          LONG_NAME  = '10-meter_northward_wind',            &
-          UNITS      = 'm s-1',                              &
-          DIMS       = MAPL_DimsHorzOnly,                    &
-          VLOCATION  = MAPL_VLocationNone,                   &
-          RESTART    = MAPL_RestartSkip,   __RC__)
-
-!      AIRDENS: moist air density
-!      --------------------------
-       call MAPL_AddImportSpec(GC,                           &
-          SHORT_NAME = 'AIRDENS',                            &
-          LONG_NAME  = 'moist_air_density',                  &
-          UNITS      = 'kg/m^3',                             &
-          DIMS       = MAPL_DimsHorzVert,                    &
-          VLOCATION  = MAPL_VLocationCenter,                 &
-          RESTART    = MAPL_RestartSkip,    __RC__)
-
-!      Cell area
-!      ---------
-       call MAPL_AddImportSpec(GC,                            &
-           SHORT_NAME = 'AREA',                               &
-           LONG_NAME  = 'agrid_cell_area',                    &
-           UNITS      = 'm^2',                                &
-           DIMS       = MAPL_DimsHorzOnly,                    &
-           VLOCATION  = MAPL_VLocationNone,                   &
-           RESTART    = MAPL_RestartSkip,   __RC__)
-
     end if ! (data_driven)
 
+
+    call MAPL_AddExportSpec(GC,  &
+        SHORT_NAME         = 'DUEMtest',  &
+        LONG_NAME          = 'Dust Emission Bin 001 __ENSEMBLE__',  &
+        UNITS              = 'kg m-2 s-1', &
+        DIMS               = MAPL_DimsHorzOnly,    &
+        VLOCATION          = MAPL_VLocationNone,    &
+                                                       RC=STATUS  )
+     _VERIFY(STATUS)
 
 !   EXPORT STATE
 !   -------------
     if (.not. data_driven) then
-#       include "DU2G_ExportSpec___.h"
+#include "DU2G_ExportSpecs.h"
+#include "DU2G_ImportSpecs.h"
     end if
+
 
 !   This state holds fields needed by radiation
 !   ---------------------------------------------
@@ -467,11 +389,13 @@ if(mapl_am_i_root()) print*,'DU2G setservices shortname = ',trim(COMP_NAME)//'::
     type (DU2G_GridComp), pointer        :: self
 
     integer, allocatable                 :: mieTable_pointer(:)
-    integer                              :: i, n_bins, nCols, dims(3)
+    integer                              :: i, n_bins, nCols, dims(3), km
     integer                              :: instance
     type (ESMF_Field)                    :: field, fld
     character (len=ESMF_MAXSTR)          :: field_name, prefix
-    character (len=ESMF_MAXSTR), allocatable           :: aerosol_names(:)
+    character (len=ESMF_MAXSTR), allocatable   :: aerosol_names(:)
+    real                              :: CDT         ! chemistry timestep (secs)
+    integer                           :: HDT         ! model     timestep (secs)
 
     logical                              :: data_driven
     integer                              :: NUM_BANDS
@@ -505,13 +429,20 @@ if (mapl_am_I_root()) print*,'DU2G Ch_DU before = ', self%Ch_DU
 
     call MAPL_GridGet ( grid, globalCellCountPerDim=dims, __RC__ )
 
-!  Dust emission tuning coefficient [kg s2 m-5]. NOT bin specific.
-!  ---------------------------------------------------------------
-   self%Ch_DU = Chem_UtilResVal(dims(1), dims(2), self%Ch_DU(:), __RC__)
-   self%Ch_DU = self%Ch_DU * 1.00E-09
-if (mapl_am_I_root()) print*,'DU2G dims(1) = ', dims(1)
-if (mapl_am_I_root()) print*,'DU2G dims(2) = ', dims(2)
-if (mapl_am_I_root()) print*,'DU2G Ch_DU after = ', self%Ch_DU
+!   Dust emission tuning coefficient [kg s2 m-5]. NOT bin specific.
+!   ---------------------------------------------------------------
+    self%Ch_DU = Chem_UtilResVal(dims(1), dims(2), self%Ch_DU(:), __RC__)
+    self%Ch_DU = self%Ch_DU * 1.00E-09
+
+!   Get dimensions
+!   ---------------
+    km = dims(3)
+    self%km = km
+!   Get DTs
+!   -------
+    call MAPL_GetResource(mapl, HDT, Label='RUN_DT:', __RC__)                        
+    call MAPL_GetResource(mapl, CDT, Label='GOCART_DT:', default=real(HDT), __RC__)
+    self%CDT = CDT
 
 
 !   Load resource file  
@@ -547,7 +478,6 @@ if (mapl_am_I_root()) print*,'DU2G Ch_DU after = ', self%Ch_DU
 !   Is DU data driven?
 !   ------------------
     call data_driven_ (COMP_NAME, data_driven, __RC__)
-
 
 !   If this is a data component, the data is provided in the import
 !   state via ExtData instead of the actual GOCART children
@@ -749,21 +679,14 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run END'
     type (DU2G_GridComp), pointer     :: self
     type(ESMF_Time)                   :: time
 
-    logical                           :: data_driven
-    integer                           :: n_bins, dims(3), import_shape(2)
-    integer                           :: i1=1, i2   ! dist grid indices
-    integer                           :: j1=1, j2   ! dist grid indices
-    integer                           :: km, nq              ! dist grid indices
-    real                              :: CDT         ! chemistry timestep (secs)
-    integer                           :: HDT         ! model     timestep (secs)
+    integer                           :: import_shape(2), i2, j2
 
-    real, pointer, dimension(:,:,:)   :: ptr3d_int, delp, rhoa
-    real(ESMF_KIND_R4), pointer, dimension(:,:) :: cell_area
-    real, pointer, dimension(:,:)     :: fraclake, gwettop, oro, u10m, v10m, du_src
-    real, pointer                     :: emissions(:,:,:), dqa(:,:,:)
-    real, allocatable                 :: radius(:)
+    real, pointer, dimension(:,:,:)   :: ptr3d_int ! should be remove, hand le with mapl_acg
+    real(ESMF_KIND_R4), pointer, dimension(:,:) :: cell_area !rm
+ 
+    real, pointer, dimension(:,:,:)   :: emissions, dqa !rm
 
-    integer                           :: nymd, nhms, iyr, imm, idd, ihr, imn, isc
+    integer                           :: nymd, nhms, iyr, imm, idd, ihr, imn, isc !do we need?
 
 !   !Indices for point emissions
     integer, pointer, dimension(:)    :: iPoint, jPoint
@@ -772,28 +695,25 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run END'
     integer :: n, i, j, ii
 
     !REPLACE undef and GRAV WITH MAPL
-    real, parameter ::  UNDEF  = 1.e15
-    real, parameter ::  GRAV   = 9.80616 ! USE MAPL_GRAV????
+    real, parameter ::  UNDEF  = 1.e15   ! USE MAPL
+    real, parameter ::  GRAV   = 9.80616 ! USE MAPL_GRAV
 
+    type(MAPL_VarSpec), pointer     :: InternalSpec(:)
+    character(len=ESMF_MAXSTR)      :: short_name, binnum
 
-   type(MAPL_VarSpec), pointer     :: InternalSpec(:)
-   character(len=ESMF_MAXSTR)      :: short_name
+#include "DU2G_DeclarePointer.h"
 
    __Iam__('Run1')
 
 !*****************************************************************************
 !   Begin... 
 
-
-!#include "DU_GetPointer___.h"
-
-
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
     call ESMF_GridCompGet (GC, grid=grid, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) //'::'// Iam
 
-if (mapl_am_I_root()) print*,trim(comp_name),' Run1 BEGIN'
+#include "DU2G_GetPointer.h"
 
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
@@ -809,41 +729,6 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run1 BEGIN'
     VERIFY_(STATUS)
     self => wrap%ptr
 
-!   Get DTs
-!   -------
-    call MAPL_GetResource(mapl, HDT, Label='RUN_DT:', __RC__)
-    call MAPL_GetResource(mapl, CDT, Label='GOCART_DT:', default=real(HDT), __RC__)
-
-!   Get 2D Imports
-!   --------------
-    call MAPL_GetPointer (import, fraclake, 'FRLAKE', __RC__)
-    call MAPL_GetPointer (import, gwettop,  'WET1',   __RC__)
-    call MAPL_GetPointer (import, oro,      'LWI',    __RC__)
-    call MAPL_GetPointer (import, u10m,     'U10M',   __RC__)
-    call MAPL_GetPointer (import, v10m,     'V10M',   __RC__)
-    call MAPL_GetPointer (import, delp,     'DELP',   __RC__)
-    call MAPL_GetPointer (import, cell_area,'AREA',   __RC__)
-    call MAPL_GetPointer (import, du_src,   'DU_SRC', __RC__)
-
-!   Set du_src to 0 where undefined
-!   --------------------------------
-    where (1.01*du_src > UNDEF) du_src = 0.
-
-!   Get 3D Imports
-!   --------------
-    call MAPL_GetPointer (import, rhoa, 'AIRDENS',  __RC__ )
-
-!   Get dimensions
-!   ---------------
-    call MAPL_GridGet (grid, globalCellCountPerDim=dims, __RC__)
-    km = dims(3)
-
-    import_shape = shape(gwettop)
-    i2 = import_shape(1)
-    j2 = import_shape(2)
-
-    n_bins = size(self%radius)
-
 !   Extract nymd(yyyymmdd) from clock
 !   ---------------------------------
     call ESMF_ClockGet (clock, currTime=time, __RC__)
@@ -851,29 +736,39 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run1 BEGIN'
     call MAPL_PackTime (nymd, iyr, imm , idd)
     call MAPL_PackTime (nhms, ihr, imn, isc)
 
-!   Dust particle radius [m] and density [kg m-3]
-!   ---------------------------------------------
-    allocate(radius(n_bins), __STAT__ )
-    radius = 1.e-6 * self%radius
-!   DU_rhop   = self%rhop
-    allocate(emissions(i1:i2,j1:j2,n_bins), dqa(i1:i2,j1:j2,n_bins), __STAT__)
+!   Get dimensions
+!   ---------------
+    import_shape = shape(wet1)
+    i2 = import_shape(1)
+    j2 = import_shape(2)
+
+!   Set du_src to 0 where undefined
+!   --------------------------------
+    where (1.01*du_src > UNDEF) du_src = 0.
 
 !   Implement gridded emission dust source
 !   --------------------------------------
+    allocate(emissions(1:i2,1:j2,self%n_bins), dqa(1:i2,1:j2,self%n_bins), __STAT__)
     emissions = 0.0
     dqa = 0.0
 
-    call DustEmissionGOCART2G(radius,fraclake, gwettop, oro, u10m, v10m, &
+!if(mapl_am_i_root()) print*,'DU2G shape(DUEM) = ',shape(DUEM)
+
+    call DustEmissionGOCART2G(self%radius*1.e-6, frlake, wet1, lwi, u10m, v10m, &
                               self%Ch_DU(1), self%sfrac, du_src, GRAV, &
                               emissions, rc )
 
-    do i = 1, n_bins
-        dqa(:,:,i) = emissions(:,:,i) * CDT * GRAV / delp(:,:,km)
+    if (associated(DUEM)) then
+        DUEM = emissions
+    end if
+
+    do i = 1, self%n_bins
+        dqa(:,:,i) = emissions(:,:,i) * CDT * GRAV / delp(:,:,self%km)
 
         call MAPL_VarSpecGet(InternalSpec(i), SHORT_NAME=short_name, __RC__)
         call MAPL_GetPointer(internal, NAME=short_name, ptr=ptr3d_int, __RC__)
-!       ! update internal pointer with emission
-        ptr3d_int(:,:,km) = ptr3d_int(:,:,km) + dqa(:,:,i)
+       ! update internal pointer with emission
+        ptr3d_int(:,:,self%km) = ptr3d_int(:,:,self%km) + dqa(:,:,i)
     end do
 
 !   Read pointwise emissions, if requested
@@ -895,7 +790,7 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run1 BEGIN'
 
 !   Get indices for point emissions
 !   -------------------------------
-    allocate(iPoint(self%nPts), jPoint(self%nPts), point_column_emissions(km), __STAT__)
+    allocate(iPoint(self%nPts), jPoint(self%nPts), point_column_emissions(self%km), __STAT__)
 
 ! DEV NOTE - radToDeg is a defined parameter. Is there a MAPL equivalent?
     call MAPL_GetHorzIJIndex(self%nPts, iPoint, jPoint, &
@@ -908,25 +803,25 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run1 BEGIN'
         VERIFY_(rc)
     end if
 
-    do ii = 1, self%nPts
-        i = iPoint(ii)
-        j = jPoint(ii)
+if(mapl_am_i_root()) print*,'iPoint = ',iPoint
+if(mapl_am_i_root()) print*,'jPoint = ',jPoint
 
-!       point emission not in this sub-domain
-        if( i<1 .or. j<1 ) cycle
-!       Emissions not occurring in current time step
+
+    do ii = 1, self%nPts
+        !       Emissions not occurring in current time step
         if(nhms < self%pStart(ii) .or. nhms >= self%pEnd(ii)) cycle
 
-           call DistributePointEmission(km, delp(i,j,:), rhoa(i,j,:), self%pBase(ii), & 
+           call DistributePointEmission(self%km, delp, airdens, self%pBase(ii), &
                                         self%pTop(ii), GRAV, self%pEmis(ii), &
                                         point_column_emissions, rc)
+
 
            do n = 1, n_bins
                call MAPL_VarSpecGet(InternalSpec(n), SHORT_NAME=short_name, __RC__)
                call MAPL_GetPointer(internal, NAME=short_name, ptr=ptr3d_int, __RC__)
 !              ! update internal pointer with emission
-               ptr3d_int(i,j,:) = ptr3d_int(i,j,:) + cdt * grav / delp(i,j,:) * &
-               self%sfrac(n) * point_column_emissions / cell_area(i,j) 
+               ptr3d_int = ptr3d_int + cdt * grav / delp * &
+               self%sfrac(n) * point_column_emissions / cell_area
            enddo ! do n
     enddo ! do ii
 
