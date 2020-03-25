@@ -5,7 +5,7 @@
 ! !USES:
       !use GmiASCIIoperations_mod, only : AsciiOpenRead
 
-      implicit none  
+      implicit none
 
       private
 !
@@ -19,9 +19,9 @@
       real*8, parameter :: Deg2Rad = PI / 180.0d0
       real*8, parameter :: SecPerHour = 3600.0d0
 !
-#     include "gmi_AerDust_const.h"  
-#     include "setkin_par.h"  
-! 
+#     include "gmi_AerDust_const.h"
+#     include "setkin_par.h"
+!
 ! !DESCRIPTION:
 !
 ! !HISTORY
@@ -46,10 +46,10 @@
      &                  overheadO3col_ij, ODAER_ij, ODMDUST_ij,          &
      &                  fjx_solar_cycle_param, ozone_ij)
 !
-#     include "parm_CTM_fastJX65.h"
-#     include "cmn_JVdat_fastJX65.h"
-#     include "cmn_metdat_fastJX65.h"
-#     include "parm_MIE_fastJX65.h"
+#include "parm_CTM_fastJX65.h"
+#include "cmn_JVdat_fastJX65.h"
+#include "cmn_metdat_fastJX65.h"
+#include "parm_MIE_fastJX65.h"
 !
 ! !INPUT PARAMETERS:
       integer, intent(in)  :: k1                 ! first interface index
@@ -69,7 +69,6 @@
       real*8,  intent(in)  :: surf_alb_ij        ! surface albedo     (fraction 0-1) [sa]
       real*8,  intent(in)  :: relHumidity_ij(k1:k2) ! relative humidity (fraction 0-1) [relh]
 !
-!     real*8, intent(in)  :: optdepth_ij(k1:k2) ! optical depth in box   (unitless) [od]
       real*8, intent(in)  :: ODAER_ij(k1:k2,NSADaer*nrh_b) ! optical depth for aerosol
       real*8, intent(in)  :: ODMDUST_ij(k1:k2,NSADdust)    ! optical depth for mineral dust
       real*8, intent(in)    :: fjx_solar_cycle_param(W_)    ! solar cycle scalings
@@ -80,13 +79,14 @@
 ! !OUTPUT PARAMETERS:
       real*8,  intent(out) :: overheadO3col_ij(k1:k2)
       real*8,  intent(out) :: qjgmi_ij(k1:chem_mask_khi, num_qjs)
+!     real*8,  intent(out) :: optdepth_ij(k1:k2) ! optical depth in box   (unitless) [od]
 !
 ! !LOCAL VARIABLES:
       real*8  ZPJ(chem_mask_khi-k1+1, num_qjs)    !2-D array of J's indexed to CTM chemistry!
       real*8 GMTAU,DELTAU, ALBEDO,SZA
       real*8 SOLF, U0, FREFL
       integer I,J,K,L,ILNG,JLAT,ODINDX, IDAY, il, ik, ic
-      logical, save :: first = .true.  
+      logical, save :: first = .true.
       logical :: rootProc
 !EOP
 !---------------------------------------------------------------------------
@@ -110,13 +110,17 @@
 
       ! Set column temperature
       T(I_, J_, 1:L_)     = kel_ij(k1:k2)
+!... set new added layer T to same as GEOS top layer
+      T(I_, J_, L1_)     = kel_ij(k2)
 
       ! Set column relative humidity
       RELH(1:L_)          = relHumidity_ij(k1:k2)
+!... set new added layer RelH to same as GEOS top layer
+      RELH(L1_)          = relHumidity_ij(k2)
 
       ! set cloud optical depth
 ! begBian, 11/21/2011
-!      CLDLWP(I_, J_, 1:L_)  = optdepth_ij(k1:k2)
+!      CLDLWP(I_, J_, 1:L_)  = optdepth_ij(k1:k2)  ! mem- set optdepth_ij first
 !      CLDLWP(I_, J_, L1_)   = 0.0
 
 !      ! set cloud index
@@ -234,7 +238,7 @@
 ! !INTERFACE:
 !
       subroutine initializeFastJX65 (k1, k2, chem_mask_khi, num_qjs, &
-                  cross_section_file, rate_file, T_O3_climatology_file, rootProc)    
+                  cross_section_file, T_O3_climatology_file, rootProc)
 !                  aerosolOpticalData_file, &
 !                  cross_section_file  , scattering_data_file,   &
 !                  rate_file, T_O3_climatology_file)
@@ -258,7 +262,7 @@
 !      character (len=128), intent(in) :: scattering_data_file
                            ! Labels of photolysis rates required input file name
                            ! keyed to chem code
-      character (len=128), intent(in) :: rate_file
+!      character (len=128), intent(in) :: rate_file
                            ! Read in T & O3 climatology input file name
                            ! general backup clim.
       character (len=128), intent(in) :: T_O3_climatology_file
@@ -281,7 +285,7 @@
 !      allocate(OPTAER (1:L_,NSADaer*nrh_b))
       allocate(optAer (1:L1_,NSADaer*nrh_b))
       optAer   = 0.0d0
- 
+
       allocate (CLDW(I_,J_,L1_))
       allocate (CLDI(I_,J_,L1_))
 
@@ -307,8 +311,7 @@
 !                   scattering_data_file,     &
 !                   rate_file,     &
 !                   T_O3_climatology_file)
-      call INPHOT (cross_section_file, &
-                   rate_file, T_O3_climatology_file, rootProc)
+      call INPHOT (cross_section_file, T_O3_climatology_file, rootProc)
 
 ! bian (11/16/06) start
 !      ! Set up aerosol
@@ -585,74 +588,74 @@
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-      subroutine SET_ATM (GMTAU)  
+      subroutine SET_ATM (GMTAU)
 !-----------------------------------------------------------------------
-      implicit none  
+      implicit none
 
-#     include "parm_CTM_fastJX65.h"  
-#     include "cmn_metdat_fastJX65.h"  
+#     include "parm_CTM_fastJX65.h"
+#     include "cmn_metdat_fastJX65.h"
 
       real (8) :: MASFAC, SCALEH, GMTAU
-      integer :: I, J, L, N  
+      integer :: I, J, L, N
 !
 !  Mass factor - delta-Pressure (mbars) to delta-Column (molecules.cm-2)
 
-      MASFAC = 100.d0 * 6.022d+23 / (28.97d0 * 9.8d0 * 10.d0)  
-      do J = 1, J_  
-         do I = 1, I_  
-            !P (I, J) = PMEAN (I, J)  
+      MASFAC = 100.d0 * 6.022d+23 / (28.97d0 * 9.8d0 * 10.d0)
+      do J = 1, J_
+         do I = 1, I_
+            !P (I, J) = PMEAN (I, J)
 !begJules
-!            do L = 1, L1_  
-!               PJ (L) = ETAA (L) + ETAB (L) * P (I, J)  
-!            enddo  
-!            PJ (L1_ + 1) = 0.d0  
+!            do L = 1, L1_
+!               PJ (L) = ETAA (L) + ETAB (L) * P (I, J)
+!            enddo
+!            PJ (L1_ + 1) = 0.d0
 !endJules
-            do L = 1, L1_  
-               DM (I, J, L) = (PJ (L) - PJ (L + 1) ) * MASFAC  
+            do L = 1, L1_
+               DM (I, J, L) = (PJ (L) - PJ (L + 1) ) * MASFAC
 !begJules
                DO3(I,J,L) = DO3(I,J,L)*DM(I,J,L)
 !endJules
-            enddo  
-            do L = 1, L_  
-               TJ (I, J, L) = T (I, J, L)  
-            enddo  
+            enddo
+            do L = 1, L_
+               TJ (I, J, L) = T (I, J, L)
+            enddo
 
-            !-------calculate effective altitude of each CTM level edge
-           !ZH (I, J, 1) = 16d5 * log10 (1000.d0 / P (I, J) )  
-            ZH (I, J, 1) = 16d5 * log10 (1000.d0 / PJ (1) )   
-            do L = 1, L_  
-               SCALEH = 1.3806d-19 * MASFAC * TJ (I, J, L)  
+!-------calculate effective altitude of each CTM level edge
+           !ZH (I, J, 1) = 16d5 * log10 (1000.d0 / P (I, J) )
+            ZH (I, J, 1) = 16d5 * log10 (1000.d0 / PJ (1) )
+            do L = 1, L_
+               SCALEH = 1.3806d-19 * MASFAC * TJ (I, J, L)
                ZH (I, J, L + 1) = ZH (I, J, L) - (log (PJ (L + 1) / PJ (L) ) &
                                * SCALEH)
-            enddo  
-         enddo  
-      enddo  
+            enddo
+         enddo
+      enddo
 
-      !---load O3 from CTM is being calculated:
+!---load O3 from CTM is being calculated:
 !begJules
-!      do N = 1, NTR_  
-!         if (TCNAME (N) .eq.'O3') then  
-!           do J = 1, J_  
-!              do I = 1, I_  
+!      do N = 1, NTR_
+!         if (TCNAME (N) .eq.'O3') then
+!           do J = 1, J_
+!              do I = 1, I_
 !                 ! unit of DO3:  # molecules/cm^2
-!                 do L = 1, L_  
+!                 do L = 1, L_
 !                    DO3 (I, J, L) = 6.023d26 * STT (I, J, L, N) / 48.d0 * 1.d-4 / &
 !                                    AREAXY (I, J)
-!                 enddo  
-!              enddo  
-!           enddo  
-!         endif  
-!      
-!      enddo  
+!                 enddo
+!              enddo
+!           enddo
+!         endif
+!
+!      enddo
 !endJules
 
-      return  
+      return
 
       end subroutine SET_ATM
 !######################################################################
-subroutine SET_AER (GMTAU)  
+subroutine SET_AER (GMTAU)
 real(8) :: GMTAU
-return  
+return
 
 end subroutine SET_AER
 !######################################################################
@@ -661,9 +664,9 @@ end subroutine SET_AER
 !     &             aerosolOpticalData_file,     &
 !     &             scattering_data_file,   &
 !     &             rate_file,   &
-!     &             T_O3_climatology_file) 
+!     &             T_O3_climatology_file)
      subroutine INPHOT (cross_section_file, &
-     &             rate_file, T_O3_climatology_file, rootProc) 
+     &             T_O3_climatology_file, rootProc)
 
 !-----------------------------------------------------------------------
 !  Routine to initialise photolysis rate data, called directly from the
@@ -679,12 +682,12 @@ end subroutine SET_AER
 !
 !-----------------------------------------------------------------------
 !
-implicit none  
+implicit none
 
-#     include "parm_CTM_fastJX65.h"  
-#     include "parm_MIE_fastJX65.h"  
-#     include "cmn_metdat_fastJX65.h"  
-#     include "cmn_JVdat_fastJX65.h"  
+#     include "parm_CTM_fastJX65.h"
+#     include "parm_MIE_fastJX65.h"
+#     include "cmn_metdat_fastJX65.h"
+#     include "cmn_JVdat_fastJX65.h"
 !
 ! !INPUT PARAMETERS:
       logical, intent(in) :: rootProc
@@ -696,83 +699,83 @@ implicit none
 !      character (len=128), intent (in) :: scattering_data_file
                            ! Labels of photolysis rates required input file name
                            ! keyed to chem code
-      character (len=128), intent (in) :: rate_file
+!      character (len=128), intent (in) :: rate_file
                            ! Read in T & O3 climatology input file name
                            ! general backup clim.
       character (len=128), intent (in) :: T_O3_climatology_file
 
-      integer :: IPH, I, J, K  
-      real * 8, parameter :: PI = 3.141592653589793d0  
+      integer :: IPH, I, J, K
+      real * 8, parameter :: PI = 3.141592653589793d0
 
-      real * 8, parameter :: PI180 = 3.141592653589793d0 / 180.d0  
+      real * 8, parameter :: PI180 = 3.141592653589793d0 / 180.d0
 !
       ! Use channel 8 to read files at the moment
-      IPH = 8  
+      IPH = 8
 !
 ! Defaults & constants
-      RAD = 6375.d5  
-      ZZHT = 5.d5  
+      RAD = 6375.d5
+      ZZHT = 5.d5
 ! begBian, 11/21/2011
-!      STT (:, :, :, :) = 1.d6  
-!      TCNAME (:) = 'CO2'  
+!      STT (:, :, :, :) = 1.d6
+!      TCNAME (:) = 'CO2'
 !
 ! Read in annual mean pressure field
 !open (IPH, file = 'ECT42_grid.dat', form = 'formatted', status = &
  !'old')
-!read (IPH, * )  
-!read (IPH, '(16F8.2)') (XDGRD (I) , I = 1, I_)  
-!read (IPH, * )  
-!read (IPH, '(16F8.2)') (YDGRD (J) , J = 1, J_)  
-!read (IPH, * )  
-!read (IPH, '(16F8.2)') (AREAXY (1, J) , J = 1, J_)  
-!read (IPH, * )  
-!read (IPH, '(16F8.1)') ( (PMEAN (I, J) , I = 1, I_) , J = 1, J_)  
+!read (IPH, * )
+!read (IPH, '(16F8.2)') (XDGRD (I) , I = 1, I_)
+!read (IPH, * )
+!read (IPH, '(16F8.2)') (YDGRD (J) , J = 1, J_)
+!read (IPH, * )
+!read (IPH, '(16F8.2)') (AREAXY (1, J) , J = 1, J_)
+!read (IPH, * )
+!read (IPH, '(16F8.1)') ( (PMEAN (I, J) , I = 1, I_) , J = 1, J_)
 !
-!close (IPH)  
-!do J = 1, J_  
-!AREAXY (1, J) = AREAXY (1, J) * 1.d9  
-!do I = 2, I_  
-!AREAXY (I, J) = AREAXY (1, J)  
-!enddo  
+!close (IPH)
+!do J = 1, J_
+!AREAXY (1, J) = AREAXY (1, J) * 1.d9
+!do I = 2, I_
+!AREAXY (I, J) = AREAXY (1, J)
+!enddo
 
-!enddo  
-!do I = 1, I_  
-!XGRD (I) = XDGRD (I) * PI180  
-!enddo  
-!do J = 1, J_  
-!YGRD (J) = YDGRD (J) * PI180  
-!enddo  
+!enddo
+!do I = 1, I_
+!XGRD (I) = XDGRD (I) * PI180
+!enddo
+!do J = 1, J_
+!YGRD (J) = YDGRD (J) * PI180
+!enddo
 !!
 ! Read in fast-J X-sections (spectral data) <<<<<<<<<<<<<< new fast-JX
       call RD_TJPL (rootProc, IPH, cross_section_file)
-      ! call RD_XXX (IPH, 'FJX_spec.dat')  
+      ! call RD_XXX (IPH, 'FJX_spec.dat')
 !      call RD_XXX(IPH,  cross_section_file)
 
 ! Read in aerosol/cloud scattering data <<<<<<<<<<<<<<<<<< new fast-JX
-      ! call RD_MIE (IPH, 'FJX_scat.dat')  
+      ! call RD_MIE (IPH, 'FJX_scat.dat')
 !      call RD_MIE(IPH,  scattering_data_file)
 
 ! Read in UMich aerosol optical data    <<<<<<<<<<<<<<<<<< new fast-JX 6
-      ! call RD_UM (IPH, 'FJX_UMaer.dat')  
-!      call RD_UM (IPH, aerosolOpticalData_file)  
+      ! call RD_UM (IPH, 'FJX_UMaer.dat')
+!      call RD_UM (IPH, aerosolOpticalData_file)
 
 ! Read in labels of photolysis rates required   >>>>> keyed to users che
 !   this is a tranfer map from the J's automatically calculated in fast-
 !   onto the names and order in the users chemistry code
-      ! call RD_JS (IPH, 'chem_Js.dat')  
-      call RD_JS(IPH, rate_file, rootProc)
+      ! call RD_JS (IPH, 'chem_Js.dat')
+      call RD_JS(IPH, rootProc)
 
 !
 ! Read in T & O3 climatology                    >>>> general backup clim
-      ! call RD_PROF (IPH, 'atmos_std.dat')  
+      ! call RD_PROF (IPH, 'atmos_std.dat')
       call RD_PROF(IPH, T_O3_climatology_file)
 !
-return  
+return
 
 
 end subroutine INPHOT
 !######################################################################
-      subroutine RD_JS (NJ1, NAMFIL, rootProc)  
+      subroutine RD_JS (NJ1, rootProc)
 !-----------------------------------------------------------------------
 !  Reread the chem_Js.dat file to map photolysis rate to reaction
 !  Read in quantum yield 'jfacta' and fastj2 label 'jlabel'
@@ -783,47 +786,60 @@ end subroutine INPHOT
 !     ipr       Photolysis reaction counter - should total 'JVN_'
 !
 !-----------------------------------------------------------------------
-      implicit none  
-#     include "parm_CTM_fastJX65.h"  
-#     include "parm_MIE_fastJX65.h"  
-#     include "cmn_metdat_fastJX65.h"  
-#     include "cmn_JVdat_fastJX65.h"  
+      implicit none
+#     include "parm_CTM_fastJX65.h"
+#     include "parm_MIE_fastJX65.h"
+#     include "cmn_metdat_fastJX65.h"
+#     include "cmn_JVdat_fastJX65.h"
 !
-      integer , intent (in) ::NJ1  
-      logical , intent (in) :: rootProc  
+!.sds..
+!... this "setkin_fastj.h" replaces ascii file "rate_file" (aka NAMFIL here)
+!...  and is created by KMG with the other setkin files, "setkin_lchem.h" is
+!...  used for informative phot reaction output in unit 6 runtime output
+#     include "setkin_fastj.h"
+#     include "setkin_lchem.h"
+!
+      integer , intent (in) ::NJ1
+      logical , intent (in) :: rootProc
 
-      character ( * ), intent (in) ::NAMFIL  
-      integer :: IPR, I, J, K  
-      character (len=120) :: CLINE  
+!     character ( * ), intent (in) ::NAMFIL
+      integer :: IPR, I, J, K
+      character (len=120) :: CLINE
 
-      character (len=7) :: T_JX, T_CHEM  
+      character (len=7) :: T_JX, T_CHEM
 ! Reread the chem_Js.dat file to map photolysis rate to reaction
 !                     Read in quantum yield jfacta and fastj2 label jlab
-   
-      IF (rootProc) PRINT*," Reading the file: ", TRIM(NAMFIL)
-      IPR = 0  
-      open (NJ1, file = NAMFIL, status = 'old', form = 'formatted')  
-   10 read (NJ1, '(A)', err = 20) CLINE  
+!.sds..
+!.sds..      IF (rootProc) PRINT*," Reading the file: ", TRIM(NAMFIL)
+!.sds..      IPR = 0
+!.sds..      open (NJ1, file = NAMFIL, status = 'old', form = 'formatted')
+!.sds..   10 read (NJ1, '(A)', err = 20) CLINE
+!.sds..
+!.sds..      if (IPR.eq.JVN_) goto 20
+!.sds..      if (CLINE (2:5) .eq.'9999') then
+!.sds..           goto 20
+!.sds..      elseif (CLINE (1:1) .eq.'#') then
+!.sds..           goto 10
+!.sds..      elseif (CLINE (5:5) .eq.'$') then
+!.sds..           goto 10
+!.sds..      else
+!.sds..           IPR = IPR + 1
+!.sds..           read (CLINE (79:83) , '(F5.1)') JFACTA (IPR)
+!.sds..           read (CLINE (86:92) , '(A7)') JLABEL (IPR)
+!.sds..           JFACTA (IPR) = JFACTA (IPR) / 100.d0
+!.sds..           goto 10
+!.sds..      endif
+!.sds..
+!.sds..   20 close (NJ1)
+!.sds..
+!.sds..
+!.sds..      NRATJ = IPR
+!... use setkin J-reaction mapping info
+      IF (rootProc) PRINT*," Using setkin_fastj.h... "
+      JLABEL(1:NUM_J) = fastj_lookup(1:NUM_J)
+      JFACTA(1:NUM_J) = fastj_yield(1:NUM_J)
+      NRATJ = NUM_J
 
-      if (IPR.eq.JVN_) goto 20  
-      if (CLINE (2:5) .eq.'9999') then  
-           goto 20  
-      elseif (CLINE (1:1) .eq.'#') then  
-           goto 10  
-      elseif (CLINE (5:5) .eq.'$') then  
-           goto 10  
-      else  
-           IPR = IPR + 1  
-           read (CLINE (79:83) , '(F5.1)') JFACTA (IPR)  
-           read (CLINE (86:92) , '(A7)') JLABEL (IPR)  
-           JFACTA (IPR) = JFACTA (IPR) / 100.d0  
-           goto 10  
-      endif  
-
-   20 close (NJ1)  
-
-
-      NRATJ = IPR  
 !-----------------------------------------------------------------------
 !  compare Xsections titles with J-values listed in chem code (jratd.dat
 !  map J-values needed for chemistry (chem_Js.dat) onto the fast-JX rate
@@ -831,106 +847,113 @@ end subroutine INPHOT
 !          >>>this must now follow the read in of Xsects, etc<<<
 !-----------------------------------------------------------------------
 !---Zero / Set index arrays that map Jvalue(j) onto rates
-      do J = 1, JVN_  
-         JIND (J) = 0  
-      enddo  
+      do J = 1, JVN_
+         JIND (J) = 0
+      enddo
 
-      if(rootProc) then
-      !  print *,'RD_JS JVN_ =',JVN_
-      !  print *,'RD_JS NJVAL =',NJVAL
-      !  print *,'RD_JS TITLEJ =',TITLEJ(1:NJVAL)
-      endif
-      do J = 1, NJVAL  
-         T_JX = TITLEJ (J)  
+!     if(rootProc) then
+!     !  print *,'RD_JS JVN_ =',JVN_
+!     !  print *,'RD_JS NJVAL =',NJVAL
+!     !  print *,'RD_JS TITLEJ =',TITLEJ(1:NJVAL)
+!     endif
+      do J = 1, NJVAL
+         T_JX = TITLEJ (J)
          ! Note: C3H6Ot renamed as Acet-a already
          !if (TITLEJ(J) .eq. 'Acet-a' .or. TITLEJ(J) .eq. 'Acet-b') T_JX = 'C3H6O'
+
+!... FastJ7+ names mapped to these FastJ6.5 names
          if (TITLEJ(J) .eq. 'Acet-a') T_JX = 'C3H6O'
+!.sds.. need to map CloudJ cross-section names with Fastjx6.5 cross-section names
+         if (JLABEL(J) .eq. 'PrAld') JLABEL(J) = 'EAld'
+         if (JLABEL(J) .eq. 'MeCCl3') JLABEL(J) = 'CH3CCl3'
+         if (JLABEL(J) .eq. 'Acet-a') JLABEL(J) = 'C3H6O'
+         if (JLABEL(J) .eq. 'Glyxlc') JLABEL(J) = 'Glyxlb' !
          !!! don't delete comment for following line
          !if (TITLEJ(J) .eq. 'Acet-b') T_JX = 'C3H6O'
-         do K = 1, NRATJ  
-            T_CHEM = JLABEL (K)  
-            if (T_CHEM (1:6) .eq.T_JX (1:6) ) JIND (K) = J  
-         enddo  
-      enddo  
+         do K = 1, NRATJ
+            T_CHEM = JLABEL (K)
+            if (T_CHEM (1:6) .eq.T_JX (1:6) ) JIND (K) = J
+         enddo
+      enddo
 
       IF (rootProc) THEN
-         write (6, '(a,i4,a)') ' Photochemistry Scheme with ', IPR, &
-                               ' J-values'
-         do K = 1, NRATJ  
-            J = JIND (K)  
-            if (J.eq.0) then  
-               write(6,'(i5,a9,f6.2,a,i4,a9)') K, JLABEL(K), JFACTA(K) &
+         write (6, '(a,i4,a)') ' FastJX6.5 Photochemistry Scheme with ', NRATJ, &
+                               ' J-reaction'
+         do K = 1, NRATJ
+            J = JIND (K)
+            if (J.eq.0) then
+               write(6,'(i5,a9,f6.2,a,i4,1x,a40)') J, TITLEJ(J), JFACTA(K) &
                              , ' has no mapping onto onto fast-JX'
-            else  
-               write(6,'(i5,a9,f6.2,a,i4,a9)') K, JLABEL(K), JFACTA(K) &
-                     , ' mapped onto fast-JX:', J, TITLEJ (J)
-            endif  
-         enddo  
+            else
+               write(6,'(i5,a9,f6.2,a,i4,1x,a80)') J, TITLEJ(J), JFACTA(K) &
+                     , ' mapped onto fast-JX:', K, lqjchem(K)
+            endif
+         enddo
       END IF
 
-      return  
+      return
 
 end subroutine RD_JS
 !######################################################################
 !-----------------------------------------------------------------------
-subroutine RD_PROF (NJ2, NAMFIL)  
+subroutine RD_PROF (NJ2, NAMFIL)
 !-----------------------------------------------------------------------
 !  Routine to input T and O3 reference profiles
 !-----------------------------------------------------------------------
-implicit none  
-#     include "parm_CTM_fastJX65.h"  
+implicit none
+#     include "parm_CTM_fastJX65.h"
 
-#     include "cmn_metdat_fastJX65.h"  
-integer , intent (in) ::NJ2  
-character ( * ), intent (in) ::NAMFIL  
+#     include "cmn_metdat_fastJX65.h"
+integer , intent (in) ::NJ2
+character ( * ), intent (in) ::NAMFIL
 !
-integer :: IA, I, M, L, LAT, MON, NTLATS, NTMONS, N216  
-real (8) :: OFAC, OFAK  
-character (len=72) :: TITLE0  
+integer :: IA, I, M, L, LAT, MON, NTLATS, NTMONS, N216
+real (8) :: OFAC, OFAK
+character (len=72) :: TITLE0
 !
-open (NJ2, file = NAMFIL, status = 'old', form = 'formatted')  
-read (NJ2, '(A)') TITLE0  
-read (NJ2, '(2I5)') NTLATS, NTMONS  
+open (NJ2, file = NAMFIL, status = 'old', form = 'formatted')
+read (NJ2, '(A)') TITLE0
+read (NJ2, '(2I5)') NTLATS, NTMONS
 !      write(6,'(1X,A)') TITLE0
-!JENwrite (6, 1000) NTLATS, NTMONS  
-N216 = min (216, NTLATS * NTMONS)  
-do IA = 1, N216  
-read (NJ2, '(1X,I3,3X,I2)') LAT, MON  
-M = min (12, max (1, MON) )  
-L = min (18, max (1, (LAT + 95) / 10) )  
-read (NJ2, '(3X,11F7.1)') (TREF (I, L, M) , I = 1, 41)  
-read (NJ2, '(3X,11F7.4)') (OREF (I, L, M) , I = 1, 31)  
-enddo  
+!JENwrite (6, 1000) NTLATS, NTMONS
+N216 = min (216, NTLATS * NTMONS)
+do IA = 1, N216
+read (NJ2, '(1X,I3,3X,I2)') LAT, MON
+M = min (12, max (1, MON) )
+L = min (18, max (1, (LAT + 95) / 10) )
+read (NJ2, '(3X,11F7.1)') (TREF (I, L, M) , I = 1, 41)
+read (NJ2, '(3X,11F7.4)') (OREF (I, L, M) , I = 1, 31)
+enddo
 
-close (NJ2)  
+close (NJ2)
 !  Extend climatology to 100 km
-OFAC = exp ( - 2.d5 / 5.d5)  
-do I = 32, 51  
-OFAK = OFAC** (I - 31)  
-do M = 1, NTMONS  
-do L = 1, NTLATS  
-OREF (I, L, M) = OREF (31, L, M) * OFAK  
-enddo  
-enddo  
-enddo  
-do L = 1, NTLATS  
-do M = 1, NTMONS  
-do I = 42, 51  
-TREF (I, L, M) = TREF (41, L, M)  
-enddo  
-enddo  
+OFAC = exp ( - 2.d5 / 5.d5)
+do I = 32, 51
+OFAK = OFAC** (I - 31)
+do M = 1, NTMONS
+do L = 1, NTLATS
+OREF (I, L, M) = OREF (31, L, M) * OFAK
+enddo
+enddo
+enddo
+do L = 1, NTLATS
+do M = 1, NTMONS
+do I = 42, 51
+TREF (I, L, M) = TREF (41, L, M)
+enddo
+enddo
 
-enddo  
+enddo
 
- 1000 format(1x,'std atmos profiles: ',i3,' lat x ',i2,' mon')  
+ 1000 format(1x,'std atmos profiles: ',i3,' lat x ',i2,' mon')
 
-return  
+return
 
 
 end subroutine RD_PROF
 !########################################################################
 !-----------------------------------------------------------------------
-      subroutine SET_ATM0  
+      subroutine SET_ATM0
 !-----------------------------------------------------------------------
 !  Routine to set up atmospheric profiles required by Fast-J2 using a
 !  doubled version of the level scheme used in the CTM. First pressure
@@ -950,88 +973,88 @@ end subroutine RD_PROF
 !     ZH       Altitude of boundaries of model levels (cm)
 !     PSTD     Approximate pressures of levels for supplied climatology
 !-----------------------------------------------------------------------
-      implicit none  
+      implicit none
 
-#     include "parm_CTM_fastJX65.h"  
-#     include "cmn_metdat_fastJX65.h"  
+#     include "parm_CTM_fastJX65.h"
+#     include "cmn_metdat_fastJX65.h"
 
-      integer  :: I, J, K, L, M, N  
-      real (8) :: PSTD (52), OREF2 (51), TREF2 (51)  
-      real (8) :: DLOGP, F0, T0, PB, PC, XC, MASFAC, SCALEH  
+      integer  :: I, J, K, L, M, N
+      real (8) :: PSTD (52), OREF2 (51), TREF2 (51)
+      real (8) :: DLOGP, F0, T0, PB, PC, XC, MASFAC, SCALEH
 !
 !  Select appropriate month
 
-      M = max (1, min (12, MONTH) )  
+      M = max (1, min (12, MONTH) )
       !  Mass factor - delta-Pressure (mbars) to delta-Column (molecules.cm-2)
 
-      MASFAC = 100.d0 * 6.022d+23 / (28.97d0 * 9.8d0 * 10.d0)  
+      MASFAC = 100.d0 * 6.022d+23 / (28.97d0 * 9.8d0 * 10.d0)
       !-----------------------------------------------------------------------
 
-      do J = 1, J_  
+      do J = 1, J_
          !  Select appropriate latitudinal profiles
-         N = max (1, min (18, (int (YDGRD (J) ) + 99) / 10) )  
+         N = max (1, min (18, (int (YDGRD (J) ) + 99) / 10) )
 
          !  Temporary zonal arrays for climatology data
-         do K = 1, 51  
-            OREF2 (K) = OREF (K, N, M)  
-            TREF2 (K) = TREF (K, N, M)  
-         enddo  
+         do K = 1, 51
+            OREF2 (K) = OREF (K, N, M)
+            TREF2 (K) = TREF (K, N, M)
+         enddo
 
-         do I = 1, I_  
+         do I = 1, I_
             !  Apportion O3 and T on supplied climatology z* levels onto CTM levels
             !  with mass (pressure) weighting, assuming constant mixing ratio and
             !  temperature half a layer on either side of the point supplied.
             !  L1_ = L_+1:
             !       PJ(L=1:L1_) = pressure at CTM layer edge, PJ(L1_+1)=0 (top-of-at
 !begJules
-!            PJ (L1_ + 1) = 0.d0  
-!            do K = 1, L1_  
-!               PJ (K) = ETAA (K) + ETAB (K) * PMEAN (I, J)  
-!            enddo  
+!            PJ (L1_ + 1) = 0.d0
+!            do K = 1, L1_
+!               PJ (K) = ETAA (K) + ETAB (K) * PMEAN (I, J)
+!            enddo
 !endJules
-   
+
             !  Set up pressure levels for O3/T climatology - assume that value
             !  given for each 2 km z* level applies from 1 km below to 1 km above,
             !  so select pressures at these boundaries. Surface level values at
             !  1000 mb are assumed to extend down to the actual P(ILNG,JLAT).
             !
-            PSTD (1) = max (PJ (1), 1000.d0)  
-            PSTD (2) = 1000.d0 * 10.d0** ( - 1.d0 / 16.d0)  
-            DLOGP = 10.d0** ( - 2.d0 / 16.d0)  
-            do K = 3, 51  
-               PSTD (K) = PSTD (K - 1) * DLOGP  
-            enddo  
-   
-            PSTD (52) = 0.d0  
-            do L = 1, L1_  
-               F0 = 0.d0  
-               T0 = 0.d0  
-               do K = 1, 51  
-                  PC = min (PJ (L), PSTD (K) )  
-                  PB = max (PJ (L + 1), PSTD (K + 1) )  
-                  if (PC.gt.PB) then  
-                    XC = (PC - PB) / (PJ (L) - PJ (L + 1) )  
-                    F0 = F0 + OREF2 (K) * XC  
-                    T0 = T0 + TREF2 (K) * XC  
-                  endif  
-               enddo  
-               TJ (I, J, L) = T0  
-               DM (I, J, L) = (PJ (L) - PJ (L + 1) ) * MASFAC  
-               DO3 (I, J, L) = F0 * 1.d-6 * DM (I, J, L)  
+            PSTD (1) = max (PJ (1), 1000.d0)
+            PSTD (2) = 1000.d0 * 10.d0** ( - 1.d0 / 16.d0)
+            DLOGP = 10.d0** ( - 2.d0 / 16.d0)
+            do K = 3, 51
+               PSTD (K) = PSTD (K - 1) * DLOGP
+            enddo
 
-            enddo  
+            PSTD (52) = 0.d0
+            do L = 1, L1_
+               F0 = 0.d0
+               T0 = 0.d0
+               do K = 1, 51
+                  PC = min (PJ (L), PSTD (K) )
+                  PB = max (PJ (L + 1), PSTD (K + 1) )
+                  if (PC.gt.PB) then
+                    XC = (PC - PB) / (PJ (L) - PJ (L + 1) )
+                    F0 = F0 + OREF2 (K) * XC
+                    T0 = T0 + TREF2 (K) * XC
+                  endif
+               enddo
+               TJ (I, J, L) = T0
+               DM (I, J, L) = (PJ (L) - PJ (L + 1) ) * MASFAC
+               DO3 (I, J, L) = F0 * 1.d-6 * DM (I, J, L)
+
+            enddo
             !  Calculate effective altitudes using scale height at each level
-            ZH (I, J, 1) = 0.d0  
-            do L = 1, L_  
-               SCALEH = 1.3806d-19 * MASFAC * TJ (I, J, L)  
+            ZH (I, J, 1) = 0.d0
+            do L = 1, L_
+               SCALEH = 1.3806d-19 * MASFAC * TJ (I, J, L)
                ZH (I, J, L + 1) = ZH (I, J, L) - (LOG (PJ (L + 1) / PJ (L) ) &
                 * SCALEH)
-   
-            enddo  
-         enddo  
-      enddo  
 
-      return  
+            enddo
+         enddo
+      enddo
+
+      return
 
       end subroutine SET_ATM0
 
@@ -1052,171 +1075,171 @@ subroutine PHOTOJ (UTIME, IDAY, ILNG, JLAT, SOLF, SZA_ij, U0, FREFL, &
 !           DTAUX() = opt depth of each layer,
 !           POMEGAX(8,) = scat phase fn, includes s-s albedo factor.
 !-----------------------------------------------------------------------
-implicit none  
-#     include "parm_CTM_fastJX65.h"  
-#     include "parm_MIE_fastJX65.h"  
-#     include "cmn_metdat_fastJX65.h"  
+implicit none
+#     include "parm_CTM_fastJX65.h"
+#     include "parm_MIE_fastJX65.h"
+#     include "cmn_metdat_fastJX65.h"
 
-#     include "cmn_JVdat_fastJX65.h"  
+#     include "cmn_JVdat_fastJX65.h"
 
 real (8) , intent (in) ::UTIME
-real (8) , intent (in) :: SZA_ij  
-integer , intent (in) ::IDAY, ILNG, JLAT  
+real (8) , intent (in) :: SZA_ij
+integer , intent (in) ::IDAY, ILNG, JLAT
                                                !2-D array of J's indexed
 real (8) , intent (in) :: fjx_solar_cycle_param(W_)
-real (8) , intent (out) ::ZPJ (JVL_, JVN_)  
+real (8) , intent (out) ::ZPJ (JVL_, JVN_)
                                                !fraction of energy refle
 
-real (8) , intent (out) ::FREFL, U0  
+real (8) , intent (out) ::FREFL, U0
 !-----------------------------------------------------------------------
 !--------key amtospheric data needed to solve plane-parallel J---------
-real (8) , dimension (L1_ + 1) ::TTJ, DDJ, ZZJ, ZHL  
-real (8) , dimension (L1_ + 1) ::PPJ  
+real (8) , dimension (L1_ + 1) ::TTJ, DDJ, ZZJ, ZHL
+real (8) , dimension (L1_ + 1) ::PPJ
 
 
-integer , dimension (L2_ + 1) ::JXTRA  
-real (8) , dimension (W_) ::FJTOP, FJBOT, FSBOT, FLXD0, RFL  
-real (8) , dimension (L_, W_) ::AVGF, FJFLX  
-real (8) , dimension (L1_, W_) ::DTAUX, FLXD  
-real (8) , dimension (8, L1_, W_) ::POMEGAX  
-real (8) , dimension (W_, L1_) ::FFX  
-real (8) , dimension (W_, 8) ::FFXNET  
+integer , dimension (L2_ + 1) ::JXTRA
+real (8) , dimension (W_) ::FJTOP, FJBOT, FSBOT, FLXD0, RFL
+real (8) , dimension (L_, W_) ::AVGF, FJFLX
+real (8) , dimension (L1_, W_) ::DTAUX, FLXD
+real (8) , dimension (8, L1_, W_) ::POMEGAX
+real (8) , dimension (W_, L1_) ::FFX
+real (8) , dimension (W_, 8) ::FFXNET
 !---flux/heating arrays (along with FJFLX,FLXD,FLXD0)
 
-real (8) :: FLXJ (L1_), FFX0, FXBOT, FABOT  
-real (8) :: ODABS, ODRAY  
-real (8) :: RFLECT, SOLF, FREFS, FREFI  
-real (8) :: AMF2 (2 * L1_ + 1, 2 * L1_ + 1)  
+real (8) :: FLXJ (L1_), FFX0, FXBOT, FABOT
+real (8) :: ODABS, ODRAY
+real (8) :: RFLECT, SOLF, FREFS, FREFI
+real (8) :: AMF2 (2 * L1_ + 1, 2 * L1_ + 1)
 !------------key SCATTERING arrays for clouds+aerosols------------------
 ! begBian, 11/22/2011
-      real (8) :: OPTX (numScat), SSAX (numScat), SLEGX (8, numScat)  
-      real (8) :: OD (numScat, L1_), SSA (numScat, L1_), SLEG (8, numScat, L1_)  
-!      real (8) :: OPTX (4), SSAX (4), SLEGX (8, 4)  
-!      real (8) :: OD (4, L1_), SSA (4, L1_), SLEG (8, 4, L1_)  
+      real (8) :: OPTX (numScat), SSAX (numScat), SLEGX (8, numScat)
+      real (8) :: OD (numScat, L1_), SSA (numScat, L1_), SLEG (8, numScat, L1_)
+!      real (8) :: OPTX (4), SSAX (4), SLEGX (8, 4)
+!      real (8) :: OD (4, L1_), SSA (4, L1_), SLEG (8, 4, L1_)
 ! endBian, 11/22/2011
-real (8) :: OD600 (L1_)  
-real (8) :: PATH, DENSWP, DENS, RH, RHO, REFF, XTINCT, ODCLD  
+real (8) :: OD600 (L1_)
+real (8) :: PATH, DENSWP, DENS, RH, RHO, REFF, XTINCT, ODCLD
 !------------key arrays AFTER solving for J's---------------------------
-real (8) :: FFF (W_, JVL_), VALJ (X_)  
-real (8) :: FLXUP (W_), FLXDN (W_), DIRUP (W_), DIRDN (W_)  
+real (8) :: FFF (W_, JVL_), VALJ (X_)
+real (8) :: FLXUP (W_), FLXDN (W_), DIRUP (W_), DIRDN (W_)
                                 !2-D array of J_s returned by JRATET
 
-real (8) :: VALJL (JVL_, NJVAL)  
-integer :: I, J, K, L, M, KMIE, KW, NAER, NDCLD, RATIO (W_)  
+real (8) :: VALJL (JVL_, NJVAL)
+integer :: I, J, K, L, M, KMIE, KW, NAER, NDCLD, RATIO (W_)
       integer :: NAERnew, it
 
-real (8) :: XQO3, XQO2, DTAUC, WAVE, TTT  
-!real (8) :: XQO3, XQO2, DTAUC, WAVE, FLINT, TTT       
+real (8) :: XQO3, XQO2, DTAUC, WAVE, TTT
+!real (8) :: XQO3, XQO2, DTAUC, WAVE, FLINT, TTT
 
 real (8) :: ODaer
 real (8) :: SZA
 integer :: MS, MSOD, MSN
 !-----------------------------------------------------------------------
-ZPJ (:, :) = 0.d0  
-FFF (:, :) = 0.d0  
-FREFL = 0.d0  
-FREFS = 0.d0  
+ZPJ (:, :) = 0.d0
+FFF (:, :) = 0.d0
+FREFL = 0.d0
+FREFS = 0.d0
 FREFI = 0.d0
 !-----------------------------------------------------------------------
 
    ! BegJules 12/15/2011
       SZA = SZA_ij
-       call SOLARZ (UTIME, IDAY, YGRD (JLAT), XGRD (ILNG), SZA, U0, SOLF)  
+       call SOLARZ (UTIME, IDAY, YGRD (JLAT), XGRD (ILNG), SZA, U0, SOLF)
 !-----------------------------------------------------------------------
 !---  SOLF = 1.d0   ! this needs to be dropped to include 6.7% annual cy
 
-!write (6, * ) ' Solar Flux factor:', SOLF  
+!write (6, * ) ' Solar Flux factor:', SOLF
 !---check for dark conditions SZA > 98.0 deg => tan ht = 63 km
 !                        or         99.                  80 km
 
-if (SZA.gt.SZAMAX) goto 99  
+if (SZA.gt.SZAMAX) goto 99
 !---load the amtospheric column data
 ! begBian, 11/21/2011
-      do L = 1, L1_  
-!         PPJ (L) = ETAA (L) + ETAB (L) * P (ILNG, JLAT)  
+      do L = 1, L1_
+!         PPJ (L) = ETAA (L) + ETAB (L) * P (ILNG, JLAT)
          PPJ (L) = PJ (L)
-         TTJ (L) = TJ (ILNG, JLAT, L)  
-         DDJ (L) = DM (ILNG, JLAT, L)  
-         ZZJ (L) = DO3 (ILNG, JLAT, L)  
-      enddo  
+         TTJ (L) = TJ (ILNG, JLAT, L)
+         DDJ (L) = DM (ILNG, JLAT, L)
+         ZZJ (L) = DO3 (ILNG, JLAT, L)
+      enddo
 ! endBian, 11/21/2011
 
-PPJ (L1_ + 1) = 0.d0  
+PPJ (L1_ + 1) = 0.d0
 !---calculate spherical weighting functions (AMF: Air Mass Factor)
-do L = 1, L1_  
-ZHL (L) = ZH (ILNG, JLAT, L)  
-enddo  
+do L = 1, L1_
+ZHL (L) = ZH (ILNG, JLAT, L)
+enddo
 
-ZHL (L1_ + 1) = ZHL (L1_) + ZZHT  
+ZHL (L1_ + 1) = ZHL (L1_) + ZZHT
 !-----------------------------------------------------------------------
 
-call SPHERE2 (U0, RAD, ZHL, ZZHT, AMF2, L1_)  
+call SPHERE2 (U0, RAD, ZHL, ZZHT, AMF2, L1_)
 !-----------------------------------------------------------------------
 !---calculate the optical properties (opt-depth, single-scat-alb, phase-
 !---  at the 5 std wavelengths 200-300-400-600-999 nm for cloud+aerosols
-do L = 1, L1_  
-OD600 (L) = 0.D0  
-!do K = 1, 5  
-do K = 1, numScat-1 
-OD (K, L) = 0.d0  
-SSA (K, L) = 0.d0  
-do I = 1, 8  
-SLEG (I, K, L) = 0.d0  
-enddo  
-enddo  
+do L = 1, L1_
+OD600 (L) = 0.D0
+!do K = 1, 5
+do K = 1, numScat-1
+OD (K, L) = 0.d0
+SSA (K, L) = 0.d0
+do I = 1, 8
+SLEG (I, K, L) = 0.d0
+enddo
+enddo
 
-enddo  
+enddo
 
-do L = 1, L1_  
+do L = 1, L1_
 !---cloud in layer:  if valid cloud index (now 4:13)
 ! begBian, 11/22/2011
         do M = 1, 2
-!         NDCLD = CLDNDX (ILNG, JLAT, L)  
-!         PATH = CLDLWP (ILNG, JLAT, L)  
-!         DENS = PATH / ZH (ILNG, JLAT, L)  
+!         NDCLD = CLDNDX (ILNG, JLAT, L)
+!         PATH = CLDLWP (ILNG, JLAT, L)
+!         DENS = PATH / ZH (ILNG, JLAT, L)
            if (M .eq. 1) then
               NDCLD = CLDWNDX (ILNG, JLAT, L)
               ODCLD = CLDW (ILNG, JLAT, L)
            else
               NDCLD = CLDINDX (ILNG, JLAT, L)
               ODCLD = CLDI (ILNG, JLAT, L)
-           endif 
-           RH = RELH (L)  
+           endif
+           RH = RELH (L)
 ! endBian, 11/22/2011
-         if (ODCLD.gt.0.d0) then  
-            if (NDCLD.lt.4.or.NDCLD.gt.13) then  
-                NDCLD = 9  
-            endif  
+         if (ODCLD.gt.0.d0) then
+            if (NDCLD.lt.4.or.NDCLD.gt.13) then
+                NDCLD = 9
+            endif
 !---now calculate cloud OD at 600 nm from mixed formulae:
-            !REFF = RAA (NDCLD)  
-            !RHO = DAA (NDCLD)  
+            !REFF = RAA (NDCLD)
+            !RHO = DAA (NDCLD)
 ! begBian, 11/22/2011
-!            if (NDCLD.eq.12.or.NDCLD.eq.13) then  
+!            if (NDCLD.eq.12.or.NDCLD.eq.13) then
 !!---Ice Water Content (density at g/m3) varies from 0.0001 to 0.1
 !!---correct R-eff for ice clouds, increase Reff (microns) with density
-!               REFF = 50.d0 * (1.d0 + 8.333d0 * DENS)  
-!            endif  
+!               REFF = 50.d0 * (1.d0 + 8.333d0 * DENS)
+!            endif
 !!---extinction K(m2/g) = Q(wvl) / [4/3 * Reff(micron) * aerosol-density(
-!            ODCLD = PATH * 0.75d0 * QAA (4, NDCLD) / (REFF * RHO)  
+!            ODCLD = PATH * 0.75d0 * QAA (4, NDCLD) / (REFF * RHO)
 ! endBian, 11/22/2011
-            call OPTICL (OPTX, SSAX, SLEGX, ODCLD, NDCLD)  
+            call OPTICL (OPTX, SSAX, SLEGX, ODCLD, NDCLD)
 ! begBian, 11/22/2011
-!            do K = 1, 5  
-            do K = 1, numScat-1  
+!            do K = 1, 5
+            do K = 1, numScat-1
 ! endBian, 11/22/2011
-               OD (K, L) = OD (K, L) + OPTX (K)  
-               SSA (K, L) = SSA (K, L) + SSAX (K) * OPTX (K)  
-               do I = 1, 8  
+               OD (K, L) = OD (K, L) + OPTX (K)
+               SSA (K, L) = SSA (K, L) + SSAX (K) * OPTX (K)
+               do I = 1, 8
                   SLEG(I,K,L) = SLEG(I,K,L) + SLEGX(I,K) * SSAX(K) * OPTX(K)
-               enddo  
-            enddo  
-         endif  
+               enddo
+            enddo
+         endif
 !---use OD of clouds (not aerosols) at 600 nm to determine added layers
 ! begBian, 11/22/2011
          enddo ! m
 
-!         OD600 (L) = OD (4, L)  
-         OD600 (L) = OD (3, L)  
+!         OD600 (L) = OD (4, L)
+         OD600 (L) = OD (3, L)
 ! endBian, 11/22/2011
 !---aerosols in layer: check aerosol index
 !---this uses data from climatology OR from current CTM (STT of aerosols
@@ -1226,29 +1249,30 @@ do L = 1, L1_
 
         ! Loop over the no. of aerosol/cloud types supplied from CTM
 ! begBian, 11/22/2011
-!         do M = 1, MX   
+!         do M = 1, MX
          do M = 1, NSADdust+NSADaer
-!            NAER = AERindex (M)  
+!            NAER = AERindex (M)
 !            it = 3
 !            if (M .ge. it) then
 !               PATH = 0.0d0
 !            end if
 
-!            ! For mineral dust
+!... For mineral dust
 !            if ((M .gt. it) .and. (M .ge. it + NSADdust)) then
             if (M .le. NSADdust) then
                 ODaer = OPTdust (L, M)
                 NAER = 14 + M
                 !NAER = M
-                call OPTICA (OPTX, SSAX, SLEGX, ODaer, RH, NAER)  
-!                do K = 1, 5  
-                do K = 1, numScat-1  
-                   OD (K, L) = OD (K, L) + OPTX (K)  
-                   SSA(K,L) = SSA(K,L) + SSAX(K) * OPTX(K)  
-                   do I = 1, 8  
+                call OPTICA (OPTX, SSAX, SLEGX, ODaer, RH, NAER)
+!                do K = 1, 5
+                do K = 1, numScat-1
+                   OD (K, L) = OD (K, L) + OPTX (K)
+                   SSA(K,L) = SSA(K,L) + SSAX(K) * OPTX(K)
+                   do I = 1, 8
                       SLEG(I,K,L) = SLEG(I,K,L) + SLEGX(I,K) * SSAX(K) * OPTX (K)
-                   enddo  
-                enddo  
+                   enddo
+                enddo
+!... For Trop sulfate at RH=0-90
             else
                 do MS = 1, NRH_b
                    MSOD = (M-NSADdust-1)*5+MS
@@ -1257,25 +1281,25 @@ do L = 1, L1_
                    !MSN  = NSADdust+(M-NSADdust-1)*NRH_b+MS
                    ODaer = OPTaer (L, MSOD)
                    NAER  = MSN
-                   call OPTICA (OPTX, SSAX, SLEGX, ODaer, RH, NAER)  
-!                   do K = 1, 5  
-                   do K = 1, numScat-1  
-                      OD (K, L) = OD (K, L) + OPTX (K)  
-                      SSA (K, L) = SSA (K, L) + SSAX (K) * OPTX (K)  
-                      do I = 1, 8  
+                   call OPTICA (OPTX, SSAX, SLEGX, ODaer, RH, NAER)
+!                   do K = 1, 5
+                   do K = 1, numScat-1
+                      OD (K, L) = OD (K, L) + OPTX (K)
+                      SSA (K, L) = SSA (K, L) + SSAX (K) * OPTX (K)
+                      do I = 1, 8
                          SLEG(I,K,L) = SLEG(I,K,L) + SLEGX(I,K) * SSAX(K) * OPTX (K)
-                      enddo  
-                   enddo  
+                      enddo
+                   enddo
                 enddo
-            endif 
-!               PATH = AER1P_dust (L, M-it)  
-!               call OPTICA (OPTX, SSAX, SLEGX, PATH, RH, NAER)  
+            endif
+!               PATH = AER1P_dust (L, M-it)
+!               call OPTICA (OPTX, SSAX, SLEGX, PATH, RH, NAER)
 !            end if
 
 !            ! For other aerosols (sulfate, sea salt, etc.)
 !            if ((M .gt. it + NSADdust) .and. (M .ge. it + NSADdust+NSADaer)) then
-!               PATH = AER1P_aero (L, M-(it+NSADdust))  
-!               call OPTICM (OPTX, SSAX, SLEGX, PATH, RH, NAERnew)  
+!               PATH = AER1P_aero (L, M-(it+NSADdust))
+!               call OPTICM (OPTX, SSAX, SLEGX, PATH, RH, NAERnew)
 !            end if
 
 !!end JulesKouatchou
@@ -1286,37 +1310,37 @@ do L = 1, L1_
 !!---subs have slightly different inputs:
 !!---  PATH is the g/m2 in the layer, NAER in the cloud/aerosol index
 !!---  UMich aerosols use relative humidity (RH)
-!            if (PATH.gt.0.d0) then  
-!!KNJR 30Sept2011              if (NAER.gt.0) then  
-!!KNJR 30Sept2011                 call OPTICA (OPTX, SSAX, SLEGX, PATH, RH, NAER)  
-!!KNJR 30Sept2011              else  
+!            if (PATH.gt.0.d0) then
+!!KNJR 30Sept2011              if (NAER.gt.0) then
+!!KNJR 30Sept2011                 call OPTICA (OPTX, SSAX, SLEGX, PATH, RH, NAER)
+!!KNJR 30Sept2011              else
 !!KNJR 30Sept2011                 NAERnew = -NAER
-!!KNJR 30Sept2011                 call OPTICM (OPTX, SSAX, SLEGX, PATH, RH, NAERnew)  
-!!KNJR 30Sept2011              endif  
-!               do K = 1, 5  
-!                  OD (K, L) = OD (K, L) + OPTX (K)  
-!                  SSA (K, L) = SSA (K, L) + SSAX (K) * OPTX (K)  
-!                  do I = 1, 8  
+!!KNJR 30Sept2011                 call OPTICM (OPTX, SSAX, SLEGX, PATH, RH, NAERnew)
+!!KNJR 30Sept2011              endif
+!               do K = 1, 5
+!                  OD (K, L) = OD (K, L) + OPTX (K)
+!                  SSA (K, L) = SSA (K, L) + SSAX (K) * OPTX (K)
+!                  do I = 1, 8
 !                     SLEG (I, K, L) = SLEG (I, K, L) + SLEGX (I, K) * SSAX (K) * OPTX (K)
-!                  enddo  
-!               enddo  
-!            endif  
-         enddo ! M 
+!                  enddo
+!               enddo
+!            endif
+         enddo ! M
 ! endBian, 11/22/2011
 
 ! begBian, 11/22/2011
-!         do K = 1, 5  
-         do K = 1, numScat-1  
+!         do K = 1, 5
+         do K = 1, numScat-1
 ! endBian, 11/22/2011
-            if (OD (K, L) .gt.0.d0) then  
-               SSA (K, L) = SSA (K, L) / OD (K, L)  
-               do I = 1, 8  
-                  SLEG (I, K, L) = SLEG (I, K, L) / OD (K, L)  
-               enddo  
-            endif  
-         enddo  
+            if (OD (K, L) .gt.0.d0) then
+               SSA (K, L) = SSA (K, L) / OD (K, L)
+               do I = 1, 8
+                  SLEG (I, K, L) = SLEG (I, K, L) / OD (K, L)
+               enddo
+            endif
+         enddo
 
-      enddo ! L 
+      enddo ! L
 !---can add aerosol OD at 600 nm to determine added layers, but not done
 !---    OD600(L) = OD(4,L) + aerosol OD's
 !---when combining with Rayleigh and O2-O3 abs, remember the SSA and
@@ -1325,67 +1349,65 @@ do L = 1, L1_
 !       additonal levels at top of clouds (now uses log spacing)
 !-----------------------------------------------------------------------
 
-call EXTRAL (OD600, L1_, L2_, N_, JTAUMX, ATAU, ATAU0, JXTRA)  
+call EXTRAL (OD600, L1_, L2_, N_, JTAUMX, ATAU, ATAU0, JXTRA)
 !-----------------------------------------------------------------------
 !---set surface reflectance
-RFLECT = SA (ILNG, JLAT)  
+RFLECT = SA (ILNG, JLAT)
 
 
 
-RFL (:) = max (0.d0, min (1.d0, RFLECT) )  
+RFL (:) = max (0.d0, min (1.d0, RFLECT) )
 !-----------------------------------------------------------------------
 !---Loop over all wavelength bins to calc mean actinic flux AVGF(L)
 !-----------------------------------------------------------------------
 
-      do K = 1, W_  
-         WAVE = WL (K)  
+      do K = 1, W_
+         WAVE = WL (K)
          !---Pick nearest Mie wavelength to get scattering properites------------
-                                       ! use 200 nm prop for <255 nm
-         KMIE = 1  
-                                       ! use 300 nm prop for 255-355 nm
-!         if (WAVE.gt.255.d0) KMIE = 2  
-                                       ! use 400 nm prop for 355-500 nm
-!         if (WAVE.gt.355.d0) KMIE = 3  
-!         if (WAVE.gt.500.d0) KMIE = 4  
-!         if (WAVE.gt.800.d0) KMIE = 5  
-        
-          if (WAVE.gt.355.d0) KMIE = 2  
-          if (WAVE.gt.500.d0) KMIE = 3  
-          if (WAVE.gt.800.d0) KMIE = 4  
 
+!... mem+sds: This is from an old 5-element table:
+!        KMIE = 1                      !... use 200 nm prop for <255 nm
+!        if (WAVE.gt.255.d0) KMIE = 2  !... use 300 nm prop for 255-355 nm
+!        if (WAVE.gt.355.d0) KMIE = 3  !... use 400 nm prop for 355-500 nm
+!        if (WAVE.gt.500.d0) KMIE = 4
+!        if (WAVE.gt.800.d0) KMIE = 5
+
+         KMIE = 1
+         if (WAVE.gt.355.d0) KMIE = 2     ! use 400 nm property for 355-500 nm
+         if (WAVE.gt.500.d0) KMIE = 3     ! use 600 nm property for 500-800 nm
+         if (WAVE.gt.800.d0) KMIE = 4     ! use 1000 nm property for >800? nm
 
 
          !---Combine: Rayleigh scatters & O2 & O3 absorbers to get optical proper
          !---values at L1_=L_+1 are a pseudo/climatol layer above the top CTM lay
-         do L = 1, L1_  
-            TTT = TTJ (L)  
+         do L = 1, L1_
+            TTT = TTJ (L)
 
             XQO3 = FLINT (TTT, TQQ (1, 2), TQQ (2, 2), TQQ (3, 2), QO3 (K, 1), &
                 QO3 (K, 2), QO3 (K, 3) )
 
             XQO2 = FLINT (TTT, TQQ (1, 1), TQQ (2, 1), TQQ (3, 1), QO2 (K, 1), &
-             QO2 (K, 2), QO2 (K, 3) ) 
+             QO2 (K, 2), QO2 (K, 3) )
 
 ! beg biandix, Dec19, 2011
 ! this line was missed in previous implementation
             ODABS = XQO3*ZZJ(L) + XQO2*DDJ(L)*0.20948d0
 ! end biandix, Dec19, 2011
-            ODRAY = DDJ (L) * QRAYL (K)  
+            ODRAY = DDJ (L) * QRAYL (K)
 
-            DTAUX (L, K) = OD (KMIE, L) + ODABS + ODRAY  
-            do I = 1, 8  
-               POMEGAX (I, L, K) = SLEG (I, KMIE, L) * OD (KMIE, L)  
-            enddo  
-            POMEGAX (1, L, K) = POMEGAX (1, L, K) + 1.0d0 * ODRAY  
-            POMEGAX (3, L, K) = POMEGAX (3, L, K) + 0.5d0 * ODRAY  
-            do I = 1, 8  
-               POMEGAX (I, L, K) = POMEGAX (I, L, K) / DTAUX (L, K)  
-            enddo  
+            DTAUX (L, K) = OD (KMIE, L) + ODABS + ODRAY
+            do I = 1, 8
+               POMEGAX (I, L, K) = SLEG (I, KMIE, L) * OD (KMIE, L)
+            enddo
+            POMEGAX (1, L, K) = POMEGAX (1, L, K) + 1.0d0 * ODRAY
+            POMEGAX (3, L, K) = POMEGAX (3, L, K) + 0.5d0 * ODRAY
+            do I = 1, 8
+               POMEGAX (I, L, K) = POMEGAX (I, L, K) / DTAUX (L, K)
+            enddo
 
-         enddo  
+         enddo
 
-
-      enddo  
+      enddo
 !-----------------------------------------------------------------------
 
 
@@ -1393,25 +1415,25 @@ RFL (:) = max (0.d0, min (1.d0, RFLECT) )
                    FJBOT, FSBOT, FJFLX, FLXD, FLXD0)
 !-----------------------------------------------------------------------
 
-do K = 1, W_  
+do K = 1, W_
 !----direct(DIR) and diffuse(FLX) fluxes at top(UP) (solar = negative by
 !----     also at bottom (DN), does not include diffuse reflected flux.
-FLXUP (K) = FJTOP (K)  
-DIRUP (K) = - FLXD0 (K)  
-FLXDN (K) = - FJBOT (K)  
+FLXUP (K) = FJTOP (K)
+DIRUP (K) = - FLXD0 (K)
+FLXDN (K) = - FJBOT (K)
 
-DIRDN (K) = - FSBOT (K)  
-do L = 1, JVL_   
+DIRDN (K) = - FSBOT (K)
+do L = 1, JVL_
 !.sds orig fastJX6.5
 !            FFF (K, L) = FFF (K, L) + SOLF * FL (K) * AVGF (L, K)
 !.sds add solar cycle capability
             FFF (K, L) = FFF (K, L) + SOLF * FL (K) * AVGF (L, K) * fjx_solar_cycle_param(K)
-enddo  
-FREFI = FREFI + SOLF * FL (K) * FLXD0 (K) / WL (K)  
-FREFL = FREFL + SOLF * FL (K) * FJTOP (K) / WL (K)  
+enddo
+FREFI = FREFI + SOLF * FL (K) * FLXD0 (K) / WL (K)
+FREFL = FREFL + SOLF * FL (K) * FJTOP (K) / WL (K)
 
 
-FREFS = FREFS + SOLF * FL (K) / WL (K)  
+FREFS = FREFS + SOLF * FL (K) / WL (K)
 !---for each wavelength calculate the flux budget/heating rates:
 !  FLXD(L) = direct flux deposited in layer L  [approx = MU0*(F(L+1) -F(
 !            but for spherical atmosphere!
@@ -1419,21 +1441,21 @@ FREFS = FREFS + SOLF * FL (K) / WL (K)
 !---calculate divergence of diffuse flux in each CTM layer (& t-o-a)
 !---     need special fix at top and bottom:
 !---FABOT = total abs at L.B. &  FXBOT = net diffusive flux at L.B.
-FABOT = (1.d0 - RFL (K) ) * (FJBOT (K) + FSBOT (K) )  
-FXBOT = - FJBOT (K) + RFL (K) * (FJBOT (K) + FSBOT (K) )  
-FLXJ (1) = FJFLX (1, K) - FXBOT  
-do L = 2, L_  
-FLXJ (L) = FJFLX (L, K) - FJFLX (L - 1, K)  
-enddo  
-FLXJ (L_ + 1) = FJTOP (K) - FJFLX (L_, K)  
+FABOT = (1.d0 - RFL (K) ) * (FJBOT (K) + FSBOT (K) )
+FXBOT = - FJBOT (K) + RFL (K) * (FJBOT (K) + FSBOT (K) )
+FLXJ (1) = FJFLX (1, K) - FXBOT
+do L = 2, L_
+FLXJ (L) = FJFLX (L, K) - FJFLX (L - 1, K)
+enddo
+FLXJ (L_ + 1) = FJTOP (K) - FJFLX (L_, K)
 !---calculate net flux deposited in each CTM layer (direct & diffuse):
-FFX0 = 0.d0  
-do L = 1, L1_  
-FFX (K, L) = FLXD (L, K) - FLXJ (L)  
-FFX0 = FFX0 + FFX (K, L)  
+FFX0 = 0.d0
+do L = 1, L1_
+FFX (K, L) = FLXD (L, K) - FLXJ (L)
+FFX0 = FFX0 + FFX (K, L)
 
 
-enddo  
+enddo
 !  NB: the radiation level ABOVE the top CTM level is included in these
 !      these are the flux budget/heating terms for the column:
 !  FFXNET(K,1) = FLXD0        direct(solar) flux dep into atmos (spheric
@@ -1445,42 +1467,42 @@ enddo
 !       these are surface fluxes to compare direct vs. diffuse:
 !  FFXNET(K,7) = FSBOT        direct flux dep onto LB (surface) - for sr
 !  FFXNET(K,8) = FJBOT        diffuse flux dep onto LB (surface)
-FFXNET (K, 1) = FLXD0 (K)  
-FFXNET (K, 2) = FSBOT (K)  
-FFXNET (K, 3) = FLXD0 (K) + FSBOT (K)  
-FFXNET (K, 4) = FJTOP (K)  
-FFXNET (K, 5) = FFX0  
-FFXNET (K, 6) = FABOT  
-FFXNET (K, 7) = FSBOT (K)  
+FFXNET (K, 1) = FLXD0 (K)
+FFXNET (K, 2) = FSBOT (K)
+FFXNET (K, 3) = FLXD0 (K) + FSBOT (K)
+FFXNET (K, 4) = FJTOP (K)
+FFXNET (K, 5) = FFX0
+FFXNET (K, 6) = FABOT
+FFXNET (K, 7) = FSBOT (K)
 
-FFXNET (K, 8) = FJBOT (K)  
+FFXNET (K, 8) = FJBOT (K)
 !-----------------------------------------------------------------------
                   ! end loop over wavelength K
 
-enddo  
+enddo
 !-----------------------------------------------------------------------
                                    !calculate reflected flux (energy wei
-FREFL = FREFL / FREFS  
+FREFL = FREFL / FREFS
 
 
-FREFI = FREFI / FREFS  
+FREFI = FREFI / FREFS
 !---NB UVB = 280-320 = bins 12:15, UVA = 320-400 = bins 16:17, VIS = bin
 !-----------------------------------------------------------------------
 
-call JRATET (PPJ, TTJ, FFF, VALJL)  
+call JRATET (PPJ, TTJ, FFF, VALJL)
 !-----------------------------------------------------------------------
 !---map the J-values from fast-JX onto ASAD ones (use JIND & JFACTA)
-do L = 1, JVL_  
-do J = 1, NRATJ  
-if (JIND (J) .gt.0) then  
-     ZPJ (L, J) = VALJL (L, JIND (J) ) * JFACTA (J)  
-else  
-     ZPJ (L, J) = 0.d0  
-endif  
-enddo  
+do L = 1, JVL_
+do J = 1, NRATJ
+if (JIND (J) .gt.0) then
+     ZPJ (L, J) = VALJL (L, JIND (J) ) * JFACTA (J)
+else
+     ZPJ (L, J) = 0.d0
+endif
+enddo
 
 
-enddo  
+enddo
 !---diagnostics that are NOT returned to the CTM code
 !-----------------------------------------------------------------------
 
@@ -1491,49 +1513,49 @@ enddo
       call JP_ATM (PPJ, TTJ, DDJ, ZZJ, ZHL, ZZHT, DTAUX (1, W_), &
        POMEGAX (1, 1, W_), JXTRA)
 !!---PRINT SUMMARY of mean intensity, flux, heating rates:
-!      write (6, * )  
+!      write (6, * )
 !      write (6,  * ) 'fast-JX(6.5)----PHOTOJ internal print: Mean Intens &
 !&----'
 !
 !      write (6, '(a,5f10.4)') ' SUMMARY fast-JX: albedo/SZA/u0/F-incd/F- &
 !      &refl/', RFLECT, SZA, U0, FREFI, FREFL
-!      write (6, '(a5,18i8)') ' bin:', (K, K = NW2, NW1, - 1)  
-!      write (6, '(a5,18f8.1)') ' wvl:', (WL (K) , K = NW2, NW1, - 1)  
+!      write (6, '(a5,18i8)') ' bin:', (K, K = NW2, NW1, - 1)
+!      write (6, '(a5,18f8.1)') ' wvl:', (WL (K) , K = NW2, NW1, - 1)
 !      write (6, '(a)') ' ----  100000=Fsolar   MEAN INTENSITY per wvl bin'
 
-      do L = JVL_, 1, - 1  
-         do K = NW1, NW2  
-            RATIO (K) = (1.d5 * FFF (K, L) / FL (K) )  
-         enddo  
-!         write (6, '(i3,2x,18i8)') L, (RATIO (K) , K = NW2, NW1, - 1)  
-      enddo  
+      do L = JVL_, 1, - 1
+         do K = NW1, NW2
+            RATIO (K) = (1.d5 * FFF (K, L) / FL (K) )
+         enddo
+!         write (6, '(i3,2x,18i8)') L, (RATIO (K) , K = NW2, NW1, - 1)
+      enddo
 
-!      write (6, * )  
+!      write (6, * )
 !      write (6,  * ) 'fast-JX(6.5)----PHOTOJ internal print: Net Fluxes----'
-!      write (6, '(a11,18i8)') ' bin:', (K, K = NW2, NW1, - 1)  
+!      write (6, '(a11,18i8)') ' bin:', (K, K = NW2, NW1, - 1)
 !      write (6, '(a11,18f8.1)') ' wvl:', (WL (K) , K = NW2, NW1, - 1)
 !!      write(6,'(a11,18f8.4)') ' sol in atm',(FFXNET(K,1), K=NW2,NW1,-1)
 !!      write(6,'(a11,18f8.4)') ' sol at srf',(FFXNET(K,2), K=NW2,NW1,-1)
-!      write (6, * ) ' ---NET FLUXES--- '  
+!      write (6, * ) ' ---NET FLUXES--- '
 !      write (6, '(a11,18f8.4)') ' sol TOTAL ', (FFXNET (K, 3) , K = NW2, NW1, - 1)
 !      write (6, '(a11,18f8.4)') ' dif outtop', (FFXNET (K, 4) , K = NW2, NW1, - 1)
 !      write (6, '(a11,18f8.4)') ' abs in atm', (FFXNET (K, 5) , K = NW2, NW1, - 1)
 !      write (6, '(a11,18f8.4)') ' abs at srf', (FFXNET (K, 6) , K = NW2, NW1, - 1)
-!      write (6, * ) ' ---SRF FLUXES--- '  
+!      write (6, * ) ' ---SRF FLUXES--- '
 !      write (6, '(a11,18f8.4)') ' srf direct', (FFXNET (K, 7) , K = NW2, NW1, - 1)
 !      write (6, '(a11,18f8.4)') ' srf diffus', (FFXNET (K, 8) , K = NW2, NW1, - 1)
 !      write (6, '(2a)') '  ---NET ABS per layer:       10000=Fsolar', ' &
 !      & [NB: values <0 = numerical error w/clouds or SZA>90, colm OK]'
 
-      do L = JVL_, 1, - 1  
-         do K = NW1, NW2  
-            RATIO (K) = 1.d5 * FFX (K, L)  
-         enddo  
-!         write (6, '(i9,2x,18i8)') L, (RATIO (K) , K = NW2, NW1, - 1)  
-      enddo  
+      do L = JVL_, 1, - 1
+         do K = NW1, NW2
+            RATIO (K) = 1.d5 * FFX (K, L)
+         enddo
+!         write (6, '(i9,2x,18i8)') L, (RATIO (K) , K = NW2, NW1, - 1)
+      enddo
 !-----------------------------------------------------------------------
-   99 continue  
-      return  
+   99 continue
+      return
 
 end subroutine PHOTOJ
 !######################################################################
@@ -1541,7 +1563,7 @@ end subroutine PHOTOJ
 !<<<<<<<<<<<<<<<<<<<<<begin core fast-J subroutines<<<<<<<<<<<<<<<<<<<<<
 !-----------------------------------------------------------------------
 
-subroutine OPTICL (OPTD, SSALB, SLEG, ODCLD, NDCLD)  
+subroutine OPTICL (OPTD, SSALB, SLEG, ODCLD, NDCLD)
 !-----------------------------------------------------------------------
 !---set CLOUD fast-JX properties at the std 5 wavelengths:200-300-400-60
 !---   this now requires the cloud layer OD rather than water path
@@ -1557,51 +1579,51 @@ subroutine OPTICL (OPTD, SSALB, SLEG, ODCLD, NDCLD)
 !  11 W_L06   (W/Lacis)GAMMA:r-m=5.5/alf=11/3        reff=10.00___G=183.
 !  12 Ice-Hexagonal (Mishchencko)                    reff=50.00___G=999.
 !  13 Ice-Irregular (Mishchencko)                    reff=50.00___G=999.
-implicit none  
-#     include "parm_CTM_fastJX65.h"  
-#     include "parm_MIE_fastJX65.h"  
+implicit none
+#     include "parm_CTM_fastJX65.h"
+#     include "parm_MIE_fastJX65.h"
 
-#     include "cmn_JVdat_fastJX65.h"  
+#     include "cmn_JVdat_fastJX65.h"
                                           ! optical depth of layer
-real (8) , intent (out) ::OPTD (5)  
+real (8) , intent (out) ::OPTD (5)
                                           ! single-scattering albedo
-real (8) , intent (out) ::SSALB (5)  
+real (8) , intent (out) ::SSALB (5)
                                           ! scatt phase fn (Leg coeffs)
-real (8) , intent (out) ::SLEG (8, 5)  
+real (8) , intent (out) ::SLEG (8, 5)
                                           ! optical depth of cloud layer
-real (8) , intent (in) ::ODCLD  
+real (8) , intent (in) ::ODCLD
                                           ! index of cloud layer:  4:13
-integer , intent (inout) ::NDCLD  
-integer :: I, J  
-real (8) :: XTINCT, REFF, RHO  
+integer , intent (inout) ::NDCLD
+integer :: I, J
+real (8) :: XTINCT, REFF, RHO
 !---default cloud type C1, Reff = 12 microns
-if (NDCLD.gt.13.or.NDCLD.lt.4) then  
-     NDCLD = 9  
-endif  
+if (NDCLD.gt.13.or.NDCLD.lt.4) then
+     NDCLD = 9
+endif
 !###########!--rescale OD by Qext at 600 nm (J=4)
 ! begBian, 11/22/2011
-!      do J = 1, 5  
-      do J = 1, numScat-1  
-!         OPTD (J) = ODCLD * QAA (J, NDCLD) / QAA (4, NDCLD)  
-! check ODCLD is for which wavelength 
-         OPTD (J) = ODCLD * QAA (J, NDCLD) / QAA (3, NDCLD)  
-         SSALB (J) = SAA (J, NDCLD)  
-         do I = 1, 8  
-            SLEG (I, J) = PAA (I, J, NDCLD)  
-         enddo  
-      enddo  
+!      do J = 1, 5
+      do J = 1, numScat-1
+!         OPTD (J) = ODCLD * QAA (J, NDCLD) / QAA (4, NDCLD)
+! check ODCLD is for which wavelength
+         OPTD (J) = ODCLD * QAA (J, NDCLD) / QAA (3, NDCLD)
+         SSALB (J) = SAA (J, NDCLD)
+         do I = 1, 8
+            SLEG (I, J) = PAA (I, J, NDCLD)
+         enddo
+      enddo
 ! endBian, 11/22/2011
 
-return  
+return
 
 
 end subroutine OPTICL
 !###########################################################
 !-----------------------------------------------------------------------
 ! begBian, 11/22/2011
-!      subroutine OPTICA (OPTD, SSALB, SLEG, PATH, RELH, L)  
-      subroutine OPTICA (OPTD, SSALB, SLEG, ODaer, RELH, L)  
-! endBian, 11/22/2011 
+!      subroutine OPTICA (OPTD, SSALB, SLEG, PATH, RELH, L)
+      subroutine OPTICA (OPTD, SSALB, SLEG, ODaer, RELH, L)
+! endBian, 11/22/2011
 !-----------------------------------------------------------------------
 !---for the UCI aerosol data sets, calculates optical properties at fast
 !              std 5 wavelengths:200-300-400-600-999nm
@@ -1624,145 +1646,145 @@ end subroutine OPTICL
 !   28 Mdust 1.5 (R.V. Martin generated phase fns)
 !   29 Mdust 2.5 (R.V. Martin generated phase fns)
 !   30 Mdust 4.0 (R.V. Martin generated phase fns)
-implicit none  
-#     include "parm_CTM_fastJX65.h"  
-#     include "parm_MIE_fastJX65.h"  
+implicit none
+#     include "parm_CTM_fastJX65.h"
+#     include "parm_MIE_fastJX65.h"
 
-#     include "cmn_JVdat_fastJX65.h"  
+#     include "cmn_JVdat_fastJX65.h"
                                           ! optical depth of layer
-real (8) , intent (out) ::OPTD (5)  
+real (8) , intent (out) ::OPTD (5)
                                           ! single-scattering albedo
-real (8) , intent (out) ::SSALB (5)  
+real (8) , intent (out) ::SSALB (5)
                                           ! scatt phase fn (Leg coeffs)
-real (8) , intent (out) ::SLEG (8, 5)  
+real (8) , intent (out) ::SLEG (8, 5)
                                           ! path (g/m2) of aerosol/cloud
 ! begBian, 11/22/2011
 !                                          ! path (g/m2) of aerosol/cloud
-!      real (8) , intent (in) ::PATH  
+!      real (8) , intent (in) ::PATH
                                           ! aerosol optical thickness
-      real (8) , intent (in) ::ODaer 
+      real (8) , intent (in) ::ODaer
 ! endBian, 11/22/2011
                                           ! relative humidity (0.00->1.0
-real (8) , intent (in) ::RELH  
+real (8) , intent (in) ::RELH
                                           ! index of cloud/aerosols
 
-integer , intent (inout) :: L  
-integer :: I, J, LL  
+integer , intent (inout) :: L
+integer :: I, J, LL
 
-real (8) :: XTINCT, REFF, RHO  
+real (8) :: XTINCT, REFF, RHO
 
-  !if (L.gt.NAA.or.L.lt.4) then  
-      !   !write (6, * ) ' aerosol index out-of-range: L/NAA', L, NAA  
-      !   L = 18  
-      !endif  
+  !if (L.gt.NAA.or.L.lt.4) then
+      !   !write (6, * ) ' aerosol index out-of-range: L/NAA', L, NAA
+      !   L = 18
+      !endif
       if (L.gt.NAA) then
-         !write (6, * ) ' aerosol index out-of-range: L/NAA', L, NAA  
+         !write (6, * ) ' aerosol index out-of-range: L/NAA', L, NAA
          LL = L-(L-50)/7*7
          L = LL
       endif
 
-!      if (L.lt.14) then  
-!         write (6, * ) ' aerosol as cloud: L/NAA', L, NAA  
-!      endif  
+!      if (L.lt.14) then
+!         write (6, * ) ' aerosol as cloud: L/NAA', L, NAA
+!      endif
 
-!REFF = RAA (L)  
-!RHO = DAA (L)  
+!REFF = RAA (L)
+!RHO = DAA (L)
 ! begBian, 11/22/2011
-!      do J = 1, 5  
-      do J = 1, numScat-1  
+!      do J = 1, 5
+      do J = 1, numScat-1
          !---extinction K(m2/g) = Q(wvl) / [4/3 * Reff(micron) * aerosol-density(
-!         XTINCT = 0.75d0 * QAA (J, L) / (REFF * RHO)  
-!         OPTD (J) = PATH * XTINCT  
+!         XTINCT = 0.75d0 * QAA (J, L) / (REFF * RHO)
+!         OPTD (J) = PATH * XTINCT
 ! note: ODaer was calculated at k = 4
          OPTD(J) = ODaer * QAA(J,L) / QAA(4, L)
 ! endBian, 11/22/2011
-SSALB (J) = SAA (J, L)  
-do I = 1, 8  
-SLEG (I, J) = PAA (I, J, L)  
-enddo  
+SSALB (J) = SAA (J, L)
+do I = 1, 8
+SLEG (I, J) = PAA (I, J, L)
+enddo
 
-enddo  
-return  
+enddo
+return
 
 
 end subroutine OPTICA
-!######################################################################
+!.unused- !######################################################################
+!.unused- !-----------------------------------------------------------------------
+!.unused- subroutine OPTICM (OPTD, SSALB, SLEG, PATH, RELH, L)
+!.unused- !-----------------------------------------------------------------------
+!.unused- !---for the U Michigan aerosol data sets, this generate fast-JX data for
+!.unused- !---NB Approximates the Legendre expansion(L) of the scattering phase fn
+!.unused- !---           as (2*L+1)*g**L
+!.unused- !---UMAER(I,J,K,L):
+!.unused- !   I=1:3 = [SSAbldeo, g, k-ext(m2/g)]
+!.unused- !   J=1:6 = [200, 300, 400, 550, 600 , 1000 nm]
+!.unused- !   K=1:21= [0, 5, 10, 15, ..., 90, 95, 99 %RelHum]
+!.unused- !   L=1:33= UM aerosol types [SULF, SS-1,-2,-3,-4, DD-1,-2,-3,-4, FF00(0
+!.unused- !                      FF02, ...FF14(14%BC), BB00, BB02, ...BB30(30%BC)]
+!.unused- implicit none
+!.unused- #     include "parm_CTM_fastJX65.h"
+!.unused- #     include "parm_MIE_fastJX65.h"
+!.unused-
+!.unused- #     include "cmn_JVdat_fastJX65.h"
+!.unused-                                           ! optical depth of layer
+!.unused- real (8) , intent (out) ::OPTD (5)
+!.unused-                                           ! single-scattering albedo
+!.unused- real (8) , intent (out) ::SSALB (5)
+!.unused-                                           ! scatt phase fn (Leg coeffs)
+!.unused- real (8) , intent (out) ::SLEG (8, 5)
+!.unused-                                           ! path (g/m2) of aerosol/cloud
+!.unused- real (8) , intent (in) ::PATH
+!.unused-                                           ! relative humidity (0.00->1.0
+!.unused- real (8) , intent (in) ::RELH
+!.unused-                                           ! index of cloud/aerosols
+!.unused-
+!.unused- integer , intent (inout) ::L
+!.unused- integer :: KR, J
+!.unused- real (8) :: R, FRH, GCOS, XTINCT
+!.unused-
+!.unused- !---calculate fast-JX properties at the std 5 wavelengths:200-300-400-60
+!.unused- !---interpolate in Relative Humidity
+!.unused- !---extrapolate pahse fn from first term (g)
+!.unused-
+!.unused- if (L.gt.33) then
+!.unused-      write (6, * ) ' UM aer index too large: L', L
+!.unused-      L = 1
+!.unused-
+!.unused- endif
+!.unused- R = 100.d0 * min (1.d0, max (.01d0, RELH) )
+!.unused- KR = (R / 5.d0)
+!.unused- KR = max (0, min (19, KR) ) + 1
+!.unused- if (KR.lt.20) then
+!.unused-      FRH = 0.20d0 * (R - 5.d0 * float (KR - 1) )
+!.unused- else
+!.unused-      FRH = 0.25d0 * (R - 5.d0 * float (KR - 1) )
+!.unused-
+!.unused- endif
+!.unused- do J = 1, 5
+!.unused-
+!.unused- SSALB (J) = UMAER (1, J, KR, L) * (1.d0 - FRH) + UMAER (1, J, KR + &
+!.unused-  1, L) * FRH
+!.unused- XTINCT = UMAER (3, J, KR, L) * (1.d0 - FRH) + UMAER (3, J, KR + 1, &
+!.unused-  L) * FRH
+!.unused-
+!.unused- OPTD (J) = PATH * XTINCT
+!.unused- GCOS = UMAER (2, J, KR, L) * (1.d0 - FRH) + UMAER (2, J, KR + 1, &
+!.unused-  L) * FRH
+!.unused- SLEG (1, J) = 1.d0
+!.unused- SLEG (2, J) = 3.d0 * GCOS
+!.unused- SLEG (3, J) = 5.d0 * GCOS**2
+!.unused- SLEG (4, J) = 7.d0 * GCOS**3
+!.unused- SLEG (5, J) = 9.d0 * GCOS**4
+!.unused- SLEG (6, J) = 11.d0 * GCOS**5
+!.unused- SLEG (7, J) = 13.d0 * GCOS**6
+!.unused- SLEG (8, J) = 15.d0 * GCOS**7
+!.unused- enddo
+!.unused- return
+!.unused-
+!.unused- end subroutine OPTICM
+!.unused- !######################################################################
 !-----------------------------------------------------------------------
-subroutine OPTICM (OPTD, SSALB, SLEG, PATH, RELH, L)  
-!-----------------------------------------------------------------------
-!---for the U Michigan aerosol data sets, this generate fast-JX data for
-!---NB Approximates the Legendre expansion(L) of the scattering phase fn
-!---           as (2*L+1)*g**L
-!---UMAER(I,J,K,L):
-!   I=1:3 = [SSAbldeo, g, k-ext(m2/g)]
-!   J=1:6 = [200, 300, 400, 550, 600 , 1000 nm]
-!   K=1:21= [0, 5, 10, 15, ..., 90, 95, 99 %RelHum]
-!   L=1:33= UM aerosol types [SULF, SS-1,-2,-3,-4, DD-1,-2,-3,-4, FF00(0
-!                      FF02, ...FF14(14%BC), BB00, BB02, ...BB30(30%BC)]
-implicit none  
-#     include "parm_CTM_fastJX65.h"  
-#     include "parm_MIE_fastJX65.h"  
-
-#     include "cmn_JVdat_fastJX65.h"  
-                                          ! optical depth of layer
-real (8) , intent (out) ::OPTD (5)  
-                                          ! single-scattering albedo
-real (8) , intent (out) ::SSALB (5)  
-                                          ! scatt phase fn (Leg coeffs)
-real (8) , intent (out) ::SLEG (8, 5)  
-                                          ! path (g/m2) of aerosol/cloud
-real (8) , intent (in) ::PATH  
-                                          ! relative humidity (0.00->1.0
-real (8) , intent (in) ::RELH  
-                                          ! index of cloud/aerosols
-
-integer , intent (inout) ::L  
-integer :: KR, J  
-real (8) :: R, FRH, GCOS, XTINCT  
-
-!---calculate fast-JX properties at the std 5 wavelengths:200-300-400-60
-!---interpolate in Relative Humidity
-!---extrapolate pahse fn from first term (g)
-
-if (L.gt.33) then  
-     write (6, * ) ' UM aer index too large: L', L  
-     L = 1  
-
-endif  
-R = 100.d0 * min (1.d0, max (.01d0, RELH) )  
-KR = (R / 5.d0)  
-KR = max (0, min (19, KR) ) + 1  
-if (KR.lt.20) then  
-     FRH = 0.20d0 * (R - 5.d0 * float (KR - 1) )  
-else  
-     FRH = 0.25d0 * (R - 5.d0 * float (KR - 1) )  
-
-endif  
-do J = 1, 5  
-
-SSALB (J) = UMAER (1, J, KR, L) * (1.d0 - FRH) + UMAER (1, J, KR + &
- 1, L) * FRH
-XTINCT = UMAER (3, J, KR, L) * (1.d0 - FRH) + UMAER (3, J, KR + 1, &
- L) * FRH
-
-OPTD (J) = PATH * XTINCT  
-GCOS = UMAER (2, J, KR, L) * (1.d0 - FRH) + UMAER (2, J, KR + 1, &
- L) * FRH
-SLEG (1, J) = 1.d0  
-SLEG (2, J) = 3.d0 * GCOS  
-SLEG (3, J) = 5.d0 * GCOS**2  
-SLEG (4, J) = 7.d0 * GCOS**3  
-SLEG (5, J) = 9.d0 * GCOS**4  
-SLEG (6, J) = 11.d0 * GCOS**5  
-SLEG (7, J) = 13.d0 * GCOS**6  
-SLEG (8, J) = 15.d0 * GCOS**7  
-enddo  
-return  
-
-end subroutine OPTICM
-!######################################################################
-!-----------------------------------------------------------------------
-subroutine JRATET (PPJ, TTJ, FFF, VALJL)  
+subroutine JRATET (PPJ, TTJ, FFF, VALJL)
 !-----------------------------------------------------------------------
 ! in:
 !        PPJ(L1_+1) = pressure profile at edges
@@ -1771,213 +1793,212 @@ subroutine JRATET (PPJ, TTJ, FFF, VALJL)
 ! out:
 !        VALJ(JVL_,NJVAL)  JVL_ = no of levels
 !-----------------------------------------------------------------------
-implicit none  
-#     include "parm_CTM_fastJX65.h"  
-#     include "parm_MIE_fastJX65.h"  
+implicit none
+#     include "parm_CTM_fastJX65.h"
+#     include "parm_MIE_fastJX65.h"
 
-#     include "cmn_JVdat_fastJX65.h"  
-real (8) , intent (in) ::PPJ (L1_ + 1), TTJ (L1_)  
-real (8) , intent (in) ::FFF (W_, JVL_)  
+#     include "cmn_JVdat_fastJX65.h"
+real (8) , intent (in) ::PPJ (L1_ + 1), TTJ (L1_)
+real (8) , intent (in) ::FFF (W_, JVL_)
 
-real (8) , intent (out) ::VALJL (JVL_, NJVAL)  
+real (8) , intent (out) ::VALJL (JVL_, NJVAL)
                                 ! temp for call J's at one L
-real (8) :: VALJ (X_)  
+real (8) :: VALJ (X_)
 real (8) :: QO2TOT (W_), QO3TOT (W_), QO31DY (W_), QO31D, QQQT, &
  TFACT
 real (8) :: TT, PP, DD, TT200, TFACA, TFAC0, TFAC1, TFAC2, QQQA, &
  QQ2, QQ1A, QQ1B
 
-integer :: J, K, L, IV  
+integer :: J, K, L, IV
                        ! master loop over layer = L
 
-do L = 1, JVL_  
+do L = 1, JVL_
 !---need temperature, pressure, and density at mid-layer (for some quant
-TT = TTJ (L)  
-if (L.eq.1) then  
-     PP = PPJ (1)  
-else  
-     PP = (PPJ (L) + PPJ (L + 1) ) * 0.5d0  
-endif  
+  TT = TTJ (L)
+  if (L.eq.1) then
+     PP = PPJ (1)
+  else
+     PP = (PPJ (L) + PPJ (L + 1) ) * 0.5d0
+  endif
 
-DD = 7.24e18 * PP / TT  
-do J = 1, NJVAL  
-VALJ (J) = 0.d0  
+  DD = 7.24e18 * PP / TT
+  do J = 1, NJVAL
+    VALJ (J) = 0.d0
+  enddo
 
-enddo  
-if (TT.le.TQQ (2, 1) ) then  
-     if (TT.le.TQQ (1, 1) ) then  
-          TFACT = 0.d0  
-     else  
-          TFACT = (TT - TQQ (1, 1) ) / (TQQ (2, 1) - TQQ (1, 1) )  
-     endif  
-     do K = 1, W_  
-     QO2TOT (K) = QO2 (K, 1) + (QO2 (K, 2) - QO2 (K, 1) ) * TFACT  
-     enddo  
-else  
-     if (TT.ge.TQQ (3, 1) ) then  
-          TFACT = 1.d0  
-     else  
-          TFACT = (TT - TQQ (2, 1) ) / (TQQ (3, 1) - TQQ (2, 1) )  
-     endif  
-     do K = 1, W_  
-     QO2TOT (K) = QO2 (K, 2) + (QO2 (K, 3) - QO2 (K, 2) ) * TFACT  
-     enddo  
+  if (TT.le.TQQ (2, 1) ) then
+    if (TT.le.TQQ (1, 1) ) then
+         TFACT = 0.d0
+    else
+         TFACT = (TT - TQQ (1, 1) ) / (TQQ (2, 1) - TQQ (1, 1) )
+    endif
+    do K = 1, W_
+      QO2TOT (K) = QO2 (K, 1) + (QO2 (K, 2) - QO2 (K, 1) ) * TFACT
+    enddo
+  else
+    if (TT.ge.TQQ (3, 1) ) then
+         TFACT = 1.d0
+    else
+         TFACT = (TT - TQQ (2, 1) ) / (TQQ (3, 1) - TQQ (2, 1) )
+    endif
+    do K = 1, W_
+      QO2TOT (K) = QO2 (K, 2) + (QO2 (K, 3) - QO2 (K, 2) ) * TFACT
+    enddo
+  endif
 
-endif  
-if (TT.le.TQQ (2, 2) ) then  
-     if (TT.le.TQQ (1, 2) ) then  
-          TFACT = 0.d0  
-     else  
-          TFACT = (TT - TQQ (1, 2) ) / (TQQ (2, 2) - TQQ (1, 2) )  
-     endif  
-     do K = 1, W_  
-     QO3TOT (K) = QO3 (K, 1) + (QO3 (K, 2) - QO3 (K, 1) ) * TFACT  
-     enddo  
-else  
-     if (TT.ge.TQQ (3, 2) ) then  
-          TFACT = 1.d0  
-     else  
-          TFACT = (TT - TQQ (2, 2) ) / (TQQ (3, 2) - TQQ (2, 2) )  
-     endif  
-     do K = 1, W_  
-     QO3TOT (K) = QO3 (K, 2) + (QO3 (K, 3) - QO3 (K, 2) ) * TFACT  
-     enddo  
-endif  
-if (TT.le.TQQ (2, 3) ) then  
-     if (TT.le.TQQ (1, 3) ) then  
-          TFACT = 0.d0  
-     else  
-          TFACT = (TT - TQQ (1, 3) ) / (TQQ (2, 3) - TQQ (1, 3) )  
-     endif  
-     do K = 1, W_  
-     QO31DY (K) = Q1D (K, 1) + (Q1D (K, 2) - Q1D (K, 1) ) * TFACT  
-     enddo  
-else  
-     if (TT.ge.TQQ (3, 3) ) then  
-          TFACT = 1.d0  
-     else  
-          TFACT = (TT - TQQ (2, 3) ) / (TQQ (3, 3) - TQQ (2, 3) )  
-     endif  
-     do K = 1, W_  
-     QO31DY (K) = Q1D (K, 2) + (Q1D (K, 3) - Q1D (K, 2) ) * TFACT  
-     enddo  
+  if (TT.le.TQQ (2, 2) ) then
+    if (TT.le.TQQ (1, 2) ) then
+         TFACT = 0.d0
+    else
+         TFACT = (TT - TQQ (1, 2) ) / (TQQ (2, 2) - TQQ (1, 2) )
+    endif
+    do K = 1, W_
+      QO3TOT (K) = QO3 (K, 1) + (QO3 (K, 2) - QO3 (K, 1) ) * TFACT
+    enddo
+  else
+    if (TT.ge.TQQ (3, 2) ) then
+         TFACT = 1.d0
+    else
+         TFACT = (TT - TQQ (2, 2) ) / (TQQ (3, 2) - TQQ (2, 2) )
+    endif
+    do K = 1, W_
+      QO3TOT (K) = QO3 (K, 2) + (QO3 (K, 3) - QO3 (K, 2) ) * TFACT
+    enddo
+  endif
 
-endif  
-do K = 1, W_  
-QO31D = QO31DY (K) * QO3TOT (K)  
-VALJ (1) = VALJ (1) + QO2TOT (K) * FFF (K, L)  
-VALJ (2) = VALJ (2) + QO3TOT (K) * FFF (K, L)  
-VALJ (3) = VALJ (3) + QO31D * FFF (K, L)  
+  if (TT.le.TQQ (2, 3) ) then
+    if (TT.le.TQQ (1, 3) ) then
+         TFACT = 0.d0
+    else
+         TFACT = (TT - TQQ (1, 3) ) / (TQQ (2, 3) - TQQ (1, 3) )
+    endif
+    do K = 1, W_
+      QO31DY (K) = Q1D (K, 1) + (Q1D (K, 2) - Q1D (K, 1) ) * TFACT
+    enddo
+  else
+    if (TT.ge.TQQ (3, 3) ) then
+         TFACT = 1.d0
+    else
+         TFACT = (TT - TQQ (2, 3) ) / (TQQ (3, 3) - TQQ (2, 3) )
+    endif
+    do K = 1, W_
+      QO31DY (K) = Q1D (K, 2) + (Q1D (K, 3) - Q1D (K, 2) ) * TFACT
+    enddo
+  endif
 
-enddo  
+  do K = 1, W_
+    QO31D = QO31DY (K) * QO3TOT (K)
+    VALJ (1) = VALJ (1) + QO2TOT (K) * FFF (K, L)
+    VALJ (2) = VALJ (2) + QO3TOT (K) * FFF (K, L)
+    VALJ (3) = VALJ (3) + QO31D * FFF (K, L)
+  enddo
 ! begBian, 1/07/2012
 !cc ***NB*** original fast-J/2 code had VALJ(2) as J[O3 -> O(3P)+O2]
 !cc         which is different from std pratmo code - fixed 7/04 MP
 !cc         QO33P = QO3TOT - QO31D
-            VALJ(2) = VALJ(2) - VALJ(3)   !AOO for GMI per the above comment
+  VALJ(2) = VALJ(2) - VALJ(3)   !AOO for GMI per the above comment
 ! endBian, 1/07/2012
 
-do J = 4, NJVAL  
-if (TQQ (2, J) .gt.TQQ (1, J) ) then  
-     TFACT = max (0.d0, min (1.d0, (TT - TQQ (1, J) ) / (TQQ (2, &
-      J) - TQQ (1, J) ) ) )
-else  
-     TFACT = 0.d0  
+  do J = 4, NJVAL
+    if (TQQ (2, J) .gt.TQQ (1, J) ) then
+      TFACT = max (0.d0, min (1.d0, (TT - TQQ (1, J) ) / (TQQ (2, &
+       J) - TQQ (1, J) ) ) )
+    else
+      TFACT = 0.d0
+    endif
 
-endif  
-do K = 1, W_  
-QQQT = QQQ (K, 1, J) + (QQQ (K, 2, J) - QQQ (K, 1, J) ) * TFACT  
-VALJ (J) = VALJ (J) + QQQT * FFF (K, L)  
+    do K = 1, W_
+      QQQT = QQQ (K, 1, J) + (QQQ (K, 2, J) - QQQ (K, 1, J) ) * TFACT
+      VALJ (J) = VALJ (J) + QQQT * FFF (K, L)
+    enddo
 
-enddo  
 !>>>>Methylvinyl ketone   'MeVK  '     q(M) = 1/(1 + 1.67e-19*[M])
-if (TITLEJ (J) .eq.'MeVK  ') then  
-     VALJ (J) = VALJ (J) / (1.0 + 1.67e-19 * DD)  
-endif  
+    if (TITLEJ (J) .eq.'MeVK  ') then
+      VALJ (J) = VALJ (J) / (1.0 + 1.67e-19 * DD)
+    endif
 !>>>>Methylethyl ketone   MEKeto     q(M) = 1/(1 + 2.0*[M/2.5e19])
-if (TITLEJ (J) .eq.'MEKeto') then  
-     VALJ (J) = VALJ (J) / (1.0 + 0.80E-19 * DD)  
-endif  
+    if (TITLEJ (J) .eq.'MEKeto') then
+      VALJ (J) = VALJ (J) / (1.0 + 0.80E-19 * DD)
+    endif
 !>>>>Methyl glyoxal       MGlyxl     q(M) = 1/(1 + 4.15*[M/2.5E19])
-if (TITLEJ (J) .eq.'MGlyxl') then  
-     VALJ (J) = VALJ (J) / (1.0 + 1.66e-19 * DD)  
+    if (TITLEJ (J) .eq.'MGlyxl') then
+      VALJ (J) = VALJ (J) / (1.0 + 1.66e-19 * DD)
+    endif
 
-endif  
+  enddo
 
-enddo  
-if (TITLEJ (NJVAL - 1) .eq.'Acet-a') then  
+  if (TITLEJ (NJVAL - 1) .eq.'Acet-a') then
 !--------------J-ref v8.3 includes Blitz ACETONE q-yields--------------
 !---Acetone is a special case:   (as per Blitz et al GRL, 2004)
 !---     61 = NJVAL-1 = J1(acetone-a) ==> CH3CO + CH3
 !---     62 = NJVAL   = J2(acetone-b) ==> CH3 + CO + CH3
-     VALJ (NJVAL - 1) = 0.d0  
-     VALJ (NJVAL) = 0.d0  
+    VALJ (NJVAL - 1) = 0.d0
+    VALJ (NJVAL) = 0.d0
 !---IV=NJVAL-1 = Xsect (total abs) for Acetone - pre-calc Temp interp fa
-     IV = NJVAL - 1  
-     TFACA = (TT - TQQ (1, IV) ) / (TQQ (2, IV) - TQQ (1, IV) )  
-     TFACA = max (0.d0, min (1.d0, TFACA) )  
+    IV = NJVAL - 1
+    TFACA = (TT - TQQ (1, IV) ) / (TQQ (2, IV) - TQQ (1, IV) )
+    TFACA = max (0.d0, min (1.d0, TFACA) )
 !---IV=NJVAL = Q2 for Acetone=>(2), specifically designed for quadratic
 !---      but force to Q2=0 by 210K
-     IV = NJVAL  
-     TFAC0 = ( (TT - TQQ (1, IV) ) / (TQQ (2, IV) - TQQ (1, IV) ) &
+    IV = NJVAL
+    TFAC0 = ( (TT - TQQ (1, IV) ) / (TQQ (2, IV) - TQQ (1, IV) ) &
       ) **2
-     if (TT.lt.TQQ (1, IV) ) then  
-          TFAC0 = (TT - 210.d0) / (TQQ (1, IV) - 210.d0)  
-     endif  
-     TFAC0 = max (0.d0, min (1.d0, TFAC0) )  
+    if (TT.lt.TQQ (1, IV) ) then
+      TFAC0 = (TT - 210.d0) / (TQQ (1, IV) - 210.d0)
+    endif
+    TFAC0 = max (0.d0, min (1.d0, TFAC0) )
 !---IV=NJVAL+1 = Q1A for Acetone => (1), allow full range of T = 200K-30
-     IV = NJVAL + 1  
-     TT200 = min (300.d0, max (200.d0, TT) )  
-     TFAC1 = (TT200 - TQQ (1, IV) ) / (TQQ (2, IV) - TQQ (1, IV) )  
+    IV = NJVAL + 1
+    TT200 = min (300.d0, max (200.d0, TT) )
+    TFAC1 = (TT200 - TQQ (1, IV) ) / (TQQ (2, IV) - TQQ (1, IV) )
 !---IV=NJVAL+2 = Q1B for Acetone => (1)
-     IV = NJVAL + 2  
+    IV = NJVAL + 2
 
-     TFAC2 = (TT200 - TQQ (1, IV) ) / (TQQ (2, IV) - TQQ (1, IV) )  
+    TFAC2 = (TT200 - TQQ (1, IV) ) / (TQQ (2, IV) - TQQ (1, IV) )
 !---now integrate over wavelengths
-     do K = 1, W_  
+    do K = 1, W_
 !---NJVAL-1 = Xsect (total abs) for Acetone
-     IV = NJVAL - 1  
-     QQQA = QQQ (K, 1, IV) + (QQQ (K, 2, IV) - QQQ (K, 1, IV) ) &
-      * TFACA
+      IV = NJVAL - 1
+      QQQA = QQQ (K, 1, IV) + (QQQ (K, 2, IV) - QQQ (K, 1, IV) ) &
+       * TFACA
 !---NJVAL   = Q2 for Acetone=>(2), specifically designed for quadratic i
-     IV = NJVAL  
-     QQ2 = QQQ (K, 1, IV) + (QQQ (K, 2, IV) - QQQ (K, 1, IV) ) &
-      * TFAC0
-     if (TT.lt.TQQ (1, IV) ) then  
-          QQ2 = QQQ (K, 1, IV) * TFAC0  
-     endif  
+      IV = NJVAL
+      QQ2 = QQQ (K, 1, IV) + (QQQ (K, 2, IV) - QQQ (K, 1, IV) ) &
+       * TFAC0
+      if (TT.lt.TQQ (1, IV) ) then
+          QQ2 = QQQ (K, 1, IV) * TFAC0
+      endif
 !---NJVAL+1 = Q1A for Acetone => (1), allow full range of T = 200K-300K
-     IV = NJVAL + 1  
-     QQ1A = QQQ (K, 1, IV) + (QQQ (K, 2, IV) - QQQ (K, 1, IV) ) &
-      * TFAC1
+      IV = NJVAL + 1
+      QQ1A = QQQ (K, 1, IV) + (QQQ (K, 2, IV) - QQQ (K, 1, IV) ) &
+       * TFAC1
 !---NJVAL+2 = Q1B for Acetone => (1)   ! scaled to [M]=2.5e19
-     IV = NJVAL + 2  
-     QQ1B = QQQ (K, 1, IV) + (QQQ (K, 2, IV) - QQQ (K, 1, IV) ) &
-      * TFAC2
-     QQ1B = QQ1B * 4.d-20  
+      IV = NJVAL + 2
+      QQ1B = QQQ (K, 1, IV) + (QQQ (K, 2, IV) - QQQ (K, 1, IV) ) &
+       * TFAC2
+      QQ1B = QQ1B * 4.d-20
 !---J(61)
-     VALJ (NJVAL - 1) = VALJ (NJVAL - 1) + FFF (K, L) * QQQA * &
-      (1.d0 - QQ2) / (QQ1A + QQ1B * DD)
+      VALJ (NJVAL - 1) = VALJ (NJVAL - 1) + FFF (K, L) * QQQA * &
+       (1.d0 - QQ2) / (QQ1A + QQ1B * DD)
 !---J(62)
 
-     VALJ (NJVAL) = VALJ (NJVAL) + FFF (K, L) * QQQA * QQ2  
+      VALJ (NJVAL) = VALJ (NJVAL) + FFF (K, L) * QQQA * QQ2
                  !K
-     enddo  
+    enddo
 !-----------end v-8.3 includes Blitz ACETONE q-yields--------------
-endif  
+  endif
 !----Load array of J-values in native order, need to be indexed/scaled
 !    by ASAD-related code later: ZPJ(L,JJ) = VALJL(L,JIND(JJ))*JFACTA(JJ
 ! begBian, 2/08/2012
 ! add two acetone reaction branches together
-            VALJ(NJVAL-1) = VALJ(NJVAL-1)+VALJ(NJVAL)
+  VALJ(NJVAL-1) = VALJ(NJVAL-1)+VALJ(NJVAL)
 ! endBian, 2/08/2012
-do J = 1, NJVAL  
-VALJL (L, J) = VALJ (J)  
-
-enddo  
+  do J = 1, NJVAL
+    VALJL (L, J) = VALJ (J)
+  enddo
                ! master loop over L=1,JVL_
-enddo  
-return  
+enddo
+return
 
 
 end subroutine JRATET
@@ -1986,35 +2007,35 @@ end subroutine JRATET
 subroutine JP_ATM (PPJ, TTJ, DDJ, ZZJ, ZHL, ZZHT, DTAUX, POMEGAX, &
  JXTRA)
 !-----------------------------------------------------------------------
-implicit none  
-#     include "parm_CTM_fastJX65.h"  
+implicit none
+#     include "parm_CTM_fastJX65.h"
 !-----------------------------------------------------------------------
 !--------key amtospheric data needed to solve plane-parallel J----------
-real (8) , dimension (L1_ + 1) ::TTJ, DDJ, ZZJ, ZHL  
-real (8) , dimension (L1_ + 1) ::PPJ  
-integer , dimension (L2_ + 1) ::JXTRA  
-real (8)  ::ZZHT  
-real (8)  ::DTAUX (L1_), POMEGAX (8, L1_)  
+real (8) , dimension (L1_ + 1) ::TTJ, DDJ, ZZJ, ZHL
+real (8) , dimension (L1_ + 1) ::PPJ
+integer , dimension (L2_ + 1) ::JXTRA
+real (8)  ::ZZHT
+real (8)  ::DTAUX (L1_), POMEGAX (8, L1_)
 !-----------------------------------------------------------------------
-integer :: I, J, K, L  
+integer :: I, J, K, L
 
-real (8) :: COLO2, COLO3, ZKM, DELZ, ZTOP  
+real (8) :: COLO2, COLO3, ZKM, DELZ, ZTOP
 
 !      write(6,'(4a)') '   L z(km)     p      T   ', &
 !     & '    d(air)   d(O3)','  col(O2)  col(O3)     d-TAU   SS-alb', &
 !     & '  g(cos) CTM lyr=>'
 
-COLO2 = 0.d0  
-COLO3 = 0.d0  
+COLO2 = 0.d0
+COLO3 = 0.d0
 
-ZTOP = ZHL (L1_) + ZZHT  
-do L = L1_, 1, - 1  
-COLO2 = COLO2 + DDJ (L) * 0.20948d0  
-COLO3 = COLO3 + ZZJ (L)  
-DELZ = ZTOP - ZHL (L)  
-ZTOP = ZHL (L)  
+ZTOP = ZHL (L1_) + ZZHT
+do L = L1_, 1, - 1
+COLO2 = COLO2 + DDJ (L) * 0.20948d0
+COLO3 = COLO3 + ZZJ (L)
+DELZ = ZTOP - ZHL (L)
+ZTOP = ZHL (L)
 
-ZKM = ZHL (L) * 1.d-5  
+ZKM = ZHL (L) * 1.d-5
 
 !      write(6,'(1x,i3,0p,f6.2,f10.3,f7.2,1p,4e9.2,0p,f10.4,2f8.5,2i3)') &
 !     &      L,ZKM,PPJ(L),TTJ(L),DDJ(L)/DELZ,ZZJ(L)/DELZ, &
@@ -2022,8 +2043,8 @@ ZKM = ZHL (L) * 1.d-5
 !     &      JXTRA(L+L),JXTRA(L+L-1)
 
 
-enddo  
-return  
+enddo
+return
 
 end subroutine JP_ATM
 !######################################################################
@@ -2062,10 +2083,10 @@ end subroutine JP_ATM
 !     lpdep    Label for pressure dependence
 !
 !-----------------------------------------------------------------------
-#     include "parm_CTM_fastJX65.h"  
-#     include "parm_MIE_fastJX65.h"  
+#     include "parm_CTM_fastJX65.h"
+#     include "parm_MIE_fastJX65.h"
 
-#     include "cmn_JVdat_fastJX65.h"  
+#     include "cmn_JVdat_fastJX65.h"
       character (len=128), intent(in) ::  NAMFIL
       logical, intent(in) :: rootProc
       INTEGER, intent(in) :: NJ1
@@ -2144,8 +2165,8 @@ end subroutine JP_ATM
 
       read(NJ1,'(A)') TITLE0
 ! begBian, 11/30/2011
-      read (NJ1, '(5x,i5,2f10.5)') JTAUMX, ATAU, ATAU0  
-      !write (6, '(a,2f9.5,i5)') ' ATAU/ATAU0/JMX', ATAU, ATAU0, JTAUMX  
+      read (NJ1, '(5x,i5,2f10.5)') JTAUMX, ATAU, ATAU0
+      !write (6, '(a,2f9.5,i5)') ' ATAU/ATAU0/JMX', ATAU, ATAU0, JTAUMX
 ! endBian, 11/30/2011
 !
 ! From Fast JX
@@ -2161,6 +2182,64 @@ end subroutine JP_ATM
 ! endBian
       do j=1,NAA
         read(NJ1,110) TITLAA(j)
+!... order in file
+!.sds TITLAA(j):            1 RAYLE  = Rayleigh ph
+!.sds TITLAA(j):            2 ISOTR  = isotropic
+!.sds TITLAA(j):            3 ABSRB  = fully absor
+!.sds TITLAA(j):            4 S_Bkg = backgrnd str
+!.sds TITLAA(j):            5 S_Vol = volcanic str
+!.sds TITLAA(j):            6 W_H01 = water haze (
+!.sds TITLAA(j):            7 W_H04 = water haze (
+!.sds TITLAA(j):            8 W_C02 = water cloud
+!.sds TITLAA(j):            9 W_C04 = water cloud
+!.sds TITLAA(j):           10 W_C08 = water cloud
+!.sds TITLAA(j):           11 W_C13 = water cloud
+!.sds TITLAA(j):           12 W_L06 = water cloud
+!.sds TITLAA(j):           13 Ice-H = hexagonal ic
+!.sds TITLAA(j):           14 Ice-I = irregular ic
+!.sds TITLAA(j):           15 Mdust 0.15 = mineral
+!.sds TITLAA(j):           16 Mdust 0.25 = mineral
+!.sds TITLAA(j):           17 Mdust 0.4 = mineral
+!.sds TITLAA(j):           18 Mdust 0.8 = mineral
+!.sds TITLAA(j):           19 Mdust 1.5 = mineral
+!.sds TITLAA(j):           20 Mdust 2.5 = mineral
+!.sds TITLAA(j):           21 Mdust 4.0 = mineral
+!.sds TITLAA(j):           22 S00(rvm) Trop sulfat
+!.sds TITLAA(j):           23 S50(rvm) Trop sulfat
+!.sds TITLAA(j):           24 S70(rvm) Trop sulfat
+!.sds TITLAA(j):           25 S80(rvm) Trop sulfat
+!.sds TITLAA(j):           26 S90(rvm) Trop sulfat
+!.sds TITLAA(j):           27 S95(rvm) Trop sulfat
+!.sds TITLAA(j):           28 S99(rvm) Trop sulfat
+!.sds TITLAA(j):           29 BC00(rvm) Black C, R
+!.sds TITLAA(j):           30 BC50(rvm) Black C, R
+!.sds TITLAA(j):           31 BC70(rvm) Black C, R
+!.sds TITLAA(j):           32 BC80(rvm) Black C, R
+!.sds TITLAA(j):           33 BC90(rvm) Black C, R
+!.sds TITLAA(j):           34 BC95(rvm) Black C, R
+!.sds TITLAA(j):           35 BC99(rvm) Black C, R
+!.sds TITLAA(j):           36 OC00(rvm) Organic C,
+!.sds TITLAA(j):           37 OC50(rvm) Organic C,
+!.sds TITLAA(j):           38 OC70(rvm) Organic C,
+!.sds TITLAA(j):           39 OC80(rvm) Organic C,
+!.sds TITLAA(j):           40 OC90(rvm) Organic C,
+!.sds TITLAA(j):           41 OC95(rvm) Organic C,
+!.sds TITLAA(j):           42 OC99(rvm) Organic C,
+!.sds TITLAA(j):           43 SSa00(rvm) Sea Salt
+!.sds TITLAA(j):           44 SSa50(rvm) Sea Salt
+!.sds TITLAA(j):           45 SSa70(rvm) Sea Salt
+!.sds TITLAA(j):           46 SSa80(rvm) Sea Salt
+!.sds TITLAA(j):           47 SSa90(rvm) Sea Salt
+!.sds TITLAA(j):           48 SSa95(rvm) Sea Salt
+!.sds TITLAA(j):           49 SSa99(rvm) Sea Salt
+!.sds TITLAA(j):           50 SSc00(rvm) Sea Salt
+!.sds TITLAA(j):           51 SSc50(rvm) Sea Salt
+!.sds TITLAA(j):           52 SSc70(rvm) Sea Salt
+!.sds TITLAA(j):           53 SSc80(rvm) Sea Salt
+!.sds TITLAA(j):           54 SSc90(rvm) Sea Salt
+!.sds TITLAA(j):           55 SSc95(rvm) Sea Salt
+!.sds TITLAA(j):           56 SSc99(rvm) Sea Salt
+!
         do k=1,NK
           read(NJ1,*) WAA(k,j),QAA(k,j),RAA(k,j),SAA(k,j),  &
      &                                             (PAA(i,k,j),i=1,8)
@@ -2314,11 +2393,11 @@ end subroutine JP_ATM
 !
 !--------
 !  Reset the titles for NJVAL-1 & NJVAL to be the two acetone J_s
-!   61: C3H6O  = Acet-a     (CH3CO + CH3)
-!   62: Q2-Ac  = Acet-b     (CH3 + CO + CH3)
-      TITLEJ (NJVAL - 1) = 'Acet-a'  
+!   60: C3H6O  = Acet-a     (CH3CO + CH3)
+!   61: Q2-Ac  = Acet-b     (CH3 + CO + CH3)
+      TITLEJ (NJVAL - 1) = 'Acet-a'
 
-      TITLEJ (NJVAL) = 'Acet-b'  
+      TITLEJ (NJVAL) = 'Acet-b'
 
   101 FORMAT(8E10.3)
   102 FORMAT((10X,6E10.3)/(10X,6E10.3)/(10X,6E10.3))
@@ -2341,7 +2420,7 @@ end subroutine JP_ATM
 
 !######################################################################
 !-----------------------------------------------------------------------
-subroutine RD_XXX (NJ1, NAMFIL)  
+subroutine RD_XXX (NJ1, NAMFIL)
 !-----------------------------------------------------------------------
 !  Read in wavelength bins, solar fluxes, Rayleigh, T-dep X-sections.
 !
@@ -2367,179 +2446,179 @@ subroutine RD_XXX (NJ1, NAMFIL)
 !     TQQ      Temperature for supplied cross sections
 !     QQQ      Supplied cross sections in each wavelength bin (cm2)
 !-----------------------------------------------------------------------
-implicit none  
-#     include "parm_CTM_fastJX65.h"  
-#     include "parm_MIE_fastJX65.h"  
+implicit none
+#     include "parm_CTM_fastJX65.h"
+#     include "parm_MIE_fastJX65.h"
 
-#     include "cmn_JVdat_fastJX65.h"  
-integer , intent (in) ::NJ1  
+#     include "cmn_JVdat_fastJX65.h"
+integer , intent (in) ::NJ1
 
-character  ( * ), intent (in) ::NAMFIL  
+character  ( * ), intent (in) ::NAMFIL
 
-integer :: I, J, JJ, K, IW, NQQQ, NWWW, NQRD  
+integer :: I, J, JJ, K, IW, NQQQ, NWWW, NQRD
 
 
 
-TQQ (:, :) = 0.d0  
+TQQ (:, :) = 0.d0
 !----------spectral data----set for new format data J-ver8.3------------
 !         note that NJVAL = # J-values, but NQQQ (>NJVAL) = # Xsects rea
 !         for 2005a data, NJVAL = 62 (including a spare XXXX) and
 !              NQQQ = 64 so that 4 wavelength datasets read in for aceto
 !         note NQQQ is not used outside this subroutine!
 ! >>>> W_ = 12 <<<< means trop-only, discard WL #1-4 and #9-10, some X-s
-open (NJ1, FILE = NAMFIL, status = 'old', form = 'formatted')  
-read (NJ1, 100) TITLE0  
-read (NJ1, 101) NJVAL, NQRD, NWWW  
-NW1 = 1  
-NW2 = NWWW  
-if (NJVAL.gt.X_.or.NQRD.gt.X_) then  
-     write (6, 201) NJVAL, X_  
-     stop  
-endif  
-write (6, '(1X,A)') TITLE0  
+open (NJ1, FILE = NAMFIL, status = 'old', form = 'formatted')
+read (NJ1, 100) TITLE0
+read (NJ1, 101) NJVAL, NQRD, NWWW
+NW1 = 1
+NW2 = NWWW
+if (NJVAL.gt.X_.or.NQRD.gt.X_) then
+     write (6, 201) NJVAL, X_
+     stop
+endif
+write (6, '(1X,A)') TITLE0
 !----J-values:  1=O2, 2=O3P,3=O3D 4=readin Xsects
-read (NJ1, 102) (WL (IW), IW = 1, NWWW)  
-read (NJ1, 102) (FL (IW), IW = 1, NWWW)  
+read (NJ1, 102) (WL (IW), IW = 1, NWWW)
+read (NJ1, 102) (FL (IW), IW = 1, NWWW)
 
-read (NJ1, 102) (QRAYL (IW), IW = 1, NWWW)  
+read (NJ1, 102) (QRAYL (IW), IW = 1, NWWW)
 !---Read O2 X-sects, O3 X-sects, O3=>O(1D) quant yields (each at 3 temps
 read (NJ1, 103) TITLEJ (1), TQQ (1, 1), (QO2 (IW, 1), IW = 1, &
  NWWW)
-read (NJ1, 103) TITLEJ2, TQQ (2, 1), (QO2 (IW, 2), IW = 1, NWWW)  
+read (NJ1, 103) TITLEJ2, TQQ (2, 1), (QO2 (IW, 2), IW = 1, NWWW)
 
-read (NJ1, 103) TITLEJ3, TQQ (3, 1), (QO2 (IW, 3), IW = 1, NWWW)  
+read (NJ1, 103) TITLEJ3, TQQ (3, 1), (QO2 (IW, 3), IW = 1, NWWW)
 read (NJ1, 103) TITLEJ (2), TQQ (1, 2), (QO3 (IW, 1), IW = 1, &
  NWWW)
-read (NJ1, 103) TITLEJ2, TQQ (2, 2), (QO3 (IW, 2), IW = 1, NWWW)  
+read (NJ1, 103) TITLEJ2, TQQ (2, 2), (QO3 (IW, 2), IW = 1, NWWW)
 
-read (NJ1, 103) TITLEJ3, TQQ (3, 2), (QO3 (IW, 3), IW = 1, NWWW)  
+read (NJ1, 103) TITLEJ3, TQQ (3, 2), (QO3 (IW, 3), IW = 1, NWWW)
 read (NJ1, 103) TITLEJ (3), TQQ (1, 3), (Q1D (IW, 1), IW = 1, &
  NWWW)
-read (NJ1, 103) TITLEJ2, TQQ (2, 3), (Q1D (IW, 2), IW = 1, NWWW)  
+read (NJ1, 103) TITLEJ2, TQQ (2, 3), (Q1D (IW, 2), IW = 1, NWWW)
 
-read (NJ1, 103) TITLEJ3, TQQ (3, 3), (Q1D (IW, 3), IW = 1, NWWW)  
-do J = 1, 3  
-write (6, 200) J, TITLEJ (J), (TQQ (I, J), I = 1, 3)  
+read (NJ1, 103) TITLEJ3, TQQ (3, 3), (Q1D (IW, 3), IW = 1, NWWW)
+do J = 1, 3
+write (6, 200) J, TITLEJ (J), (TQQ (I, J), I = 1, 3)
 
-enddo  
+enddo
 !---Read remaining species:  X-sections at 2 T_s
-JJ = 4  
-do J = 4, NQRD  
+JJ = 4
+do J = 4, NQRD
 read (NJ1, 103) TITLEJ (JJ), TQQ (1, JJ), (QQQ (IW, 1, JJ), &
  IW = 1, NWWW)
 
 read (NJ1, 103) TITLEJ2, TQQ (2, JJ), (QQQ (IW, 2, JJ), IW = 1, &
  NWWW)
-if (W_.eq.18.or.TITLEJ2 (7:7) .ne.'x') then  
+if (W_.eq.18.or.TITLEJ2 (7:7) .ne.'x') then
 !---include stratospheric J's (this also includes Cl and Br compounds!)
-     write (6, 200) JJ, TITLEJ (JJ), (TQQ (I, JJ), I = 1, 2)  
-     JJ = JJ + 1  
+     write (6, 200) JJ, TITLEJ (JJ), (TQQ (I, JJ), I = 1, 2)
+     JJ = JJ + 1
 
-endif  
-enddo  
-NQQQ = JJ - 1  
+endif
+enddo
+NQQQ = JJ - 1
 
-NJVAL = NJVAL + (NQQQ - NQRD)  
+NJVAL = NJVAL + (NQQQ - NQRD)
 !---truncate number of wavelengths to do troposphere-only
-if (W_.ne.WX_) then  
+if (W_.ne.WX_) then
 !---TROP-ONLY
-     if (W_.eq.12) then  
+     if (W_.eq.12) then
 write (6, '(a)') ' >>>TROP-ONLY reduce wavelengths to 12, drop str &
 &at X-sects'
-          NW2 = 12  
-          do IW = 1, 4  
-          WL (IW) = WL (IW + 4)  
-          FL (IW) = FL (IW + 4)  
-          QRAYL (IW) = QRAYL (IW + 4)  
-          do K = 1, 3  
-          QO2 (IW, K) = QO2 (IW + 4, K)  
-          QO3 (IW, K) = QO3 (IW + 4, K)  
-          Q1D (IW, K) = Q1D (IW + 4, K)  
-          enddo  
-          do J = 4, NQQQ  
-          QQQ (IW, 1, J) = QQQ (IW + 4, 1, J)  
-          QQQ (IW, 2, J) = QQQ (IW + 4, 2, J)  
-          enddo  
-          enddo  
-          do IW = 5, 12  
-          WL (IW) = WL (IW + 6)  
-          FL (IW) = FL (IW + 6)  
-          QRAYL (IW) = QRAYL (IW + 6)  
-          do K = 1, 3  
-          QO2 (IW, K) = QO2 (IW + 6, K)  
-          QO3 (IW, K) = QO3 (IW + 6, K)  
-          Q1D (IW, K) = Q1D (IW + 6, K)  
-          enddo  
-          do J = 4, NQQQ  
-          QQQ (IW, 1, J) = QQQ (IW + 6, 1, J)  
-          QQQ (IW, 2, J) = QQQ (IW + 6, 2, J)  
-          enddo  
-          enddo  
+          NW2 = 12
+          do IW = 1, 4
+          WL (IW) = WL (IW + 4)
+          FL (IW) = FL (IW + 4)
+          QRAYL (IW) = QRAYL (IW + 4)
+          do K = 1, 3
+          QO2 (IW, K) = QO2 (IW + 4, K)
+          QO3 (IW, K) = QO3 (IW + 4, K)
+          Q1D (IW, K) = Q1D (IW + 4, K)
+          enddo
+          do J = 4, NQQQ
+          QQQ (IW, 1, J) = QQQ (IW + 4, 1, J)
+          QQQ (IW, 2, J) = QQQ (IW + 4, 2, J)
+          enddo
+          enddo
+          do IW = 5, 12
+          WL (IW) = WL (IW + 6)
+          FL (IW) = FL (IW + 6)
+          QRAYL (IW) = QRAYL (IW + 6)
+          do K = 1, 3
+          QO2 (IW, K) = QO2 (IW + 6, K)
+          QO3 (IW, K) = QO3 (IW + 6, K)
+          Q1D (IW, K) = Q1D (IW + 6, K)
+          enddo
+          do J = 4, NQQQ
+          QQQ (IW, 1, J) = QQQ (IW + 6, 1, J)
+          QQQ (IW, 2, J) = QQQ (IW + 6, 2, J)
+          enddo
+          enddo
 !---TROP-QUICK  (must scale solar flux for W=5)
-     elseif (W_.eq.8) then  
+     elseif (W_.eq.8) then
 write (6, '(a)') ' >>>TROP-QUICK reduce wavelengths to 8, drop str &
 &at X-sects'
-          NW2 = 8  
-          do IW = 1, 1  
-          WL (IW) = WL (IW + 4)  
-          FL (IW) = FL (IW + 4) * 2.d0  
-          QRAYL (IW) = QRAYL (IW + 4)  
-          do K = 1, 3  
-          QO2 (IW, K) = QO2 (IW + 4, K)  
-          QO3 (IW, K) = QO3 (IW + 4, K)  
-          Q1D (IW, K) = Q1D (IW + 4, K)  
-          enddo  
-          do J = 4, NQQQ  
-          QQQ (IW, 1, J) = QQQ (IW + 4, 1, J)  
-          QQQ (IW, 2, J) = QQQ (IW + 4, 2, J)  
-          enddo  
-          enddo  
-          do IW = 2, 8  
-          WL (IW) = WL (IW + 10)  
-          FL (IW) = FL (IW + 10)  
-          QRAYL (IW) = QRAYL (IW + 10)  
-          do K = 1, 3  
-          QO2 (IW, K) = QO2 (IW + 10, K)  
-          QO3 (IW, K) = QO3 (IW + 10, K)  
-          Q1D (IW, K) = Q1D (IW + 10, K)  
-          enddo  
-          do J = 4, NQQQ  
-          QQQ (IW, 1, J) = QQQ (IW + 10, 1, J)  
-          QQQ (IW, 2, J) = QQQ (IW + 10, 2, J)  
-          enddo  
+          NW2 = 8
+          do IW = 1, 1
+          WL (IW) = WL (IW + 4)
+          FL (IW) = FL (IW + 4) * 2.d0
+          QRAYL (IW) = QRAYL (IW + 4)
+          do K = 1, 3
+          QO2 (IW, K) = QO2 (IW + 4, K)
+          QO3 (IW, K) = QO3 (IW + 4, K)
+          Q1D (IW, K) = Q1D (IW + 4, K)
+          enddo
+          do J = 4, NQQQ
+          QQQ (IW, 1, J) = QQQ (IW + 4, 1, J)
+          QQQ (IW, 2, J) = QQQ (IW + 4, 2, J)
+          enddo
+          enddo
+          do IW = 2, 8
+          WL (IW) = WL (IW + 10)
+          FL (IW) = FL (IW + 10)
+          QRAYL (IW) = QRAYL (IW + 10)
+          do K = 1, 3
+          QO2 (IW, K) = QO2 (IW + 10, K)
+          QO3 (IW, K) = QO3 (IW + 10, K)
+          Q1D (IW, K) = Q1D (IW + 10, K)
+          enddo
+          do J = 4, NQQQ
+          QQQ (IW, 1, J) = QQQ (IW + 10, 1, J)
+          QQQ (IW, 2, J) = QQQ (IW + 10, 2, J)
+          enddo
 
-          enddo  
-     else  
-          write (6, * ) ' number of used wavelengths wrong:', W_  
-          stop  
-     endif  
+          enddo
+     else
+          write (6, * ) ' number of used wavelengths wrong:', W_
+          stop
+     endif
 
 
-endif  
+endif
 !  Reset the titles for NJVAL-1 & NJVAL to be the two acetone J_s
 !   61: C3H6O  = Acet-a     (CH3CO + CH3)
 !   62: Q2-Ac  = Acet-b     (CH3 + CO + CH3)
-TITLEJ (NJVAL - 1) = 'Acet-a'  
+TITLEJ (NJVAL - 1) = 'Acet-a'
 
-TITLEJ (NJVAL) = 'Acet-b'  
+TITLEJ (NJVAL) = 'Acet-b'
 
-close (NJ1)  
-  100 format(a)  
-  101 format(10x,5i5)  
-  102 format(10x,    6e10.3/(10x,6e10.3)/(10x,6e10.3))  
-  103 format(a7,f3.0,6e10.3/(10x,6e10.3)/(10x,6e10.3))  
-  200 format(1x,' x-sect:',i3,a10,3(3x,f6.2))  
+close (NJ1)
+  100 format(a)
+  101 format(10x,5i5)
+  102 format(10x,    6e10.3/(10x,6e10.3)/(10x,6e10.3))
+  103 format(a7,f3.0,6e10.3/(10x,6e10.3)/(10x,6e10.3))
+  200 format(1x,' x-sect:',i3,a10,3(3x,f6.2))
 
   201 format(' Number of x-sections supplied to Fast-J2: ',i3,/, &
 &       ' Maximum number allowed (X_) only set to: ',i3, &
 &       ' - increase in cmn_jv.f')
-return  
+return
 
 
 end subroutine RD_XXX
 !######################################################################
 !-----------------------------------------------------------------------
-!subroutine RD_MIE (NJ1, NAMFIL)  
+!subroutine RD_MIE (NJ1, NAMFIL)
 !-----------------------------------------------------------------------
 !-------aerosols/cloud scattering data set for fast-JX (ver 5.3+)
 !  >>>>>>>>>>>>>>>>spectral data rev to J-ref ver8.5 (5/05)<<<<<<<<<<<<
@@ -2554,122 +2633,122 @@ end subroutine RD_XXX
 !     RAA      Effective radius associated with aerosol type
 !     SAA      Single scattering albedo
 !-----------------------------------------------------------------------
-!implicit none  
-!#     include "parm_CTM_fastJX65.h"  
-!#     include "parm_MIE_fastJX65.h"  
+!implicit none
+!#     include "parm_CTM_fastJX65.h"
+!#     include "parm_MIE_fastJX65.h"
 !
-!#     include "cmn_JVdat_fastJX65.h"  
-!integer , intent (in) ::NJ1  
-!character  ( * ), intent (in) ::NAMFIL  
+!#     include "cmn_JVdat_fastJX65.h"
+!integer , intent (in) ::NJ1
+!character  ( * ), intent (in) ::NAMFIL
 !
-!integer :: I, J, K  
+!integer :: I, J, K
 !
-!open (NJ1, FILE = NAMFIL, status = 'old', form = 'formatted')  
-!read (NJ1, '(i2,a78)') NAA, TITLE0  
-!if (NAA.gt.A_) then  
-!     write (6, * ) ' too many scat-data sets:', NAA, A_  
-!     stop  
-!endif  
-!read (NJ1, '(5x,i5,2f10.5)') JTAUMX, ATAU, ATAU0  
-!write (6, '(a,2f9.5,i5)') ' ATAU/ATAU0/JMX', ATAU, ATAU0, JTAUMX  
-!read (NJ1, * )  
-!do J = 1, NAA  
+!open (NJ1, FILE = NAMFIL, status = 'old', form = 'formatted')
+!read (NJ1, '(i2,a78)') NAA, TITLE0
+!if (NAA.gt.A_) then
+!     write (6, * ) ' too many scat-data sets:', NAA, A_
+!     stop
+!endif
+!read (NJ1, '(5x,i5,2f10.5)') JTAUMX, ATAU, ATAU0
+!write (6, '(a,2f9.5,i5)') ' ATAU/ATAU0/JMX', ATAU, ATAU0, JTAUMX
+!read (NJ1, * )
+!do J = 1, NAA
 !read (NJ1, '(3x,a20,32x,f5.3,15x,f5.3)') TITLAA (J) , RAA (J) , &
 ! DAA (J)
 !                       ! ver 6.0 extend to 5 ref wavelengths for mie-sca
-!do K = 1, 5  
+!do K = 1, 5
 !read (NJ1, '(f4.0,f7.4,f7.4,7f6.3,1x,f7.3,f8.4)') WAA (K, J) , &
 ! QAA (K, J) , SAA (K, J) , (PAA (I, K, J) , I = 2, 8)
-!PAA (1, K, J) = 1.d0  
-!enddo  
+!PAA (1, K, J) = 1.d0
+!enddo
 !
-!enddo  
+!enddo
 !
-!close (NJ1)  
+!close (NJ1)
 !write (6, '(a,9f8.1)') ' Aerosol optical: r-eff/rho/Q(@wavel):', &
 ! (WAA (K, 1) , K = 1, 5)
-!write (6, * ) TITLE0  
-!do J = 1, NAA  
+!write (6, * ) TITLE0
+!do J = 1, NAA
 !write (6, '(i3,1x,a8,7f8.3)') J, TITLAA (J) , RAA (J) , DAA (J) , &
 ! (QAA (K, J) , K = 1, 5)
 !
-!enddo  
-!return  
+!enddo
+!return
 !
 !
 !end subroutine RD_MIE
 !######################################################################
 !-----------------------------------------------------------------------
-!subroutine RD_UM (NJ1, NAMFIL)  
+!subroutine RD_UM (NJ1, NAMFIL)
 !-----------------------------------------------------------------------
 !-------UMich aerosol optical data for fast-JX (ver 6.1+)
 !-----------------------------------------------------------------------
 !     NAMFIL   Name of scattering data file (e.g., FJX_scat.dat)
 !     NJ1      Channel number for reading data file
 !-----------------------------------------------------------------------
-!implicit none  
-!#     include "parm_CTM_fastJX65.h"  
-!#     include "parm_MIE_fastJX65.h"  
+!implicit none
+!#     include "parm_CTM_fastJX65.h"
+!#     include "parm_MIE_fastJX65.h"
 !
-!#     include "cmn_JVdat_fastJX65.h"  
-!integer , intent (in) ::NJ1  
+!#     include "cmn_JVdat_fastJX65.h"
+!integer , intent (in) ::NJ1
 !
-!character  ( * ), intent (in) ::NAMFIL  
+!character  ( * ), intent (in) ::NAMFIL
 !
-!integer :: I, J, K, L  
+!integer :: I, J, K, L
 !
-!open (NJ1, FILE = NAMFIL, status = 'old', form = 'formatted')  
-!read (NJ1, '(a78)') TITLE0  
-!write (6, * ) 'UMichigan Aerosol optical data'  
+!open (NJ1, FILE = NAMFIL, status = 'old', form = 'formatted')
+!read (NJ1, '(a78)') TITLE0
+!write (6, * ) 'UMichigan Aerosol optical data'
 !
-!write (6, * ) TITLE0  
+!write (6, * ) TITLE0
 !---33 Different UM Aerosol Types:  SULF, SS-1,-2,-3,-4, DD-1,-2,-3,-4,
 !---      FF00(0%BC), FF02, ...FF14(14%BC),  BB00, BB02, ...BB30(30%BC)
-!do L = 1, 33  
-!read (NJ1, '(a4)') TITLUM (L)  
+!do L = 1, 33
+!read (NJ1, '(a4)') TITLUM (L)
 !---21 Rel Hum:    K=1=0%, =2=5%, ... =20=95%, =21=99%
-!do K = 1, 21  
+!do K = 1, 21
 !---6 wavelengths: J=1=200nm, 2=300nm, 3=400nm, (4'=550nm) 4=600nm, 5=10
 !---3 optic vars:  I=1=SSAlbedo,  =2=g,  =3=k-ext
 !read (NJ1, '(9f9.5,27x,6f9.5)') ( (UMAER (I, J, K, L) , I = 1, 3) &
 ! , J = 1, 5)
-!enddo  
+!enddo
 !
-!enddo  
+!enddo
 !
-!close (NJ1)  
+!close (NJ1)
 !
-!write (6, '(7(i5,1x,a4))') (L, TITLUM (L) , L = 1, 33)  
-!return  
+!write (6, '(7(i5,1x,a4))') (L, TITLUM (L) , L = 1, 33)
+!return
 !
 !
 !end subroutine RD_UM
 !######################################################################
 !-----------------------------------------------------------------------
-real(8) FUNCTION FLINT (TINT, T1, T2, T3, F1, F2, F3)  
+real(8) FUNCTION FLINT (TINT, T1, T2, T3, F1, F2, F3)
 !-----------------------------------------------------------------------
 !  Three-point linear interpolation function
 !-----------------------------------------------------------------------
-real (8) :: TINT, T1, T2, T3, F1, F2, F3  
-if (TINT.le.T2) then  
-     if (TINT.le.T1) then  
-          FLINT = F1  
-     else  
-          FLINT = F1 + (F2 - F1) * (TINT - T1) / (T2 - T1)  
-     endif  
-else  
-     if (TINT.ge.T3) then  
-          FLINT = F3  
-     else  
-          FLINT = F2 + (F3 - F2) * (TINT - T2) / (T3 - T2)  
-     endif  
-endif  
-return  
+real (8) :: TINT, T1, T2, T3, F1, F2, F3
+if (TINT.le.T2) then
+     if (TINT.le.T1) then
+          FLINT = F1
+     else
+          FLINT = F1 + (F2 - F1) * (TINT - T1) / (T2 - T1)
+     endif
+else
+     if (TINT.ge.T3) then
+          FLINT = F3
+     else
+          FLINT = F2 + (F3 - F2) * (TINT - T2) / (T3 - T2)
+     endif
+endif
+return
 
 
 end function FLINT
 !-----------------------------------------------------------------------
-      subroutine SOLARZ (GMTIME, NDAY, YGRDJ, XGRDI, SZA, COSSZA, SOLFX)  
+      subroutine SOLARZ (GMTIME, NDAY, YGRDJ, XGRDI, SZA, COSSZA, SOLFX)
       !-----------------------------------------------------------------------
       !     GMTIME = UT for when J-values are wanted
       !           (for implicit solver this is at the end of the time step)
@@ -2680,45 +2759,45 @@ end function FLINT
       !     SZA = solar zenith angle in degrees
       !     COSSZA = U0 = cos(SZA)
       !-----------------------------------------------------------------------
-      implicit none  
-      real (8) , intent (in) ::GMTIME, YGRDJ, XGRDI  
-      integer , intent (in) ::NDAY  
+      implicit none
+      real (8) , intent (in) ::GMTIME, YGRDJ, XGRDI
+      integer , intent (in) ::NDAY
       real (8) , intent (in) :: SZA
 
-      real (8) , intent (out) :: COSSZA, SOLFX  
-      real (8) :: PI, PI180, LOCT  
-      real (8) :: SINDEC, SOLDEK, COSDEC, SINLAT, SOLLAT, COSLAT, COSZ  
+      real (8) , intent (out) :: COSSZA, SOLFX
+      real (8) :: PI, PI180, LOCT
+      real (8) :: SINDEC, SOLDEK, COSDEC, SINLAT, SOLLAT, COSLAT, COSZ
 !
-      PI = 3.141592653589793d0  
-      PI180 = PI / 180.d0  
+      PI = 3.141592653589793d0
+      PI180 = PI / 180.d0
 
-      !SINDEC = 0.3978d0 * sin (0.9863d0 * (dble (NDAY) - 80.d0) * PI180)  
-      !SOLDEK = asin (SINDEC)  
-      !COSDEC = cos (SOLDEK)  
-      !SINLAT = sin (YGRDJ)  
-      !SOLLAT = asin (SINLAT)  
-      !COSLAT = cos (SOLLAT)  
+      !SINDEC = 0.3978d0 * sin (0.9863d0 * (dble (NDAY) - 80.d0) * PI180)
+      !SOLDEK = asin (SINDEC)
+      !COSDEC = cos (SOLDEK)
+      !SINLAT = sin (YGRDJ)
+      !SOLLAT = asin (SINLAT)
+      !COSLAT = cos (SOLLAT)
 !
-      !LOCT = ( ( (GMTIME) * 15.d0) - 180.d0) * PI180 + XGRDI  
-      !COSSZA = COSDEC * COSLAT * cos (LOCT) + SINDEC * SINLAT  
+      !LOCT = ( ( (GMTIME) * 15.d0) - 180.d0) * PI180 + XGRDI
+      !COSSZA = COSDEC * COSLAT * cos (LOCT) + SINDEC * SINLAT
 
-      !SZA = acos (COSSZA) / PI180  
+      !SZA = acos (COSSZA) / PI180
 
       COSSZA = COS(SZA*PI180)
 
-      !write (6, * ) ' XGRDI,YGRDJ', XGRDI, YGRDJ  
-      !write (6, * ) ' LOCT (rad)', LOCT  
-      !write (6, * ) ' SINDEC,COSDEC', SINDEC, COSDEC  
-      !write (6, * ) ' SINLAT,COSLAT', SINLAT, COSLAT  
-      !write (6, * ) ' COS, SZA', COSSZA, SZA  
+      !write (6, * ) ' XGRDI,YGRDJ', XGRDI, YGRDJ
+      !write (6, * ) ' LOCT (rad)', LOCT
+      !write (6, * ) ' SINDEC,COSDEC', SINDEC, COSDEC
+      !write (6, * ) ' SINLAT,COSLAT', SINLAT, COSLAT
+      !write (6, * ) ' COS, SZA', COSSZA, SZA
 
       SOLFX = 1.d0 - (0.034d0 * cos (dble (NDAY - 186) * 2.d0 * PI / 365.d0) )
-      return  
+      return
 
       end subroutine SOLARZ
 !######################################################################
 !-----------------------------------------------------------------------
-subroutine SPHERE2 (GMU, RAD, ZHL, ZZHT, AMF2, L1_)  
+subroutine SPHERE2 (GMU, RAD, ZHL, ZZHT, AMF2, L1_)
 !-----------------------------------------------------------------------
 !----new v6.2: does AirMassFactors for mid-layer, needed for SZA ~ 90
 !  This new AMF2 does each of the half-layers of the CTM separately,
@@ -2743,92 +2822,92 @@ subroutine SPHERE2 (GMU, RAD, ZHL, ZZHT, AMF2, L1_)
 ! out:
 !     AMF2(I,J) = air mass factor for CTM level I for sunlight reaching
 !-----------------------------------------------------------------------
-implicit none  
-integer , intent (in) ::L1_  
-real (8) , intent (in) ::GMU, RAD, ZHL (L1_ + 1), ZZHT  
+implicit none
+integer , intent (in) ::L1_
+real (8) , intent (in) ::GMU, RAD, ZHL (L1_ + 1), ZZHT
 
 
-real (8) , intent (out) ::AMF2 (2 * L1_ + 1, 2 * L1_ + 1)  
+real (8) , intent (out) ::AMF2 (2 * L1_ + 1, 2 * L1_ + 1)
 !     RZ      Distance from centre of Earth to each point (cm)
 !     RQ      Square of radius ratios
 !     SHADHT  Shadow height for the current SZA
 !     XL      Slant path between points
-integer :: I, J, K, II, L2  
-real (8) :: XMU1, XMU2, XL, DIFF, SHADHT, RZ (L1_ + 1)  
+integer :: I, J, K, II, L2
+real (8) :: XMU1, XMU2, XL, DIFF, SHADHT, RZ (L1_ + 1)
 
-real (8) :: RZ2 (2 * L1_ + 1), RQ2 (2 * L1_ + 1)  
+real (8) :: RZ2 (2 * L1_ + 1), RQ2 (2 * L1_ + 1)
 !
 !--- must have top-of-atmos (NOT top-of-CTM) defined
 !      ZHL(L1_+1) = ZHL(L1_) + ZZHT
-RZ (1) = RAD+ZHL (1)  
-do II = 2, L1_ + 1  
-RZ (II) = RAD+ZHL (II)  
+RZ (1) = RAD+ZHL (1)
+do II = 2, L1_ + 1
+RZ (II) = RAD+ZHL (II)
 
-enddo  
+enddo
 !---calculate heights for edges of split CTM-layers
-L2 = 2 * L1_  
-do II = 2, L2, 2  
-I = II / 2  
-RZ2 (II - 1) = RZ (I)  
-RZ2 (II) = 0.5d0 * (RZ (I) + RZ (I + 1) )  
-enddo  
-RZ2 (L2 + 1) = RZ (L1_ + 1)  
-do II = 1, L2  
-RQ2 (II) = (RZ2 (II) / RZ2 (II + 1) ) **2  
+L2 = 2 * L1_
+do II = 2, L2, 2
+I = II / 2
+RZ2 (II - 1) = RZ (I)
+RZ2 (II) = 0.5d0 * (RZ (I) + RZ (I + 1) )
+enddo
+RZ2 (L2 + 1) = RZ (L1_ + 1)
+do II = 1, L2
+RQ2 (II) = (RZ2 (II) / RZ2 (II + 1) ) **2
 
 
-enddo  
+enddo
 !---shadow height for SZA > 90
-if (GMU.lt.0.0d0) then  
-     SHADHT = RZ2 (1) / dsqrt (1.0d0 - GMU**2)  
-else  
-     SHADHT = 0.d0  
+if (GMU.lt.0.0d0) then
+     SHADHT = RZ2 (1) / dsqrt (1.0d0 - GMU**2)
+else
+     SHADHT = 0.d0
 
-endif  
+endif
 !---up from the surface calculating the slant paths between each level
 !---  and the level above, and deriving the appropriate Air Mass Factor
 
-AMF2 (:, :) = 0.d0  
+AMF2 (:, :) = 0.d0
 
-do 16 J = 1, 2 * L1_ + 1  
+do 16 J = 1, 2 * L1_ + 1
 !  Air Mass Factors all zero if below the tangent height
-     if (RZ2 (J) .lt.SHADHT) goto 16  
+     if (RZ2 (J) .lt.SHADHT) goto 16
 !  Ascend from layer J calculating AMF2s
-     XMU1 = abs (GMU)  
-     do I = J, 2 * L1_  
-     XMU2 = dsqrt (1.0d0 - RQ2 (I) * (1.0d0 - XMU1**2) )  
-     XL = RZ2 (I + 1) * XMU2 - RZ2 (I) * XMU1  
-     AMF2 (I, J) = XL / (RZ2 (I + 1) - RZ2 (I) )  
-     XMU1 = XMU2  
-     enddo  
+     XMU1 = abs (GMU)
+     do I = J, 2 * L1_
+     XMU2 = dsqrt (1.0d0 - RQ2 (I) * (1.0d0 - XMU1**2) )
+     XL = RZ2 (I + 1) * XMU2 - RZ2 (I) * XMU1
+     AMF2 (I, J) = XL / (RZ2 (I + 1) - RZ2 (I) )
+     XMU1 = XMU2
+     enddo
 !--fix above top-of-atmos (L=L1_+1), must set DTAU(L1_+1)=0
-     AMF2 (2 * L1_ + 1, J) = 1.d0  
+     AMF2 (2 * L1_ + 1, J) = 1.d0
 !
 !  Twilight case - Emergent Beam, calc air mass factors below layer
 
-     if (GMU.ge.0.0d0) goto 16  
+     if (GMU.ge.0.0d0) goto 16
 !  Descend from layer J
-     XMU1 = abs (GMU)  
-     do II = J - 1, 1, - 1  
-     DIFF = RZ2 (II + 1) * sqrt (1.0d0 - XMU1**2) - RZ2 (II)  
+     XMU1 = abs (GMU)
+     do II = J - 1, 1, - 1
+     DIFF = RZ2 (II + 1) * sqrt (1.0d0 - XMU1**2) - RZ2 (II)
                                                 ! filter
-     if (II.eq.1) DIFF = max (DIFF, 0.d0)  
+     if (II.eq.1) DIFF = max (DIFF, 0.d0)
 !  Tangent height below current level - beam passes through twice
-     if (DIFF.lt.0.0d0) then  
-          XMU2 = sqrt (1.0d0 - (1.0d0 - XMU1**2) / RQ2 (II) )  
-          XL = abs (RZ2 (II + 1) * XMU1 - RZ2 (II) * XMU2)  
-          AMF2 (II, J) = 2.d0 * XL / (RZ2 (II + 1) - RZ2 (II) )  
-          XMU1 = XMU2  
+     if (DIFF.lt.0.0d0) then
+          XMU2 = sqrt (1.0d0 - (1.0d0 - XMU1**2) / RQ2 (II) )
+          XL = abs (RZ2 (II + 1) * XMU1 - RZ2 (II) * XMU2)
+          AMF2 (II, J) = 2.d0 * XL / (RZ2 (II + 1) - RZ2 (II) )
+          XMU1 = XMU2
 !  Lowest level intersected by emergent beam
-     else  
-          XL = RZ2 (II + 1) * XMU1 * 2.0d0  
-          AMF2 (II, J) = XL / (RZ2 (II + 1) - RZ2 (II) )  
-          goto 16  
-     endif  
+     else
+          XL = RZ2 (II + 1) * XMU1 * 2.0d0
+          AMF2 (II, J) = XL / (RZ2 (II + 1) - RZ2 (II) )
+          goto 16
+     endif
 
-     enddo  
-   16 end do  
-return  
+     enddo
+   16 end do
+return
 
 
 
@@ -2855,24 +2934,24 @@ subroutine EXTRAL (DTAUX, L1X, L2X, NX, JTAUMX, ATAU, ATAU0, &
 !---  ATAU = 1.12 now recommended for more -accurate heating rates (not
 !-----------------------------------------------------------------------
 !
-implicit none  
+implicit none
                                               !index of cloud/aerosol
-integer , intent (in) ::JTAUMX, L1X, L2X  
+integer , intent (in) ::JTAUMX, L1X, L2X
                                               !Mie scattering array size
-integer , intent (in) ::NX  
+integer , intent (in) ::NX
                                               !cloud+3aerosol OD in each
-real (8) , intent (in) ::DTAUX (L1X)  
-real (8) , intent (in) ::ATAU, ATAU0  
+real (8) , intent (in) ::DTAUX (L1X)
+real (8) , intent (in) ::ATAU, ATAU0
                                               !number of sub-layers to b
-integer , intent (out) ::JXTRA (L2X + 1)  
+integer , intent (out) ::JXTRA (L2X + 1)
 !
-integer :: JTOTL, I, L, L2  
-real (8) :: TTAU (L2X + 1), DTAUJ, ATAU1, ATAULN, ATAUM, ATAUN1  
+integer :: JTOTL, I, L, L2
+real (8) :: TTAU (L2X + 1), DTAUJ, ATAU1, ATAULN, ATAUM, ATAUN1
 !
 !---Reinitialize arrays
-TTAU (:) = 0.d0  
+TTAU (:) = 0.d0
 
-JXTRA (:) = 0  
+JXTRA (:) = 0
 !
 !---combine these edge- and mid-layer points into grid of size:
 !---              L2X+1 = 2*L1X+1 = 2*L_+3
@@ -2890,41 +2969,41 @@ JXTRA (:) = 0
 !---        ATAUMN = the smallest OD layer desired
 !---        JTAUMX = maximum number of divisions (i.e., may not get to A
 !---These are hardwired below, can be changed, but have been tested/opti
-ATAU1 = ATAU - 1.d0  
-ATAULN = log (ATAU)  
-TTAU (L2X + 1) = 0.0d0  
-do L2 = L2X, 1, - 1  
-L = (L2 + 1) / 2  
-DTAUJ = 0.5d0 * DTAUX (L)  
-TTAU (L2) = TTAU (L2 + 1) + DTAUJ  
+ATAU1 = ATAU - 1.d0
+ATAULN = log (ATAU)
+TTAU (L2X + 1) = 0.0d0
+do L2 = L2X, 1, - 1
+L = (L2 + 1) / 2
+DTAUJ = 0.5d0 * DTAUX (L)
+TTAU (L2) = TTAU (L2 + 1) + DTAUJ
 !---Now compute the number of log-spaced sub-layers to be added in
 !---   the interval TTAU(L2) > TTAU(L2+1)
 !---The objective is to have successive TAU-layers increasing by factor
 !---the number of sub-layers + 1
-if (TTAU (L2) .lt.ATAU0) then  
-     JXTRA (L2) = 0  
-else  
-     ATAUM = max (ATAU0, TTAU (L2 + 1) )  
-     ATAUN1 = log (TTAU (L2) / ATAUM) / ATAULN  
-     JXTRA (L2) = min (JTAUMX, max (0, int (ATAUN1 - 0.5d0) ) )  
-endif  
+if (TTAU (L2) .lt.ATAU0) then
+     JXTRA (L2) = 0
+else
+     ATAUM = max (ATAU0, TTAU (L2 + 1) )
+     ATAUN1 = log (TTAU (L2) / ATAUM) / ATAULN
+     JXTRA (L2) = min (JTAUMX, max (0, int (ATAUN1 - 0.5d0) ) )
+endif
 
-enddo  
+enddo
 !---check on overflow of arrays, cut off JXTRA at lower L if too many le
-JTOTL = L2X + 2  
-do L2 = L2X, 1, - 1  
-JTOTL = JTOTL + JXTRA (L2)  
-if (JTOTL.gt.NX / 2) then  
+JTOTL = L2X + 2
+do L2 = L2X, 1, - 1
+JTOTL = JTOTL + JXTRA (L2)
+if (JTOTL.gt.NX / 2) then
 !    write (6, '(A,2I5,F9.2)') 'N_/L2_/L2-cutoff JXTRA:', NX, L2X, L2
-     do L = L2, 1, - 1  
-     JXTRA (L) = 0  
-     enddo  
-     goto 10  
-endif  
-enddo  
+     do L = L2, 1, - 1
+     JXTRA (L) = 0
+     enddo
+     goto 10
+endif
+enddo
 
-   10 continue  
-return  
+   10 continue
+return
 
 
 end subroutine EXTRAL
@@ -2933,38 +3012,38 @@ end subroutine EXTRAL
 subroutine OPMIE (DTAUX, POMEGAX, U0, RFL, AMF2, JXTRA, FJACT, &
  FJTOP, FJBOT, FSBOT, FJFLX, FLXD, FLXD0)
 !-----------------------------------------------------------------------
-implicit none  
-#     include "parm_CTM_fastJX65.h"  
-#     include "parm_MIE_fastJX65.h"  
+implicit none
+#     include "parm_CTM_fastJX65.h"
+#     include "parm_MIE_fastJX65.h"
 
-#     include "cmn_JVdat_fastJX65.h"  
-real (8) , intent (in) ::DTAUX (L1_, W_), POMEGAX (8, L1_, W_)  
-real (8) , intent (in) ::AMF2 (2 * L1_ + 1, 2 * L1_ + 1)  
-real (8) , intent (in) ::U0, RFL (W_)  
-integer , intent (in) ::JXTRA (L2_ + 1)  
+#     include "cmn_JVdat_fastJX65.h"
+real (8) , intent (in) ::DTAUX (L1_, W_), POMEGAX (8, L1_, W_)
+real (8) , intent (in) ::AMF2 (2 * L1_ + 1, 2 * L1_ + 1)
+real (8) , intent (in) ::U0, RFL (W_)
+integer , intent (in) ::JXTRA (L2_ + 1)
 real (8) , intent (out) ::FJACT (L_, W_), FJTOP (W_), FJBOT (W_), FSBOT (W_)
 
 real (8) , intent (out) ::FJFLX (L_, W_), FLXD (L1_, W_), FLXD0 (W_)
-integer :: JNDLEV (L_), JNELEV (L1_)  
-integer :: JADDLV (L2_ + 1), JADDTO (L2_ + 1), L2LEV (L2_ + 1)  
+integer :: JNDLEV (L_), JNELEV (L1_)
+integer :: JADDLV (L2_ + 1), JADDTO (L2_ + 1), L2LEV (L2_ + 1)
 integer :: JTOTL, I, II, J, K, L, LL, IX, JK, L2, L2L, L22, LZ, LZZ, ND
-integer :: LZ0, LZ1, LZMID  
+integer :: LZ0, LZ1, LZMID
 
-real (8) :: SUMT, SUMJ  
+real (8) :: SUMT, SUMJ
 real (8) :: DTAU (L1_ + 1, W_), POMEGAJ (M2_, L2_ + 1, W_), TTAU (L2_ + 1, W_)
-real (8) :: FTAU2 (L2_ + 1, W_), POMEGAB (M2_, W_)  
-real (8) :: ATAUA, ATAUZ, XLTAU, TAUDN, TAUUP, DTAUJ, FJFLX0  
-real (8) , dimension (W_) ::TAUBTM, TAUTOP, FBTM, FTOP, ZFLUX  
+real (8) :: FTAU2 (L2_ + 1, W_), POMEGAB (M2_, W_)
+real (8) :: ATAUA, ATAUZ, XLTAU, TAUDN, TAUUP, DTAUJ, FJFLX0
+real (8) , dimension (W_) ::TAUBTM, TAUTOP, FBTM, FTOP, ZFLUX
 !--- variables used in mie code-----------------------------------------
-real (8) , dimension (W_) ::FJT, FJB  
-real (8) , dimension (N_, W_) ::FJ, FZ, ZTAU  
-real (8) , dimension (M2_, N_, W_) ::POMEGA  
+real (8) , dimension (W_) ::FJT, FJB
+real (8) , dimension (N_, W_) ::FJ, FZ, ZTAU
+real (8) , dimension (M2_, N_, W_) ::POMEGA
 
 
 
 
 
-real (8) , dimension (2 * L1_, W_) ::FLXD2  
+real (8) , dimension (2 * L1_, W_) ::FLXD2
 !  fast-J Mie code for J_s, only uses 8-term expansion, 4-Gauss pts
 !
 ! in:
@@ -3046,116 +3125,116 @@ real (8) , dimension (2 * L1_, W_) ::FLXD2
 !---    JADDLV is taken from JXTRA, which is based on visible OD.
 !---    JADDTO(L2=1:L2_+1) is the cumulative number of levels to be adde
 !---these should be fixed for all wavelengths to lock-in the array sizes
-do L2 = 1, L2_, 1  
-JADDLV (L2) = JXTRA (L2)  
-enddo  
-JADDTO (L2_ + 1) = 0  
-do L2 = L2_, 1, - 1  
-JADDTO (L2) = JADDTO (L2 + 1) + JADDLV (L2)  
+do L2 = 1, L2_, 1
+JADDLV (L2) = JXTRA (L2)
+enddo
+JADDTO (L2_ + 1) = 0
+do L2 = L2_, 1, - 1
+JADDTO (L2) = JADDTO (L2 + 1) + JADDLV (L2)
 
 
-enddo  
+enddo
 !---expanded grid now included CTM edge and mid layers plus expanded
 !---    grid to allow for finer delta-tau at tops of clouds.
 !---    DIM of new grid = L2_ + JADDTO(1) + 1
 !---L2LEV(L2) = L2-index for old level L2 in expanded J-grid (w/JADDLV)
 !     in absence of JADDLV, L2LEV(L2) = L2
-L2LEV (1) = 1  
-do L2 = 2, L2_ + 1  
-L2LEV (L2) = L2LEV (L2 - 1) + 1 + JADDLV (L2 - 1)  
+L2LEV (1) = 1
+do L2 = 2, L2_ + 1
+L2LEV (L2) = L2LEV (L2 - 1) + 1 + JADDLV (L2 - 1)
 
-enddo  
+enddo
 !---JNDLEV(L=1:L_) = L2-index in expanded grid for CTM mid-layer L
 !---JNELEV(L=1:L_) = L2-index for top of layer L
-do L = 1, L_  
-JNDLEV (L) = L2LEV (2 * L)  
-JNELEV (L) = L2LEV (2 * L + 1)  
-enddo  
+do L = 1, L_
+JNDLEV (L) = L2LEV (2 * L)
+JNELEV (L) = L2LEV (2 * L + 1)
+enddo
                           !need to set this to top-of-atmosphere
 
-JNELEV (L_ + 1) = 0  
+JNELEV (L_ + 1) = 0
 
-ND = 2 * L2_ + 2 * JADDTO (1) + 1  
-if (ND.gt.N_) then  
-     write (6, '(a,2i9)') ' overflow of scatter arrays:', ND, N_  
-     stop  
+ND = 2 * L2_ + 2 * JADDTO (1) + 1
+if (ND.gt.N_) then
+     write (6, '(a,2i9)') ' overflow of scatter arrays:', ND, N_
+     stop
 
 
-endif  
+endif
 !----------------begin wavelength dependent set up----------------------
 !---Reinitialize arrays
-ZTAU (:, :) = 0.d0  
-FZ (:, :) = 0.d0  
+ZTAU (:, :) = 0.d0
+FZ (:, :) = 0.d0
 
-POMEGA (:, :, :) = 0.d0  
+POMEGA (:, :, :) = 0.d0
 
-do K = 1, W_  
+do K = 1, W_
 !---Set up optical depth DTAU(L)
-do L = 1, L1_  
-DTAU (L, K) = DTAUX (L, K)  
-enddo  
+do L = 1, L1_
+DTAU (L, K) = DTAUX (L, K)
+enddo
 
-DTAU (L1_ + 1, K) = 0.d0  
+DTAU (L1_ + 1, K) = 0.d0
 !---Define the total scattering phase fn for each CTM layer L=1:L_+1
 !---   from a DTAU-wt_d mix of aerosols, cloud & Rayleigh
 !---No. of quadrature pts fixed at 4(M_), expansion of phase fn @ 8
-do L = 1, L1_  
-do I = 1, M2_  
-POMEGAJ (I, L, K) = POMEGAX (I, L, K)  
-enddo  
+do L = 1, L1_
+do I = 1, M2_
+POMEGAJ (I, L, K) = POMEGAX (I, L, K)
+enddo
 
-enddo  
+enddo
 !---Calculate attenuated incident beam exp(-TTAU/U0 = DTAU * AirMassFact
 !---      at the middle & edges of the CTM layers L=1:2*L1_+1
 !---  L1_ is top-edge of CTM (ie, L=38 = 2 hPa) which has TAU > 0
 !---  note that DTAU(L1_) is optical depth in the FULL CTM layer just ab
-FTAU2 (:, :) = 0.d0  
-FTAU2 (L2_ + 1, :) = 1.0d0  
-do LL = 1, 2 * L1_ + 1  
-L = (LL + 1) / 2  
-if (AMF2 (LL, LL) .gt.0.0d0) then  
-     XLTAU = 0.0d0  
-     do II = 1, 2 * L1_ + 1  
-     I = (II + 1) / 2  
-     XLTAU = XLTAU + 0.5d0 * DTAU (I, K) * AMF2 (II, LL)  
-     enddo  
+FTAU2 (:, :) = 0.d0
+FTAU2 (L2_ + 1, :) = 1.0d0
+do LL = 1, 2 * L1_ + 1
+L = (LL + 1) / 2
+if (AMF2 (LL, LL) .gt.0.0d0) then
+     XLTAU = 0.0d0
+     do II = 1, 2 * L1_ + 1
+     I = (II + 1) / 2
+     XLTAU = XLTAU + 0.5d0 * DTAU (I, K) * AMF2 (II, LL)
+     enddo
                                       ! zero out flux at 1e-33
-     if (XLTAU.lt.76.d0) then  
-          FTAU2 (LL, K) = exp ( - XLTAU)  
-     endif  
-endif  
+     if (XLTAU.lt.76.d0) then
+          FTAU2 (LL, K) = exp ( - XLTAU)
+     endif
+endif
 
-enddo  
+enddo
 !---calculate direct solar flux deposited in each CTM half-layer: L=1:L2
 !---     use FSBOT for surface flux, cannot do layer above CTM (L_+1)
-FLXD2 (:, :) = 0.d0  
-do LL = 1, 2 * L1_  
-if (AMF2 (LL, LL) .gt.0.d0) then  
+FLXD2 (:, :) = 0.d0
+do LL = 1, 2 * L1_
+if (AMF2 (LL, LL) .gt.0.d0) then
      FLXD2 (LL, K) = (FTAU2 (LL + 1, K) - FTAU2 (LL, K) ) / AMF2 ( &
       LL, LL)
-endif  
-enddo  
-if (AMF2 (1, 1) .gt.0.d0) then  
-     FSBOT (K) = FTAU2 (1, K) / AMF2 (1, 1)  
-else  
-     FSBOT (K) = 0.d0  
+endif
+enddo
+if (AMF2 (1, 1) .gt.0.d0) then
+     FSBOT (K) = FTAU2 (1, K) / AMF2 (1, 1)
+else
+     FSBOT (K) = 0.d0
 
-endif  
-do LL = 2, 2 * L1_, 2  
-L = LL / 2  
-FLXD (L, K) = FLXD2 (LL, K) + FLXD2 (LL - 1, K)  
+endif
+do LL = 2, 2 * L1_, 2
+L = LL / 2
+FLXD (L, K) = FLXD2 (LL, K) + FLXD2 (LL - 1, K)
 
-enddo  
+enddo
 !---integrate solar flux depositied in CTM layers L=1:L_, cannot do top
 !---  note FLXD0 .ne. (1.d0 - FTAU(L_+1))/AMF(L_+1,L_+1) with spherical
-FLXD0 (K) = 0.d0  
-if (AMF2 (2 * L1_, 2 * L1_) .gt.0.d0) then  
-     do L = 1, L1_  
-     FLXD0 (K) = FLXD0 (K) + FLXD (L, K)  
-     enddo  
+FLXD0 (K) = 0.d0
+if (AMF2 (2 * L1_, 2 * L1_) .gt.0.d0) then
+     do L = 1, L1_
+     FLXD0 (K) = FLXD0 (K) + FLXD (L, K)
+     enddo
 
 
-endif  
+endif
 !-----------------------------------------------------------------------
 !  Take optical properties on CTM layers and convert to a photolysis
 !  level grid corresponding to layer centres and boundaries. This is
@@ -3168,140 +3247,140 @@ endif
 !---              L2_+1 = 2*L1_+1 = 2*L_+3
 !---calculate column optical depths above each level, TTAU(1:L2_+1)
 !---      note that TTAU(L2_+1)=0 and TTAU(1)=total OD
-TTAU (L2_ + 1, K) = 0.0d0  
-do L2 = L2_, 1, - 1  
-L = (L2 + 1) / 2  
-DTAUJ = 0.5d0 * DTAU (L, K)  
-TTAU (L2, K) = TTAU (L2 + 1, K) + DTAUJ  
+TTAU (L2_ + 1, K) = 0.0d0
+do L2 = L2_, 1, - 1
+L = (L2 + 1) / 2
+DTAUJ = 0.5d0 * DTAU (L, K)
+TTAU (L2, K) = TTAU (L2 + 1, K) + DTAUJ
 
-enddo  
+enddo
 !----solar flux incident on lower boundary & Lambertian reflect factor:
-if (FSBOT (K) .gt.0.d0) then  
-     ZFLUX (K) = FSBOT (K) * RFL (K) / (1.d0 + RFL (K) )  
-else  
-     ZFLUX (K) = 0.d0  
+if (FSBOT (K) .gt.0.d0) then
+     ZFLUX (K) = FSBOT (K) * RFL (K) / (1.d0 + RFL (K) )
+else
+     ZFLUX (K) = 0.d0
 
-endif  
+endif
 !  Calculate scattering properties, level centres then level boundaries
 !>>>>>be careful of order, we are overwriting/shifting the 'POMEGAJ' upw
-do L2 = L2_, 2, - 2  
-L = L2 / 2  
-do I = 1, M2_  
-POMEGAJ (I, L2, K) = POMEGAJ (I, L, K)  
-enddo  
-enddo  
+do L2 = L2_, 2, - 2
+L = L2 / 2
+do I = 1, M2_
+POMEGAJ (I, L2, K) = POMEGAJ (I, L, K)
+enddo
+enddo
 !---lower boundary value is set (POMEGAJ(I,1), but set upper:
-do I = 1, M2_  
-POMEGAJ (I, L2_ + 1, K) = POMEGAJ (I, L2_, K)  
-enddo  
+do I = 1, M2_
+POMEGAJ (I, L2_ + 1, K) = POMEGAJ (I, L2_, K)
+enddo
 !---now have POMEGAJ filled at even points from L2=3:L2_-1
 !---use inverse interpolation for correct tau-weighted values at edges
-do L2 = 3, L2_ - 1, 2  
-TAUDN = TTAU (L2 - 1, K) - TTAU (L2, K)  
-TAUUP = TTAU (L2, K) - TTAU (L2 + 1, K)  
-do I = 1, M2_  
+do L2 = 3, L2_ - 1, 2
+TAUDN = TTAU (L2 - 1, K) - TTAU (L2, K)
+TAUUP = TTAU (L2, K) - TTAU (L2 + 1, K)
+do I = 1, M2_
 POMEGAJ (I, L2, K) = (POMEGAJ (I, L2 - 1, K) * TAUDN + POMEGAJ (I, &
  L2 + 1, K) * TAUUP) / (TAUDN + TAUUP)
-enddo  
+enddo
 
 
-enddo  
+enddo
 !---at this point FTAU2(1:L2_+1) and POMEAGJ(1:8, 1:L2_+1)
 !---    where FTAU2(L2_+1) = 1.0 = top-of-atmos, FTAU2(1) = surface
                                 ! L2 = index of CTM edge- and mid-layers
-do L2 = 1, L2_ + 1  
+do L2 = 1, L2_ + 1
                                ! L2L = index for L2 in expanded scale(JA
-L2L = L2LEV (L2)  
+L2L = L2LEV (L2)
                               ! LZ = index for L2 in scatt arrays
-LZ = ND+2 - 2 * L2L  
-ZTAU (LZ, K) = TTAU (L2, K)  
-FZ (LZ, K) = FTAU2 (L2, K)  
-do I = 1, M2_  
-POMEGA (I, LZ, K) = POMEGAJ (I, L2, K)  
-enddo  
+LZ = ND+2 - 2 * L2L
+ZTAU (LZ, K) = TTAU (L2, K)
+FZ (LZ, K) = FTAU2 (L2, K)
+do I = 1, M2_
+POMEGA (I, LZ, K) = POMEGAJ (I, L2, K)
+enddo
 
-enddo  
+enddo
 !   Now go thru the pairs of L2 levels to see if we need JADD levels
                                  ! L2 = index of CTM edge- and mid-layer
-do L2 = 1, L2_  
+do L2 = 1, L2_
                                  ! L2L = index for L2 in expanded scale(
-L2L = L2LEV (L2)  
+L2L = L2LEV (L2)
                                 ! LZ = index for L2 in scatt arrays
-LZ = ND+2 - 2 * L2L  
+LZ = ND+2 - 2 * L2L
                                              ! L22 = 0 if no added level
 
-L22 = L2LEV (L2 + 1) - L2LEV (L2) - 1  
-if (L22.gt.0) then  
-     TAUBTM (K) = TTAU (L2, K)  
-     TAUTOP (K) = TTAU (L2 + 1, K)  
-     FBTM (K) = FTAU2 (L2, K)  
-     FTOP (K) = FTAU2 (L2 + 1, K)  
-     do I = 1, M2_  
-     POMEGAB (I, K) = POMEGAJ (I, L2, K)  
+L22 = L2LEV (L2 + 1) - L2LEV (L2) - 1
+if (L22.gt.0) then
+     TAUBTM (K) = TTAU (L2, K)
+     TAUTOP (K) = TTAU (L2 + 1, K)
+     FBTM (K) = FTAU2 (L2, K)
+     FTOP (K) = FTAU2 (L2 + 1, K)
+     do I = 1, M2_
+     POMEGAB (I, K) = POMEGAJ (I, L2, K)
 
-     enddo  
+     enddo
 !---to fit L22 new layers between TAUBOT > TAUTOP, calculate new 1/ATAU
 !---  such that TAU(just above TAU-btm) = ATUAZ * TAUBTM < TAUBTM
      ATAUZ = exp ( - log (TAUBTM (K) / max (TAUTOP (K), ATAU0) ) &
       / float (L22 + 1) )
                                 ! add odd levels between L2LEV(L2) & L2L
-     do L = 1, L22  
+     do L = 1, L22
                                ! LZZ = index(odd) of added level in scat
-     LZZ = LZ - 2 * L  
+     LZZ = LZ - 2 * L
 
-     ZTAU (LZZ, K) = TAUBTM (K) * ATAUZ  
+     ZTAU (LZZ, K) = TAUBTM (K) * ATAUZ
 !---fraction from TAUBTM=>TAUTOP
      ATAUA = (TAUBTM (K) - ZTAU (LZZ, K) ) / (TAUBTM (K) - TAUTOP &
       (K) )
 !---solar flux at interp-levels: use exp(TAU/U0) if U0>0.02 (89 deg),
 !---else scale by TAU
-     if (U0.gt.0.02d0) then  
+     if (U0.gt.0.02d0) then
           FZ (LZZ, K) = FTOP (K) * exp ( (TAUTOP (K) - ZTAU (LZZ, &
            K) ) / U0)
-     else  
-          if (FBTM (K) .lt.1.d-32) then  
-               FZ (LZZ, K) = 0.d0  
-          else  
+     else
+          if (FBTM (K) .lt.1.d-32) then
+               FZ (LZZ, K) = 0.d0
+          else
                FZ (LZZ, K) = FBTM (K) * (FTOP (K) / FBTM (K) ) ** &
                 ATAUA
-          endif  
-     endif  
-     do I = 1, M2_  
+          endif
+     endif
+     do I = 1, M2_
      POMEGA (I, LZZ, K) = POMEGAB (I, K) + ATAUA * (POMEGAJ (I, &
       L2 + 1, K) - POMEGAB (I, K) )
-     enddo  
-     TAUBTM (K) = ZTAU (LZZ, K)  
-     FBTM (K) = FZ (LZZ, K)  
-     do I = 1, M2_  
-     POMEGAB (I, K) = POMEGA (I, LZZ, K)  
-     enddo  
-     enddo  
-endif  
+     enddo
+     TAUBTM (K) = ZTAU (LZZ, K)
+     FBTM (K) = FZ (LZZ, K)
+     do I = 1, M2_
+     POMEGAB (I, K) = POMEGA (I, LZZ, K)
+     enddo
+     enddo
+endif
 
-enddo  
+enddo
 !   Now fill in the even points with simple interpolation in scatter arr
-do LZ = 2, ND-1, 2  
-ZTAU (LZ, K) = 0.5d0 * (ZTAU (LZ - 1, K) + ZTAU (LZ + 1, K) )  
-FZ (LZ, K) = sqrt (FZ (LZ - 1, K) * FZ (LZ + 1, K) )  
-do I = 1, M2_  
+do LZ = 2, ND-1, 2
+ZTAU (LZ, K) = 0.5d0 * (ZTAU (LZ - 1, K) + ZTAU (LZ + 1, K) )
+FZ (LZ, K) = sqrt (FZ (LZ - 1, K) * FZ (LZ + 1, K) )
+do I = 1, M2_
 POMEGA (I, LZ, K) = 0.5d0 * (POMEGA (I, LZ - 1, K) + POMEGA (I, &
  LZ + 1, K) )
-enddo  
+enddo
 
-enddo  
+enddo
              ! wavelength loop!
 
-enddo  
+enddo
 !-----------------------------------------------------------------------
 
 
-call MIESCT (FJ, FJT, FJB, POMEGA, FZ, ZTAU, ZFLUX, RFL, U0, ND)  
+call MIESCT (FJ, FJT, FJB, POMEGA, FZ, ZTAU, ZFLUX, RFL, U0, ND)
 !-----------------------------------------------------------------------
 !---Move mean intensity from scatter array FJ(LZ=1:ND)
 !---              to CTM mid-level array FJACT(L=1:L_)
 
 
-do K = 1, W_  
+do K = 1, W_
 !---mean intensity at mid-layer:  4*<I> + solar
 !       do L = 1,L_
 !        L2L = JNDLEV(L)
@@ -3309,46 +3388,46 @@ do K = 1, W_
 !        FJACT(L,K) = 4.d0*FJ(LZ,K) + FZ(LZ,K)
 !       enddo
 !---mean intensity averaged throughout layer:
-do L = 1, L_  
-LZ0 = ND+2 - 2 * JNELEV (L)  
-if (L.gt.1) then  
-     LZ1 = ND+2 - 2 * JNELEV (L - 1)  
-else  
-     LZ1 = ND  
-endif  
+do L = 1, L_
+LZ0 = ND+2 - 2 * JNELEV (L)
+if (L.gt.1) then
+     LZ1 = ND+2 - 2 * JNELEV (L - 1)
+else
+     LZ1 = ND
+endif
 SUMJ = (4.d0 * FJ (LZ0, K) + FZ (LZ0, K) ) * (ZTAU (LZ0 + 2, K) &
  - ZTAU (LZ0, K) ) + (4.d0 * FJ (LZ1, K) + FZ (LZ1, K) ) * (ZTAU ( &
  LZ1, K) - ZTAU (LZ1 - 2, K) )
 
 SUMT = ZTAU (LZ0 + 2, K) - ZTAU (LZ0, K) + ZTAU (LZ1, K) - ZTAU ( &
  LZ1 - 2, K)
-do LZ = LZ0 + 2, LZ1 - 2, 2  
+do LZ = LZ0 + 2, LZ1 - 2, 2
 SUMJ = SUMJ + (4.d0 * FJ (LZ, K) + FZ (LZ, K) ) * (ZTAU (LZ + 2, &
  K) - ZTAU (LZ - 2, K) )
-SUMT = SUMT + ZTAU (LZ + 2, K) - ZTAU (LZ - 2, K)  
-enddo  
-FJACT (L, K) = SUMJ / SUMT  
+SUMT = SUMT + ZTAU (LZ + 2, K) - ZTAU (LZ - 2, K)
+enddo
+FJACT (L, K) = SUMJ / SUMT
 
-enddo  
+enddo
 !---mean diffuse flux:  4<I*mu> (not solar) at top of layer L
 !---      average (tau-wtd) the h's just above and below the L-edge
-do L = 1, L_  
-L2L = JNELEV (L)  
-LZ = ND+2 - 2 * L2L  
+do L = 1, L_
+L2L = JNELEV (L)
+LZ = ND+2 - 2 * L2L
 FJFLX0 = (ZTAU (LZ + 1, K) - ZTAU (LZ, K) ) / (ZTAU (LZ + 1, K) &
  - ZTAU (LZ - 1, K) )
 FJFLX (L, K) = 4.d0 * (FJ (LZ - 1, K) * FJFLX0 + FJ (LZ + 1, K) &
  * (1.d0 - FJFLX0) )
 
-enddo  
+enddo
 !---diffuse fluxes reflected at top, incident at bottom
-FJTOP (K) = FJT (K)  
+FJTOP (K) = FJT (K)
 
-FJBOT (K) = FJB (K)  
+FJBOT (K) = FJB (K)
              ! wavelength loop!
 
-enddo  
-return  
+enddo
+return
 
 
 
@@ -3361,17 +3440,17 @@ end subroutine OPMIE
 subroutine MIESCT (FJ, FJT, FJB, POMEGA, FZ, ZTAU, ZFLUX, RFL, U0, &
  ND)
 !-----------------------------------------------------------------------
-implicit none  
+implicit none
 
-#     include "parm_MIE_fastJX65.h"  
-integer , intent (in) ::ND  
+#     include "parm_MIE_fastJX65.h"
+integer , intent (in) ::ND
 real (8) , intent (in) ::POMEGA (M2_, N_, W_), FZ (N_, W_), &
  ZTAU (N_, W_), RFL (W_), U0, ZFLUX (W_)
 
-real (8) , intent (out) ::FJ (N_, W_), FJT (W_), FJB (W_)  
-real (8) :: PM (M_, M2_), PM0 (M2_)  
+real (8) , intent (out) ::FJ (N_, W_), FJT (W_), FJB (W_)
+real (8) :: PM (M_, M2_), PM0 (M2_)
 
-integer :: I, IM, K  
+integer :: I, IM, K
 !-----------------------------------------------------------------------
 !   This is an adaption of the Prather radiative transfer code, (mjp, 10
 !     Prather, 1974, Astrophys. J. 192, 787-792.
@@ -3387,48 +3466,48 @@ integer :: I, IM, K
 !    takes atmospheric structure and source terms from std J-code
 !    ALSO limited to 4 Gauss points, only calculates mean field! (M=1)
 !-----------------------------------------------------------------------
-do I = 1, M_  
-call LEGND0 (EMU (I), PM0, M2_)  
-do IM = 1, M2_  
-PM (I, IM) = PM0 (IM)  
-enddo  
+do I = 1, M_
+call LEGND0 (EMU (I), PM0, M2_)
+do IM = 1, M2_
+PM (I, IM) = PM0 (IM)
+enddo
 
-enddo  
-call LEGND0 ( - U0, PM0, M2_)  
-do IM = 1, M2_  
-PM0 (IM) = 0.25d0 * PM0 (IM)  
+enddo
+call LEGND0 ( - U0, PM0, M2_)
+do IM = 1, M2_
+PM0 (IM) = 0.25d0 * PM0 (IM)
 
 
-enddo  
+enddo
 !---BLKSLV now called with all the wavelength arrays (K=1:W_)
 
 call BLKSLV (FJ, POMEGA, FZ, ZTAU, ZFLUX, RFL, PM, PM0, FJT, FJB, &
  ND)
-return  
+return
 
 
 end subroutine MIESCT
 !######################################################################
 !-----------------------------------------------------------------------
-subroutine LEGND0 (X, PL, N)  
+subroutine LEGND0 (X, PL, N)
 !-----------------------------------------------------------------------
 !---Calculates ORDINARY Legendre fns of X (real)
 !---   from P[0] = PL(1) = 1,  P[1] = X, .... P[N-1] = PL(N)
-implicit none  
-integer , intent (in) ::N  
-real (8) , intent (in) ::X  
-real (8) , intent (out) ::PL (N)  
-integer :: I  
-real (8) :: DEN  
+implicit none
+integer , intent (in) ::N
+real (8) , intent (in) ::X
+real (8) , intent (out) ::PL (N)
+integer :: I
+real (8) :: DEN
 !---Always does PL(2) = P[1]
-PL (1) = 1.d0  
-PL (2) = X  
-do I = 3, N  
-DEN = (I - 1)  
+PL (1) = 1.d0
+PL (2) = X
+do I = 3, N
+DEN = (I - 1)
 PL (I) = PL (I - 1) * X * (2.d0 - 1.0 / DEN) - PL (I - 2) * &
  (1.d0 - 1.d0 / DEN)
-enddo  
-return  
+enddo
+return
 
 
 end subroutine LEGND0
@@ -3441,147 +3520,147 @@ subroutine BLKSLV (FJ, POMEGA, FZ, ZTAU, ZFLUX, RFL, PM, PM0, &
 !               A(I)*X(I-1) + B(I)*X(I) + C(I)*X(I+1) = H(I)
 !  This goes back to the old, dumb, fast version 5.3
 !-----------------------------------------------------------------------
-implicit none  
+implicit none
 
-#     include "parm_MIE_fastJX65.h"  
+#     include "parm_MIE_fastJX65.h"
 !--- expect parameters M_, N_ in parm_MIE.f-----------------------------
-integer , intent (in) ::ND  
+integer , intent (in) ::ND
 real (8) , intent (in) ::POMEGA (M2_, N_, W_), FZ (N_, W_), &
  ZTAU (N_, W_), PM (M_, M2_), PM0 (M2_), RFL (W_), ZFLUX (W_)
 
-real (8) , intent (out) ::FJ (N_, W_), FJTOP (W_), FJBOT (W_)  
+real (8) , intent (out) ::FJ (N_, W_), FJTOP (W_), FJBOT (W_)
 
-real (8) , dimension (M_, N_, W_) ::A, C, H, RR  
-real (8) , dimension (M_, M_, N_, W_) ::B, AA, CC, DD  
-real (8) , dimension (W_, M_, M_) ::F, E  
-real (8) :: SUMB, SUMBX, SUMT  
+real (8) , dimension (M_, N_, W_) ::A, C, H, RR
+real (8) , dimension (M_, M_, N_, W_) ::B, AA, CC, DD
+real (8) , dimension (W_, M_, M_) ::F, E
+real (8) :: SUMB, SUMBX, SUMT
 
 
-integer :: I, J, K, L  
-do K = 1, W_  
+integer :: I, J, K, L
+do K = 1, W_
 call GEN_ID (POMEGA (1, 1, K), FZ (1, K), ZTAU (1, K), ZFLUX (K), &
  RFL (K), PM, PM0, B (1, 1, 1, K), CC (1, 1, 1, K), AA (1, 1, 1, K) &
  , A (1, 1, K), H (1, 1, K), C (1, 1, K), ND)
 
-enddo  
+enddo
 !-----------UPPER BOUNDARY L=1
-do K = 1, W_  
-do J = 1, M_  
-do I = 1, M_  
-F (K, I, J) = B (I, J, 1, K)  
-enddo  
-enddo  
+do K = 1, W_
+do J = 1, M_
+do I = 1, M_
+F (K, I, J) = B (I, J, 1, K)
+enddo
+enddo
 
-enddo  
+enddo
 
-call MATINW (F, E)  
-do K = 1, W_  
-do J = 1, M_  
-do I = 1, M_  
+call MATINW (F, E)
+do K = 1, W_
+do J = 1, M_
+do I = 1, M_
 DD (I, J, 1, K) = - E (K, I, 1) * CC (1, J, 1, K) - E (K, I, 2) &
  * CC (2, J, 1, K) - E (K, I, 3) * CC (3, J, 1, K) - E (K, I, 4) &
  * CC (4, J, 1, K)
-enddo  
+enddo
 RR (J, 1, K) = E (K, J, 1) * H (1, 1, K) + E (K, J, 2) * H (2, 1, &
  K) + E (K, J, 3) * H (3, 1, K) + E (K, J, 4) * H (4, 1, K)
-enddo  
+enddo
 
-enddo  
+enddo
 !----------CONTINUE THROUGH ALL DEPTH POINTS ID=2 TO ID=ND-1
 
-do L = 2, ND-1  
-do K = 1, W_  
-do J = 1, M_  
-do I = 1, M_  
+do L = 2, ND-1
+do K = 1, W_
+do J = 1, M_
+do I = 1, M_
 B (I, J, L, K) = B (I, J, L, K) + A (I, L, K) * DD (I, J, L - 1, &
  K)
-enddo  
-H (J, L, K) = H (J, L, K) - A (J, L, K) * RR (J, L - 1, K)  
+enddo
+H (J, L, K) = H (J, L, K) - A (J, L, K) * RR (J, L - 1, K)
 
-enddo  
-do J = 1, M_  
-do I = 1, M_  
-F (K, I, J) = B (I, J, L, K)  
-enddo  
-enddo  
+enddo
+do J = 1, M_
+do I = 1, M_
+F (K, I, J) = B (I, J, L, K)
+enddo
+enddo
 
-enddo  
+enddo
 
-call MATINW (F, E)  
-do K = 1, W_  
-do J = 1, M_  
-do I = 1, M_  
-DD (I, J, L, K) = - E (K, I, J) * C (J, L, K)  
-enddo  
+call MATINW (F, E)
+do K = 1, W_
+do J = 1, M_
+do I = 1, M_
+DD (I, J, L, K) = - E (K, I, J) * C (J, L, K)
+enddo
 RR (J, L, K) = E (K, J, 1) * H (1, L, K) + E (K, J, 2) * H (2, L, &
  K) + E (K, J, 3) * H (3, L, K) + E (K, J, 4) * H (4, L, K)
-enddo  
+enddo
 
-enddo  
+enddo
 
-enddo  
+enddo
 !---------FINAL DEPTH POINT: L=ND
 
-L = ND  
-do K = 1, W_  
-do J = 1, M_  
-do I = 1, M_  
+L = ND
+do K = 1, W_
+do J = 1, M_
+do I = 1, M_
 B (I, J, L, K) = B (I, J, L, K) + AA (I, 1, L, K) * DD (1, J, L - &
  1, K) + AA (I, 2, L, K) * DD (2, J, L - 1, K) + AA (I, 3, L, K) &
  * DD (3, J, L - 1, K) + AA (I, 4, L, K) * DD (4, J, L - 1, K)
-enddo  
+enddo
 H (J, L, K) = H (J, L, K) - AA (J, 1, L, K) * RR (1, L - 1, K) &
  - AA (J, 2, L, K) * RR (2, L - 1, K) - AA (J, 3, L, K) * RR (3, L &
  - 1, K) - AA (J, 4, L, K) * RR (4, L - 1, K)
-enddo  
-do J = 1, M_  
-do I = 1, M_  
-F (K, I, J) = B (I, J, L, K)  
-enddo  
-enddo  
+enddo
+do J = 1, M_
+do I = 1, M_
+F (K, I, J) = B (I, J, L, K)
+enddo
+enddo
 
-enddo  
+enddo
 
-call MATINW (F, E)  
-do K = 1, W_  
-do J = 1, M_  
+call MATINW (F, E)
+do K = 1, W_
+do J = 1, M_
 RR (J, L, K) = E (K, J, 1) * H (1, L, K) + E (K, J, 2) * H (2, L, &
  K) + E (K, J, 3) * H (3, L, K) + E (K, J, 4) * H (4, L, K)
-enddo  
-enddo  
+enddo
+enddo
 !-----------BACK SOLUTION
-do L = ND-1, 1, - 1  
-do K = 1, W_  
-do J = 1, M_  
+do L = ND-1, 1, - 1
+do K = 1, W_
+do J = 1, M_
 RR (J, L, K) = RR (J, L, K) + DD (J, 1, L, K) * RR (1, L + 1, K) &
  + DD (J, 2, L, K) * RR (2, L + 1, K) + DD (J, 3, L, K) * RR (3, L &
  + 1, K) + DD (J, 4, L, K) * RR (4, L + 1, K)
-enddo  
-enddo  
+enddo
+enddo
 
-enddo  
+enddo
 !----------mean J & H
-FJ (:, :) = 0.d0  
-do L = 1, ND, 2  
-do K = 1, W_  
+FJ (:, :) = 0.d0
+do L = 1, ND, 2
+do K = 1, W_
 FJ(L, K) = RR(1, L, K) * WT(1) + RR(2, L, K) * WT(2) + &
          RR(3, L, K)*WT (3) + RR (4, L, K) * WT (4)
-enddo  
-enddo  
-do L = 2, ND, 2  
-do K = 1, W_  
+enddo
+enddo
+do L = 2, ND, 2
+do K = 1, W_
 FJ (L, K) = RR (1, L, K) * WT (1) * EMU (1) + RR (2, L, K) &
  * WT (2) * EMU (2) + RR (3, L, K) * WT (3) * EMU (3) + RR (4, L, &
  K) * WT (4) * EMU (4)
-enddo  
+enddo
 
-enddo  
+enddo
 !---FJTOP = scaled diffuse flux out top-of-atmosphere (limit = mu0)
 !---FJBOT = scaled diffuse flux onto surface:
 !---ZFLUX = reflect/(1 + reflect) * mu0 * Fsolar(lower boundary)
 !---SUMBX = flux from Lambert reflected I+
 
-do K = 1, W_  
+do K = 1, W_
 SUMT = RR (1, 1, K) * WT (1) * EMU (1) + RR (2, 1, K) * WT (2) &
  * EMU (2) + RR (3, 1, K) * WT (3) * EMU (3) + RR (4, 1, K) &
  * WT (4) * EMU (4)
@@ -3589,13 +3668,13 @@ SUMB = RR (1, ND, K) * WT (1) * EMU (1) + RR (2, ND, K) * WT (2) &
  * EMU (2) + RR (3, ND, K) * WT (3) * EMU (3) + RR (4, ND, K) &
  * WT (4) * EMU (4)
 
-SUMBX = 4.d0 * SUMB * RFL (K) / (1.0d0 + RFL (K) ) + ZFLUX (K)  
-FJTOP (K) = 4.d0 * SUMT  
+SUMBX = 4.d0 * SUMB * RFL (K) / (1.0d0 + RFL (K) ) + ZFLUX (K)
+FJTOP (K) = 4.d0 * SUMT
 
-FJBOT (K) = 4.d0 * SUMB - SUMBX  
+FJBOT (K) = 4.d0 * SUMB - SUMBX
 
-enddo  
-      return  
+enddo
+      return
 
 
       end subroutine BLKSLV
@@ -3607,28 +3686,28 @@ enddo
 !  Generates coefficient matrices for the block tri-diagonal system:
 !               A(I)*X(I-1) + B(I)*X(I) + C(I)*X(I+1) = H(I)
 !-----------------------------------------------------------------------
-      implicit none  
-#     include "parm_MIE_fastJX65.h"  
+      implicit none
+#     include "parm_MIE_fastJX65.h"
 !--- expect parameters M_, N_ in parm_MIE.f-----------------------------
-      integer , intent (in) ::ND  
+      integer , intent (in) ::ND
       real (8) , intent (in) ::POMEGA (M2_, N_), PM (M_, M2_), PM0 (M2_)
-      real (8) , intent (in) ::ZFLUX, RFL  
+      real (8) , intent (in) ::ZFLUX, RFL
 
-      real (8) , intent (in), dimension (N_) ::FZ, ZTAU  
-      real (8) , intent (out), dimension (M_, M_, N_) ::B, AA, CC  
+      real (8) , intent (in), dimension (N_) ::FZ, ZTAU
+      real (8) , intent (out), dimension (M_, M_, N_) ::B, AA, CC
 
-      real (8) , intent (out), dimension (M_, N_) ::A, C, H  
-      integer :: I, J, K, L1, L2, LL  
-      real (8) :: SUM0, SUM1, SUM2, SUM3  
-      real (8) :: DELTAU, D1, D2, SURFAC  
+      real (8) , intent (out), dimension (M_, N_) ::A, C, H
+      integer :: I, J, K, L1, L2, LL
+      real (8) :: SUM0, SUM1, SUM2, SUM3
+      real (8) :: DELTAU, D1, D2, SURFAC
 !
 
-      real (8) , dimension (M_, M_) ::S, T, U, V, W  
+      real (8) , dimension (M_, M_) ::S, T, U, V, W
 !---------------------------------------------
 !---------upper boundary:  2nd-order terms
-      L1 = 1  
-      L2 = 2  
-      do I = 1, M_  
+      L1 = 1
+      L2 = 2
+      do I = 1, M_
          SUM0 = POMEGA (1, L1) * PM (I, 1) * PM0 (1) + POMEGA (3, L1) &
              * PM (I, 3) * PM0 (3) + POMEGA (5, L1) * PM (I, 5) * PM0 (5) &
              + POMEGA (7, L1) * PM (I, 7) * PM0 (7)
@@ -3641,12 +3720,12 @@ enddo
          SUM3 = POMEGA (2, L2) * PM (I, 2) * PM0 (2) + POMEGA (4, L2) &
              * PM (I, 4) * PM0 (4) + POMEGA (6, L2) * PM (I, 6) * PM0 (6) &
              + POMEGA (8, L2) * PM (I, 8) * PM0 (8)
-         H (I, L1) = 0.5d0 * (SUM0 * FZ (L1) + SUM2 * FZ (L2) )  
-         A (I, L1) = 0.5d0 * (SUM1 * FZ (L1) + SUM3 * FZ (L2) )  
-      enddo  
+         H (I, L1) = 0.5d0 * (SUM0 * FZ (L1) + SUM2 * FZ (L2) )
+         A (I, L1) = 0.5d0 * (SUM1 * FZ (L1) + SUM3 * FZ (L2) )
+      enddo
 
-      do I = 1, M_  
-         do J = 1, I  
+      do I = 1, M_
+         do J = 1, I
             SUM0 = POMEGA (1, L1) * PM (I, 1) * PM (J, 1) + POMEGA (3, L1) &
                  * PM (I, 3) * PM (J, 3) + POMEGA (5, L1) * PM (I, 5) * PM (J, 5) &
                  + POMEGA (7, L1) * PM (I, 7) * PM (J, 7)
@@ -3659,110 +3738,110 @@ enddo
             SUM3 = POMEGA (2, L2) * PM (I, 2) * PM (J, 2) + POMEGA (4, L2) &
                  * PM (I, 4) * PM (J, 4) + POMEGA (6, L2) * PM (I, 6) * PM (J, 6) &
                  + POMEGA (8, L2) * PM (I, 8) * PM (J, 8)
-            S (I, J) = - SUM2 * WT (J)  
-            S (J, I) = - SUM2 * WT (I)  
-            T (I, J) = - SUM1 * WT (J)  
-            T (J, I) = - SUM1 * WT (I)  
-            V (I, J) = - SUM3 * WT (J)  
-            V (J, I) = - SUM3 * WT (I)  
-            B (I, J, L1) = - 0.5d0 * (SUM0 + SUM2) * WT (J)  
-            B (J, I, L1) = - 0.5d0 * (SUM0 + SUM2) * WT (I)  
-         enddo  
+            S (I, J) = - SUM2 * WT (J)
+            S (J, I) = - SUM2 * WT (I)
+            T (I, J) = - SUM1 * WT (J)
+            T (J, I) = - SUM1 * WT (I)
+            V (I, J) = - SUM3 * WT (J)
+            V (J, I) = - SUM3 * WT (I)
+            B (I, J, L1) = - 0.5d0 * (SUM0 + SUM2) * WT (J)
+            B (J, I, L1) = - 0.5d0 * (SUM0 + SUM2) * WT (I)
+         enddo
 
-      enddo  
+      enddo
 
-      do I = 1, M_  
-         S (I, I) = S (I, I) + 1.0d0  
-         T (I, I) = T (I, I) + 1.0d0  
-         V (I, I) = V (I, I) + 1.0d0  
+      do I = 1, M_
+         S (I, I) = S (I, I) + 1.0d0
+         T (I, I) = T (I, I) + 1.0d0
+         V (I, I) = V (I, I) + 1.0d0
 
-         B (I, I, L1) = B (I, I, L1) + 1.0d0  
+         B (I, I, L1) = B (I, I, L1) + 1.0d0
          C (I, L1) = S (I, 1) * A (1, L1) / EMU (1) + S (I, 2) * A (2, L1) &
                / EMU (2) + S (I, 3) * A (3, L1) / EMU (3) + S (I, 4) * A (4, L1) &
                / EMU (4)
 
-      enddo  
+      enddo
 
-      do I = 1, M_  
-         do J = 1, M_  
+      do I = 1, M_
+         do J = 1, M_
             W (J, I) = S (J, 1) * T (1, I) / EMU (1) + S (J, 2) * T (2, I) &
                / EMU (2) + S (J, 3) * T (3, I) / EMU (3) + S (J, 4) * T (4, I) &
                / EMU (4)
             U (J, I) = S (J, 1) * V (1, I) / EMU (1) + S (J, 2) * V (2, I) &
                / EMU (2) + S (J, 3) * V (3, I) / EMU (3) + S (J, 4) * V (4, I) &
                / EMU (4)
-         enddo  
-      enddo  
+         enddo
+      enddo
 !-------------upper boundary, 2nd-order, C-matrix is full (CC)
-      DELTAU = ZTAU (L2) - ZTAU (L1)  
-      D2 = 0.25d0 * DELTAU  
-      do I = 1, M_  
-         do J = 1, M_  
-            B (I, J, L1) = B (I, J, L1) + D2 * W (I, J)  
-            CC (I, J, L1) = D2 * U (I, J)  
-         enddo  
-         H (I, L1) = H (I, L1) + 2.0d0 * D2 * C (I, L1)  
-         A (I, L1) = 0.0d0  
-      enddo  
-      do I = 1, M_  
-         D1 = EMU (I) / DELTAU  
-         B (I, I, L1) = B (I, I, L1) + D1  
-         CC (I, I, L1) = CC (I, I, L1) - D1  
+      DELTAU = ZTAU (L2) - ZTAU (L1)
+      D2 = 0.25d0 * DELTAU
+      do I = 1, M_
+         do J = 1, M_
+            B (I, J, L1) = B (I, J, L1) + D2 * W (I, J)
+            CC (I, J, L1) = D2 * U (I, J)
+         enddo
+         H (I, L1) = H (I, L1) + 2.0d0 * D2 * C (I, L1)
+         A (I, L1) = 0.0d0
+      enddo
+      do I = 1, M_
+         D1 = EMU (I) / DELTAU
+         B (I, I, L1) = B (I, I, L1) + D1
+         CC (I, I, L1) = CC (I, I, L1) - D1
 
-      enddo  
+      enddo
 !------------intermediate points:  can be even or odd, A & C diagonal
 !---mid-layer h-points, Legendre terms 2,4,6,8
-      do LL = 2, ND-1, 2  
-         DELTAU = ZTAU (LL + 1) - ZTAU (LL - 1)  
-         do I = 1, M_  
-            A (I, LL) = EMU (I) / DELTAU  
-            C (I, LL) = - A (I, LL)  
+      do LL = 2, ND-1, 2
+         DELTAU = ZTAU (LL + 1) - ZTAU (LL - 1)
+         do I = 1, M_
+            A (I, LL) = EMU (I) / DELTAU
+            C (I, LL) = - A (I, LL)
             H (I, LL) = FZ (LL) * (POMEGA (2, LL) * PM (I, 2) * PM0 (2) &
                 + POMEGA (4, LL) * PM (I, 4) * PM0 (4) + POMEGA (6, LL) * PM (I,6) &
                 * PM0 (6) + POMEGA (8, LL) * PM (I, 8) * PM0 (8) )
-         enddo  
-         do I = 1, M_  
-            do J = 1, I  
+         enddo
+         do I = 1, M_
+            do J = 1, I
                SUM0 = POMEGA (2, LL) * PM (I, 2) * PM (J, 2) + POMEGA (4, LL) &
                    * PM (I, 4) * PM (J, 4) + POMEGA (6, LL) * PM (I, 6) * PM (J, 6) &
                    + POMEGA (8, LL) * PM (I, 8) * PM (J, 8)
-               B (I, J, LL) = - SUM0 * WT (J)  
-               B (J, I, LL) = - SUM0 * WT (I)  
-            enddo  
-         enddo  
-         do I = 1, M_  
-            B (I, I, LL) = B (I, I, LL) + 1.0d0  
-         enddo  
+               B (I, J, LL) = - SUM0 * WT (J)
+               B (J, I, LL) = - SUM0 * WT (I)
+            enddo
+         enddo
+         do I = 1, M_
+            B (I, I, LL) = B (I, I, LL) + 1.0d0
+         enddo
 
-      enddo  
+      enddo
 !---odd-layer j-points, Legendre terms 1,3,5,7
-      do LL = 3, ND-2, 2  
-         DELTAU = ZTAU (LL + 1) - ZTAU (LL - 1)  
-         do I = 1, M_  
-            A (I, LL) = EMU (I) / DELTAU  
-            C (I, LL) = - A (I, LL)  
+      do LL = 3, ND-2, 2
+         DELTAU = ZTAU (LL + 1) - ZTAU (LL - 1)
+         do I = 1, M_
+            A (I, LL) = EMU (I) / DELTAU
+            C (I, LL) = - A (I, LL)
             H (I, LL) = FZ (LL) * (POMEGA (1, LL) * PM (I, 1) * PM0 (1) &
                    + POMEGA (3, LL) * PM (I, 3) * PM0 (3) + POMEGA (5, LL) * PM (I, 5) &
                    * PM0 (5) + POMEGA (7, LL) * PM (I, 7) * PM0 (7) )
-         enddo  
-         do I = 1, M_  
-            do J = 1, I  
+         enddo
+         do I = 1, M_
+            do J = 1, I
                SUM0 = POMEGA (1, LL) * PM (I, 1) * PM (J, 1) + POMEGA (3, LL) &
                    * PM (I, 3) * PM (J, 3) + POMEGA (5, LL) * PM (I, 5) * PM (J, 5) &
                    + POMEGA (7, LL) * PM (I, 7) * PM (J, 7)
-               B (I, J, LL) = - SUM0 * WT (J)  
-               B (J, I, LL) = - SUM0 * WT (I)  
-            enddo  
-         enddo  
-         do I = 1, M_  
-            B (I, I, LL) = B (I, I, LL) + 1.0d0  
-         enddo  
+               B (I, J, LL) = - SUM0 * WT (J)
+               B (J, I, LL) = - SUM0 * WT (I)
+            enddo
+         enddo
+         do I = 1, M_
+            B (I, I, LL) = B (I, I, LL) + 1.0d0
+         enddo
 
-      enddo  
+      enddo
 !---------lower boundary:  2nd-order terms
-     L1 = ND  
-     L2 = ND-1  
-     do I = 1, M_  
+     L1 = ND
+     L2 = ND-1
+     do I = 1, M_
      SUM0 = POMEGA (1, L1) * PM (I, 1) * PM0 (1) + POMEGA (3, L1) &
            * PM (I, 3) * PM0 (3) + POMEGA (5, L1) * PM (I, 5) * PM0 (5) &
            + POMEGA (7, L1) * PM (I, 7) * PM0 (7)
@@ -3775,12 +3854,12 @@ enddo
      SUM3 = POMEGA (2, L2) * PM (I, 2) * PM0 (2) + POMEGA (4, L2) &
            * PM (I, 4) * PM0 (4) + POMEGA (6, L2) * PM (I, 6) * PM0 (6) &
            + POMEGA (8, L2) * PM (I, 8) * PM0 (8)
-     H (I, L1) = 0.5d0 * (SUM0 * FZ (L1) + SUM2 * FZ (L2) )  
-     A (I, L1) = 0.5d0 * (SUM1 * FZ (L1) + SUM3 * FZ (L2) )  
+     H (I, L1) = 0.5d0 * (SUM0 * FZ (L1) + SUM2 * FZ (L2) )
+     A (I, L1) = 0.5d0 * (SUM1 * FZ (L1) + SUM3 * FZ (L2) )
 
-     enddo  
-     do I = 1, M_  
-        do J = 1, I  
+     enddo
+     do I = 1, M_
+        do J = 1, I
            SUM0 = POMEGA (1, L1) * PM (I, 1) * PM (J, 1) + POMEGA (3, L1) &
                 * PM (I, 3) * PM (J, 3) + POMEGA (5, L1) * PM (I, 5) * PM (J, 5) &
                 + POMEGA (7, L1) * PM (I, 7) * PM (J, 7)
@@ -3793,123 +3872,123 @@ enddo
            SUM3 = POMEGA (2, L2) * PM (I, 2) * PM (J, 2) + POMEGA (4, L2) &
                 * PM (I, 4) * PM (J, 4) + POMEGA (6, L2) * PM (I, 6) * PM (J, 6) &
                 + POMEGA (8, L2) * PM (I, 8) * PM (J, 8)
-           S (I, J) = - SUM2 * WT (J)  
-           S (J, I) = - SUM2 * WT (I)  
-           T (I, J) = - SUM1 * WT (J)  
-           T (J, I) = - SUM1 * WT (I)  
-           V (I, J) = - SUM3 * WT (J)  
-           V (J, I) = - SUM3 * WT (I)  
-           B (I, J, L1) = - 0.5d0 * (SUM0 + SUM2) * WT (J)  
-           B (J, I, L1) = - 0.5d0 * (SUM0 + SUM2) * WT (I)  
-        enddo  
+           S (I, J) = - SUM2 * WT (J)
+           S (J, I) = - SUM2 * WT (I)
+           T (I, J) = - SUM1 * WT (J)
+           T (J, I) = - SUM1 * WT (I)
+           V (I, J) = - SUM3 * WT (J)
+           V (J, I) = - SUM3 * WT (I)
+           B (I, J, L1) = - 0.5d0 * (SUM0 + SUM2) * WT (J)
+           B (J, I, L1) = - 0.5d0 * (SUM0 + SUM2) * WT (I)
+        enddo
 
-     enddo  
-     do I = 1, M_  
-        S (I, I) = S (I, I) + 1.0d0  
-        T (I, I) = T (I, I) + 1.0d0  
-        V (I, I) = V (I, I) + 1.0d0  
-     
-        B (I, I, L1) = B (I, I, L1) + 1.0d0  
+     enddo
+     do I = 1, M_
+        S (I, I) = S (I, I) + 1.0d0
+        T (I, I) = T (I, I) + 1.0d0
+        V (I, I) = V (I, I) + 1.0d0
+
+        B (I, I, L1) = B (I, I, L1) + 1.0d0
         C (I, L1) = S (I, 1) * A (1, L1) / EMU (1) + S (I, 2) * A (2, L1) &
          / EMU (2) + S (I, 3) * A (3, L1) / EMU (3) + S (I, 4) * A (4, L1) &
          / EMU (4)
 
-     enddo  
-     do I = 1, M_  
-        do J = 1, M_  
+     enddo
+     do I = 1, M_
+        do J = 1, M_
            W (J, I) = S (J, 1) * T (1, I) / EMU (1) + S (J, 2) * T (2, I) &
                / EMU (2) + S (J, 3) * T (3, I) / EMU (3) + S (J, 4) * T (4, I) &
                / EMU (4)
            U (J, I) = S (J, 1) * V (1, I) / EMU (1) + S (J, 2) * V (2, I) &
                / EMU (2) + S (J, 3) * V (3, I) / EMU (3) + S (J, 4) * V (4, I) &
                / EMU (4)
-        enddo  
+        enddo
 
-     enddo  
+     enddo
 !------------lower boundary, 2nd-order, A-matrix is full (AA)
-      DELTAU = ZTAU (L1) - ZTAU (L2)  
-      D2 = 0.25d0 * DELTAU  
-      SURFAC = 4.0d0 * RFL / (1.0d0 + RFL)  
-      do I = 1, M_  
-         D1 = EMU (I) / DELTAU  
-         SUM0 = D1 + D2 * (W (I, 1) + W (I, 2) + W (I, 3) + W (I, 4) )  
-         SUM1 = SURFAC * SUM0  
-         do J = 1, M_  
-            AA (I, J, L1) = - D2 * U (I, J)  
+      DELTAU = ZTAU (L1) - ZTAU (L2)
+      D2 = 0.25d0 * DELTAU
+      SURFAC = 4.0d0 * RFL / (1.0d0 + RFL)
+      do I = 1, M_
+         D1 = EMU (I) / DELTAU
+         SUM0 = D1 + D2 * (W (I, 1) + W (I, 2) + W (I, 3) + W (I, 4) )
+         SUM1 = SURFAC * SUM0
+         do J = 1, M_
+            AA (I, J, L1) = - D2 * U (I, J)
             B (I, J, L1) = B (I, J, L1) + D2 * W (I, J) - SUM1 * EMU (J) &
                             * WT (J)
-         enddo  
-         H (I, L1) = H (I, L1) - 2.0d0 * D2 * C (I, L1) + SUM0 * ZFLUX  
+         enddo
+         H (I, L1) = H (I, L1) - 2.0d0 * D2 * C (I, L1) + SUM0 * ZFLUX
 
-      enddo  
-      do I = 1, M_  
-         D1 = EMU (I) / DELTAU  
-         AA (I, I, L1) = AA (I, I, L1) + D1  
-         B (I, I, L1) = B (I, I, L1) + D1  
-         C (I, L1) = 0.0d0  
+      enddo
+      do I = 1, M_
+         D1 = EMU (I) / DELTAU
+         AA (I, I, L1) = AA (I, I, L1) + D1
+         B (I, I, L1) = B (I, I, L1) + D1
+         C (I, L1) = 0.0d0
 
-      enddo  
-      return  
+      enddo
+      return
 
       end subroutine GEN_ID
 
 !######################################################################
 !-----------------------------------------------------------------------
-      subroutine MATINW (B, A)  
+      subroutine MATINW (B, A)
 !-----------------------------------------------------------------------
 !  invert 4x4 matrix B(4,4) with L-U decomposition, return as A(4,4) (mj
-implicit none  
-#     include "parm_MIE_fastJX65.h"  
-      real (8) , intent (in) ::B (W_, 4, 4)  
+implicit none
+#     include "parm_MIE_fastJX65.h"
+      real (8) , intent (in) ::B (W_, 4, 4)
 
-      real (8) , intent (out) ::A (W_, 4, 4)  
-      A (:, :, :) = B (:, :, :)  
+      real (8) , intent (out) ::A (W_, 4, 4)
+      A (:, :, :) = B (:, :, :)
 !---SETUP L AND U
-      A (:, 2, 1) = A (:, 2, 1) / A (:, 1, 1)  
-      A (:, 2, 2) = A (:, 2, 2) - A (:, 2, 1) * A (:, 1, 2)  
-      A (:, 2, 3) = A (:, 2, 3) - A (:, 2, 1) * A (:, 1, 3)  
-      A (:, 2, 4) = A (:, 2, 4) - A (:, 2, 1) * A (:, 1, 4)  
-      A (:, 3, 1) = A (:, 3, 1) / A (:, 1, 1)  
+      A (:, 2, 1) = A (:, 2, 1) / A (:, 1, 1)
+      A (:, 2, 2) = A (:, 2, 2) - A (:, 2, 1) * A (:, 1, 2)
+      A (:, 2, 3) = A (:, 2, 3) - A (:, 2, 1) * A (:, 1, 3)
+      A (:, 2, 4) = A (:, 2, 4) - A (:, 2, 1) * A (:, 1, 4)
+      A (:, 3, 1) = A (:, 3, 1) / A (:, 1, 1)
       A (:, 3, 2) = (A (:, 3, 2) - A (:, 3, 1) * A (:, 1, 2) ) / A (:, 2, 2)
       A (:, 3, 3) = A (:, 3, 3) - A (:, 3, 1) * A (:, 1, 3) - A (:, 3, 2) * A (:, 2, 3)
       A (:, 3, 4) = A (:, 3, 4) - A (:, 3, 1) * A (:, 1, 4) - A (:, 3, 2) * A (:, 2, 4)
-      A (:, 4, 1) = A (:, 4, 1) / A (:, 1, 1)  
+      A (:, 4, 1) = A (:, 4, 1) / A (:, 1, 1)
       A (:, 4, 2) = (A (:, 4, 2) - A (:, 4, 1) * A (:, 1, 2) ) / A (:, 2, 2)
       A (:, 4, 3) = (A (:, 4, 3) - A (:, 4, 1) * A (:, 1, 3) - A (:, 4, 2) * A (:, 2, 3) ) / A (:, 3, 3)
       A (:, 4, 4) = A (:, 4, 4) - A (:, 4, 1) * A (:, 1, 4) - A (:, 4, 2) * A (:, 2, 4) - A (:, 4, 3) * A (:, 3, 4)
 !---INVERT L
-      A (:, 4, 3) = - A (:, 4, 3)  
-      A (:, 4, 2) = - A (:, 4, 2) - A (:, 4, 3) * A (:, 3, 2)  
+      A (:, 4, 3) = - A (:, 4, 3)
+      A (:, 4, 2) = - A (:, 4, 2) - A (:, 4, 3) * A (:, 3, 2)
       A (:, 4, 1) = - A (:, 4, 1) - A (:, 4, 2) * A (:, 2, 1) - A (:, 4, 3) * A (:, 3, 1)
-      A (:, 3, 2) = - A (:, 3, 2)  
-      A (:, 3, 1) = - A (:, 3, 1) - A (:, 3, 2) * A (:, 2, 1)  
-      A (:, 2, 1) = - A (:, 2, 1)  
+      A (:, 3, 2) = - A (:, 3, 2)
+      A (:, 3, 1) = - A (:, 3, 1) - A (:, 3, 2) * A (:, 2, 1)
+      A (:, 2, 1) = - A (:, 2, 1)
 !---INVERT U
-      A (:, 4, 4) = 1.d0 / A (:, 4, 4)  
-      A (:, 3, 4) = - A (:, 3, 4) * A (:, 4, 4) / A (:, 3, 3)  
-      A (:, 3, 3) = 1.d0 / A (:, 3, 3)  
+      A (:, 4, 4) = 1.d0 / A (:, 4, 4)
+      A (:, 3, 4) = - A (:, 3, 4) * A (:, 4, 4) / A (:, 3, 3)
+      A (:, 3, 3) = 1.d0 / A (:, 3, 3)
       A (:, 2, 4) = - (A (:, 2, 3) * A (:, 3, 4) + A (:, 2, 4) * A (:, 4, 4) ) / A (:, 2, 2)
-      A (:, 2, 3) = - A (:, 2, 3) * A (:, 3, 3) / A (:, 2, 2)  
-      A (:, 2, 2) = 1.d0 / A (:, 2, 2)  
+      A (:, 2, 3) = - A (:, 2, 3) * A (:, 3, 3) / A (:, 2, 2)
+      A (:, 2, 2) = 1.d0 / A (:, 2, 2)
       A (:, 1, 4) = - (A (:, 1, 2) * A (:, 2, 4) + A (:, 1, 3) * A (:, 3, 4) + A (:, 1, 4) * A (:, 4, 4) ) / A (:, 1, 1)
       A (:, 1, 3) = - (A (:, 1, 2) * A (:, 2, 3) + A (:, 1, 3) * A (:, 3, 3) ) / A (:, 1, 1)
-      A (:, 1, 2) = - A (:, 1, 2) * A (:, 2, 2) / A (:, 1, 1)  
-      A (:, 1, 1) = 1.d0 / A (:, 1, 1)  
+      A (:, 1, 2) = - A (:, 1, 2) * A (:, 2, 2) / A (:, 1, 1)
+      A (:, 1, 1) = 1.d0 / A (:, 1, 1)
 !---MULTIPLY (:,U-INVERSE)*(:,L-INVERSE)
       A (:, 1, 1) = A (:, 1, 1) + A (:, 1, 2) * A (:, 2, 1) + A (:, 1, 3) * A (:, 3, 1) + A (:, 1, 4) * A (:, 4, 1)
       A (:, 1, 2) = A (:, 1, 2) + A (:, 1, 3) * A (:, 3, 2) + A (:, 1, 4) * A (:, 4, 2)
-      A (:, 1, 3) = A (:, 1, 3) + A (:, 1, 4) * A (:, 4, 3)  
+      A (:, 1, 3) = A (:, 1, 3) + A (:, 1, 4) * A (:, 4, 3)
       A (:, 2, 1) = A (:, 2, 2) * A (:, 2, 1) + A (:, 2, 3) * A (:, 3, 1) + A (:, 2, 4) * A (:, 4, 1)
       A (:, 2, 2) = A (:, 2, 2) + A (:, 2, 3) * A (:, 3, 2) + A (:, 2, 4) * A (:, 4, 2)
-      A (:, 2, 3) = A (:, 2, 3) + A (:, 2, 4) * A (:, 4, 3)  
+      A (:, 2, 3) = A (:, 2, 3) + A (:, 2, 4) * A (:, 4, 3)
       A (:, 3, 1) = A (:, 3, 3) * A (:, 3, 1) + A (:, 3, 4) * A (:, 4, 1)
       A (:, 3, 2) = A (:, 3, 3) * A (:, 3, 2) + A (:, 3, 4) * A (:, 4, 2)
-      A (:, 3, 3) = A (:, 3, 3) + A (:, 3, 4) * A (:, 4, 3)  
-      A (:, 4, 1) = A (:, 4, 4) * A (:, 4, 1)  
-      A (:, 4, 2) = A (:, 4, 4) * A (:, 4, 2)  
+      A (:, 3, 3) = A (:, 3, 3) + A (:, 3, 4) * A (:, 4, 3)
+      A (:, 4, 1) = A (:, 4, 4) * A (:, 4, 1)
+      A (:, 4, 2) = A (:, 4, 4) * A (:, 4, 2)
 
-      A (:, 4, 3) = A (:, 4, 4) * A (:, 4, 3)  
-      return  
+      A (:, 4, 3) = A (:, 4, 4) * A (:, 4, 3)
+      return
 
       end subroutine MATINW
 !######################################################################

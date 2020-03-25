@@ -548,6 +548,7 @@ CONTAINS
     ! Scalars
     INTEGER                   :: I, N
     INTEGER                   :: nScl
+    INTEGER                   :: nTmp
     INTEGER                   :: STAT
     INTEGER                   :: Int1
     INTEGER                   :: Int2
@@ -995,9 +996,9 @@ CONTAINS
                      
                    ! Extract grid box edges. Need to be four values.
                    CALL HCO_CharSplit ( Char1, Separator, Wildcard, & 
-                                        SplitInts, N, RC ) 
+                                        SplitInts, nTmp, RC ) 
                    IF ( RC /= HCO_SUCCESS ) RETURN
-                   IF ( N /= 4 ) THEN
+                   IF ( nTmp /= 4 ) THEN
                       MSG = 'Cannot properly read mask coverage: ' // &
                            TRIM(Lct%Dct%cName)
                       CALL HCO_ERROR ( HcoConfig%Err, MSG, RC, THISLOC=LOC )

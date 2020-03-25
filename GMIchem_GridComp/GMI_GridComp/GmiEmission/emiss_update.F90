@@ -78,9 +78,9 @@
      &   emiss_map_dust, emiss_map_aero, ndust, nst_dust, nt_dust, naero, nymd, &
      &   num_time_steps, mw, tdt, ndt, emiss_timpyr, num_emiss, isop_scale, &
      &   i1, i2, ju1, j2, k1, k2, ilo, ihi, julo, jhi, i1_gl, i2_gl, ju1_gl, j2_gl, &
-     &   ilong, num_species, doMEGANemission, aefIsop, aefMbo, aefMonot, isoLaiPrev, &
-     &   isoLaiCurr, isoLaiNext, pardif, pardir, T_15_AVG, emissionSpeciesLayers, &
-         exp_fac, mixPBL)
+     &   ilong, num_species, doMEGANemission, doMEGANviaHEMCO, aefIsop, aefMbo, &
+     &   aefMonot, isoLaiPrev, isoLaiCurr, isoLaiNext, pardif, pardir, T_15_AVG, &
+     &   emissionSpeciesLayers, exp_fac, mixPBL)
 
       use GmiArrayBundlePointer_mod, only : t_GmiArrayBundle
       use GmiTimeControl_mod       , only : GmiSplitDateTime
@@ -118,7 +118,7 @@
       real*8 , intent(in   ) :: cosSolarZenithAngle(i1:i2, ju1:j2)
       real*8 , intent(in   ) :: latdeg   (i1:i2, ju1:j2)
       real*8 , intent(in   ) :: mcor     (i1:i2, ju1:j2)
-      real*8 , intent(  out) :: emiss_isop   (i1:i2, ju1:j2)
+      real*8 , intent(inout) :: emiss_isop   (i1:i2, ju1:j2)
       real*8 , intent(  out) :: emiss_monot  (i1:i2, ju1:j2)
       real*8 , intent(  out) :: emiss_nox    (i1:i2, ju1:j2)
       real*8 , intent(in   ) :: emiss_o3     (i1:i2, ju1:j2)
@@ -146,6 +146,7 @@
       real*8 , intent(in   ) :: fracCloudCover (i1:i2, ju1:j2) ! cloud fraction
 
       logical, intent(in   ) :: doMEGANemission
+      logical, intent(in   ) :: doMEGANviaHEMCO
       real*8 , intent(in) :: aefIsop   (i1:i2, ju1:j2)
       real*8 , intent(in) :: aefMbo    (i1:i2, ju1:j2)
       real*8 , intent(in) :: aefMonot  (i1:i2, ju1:j2)
@@ -245,7 +246,9 @@
 
         if (btest(emiss_opt,1)) then
 
-          emiss_isop (:,:) = 0.0d0
+          IF ( .not. doMEGANviaHEMCO ) THEN 
+             emiss_isop (:,:) = 0.0d0 
+          END IF
           emiss_monot(:,:) = 0.0d0
           emiss_nox  (:,:) = 0.0d0
 
@@ -262,7 +265,7 @@
      &       soil_pulse, ireg, iland, iuse, convert_isop, convert_monot, coeff_isop,  &
      &       base_isop, base_monot, xlai, pr_diag, loc_proc, rootProc, i1, i2, ju1, j2, &
      &       k1, k2, i1_gl, i2_gl, ju1_gl, j2_gl, ilong, num_species, doMEGANemission, &
-     &       aefIsop, aefMbo, aefMonot, isoLaiPrev, isoLaiCurr, isoLaiNext, &
+     &       doMEGANviaHEMCO, aefIsop, aefMbo, aefMonot, isoLaiPrev, isoLaiCurr, isoLaiNext, &
              pardif, pardir,T_15_AVG, exp_fac)
 
 !         ------------------------------------------------
