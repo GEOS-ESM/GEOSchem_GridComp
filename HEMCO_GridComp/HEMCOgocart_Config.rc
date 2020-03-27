@@ -34,6 +34,7 @@ BEGIN SECTION EXTENSION SWITCHES
 0       Base              : on    *
     --> TIMEZONES         :       false
     --> GOCART            :       true
+    --> MEGAN_FIELDS      :       true
     --> HTAP              :       false
     --> KORUS             :       false
 108     MEGAN             : on    ISOP/ACET/PRPE/C2H4/ALD2/EOH/SOAP/SOAS
@@ -176,6 +177,7 @@ BEGIN SECTION BASE EMISSIONS
 # NOTE: These are the base emissions, which will be converted to kgC/m2/s by HEMCO. The specified species (OCPI/ISOP/ACET) are required
 #       for proper unit conversion. Since netCDF files are already in mass carbon (ug(C)), the only important thing is to specify a VOC
 #       with a specified MW of 12g/mol. This is the case for OCPI, ISOP and ACET.
+(((MEGAN_FIELDS
 108  MEGAN_AEF_ISOP               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_ISOPRENE            1985/1/1/0    C xy kgC/m2/s * - 1 1
 109  MEGAN_AEF_MBOX               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_MBO                 1985/1/1/0    C xy kgC/m2/s * - 1 1
 109  MEGAN_AEF_BPIN               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_BETA_PINENE         1985/1/1/0    C xy kgC/m2/s * - 1 1
@@ -200,6 +202,7 @@ BEGIN SECTION BASE EMISSIONS
 109  CLM4_PFT_C4_GRSS             ~/data/CLM4_PFT.geos.1x1.nc    PFT_C4_GRSS             2000/1/1/0    C xy 1        * - 1 1
 109  CLM4_PFT_CROP                ~/data/CLM4_PFT.geos.1x1.nc    PFT_CROP                2000/1/1/0    C xy 1        * - 1 1
 109  MEGAN_ORVC                   ~/data/NVOC.geos.1x1.nc        OCPI                    1990/1-12/1/0 C xy kgC/m2/s * - 1 1
+)))MEGAN_FIELDS
 
 #==============================================================================
 # --- time zones (offset to UTC) ---

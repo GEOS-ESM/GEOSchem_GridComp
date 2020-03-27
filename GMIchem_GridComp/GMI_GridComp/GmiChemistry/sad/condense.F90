@@ -222,7 +222,7 @@
       real*8,  parameter :: DENSICE   =  1.0d0
       real*8,  parameter :: NICE      =  1.0d-2
       real*8,  parameter :: RICE      = 10.0d0
-      real*8,  parameter :: SATRATICE =  1.0d0
+      real*8,  parameter :: SATRATICE =  1.4d0
       real*8,  parameter :: SIGICE    =  1.6d0
 
 !     ------------------------------------
@@ -231,11 +231,11 @@
 
       logical, parameter :: CONSTANTNNAT = .true.
 
-      real*8,  parameter :: DENSNAT   = 1.6d0
-      real*8,  parameter :: NNAT      = 0.1d0
-      real*8,  parameter :: RNAT      = 0.4d0
-      real*8,  parameter :: SIGNAT    = 1.6d0
-      real*8,  parameter :: SATRATNAT = 1.0d0
+      real*8,  parameter :: DENSNAT   =  1.6d0
+      real*8,  parameter :: NNAT      =  0.1d0
+      real*8,  parameter :: RNAT      =  1.0d0
+      real*8,  parameter :: SIGNAT    =  1.6d0
+      real*8,  parameter :: SATRATNAT = 10.0d0
 
 !     ------------------------------------
 !     Parameters controlling sts aerosols:

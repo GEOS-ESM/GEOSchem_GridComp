@@ -1,4 +1,25 @@
 AeroChem ChangeLog
+2019-12-17 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_19
+    * Added Steve's virtually zero-diff edits to FJ6.5
+    * Added trap for Cly too small, in family xport
+
+2019-10-09 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_18
+    * In GMI, new values for ice and nat aerosols (surface area density)
+    * Also use CMIP6 files for surface area density
+    * GMI option to use HEMCO for MEGAN emissions
+    * In HEMCO, added a GMI instance
+    * In HEMCO GOCART instance added suffix to MEGAN emissions for symmetry
+    * In GOCART now disallow GOCART_DT /= HEARTBEAT_DT
+
+2019-10-09 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_17
+    * Added RAS_NO_NEG option for guarding against negative tracer values
+
+2019-08-20 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_16
+    * Added Jules' ship emissions option in GMI
+
+2019-07-16 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_15
+    * Added Elliot's new aoa_bl tracer in TR
+
 2019-06-21 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_15
     * In bundles, chem tracers now have grid comp prefix, to
       eliminate naming collisions
