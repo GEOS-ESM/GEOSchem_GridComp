@@ -943,6 +943,8 @@ CONTAINS
    n1    = w_c%reg%i_DU
    n2    = w_c%reg%j_DU
 
+if(mapl_am_i_root()) print*,'DU km = ',km
+
    ijl  = ( i2 - i1 + 1 ) * ( j2 - j1 + 1 )
    ijkl = ijl * km
 
