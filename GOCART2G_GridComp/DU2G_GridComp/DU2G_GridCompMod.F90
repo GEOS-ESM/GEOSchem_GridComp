@@ -52,7 +52,7 @@ module DU2G_GridCompMod
        real, allocatable      :: molwght(:)     ! molecular weight
        real, allocatable      :: fnum(:)        ! number of particles per kg mass
        real                   :: maringFlag     ! maring settling velocity correction
-       integer                :: n_bins
+       integer                :: nbins
        integer                :: km             ! vertical grid dimension
        real                   :: CDT            ! chemistry timestep (secs)
        character (len=ESMF_MAXSTR), allocatable    :: aerosol_names(:)
@@ -109,7 +109,7 @@ contains
     character (len=ESMF_MAXSTR)                 :: field_name
     character (len=ESMF_MAXSTR), allocatable    :: aerosol_names(:)
 
-    integer                                     :: n, i, nCols, n_bins
+    integer                                     :: n, i, nCols, nbins
     real                                        :: DEFVAL
     logical                                     :: data_driven = .true.
 !    integer, parameter                          :: bins = 5  ! This should equal the number of bins. Is this how we want to handle this?
@@ -144,22 +144,22 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
 
 !   Get names of aerosols and write to aerosol_names to add to AERO State
 !   ----------------------------------------------------------------------
-    call ESMF_ConfigGetDim (cfg, n_bins, nCols, label=('variable_table::'), __RC__ )
-    allocate (aerosol_names(n_bins), __STAT__)
+    call ESMF_ConfigGetDim (cfg, nbins, nCols, label=('variable_table::'), __RC__ )
+    allocate (aerosol_names(nbins), __STAT__)
     call ESMF_ConfigFindLabel (cfg, 'variable_table::', __RC__ )
 
-    do i = 1, n_bins
+    do i = 1, nbins
         call ESMF_ConfigNextLine( cfg, __RC__ )
         call ESMF_ConfigGetAttribute( cfg, aerosol_names(i), __RC__ )
     end do
 
-    self%n_bins = n_bins
+    self%nbins = nbins
 
 !   Parse config file into private internal state
 !   ----------------------------------------------
-    allocate(self%radius(n_bins), self%rlow(n_bins), self%rup(n_bins), self%sfrac(n_bins), &
-             self%rhop(n_bins), self%fscav(n_bins), self%molwght(n_bins), self%fnum(n_bins), &
-             self%aerosol_names(n_bins), __STAT__)
+    allocate(self%radius(nbins), self%rlow(nbins), self%rup(nbins), self%sfrac(nbins), &
+             self%rhop(nbins), self%fscav(nbins), self%molwght(nbins), self%fnum(nbins), &
+             self%aerosol_names(nbins), __STAT__)
 
     self%aerosol_names = aerosol_names
 
@@ -185,9 +185,6 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
         end if
     end if
 
-if(mapl_am_i_root()) print*,'DU2G self%Ch_DU',self%Ch_DU
-
-
 !   Set entry points
 !   ------------------------
     call MAPL_GridCompSetEntryPoint (GC, ESMF_Method_Initialize,  Initialize, __RC__)
@@ -204,20 +201,6 @@ if(mapl_am_i_root()) print*,'DU2G self%Ch_DU',self%Ch_DU
 !   Default internal state values
 !   -----------------------------
     DEFVAL = 0.0
-
-!   Aerosol Tracers to be transported
-!   ---------------------------------
-!    do i = 1, n_bins
-!        call MAPL_AddInternalSpec(GC,                                    &
-!          short_name = trim(comp_name)//'::'//trim(aerosol_names(i)),    &
-!          long_name  = 'Dust Mixing Ratio (bin '//trim(aerosol_names(i))//')', &
-!          units      = 'kg kg-1',                                        &
-!          restart    = MAPL_RestartOptional,                             &
-!          default    = DEFVAL,                                           &
-!          friendlyto = trim(comp_name),                                  &
-!          dims       = MAPL_DimsHorzVert,                                &
-!          vlocation  = MAPL_VLocationCenter, __RC__)
-!    end do
 
 #include "DU2G_InternalSpecs.h"
 
@@ -244,7 +227,7 @@ if(mapl_am_i_root()) print*,'DU2G self%Ch_DU',self%Ch_DU
           VLOCATION  = MAPL_VLocationCenter,                  &
           RESTART    = MAPL_RestartSkip,     __RC__)
 
-       do i = 1, n_bins 
+       do i = 1, nbins 
            write (field_name, '(A, I0.3)') '', i
             call MAPL_AddImportSpec(GC,                                     &
               short_name = 'climdu'//trim(field_name),                        &
@@ -385,7 +368,7 @@ if(mapl_am_i_root()) print*,'DU2G self%Ch_DU',self%Ch_DU
     type (DU2G_GridComp), pointer        :: self
 
     integer, allocatable                 :: mieTable_pointer(:)
-    integer                              :: i, n_bins, nCols, dims(3), km
+    integer                              :: i, nbins, nCols, dims(3), km
     integer                              :: instance
     type (ESMF_Field)                    :: field, fld
     character (len=ESMF_MAXSTR)          :: field_name, prefix
@@ -407,10 +390,6 @@ if(mapl_am_i_root()) print*,'DU2G self%Ch_DU',self%Ch_DU
     call ESMF_GridCompGet (GC, grid=grid, name=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) // '::' //trim(Iam)
 
-
-if (mapl_am_I_root()) print*,trim(comp_name),' INIT BEGIN'
-
-
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
     call MAPL_GetObjectFromGC (GC, MAPL, __RC__)
@@ -420,8 +399,6 @@ if (mapl_am_I_root()) print*,trim(comp_name),' INIT BEGIN'
     call ESMF_UserCompGetInternalState(GC, 'DU2G_GridComp', wrap, STATUS)
     VERIFY_(STATUS)
     self => wrap%ptr
-
-if (mapl_am_I_root()) print*,'DU2G Ch_DU before = ', self%Ch_DU
 
     call MAPL_GridGet ( grid, globalCellCountPerDim=dims, __RC__ )
 
@@ -434,12 +411,12 @@ if (mapl_am_I_root()) print*,'DU2G Ch_DU before = ', self%Ch_DU
 !   ---------------
     km = dims(3)
     self%km = km
+
 !   Get DTs
 !   -------
     call MAPL_GetResource(mapl, HDT, Label='RUN_DT:', __RC__)                        
     call MAPL_GetResource(mapl, CDT, Label='GOCART_DT:', default=real(HDT), __RC__)
     self%CDT = CDT
-
 
 !   Load resource file  
 !   -------------------
@@ -453,15 +430,14 @@ if (mapl_am_I_root()) print*,'DU2G Ch_DU before = ', self%Ch_DU
 
 !   Get names of aerosols and write to list to add to AERO State
 !   -------------------------------------------------------------
-    call ESMF_ConfigGetDim (cfg, n_bins, nCols, label=('variable_table::'), __RC__ )
-    allocate (aerosol_names(n_bins), __STAT__)
+    call ESMF_ConfigGetDim (cfg, nbins, nCols, label=('variable_table::'), __RC__ )
+    allocate (aerosol_names(nbins), __STAT__)
     call ESMF_ConfigFindLabel (cfg, 'variable_table::', __RC__ )
 
-    do i = 1, n_bins
+    do i = 1, nbins
         call ESMF_ConfigNextLine (cfg, __RC__ )
         call ESMF_ConfigGetAttribute (cfg, aerosol_names(i), __RC__ )
     end do
-
 
 !   Call Generic Initialize 
 !   ------------------------
@@ -488,7 +464,6 @@ if (mapl_am_I_root()) print*,'DU2G Ch_DU before = ', self%Ch_DU
 
 if(mapl_am_i_root()) print*,'DU2G INIT data_driven = ',data_driven
 
-
 !   Fill AERO States with dust fields
 !   ------------------------------------
     call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO'    , aero    , __RC__)
@@ -506,7 +481,7 @@ if(mapl_am_i_root()) print*,'DU2G INIT data_driven = ',data_driven
 !        call MAPL_StateAdd (aero    , fld, __RC__)
 !        call MAPL_StateAdd (aero_aci, fld, __RC__)
 
-    do i = 1, n_bins
+    do i = 1, nbins
         write (field_name, '(A, I0.3)') '', i
 
         call ESMF_StateGet (internal, trim(COMP_NAME)//'::'//trim(aerosol_names(i)), field, __RC__)
@@ -562,7 +537,6 @@ if(mapl_am_i_root()) print*,'DU2G INIT data_driven = ',data_driven
 
     call ESMF_AttributeSet(aero, name='band_for_aerosol_optics',             value=0,     __RC__)
 
-!    mieTable_pointer = transfer(c_loc(DU2G_GridComp), [1])
     mieTable_pointer = transfer(c_loc(self), [1])
 
     call ESMF_AttributeSet(aero, name='mieTable_pointer', valueList=mieTable_pointer, itemCount=size(mieTable_pointer), __RC__)
@@ -675,7 +649,8 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run END'
 
     integer                           :: import_shape(2), i2, j2
     real, pointer, dimension(:,:,:)   :: ptr3d_int
-    real, pointer, dimension(:,:,:)   :: emissions, dqa
+    real, pointer, dimension(:,:,:)   :: emissions
+    real, pointer, dimension(:,:)     :: dqa
     integer                           :: nymd, nhms, iyr, imm, idd, ihr, imn, isc
 
 !   !Indices for point emissions
@@ -735,25 +710,25 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run END'
 
 !   Implement gridded emission dust source
 !   --------------------------------------
-    allocate(emissions(1:i2,1:j2,self%n_bins), dqa(1:i2,1:j2,self%n_bins), __STAT__)
+    allocate(emissions, mold=DUEM,  __STAT__)
     emissions = 0.0
-    dqa = 0.0
 
     call DustEmissionGOCART2G(self%radius*1.e-6, frlake, wet1, lwi, u10m, v10m, &
-                              self%Ch_DU(1), self%sfrac, du_src, GRAV, &            !Chem_UtilResVal should return one value for Ch_DU, look into this!
+                              self%Ch_DU(1), self%sfrac, du_src, GRAV, &   
                               emissions, rc )
 
     if (associated(DUEM)) then
         DUEM = emissions
     end if
 
-    do n = 1, self%n_bins
-        dqa(:,:,n) = emissions(:,:,n) * self%CDT * GRAV / delp(:,:,self%km)
+    do n = 1, self%nbins
+        associate (dqa => emissions(:,:,n) * self%CDT * GRAV / delp(:,:,self%km))
 
         call MAPL_GetPointer(internal, name=trim(comp_name)//'::'//trim(self%aerosol_names(n)),&
                               ptr=ptr3d_int, __RC__)
 !       ! update internal pointer with emission
-        ptr3d_int(:,:,self%km) = ptr3d_int(:,:,self%km) + dqa(:,:,n) 
+        ptr3d_int(:,:,self%km) = ptr3d_int(:,:,self%km) + dqa 
+        end associate
     end do
 
 !   Read pointwise emissions, if requested
@@ -799,7 +774,7 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run END'
                                          self%pTop(k), GRAV, self%pEmis(k), &
                                          point_column_emissions, rc)
 
-           do n = 1, self%n_bins
+           do n = 1, self%nbins
 !              ! update internal pointer with emission
                call MAPL_GetPointer(internal, name=trim(comp_name)//'::'//trim(self%aerosol_names(n)),& 
                                     ptr=ptr3d_int, __RC__)
@@ -1091,7 +1066,7 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
     integer,                       intent(  out) :: rc
 
     ! local
-    integer                           :: l, n_bins, idx
+    integer                           :: l, nbins, idx
     real                              :: bext (size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! extinction
     real                              :: bssa (size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! SSA
     real                              :: gasym(size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! asymmetry parameter
@@ -1099,15 +1074,15 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
     __Iam__('DU2G::aerosol_optics::mie_')
 
 
-     n_bins = size(aerosol_names)
+     nbins = size(aerosol_names)
 
-     ASSERT_ (n_bins == size(q,4))
+     ASSERT_ (nbins == size(q,4))
 
      bext_s  = 0.0d0
      bssa_s  = 0.0d0
      basym_s = 0.0d0
 
-     do l = 1, n_bins
+     do l = 1, nbins
          idx = Chem_MieQueryIdx(mie_table, trim(aerosol_names(l)), __RC__)
          call Chem_MieQuery(mie_table, idx, real(offset+1.), q(:,:,:,l), rh, bext, gasym=gasym, ssa=bssa)
 
