@@ -602,6 +602,7 @@ CONTAINS
    integer, parameter :: nhres = 6   ! number of horizontal model resolutions: a,b,c,d,e
    real    :: Ch_DU(nhres)           ! emission tuning coefficient buffer
 
+real :: gcdu_test(nhres)
 
    rcfilen = trim(gcDU%rcfilen)
    gcDU%name = 'DU Constituent Package'
@@ -775,12 +776,21 @@ CONTAINS
    end do
    gcDU%Ch_DU = Chem_UtilResVal(im, jm, Ch_DU(:), ier(nhres + 2))
    gcDU%Ch_DU = gcDU%Ch_DU * 1.00E-09
+
+gcdu_test = Chem_UtilResVal(im, jm, Ch_DU(:), ier(nhres + 2))
+gcdu_test = gcdu_test * 1.00E-09
+
    if ( any(ier(1:nhres+2) /= 0) ) then
       call final_(50)
       return
    end if
 
-!f(mapl_am_i_root()) print*,'gcDU%Ch_DU = ',gcDU%Ch_DU
+if(mapl_am_i_root()) print*,'Ch_DU(:) = ',Ch_DU(:)
+if(mapl_am_i_root()) print*,'gcDU%Ch_DU = ',gcDU%Ch_DU
+if(mapl_am_i_root()) print*,'gcdu_test = ',gcdu_test
+if(mapl_am_i_root()) print*,'DU im = ', im
+if(mapl_am_i_root()) print*,'DU jm = ', jm
+
 
 !  Settling velocity correction following Maring et al, 2003
 !  ---------------
