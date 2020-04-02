@@ -34,6 +34,7 @@ module GEOS_ChemGridCompMod
   use TR_GridCompMod,           only : TR_SetServices        => SetServices
   use DNA_GridCompMod,          only : DNA_SetServices       => SetServices
   use HEMCO_GridCompMod,        only : HEMCO_SetServices     => SetServices
+  use GmiESMFrcFileReading_mod, only : rcEsmfReadLogical
 
   implicit none
   private
@@ -128,7 +129,9 @@ contains
 !
 ! ErrLog Variables
 
-    __Iam__('SetServices')
+    __Iam__('SetServices')      ! NOTE: this macro declares STATUS
+                                ! ALSO: Never set Iam = TRIM(Iam) // suffix
+                                !       because Iam is a SAVED varaible
     character(len=ESMF_MAXSTR) :: COMP_NAME
 
 ! Locals
@@ -149,12 +152,26 @@ contains
     CHARACTER(LEN=ESMF_MAXSTR) :: shortName
     CHARACTER(LEN=ESMF_MAXSTR) :: str
 
+    !GMI MEGAN isoprene related 
+    CHARACTER(LEN=255) :: gmi_rcfilen = 'GMI_GridComp.rc'
+    TYPE(ESMF_Config)  :: gmi_config
+    LOGICAL  doMEGANemission,  doMEGANviaHEMCO
+
 !   Private state
 !   -------------
     type (GEOS_ChemGridComp), pointer :: myState   ! private, that is
     type (GEOS_ChemGridComp_Wrap)     :: wrap
     type(Chem_Registry)               :: chemReg
     character(len=ESMF_MAXSTR) :: chem_gridcomp_rc_file
+
+!   Related to HEMCO
+!   ----------------
+    type (ESMF_Config)          :: HemcoCF
+    character(len=ESMF_MAXSTR)  :: Label
+    character(len=ESMF_MAXSTR)  :: ConfigFile
+    integer                     :: nnInst
+    logical                     :: GOCART_instance_of_HEMCO   ! TRUE if HEMCO is running a GOCART instance
+    logical                     ::    GMI_instance_of_HEMCO   ! TRUE if HEMCO is running a GMI instance
 
 !=============================================================================
 
@@ -166,9 +183,8 @@ contains
     Iam = TRIM(COMP_NAME) // '::' //TRIM(Iam)
 
 !   Wrap internal state for storing in GC; rename legacyState
-!   -------------------------------------
-    allocate ( myState, stat=STATUS )
-    VERIFY_(STATUS)
+!   ---------------------------------------------------------
+    allocate ( myState, __STAT__ )
     wrap%ptr => myState
 
 !   Load the Chemistry Registry
@@ -190,13 +206,15 @@ contains
     call ESMF_ConfigGetAttribute(cf, chem_gridcomp_rc_file, label = "GEOS_ChemGridComp_RC_File:", &
          default = "GEOS_ChemGridComp.rc", __RC__)
   
-! Choose children to birth and which children not to conceive
-! -----------------------------------------------------------
+! Identify which children to run
+! ------------------------------
     myCF = ESMF_ConfigCreate(__RC__)
+
     call ESMF_ConfigLoadFile ( myCF, chem_gridcomp_rc_file, __RC__ )
-    call ESMF_ConfigGetAttribute(myCF,      myState%enable_PCHEM, Default=.FALSE., Label="ENABLE_PCHEM:",       __RC__ )
-    call ESMF_ConfigGetAttribute(myCF,      myState%enable_ACHEM, Default=.FALSE., Label="ENABLE_ACHEM:",       __RC__ )
-    call ESMF_ConfigGetAttribute(myCF,     myState%enable_GOCART, Default=.FALSE., Label="ENABLE_GOCART:",      __RC__ )
+
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_PCHEM,      Default=.FALSE., Label="ENABLE_PCHEM:",       __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_ACHEM,      Default=.FALSE., Label="ENABLE_ACHEM:",       __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCART,     Default=.FALSE., Label="ENABLE_GOCART:",      __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCARTdata, Default=.FALSE., Label="ENABLE_GOCART_DATA:", __RC__ )
     call ESMF_ConfigGetAttribute(myCF,   myState%enable_GOCART2G, Default=.FALSE., Label="ENABLE_GOCART2G:",    __RC__ )
     call ESMF_ConfigGetAttribute(myCF,       myState%enable_GAAS, Default=.FALSE., Label="ENABLE_GAAS:",        __RC__ )
@@ -713,12 +731,12 @@ contains
     SHORT_NAME  = (/ "TO3" /), &
     DST_ID=GEOSCHEM, SRC_ID=PCHEM, __RC__)
 
-
    ! added by ckeller, 10/31/2018
    CALL MAPL_AddConnectivity ( GC, &
     SRC_NAME  = (/"O3"/), &
     DST_NAME  = (/"PCHEM_O3"/), &
     DST_ID = GEOSCHEM, SRC_ID = PCHEM, __RC__  )
+
   END IF
 
   ! GOCART needs ozone for CFC12 photolysis.
@@ -734,15 +752,53 @@ contains
 
 ! HEMCO connections to CHEMENV
 ! -----------------------------
+  ! Default values:
+       GMI_instance_of_HEMCO = .FALSE.
+    GOCART_instance_of_HEMCO = .FALSE.
+
   IF( myState%enable_HEMCO ) THEN
-   CALL MAPL_AddConnectivity ( GC, &
-    SHORT_NAME  = (/ 'AIRDENS' /), &
-    DST_ID=HEMCO, SRC_ID=CHEMENV, __RC__)
+
+    CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/ 'AIRDENS' /), DST_ID=HEMCO, SRC_ID=CHEMENV, __RC__)
+
+    !!!!!!!!!!!!!!!!!!
+    ! Determine if GOCART or GMI expect data from HEMCO:  
+    ! (adapted from HEMCO_GridCompMod.F90)
+    !!!!!!!!!!!!!!!!!!
+
+    ! Define ESMF config for HEMCO
+    HemcoCF = ESMF_ConfigCreate(__RC__)
+    CALL ESMF_ConfigLoadFile( HemcoCF, 'HEMCO_GridComp.rc', __RC__ )
+
+    ! Get number of instances
+    call ESMF_ConfigGetAttribute(HemcoCF, nnInst, Label="HEMCO_Instances:" , DEFAULT=1, __RC__)
+
+    ! Verbose
+    IF ( MAPL_Am_I_Root() ) WRITE(*,*) 'CHEMsetup - number of HEMCO instances: ', nnInst
+
+
+    ! Identify HEMCO instances
+    DO N = 1, nnInst
+
+       ! Get HEMCO configuration file names
+       WRITE(Label,'(a14,i3.3,a1)') 'HEMCO_CONFIG--',N,':'
+       call ESMF_ConfigGetAttribute( HemcoCF, ConfigFile, Label=TRIM(Label), &
+                                     DEFAULT="HEMCOsa_Config.rc", __RC__)
+
+       IF ( TRIM(ConfigFile) ==    'HEMCOgmi_Config.rc' )    GMI_instance_of_HEMCO = .TRUE.
+       IF ( TRIM(ConfigFile) == 'HEMCOgocart_Config.rc' ) GOCART_instance_of_HEMCO = .TRUE.
+
+       ! Verbose
+       IF ( MAPL_Am_I_Root() ) WRITE(*,'(a19,i3.3,a2,a)') '--> HEMCO instance ', N, ': ', TRIM(ConfigFile)
+
+    ENDDO
+
+    IF ( MAPL_Am_I_Root() ) WRITE(*,*) '-->    GMI_instance_of_HEMCO: ',    GMI_instance_of_HEMCO
+    IF ( MAPL_Am_I_Root() ) WRITE(*,*) '--> GOCART_instance_of_HEMCO: ', GOCART_instance_of_HEMCO
   END IF
 
 ! HEMCO -> GOCART
-! -----------------------------
-  IF( myState%enable_HEMCO .AND. myState%enable_GOCART ) THEN
+! ---------------
+  IF( myState%enable_HEMCO .AND. myState%enable_GOCART .and. GOCART_instance_of_HEMCO ) THEN
    CALL MAPL_AddConnectivity ( GC, &
     SHORT_NAME  = (/ 'SU_ANTHROL1' , 'SU_ANTHROL2',    &
                      'SU_SHIPSO2 ' , 'SU_SHIPSO4 ',    &
@@ -758,6 +814,52 @@ contains
     SRC_ID=HEMCO, DST_ID=GOCART, __RC__)
   END IF
 
+! HEMCO -> GMI 
+! ------------
+  IF( myState%enable_HEMCO .AND. myState%enable_GMICHEM ) THEN
+
+     ! MEM - NOTE: We have more flags than we need;
+     ! if we are running a GMI instance of HEMCO then it stands to reason that
+     ! doMEGANviaHEMCO and doMEGANemission are both TRUE.
+     ! Enforce consistency!
+     ! (We could just AddConnectivity for GMI_ISOPRENE without checking
+     ! whether it will be used, but if settings are inconsistent
+     ! the model may not be doing what the user expects.)
+
+     ! read GMI configuration
+     gmi_config = ESMF_ConfigCreate(__RC__ )
+     call ESMF_ConfigLoadFile(gmi_config, TRIM(gmi_rcfilen), __RC__ )
+
+     call rcEsmfReadLogical(gmi_config, doMEGANemission, &
+                                       "doMEGANemission:", default=.false., __RC__ )
+
+     call rcEsmfReadLogical(gmi_config, doMEGANviaHEMCO, &
+                                       "doMEGANviaHEMCO:", default=.false., __RC__ )
+       
+     ! make sure we don't have inconsistent HEMCO flags
+     IF ( GMI_instance_of_HEMCO .neqv. doMEGANviaHEMCO ) THEN
+        PRINT*,'Inconsistency --- HEMCO GMI instance  = ', GMI_instance_of_HEMCO
+        PRINT*,'              --- GMI:doMEGANviaHEMCO = ', doMEGANviaHEMCO
+        STATUS=98
+        VERIFY_(STATUS)
+     END IF
+
+     ! make sure we don't have inconsistent MEGAN flags
+     IF ( doMEGANviaHEMCO .eqv. .TRUE.    .AND.  &
+          doMEGANemission .eqv. .FALSE. ) THEN
+        PRINT*,'Inconsistent GMI flags: doMEGANviaHEMCO==T, doMEGANemission==F'
+        STATUS=99
+        VERIFY_(STATUS)
+     END IF
+
+     ! connect HEMCO isoprene to GMI if doMEGANviaHEMCO is true
+     IF (doMEGANviaHEMCO) THEN
+        CALL MAPL_AddConnectivity ( GC,          &
+             SHORT_NAME  = (/'GMI_ISOPRENE'/),   &
+             SRC_ID=HEMCO, DST_ID=GMICHEM, __RC__)
+     ENDIF
+
+  END IF
 
 ! Finally, set the services
 ! -------------------------
