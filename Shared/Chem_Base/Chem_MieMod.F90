@@ -23,9 +23,6 @@
    use m_die, only: die
    use m_inpak90
 
-
-   use ESMF
-
 #if defined(GEOS5)
    use ESMF
    use MAPL
@@ -42,13 +39,13 @@
 ! !PUBLIC MEMBER FUNCTIONS:
 !
    public  Chem_MieCreate          ! Constructor 
-   public  Chem_MieCreateng        ! Constructor for GOCARTng. Does not use Chem_Registry
    public  Chem_MieDestroy         ! Destructor
    public  Chem_MieQuery           ! Query the Mie table to return parameters (qname interface)
    public  Chem_MieQueryTauList    
    public  Chem_MieQueryAllBand3D
    public  Chem_MieQueryAllBand4D
    public  Chem_MieQueryIdx        ! Query the index of the mie table given the qname
+
 !
 ! !DESCRIPTION:
 !
@@ -81,7 +78,7 @@
      character(len=255) :: su_optics_file
      character(len=255) :: ni_optics_file
      character(len=255) :: sm_optics_file
-     character(len=255) :: optics_file
+
                                            ! mie tables -- dim(nch,nrh,nbin)
      type(Chem_MieTable), pointer :: mie_DU  => null()
      type(Chem_MieTable), pointer :: mie_SS  => null()
@@ -91,7 +88,6 @@
      type(Chem_MieTable), pointer :: mie_SU  => null()
      type(Chem_MieTable), pointer :: mie_NI  => null()
      type(Chem_MieTable), pointer :: mie_SM  => null()
-     type(Chem_MieTable), pointer :: mie_aerosol  => null()
 
      integer :: nq                                ! number of tracers
      character(len=255), pointer  :: vname(:)  => null()
@@ -510,8 +506,6 @@ contains
    call ESMF_ConfigGetAttribute( CF, this%ss_optics_file, Label="SS_OPTICS:" , &
                                  default='ExtData/g5chem/x/opticsBands_SS.nc4', &
                                  __RC__ )
-if (mapl_am_i_root()) print *,'SS_OPTICS FILE = ',trim(this%ss_optics_file)
-
    call ESMF_ConfigGetAttribute( CF, this%su_optics_file, Label="SU_OPTICS:" , &
                                  default='ExtData/g5chem/x/opticsBands_SU.nc4', &
                                  __RC__ )
@@ -530,15 +524,11 @@ if (mapl_am_i_root()) print *,'SS_OPTICS FILE = ',trim(this%ss_optics_file)
    call ESMF_ConfigGetAttribute( CF, this%nch           , Label= "NUM_BANDS:" , &
                                  default=18, __RC__)
 
-if (mapl_am_i_root()) print*,'GOCART this%nch = ', this%nch
-
    allocate ( this%channels(this%nch), stat=rc )
    if ( rc /= 0 ) return 
 
    call ESMF_ConfigGetAttribute( CF, this%channels       , Label= "BANDS:" , &
                                  count=this%nch, rc=rc )
-
-if (mapl_am_i_root()) print*,'GOCART this%channels', this%channels
 
 !  If there is no BAND definition on CF, make something up
 !  -------------------------------------------------------
@@ -796,9 +786,9 @@ end subroutine Chem_MieDestroy
 !
 ! !INTERFACE:
 !
-   impure elemental subroutine Chem_MieQueryByInt ( this, idx, channel, q_mass, rh,     &
+   subroutine Chem_MieQueryByInt ( this, idx, channel, q_mass, rh,     &
                                    tau, ssa, gasym, bext, bsca, bbck,  &
-                                   reff, p11, p22, gf, rhop, rhod, &
+                                   reff, pmom, p11, p22, gf, rhop, rhod, &
                                    vol, area, refr, refi, rc )
 
 ! !INPUT PARAMETERS:
@@ -818,7 +808,7 @@ end subroutine Chem_MieDestroy
    real,    optional,      intent(out) :: bsca  ! mass scattering efficiency [m2 (kg dry mass)-1]
    real,    optional,      intent(out) :: bbck  ! mass backscatter efficiency [m2 (kg dry mass)-1]
    real,    optional,      intent(out) :: reff  ! effective radius (micron)
-!   real,    optional,      intent(out) :: pmom(:,:)
+   real,    optional,      intent(out) :: pmom(:,:)
    real,    optional,      intent(out) :: p11   ! P11 phase function at backscatter
    real,    optional,      intent(out) :: p22   ! P22 phase function at backscatter
    real,    optional,      intent(out) :: gf    ! Growth factor (ratio of wet to dry radius)
@@ -905,10 +895,10 @@ end subroutine Chem_MieDestroy
          rEff = 1.E6 * rEff ! convert to microns
       endif
 
-!      if(present(pmom)) then
-!         pmom(:,:) = TABLE%pmom(irh  ,ichannel,TYPE,:,:) * (1.-arh) &
-!                   + TABLE%pmom(irhp1,ichannel,TYPE,:,:) * arh
-!      endif
+      if(present(pmom)) then
+         pmom(:,:) = TABLE%pmom(irh  ,ichannel,TYPE,:,:) * (1.-arh) &
+                   + TABLE%pmom(irhp1,ichannel,TYPE,:,:) * arh
+      endif
 
       if(present(p11) ) then
          p11In =   TABLE%pback(irh  ,ichannel,TYPE,1) * (1.-arh) &
@@ -975,7 +965,6 @@ end subroutine Chem_MieDestroy
  end subroutine Chem_MieQueryByInt
 
 
-
    subroutine Chem_MieQueryTauList ( this, idx, channel, q_mass, rh, tau, rc )
 
 
@@ -1029,9 +1018,9 @@ end subroutine Chem_MieDestroy
     end subroutine Chem_MieQueryTauList
 
 
-   impure elemental subroutine Chem_MieQueryByChar( this, idx, channel, q_mass, rh,     &
+   subroutine Chem_MieQueryByChar( this, idx, channel, q_mass, rh,     &
                                    tau, ssa, gasym, bext, bsca, bbck,  &
-                                   rEff, p11, p22, rc )
+                                   rEff, pmom, p11, p22, rc )
 
 !  ! INPUT parameters
    type(Chem_Mie), target, intent(in ) :: this     
@@ -1048,7 +1037,7 @@ end subroutine Chem_MieDestroy
    real,    optional,      intent(out) :: bsca  ! mass scattering efficiency [m2 (kg dry mass)-1]
    real,    optional,      intent(out) :: bbck  ! mass backscatter efficiency [m2 (kg dry mass)-1]
    real,    optional,      intent(out) :: reff  ! effective radius (micron)
-!   real,    optional,      intent(out) :: pmom(:,:)
+   real,    optional,      intent(out) :: pmom(:,:)
    real,    optional,      intent(out) :: p11   ! P11 phase function at backscatter
    real,    optional,      intent(out) :: p22   ! P22 phase function at backscatter
    integer, optional,      intent(out) :: rc    ! error code
@@ -1072,7 +1061,7 @@ end subroutine Chem_MieDestroy
       if( uppercase(trim(NAME)) == uppercase(trim(this%vname(iq)))) then
          call  Chem_MieQueryByInt( this, iq, channel, q_mass, rh,     &
                              tau, ssa, gasym, bext, bsca, bbck, &
-                             rEff, p11, p22, rc=rc )
+                             rEff, pmom, p11, p22, rc=rc )
          if ( rc /= 0 ) return
       endif
    enddo
@@ -1271,102 +1260,6 @@ end subroutine Chem_MieDestroy
       return
 
     end subroutine Chem_MieQueryAllBand4D
-
-
-!-------------------------------------------------------------------------
-!     NASA/GSFC, Global Modeling and Assimilation Office, Code 610.1     !
-!-------------------------------------------------------------------------
-!BOP
-!
-! !IROUTINE:  Chem_MieCreateng --- Construct Mie LUTs from CF object for GOCARTng.
-!                                  It does not use any Registry.rc files.
-!
-! !INTERFACE:
-!
-  function Chem_MieCreateng ( cf, NUM_BANDS, rc ) result(this)
-
-! !INPUT PARAMETERS:
-   type (ESMF_Config)             :: cf          ! Mie table file name
-   integer                        :: NUM_BANDS   ! Number of radiation bands
-
-! !OUTPUT PARAMETERS:
-   type (Chem_Mie) this
-   integer, intent(out) ::  rc
-
-! !DESCRIPTION:
-!
-!  This routine creates a LUT object from an ESMF configuration
-!  attribute CF. This routine is usually called from GEOS-5.
-!
-!  IMPORTANT: Does not yet handle the phase function!!!!
-!
-! !REVISION HISTORY:
-!
-!  09Mar2005 da Silva  API, prologues.
-!  25Nov2019 E. Sherman - refactored from Chem_MieCreate
-!
-!EOP
-!-------------------------------------------------------------------------
-   
-   type (ESMF_Config)    :: cfg
-   integer               :: iq, i, nCols
-   __Iam__('Chem_MieCreateng')
-
-
-
-!  Set up the hash table to map the variable names to the
-!  corresponding Mie Table
-!  -----------------------------------------------------
-   call ESMF_ConfigGetDim( CF, this%nq, nCols, label=('variable_table::'), __RC__ )
-   allocate(this%vname(this%nq), this%vindex(this%nq), __STAT__ )
-   allocate(this%vtable(this%nq), __STAT__ )
-
-   call ESMF_ConfigFindLabel( CF, 'variable_table::', __RC__ )
-   do iq = 1, this%nq
-      this%vindex(iq) = iq
-      call ESMF_ConfigNextLine( CF, __RC__ )
-      call ESMF_ConfigGetAttribute( CF, this%vname(iq), __RC__ )
-   enddo
-
-
-!  Get file names for the optical tables
-!  -------------------------------------
-   call ESMF_ConfigGetAttribute( CF, this%optics_file, Label="OPTICS_FILE:", __RC__ )
-
-!  Set the number of bands and channels
-!  -------------------------------------
-  this%nch = NUM_BANDS
-
-!  Make chanel = number of bands
-!  --------------------------------------------------------------------
-   allocate ( this%channels(this%nch), __STAT__ )
-
-   do i = 1, this%nch
-       this%channels(i) = i
-   end do
-
-   allocate(this%mie_aerosol, __STAT__)
-   this%mie_aerosol = Chem_MieTableCreate( this%optics_file, __RC__ )
-   call Chem_MieTableRead( this%mie_aerosol, this%nch, this%channels, __RC__)
-
-
-!  Now map the mie tables to the hash table for the registry
-!  This part is hard-coded for now!
-!  ---------------------------------------------------------
-   do iq = 1, this%nq
-       this%vtable(iq) = this%mie_aerosol
-   end do
-
-
-!  All done
-!  --------
-   RETURN_(ESMF_SUCCESS)
-
- end function Chem_MieCreateng
-
-
-!-----------------------------------------------------------------------------------
-
 
  end module Chem_MieMod
 
