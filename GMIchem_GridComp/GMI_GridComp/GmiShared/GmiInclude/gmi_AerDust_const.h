@@ -19,6 +19,6 @@
 !      integer, parameter :: naer_b  = 5  ! number of other aerosol bins
 !      integer, parameter :: naer_ndust = naer_b + ndust_b
 
-      integer, parameter :: nrh_b   = 5  ! number of relative humidity bins
+      integer, parameter :: nrh_b   = 7  ! number of relative humidity bins
 
       INTEGER, parameter :: NP_b = 56
