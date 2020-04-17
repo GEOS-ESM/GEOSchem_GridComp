@@ -323,6 +323,13 @@ CONTAINS
         DIMS       = MAPL_DimsHorzVert,                    &
         VLOCATION  = MAPL_VLocationCenter,   __RC__) 
 
+     call MAPL_AddImportSpec(GC,                           & 
+        SHORT_NAME = 'CNV_FRC',                            &
+        LONG_NAME  = 'convective_fraction',                &
+        UNITS      = '',                                   &
+        DIMS       = MAPL_DimsHorzOnly,                    &
+        VLOCATION  = MAPL_VLocationNone,     __RC__) 
+
      ! add MEGAN emission imports -sas 
      ! note: might change this later to use GMICHEM_ImportSpec___.h
      gmi_config = ESMF_ConfigCreate(__RC__ )

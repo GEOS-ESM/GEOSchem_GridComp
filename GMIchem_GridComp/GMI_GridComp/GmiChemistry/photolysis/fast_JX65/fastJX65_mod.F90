@@ -4,6 +4,7 @@
 !
 ! !USES:
       !use GmiASCIIoperations_mod, only : AsciiOpenRead
+      use MAPL_BaseMod, only: MAPL_UNDEF
 
       implicit none
 
@@ -44,7 +45,7 @@
      &                  press3e_ij, pctm_ij, kel_ij,                     &
      &                  surf_alb_ij, qjgmi_ij, relHumidity_ij,           &
      &                  overheadO3col_ij, ODAER_ij, ODMDUST_ij,          &
-     &                  fjx_solar_cycle_param, ozone_ij)
+     &                  optdepth_ij, fjx_solar_cycle_param, ozone_ij)
 !
 #include "parm_CTM_fastJX65.h"
 #include "cmn_JVdat_fastJX65.h"
@@ -79,7 +80,7 @@
 ! !OUTPUT PARAMETERS:
       real*8,  intent(out) :: overheadO3col_ij(k1:k2)
       real*8,  intent(out) :: qjgmi_ij(k1:chem_mask_khi, num_qjs)
-!     real*8,  intent(out) :: optdepth_ij(k1:k2) ! optical depth in box   (unitless) [od]
+      real*8,  intent(out) :: optdepth_ij(k1:k2) ! optical depth in box   (unitless) [od]
 !
 ! !LOCAL VARIABLES:
       real*8  ZPJ(chem_mask_khi-k1+1, num_qjs)    !2-D array of J's indexed to CTM chemistry!
@@ -210,7 +211,7 @@
       ! FREFL: fraction of flux (energy-wtd) reflected (out)
       ! ZPJ:   2D array of J's indexed to CTM chemistry (out)
 
-      call PHOTOJ(GMTAU, IDAY, ILNG, JLAT, SOLF, SZA_ij, U0, FREFL, ZPJ, fjx_solar_cycle_param)
+      call PHOTOJ(GMTAU, IDAY, ILNG, JLAT, SOLF, SZA_ij, U0, FREFL, ZPJ, fjx_solar_cycle_param, optdepth_ij)
 
       ! Store the photolysis rate constants
       qjgmi_ij(:,:) = ZPJ(:,:)
@@ -1063,7 +1064,7 @@ end subroutine RD_PROF
 !<<<<<<<<<<<<<<<<<<<<<begin CTM-fastJX linking subroutines<<<<<<<<<<<<<<
 !-----------------------------------------------------------------------
 subroutine PHOTOJ (UTIME, IDAY, ILNG, JLAT, SOLF, SZA_ij, U0, FREFL, &
- ZPJ, fjx_solar_cycle_param)
+ ZPJ, fjx_solar_cycle_param, OD600)
 !-----------------------------------------------------------------------
 !
 !  PHOTOJ is the gateway to fast-JX calculations:
@@ -1091,6 +1092,7 @@ real (8) , intent (out) ::ZPJ (JVL_, JVN_)
                                                !fraction of energy refle
 
 real (8) , intent (out) ::FREFL, U0
+real (8) , intent (out) ::OD600 (L1_)
 !-----------------------------------------------------------------------
 !--------key amtospheric data needed to solve plane-parallel J---------
 real (8) , dimension (L1_ + 1) ::TTJ, DDJ, ZZJ, ZHL
@@ -1117,7 +1119,6 @@ real (8) :: AMF2 (2 * L1_ + 1, 2 * L1_ + 1)
 !      real (8) :: OPTX (4), SSAX (4), SLEGX (8, 4)
 !      real (8) :: OD (4, L1_), SSA (4, L1_), SLEG (8, 4, L1_)
 ! endBian, 11/22/2011
-real (8) :: OD600 (L1_)
 real (8) :: PATH, DENSWP, DENS, RH, RHO, REFF, XTINCT, ODCLD
 !------------key arrays AFTER solving for J's---------------------------
 real (8) :: FFF (W_, JVL_), VALJ (X_)
@@ -1152,7 +1153,12 @@ FREFI = 0.d0
 !---check for dark conditions SZA > 98.0 deg => tan ht = 63 km
 !                        or         99.                  80 km
 
-if (SZA.gt.SZAMAX) goto 99
+!... set Cloud OD diagnostic to UNDEF at night
+if (SZA.gt.SZAMAX) then
+  OD600(:) = MAPL_UNDEF
+  goto 99
+endif
+
 !---load the amtospheric column data
 ! begBian, 11/21/2011
       do L = 1, L1_
@@ -1349,21 +1355,21 @@ do L = 1, L1_
 !       additonal levels at top of clouds (now uses log spacing)
 !-----------------------------------------------------------------------
 
-call EXTRAL (OD600, L1_, L2_, N_, JTAUMX, ATAU, ATAU0, JXTRA)
+      call EXTRAL (OD600, L1_, L2_, N_, JTAUMX, ATAU, ATAU0, JXTRA)
 !-----------------------------------------------------------------------
 !---set surface reflectance
-RFLECT = SA (ILNG, JLAT)
+      RFLECT = SA (ILNG, JLAT)
 
 
 
-RFL (:) = max (0.d0, min (1.d0, RFLECT) )
+      RFL (:) = max (0.d0, min (1.d0, RFLECT) )
 !-----------------------------------------------------------------------
 !---Loop over all wavelength bins to calc mean actinic flux AVGF(L)
 !-----------------------------------------------------------------------
 
       do K = 1, W_
          WAVE = WL (K)
-         !---Pick nearest Mie wavelength to get scattering properites------------
+!---Pick nearest Mie wavelength to get scattering properites------------
 
 !... mem+sds: This is from an old 5-element table:
 !        KMIE = 1                      !... use 200 nm prop for <255 nm
@@ -1415,25 +1421,25 @@ RFL (:) = max (0.d0, min (1.d0, RFLECT) )
                    FJBOT, FSBOT, FJFLX, FLXD, FLXD0)
 !-----------------------------------------------------------------------
 
-do K = 1, W_
+      do K = 1, W_
 !----direct(DIR) and diffuse(FLX) fluxes at top(UP) (solar = negative by
 !----     also at bottom (DN), does not include diffuse reflected flux.
-FLXUP (K) = FJTOP (K)
-DIRUP (K) = - FLXD0 (K)
-FLXDN (K) = - FJBOT (K)
+        FLXUP (K) = FJTOP (K)
+        DIRUP (K) = - FLXD0 (K)
+        FLXDN (K) = - FJBOT (K)
 
-DIRDN (K) = - FSBOT (K)
-do L = 1, JVL_
+        DIRDN (K) = - FSBOT (K)
+        do L = 1, JVL_
 !.sds orig fastJX6.5
 !            FFF (K, L) = FFF (K, L) + SOLF * FL (K) * AVGF (L, K)
 !.sds add solar cycle capability
             FFF (K, L) = FFF (K, L) + SOLF * FL (K) * AVGF (L, K) * fjx_solar_cycle_param(K)
-enddo
-FREFI = FREFI + SOLF * FL (K) * FLXD0 (K) / WL (K)
-FREFL = FREFL + SOLF * FL (K) * FJTOP (K) / WL (K)
+        enddo
+        FREFI = FREFI + SOLF * FL (K) * FLXD0 (K) / WL (K)
+        FREFL = FREFL + SOLF * FL (K) * FJTOP (K) / WL (K)
 
 
-FREFS = FREFS + SOLF * FL (K) / WL (K)
+        FREFS = FREFS + SOLF * FL (K) / WL (K)
 !---for each wavelength calculate the flux budget/heating rates:
 !  FLXD(L) = direct flux deposited in layer L  [approx = MU0*(F(L+1) -F(
 !            but for spherical atmosphere!
@@ -1441,68 +1447,68 @@ FREFS = FREFS + SOLF * FL (K) / WL (K)
 !---calculate divergence of diffuse flux in each CTM layer (& t-o-a)
 !---     need special fix at top and bottom:
 !---FABOT = total abs at L.B. &  FXBOT = net diffusive flux at L.B.
-FABOT = (1.d0 - RFL (K) ) * (FJBOT (K) + FSBOT (K) )
-FXBOT = - FJBOT (K) + RFL (K) * (FJBOT (K) + FSBOT (K) )
-FLXJ (1) = FJFLX (1, K) - FXBOT
-do L = 2, L_
-FLXJ (L) = FJFLX (L, K) - FJFLX (L - 1, K)
-enddo
-FLXJ (L_ + 1) = FJTOP (K) - FJFLX (L_, K)
+        FABOT = (1.d0 - RFL (K) ) * (FJBOT (K) + FSBOT (K) )
+        FXBOT = - FJBOT (K) + RFL (K) * (FJBOT (K) + FSBOT (K) )
+        FLXJ (1) = FJFLX (1, K) - FXBOT
+        do L = 2, L_
+          FLXJ (L) = FJFLX (L, K) - FJFLX (L - 1, K)
+        enddo
+        FLXJ (L_ + 1) = FJTOP (K) - FJFLX (L_, K)
 !---calculate net flux deposited in each CTM layer (direct & diffuse):
-FFX0 = 0.d0
-do L = 1, L1_
-FFX (K, L) = FLXD (L, K) - FLXJ (L)
-FFX0 = FFX0 + FFX (K, L)
+        FFX0 = 0.d0
+        do L = 1, L1_
+          FFX (K, L) = FLXD (L, K) - FLXJ (L)
+          FFX0 = FFX0 + FFX (K, L)
 
 
-enddo
+        enddo
 !  NB: the radiation level ABOVE the top CTM level is included in these
 !      these are the flux budget/heating terms for the column:
-!  FFXNET(K,1) = FLXD0        direct(solar) flux dep into atmos (spheric
-!  FFXNET(K,2) = FSBOT        direct(solar) flux dep onto LB (surface)
-!  FFXNET(K,3) = FLXD0+FSBOT  TOTAL solar into atmopshere+surface
-!  FFXNET(K,4) = FJTOP        diffuse flux leaving top-of-atmos
-!  FFXNET(K,5) = FFX0         diffuse flux absorbed in atmos
-!  FFXNET(K,6) = FABOT        total (dir+dif) absorbed at LB (surface)
-!       these are surface fluxes to compare direct vs. diffuse:
-!  FFXNET(K,7) = FSBOT        direct flux dep onto LB (surface) - for sr
-!  FFXNET(K,8) = FJBOT        diffuse flux dep onto LB (surface)
-FFXNET (K, 1) = FLXD0 (K)
-FFXNET (K, 2) = FSBOT (K)
-FFXNET (K, 3) = FLXD0 (K) + FSBOT (K)
-FFXNET (K, 4) = FJTOP (K)
-FFXNET (K, 5) = FFX0
-FFXNET (K, 6) = FABOT
-FFXNET (K, 7) = FSBOT (K)
+!          FFXNET(K,1) = FLXD0        direct(solar) flux dep into atmos (spheric
+!          FFXNET(K,2) = FSBOT        direct(solar) flux dep onto LB (surface)
+!          FFXNET(K,3) = FLXD0+FSBOT  TOTAL solar into atmopshere+surface
+!          FFXNET(K,4) = FJTOP        diffuse flux leaving top-of-atmos
+!          FFXNET(K,5) = FFX0         diffuse flux absorbed in atmos
+!          FFXNET(K,6) = FABOT        total (dir+dif) absorbed at LB (surface)
+!  these are surface fluxes to compare direct vs. diffuse:
+!          FFXNET(K,7) = FSBOT        direct flux dep onto LB (surface) - for sr
+!          FFXNET(K,8) = FJBOT        diffuse flux dep onto LB (surface)
+        FFXNET (K, 1) = FLXD0 (K)
+        FFXNET (K, 2) = FSBOT (K)
+        FFXNET (K, 3) = FLXD0 (K) + FSBOT (K)
+        FFXNET (K, 4) = FJTOP (K)
+        FFXNET (K, 5) = FFX0
+        FFXNET (K, 6) = FABOT
+        FFXNET (K, 7) = FSBOT (K)
 
-FFXNET (K, 8) = FJBOT (K)
+        FFXNET (K, 8) = FJBOT (K)
 !-----------------------------------------------------------------------
                   ! end loop over wavelength K
 
-enddo
+      enddo
 !-----------------------------------------------------------------------
                                    !calculate reflected flux (energy wei
-FREFL = FREFL / FREFS
+      FREFL = FREFL / FREFS
 
 
-FREFI = FREFI / FREFS
+      FREFI = FREFI / FREFS
 !---NB UVB = 280-320 = bins 12:15, UVA = 320-400 = bins 16:17, VIS = bin
 !-----------------------------------------------------------------------
 
-call JRATET (PPJ, TTJ, FFF, VALJL)
+      call JRATET (PPJ, TTJ, FFF, VALJL)
 !-----------------------------------------------------------------------
 !---map the J-values from fast-JX onto ASAD ones (use JIND & JFACTA)
-do L = 1, JVL_
-do J = 1, NRATJ
-if (JIND (J) .gt.0) then
-     ZPJ (L, J) = VALJL (L, JIND (J) ) * JFACTA (J)
-else
-     ZPJ (L, J) = 0.d0
-endif
-enddo
+      do L = 1, JVL_
+        do J = 1, NRATJ
+          if (JIND (J) .gt.0) then
+            ZPJ (L, J) = VALJL (L, JIND (J) ) * JFACTA (J)
+          else
+            ZPJ (L, J) = 0.d0
+          endif
+        enddo
 
 
-enddo
+      enddo
 !---diagnostics that are NOT returned to the CTM code
 !-----------------------------------------------------------------------
 

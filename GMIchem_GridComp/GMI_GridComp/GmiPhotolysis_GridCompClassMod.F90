@@ -156,6 +156,7 @@
     integer             :: num_qjs
     integer             :: num_qjo
     integer             :: sfalbedo_opt
+    integer             :: cldflag
     INTEGER             :: jNOindex
     REAL                :: jNOamp
     real*8              :: saldif_init_val
@@ -179,7 +180,15 @@
     character (len=MAX_LENGTH_FILE_NAME) :: aerosolOpticalData_file
     character (len=MAX_LENGTH_FILE_NAME) :: rate_file
     character (len=MAX_LENGTH_FILE_NAME) :: T_O3_climatology_file
+    character (len=MAX_LENGTH_FILE_NAME) :: H2O_CH4_climatology_file
     character (len=MAX_LENGTH_FILE_NAME) :: scattering_data_file
+!... FastJX74 file names
+    character (len=MAX_LENGTH_FILE_NAME) :: cloud_scat_file
+    character (len=MAX_LENGTH_FILE_NAME) :: ssa_scat_file
+    character (len=MAX_LENGTH_FILE_NAME) :: aer_scat_file
+    character (len=MAX_LENGTH_FILE_NAME) :: UMaer_scat_file
+    character (len=MAX_LENGTH_FILE_NAME) :: GMI_scat_file
+!
     logical             :: do_solar_cycle
     character (len=MAX_LENGTH_FILE_NAME) :: sc_infile_name
     logical             :: do_ozone_inFastJX
@@ -207,7 +216,7 @@
 
 ! Component derived type declarations
 ! -----------------------------------
-   TYPE(t_gmiGrid   )		:: gmiGrid
+   TYPE(t_gmiGrid   )           :: gmiGrid
    TYPE(t_GmiClock  )           :: gmiClock
    TYPE(t_SpeciesConcentration) :: SpeciesConcentration
  
@@ -231,7 +240,7 @@ CONTAINS
                                       tdt, rc )
 
    USE GmiSpcConcentrationMethod_mod, ONLY : InitializeSpcConcentration
-   USE GmiGrid_mod,		      ONLY : InitializeGmiGrid
+   USE GmiGrid_mod,                   ONLY : InitializeGmiGrid
    USE GmiTimeControl_mod,            ONLY : Set_curGmiDate, Set_curGmiTime
    USE GmiTimeControl_mod,            ONLY : Set_begGmiDate, Set_begGmiTime
    USE GmiTimeControl_mod,            ONLY : Set_numTimeSteps
@@ -241,6 +250,7 @@ CONTAINS
    use Fast_JX53b      , only : InitializeFastJX53b
    use Fast_JX53c      , only : InitializeFastJX53c
    use fastJX65_mod,     only : initializeFastJX65
+   use CloudJ_mod,       only : initializeFastJX74
    USE ReadSolarCycle_mod,            ONLY : readSolarCycleData
 
    IMPLICIT none
@@ -252,8 +262,8 @@ CONTAINS
 ! !INPUT PARAMETERS:
 !
    TYPE(Chem_Bundle), INTENT(in) :: w_c                ! Chemical tracer fields, delp, +
-   INTEGER, INTENT(IN) :: nymd, nhms		       ! Time from AGCM
-   REAL,    INTENT(IN) :: tdt			       ! Chemistry time step (secs)
+   INTEGER, INTENT(IN) :: nymd, nhms                   ! Time from AGCM
+   REAL,    INTENT(IN) :: tdt                          ! Chemistry time step (secs)
 !
 ! !OUTPUT PARAMETERS:
 !
@@ -432,11 +442,13 @@ CONTAINS
 
 !     -----------------------------------------------------
 !     fastj_opt: set when phot_opt=3
-!     0: for fastJ
-!     1: for fastJx
-!     2: for fastJx53b
-!     2: for fastJx53c
-!    -----------------------------------------------------
+!       0:  FastJ
+!       1:  FastJx       (supported)
+!       2:  FastJx 5.3b
+!       3:  FastJx 5.3c
+!       4:  FastJx 6.5   (supported)
+!       5:  CloudJ       (supported) (FastJX 7.4)
+!     -----------------------------------------------------
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%fastj_opt, &
      &                label   = "fastj_opt:", &
@@ -444,11 +456,23 @@ CONTAINS
       VERIFY_(STATUS)
 
       call rcEsmfReadLogical(gmiConfigFile, self%do_clear_sky, "do_clear_sky:", &
-     &                       default=.true., rc=STATUS)
+     &                       default=.false., rc=STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%fastj_offset_sec, &
      &                label   = "fastj_offset_sec:", &
      &                default = 0.0d0, rc=STATUS )
+      VERIFY_(STATUS)
+!
+!... CloudJ_cldflag = 1 ! clear sky
+!... CloudJ_cldflag = 2 ! grid-box avg clouds cloud: fract*(in cloud ODs) (minamal overlap?)
+!... CloudJ_cldflag = 3 ! cloud-fract**3/2*(in cloud ODs) (random overlap?) 
+!... CloudJ_cldflag = 4 ! NOT ALLOWED
+!... CloudJ_cldflag = 5 ! Random select NRANDO ICA's (Independent Column Atmos.) from all
+!... CloudJ_cldflag = 6 ! Use all (up to 4) quadrature cloud cover QCAs (mid-pts of bin)
+!... CloudJ_cldflag = 7 ! RECOMMENDED - Use all (up to 4) QCAs (average clouds within each Q-bin)
+!... CloudJ_cldflag = 8 ! Calculate Js for ALL ICAs (up to 20,000 per cell!)
+      CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%cldflag, &
+     &          LABEL="CloudJ_cldflag:", DEFAULT=7, RC=STATUS )
       VERIFY_(STATUS)
 
       CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%jNOamp, &
@@ -586,8 +610,38 @@ CONTAINS
      &                default = '', rc=STATUS )
       VERIFY_(STATUS)
 
+      call ESMF_ConfigGetAttribute(gmiConfigFile, self%H2O_CH4_climatology_file, &
+     &                label   = "H2O_CH4_climatology_file:", &
+     &                default = '', rc=STATUS )
+      VERIFY_(STATUS)
+
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%scattering_data_file, &
      &                label   = "scattering_data_file:", &
+     &                default = '', rc=STATUS )
+      VERIFY_(STATUS)
+
+      call ESMF_ConfigGetAttribute(gmiConfigFile, self%cloud_scat_file, &
+     &                label   = "cloud_scat_file:", &
+     &                default = '', rc=STATUS )
+      VERIFY_(STATUS)
+
+      call ESMF_ConfigGetAttribute(gmiConfigFile, self%ssa_scat_file, &
+     &                label   = "ssa_scat_file:", &
+     &                default = '', rc=STATUS )
+      VERIFY_(STATUS)
+
+      call ESMF_ConfigGetAttribute(gmiConfigFile, self%aer_scat_file, &
+     &                label   = "aer_scat_file:", &
+     &                default = '', rc=STATUS )
+      VERIFY_(STATUS)
+
+      call ESMF_ConfigGetAttribute(gmiConfigFile, self%UMaer_scat_file, &
+     &                label   = "UMaer_scat_file:", &
+     &                default = '', rc=STATUS )
+      VERIFY_(STATUS)
+
+      call ESMF_ConfigGetAttribute(gmiConfigFile, self%GMI_scat_file, &
+     &                label   = "GMI_scat_file:", &
      &                default = '', rc=STATUS )
       VERIFY_(STATUS)
 
@@ -636,7 +690,7 @@ CONTAINS
       VERIFY_(STATUS)
 
       call CheckNamelistOptionRange ('phot_opt', self%phot_opt, 0, 7)
-      call CheckNamelistOptionRange ('fastj_opt', self%fastj_opt, 0, 4)
+      call CheckNamelistOptionRange ('fastj_opt', self%fastj_opt, 0, 5)
       call CheckNamelistOptionRange ('AerDust_Effect_opt', self%AerDust_Effect_opt, 0, 3)
 
       self%num_qjs       = NUM_J
@@ -949,14 +1003,19 @@ CONTAINS
             case (4)
             !=======
                 call initializeFastJX65 (k1, k2, self%chem_mask_khi, NUM_J,    &
-                                  self%cross_section_file,                     &
-                                  self%T_O3_climatology_file, rootproc)
-!                    call initializeFastJX65 (k1, k2, self%chem_mask_khi, NUM_J,    &
-!                               self%aerosolOpticalData_file,                   &
-!                               self%cross_section_file,                        &
-!                               self%scattering_data_file,                      &
-!                               self%rate_file, self%T_O3_climatology_file)
-       !=========
+     &                         self%cross_section_file,                        &
+     &                         self%T_O3_climatology_file, rootproc)
+            !=======
+            case (5)
+            !=======
+                call InitializeFastJX74 (k1, k2, self%chem_mask_khi, NUM_J,    &
+     &                         self%cross_section_file,  self%cloud_scat_file, &
+     &                         self%ssa_scat_file, self%aer_scat_file,         &
+     &                         self%UMaer_scat_file, self%GMI_scat_file,       &
+     &                         self%T_O3_climatology_file,                     &
+     &                         self%H2O_CH4_climatology_file,                  &
+     &                         self%cldflag, rootProc)
+         !=========
          end select
          !=========
       end if
@@ -964,7 +1023,7 @@ CONTAINS
       if ((TRIM(self%chem_mecha) ==        'troposphere') .OR. &
      &    (TRIM(self%chem_mecha) ==         'strat_trop') .OR. &
      &    (TRIM(self%chem_mecha) == 'strat_trop_aerosol')) THEN
-         if ((self%phot_opt == 3) .and. self%do_AerDust_Calc) then
+         if ((self%phot_opt == 3)) then
             Allocate(self%dust(i1:i2, ju1:j2, k1:k2, nSADdust))
             self%dust = 0.0d0
 
@@ -1094,7 +1153,7 @@ CONTAINS
       if (self%do_ShipEmission) then
          do ic=1, NUM_J
             if (TRIM(self%chem_mecha) ==         'strat_trop' .OR. &
-	        TRIM(self%chem_mecha) == 'strat_trop_aerosol') THEN
+                TRIM(self%chem_mecha) == 'strat_trop_aerosol') THEN
                if (Trim(lqjchem(ic)) =='NO2 + hv = NO + O') self%jno2num = ic
             else if (TRIM(self%chem_mecha) == 'troposphere') then
                if (Trim(lqjchem(ic)) =='NO2 + hv = NO + O3') self%jno2num = ic
@@ -1142,8 +1201,8 @@ CONTAINS
    USE GmiTimeControl_mod,            ONLY : Set_gmiSeconds, GetSecondsFromJanuary1
    USE GmiTimeControl_mod,            ONLY : GetDaysFromJanuary1, ConvertTimeToSeconds
    USE GmiSpcConcentrationMethod_mod, ONLY : resetFixedConcentration
-   USE GmiSolar_mod,		      ONLY : computeSolarZenithAngle_Photolysis
-   USE GmiPhotRateConst_mod,	      ONLY : calcPhotolysisRateConstants
+   USE GmiSolar_mod,                  ONLY : computeSolarZenithAngle_Photolysis
+   USE GmiPhotRateConst_mod,          ONLY : calcPhotolysisRateConstants
 
    IMPLICIT none
 
@@ -1155,8 +1214,8 @@ CONTAINS
 ! !INPUT PARAMETERS:
 
    TYPE(ESMF_State), INTENT(INOUT) :: impChem ! Import State
-   INTEGER, INTENT(IN) :: nymd, nhms	      ! time
-   REAL,    INTENT(IN) :: tdt		      ! chemical timestep (secs)
+   INTEGER, INTENT(IN) :: nymd, nhms          ! time
+   REAL,    INTENT(IN) :: tdt                 ! chemical timestep (secs)
 
 ! !OUTPUT PARAMETERS:
 
@@ -1187,9 +1246,12 @@ CONTAINS
 !  Input fields from GEOS-5
 !  ------------------------
    REAL, POINTER, DIMENSION(:,:) :: cldtt, albvf
+!  REAL, POINTER, DIMENSION(:,:) :: cnv_frc, frland
 
    REAL, POINTER, DIMENSION(:,:,:) :: airdens, ple, Q, T, zle
-   REAL, POINTER, DIMENSION(:,:,:) :: fcld,taucli,tauclw,ql,cnv_mfc
+   REAL, POINTER, DIMENSION(:,:,:) :: fcld, taucli, tauclw, ql, cnv_mfc
+   REAL, POINTER, DIMENSION(:,:,:) :: qi
+   REAL, POINTER, DIMENSION(:,:,:) :: ri, rl
    REAL, POINTER, DIMENSION(:,:,:) :: rh2,dqdt
 
 !  Dust and aerosols.  May serve as imports from GOCART
@@ -1204,7 +1266,7 @@ CONTAINS
 !  Exports not part of internal state
 !  ----------------------------------
    REAL, POINTER, DIMENSION(:,:) :: SZAPHOT
-   REAL, POINTER, DIMENSION(:,:,:) :: DUSTOD, DUSTSA
+   REAL, POINTER, DIMENSION(:,:,:) :: FJXCLDOD, FJXFCLD, DUSTOD, DUSTSA
    REAL, POINTER, DIMENSION(:,:,:) :: SO4OD, SO4HYGRO, SO4SA
    REAL, POINTER, DIMENSION(:,:,:) :: BCOD, BCHYGRO, BCSA
    REAL, POINTER, DIMENSION(:,:,:) :: OCOD, OCHYGRO, OCSA
@@ -1216,7 +1278,7 @@ CONTAINS
 !  Local
 !  -----
    INTEGER :: cymd, dymd, emiss_opt, hms
-   INTEGER :: i, i1, i2, ic, idehyd_num, im, iXj, iTile(1)
+   INTEGER :: i, i1, i2, ic, im, iXj, iTile(1)
    INTEGER :: j, j1, j2, jm, jTile(1)
    INTEGER :: k, km, kReverse
    INTEGER :: ilo, gmi_nborder
@@ -1264,8 +1326,6 @@ CONTAINS
    REAL(KIND=DBL), ALLOCATABLE :: fracCloudCover(:,:)
    REAL(KIND=DBL), ALLOCATABLE :: surf_alb(:,:)
 
-   REAL(KIND=DBL), ALLOCATABLE :: var4dDBL(:,:,:,:)
-
    REAL(KIND=DBL), ALLOCATABLE :: mass(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: press3c(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: press3e(:,:,:)
@@ -1280,6 +1340,13 @@ CONTAINS
    REAL(KIND=DBL), ALLOCATABLE :: cmf(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: relativeHumidity(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: moistq(:,:,:)
+!... for CloudJ
+!  REAL(KIND=DBL), ALLOCATABLE :: frland_(:,:)
+!  REAL(KIND=DBL), ALLOCATABLE :: cnv_frc_(:,:)
+   REAL(KIND=DBL), ALLOCATABLE :: qi_(:,:,:)
+   REAL(KIND=DBL), ALLOCATABLE :: ql_(:,:,:)
+   REAL(KIND=DBL), ALLOCATABLE :: ri_(:,:,:)
+   REAL(KIND=DBL), ALLOCATABLE :: rl_(:,:,:)
 
    REAL(KIND=DBL), ALLOCATABLE :: solarZenithAngle(:,:)
 
@@ -1386,6 +1453,18 @@ CONTAINS
    VERIFY_(STATUS)
    ALLOCATE(           tau_cli(i1:i2,j1:j2,1:km),STAT=STATUS)
    VERIFY_(STATUS)
+!  ALLOCATE(          cnv_frc_(i1:i2,j1:j2),     STAT=STATUS)
+!  VERIFY_(STATUS)
+!  ALLOCATE(           frland_(i1:i2,j1:j2),     STAT=STATUS)
+!  VERIFY_(STATUS)
+   ALLOCATE(               qi_(i1:i2,j1:j2,1:km),STAT=STATUS)
+   VERIFY_(STATUS)
+   ALLOCATE(               ql_(i1:i2,j1:j2,1:km),STAT=STATUS)
+   VERIFY_(STATUS)
+   ALLOCATE(               ri_(i1:i2,j1:j2,1:km),STAT=STATUS)
+   VERIFY_(STATUS)
+   ALLOCATE(               rl_(i1:i2,j1:j2,1:km),STAT=STATUS)
+   VERIFY_(STATUS)
 
 ! Geolocation
 ! -----------
@@ -1475,7 +1554,9 @@ CONTAINS
      &               rsec_jan1, pctm2, mass, press3e, press3c, kel,            &
      &               self%SpeciesConcentration%concentration, solarZenithAngle,&
      &               self%cellArea, surf_alb, fracCloudCover,                  &
-     &               tau_cloud, tau_clw, tau_cli,                              &
+     &               tau_cloud, tau_clw, tau_cli, totalCloudFraction,          &
+     &               qi_, ql_, ri_, rl_,                                       &
+!    &               cnv_frc_, frland_,                                        &
      &               self%overheadO3col, self%qjgmi, gridBoxThickness,         &
      &               self%optDepth, self%eRadius, self%tArea, self%odAer,      &
      &               relativeHumidity, self%odMdust, self%dust, self%wAersl,   &
@@ -1485,8 +1566,9 @@ CONTAINS
      &               self%do_synoz, self%qj_timpyr, IO3, IH2O, ISYNOZ,         &
      &               self%chem_mask_khi, nymd, nhms, self%pr_diag, loc_proc,   &
      &               self%synoz_threshold, self%AerDust_Effect_opt, NSP,       &
-     &               NUM_J, self%num_qjo, ilo, ihi, julo, jhi, &
-     &               i1, i2, ju1, j2, k1, k2, self%jNOindex, self%jNOamp)
+     &               NUM_J, self%num_qjo, ilo, ihi, julo, jhi,                 &
+     &               i1, i2, ju1, j2, k1, k2, self%jNOindex, self%jNOamp,      &
+     &               self%cldflag)
          endif
       END IF
 
@@ -1519,6 +1601,10 @@ CONTAINS
    DEALLOCATE(pl, mass, press3c, press3e, gridBoxThickness, kel, humidity, &
               totalCloudFraction, tau_cloud, clwc, cmf, relativeHumidity, &
               moistq, STAT=STATUS)
+   VERIFY_(STATUS)
+
+   DEALLOCATE(tau_clw, tau_cli, qi_, ql_, ri_, rl_, STAT=STATUS)
+!  DEALLOCATE(cnv_frc_, frland_,                    STAT=STATUS)
    VERIFY_(STATUS)
 
 ! IMPORTANT: Reset this switch to .TRUE. after first pass.
@@ -2237,31 +2323,29 @@ CONTAINS
 ! Generalized diagnostic for dust and aerosol. See GmiAerDustODSA_mod.F90.
 ! ------------------------------------------------------------------------
    IF(self%gotImportRst .AND. self%phot_opt == 3 .AND. self%do_AerDust_calc) THEN
-     ALLOCATE(var4dDBL(i1:i2,j1:j2,1:km,1:num_AerDust),STAT=STATUS)
-     VERIFY_(STATUS)
-     var4dDBL(:,:,:,:) = self%optDepth(:,:,:,:)
-     DO k=1,km
-      kReverse = km-k+1
-      IF(ASSOCIATED(  DUSTOD))   DUSTOD(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k, 4)
-      IF(ASSOCIATED(  DUSTSA))   DUSTSA(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k, 5)
-      IF(ASSOCIATED(   SO4OD))    SO4OD(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k, 6)
-      IF(ASSOCIATED(SO4HYGRO)) SO4HYGRO(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k, 7)
-      IF(ASSOCIATED(   SO4SA))    SO4SA(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k, 8)
-      IF(ASSOCIATED(    BCOD))     BCOD(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k, 9)
-      IF(ASSOCIATED( BCHYGRO))  BCHYGRO(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k,10)
-      IF(ASSOCIATED(    BCSA))     BCSA(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k,11)
-      IF(ASSOCIATED(    OCOD))     OCOD(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k,12)
-      IF(ASSOCIATED( OCHYGRO))  OCHYGRO(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k,13)
-      IF(ASSOCIATED(    OCSA))     OCSA(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k,14)
-      IF(ASSOCIATED(   SSAOD))    SSAOD(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k,15)
-      IF(ASSOCIATED(SSAHYGRO)) SSAHYGRO(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k,16)
-      IF(ASSOCIATED(   SSASA))    SSASA(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k,17)
-      IF(ASSOCIATED(   SSCOD))    SSCOD(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k,18)
-      IF(ASSOCIATED(SSCHYGRO)) SSCHYGRO(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k,19)
-      IF(ASSOCIATED(   SSCSA))    SSCSA(i1:i2,j1:j2,kReverse) = var4dDBL(i1:i2,j1:j2,k,20)
+     DO k=k1,k2
+       kReverse = k2-k+k1
+       IF(ASSOCIATED(FJXCLDOD)) FJXCLDOD(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k, 1)
+       IF(ASSOCIATED( FJXFCLD))  FJXFCLD(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k, 2)
+!      IF(ASSOCIATED(        ))         (i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k, 3)
+       IF(ASSOCIATED(  DUSTOD))   DUSTOD(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k, 4)
+       IF(ASSOCIATED(  DUSTSA))   DUSTSA(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k, 5)
+       IF(ASSOCIATED(   SO4OD))    SO4OD(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k, 6)
+       IF(ASSOCIATED(SO4HYGRO)) SO4HYGRO(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k, 7)
+       IF(ASSOCIATED(   SO4SA))    SO4SA(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k, 8)
+       IF(ASSOCIATED(    BCOD))     BCOD(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k, 9)
+       IF(ASSOCIATED( BCHYGRO))  BCHYGRO(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k,10)
+       IF(ASSOCIATED(    BCSA))     BCSA(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k,11)
+       IF(ASSOCIATED(    OCOD))     OCOD(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k,12)
+       IF(ASSOCIATED( OCHYGRO))  OCHYGRO(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k,13)
+       IF(ASSOCIATED(    OCSA))     OCSA(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k,14)
+       IF(ASSOCIATED(   SSAOD))    SSAOD(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k,15)
+       IF(ASSOCIATED(SSAHYGRO)) SSAHYGRO(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k,16)
+       IF(ASSOCIATED(   SSASA))    SSASA(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k,17)
+       IF(ASSOCIATED(   SSCOD))    SSCOD(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k,18)
+       IF(ASSOCIATED(SSCHYGRO)) SSCHYGRO(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k,19)
+       IF(ASSOCIATED(   SSCSA))    SSCSA(i1:i2,j1:j2,kReverse) = self%optDepth(i1:i2,j1:j2,k,20)
      END DO
-     DEALLOCATE(var4dDBL, STAT=STATUS)
-     VERIFY_(STATUS)
    END IF
 
   RETURN
@@ -2389,13 +2473,13 @@ CONTAINS
 
    CALL MAPL_GetPointer(impChem,   airdens, 'AIRDENS', RC=STATUS)
    VERIFY_(STATUS)
-   CALL MAPL_GetPointer(impChem,       ple,	'PLE', RC=STATUS)
+   CALL MAPL_GetPointer(impChem,       ple,     'PLE', RC=STATUS)
    VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,         Q,       'Q', RC=STATUS)
    VERIFY_(STATUS)
-   CALL MAPL_GetPointer(impChem,	 T,	  'T', RC=STATUS)
+   CALL MAPL_GetPointer(impChem,         T,       'T', RC=STATUS)
    VERIFY_(STATUS)
-   CALL MAPL_GetPointer(impChem,       zle,	'ZLE', RC=STATUS)
+   CALL MAPL_GetPointer(impChem,       zle,     'ZLE', RC=STATUS)
    VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,      fcld,    'FCLD', RC=STATUS)
    VERIFY_(STATUS)
@@ -2403,18 +2487,32 @@ CONTAINS
    VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,    tauclw,  'TAUCLW', RC=STATUS)
    VERIFY_(STATUS)
-   CALL MAPL_GetPointer(impChem,	ql,	 'QL', RC=STATUS)
+   CALL MAPL_GetPointer(impChem,        ql,      'QL', RC=STATUS)
    VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,   cnv_mfc, 'CNV_MFC', RC=STATUS)
    VERIFY_(STATUS)
-   CALL MAPL_GetPointer(impChem,       rh2,	'RH2', RC=STATUS)
+   CALL MAPL_GetPointer(impChem,       rh2,     'RH2', RC=STATUS)
    VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,      dqdt,    'DQDT', RC=STATUS)
    VERIFY_(STATUS)
+   CALL MAPL_GetPointer(impChem,        qi,      'QI', RC=STATUS)
+   VERIFY_(STATUS)
+   CALL MAPL_GetPointer(impChem,        ri,      'RI', RC=STATUS)
+   VERIFY_(STATUS)
+   CALL MAPL_GetPointer(impChem,        rl,      'RL', RC=STATUS)
+   VERIFY_(STATUS)
+!  CALL MAPL_GetPointer(impChem,   cnv_frc, 'CNV_FRC', RC=STATUS)
+!  VERIFY_(STATUS)
+!  CALL MAPL_GetPointer(impChem,    frland,  'FRLAND', RC=STATUS)
+!  VERIFY_(STATUS)
 
 !  Export state pointers
 !  ---------------------
    CALL MAPL_GetPointer(expChem,  SZAPHOT,  'SZAPHOT', RC=STATUS)
+   VERIFY_(STATUS)
+   CALL MAPL_GetPointer(expChem, FJXCLDOD, 'FJXCLDOD', RC=STATUS)
+   VERIFY_(STATUS)
+   CALL MAPL_GetPointer(expChem,  FJXFCLD,  'FJXFCLD', RC=STATUS)
    VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem,   DUSTOD,   'DUSTOD', RC=STATUS)
    VERIFY_(STATUS)
@@ -2467,12 +2565,16 @@ CONTAINS
     CALL pmaxmin('CNV_MFC:', cnv_mfc, qmin, qmax, iXj, km+1, 1. )
     CALL pmaxmin('RH2:', rh2, qmin, qmax, iXj, km, 1. )
     CALL pmaxmin('DQ/DT:', dqdt, qmin, qmax, iXj, km, 1. )
+    CALL pmaxmin('QI:', qi, qmin, qmax, iXj, km, 1. )
+    CALL pmaxmin('RI:', ri, qmin, qmax, iXj, km, 1. )
+    CALL pmaxmin('RL:', rl, qmin, qmax, iXj, km, 1. )
 
     i = w_c%reg%j_XX
     CALL pmaxmin('TROPP:', w_c%qa(i)%data3d(:,:,km), qmin, qmax, iXj, 1, 0.01 )
     CALL pmaxmin('CLDTT:', cldtt, qmin, qmax, iXj, 1, 1. )
     CALL pmaxmin('ALBEDO:', albvf, qmin, qmax, iXj, 1, 1. )
-
+!   CALL pmaxmin('CNV_FRC:', cnv_frc, qmin, qmax, iXj, 1, 1. )
+!   CALL pmaxmin('FRLAND:', frland, qmin, qmax, iXj, 1, 1. )
    END IF Validate
 
 !  Dust and aerosols are (instead!) part of the export state when GMICHEM is the AERO provider.
@@ -2565,12 +2667,19 @@ CONTAINS
    tau_cloud(i1:i2,j1:j2,kReverse) = (tauclw(i1:i2,j1:j2,k)+  &             ! 1
                                       taucli(i1:i2,j1:j2,k))*fcld(i1:i2,j1:j2,k)
 
-!   tau_clw(i1:i2,j1:j2,kReverse) = tauclw(i1:i2,j1:j2,k)
-!   tau_cli(i1:i2,j1:j2,kReverse) = taucli(i1:i2,j1:j2,k)
-   tau_clw(i1:i2,j1:j2,kReverse) = tauclw(i1:i2,j1:j2,k)*fcld(i1:i2,j1:j2,k)
-   tau_cli(i1:i2,j1:j2,kReverse) = taucli(i1:i2,j1:j2,k)*fcld(i1:i2,j1:j2,k)
+!   tau_clw(i1:i2,j1:j2,kReverse) =  tauclw(i1:i2,j1:j2,k)
+!   tau_cli(i1:i2,j1:j2,kReverse) =  taucli(i1:i2,j1:j2,k)
+   tau_clw(i1:i2,j1:j2,kReverse) =  tauclw(i1:i2,j1:j2,k)*fcld(i1:i2,j1:j2,k)
+   tau_cli(i1:i2,j1:j2,kReverse) =  taucli(i1:i2,j1:j2,k)*fcld(i1:i2,j1:j2,k)
+!...parameters for CloudJ
+       qi_(i1:i2,j1:j2,kReverse) =      qi(i1:i2,j1:j2,k)
+       ql_(i1:i2,j1:j2,kReverse) =      ql(i1:i2,j1:j2,k)
+       ri_(i1:i2,j1:j2,kReverse) =      ri(i1:i2,j1:j2,k)
+       rl_(i1:i2,j1:j2,kReverse) =      rl(i1:i2,j1:j2,k)
   END DO
-
+!...parameter for CloudJ
+! cnv_frc_(i1:i2,j1:j2)          = cnv_frc(i1:i2,j1:j2)
+!  frland_(i1:i2,j1:j2)          =  frland(i1:i2,j1:j2)
 ! These bounds are in Jules' RH code
 ! ----------------------------------
   WHERE(relativeHumidity < 0.00D+00) relativeHumidity = 0.00D+00
@@ -2612,7 +2721,7 @@ CONTAINS
       TRIM(self%chem_mecha) ==         'strat_trop' .OR. &
       TRIM(self%chem_mecha) == 'strat_trop_aerosol') THEN
     IF(self%phot_opt == 3 .AND. self%do_AerDust_Calc) THEN
-     self%optDepth(:,:,:,:)=0.00D+00
+     self%optDepth(:,:,:,:) = 0.00D+00
     END IF
    END IF
 
@@ -2643,14 +2752,14 @@ CONTAINS
 ! !INPUT PARAMETERS:
 
    TYPE(Chem_Bundle), INTENT(in)  :: w_c      ! Chemical tracer fields   
-   INTEGER, INTENT(in) :: nymd, nhms	      ! time
-   REAL,    INTENT(in) :: cdt  	              ! chemical timestep (secs)
+   INTEGER, INTENT(in) :: nymd, nhms          ! time
+   REAL,    INTENT(in) :: cdt                 ! chemical timestep (secs)
 
 
 ! !OUTPUT PARAMETERS:
 
-   TYPE(ESMF_State), INTENT(inout) :: impChem	! Import State
-   TYPE(ESMF_State), INTENT(inout) :: expChem	! Import State
+   TYPE(ESMF_State), INTENT(inout) :: impChem   ! Import State
+   TYPE(ESMF_State), INTENT(inout) :: expChem   ! Import State
    INTEGER, INTENT(out) ::  rc                  ! Error return code:
                                                 !  0 - all is well
                                                 !  1 -
