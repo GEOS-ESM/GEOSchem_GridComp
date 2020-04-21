@@ -16,7 +16,7 @@ module DU2G_GridCompMod
    use iso_c_binding, only: c_loc, c_f_pointer, c_ptr
 
    use Chem_UtilMod          
-   use GriddedEmission       ! Emissions
+   use GOCART2G_Process       ! GOCART2G process library
 
    
    implicit none
@@ -48,7 +48,8 @@ module DU2G_GridCompMod
        real, allocatable      :: rup(:)         ! particle effective radius upper bound [um]
        real, allocatable      :: sfrac(:)       ! fraction of total source
        real, allocatable      :: rhop(:)        ! soil class density [kg m-3]
-       real                   :: Ch_DU(NHRES)   ! dust emission tuning coefficient [kg s2 m-5].
+       real                   :: Ch_DU_res(NHRES) ! resolutions used for Ch_DU
+       real                   :: Ch_DU          ! dust emission tuning coefficient [kg s2 m-5].
        real, allocatable      :: fscav(:)       ! scavenging efficiency
        real, allocatable      :: molwght(:)     ! molecular weight
        real, allocatable      :: fnum(:)        ! number of particles per kg mass
@@ -56,6 +57,7 @@ module DU2G_GridCompMod
        integer                :: nbins
        integer                :: km             ! vertical grid dimension
        real                   :: CDT            ! chemistry timestep (secs)
+       integer                :: day_save = -1      
        character (len=ESMF_MAXSTR), allocatable    :: aerosol_names(:)
 !      !Workspae for point emissions
        logical                :: doing_point_emissions = .FALSE.
@@ -169,22 +171,13 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
     call ESMF_ConfigGetAttribute (cfg, self%rup,        label='radius_upper:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%sfrac,      label='source_fraction:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%rhop,       label='soil_density:', __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%Ch_DU,      label='Ch_DU:', __RC__)
+    call ESMF_ConfigGetAttribute (cfg, self%Ch_DU_res,  label='Ch_DU:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%fscav,      label='fscav:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%molwght,    label='molecular_weight:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%fnum,       label='fnum:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%maringFlag, label='maringFlag:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%point_emissions_srcfilen, &
-                                  label='point_emissions_srcfilen:', rc=status)
-    if (status /= 0) then
-        self%doing_point_emissions = .false.
-    else
-        if ( (index(self%point_emissions_srcfilen,'/dev/null')>0) ) then
-            self%doing_point_emissions = .FALSE. ! disable it if no file specified
-        else
-            self%doing_point_emissions = .TRUE.  ! we are good to go
-        end if
-    end if
+                                  label='point_emissions_srcfilen:', default='/dev/null', __RC__)
 
 !   Set entry points
 !   ------------------------
@@ -203,7 +196,7 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
 !   -----------------------------
     DEFVAL = 0.0
 
-#include "DU2G_InternalSpecs.h"
+#include "DU2G_Internal___.h"
 
 !   IMPORT STATE
 !   -------------
@@ -280,8 +273,8 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
 !   EXPORT STATE
 !   -------------
     if (.not. data_driven) then
-#include "DU2G_ExportSpecs.h"
-#include "DU2G_ImportSpecs.h"
+#include "DU2G_Export___.h"
+#include "DU2G_Import___.h"
     end if
 
 
@@ -405,7 +398,7 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
 
 !   Dust emission tuning coefficient [kg s2 m-5]. NOT bin specific.
 !   ---------------------------------------------------------------
-    self%Ch_DU = Chem_UtilResVal(dims(1), dims(2), self%Ch_DU(:), __RC__)
+    self%Ch_DU = Chem_UtilResVal(dims(1), dims(2), self%Ch_DU_res(:), __RC__)
     self%Ch_DU = self%Ch_DU * 1.00E-09
 
 !   Get dimensions
@@ -485,7 +478,7 @@ if(mapl_am_i_root()) print*,'DU2G INIT data_driven = ',data_driven
     do i = 1, nbins
         write (field_name, '(A, I0.3)') '', i
 
-        call ESMF_StateGet (internal, trim(COMP_NAME)//'::'//trim(aerosol_names(i)), field, __RC__)
+        call ESMF_StateGet (internal, trim(aerosol_names(i)), field, __RC__)
         fld = MAPL_FieldCreate (field, name='du'//trim(field_name), __RC__)
         call MAPL_StateAdd (aero    , fld, __RC__)
         call MAPL_StateAdd (aero_aci, fld, __RC__)
@@ -648,20 +641,26 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run END'
     type (DU2G_GridComp), pointer     :: self
     type(ESMF_Time)                   :: time
 
+    integer                             :: nymd, nhms, iyr, imm, idd, ihr, imn, isc
     integer                             :: import_shape(2), i2, j2
     real, pointer, dimension(:,:,:)     :: ptr3d_int
-    real, pointer, dimension(:,:,:)     :: emissions_surface
-    real, dimension(:,:,:), allocatable :: emissions
-!    integer                             :: nymd, nhms, iyr, imm, idd, ihr, imn, isc
+    real, pointer, dimension(:,:)     :: emissions_surface
+    real, dimension(:,:), allocatable :: emissions_surface_total
+    real, dimension(:,:,:,:), allocatable :: emissions
+    real, dimension(:,:,:), allocatable :: emissions_point
+!    real, pointer, dimension(:,:,:)     :: emissions_surface
+!    real, dimension(:,:,:), allocatable :: emissions, emissions_point
 
-    integer :: i 
 
+    integer, pointer, dimension(:)  :: iPoint, jPoint
+
+    integer :: i,n
 
     !REPLACE undef and GRAV WITH MAPL
     real, parameter ::  UNDEF  = 1.e15   ! USE MAPL
     real, parameter ::  GRAV   = 9.80616 ! USE MAPL_GRAV
 
-#include "DU2G_DeclarePointer.h"
+#include "DU2G_DeclarePointer___.h"
 
    __Iam__('Run1')
 
@@ -681,7 +680,7 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run END'
 !   -----------------------------------
     call MAPL_Get (mapl, INTERNAL_ESMF_STATE=internal, __RC__)
 
-#include "DU2G_GetPointer.h"
+#include "DU2G_GetPointer___.h"
 
 !   Set du_src to 0 where undefined
 !   --------------------------------
@@ -693,53 +692,116 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run END'
     VERIFY_(STATUS)
     self => wrap%ptr
 
+!   Extract nymd(yyyymmdd) from clock
+!   ---------------------------------
+    call ESMF_ClockGet (clock, currTime=time, __RC__)
+    call ESMF_TimeGet (time ,YY=iyr, MM=imm, DD=idd, H=ihr, M=imn, S=isc, __RC__)
+    call MAPL_PackTime (nymd, iyr, imm , idd)
+    call MAPL_PackTime (nhms, ihr, imn, isc)
+
 !   Get dimensions
 !   ---------------
     import_shape = shape(wet1)
     i2 = import_shape(1)
     j2 = import_shape(2)
 
-!   Implement gridded emission dust source
-!   --------------------------------------
-    allocate(emissions, mold=delp,  __STAT__)
+    allocate(emissions(i2,j2,self%km,self%nbins),  __STAT__)
     emissions = 0.0
-
+    allocate(emissions_point, mold=delp,  __STAT__)
+    emissions_point = 0.0
 !    allocate(emissions_surface, mold=spread(delp(:,:,1),3,self%nbins),  __STAT__)
-    allocate(emissions_surface(1:i2,1:j2,self%nbins), __STAT__)
+    allocate(emissions_surface(i2,j2), __STAT__)
     emissions_surface = 0.0
-!if(mapl_am_i_root()) print*,'DU2G shape(emissions_surface) = ', shape(emissions_surface)
+    allocate(emissions_surface_total(i2,j2), __STAT__)
+    emissions_surface_total = 0.0
 
-    call DustEmissionGOCART2G(self%radius*1.e-6, frlake, wet1, lwi, u10m, v10m, &
-                              self%Ch_DU(1), du_src, GRAV, &   
-                              emissions_surface, rc )
+!   Get surface gridded emissions
+!   -----------------------------
+    do i = 1, self%nbins
+       call DustEmissionGOCART2G(self%radius(n)*1.e-6, frlake, wet1, lwi, u10m, v10m, &
+                                 self%Ch_DU, du_src, GRAV, &
+                                 emissions_surface, __RC__)
 
-!   Read pointwise emissions, if requested
-!   ---------------------------------------
-    if (self%doing_point_emissions) then
-        call updatePointwiseEmissions_(self, grid, clock, airdens, delp, GRAV, area, &
-                                       emissions, rc)
+       emissions_surface_total = emissions_surface_total + emissions_surface
+    end do
+
+!   Read point emissions file once per day
+!   --------------------------------------
+    if (self%day_save /= idd) then
+        self%day_save = idd
+        call Chem_UtilPointEmissions( nymd, self%point_emissions_srcfilen, &
+                                      self%nPts, self%pLat, self%pLon, &
+                                      self%pBase, self%pTop, self%pEmis, &
+                                      self%pStart, self%pEnd )
+
+!       In case pStart or pEnd were not specified in the file set to defaults
+        where(self%pStart < 0) self%pStart = 000000
+        where(self%pEnd < 0)   self%pEnd   = 240000
     end if
 
-    do i = 1, self%nbins
-        if (associated(DUEM)) then
-            DUEM(:,:,i) = emissions_surface(:,:,i) * self%sfrac(i)
-        end if
+!   Get indices for point emissions
+!   -------------------------------
+    if (self%nPts > 0) then
+        allocate(iPoint(self%nPts), jPoint(self%nPts),  __STAT__)
+        call MAPL_GetHorzIJIndex(self%nPts, iPoint, jPoint, &
+                                 grid = grid,               &
+                                 lon  = self%pLon/radToDeg, &
+                                 lat  = self%pLat/radToDeg, &
+                                 rc   = status)
+            if ( status /= 0 ) then
+                if (mapl_am_i_root()) print*, trim(Iam), ' - cannot get indices for point emissions'
+                VERIFY_(status)
+            end if
 
-!       combine gridded and point emissions
-        emissions(:,:,self%km) = emissions(:,:,self%km) + emissions_surface(:,:,i)
-        emissions = emissions * self%CDT * self%sfrac(i) * GRAV / delp
+        call updatePointwiseEmissions (self%km, self%pBase, self%pTop, self%pEmis, self%nPts, &
+                                       self%pStart, self%pEnd, airdens, delp, GRAV, &
+                                       area, iPoint, jPoint, nhms, emissions_point, __RC__)
+    end if
 
-!       update internal pointer with emission
-        call MAPL_GetPointer(internal, name=trim(comp_name)//'::'//trim(self%aerosol_names(i)),&
-                             ptr=ptr3d_int, __RC__)
 
-        ptr3d_int = ptr3d_int + emissions
-    enddo
+!   Calculate 3D emissions
+!   ----------------------
+!    do n = 1, self%nbins
+!       emissions(:,:,self%km,n) = emissions_surface_total * self%sfrac(n)
+!       if (self%nPts > 0) then
+!          emissions(:,:,:,n) = emissions(:,:,:,n) + emissions_point * self%sfrac(n)
+!          DU(:,:,:,n) = emissions(:,:,:,n) * self%CDT * GRAV / delp
+!       else
+!          DU(:,:,self%km,n) = emissions(:,:,self%km,n) * self%CDT * GRAV / delp(:,:,self%km)
+!       end if
+!    end do
 
-!    if (associated(DUEM)) then
-!        DUEM = sum(emissions * delp / (grav * airdens), dim=3)
-!    end if
 
+    do n = 1, self%nbins
+       call MAPL_GetPointer(internal, name=trim(self%aerosol_names(n)),&
+                            ptr=ptr3d_int, __RC__)
+
+       ptr3d_int(:,:,self%km) = emissions_surface_total * self%sfrac(n)
+       emissions(:,:,self%km,n) = emissions_surface_total * self%sfrac(n)
+
+       if (self%nPts > 0) then
+          emissions(:,:,:,n) = emissions(:,:,:,n) + emissions_point * self%sfrac(n)
+
+          ptr3d_int = ptr3d_int + emissions_point * self%sfrac(n)
+          ptr3d_int = ptr3d_int * self%CDT * GRAV / delp
+       else
+          ptr3d_int(:,:,self%km) = ptr3d_int(:,:,self%km) * self%CDT * GRAV / delp(:,:,self%km)
+       end if
+    end do
+
+
+    if (associated(DUEM)) then
+       DUEM = sum(emissions, dim=3)
+    end if
+
+
+
+!   Clean up
+!   --------
+    deallocate(emissions, emissions_surface, emissions_surface_total, emissions_point, __STAT__)
+    if (self%nPts > 0) then
+        deallocate(iPoint, jPoint, __STAT__)
+    end if
 
     RETURN_(ESMF_SUCCESS)
 
@@ -848,7 +910,7 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data BEGIN'
 !   -----------------------------------------
     do i = 1, n
     write (field_name, '(A, I0.3)') 'du', i
-        call MAPL_GetPointer (internal, NAME=trim(COMP_NAME)//'::'//trim(field_name), ptr=ptr3d_int, __RC__)
+        call MAPL_GetPointer (internal, NAME=trim(field_name), ptr=ptr3d_int, __RC__)
         call MAPL_GetPointer (import,  NAME='clim'//trim(field_name), ptr=ptr3d_imp, __RC__)
 
         ptr3d_int = ptr3d_imp
@@ -932,6 +994,7 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
     j1 = lbound(ple, 2); j2 = ubound(ple, 2)
                          km = ubound(ple, 3)
 
+!if(mapl_am_i_root()) print*,'TEST km = ',km
 
 !   Relative humidity
 !   -----------------
@@ -1110,70 +1173,32 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
   end subroutine appendToBundle_
 
 !---------------------------------------------------------------------------------------
-  subroutine updatePointwiseEmissions_ (self, grid, clock, airdens, delp, GRAV, area,&
+  subroutine updatePointwiseEmissions_ (self, airdens, delp, GRAV, area, iPoint, jPoint, nhms, &
                                         emissions_point, rc)
   
     implicit none
 
 !   !ARGUMENTS:
     type (DU2G_GridComp),                 intent(inout)  :: self
-    type (ESMF_Grid),                     intent(inout)  :: grid
-    type (ESMF_Clock),                    intent(in   )  :: clock
-!    integer,                              intent(in   )  :: nymd, nhms
-    real, dimension(:,:,:),               intent(in   )  :: airdens, delp
+    real, dimension(:,:,:),               intent(in   )  :: airdens
+    real, dimension(:,:,:),               intent(in   )  :: delp
     real,                                 intent(in   )  :: GRAV
     real, dimension(:,:),                 intent(in   )  :: area
+    integer, pointer, dimension(:),       intent(in   )  :: iPoint
+    integer, pointer, dimension(:),       intent(in   )  :: jPoint
+    integer,                              intent(in   )  :: nhms
     real, dimension(:,:,:),               intent(inout)  :: emissions_point
     integer, optional,                    intent(  out)  :: rc
 
 !   !Local
-    type(ESMF_Time)                   :: time
-    integer, pointer, dimension(:)    :: iPoint, jPoint
-    real, dimension(:), allocatable   :: point_column_emissions
+    real, dimension(self%km)          :: point_column_emissions
     integer                           :: n, i, j
-    integer                           :: nymd, nhms, iyr, imm, idd, ihr, imn, isc
 
 !   Description: Returns 3D array of pointwise emissions.
 
     __Iam__('updatePointwiseEmissions_')
 
 !    Begin...
-
-!    Extract nymd(yyyymmdd) from clock
-!    ---------------------------------
-     call ESMF_ClockGet (clock, currTime=time, __RC__)
-     call ESMF_TimeGet (time ,YY=iyr, MM=imm, DD=idd, H=ihr, M=imn, S=isc, __RC__)
-     call MAPL_PackTime (nymd, iyr, imm , idd)
-     call MAPL_PackTime (nhms, ihr, imn, isc)
-
-!    MOVE THIS CALL TO INITIALIZE???
-!    if (nhms==0) then !make sure point source file is read only once per day
-        call Chem_UtilPointEmissions( nymd, self%point_emissions_srcfilen, &
-                                      self%nPts, self%pLat, self%pLon, &
-                                      self%pBase, self%pTop, self%pEmis, &
-                                      self%pStart, self%pEnd )
-
-!       In case pStart or pEnd were not specified in the file set to defaults
-        where(self%pStart < 0) self%pStart = 000000
-        where(self%pEnd < 0)   self%pEnd   = 240000
-!    end if ! (nhms==0)
-
-!   Distribute pointwise sources if requested
-!   -----------------------------------------
-    POINTWISE_SOURCES: if (self%nPts > 0) then
-
-!   Get indices for point emissions
-!   -------------------------------
-    allocate(iPoint(self%nPts), jPoint(self%nPts), point_column_emissions(self%km), __STAT__)
-    call MAPL_GetHorzIJIndex(self%nPts, iPoint, jPoint, &
-                             grid = grid,               &
-                             lon  = self%pLon/radToDeg, &
-                             lat  = self%pLat/radToDeg, &
-                             rc   = rc)
-        if ( rc /= 0 ) then
-            if (mapl_am_i_root()) print*, trim(Iam), ' - cannot get indices for point emissions'
-            VERIFY_(rc)
-        end if
 
         do  n = 1, self%nPts
             i = iPoint(n)
@@ -1188,9 +1213,7 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
             emissions_point(i,j,:) = point_column_emissions
         end do
 
-    endif POINTWISE_SOURCES
 
-    deallocate(iPoint, jPoint, __STAT__)
 
     RETURN_(ESMF_SUCCESS)
 
