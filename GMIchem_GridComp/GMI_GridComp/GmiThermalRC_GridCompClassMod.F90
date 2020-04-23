@@ -563,7 +563,7 @@ CONTAINS
 !  Local
 !  -----
    INTEGER :: cymd, dymd, emiss_opt, hms
-   INTEGER :: i, i1, i2, ic, idehyd_num, im, iXj, iTile(1)
+   INTEGER :: i, i1, i2, ic, im, iXj, iTile(1)
    INTEGER :: j, j1, j2, jm, jTile(1)
    INTEGER :: k, km, kReverse
    INTEGER :: i1_gl, i2_gl, ju1_gl, j2_gl, ilo, gmi_nborder
@@ -929,7 +929,7 @@ CONTAINS
 !---------------------------------------------------------------------------
 !BOP
 !
-! !ROUTINE:  populateBundleQJ
+! !ROUTINE:  populateBundleQK
 !
 ! !INTERFACE:
 

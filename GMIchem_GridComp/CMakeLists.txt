@@ -6,6 +6,7 @@ set (src_directories
   GMI_GridComp/GmiChemistry
   GMI_GridComp/GmiChemistry/AerosolDust
   GMI_GridComp/GmiChemistry/ioChemistry
+  GMI_GridComp/GmiChemistry/photolysis/CloudJ
   GMI_GridComp/GmiChemistry/photolysis/fastJX53c_ref
   GMI_GridComp/GmiChemistry/photolysis/fast_JX
   GMI_GridComp/GmiChemistry/photolysis/fast_JX65
@@ -73,6 +74,7 @@ target_include_directories (${this}
   GMI_GridComp/GmiChemistry/photolysis/include
   GMI_GridComp/GmiChemistry/stratTropMech
   GMI_GridComp/GmiShared/GmiInclude
+  GMI_GridComp/GmiChemistry/photolysis/CloudJ
   GMI_GridComp/GmiChemistry/photolysis/fast_JX
   GMI_GridComp/GmiChemistry/photolysis/fast_JX65
   GMI_GridComp/GmiChemistry/photolysis/fast_JX53b

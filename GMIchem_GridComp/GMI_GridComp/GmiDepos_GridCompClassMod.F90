@@ -534,7 +534,7 @@ CONTAINS
 !  Local
 !  -----
    INTEGER :: cymd, dymd, emiss_opt, hms
-   INTEGER :: i, i1, i2, ic, idehyd_num, im, iXj
+   INTEGER :: i, i1, i2, ic, im, iXj
    INTEGER :: j, j1, j2, jm
    INTEGER :: k, km, kReverse
    INTEGER :: loc_proc
@@ -552,7 +552,6 @@ CONTAINS
    REAL, PARAMETER :: secPerDay = 86400.00
    REAL, PARAMETER :: err = 1.00E-04
 
-   REAL(KIND=DBL) :: dehydmin = 0.00
    REAL(KIND=DBL) :: chemDt, dayOfYear
 
    CHARACTER(LEN=255) :: speciesName
