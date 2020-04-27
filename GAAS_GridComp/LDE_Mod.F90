@@ -1480,16 +1480,16 @@ merid:     do j = 1, JM_World
 
                        __Iam__('isAerosol_')
          
-     if ( uppercase(name(1:2))=='DU'        .OR. &
-          uppercase(name(1:2))=='SS'        .OR. &
-          uppercase(name(1:5))=='NO3AN'     .OR. &
-          uppercase(name)     =='SO4'       .OR. &
-          uppercase(name)     =='BCPHOBIC'  .OR. &
-          uppercase(name)     =='BCPHILIC'  .OR. &
-          uppercase(name)     =='OCPHOBIC'  .OR. &
-          uppercase(name)     =='OCPHILIC'  .OR. &
-          uppercase(name)     =='BRCPHOBIC' .OR. &
-          uppercase(name)     =='BRCPHILIC' ) then
+     if ( ESMF_UtilStringUpperCase(name(1:2))=='DU'        .OR. &
+          ESMF_UtilStringUpperCase(name(1:2))=='SS'        .OR. &
+          ESMF_UtilStringUpperCase(name(1:5))=='NO3AN'     .OR. &
+          ESMF_UtilStringUpperCase(name)     =='SO4'       .OR. &
+          ESMF_UtilStringUpperCase(name)     =='BCPHOBIC'  .OR. &
+          ESMF_UtilStringUpperCase(name)     =='BCPHILIC'  .OR. &
+          ESMF_UtilStringUpperCase(name)     =='OCPHOBIC'  .OR. &
+          ESMF_UtilStringUpperCase(name)     =='OCPHILIC'  .OR. &
+          ESMF_UtilStringUpperCase(name)     =='BRCPHOBIC' .OR. &
+          ESMF_UtilStringUpperCase(name)     =='BRCPHILIC' ) then
             
           isAerosol_ = .TRUE.
 
