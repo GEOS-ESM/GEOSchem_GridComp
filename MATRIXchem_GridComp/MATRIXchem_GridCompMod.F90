@@ -14,7 +14,7 @@ module MATRIXchem_GridCompMod
 ! !USES:
 !
    use ESMF
-   use MAPL_Mod
+   use MAPL
 
    use Chem_UtilMod,       only: Chem_UtilResVal
 
@@ -226,7 +226,7 @@ contains
     call ESMF_ConfigGetAttribute(self%CF, self%verbose,       Label='verbose:', default=.false.,  __RC__)
 
     call ESMF_ConfigGetAttribute(self%CF, self%configuration, Label='matrix:',  default=1,        __RC__)
-    ASSERT_(self%configuration == MATRIX_CONFIGURATION)
+    _ASSERT(self%configuration == MATRIX_CONFIGURATION,'needs informative message')
 
 
 
@@ -530,7 +530,7 @@ contains
                                MATRIX_NUMB_MXX, MATRIX_MASS_MXX_SU, MATRIX_MASS_MXX_BC, MATRIX_MASS_MXX_OC, &
                                                 MATRIX_MASS_MXX_DU, MATRIX_MASS_MXX_SS/)
 
-    ASSERT_(any(matrix_aerosol_indexes > 0))
+    _ASSERT(any(matrix_aerosol_indexes > 0),'needs informative message')
     deallocate(matrix_aerosol_indexes, __STAT__)
     
 

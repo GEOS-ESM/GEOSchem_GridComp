@@ -14,13 +14,13 @@
 ! !USES:
 !
    use ESMF
-   use MAPL_Mod
-   use MAPL_GenericMod
+   use MAPL
 
    use Chem_Mod              ! Chemistry Base Class
    use Chem_UtilMod, only: Chem_UtilNegFiller
    use Aero_GridCompMod      ! Parent Aerosol component with IRF methods but no SetServices()
-   USE m_chars, ONLY: uppercase
+
+   use ConvectionMod, only: Disable_Convection
 
    implicit none
    private
@@ -120,11 +120,11 @@ CONTAINS
     character(len=ESMF_MAXSTR)      :: AEROFRIENDLY
     character(len=ESMF_MAXSTR)      :: providerName
     character(len=ESMF_MAXSTR)      :: short_name
-    character(len=ESMF_MAXSTR)      :: CONVPAR_OPTION
     real                            :: DEFVAL
     real                            :: DEFVAL_CO2
 
     character(len=ESMF_MAXSTR)      :: field_name
+    character(len=ESMF_MAXSTR)      :: chem_registry_file
 
 !                              ------------
 
@@ -152,8 +152,11 @@ CONTAINS
         state%chemReg = Chem_RegistryCreate(STATUS, rcfile='GOCARTdata_AerRegistry.rc')
         VERIFY_(STATUS)
     else
-        state%chemReg = Chem_RegistryCreate(STATUS, rcfile='Chem_Registry.rc')
-        VERIFY_(STATUS)
+       call ESMF_ConfigGetAttribute(cf, chem_registry_file, label="Chem_Registry_File:", &
+            default = "Chem_Registry.rc", rc = status)
+       VERIFY_(status)
+       state%chemReg = Chem_RegistryCreate(STATUS, rcfile=chem_registry_file)
+       VERIFY_(STATUS)
     end if    
 
     r => state%chemReg   ! short hand
@@ -1107,18 +1110,8 @@ if ( r%doing_GOCART ) then
 
 !         Set aerosol friendly attribute to MOIST as function of Convective Parameterization
 !         ----------------------------------------------------------------------------------
-          CALL ESMF_ConfigGetAttribute(CF, CONVPAR_OPTION, Label='CONVPAR_OPTION:', __RC__) ! Note: Default set in GEOS_GcmGridComp.F90
 
-          IF( trim(CONVPAR_OPTION) .ne. 'RAS'  .and. &
-              trim(CONVPAR_OPTION) .ne. 'GF'   .and. &
-              trim(CONVPAR_OPTION) .ne. 'BOTH' .and. &
-              trim(CONVPAR_OPTION) .ne. 'NONE' )  then
-              print *, trim(Iam)//': CONVPAR_OPTION (',trim(CONVPAR_OPTION),') Not Properly Defined.'
-              STATUS = 1
-              VERIFY_(STATUS)
-          endif
-
-          short_name = uppercase(trim(r%vname(n)))
+          short_name = ESMF_UtilStringUpperCase(trim(r%vname(n)))
           if ( short_name(1:2) .eq. 'DU'    .or. &
                short_name(1:2) .eq. 'SS'    .or. &
                short_name(1:2) .eq. 'OC'    .or. &
@@ -1131,11 +1124,13 @@ if ( r%doing_GOCART ) then
                short_name(1:3) .eq. 'NH3'   .or. &
                short_name(1:4) .eq. 'NH4A'  .or. &
                short_name(1:5) .eq. 'NO3AN' ) then
-                  if( trim(CONVPAR_OPTION)=='NONE' ) FRIENDLIES = 'DYNAMICS:TURBULENCE'
-                  if( trim(CONVPAR_OPTION)=='RAS'  ) FRIENDLIES = 'DYNAMICS:TURBULENCE'
-                  if( trim(CONVPAR_OPTION)=='BOTH' ) FRIENDLIES = 'DYNAMICS:TURBULENCE:MOIST'
-                  if( trim(CONVPAR_OPTION)=='GF'   ) FRIENDLIES = 'DYNAMICS:TURBULENCE:MOIST'
-          endif
+
+             FRIENDLIES = 'DYNAMICS:TURBULENCE:MOIST'
+             call ESMF_ConfigGetAttribute(CF, AEROFRIENDLY, Label='AERO_FRIENDLIES:', default=trim(FRIENDLIES), __RC__)
+
+             if (index(trim(FRIENDLIES), 'MOIST') > 0)  call Disable_Convection
+          end if
+
        end if ! data or computational GC
 
                                          DEFVAL = 0.0
@@ -1441,8 +1436,10 @@ end if ! doing GOCART
    character(len=ESMF_MAXSTR)      :: aero_aci_modes(n_gocart_modes)
    character(len=ESMF_MAXSTR)      :: short_name
 
-   real                            :: f_aci_seasalt
+   real                            :: f_aci_seasalt, f_aci_seasalt_default
    real                            :: maxclean
+   real                            :: ccntuning
+
    character(LEN=ESMF_MAXSTR)      :: CLDMICRO
    
    type(MAPL_VarSpec), pointer     :: InternalSpec(:)
@@ -1573,7 +1570,7 @@ end if ! doing GOCART
 !  ----------------------------------------------------
    allocate(w_c%delp(i1:i2,j1:j2,km), w_c%rh(i1:i2,j1:j2,km), __STAT__)
 
-   ASSERT_ ( size(InternalSpec) == chemReg%n_GOCART )
+   _ASSERT( size(InternalSpec) == chemReg%n_GOCART, 'needs informative message' )
 
    do L = 1, size(InternalSpec)
 
@@ -1673,7 +1670,6 @@ end if ! doing GOCART
        call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=ChemReg%fscav(n), __RC__)
 
        Vect_Hcts(1:4)= ChemReg%hcts(1:4,n)
-
        call ESMF_AttributeSet(field, 'SetofHenryLawCts', Vect_Hcts, __RC__)
     end do
 
@@ -1692,7 +1688,7 @@ end if ! doing GOCART
 
     do n = ChemReg%i_GOCART, ChemReg%j_GOCART
 
-        short_name = uppercase(trim(ChemReg%vname(n)))
+        short_name = ESMF_UtilStringUpperCase(trim(ChemReg%vname(n)))
 
         if ( short_name .eq. 'DU001'     .or. &
              short_name .eq. 'DU002'     .or. &
@@ -1824,7 +1820,7 @@ end if ! doing GOCART
     call MAPL_StateAdd(aero_aci, aero_aci_aerosols, __RC__)
 
     do n = ChemReg%i_GOCART, ChemReg%j_GOCART 
-        short_name = uppercase(trim(ChemReg%vname(n)))
+        short_name = ESMF_UtilStringUpperCase(trim(ChemReg%vname(n)))
 
         if ( short_name .eq. 'DU001'     .or. &
              short_name .eq. 'DU002'     .or. &
@@ -1890,17 +1886,24 @@ end if ! doing GOCART
         call ESMF_AttributeSet(aero_aci, name='air_temperature',              value='T',        __RC__)
         call ESMF_AttributeSet(aero_aci, name='fraction_of_land_type',        value='FRLAND',   __RC__)
 
-        ! scaling factor for sea salt
-        call ESMF_ConfigGetAttribute(CF, f_aci_seasalt, default=14.0, label='SS_SCALE:', __RC__)
-        call ESMF_AttributeSet(aero_aci, name='seasalt_scaling_factor', value=f_aci_seasalt, __RC__)
-
         ! max mixing ratio before switching to "polluted" size distributions
-        call ESMF_ConfigGetAttribute(CF, maxclean, default=1.0e-12, label='MAXCLEAN:', __RC__)
+        call ESMF_ConfigGetAttribute(CF, maxclean, default=1.0e-9, label='MAXCLEAN:', __RC__)
         call ESMF_AttributeSet(aero_aci, name='max_q_clean', value=maxclean, __RC__)
-       
+        
+        call ESMF_ConfigGetAttribute(CF, CCNtuning, default=1.8, label='CCNTUNING:', __RC__)        
+        call ESMF_AttributeSet(aero_aci, name='ccn_tuning', value=CCNtuning, __RC__)
        
         call ESMF_ConfigGetAttribute( CF, CLDMICRO, Label='CLDMICRO:',  default="1MOMENT", RC=STATUS)
         call ESMF_AttributeSet(aero_aci, name='cldmicro', value=CLDMICRO, __RC__)
+
+        ! scaling factor for sea salt
+        if (adjustl(CLDMICRO)=="2MOMENT") then
+            f_aci_seasalt_default = 4.0
+        else
+            f_aci_seasalt_default = 14.0
+        end if
+        call ESMF_ConfigGetAttribute(CF, f_aci_seasalt, default=f_aci_seasalt_default, label='SS_SCALE:', __RC__)
+        call ESMF_AttributeSet(aero_aci, name='seasalt_scaling_factor', value=f_aci_seasalt, __RC__)
 
         ! aerosol activation properties
         call ESMF_AttributeSet(aero_aci, name='width_of_aerosol_mode',        value='SIGMA',    __RC__)
@@ -2311,11 +2314,7 @@ CONTAINS
 !  ----------------------------------------------------------------------------------------
 !  Assume that DT is always an integral number of seconds
 !  Add a fraction to both (and then truncate to int), to avoid cases like 900 /= 899.999999
-   if (abs(cdt-hdt) > 0.1) then
-     __raise__(234, 'Implementation of GOCART_DT is problematic; set GOCART_DT = HEARTBEAT_DT')
-   endif
-!  With the new MAPL2.0, use this line instead of the 3 above:
-!  _ASSERT(abs(cdt-hdt) < 0.1, 'Implementation of GOCART_DT is problematic; set GOCART_DT = HEARTBEAT_DT')
+   _ASSERT(abs(cdt-hdt) < 0.1, 'Implementation of GOCART_DT is problematic; set GOCART_DT = HEARTBEAT_DT')
 
    allocate(r4ZTH(SIZE(LATS,1), SIZE(LATS,2)), __STAT__)
    allocate(  ZTH(SIZE(LATS,1), SIZE(LATS,2)), __STAT__)
@@ -3334,7 +3333,7 @@ contains
 
      na = size(aerosol)
 
-     ASSERT_ (na == size(q,4))
+     _ASSERT(na == size(q,4), 'needs informative message')
 
      ext_ = 0.0d0
      ssa_ = 0.0d0
@@ -3397,6 +3396,8 @@ subroutine aerosol_activation_properties(state, rc)
 
   real                            :: ss_scale          ! sea salt scaling factor
   real                            :: max_clean         ! max mixing ratio before considered polluted
+  real                            :: ccn_tuning        ! tunes conversion factors for sulfate
+
   character(LEN=ESMF_MAXSTR)      :: cld_micro
 
   character(len=ESMF_MAXSTR)      :: fld_name
@@ -3482,10 +3483,10 @@ subroutine aerosol_activation_properties(state, rc)
 
 ! Sea salt scaling fctor
 ! ----------------------
-  call ESMF_AttributeGet(state, name='seasalt_scaling_factor', value=ss_scale,  __RC__)
-  call ESMF_AttributeGet(state, name='max_q_clean',            value=max_clean, __RC__)
-  call ESMF_AttributeGet(state, name='cldmicro',               value=cld_micro, __RC__)
-
+  call ESMF_AttributeGet(state, name='seasalt_scaling_factor', value=ss_scale, __RC__)
+  call ESMF_AttributeGet(state, name='max_q_clean', value=max_clean, __RC__)
+  call ESMF_AttributeGet(state, name='cldmicro', value=cld_micro, __RC__)
+  call ESMF_AttributeGet(state, name='ccn_tuning', value=ccn_tuning, __RC__)
 
 ! Aerosol mass mixing ratios
 ! --------------------------
@@ -3576,13 +3577,12 @@ subroutine aerosol_activation_properties(state, rc)
       end where
 
       ! required by the aap_(...)
-      if(adjustl(cld_micro)/="2MOMENT") then ! maintained for compatibility with the single moment
-          call ESMF_FieldBundleGet(aerosols, 'SO4', field=fld, __RC__)
-          call ESMF_FieldGet(fld, farrayPtr=q_, __RC__)  ! only use the mass of sulfate to make the conversion
-      else
-          q = q_
-      end if
+      if (adjustl(cld_micro)/="2MOMENT") then ! maintained for compatibility with the single moment
  
+       call ESMF_FieldBundleGet(aerosols, 'SO4', field=fld, __RC__)
+       call ESMF_FieldGet(fld, farrayPtr=q_, __RC__)  ! only use the mass of sulfate to make the conversion
+      end if 
+
   else if (index(mode_, 'bcphilic') > 0) then
       call ESMF_FieldBundleGet(aerosols, 'BCphilic', field=fld, __RC__)
       call ESMF_FieldGet(fld, farrayPtr=q_, __RC__)
@@ -3679,19 +3679,20 @@ contains
      f_soot    = 0.0
      f_organic = 0.0
 
-     if(adjustl(cld_micro)=="2MOMENT") then
+     if (adjustl(cld_micro)=="2MOMENT") then
         qaux=q !this corrects a bug
      else
-        qaux  =  q_ ! this is incorrect bu we keep it to get zero diff with the single moment
+        qaux  =  q_ !keep it to get zero diff with the single moment
         max_clean = 5.0e-7
+        ccn_tuning = 1.0
      end if
 
 
      if (index(mode_, 'ss00') > 0) then
-       if(adjustl(cld_micro)=="2MOMENT") then
-         TPI  (1) = 230e6          ! num fraction (reduced 091015)
-       else 
-         TPI  (1) = 100e6          ! num fraction (reduced 091015)
+       if (adjustl(cld_micro)=="2MOMENT") then
+         TPI  (1) = 230e6          ! num fraction (reduced 091015)        
+       else       
+         TPI  (1) = 100e6          ! num fraction (reduced 091015)                   
        end if
 
          DPGI (1) = 0.02e-6        ! modal diameter (m)
@@ -3803,33 +3804,33 @@ contains
          where (q > max_clean)          
              sigma    = SIGI(1)
              diameter = DPGI(1)
-             num      = TPI(1) * qaux / (dens_*fmassaux)             ! only sulfate  mass
+             num      = TPI(1) * qaux*ccn_tuning / (dens_*fmassaux)             ! only sulfate  mass
          elsewhere 
              sigma    = SIGIclean(1)
              diameter = DPGIclean(1)
-             num      = TPIclean(1) * qaux / (dens_*fmassclean)      ! only sulfate
+             num      = TPIclean(1) * qaux*ccn_tuning / (dens_*fmassclean)      ! only sulfate 
          end where 
 
      case ('sulforg02')
          where (q > max_clean)
              sigma    = SIGI(2)
              diameter = DPGI(2)
-             num      = TPI(2) * qaux / (dens_*fmassaux)            ! only sulfate mass
+             num      = TPI(2) * qaux*ccn_tuning / (dens_*fmassaux)            ! only sulfate mass
          elsewhere
              sigma    = SIGIclean(2)
-             diameter = DPGIclean(2) 
-             num      = TPIclean(2) * qaux / (dens_*fmassclean)     ! only sulfate
+             diameter = DPGIclean(2)        
+             num      = TPIclean(2) * qaux*ccn_tuning / (dens_*fmassclean)     ! only sulfate
          end where 
    
      case ('sulforg03')
          where (q > max_clean)
              sigma    = SIGI(3)
-             diameter = DPGI(3)     
-             num      = TPI(3) * qaux / (dens_*fmassaux)           ! only sulfate mass
+             diameter = DPGI(3)        
+             num      = TPI(3) * qaux*ccn_tuning / (dens_*fmassaux)           ! only sulfate mass
          elsewhere 
              sigma    = SIGIclean(3)
              diameter = DPGIclean(3)
-             num      = TPIclean(3) * qaux / (dens_*fmassclean)    ! only sulfate
+             num      = TPIclean(3) * qaux*ccn_tuning / (dens_*fmassclean)    ! only sulfate
          end where 
 
      case ('bcphilic')
@@ -3887,11 +3888,10 @@ contains
              if (f_land(i,j) < 0.1) then  !ocean
 
                  if(adjustl(cld_micro) .ne."2MOMENT") then
-                     usurf = max(min((t_air_sfc(i,j) - 285.0) / 2.0, 10.0), -10.0) !smooth transition around some T value		   		   	      	      
+                    usurf = max(min((t_air_sfc(i,j) - 285.0) / 2.0, 10.0), -10.0) !smooth transition around some T value		   		   	      	      
                  else
-                     usurf = max(min((t_air_sfc(i,j) - 285.0) / 2.0, 30.0), -30.0) !smooth transition around some T value
-                 end if
-
+                    usurf = max(min((t_air_sfc(i,j) - 285.0) / 2.0, 30.0), -30.0) !smooth transition around some T value
+                 end if 
                  usurf = min(ss_scale / (1.0 + exp(usurf)), 20.0)
 
                  f(i,j,:) = (1.0 + usurf)

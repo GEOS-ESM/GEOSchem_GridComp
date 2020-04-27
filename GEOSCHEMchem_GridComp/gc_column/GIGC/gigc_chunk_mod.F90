@@ -16,7 +16,7 @@ MODULE GIGC_Chunk_Mod
 !
 ! !USES:
 !      
-  USE MAPL_MOD
+  USE MAPL
   USE ESMF
   USE ErrCode_Mod
   USE Precision_Mod

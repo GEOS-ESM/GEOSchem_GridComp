@@ -15,7 +15,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE MAPL_ConstantsMod, only: MAPL_AIRMW, MAPL_AVOGAD, MAPL_PI
 
    use Chem_Mod              ! Chemistry Base Class
@@ -31,7 +31,6 @@
    use DryDepositionMod      ! Dry Deposition
    use WetRemovalMod         ! Large-scale Wet Removal
    use ConvectionMod         ! Offline convective mixing/scavenging
-   USE m_chars, ONLY: lowercase, uppercase
    USE Henrys_law_ConstantsMod, ONLY: get_HenrysLawCts
 
    implicit none
@@ -891,7 +890,7 @@ CONTAINS
    IF(gcNI%regionsString(1:2) == "-1") THEN
     NoRegionalConstraint = .TRUE.
    ELSE
-    SELECT CASE (lowercase(gcNI%regionsString(1:2)))
+    SELECT CASE (ESMF_UtilStringLowerCase(gcNI%regionsString(1:2)))
      CASE ("gl") 
       NoRegionalConstraint = .TRUE.
      CASE ("al") 
@@ -2443,7 +2442,7 @@ CONTAINS
 
   Use NI_GridCompMod
   Use ESMF
-  Use MAPL_Mod
+  Use MAPL
   Use Chem_Mod 
 
   IMPLICIT NONE
@@ -2456,7 +2455,7 @@ CONTAINS
      subroutine Method_ (gc, w, imp, exp, state, ymd, hms, dt, rcode )
        Use NI_GridCompMod
        Use ESMF
-       Use MAPL_Mod
+       Use MAPL
        Use Chem_Mod 
        type(NI_GridComp1),  intent(inout)  :: gc
        type(Chem_Bundle),   intent(in)     :: w

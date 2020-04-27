@@ -15,7 +15,7 @@
 ! !USES:
 !
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod 	     ! Chemistry Base Class
    USE Chem_UtilMod
 
@@ -185,7 +185,6 @@ CONTAINS
 
    CHARACTER(LEN=*), PARAMETER :: IAm = 'GmiDepos_GridCompInitialize'
    CHARACTER(LEN=255) :: rcfilen = 'GMI_GridComp.rc'
-   CHARACTER(LEN=255) :: kineticsTextFile
    CHARACTER(LEN=255) :: importRestartFile
    CHARACTER(LEN=255) :: string
    
@@ -247,11 +246,6 @@ CONTAINS
       VERIFY_(STATUS)
 
       call ESMF_ConfigLoadFile(gmiConfigFile, TRIM(rcfilen), rc=STATUS )
-      VERIFY_(STATUS)
-
-      call ESMF_ConfigGetAttribute(gmiConfigFile, kineticsTextFile, &
-     &                label   = "kineticsTextFile:", &
-     &                default = ' ', rc=STATUS )
       VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, importRestartFile, &
@@ -540,7 +534,7 @@ CONTAINS
 !  Local
 !  -----
    INTEGER :: cymd, dymd, emiss_opt, hms
-   INTEGER :: i, i1, i2, ic, idehyd_num, im, iXj
+   INTEGER :: i, i1, i2, ic, im, iXj
    INTEGER :: j, j1, j2, jm
    INTEGER :: k, km, kReverse
    INTEGER :: loc_proc
@@ -558,7 +552,6 @@ CONTAINS
    REAL, PARAMETER :: secPerDay = 86400.00
    REAL, PARAMETER :: err = 1.00E-04
 
-   REAL(KIND=DBL) :: dehydmin = 0.00
    REAL(KIND=DBL) :: chemDt, dayOfYear
 
    CHARACTER(LEN=255) :: speciesName

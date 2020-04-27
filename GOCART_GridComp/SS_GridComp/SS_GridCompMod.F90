@@ -15,7 +15,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
 
    use Chem_Mod              ! Chemistry Base Class
    use Chem_StateMod         ! Chemistry State
@@ -2200,7 +2200,7 @@ double precision, parameter :: PI = 4.d0 * atan(1.d0)
 
   Use SS_GridCompMod
   Use ESMF
-  Use MAPL_Mod
+  Use MAPL
   Use Chem_Mod 
 
   IMPLICIT NONE
@@ -2213,7 +2213,7 @@ double precision, parameter :: PI = 4.d0 * atan(1.d0)
      subroutine Method_ (gc, w, imp, exp, state, ymd, hms, dt, rcode )
        Use SS_GridCompMod
        Use ESMF
-       Use MAPL_Mod
+       Use MAPL
        Use Chem_Mod 
        type(SS_GridComp1),  intent(inout)  :: gc
        type(Chem_Bundle),   intent(in)     :: w

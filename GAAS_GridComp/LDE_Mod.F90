@@ -11,16 +11,11 @@
 module LDE_Mod
 
    use ESMF
-   use MAPL_Mod
-   use MAPL_CommsMod
-   use MAPL_MaxMinMod
-   use MAPL_ShmemMod, only: MAPL_NodeRankList
+   use MAPL
 
-   use MAPL_SimpleBundleMod
    use Chem_SimpleBundleMod
    use m_Random
    use m_MergeSorts
-   use m_chars, only: uppercase
 
    implicit NONE
 
@@ -609,7 +604,7 @@ merid:        do j = 1, JM_World
 
 !    Use single channel
 !    ------------------
-     ASSERT_(size(bY_f%coords%levs) == size(bY_d%coords%levs))
+     _ASSERT(size(bY_f%coords%levs) == size(bY_d%coords%levs),'needs informative message')
      missing_f = .TRUE.
      missing_d = .TRUE.
      do k = 1, size(bY_f%coords%levs)
@@ -1143,7 +1138,7 @@ merid:     do j = 1, JM_World
      
      myFace = (J1-1)/IM_World + 1
      ! Saniny checking: make sure the upper right corner is on the same face
-     ASSERT_(myFace == (jn -1)/IM_World+1)
+     _ASSERT(myFace == (jn -1)/IM_World+1,'needs informative message')
 
      face: do iFace = myface, myface
 
@@ -1337,7 +1332,7 @@ merid:     do j = 1, JM_World
 
 !    Use single channel
 !    ------------------
-     ASSERT_(size(bY_f%coords%levs) == size(bY_d%coords%levs))
+     _ASSERT(size(bY_f%coords%levs) == size(bY_d%coords%levs),'needs informative message')
      missing_f = .TRUE.
      missing_d = .TRUE.
      do k = 1, size(bY_f%coords%levs)

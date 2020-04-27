@@ -78,9 +78,9 @@
          ncon_soil, soil_fert, soil_precip, soil_pulse, ireg, iland, iuse,        &
          convert_isop, convert_monot, coeff_isop, base_isop, base_monot, xlai,    &
          pr_diag, loc_proc, rootProc, i1, i2, ju1, j2, k1, k2, i1_gl, i2_gl,      &
-         ju1_gl, j2_gl, ilong, num_species, doMEGANemission, aefIsop, aefMbo,     &
-         aefMonot, isoLaiPrev, isoLaiCurr, isoLaiNext, pardif, pardir,T_15_AVG,   &
-         exp_fac)
+         ju1_gl, j2_gl, ilong, num_species, doMEGANemission, doMEGANviaHEMCO,     &
+         aefIsop, aefMbo, aefMonot, isoLaiPrev, isoLaiCurr, isoLaiNext, pardif,   &
+         pardir, T_15_AVG, exp_fac)
 
       USE GmiGrid_mod, ONLY : t_gmiGrid
       USE ReadInputMegan_mod, ONLY : setMEGANisoLAI
@@ -99,6 +99,7 @@
 
      type (t_gmiGrid) , intent(in) :: gmiGrid
      logical, intent(in) :: pr_diag, rootProc, doMEGANemission
+     logical, intent(in) :: doMEGANviaHEMCO 
      integer, intent(in) :: loc_proc, nymd
      integer, intent(in) :: i1, i2, ju1, j2, k1, k2
      integer, intent(in) :: i1_gl, i2_gl, ju1_gl, j2_gl, ilong, num_species
@@ -143,11 +144,10 @@
 !     ----------------------
 
       integer :: ij
-      integer :: nsec_jan1
 
-      real*8  :: decl, tdtinv
-      real*8  :: rdistsq
-      real*8  :: days, time
+      real*8  :: tdtinv
+
+      logical :: compute_isop
 
 !     ----------------
 !     Begin execution.
@@ -168,19 +168,28 @@
      &           (isoLai, isoLaiCurr, isoLaiPrev, isoLaiNext, &
      &            days_btw_m, nymd, i1, i2, ju1, j2, i1_gl, ju1_gl)
 
+          compute_isop = .NOT.  doMEGANviaHEMCO
+
 !         ======================
           call calcBiogenicMEGANemission  &
 !         ======================
      &      (emiss_isop, emiss_monot, days_btw_m, &
      &       aefIsop, aefMbo, aefMonot, isoLai, isoLaiCurr, isoLaiPrev, &
      &       tempk, T_15_AVG, pardif, pardir, cosSolarZenithAngle, &
-     &       pr_diag, loc_proc, i1, i2, ju1, j2, PT_15isOK)
+     &       pr_diag, loc_proc, i1, i2, ju1, j2, PT_15isOK, compute_isop)
 
           ! Perform unit conversions
           tdtinv = 1.0d0 / tdt
 
-          emiss_isop = emiss_isop * tdtinv / ATOMSC_PER_MOLECISOP *  &
-     &                        (mw(iisoprene_num) / AVOGAD) * KGPG
+          if (doMEGANviaHEMCO) then 
+             ! isoprene emissions coming from HEMCO already kgC/m2/s 
+             ! convert to kgIsoprene/box/s
+             emiss_isop = emiss_isop / ( ATOMSC_PER_MOLECISOP * 12.01 )  *  &
+                  &                        mw(iisoprene_num) * mcor
+          else
+             emiss_isop = emiss_isop * tdtinv / ATOMSC_PER_MOLECISOP *  &
+             &                        (mw(iisoprene_num) / AVOGAD) * KGPG
+          end if
 
           emiss_monot = emiss_monot * tdtinv / ATOMSC_PER_MOLECMONOT *  &
      &                          (MWTMONOT / AVOGAD) * KGPG
@@ -602,6 +611,7 @@
      &   pr_diag, loc_proc, i1, i2, ju1, j2, k1, k2, num_species)
 
       use GmiArrayBundlePointer_mod, only : t_GmiArrayBundle
+      use Chem_UtilMod ! for pmaxmin
 
       implicit none
 
@@ -633,6 +643,10 @@
 
       integer :: ik
 
+      integer :: iXj                    ! for pmaxmin
+      REAL :: qmin, qmax                ! for pmaxmin
+      real*4 :: tempemis(i1:i2, ju1:j2) ! for pmaxmin
+
 !     ----------------------
 !     Variable declarations.
 !     ----------------------
@@ -655,6 +669,11 @@
 
         emass(:,:) =  &
      &    emiss_isop(:,:) * tdt
+
+        iXj = (i2-i1+1)*(j2-ju1+1)
+        tempemis = emiss_isop(:,:)/mcor(:,:)
+        CALL pmaxmin('emiss_isop in add_emiss:', tempemis(:,:) &
+     &   , qmin, qmax, iXj, 1, 1. )
 
         concentration(iisoprene_num)%pArray3D(:,:,1) =  &
      &    concentration(iisoprene_num)%pArray3D(:,:,1) +  &

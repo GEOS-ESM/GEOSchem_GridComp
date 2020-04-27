@@ -1,4 +1,3 @@
-#include "MAPL_Exceptions.h"
 #include "MAPL_Generic.h"
 
 
@@ -15,10 +14,7 @@
 !
 ! !USES:
 !
-   use MAPL_Mod
-
-   use MAPL_ConstantsMod
-
+   use MAPL
 
    implicit NONE
    private

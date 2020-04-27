@@ -7,7 +7,7 @@ set (srcs
   )
 
 
-esma_add_library (${this} SRCS ${srcs} DEPENDENCIES MAPL_Base Chem_Base Chem_Shared GMAO_mpeu FVdycoreCubed_GridComp)
+esma_add_library (${this} SRCS ${srcs} DEPENDENCIES MAPL Chem_Base Chem_Shared GMAO_mpeu FVdycoreCubed_GridComp)
 target_include_directories (${this} PUBLIC ${INC_NETCDF})
 
 esma_generate_gocart_code (${this} -F)

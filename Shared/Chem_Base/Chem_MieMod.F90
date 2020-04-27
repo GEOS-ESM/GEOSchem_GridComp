@@ -25,7 +25,7 @@
 
 #if defined(GEOS5)
    use ESMF
-   use MAPL_Mod
+   use MAPL
 #endif
 
    implicit none

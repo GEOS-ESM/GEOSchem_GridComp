@@ -18,7 +18,7 @@
 !=======================================================================
 
 
-      integer i
+      integer kmg_i
 
       character*16 lchemvar(NSP), ldynvar(NDYN)
       character*180 lqkchem(NUM_K),  lqjchem(NUM_J)
@@ -265,7 +265,7 @@
 !
 !.... Thermal reaction labels
 !
-      data (lqkchem(i), i=1,10) / &
+      data (lqkchem(kmg_i), kmg_i=1,10) / &
      & 'O + O2 = O3', &
      & 'O + O3 = 2 O2', &
      & 'N2 + O1D = N2 + O', &
@@ -277,7 +277,7 @@
      & 'N2O + O1D = N2 + O2', &
      & 'N2O + O1D = 2 NO' /
 
-      data (lqkchem(i), i=11,20) / &
+      data (lqkchem(kmg_i), kmg_i=11,20) / &
      & 'CH4 + O1D = MO2 + OH', &
      & 'CH4 + O1D = CH2O + H + HO2', &
      & 'CH4 + O1D = CH2O + H2', &
@@ -289,7 +289,7 @@
      & 'HCFC141b + O1D = 2 Cl', &
      & 'HCFC142b + O1D = Cl' /
 
-      data (lqkchem(i), i=21,30) / &
+      data (lqkchem(kmg_i), kmg_i=21,30) / &
      & 'H + O2 = HO2', &
      & 'H + O3 = O2 + OH', &
      & 'O + OH = H + O2', &
@@ -301,7 +301,7 @@
      & 'NO2 + O3 = NO3 + O2', &
      & 'OH + OH = H2O + O' /
 
-      data (lqkchem(i), i=31,40) / &
+      data (lqkchem(kmg_i), kmg_i=31,40) / &
      & 'OH + OH = H2O2', &
      & 'HO2 + OH = H2O + O2', &
      & 'H2O2 + OH = H2O + HO2', &
@@ -313,7 +313,7 @@
      & 'CH4 + OH = H2O + MO2', &
      & 'MO2 + NO = CH2O + HO2 + NO2' /
 
-      data (lqkchem(i), i=41,50) / &
+      data (lqkchem(kmg_i), kmg_i=41,50) / &
      & 'ClO + MO2 = CH2O + Cl + HO2 + O2', &
      & 'HO2 + MO2 = MP + O2', &
      & 'MO2 + MO2 = CH2O + MOH + O2', &
@@ -325,7 +325,7 @@
      & 'N + NO = N2 + O', &
      & 'NO2 + O = NO + O2' /
 
-      data (lqkchem(i), i=51,60) / &
+      data (lqkchem(kmg_i), kmg_i=51,60) / &
      & 'NO3 + O = NO2 + O2', &
      & 'NO2 + OH = HNO3', &
      & 'HNO3 + OH = H2O + NO3', &
@@ -337,7 +337,7 @@
      & 'HO2 + NO3 = NO2 + O2 + OH', &
      & 'NO + NO3 = 2 NO2' /
 
-      data (lqkchem(i), i=61,70) / &
+      data (lqkchem(kmg_i), kmg_i=61,70) / &
      & 'NO3 + OH = HO2 + NO2', &
      & 'NO2 + NO3 = N2O5', &
      & 'N2O5 = NO2 + NO3', &
@@ -349,7 +349,7 @@
      & 'Cl + H2 = H + HCl', &
      & 'Cl + H2O2 = HCl + HO2' /
 
-      data (lqkchem(i), i=71,80) / &
+      data (lqkchem(kmg_i), kmg_i=71,80) / &
      & 'Cl + HO2 = HCl + O2', &
      & 'Cl + HO2 = ClO + OH', &
      & 'ClO + O = Cl + O2', &
@@ -361,7 +361,7 @@
      & 'ClO + NO2 = ClONO2', &
      & 'ClO + ClO = 2 Cl + O2' /
 
-      data (lqkchem(i), i=81,90) / &
+      data (lqkchem(kmg_i), kmg_i=81,90) / &
      & 'ClO + ClO = Cl2 + O2', &
      & 'ClO + ClO = Cl + OClO', &
      & 'ClO + ClO = Cl2O2', &
@@ -373,7 +373,7 @@
      & 'Cl + ClONO2 = Cl2 + NO3', &
      & 'Br + O3 = BrO + O2' /
 
-      data (lqkchem(i), i=91,100) / &
+      data (lqkchem(kmg_i), kmg_i=91,100) / &
      & 'Br + HO2 = HBr + O2', &
      & 'Br + CH2O = CO + HBr + HO2', &
      & 'BrO + O = Br + O2', &
@@ -385,7 +385,7 @@
      & 'BrO + ClO = BrCl + O2', &
      & 'BrO + BrO = 2 Br + O2' /
 
-      data (lqkchem(i), i=101,110) / &
+      data (lqkchem(kmg_i), kmg_i=101,110) / &
      & 'HBr + OH = Br + H2O', &
      & 'CH2O + O = CO + HO2 + OH', &
      & 'CH4 + Cl = HCl + MO2', &
@@ -397,7 +397,7 @@
      & 'HCFC142b + OH = Cl + H2O', &
      & 'CH3Cl + Cl = CO + 2 HCl + HO2' /
 
-      data (lqkchem(i), i=111,120) / &
+      data (lqkchem(kmg_i), kmg_i=111,120) / &
      & 'CH3Br + OH = Br + H2O + HO2', &
      & 'A3O2 + HO2 = RA3P', &
      & 'A3O2 + MO2 =  0.75 CH2O + HO2 +  0.25 MOH +  0.75 RCHO +  0.25 ROH', &
@@ -409,7 +409,7 @@
      & 'ALK4 + NO3 = HNO3 + R4O2', &
      & 'ALK4 + OH = R4O2' /
 
-      data (lqkchem(i), i=121,130) / &
+      data (lqkchem(kmg_i), kmg_i=121,130) / &
      & 'ATO2 + HO2 = MCO3 + MO2', &
      & 'ATO2 + MCO3 = ACTA + MEK', &
      & 'ATO2 + MCO3 =  0.20 CH2O +  0.80 HO2 +  0.20 MCO3 +  0.80 MGLY + MO2', &
@@ -421,7 +421,7 @@
      & 'B3O2 + MO2 =  0.75 ACET +  0.75 CH2O + HO2 +  0.25 MOH +  0.25 ROH', &
      & 'B3O2 + NO = ACET + HO2 + NO2' /
 
-      data (lqkchem(i), i=131,140) / &
+      data (lqkchem(kmg_i), kmg_i=131,140) / &
      & 'C2H6 + NO3 = ETO2 + HNO3', &
      & 'C2H6 + OH = ETO2 + H2O', &
      & 'C2H6 + Cl = ETO2 + HCl', &
@@ -433,7 +433,7 @@
      & 'ETO2 + NO = ALD2 + HO2 + NO2', &
      & 'ETP + OH =  0.50 ALD2 +  0.50 ETO2 +  0.50 OH' /
 
-      data (lqkchem(i), i=141,150) / &
+      data (lqkchem(kmg_i), kmg_i=141,150) / &
      & 'GLYC + OH =  0.73 CH2O +  0.50 CO +  0.13 GLYX +  0.13 HCOOH +  0.77 HO2 +  0.23 OH', &
      & 'GLYC + OH = CO + HCOOH + OH', &
      & 'GLYX + NO3 = 2 CO + HNO3 + HO2', &
@@ -445,7 +445,7 @@
      & 'HO2 + MCO3 = MAP', &
      & 'IALD + O3 =  0.12 CH2O +  0.28 GLYC +  0.20 GLYX +  0.20 HAC +  0.20 HCOOH +  0.60 MGLY +  0.30 O3 +  0.10 OH' /
 
-      data (lqkchem(i), i=151,160) / &
+      data (lqkchem(kmg_i), kmg_i=151,160) / &
      & 'IALD + OH =  0.15 HO2 +  0.44 IAO2 +  0.41 MAO3', &
      & 'HO2 + IAO2 = IAP', &
      & 'IAO2 + MCO3 = ACTA + MEK', &
@@ -457,7 +457,7 @@
      & 'INO2 + MCO3 =  0.15 CH2O +  0.85 HNO3 +  0.80 HO2 +  0.10 MACR + MO2 +  0.05 MVK +  0.15 NO2', &
      & 'INO2 + MCO3 = ACTA + NO2 + RCHO' /
 
-      data (lqkchem(i), i=161,170) / &
+      data (lqkchem(kmg_i), kmg_i=161,170) / &
      & 'INO2 + MO2 =  0.83 CH2O +  0.43 HNO3 +  0.90 HO2 +  0.05 MACR +  0.25 MOH +  0.03 MVK +  0.57 NO2 +  0.25 RCHO +  0.25 ROH', &
      & 'INO2 + NO =  0.15 CH2O +  0.85 HNO3 +  0.80 HO2 +  0.10 MACR +  0.05 MVK +  1.15 NO2', &
      & 'INPN + OH = INO2', &
@@ -469,7 +469,7 @@
      & 'ISOP + NO3 = INO2', &
      & 'ISOP + O3 =  0.90 CH2O +  0.05 CO +  0.06 HO2 +  0.39 MACR +  0.16 MVK +  0.10 O3 +  0.27 OH +  0.07 PRPE' /
 
-      data (lqkchem(i), i=171,180) / &
+      data (lqkchem(kmg_i), kmg_i=171,180) / &
      & 'ISOP + OH = RIO2', &
      & 'HO2 + KO2 = MGLY + MO2', &
      & 'KO2 + MCO3 = ACTA + MEK', &
@@ -481,7 +481,7 @@
      & 'MACR + O3 =  0.70 CH2O +  0.20 CO +  0.28 HO2 +  0.80 MGLY +  0.20 O3 +  0.22 OH', &
      & 'MACR + OH =  0.53 MAO3 +  0.47 MRO2' /
 
-      data (lqkchem(i), i=181,190) / &
+      data (lqkchem(kmg_i), kmg_i=181,190) / &
      & 'HO2 + MAN2 = ISNP', &
      & 'MAN2 + MCO3 = CH2O + MGLY + MO2 + NO2', &
      & 'MAN2 + MCO3 = ACTA + NO2 + RCHO', &
@@ -493,7 +493,7 @@
      & 'MAO3 + MO2 = CH2O + RCOOH', &
      & 'MAO3 + NO2 = PMN' /
 
-      data (lqkchem(i), i=191,200) / &
+      data (lqkchem(kmg_i), kmg_i=191,200) / &
      & 'MAO3 + NO =  0.50 CH2O +  0.50 CO +  0.50 MCO3 +  0.50 MO2 + NO2', &
      & 'MAOP + OH = MAO3', &
      & 'A3O2 + MCO3 = ACTA + RCHO', &
@@ -505,7 +505,7 @@
      & 'MCO3 + MO2 = CH2O + HO2 + MO2', &
      & 'MCO3 + NO2 = PAN' /
 
-      data (lqkchem(i), i=201,210) / &
+      data (lqkchem(kmg_i), kmg_i=201,210) / &
      & 'MCO3 + NO = MO2 + NO2', &
      & 'MCO3 + PO2 = ACTA +  0.65 HAC +  0.35 RCHO', &
      & 'MCO3 + PO2 = ALD2 + CH2O + HO2 + MO2', &
@@ -517,7 +517,7 @@
      & 'HO2 + MRO2 = MRP', &
      & 'MCO3 + MRO2 = ACTA + MEK' /
 
-      data (lqkchem(i), i=211,220) / &
+      data (lqkchem(kmg_i), kmg_i=211,220) / &
      & 'MCO3 + MRO2 =  0.17 CH2O +  0.83 CO +  0.83 HAC + HO2 +  0.17 MGLY + MO2', &
      & 'MO2 + MRO2 = CH2O +  0.60 CO +  0.60 HAC + HO2 +  0.25 MGLY +  0.15 ROH', &
      & 'MRO2 + NO = HNO3', &
@@ -529,7 +529,7 @@
      & 'OH + RCHO = H2O + RCO3', &
      & 'PAN = MCO3 + NO2' /
 
-      data (lqkchem(i), i=221,230) / &
+      data (lqkchem(kmg_i), kmg_i=221,230) / &
      & 'PMN = MAO3 + NO2', &
      & 'O3 + PMN =  0.60 CH2O + HO2 + NO2', &
      & 'OH + PMN = CO + HAC + NO2', &
@@ -541,7 +541,7 @@
      & 'HO2 + PRN1 = PRPN', &
      & 'MCO3 + PRN1 = ALD2 + CH2O + MO2 + NO2' /
 
-      data (lqkchem(i), i=231,240) / &
+      data (lqkchem(kmg_i), kmg_i=231,240) / &
      & 'MCO3 + PRN1 = ACTA + NO2 + RCHO', &
      & 'MO2 + PRN1 =  0.50 ALD2 +  1.25 CH2O +  0.50 HO2 +  0.25 MOH + NO2 +  0.25 RCHO +  0.25 ROH', &
      & 'NO + PRN1 = ALD2 + CH2O + 2 NO2', &
@@ -553,7 +553,7 @@
      & 'MCO3 + R4N1 =  0.75 ALD2 +  0.39 CH2O + MO2 + NO2 +  0.30 R4O2 +  0.57 RCHO', &
      & 'MCO3 + R4N1 = ACTA + NO2 + RCHO' /
 
-      data (lqkchem(i), i=241,250) / &
+      data (lqkchem(kmg_i), kmg_i=241,250) / &
      & 'MO2 + R4N1 =  0.38 ALD2 +  0.95 CH2O +  0.50 HO2 +  0.25 MOH + NO2 +  0.15 R4O2 +  0.54 RCHO +  0.25 ROH', &
      & 'NO + R4N1 =  0.75 ALD2 +  0.39 CH2O + 2 NO2 +  0.30 R4O2 +  0.57 RCHO', &
      & 'OH + R4N2 = H2O + R4N1', &
@@ -565,7 +565,7 @@
      & 'NO + R4O2 = R4N2', &
      & 'OH + R4P =  0.50 OH +  0.50 R4O2 +  0.50 RCHO' /
 
-      data (lqkchem(i), i=251,260) / &
+      data (lqkchem(kmg_i), kmg_i=251,260) / &
      & 'OH + RA3P =  0.50 A3O2 +  0.50 OH +  0.50 RCHO', &
      & 'OH + RB3P =  0.79 ACET +  0.21 B3O2 +  0.79 OH', &
      & 'NO3 + RCHO = HNO3 + RCO3', &
@@ -577,7 +577,7 @@
      & 'NO2 + RCO3 = PPN', &
      & 'NO + RCO3 = ETO2 + NO2' /
 
-      data (lqkchem(i), i=261,270) / &
+      data (lqkchem(kmg_i), kmg_i=261,270) / &
      & 'HO2 + RIO1 = RIP', &
      & 'MCO3 + RIO1 = ACTA + MEK', &
      & 'MCO3 + RIO1 =  0.75 CH2O + HO2 + IALD + MO2', &
@@ -589,7 +589,7 @@
      & 'MCO3 + RIO2 =  0.69 CH2O +  0.86 HO2 +  0.13 IALD +  0.29 MACR + MO2 +  0.40 MVK +  0.14 RIO1', &
      & 'MO2 + RIO2 =  1.10 CH2O +  0.93 HO2 +  0.06 IALD +  0.14 MACR +  0.25 MEK +  0.25 MOH +  0.20 MVK +  0.07 RIO1 +  0.25 ROH' /
 
-      data (lqkchem(i), i=271,280) / &
+      data (lqkchem(kmg_i), kmg_i=271,280) / &
      & 'NO + RIO2 = HNO3', &
      & 'NO + RIO2 =  0.69 CH2O +  0.86 HO2 +  0.13 IALD +  0.29 MACR +  0.40 MVK + NO2 +  0.14 RIO1', &
      & 'OH + RIP =  0.50 IAO2 +  0.10 RIO1 +  0.40 RIO2', &
@@ -601,7 +601,7 @@
      & 'MO2 + VRO2 =  0.89 CH2O +  0.36 GLYC +  0.64 HO2 +  0.36 MCO3 +  0.25 MEK +  0.14 MGLY +  0.25 MOH +  0.25 ROH', &
      & 'NO + VRO2 = HNO3' /
 
-      data (lqkchem(i), i=281,290) / &
+      data (lqkchem(kmg_i), kmg_i=281,290) / &
      & 'NO + VRO2 =  0.28 CH2O +  0.72 GLYC +  0.28 HO2 +  0.72 MCO3 +  0.28 MGLY + NO2', &
      & 'OH + VRP =  0.50 OH +  0.50 RCHO +  0.50 VRO2', &
      & 'N2O5 = 2 HNO3', &
@@ -613,7 +613,7 @@
      & 'N2O5 = 2 HNO3', &
      & 'ClONO2 = HNO3 + HOCl' /
 
-      data (lqkchem(i), i=291,300) / &
+      data (lqkchem(kmg_i), kmg_i=291,300) / &
      & 'BrONO2 = HNO3 + HOBr', &
      & 'ClONO2 + HCl = Cl2 + HNO3', &
      & 'HCl + HOCl = Cl2 + H2O', &
@@ -625,7 +625,7 @@
      & 'BrONO2 + HCl = BrCl + HNO3', &
      & 'HCl + HOBr = BrCl + H2O' /
 
-      data (lqkchem(i), i=301,310) / &
+      data (lqkchem(kmg_i), kmg_i=301,310) / &
      & 'ClONO2 = HNO3 + HOCl', &
      & 'BrONO2 = HNO3 + HOBr', &
      & 'ClONO2 + HCl = Cl2 + HNO3', &
@@ -637,13 +637,13 @@
      & 'HO2 =  0.50 H2O', &
      & 'NO2 =  0.50 HNO2 +  0.50 HNO3' /
 
-      data (lqkchem(i), i=311,312) / &
+      data (lqkchem(kmg_i), kmg_i=311,312) / &
      & 'NO3 = HNO3', &
      & 'N2O5 = 2 HNO3' /
 !
 !.... Photolytic reaction labels
 !
-      data (lqjchem(i), i=1,10) / &
+      data (lqjchem(kmg_i), kmg_i=1,10) / &
      & 'O2 + hv = 2 O', &
      & 'O3 + hv = O + O2', &
      & 'O3 + hv = O1D + O2', &
@@ -655,7 +655,7 @@
      & 'CH2O + hv = CO + H + HO2', &
      & 'CH2O + hv = CO + H2' /
 
-      data (lqjchem(i), i=11,20) / &
+      data (lqjchem(kmg_i), kmg_i=11,20) / &
      & 'HNO3 + hv = NO2 + OH', &
      & 'HNO2 + hv = NO + OH', &
      & 'HNO4 + hv = NO3 + OH', &
@@ -667,7 +667,7 @@
      & 'OClO + hv = ClO + O', &
      & 'Cl2O2 + hv = 2 Cl + O2' /
 
-      data (lqjchem(i), i=21,30) / &
+      data (lqjchem(kmg_i), kmg_i=21,30) / &
      & 'HOCl + hv = Cl + OH', &
      & 'ClONO2 + hv = Cl + NO3', &
      & 'ClONO2 + hv = ClO + NO2', &
@@ -679,7 +679,7 @@
      & 'CCl4 + hv = 4 Cl', &
      & 'CH3CCl3 + hv = 3 Cl' /
 
-      data (lqjchem(i), i=31,40) / &
+      data (lqjchem(kmg_i), kmg_i=31,40) / &
      & 'CFCl3 + hv = 3 Cl', &
      & 'CF2Cl2 + hv = 2 Cl', &
      & 'CFC113 + hv = 3 Cl', &
@@ -691,7 +691,7 @@
      & 'CF3Br + hv = Br', &
      & 'CF2Br2 + hv = 2 Br' /
 
-      data (lqjchem(i), i=41,50) / &
+      data (lqjchem(kmg_i), kmg_i=41,50) / &
      & 'H2402 + hv = 2 Br', &
      & 'CF2ClBr + hv = Br + Cl', &
      & 'ALD2 + hv = CO + HO2 + MO2', &
@@ -703,7 +703,7 @@
      & 'GLYX + hv = 2 CO + H2', &
      & 'GLYX + hv = 2 CO + 2 HO2' /
 
-      data (lqjchem(i), i=51,60) / &
+      data (lqjchem(kmg_i), kmg_i=51,60) / &
      & 'GLYX + hv = CH2O + CO', &
      & 'MGLY + hv = CO + HO2 + MCO3', &
      & 'MVK + hv = CO + PRPE', &
@@ -715,7 +715,7 @@
      & 'ETP + hv = ALD2 + HO2 + OH', &
      & 'RA3P + hv = HO2 + OH + RCHO' /
 
-      data (lqjchem(i), i=61,70) / &
+      data (lqjchem(kmg_i), kmg_i=61,70) / &
      & 'RB3P + hv = HO2 + OH + RCHO', &
      & 'R4P + hv = HO2 + OH + RCHO', &
      & 'PP + hv = HO2 + OH + RCHO', &
@@ -727,7 +727,7 @@
      & 'MRP + hv =  0.17 CH2O +  0.83 CO +  0.83 HAC + HO2 +  0.17 MGLY + OH', &
      & 'MAOP + hv = HO2 + OH + RCHO' /
 
-      data (lqjchem(i), i=71,73) / &
+      data (lqjchem(kmg_i), kmg_i=71,73) / &
      & 'R4N2 + hv =  0.05 A3O2 +  0.32 ACET +  0.32 ALD2 +  0.18 B3O2 +  0.32 ETO2 +  0.27 HO2 +  0.19 MEK +  0.18 MO2 + NO2 +  0.13 RCHO', &
      & 'MAP + hv = MO2 + OH', &
      & 'OCSg + hv = CO' /

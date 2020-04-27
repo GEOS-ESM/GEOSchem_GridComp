@@ -17,7 +17,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod 	     ! Chemistry Base Class
    USE Chem_UtilMod
 
@@ -188,7 +188,6 @@ CONTAINS
    CHARACTER(LEN=*), PARAMETER :: IAm    = 'GmiChem_GridCompClassInitialize'
    CHARACTER(LEN=255) :: rcfilen = 'GMI_GridComp.rc'
    CHARACTER(LEN=255) :: namelistFile
-   CHARACTER(LEN=255) :: kineticsTextFile
    CHARACTER(LEN=255) :: importRestartFile
    CHARACTER(LEN=255) :: string
    
@@ -509,7 +508,7 @@ CONTAINS
 
    CALL ESMF_FieldBundleGet(qqjBundle, fieldCount=numVars , rc=STATUS)
    VERIFY_(STATUS)
-   ASSERT_(NUM_J == numVars)
+   _ASSERT(NUM_J == numVars,'needs informative message')
 
 ! Initialize the qqkBundle
 ! ------------------------
@@ -532,7 +531,7 @@ CONTAINS
 
    CALL ESMF_FieldBundleGet(qqkBundle, fieldCount=numVars , rc=STATUS)
    VERIFY_(STATUS)
-   ASSERT_(NUM_K == numVars)
+   _ASSERT(NUM_K == numVars,'needs informative message')
 
   END IF ! pr_qqjk is .TRUE.
 
@@ -630,7 +629,7 @@ CONTAINS
 !  Local
 !  -----
    INTEGER :: cymd, dymd, emiss_opt, hms
-   INTEGER :: i, i1, i2, ic, idehyd_num, im, iXj
+   INTEGER :: i, i1, i2, ic, im, iXj
    INTEGER :: j, j1, j2, jm
    INTEGER :: k, km, kReverse
    INTEGER :: loc_proc
@@ -648,7 +647,6 @@ CONTAINS
    REAL, PARAMETER :: secPerDay = 86400.00
    REAL, PARAMETER :: err = 1.00E-04
 
-   REAL(KIND=DBL) :: dehydmin = 0.00
    REAL(KIND=DBL) :: chemDt, dayOfYear
 
    CHARACTER(LEN=255) :: speciesName

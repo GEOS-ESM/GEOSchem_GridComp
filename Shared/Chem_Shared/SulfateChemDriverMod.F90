@@ -16,7 +16,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    use m_StrTemplate
    use m_die, only: die
 

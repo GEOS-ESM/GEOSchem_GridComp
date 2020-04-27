@@ -8,7 +8,7 @@
 ! !USES:
 !     use GmiSpcConcentrationMethod_mod, only : t_SpeciesConcentration
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
 
 !
       implicit none

@@ -16,10 +16,7 @@
 !
 ! !USES:
 !
-   use MAPL_Mod
-
-   use MAPL_ConstantsMod
-
+   use MAPL
 
    implicit NONE
    private

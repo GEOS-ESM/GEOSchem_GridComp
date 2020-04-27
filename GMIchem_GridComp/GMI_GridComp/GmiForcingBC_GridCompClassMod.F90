@@ -16,7 +16,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod 	     ! Chemistry Base Class
    USE Chem_UtilMod
 
@@ -188,7 +188,6 @@ CONTAINS
    CHARACTER(LEN=*), PARAMETER :: IAm = 'GmiForcingBC_GridCompInitialize'
    CHARACTER(LEN=255) :: rcfilen = 'GMI_GridComp.rc'
    CHARACTER(LEN=255) :: namelistFile
-   CHARACTER(LEN=255) :: kineticsTextFile
    CHARACTER(LEN=255) :: importRestartFile
    CHARACTER(LEN=255) :: string
       character (len=MAX_LENGTH_SPECIES_NAME), pointer :: tempListNames(:)

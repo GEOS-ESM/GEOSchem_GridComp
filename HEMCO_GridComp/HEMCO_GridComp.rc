@@ -14,3 +14,4 @@ HEMCO_Instances: 1
         ###############################
 
 HEMCO_CONFIG--001: HEMCOgeosfp_Config.rc
+HEMCO_CONFIG--002: HEMCOgmi_Config.rc

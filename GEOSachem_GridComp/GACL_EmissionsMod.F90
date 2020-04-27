@@ -25,7 +25,7 @@
                                ESMF_ConfigNextLine,  & 
                                ESMF_ConfigGetAttribute
 
-   use MAPL_Mod 
+   use MAPL 
 
    use m_StrTemplate, only : StrTemplate
 

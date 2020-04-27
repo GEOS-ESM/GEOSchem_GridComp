@@ -16,7 +16,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod            ! SAD Base Class
    USE Chem_UtilMod
 
@@ -486,11 +486,12 @@ CONTAINS
      &        (err_msg, .true., 2, self%chem_opt, self%ich4_num, 0, 0.0d0, 0.0d0)
          end if
 
-         if ((self%idehyd_num == 0) .or. (self%idehyd_num /= IDEHYD)) then
-            err_msg = 'chem_opt/idehyd_num problem in the rc File.'
-            call GmiPrintError  &
-     &       (err_msg, .true., 2, self%chem_opt, self%idehyd_num, 0, 0.0d0, 0.0d0)
-         end if
+!.sds.. unnecessary test
+!.sds..         if ((self%idehyd_num == 0) .or. (self%idehyd_num /= IDEHYD)) then
+!.sds..            err_msg = 'chem_opt/idehyd_num problem in the rc File.'
+!.sds..            call GmiPrintError  &
+!.sds..     &       (err_msg, .true., 2, self%chem_opt, self%idehyd_num, 0, 0.0d0, 0.0d0)
+!.sds..         end if
 
          if ((self%ih2o_num == 0) .or. (self%ih2o_num /= IH2O)) then
             err_msg = 'chem_opt/ih2o_num problem in the rc File.'
@@ -673,7 +674,7 @@ CONTAINS
    IF (MAPL_AM_I_ROOT()) THEN
       PRINT*,"  Number of fields in the bundle gmiSAD: ", numVars
    END IF
-   ASSERT_(NSAD == numVars)
+   _ASSERT(NSAD == numVars,'needs informative message')
 
     !---------------------------------------------------------------
     ! Create and populate the array that maps GMI species indices to
@@ -1161,7 +1162,7 @@ CONTAINS
       ! Verify that the number of fields in the bundle is equal to the number
       ! of SAD variables.
 
-      ASSERT_(numVars == NSAD)
+      _ASSERT(numVars == NSAD,'needs informative message')
 
       allocate(ptr3Dreal(i1:i2, j1:j2, 1:km))
 

@@ -2803,7 +2803,7 @@ CONTAINS
 !
 #if defined(ESMF_)
     USE ESMF
-    USE MAPL_Mod
+    USE MAPL
 #else
     ! Modules for netCDF read
     USE m_netcdf_io_open

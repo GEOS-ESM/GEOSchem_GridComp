@@ -14,8 +14,7 @@
 ! !USES:
 !
    Use ESMF
-   Use MAPL_Mod
-   Use MAPL_MaxMinMod
+   Use MAPL
    Use m_StrTemplate  
 
    Use  LDE_Mod
@@ -25,7 +24,7 @@
    Use  Chem_AodMod
    Use  MAPL_GridManagerMod
    Use  MAPL_LatLonGridFactoryMod
-   Use  CubedSphereGridFactoryMod, only: CubedSphereGridFactory
+   Use  MAPL_CubedSphereGridFactoryMod, only: CubedSphereGridFactory
 
    IMPLICIT NONE
    PRIVATE
@@ -399,9 +398,13 @@ CONTAINS
     type(ESMF_Config)             :: CF          ! Universal Config 
     type(ESMF_Time)               :: Time     ! Current time
     type(ESMF_Alarm)              :: Alarm
+    type(ESMF_Alarm)              :: Predictor_Alarm
+    type(ESMF_Alarm)              :: ReplayShutOff_Alarm
 
     integer                       :: nymd, nhms, i550nm, izAOD, iyAOD
     logical                       :: analysis_time, fexists 
+    logical                       :: PREDICTOR_STEP
+    logical                       :: ReplayShutOff
 
     character(len=ESMF_MAXSTR)    :: comp_name
 
@@ -440,6 +443,12 @@ CONTAINS
    analysis_time = ESMF_AlarmIsRinging(Alarm,__RC__)
 #endif
 
+   call ESMF_ClockGetAlarm(Clock,'PredictorActive',Predictor_Alarm,__RC__)
+   PREDICTOR_STEP = ESMF_AlarmIsRinging( Predictor_Alarm,__RC__)
+
+   call ESMF_ClockGetAlarm(Clock,'ReplayShutOff',ReplayShutOff_Alarm,__RC__)
+   ReplayShutOff  = ESMF_AlarmIsRinging( ReplayShutOff_Alarm,__RC__)
+
 !  For some reason the alarm above is not working.
 !  For now, hardwire this...
 !  -----------------------------------------------
@@ -454,7 +463,7 @@ CONTAINS
 
 !  Stop here if it is NOT analysis time
 !  -------------------------------------
-   if ( .not. analysis_time ) then
+   if ( PREDICTOR_STEP .or. ReplayShutOff .or. (.not. analysis_time) ) then
       RETURN_(ESMF_SUCCESS)
    end if
 
@@ -484,7 +493,7 @@ CONTAINS
 
 !  Run MAPL Generic
 !  ----------------
-   call MAPL_GenericRun ( gc, IMPORT, EXPORT, clock,  __RC__ )
+!ALT   call MAPL_GenericRunChildren ( gc, IMPORT, EXPORT, clock,  __RC__ )
 
 !  Get pointer for IMPORT/EXPORT/INTERNAL states 
 !  ---------------------------------------------
@@ -521,7 +530,7 @@ CONTAINS
 !  -----------------------------------------------------------------
    izAOD = MAPL_SimpleBundleGetIndex(self%z_f,'AOD',3,__RC__)
    iyAOD = MAPL_SimpleBundleGetIndex(self%y_f,'AOD',3,__RC__)
-   ASSERT_(iyAOD==1) ! what we have created must have only AOD
+   _ASSERT(iyAOD==1,'needs informative message') ! what we have created must have only AOD
 
 !  Convert AOD to Log(AOD+eps) for A.K. Adjustment
 !  -----------------------------------------------

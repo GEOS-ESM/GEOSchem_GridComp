@@ -16,7 +16,7 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
    USE Chem_Mod 	     ! Chemistry Base Class
    USE Chem_UtilMod
 
@@ -472,7 +472,7 @@ CONTAINS
 
    call ESMF_FieldBundleGet(qkBundle, fieldCount=numVars , rc=STATUS)
    VERIFY_(STATUS)
-   ASSERT_(NUM_K == numVars)
+   _ASSERT(NUM_K == numVars,'needs informative message')
 
     !---------------------------------------------------------------
     ! Create and populate the array that maps GMI species indices to
@@ -563,7 +563,7 @@ CONTAINS
 !  Local
 !  -----
    INTEGER :: cymd, dymd, emiss_opt, hms
-   INTEGER :: i, i1, i2, ic, idehyd_num, im, iXj, iTile(1)
+   INTEGER :: i, i1, i2, ic, im, iXj, iTile(1)
    INTEGER :: j, j1, j2, jm, jTile(1)
    INTEGER :: k, km, kReverse
    INTEGER :: i1_gl, i2_gl, ju1_gl, j2_gl, ilo, gmi_nborder
@@ -929,7 +929,7 @@ CONTAINS
 !---------------------------------------------------------------------------
 !BOP
 !
-! !ROUTINE:  populateBundleQJ
+! !ROUTINE:  populateBundleQK
 !
 ! !INTERFACE:
 
@@ -959,7 +959,7 @@ CONTAINS
 
       call ESMF_FieldBundleGet(qkBundle, fieldCount=numVars, rc=STATUS)
       VERIFY_(STATUS)
-      ASSERT_(numVars == NUM_K)
+      _ASSERT(numVars == NUM_K,'needs informative message')
 
       do ib = 1, numVars
          ptr3D(:,:,:) = self%qkgmi(ib)%pArray3D(:,:,km:1:-1)

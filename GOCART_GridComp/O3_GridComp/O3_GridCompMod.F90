@@ -16,16 +16,13 @@
 ! !USES:
 
    USE ESMF
-   USE MAPL_Mod
+   USE MAPL
 
    USE Chem_Mod 	     ! Chemistry Base Class
    USE Chem_StateMod	     ! Chemistry State
    Use Chem_UtilMod, ONLY: pmaxmin             ! Utilities
    USE Chem_UtilMod, ONLY: Chem_UtilTroppFixer ! Fixes bad tropopause pressure values
    USE m_inpak90	     ! Resource file management  
-
-   USE ESMF_CFIOFileMOD
-   USE MAPL_CFIOMOD
 
    USE Henrys_law_ConstantsMod, ONLY: get_HenrysLawCts
 
@@ -35,6 +32,8 @@
 
    PRIVATE
 #include "mpif.h"
+
+   include "netcdf.inc"
 
    PUBLIC  O3_GridComp       ! The O3 object 
 
@@ -297,7 +296,7 @@ CONTAINS
 ! ------------------------------------------------------
    CALL setUpPandL(RC=status)
    VERIFY_(status)
-   ASSERT_(gcO3%nlevsPCHEM == km)
+   _ASSERT(gcO3%nlevsPCHEM == km,'needs informative message')
 
 ! GMIchem: Obtain static vegetation properties for dry deposition
 ! ---------------------------------------------------------------
@@ -439,7 +438,7 @@ CONTAINS
        status = 1
        VERIFY_(status)
     END IF
-    ASSERT_(gcO3%NSPECIES == nspecies)
+    _ASSERT(gcO3%NSPECIES == nspecies,'needs informative message')
 
 ! Validate the length of the climatology
 ! --------------------------------------
