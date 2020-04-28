@@ -1496,7 +1496,7 @@ RUN_ALARM: if (gcNI%run_alarm) then
 
       DUST_REACTION_RATES: do n = w_c%reg%i_DU, w_c%reg%j_DU
          
-         vname = uppercase( trim(w_c%reg%vname(n)) )
+         vname = ESMF_UtilStringUpperCase( trim(w_c%reg%vname(n)) )
 
          if (vname == 'DU001' .or. &
              vname == 'DU002' .or. &
@@ -1536,7 +1536,7 @@ RUN_ALARM: if (gcNI%run_alarm) then
 
       SALT_REACTION_RATES: do n = w_c%reg%i_SS, w_c%reg%j_SS
 
-         vname = uppercase( trim(w_c%reg%vname(n)) )
+         vname = ESMF_UtilStringUpperCase( trim(w_c%reg%vname(n)) )
 
          if (vname == 'SS001' .or. &
              vname == 'SS002' .or. &
