@@ -52,19 +52,18 @@ CONTAINS
 !\\
 ! !INTERFACE:
   !
-  SUBROUTINE HCOIO_Read_ESMF( am_I_Root, HcoState, Lct, RC )
+  SUBROUTINE HCOIO_Read_ESMF( HcoState, Lct, RC )
 !
 ! !USES:
 !
     USE ESMF
-    USE MAPL
+    USE MAPL_mod
     USE HCO_FILEDATA_MOD, ONLY : FileData_ArrInit
 
 # include "MAPL_Generic.h"
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,          INTENT(IN   )  :: am_I_Root
     TYPE(HCO_State),  POINTER        :: HcoState
     TYPE(ListCont),   POINTER        :: Lct
 !

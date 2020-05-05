@@ -35,7 +35,7 @@
 #
 # !REVISION HISTORY:
 #  23 Aug 2011 - M. Long     - Initial version
-#  See the Git history with the gitk browser!
+#  See https://github.com/geoschem/geos-chem for complete history
 #EOP
 #------------------------------------------------------------------------------
 #BOC
@@ -120,25 +120,25 @@ debug:
 
 charpak_mod.o          : charpak_mod.F90
 
-CMN_DIAG_mod.o         : CMN_DIAG_mod.F           \
+CMN_DIAG_mod.o         : CMN_DIAG_mod.F90         \
                          CMN_SIZE_mod.o           \
                          CMN_FJX_MOD.o            \
                          errcode_mod.o            \
                          precision_mod.o          \
                          state_grid_mod.o
 
-CMN_FJX_MOD.o          : CMN_FJX_MOD.F            \
+CMN_FJX_MOD.o          : CMN_FJX_MOD.F90          \
                          CMN_SIZE_mod.o           \
                          precision_mod.o          \
                          state_grid_mod.o
 
-CMN_O3_mod.o           : CMN_O3_mod.F             \
+CMN_O3_mod.o           : CMN_O3_mod.F90           \
                          CMN_SIZE_mod.o           \
                          errcode_mod.o            \
                          precision_mod.o          \
                          state_grid_mod.o
 
-CMN_SIZE_mod.o         : CMN_SIZE_mod.F           \
+CMN_SIZE_mod.o         : CMN_SIZE_mod.F90         \
                          errcode_mod.o            \
                          input_opt_mod.o          \
                          precision_mod.o          \
@@ -183,6 +183,7 @@ state_diag_mod.o       : state_diag_mod.F90       \
                          CMN_FJX_MOD.o            \
                          charpak_mod.o            \
                          diaglist_mod.o           \
+                         dictionary_m.o           \
                          errcode_mod.o            \
                          precision_mod.o          \
                          input_opt_mod.o          \
@@ -198,6 +199,7 @@ state_grid_mod.o       : state_grid_mod.F90       \
 state_met_mod.o        : state_met_mod.F90        \
                          charpak_mod.o            \
                          errcode_mod.o            \
+                         dictionary_m.o           \
                          CMN_SIZE_mod.o           \
                          precision_mod.o          \
                          registry_mod.o           \
@@ -207,12 +209,14 @@ taggeddiaglist_mod.o   : taggeddiaglist_mod.F90   \
                          charpak_mod.o            \
                          diaglist_mod.o           \
 
-physconstants.o        : physconstants.F          \
+physconstants.o        : physconstants.F90        \
                          precision_mod.o
 
 registry_mod.o         : registry_mod.F90         \
                          charpak_mod.o            \
+                         dictionary_m.o           \
                          errcode_mod.o            \
+                         input_opt_mod.o          \
                          precision_mod.o          \
                          registry_params_mod.o
 
@@ -221,6 +225,7 @@ registry_params_mod.o  : registry_params_mod.F90 \
 
 species_mod.o          : species_mod.F90          \
                          charpak_mod.o            \
+                         input_opt_mod.o          \
                          physconstants.o          \
                          precision_mod.o
 

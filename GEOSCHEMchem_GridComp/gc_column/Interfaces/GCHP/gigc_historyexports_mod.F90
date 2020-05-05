@@ -20,7 +20,7 @@ MODULE GIGC_HistoryExports_Mod
   USE DiagList_Mod
   USE ErrCode_Mod
   USE Precision_Mod
-  USE MAPL
+  USE MAPL_Mod
 
   IMPLICIT NONE
   PRIVATE
@@ -807,7 +807,7 @@ CONTAINS
     ENDIF
 
     ! Copy emissions data to MAPL exports via HEMCO
-    CALL HCOI_GC_WriteDiagn( am_I_Root, Input_Opt, .FALSE., RC )
+    CALL HCOI_GC_WriteDiagn( Input_Opt, .FALSE., RC )
     IF ( RC == GC_FAILURE ) THEN
        ErrMsg = "Error copying emissions data to MAPL via HEMCO"
        CALL GC_ERROR( ErrMsg, RC, Iam )
@@ -964,6 +964,7 @@ CONTAINS
           CALL Registry_Lookup( am_I_Root = am_I_Root,               &
                                 Registry  = State_Met%Registry,      &
                                 State     = State_Met%State,         &
+                                RegDict   = State_Met%RegDict,       &
                                 Variable  = current%registryID,      &
                                 Ptr2d     = current%GCStateData2d,   &
                                 Ptr2d_4   = current%GCStateData2d_4, &
@@ -977,6 +978,7 @@ CONTAINS
        ELSEIF ( current%isChem ) THEN
           CALL Registry_Lookup( am_I_Root = am_I_Root,               &
                                 Registry  = State_Chm%Registry,      &
+                                RegDict   = State_Chm%RegDict,       &
                                 State     = State_Chm%State,         &
                                 Variable  = current%registryID,      &
                                 Ptr2d     = current%GCStateData2d,   &
@@ -991,6 +993,7 @@ CONTAINS
        ELSEIF ( current%isDiag ) THEN
           CALL Registry_Lookup( am_I_Root = am_I_Root,               &
                                 Registry  = State_Diag%Registry,     &
+                                RegDict   = State_Diag%RegDict,      &
                                 State     = State_Diag%State,        &
                                 Variable  = current%registryID,      &
                                 Ptr2d     = current%GCStateData2d,   &

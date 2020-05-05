@@ -39,8 +39,8 @@ MODULE GC_Grid_Mod
 #endif
 !
 ! !REVISION HISTORY:
-!  23 Feb 2012 - R. Yantosca - Initial version, based on grid_mod.F
-!  See the Git history with the gitk browser!
+!  23 Feb 2012 - R. Yantosca - Initial version, based on grid_mod.F90
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -61,7 +61,7 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE Compute_Grid( am_I_Root, Input_Opt, State_Grid, RC )
+  SUBROUTINE Compute_Grid( Input_Opt, State_Grid, RC )
 !
 ! !USES:
 !
@@ -70,7 +70,6 @@ CONTAINS
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,        INTENT(IN)    :: am_I_Root         ! Root CPU?
     TYPE(OptInput), INTENT(IN)    :: Input_Opt         ! Input Options
 !
 ! !INPUT/OUTPUT PARAMETERS:
@@ -87,7 +86,7 @@ CONTAINS
 !  22 May 2019 - M. Sulprizio- Initial version: Consolidated Compute_Grid and
 !                              DoGridComputation into single routine that
 !                              computes fields in State_Grid.
-!  See the Git history with the gitk browser!
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -119,7 +118,6 @@ CONTAINS
     State_Grid%NativeNZ = 72
 
     ! Hardcode maximum number of levels below tropopause and stratopause
-    ! (formerly set in CMN_SIZE_mod.F)
     IF ( State_Grid%NZ == 47 ) THEN
        State_Grid%MaxTropLev  = 38
        State_Grid%MaxStratLev = 44
@@ -432,7 +430,7 @@ CONTAINS
     !======================================================================
     ! Echo info to stdout
     !======================================================================
-    IF ( am_I_Root ) THEN
+    IF ( Input_Opt%amIRoot ) THEN
        WRITE( 6, '(a)' )
        WRITE( 6, '(''%%%%%%%%%%%%%%% GLOBAL GRID %%%%%%%%%%%%%%%'')' )
        WRITE( 6, '(a)' )
@@ -489,16 +487,17 @@ CONTAINS
 ! initialization phase (they are imported from superdynamics).
 ! !INTERFACE:
 !
-  SUBROUTINE SetGridFromCtr( am_I_Root,  State_Grid, lonCtr, latCtr, RC )
+  SUBROUTINE SetGridFromCtr( Input_Opt, State_Grid, lonCtr, latCtr, RC )
 !
 ! USES
 !
     USE ErrCode_Mod
+    USE Input_Opt_Mod, ONLY : OptInput
     USE Roundoff_Mod
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,        INTENT(IN)    :: am_I_Root      ! Root CPU?
+    TYPE(OptInput), INTENT(IN)    :: Input_Opt      ! Input Options object
     REAL(f4),       INTENT(IN)    :: lonCtr(:,:)    ! Lon ctrs [rad]
     REAL(f4),       INTENT(IN)    :: latCtr(:,:)    ! Lat ctrs [rad]
     TYPE(GrdState), INTENT(IN)    :: State_Grid     ! Grid State object
@@ -509,7 +508,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  02 Jan 2014 - C. Keller   - Initial version
-!  See the Git history with the gitk browser!
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -602,17 +601,18 @@ CONTAINS
 ! consistency with the GEOS-Chem interface to GEOS-5.
 ! !INTERFACE:
 !
-  SUBROUTINE SetGridFromCtrEdges( am_I_Root, State_Grid, lonCtr, latCtr, &
+  SUBROUTINE SetGridFromCtrEdges( Input_Opt, State_Grid, lonCtr, latCtr, &
                                   lonEdge, latEdge, RC )
 !
 ! USES
 !
     USE ErrCode_Mod
+    USE Input_Opt_Mod, ONLY : OptInput
     USE Roundoff_Mod
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,        INTENT(IN)    :: am_I_Root      ! Root CPU?
+    TYPE(OptInput), INTENT(IN)    :: Input_Opt      ! Input Options object
     REAL(f4),       INTENT(IN)    :: lonCtr (:,:)   ! Lon ctrs [rad]
     REAL(f4),       INTENT(IN)    :: latCtr (:,:)   ! Lat ctrs [rad]
     REAL(f4),       INTENT(IN)    :: lonEdge(:,:)   ! Lon edges [rad]
@@ -625,7 +625,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  11 Nov 2018 - H.P. Lin    - Initial version based on SetGridFromCtr
-!  See the Git history with the gitk browser!
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -633,7 +633,7 @@ CONTAINS
 ! !LOCAL VARIABLES:
 !
     INTEGER            :: I, J
-    REAL(fp)           :: YEDGE_VAL, YSIN_VAL
+    REAL(fp)           :: YEDGE_VAL, YSIN_VAL, TMP
 
     ! Strings
     CHARACTER(LEN=255) :: ErrMsg
@@ -663,7 +663,7 @@ CONTAINS
 
        ! Special treatment at uppermost edge
        IF ( I == State_Grid%NX ) THEN
-          XEDGE(I+1,J) = RoundOff( lonEdge(I+1,J) / PI_180, 4 )
+          State_Grid%XEdge(I+1,J) = RoundOff( lonEdge(I+1,J) / PI_180, 4 )
        ENDIF
        IF ( J == State_Grid%NY ) THEN
           State_Grid%YEdge(I,J+1)   = RoundOff( latEdge(I,J+1) / PI_180, 4 )
@@ -671,11 +671,11 @@ CONTAINS
           State_Grid%YSIN(I,J+1)    = SIN( State_Grid%YEdge_R(I,J+1) )
        ENDIF
 
-       ! Special quantities directly derived from YEDGE
-       State_Grid%YEdge_R(I,J)   = State_Grid%YEdge(I,J) * PI_180
-       State_Grid%YEdge_VAL      = State_Grid%YEdge_R(I,J) ! Lat edge [radians]
-       State_Grid%YSIN_VAL       = SIN( YEDGE_VAL)         ! SIN( lat edge )
-       State_Grid%YSIN(I,J)      = YSIN_VAL                ! Store in YSIN array
+       ! Special quantities directly derived from State_Grid%YEdge
+       State_Grid%YEdge_R(I,J) = State_Grid%YEdge(I,J) * PI_180
+       YEDGE_VAL               = State_Grid%YEdge_R(I,J) ! Lat edge[radians]
+       YSIN_VAL                = SIN( YEDGE_VAL )        ! SIN( lat edge )
+       State_Grid%YSIN(I,J)    = YSIN_VAL                ! Store in YSIN
 
     ENDDO
     ENDDO
@@ -704,7 +704,6 @@ CONTAINS
 !
 ! !USES:
 !
-    USE CMN_SIZE_MOD
     USE ERROR_MOD,      ONLY : ERROR_STOP
     USE State_Grid_Mod, ONLY : GrdState
 !
@@ -719,7 +718,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  16 Jun 2017 - M. Sulprizio- Initial version based on routine from adjoint
-!  See the Git history with the gitk browser!
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC

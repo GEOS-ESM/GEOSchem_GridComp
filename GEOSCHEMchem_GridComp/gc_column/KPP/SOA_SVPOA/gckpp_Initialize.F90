@@ -13,8 +13,8 @@
 !        R. Sander, Max-Planck Institute for Chemistry, Mainz, Germany
 ! 
 ! File                 : gckpp_Initialize.f90
-! Time                 : Mon Nov 18 17:54:36 2019
-! Working directory    : /n/home08/elundgren/GC/Code.12.7.0_gcc/KPP/SOA_SVPOA
+! Time                 : Fri Mar 13 14:32:09 2020
+! Working directory    : /n/home05/msulprizio/GC/Code.GCHP/KPP/SOA_SVPOA
 ! Equation file        : gckpp.kpp
 ! Output root filename : gckpp
 ! 
