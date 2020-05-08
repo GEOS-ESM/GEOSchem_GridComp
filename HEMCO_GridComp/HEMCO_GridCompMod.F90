@@ -131,11 +131,10 @@ CONTAINS
     type (ESMF_Config)                 :: HemcoCF
     character(len=ESMF_MAXSTR)         :: COMP_NAME
     character(len=ESMF_MAXSTR)         :: Label 
-    character(len=ESMF_MAXSTR)         :: ConfigFile 
-    logical                            :: am_I_Root
-
+    character(len=ESMF_MAXSTR)         :: ConfigFile
     character(len=ESMF_MAXSTR)         :: Iam
     integer                            :: STATUS
+    logical                            :: am_I_Root
 
     !=======================================================================
     ! Set services begins here 
@@ -146,14 +145,14 @@ CONTAINS
     call ESMF_GridCompGet( GC, NAME=COMP_NAME, __RC__ )
     Iam = trim(COMP_NAME) // '::' // Iam
 
+    ! Is this the root CPU?
+    am_I_Root = MAPL_Am_I_Root()
+
     ! Set the Initialize, Run and Finalize entry points
     call MAPL_GridCompSetEntryPoint ( GC, ESMF_METHOD_INITIALIZE, Initialize_, __RC__ ) 
     call MAPL_GridCompSetEntryPoint ( GC, ESMF_METHOD_RUN,        Run1,        __RC__ )
     call MAPL_GridCompSetEntryPoint ( GC, ESMF_METHOD_RUN,        Run2,        __RC__ )
     call MAPL_GridCompSetEntryPoint ( GC, ESMF_METHOD_FINALIZE,   Finalize_,   __RC__ )
-
-    ! Root CPU?
-    am_I_Root = MAPL_Am_I_Root()
 
     ! Define ESMF config for HEMCO
     HemcoCF = ESMF_ConfigCreate(__RC__)
@@ -163,7 +162,7 @@ CONTAINS
     call ESMF_ConfigGetAttribute(HemcoCF, nnInst, Label="HEMCO_Instances:" , DEFAULT=1, __RC__)
   
     ! Verbose
-    IF ( am_I_Root ) WRITE(*,*) TRIM(Iam), ' - number of HEMCO instances: ', nnInst
+    IF ( Am_I_Root ) WRITE(*,*) TRIM(Iam), ' - number of HEMCO instances: ', nnInst
  
     ! Set HEMCO services for all instances
     DO N = 1, nnInst 
@@ -174,7 +173,7 @@ CONTAINS
                                      DEFAULT="HEMCOsa_Config.rc", __RC__)
 
        ! Verbose
-       IF ( am_I_Root ) WRITE(*,'(a19,i3.3,a2,a)') '--> HEMCO instance ', N, ': ', TRIM(ConfigFile)
+       IF ( Am_I_Root ) WRITE(*,'(a19,i3.3,a2,a)') '--> HEMCO instance ', N, ': ', TRIM(ConfigFile)
  
        ! Create a new instance object that holds the HEMCO states for this 
        ! instance. Will be added to linked list Instances.
@@ -705,7 +704,6 @@ CONTAINS
     TYPE(Instance), POINTER     :: ThisInst => NULL()
     TYPE(Instance), POINTER     :: NextInst => NULL()
     CHARACTER(LEN=ESMF_MAXSTR)  :: compName
-    LOGICAL                     :: am_I_Root 
     INTEGER                     :: ERROR
 
     __Iam__('Finalize')
@@ -806,7 +804,6 @@ CONTAINS
     REAL                            :: tsChem, tsDyn
     REAL(ESMF_KIND_R8)              :: s_r8
 
-    LOGICAL                         :: am_I_Root 
     INTEGER                         :: HCRC
 
     ! For MAPL/ESMF error handling (defined Iam and STATUS)
@@ -816,32 +813,29 @@ CONTAINS
     ! HEMCOinit_ begins here
     ! ================================================================
 
-    ! Root CPU?
-    am_I_Root = MAPL_am_I_Root()
-
     ! ------------------------------------------------------------------
     ! HEMCO initialization 
     ! ------------------------------------------------------------------
 
-    IF ( am_I_Root ) THEN
+    IF ( MAPL_Am_I_Root() ) THEN
        CALL HCO_LogFile_Open( Inst%HcoConfig%Err, RC = HCRC )
        _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
     ENDIF
 
     !-----------------------------------------------------------------
     ! Extract species to use in HEMCO 
-    CALL Get_nnMatch( am_I_Root, Inst%HcoConfig, nnMatch, HCRC )
+    CALL Get_nnMatch( Inst%HcoConfig, nnMatch, HCRC )
     _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
 
     !-----------------------------------------------------------------
     ! Initialize HCO state. Use only species that are used
     ! in GEOS-Chem and are also found in the HEMCO config. file.
-    CALL HcoState_Init ( am_I_Root, Inst%HcoState, Inst%HcoConfig, nnMatch, HCRC )
+    CALL HcoState_Init ( Inst%HcoState, Inst%HcoConfig, nnMatch, HCRC )
     _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
 
     ! ------------------------------------------------------------------
     ! Register species. Grid MUST be defined before doing this! 
-    CALL Register_Species ( am_I_Root, Inst%HcoState, HCRC )
+    CALL Register_Species ( Inst%HcoState, HCRC )
     _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
 
     ! ------------------------------------------------------------------
@@ -881,7 +875,7 @@ CONTAINS
     Inst%HcoState%TS_CHEM = s_r8
     Inst%HcoState%TS_EMIS = s_r8
 
-!    IF ( am_I_Root ) THEN
+!    IF ( MAPL_Am_I_Root() ) THEN
 !       WRITE(*,*) 'HEMCO time steps:'
 !       WRITE(*,*) 'Dynamic  : ', Inst%HcoState%TS_DYN 
 !       WRITE(*,*) 'Emissions: ', Inst%HcoState%TS_EMIS
@@ -910,14 +904,14 @@ CONTAINS
     ! information is written into internal lists (ReadList) and 
     ! the HEMCO configuration file is removed from buffer in this
     ! step. Also initializes the HEMCO clock
-    CALL HCO_Init( am_I_Root, Inst%HcoState, HCRC )
+    CALL HCO_Init( Inst%HcoState, HCRC )
     _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
 
     ! ------------------------------------------------------------------
     ! Initialize extensions.
     ! This initializes all (enabled) extensions and selects all met.
     ! fields needed by them. 
-    CALL HCOX_Init( am_I_Root, Inst%HcoState, Inst%ExtState, HCRC )
+    CALL HCOX_Init( Inst%HcoState, Inst%ExtState, HCRC )
     _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
 
     ! ------------------------------------------------------------------
@@ -925,12 +919,12 @@ CONTAINS
     ! every element of the HEMCO diagnostics file. In addition, if set
     ! in the HEMCO configuration file, a default diagnostics is created 
     ! for every HEMCO species. 
-    CALL Define_Diagnostics( am_I_Root, Inst%HcoState, HCRC )
+    CALL Define_Diagnostics( Inst%HcoState, HCRC )
     _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
 
     ! ------------------------------------------------------------------
     ! Cleanup 
-    CALL HCOI_SA_InitCleanup ( am_I_Root, HCRC )
+    CALL HCOI_SA_InitCleanup ( HCRC )
     _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
 
     ! Nullify pointers
@@ -993,7 +987,6 @@ CONTAINS
     TYPE(ESMF_Time)             :: currTime
     INTEGER                     :: yyyy, mm, dd, h, m, s, doy 
     INTEGER                     :: STAT
-    LOGICAL                     :: am_I_Root
 
     ! For MAPL/ESMF error handling (defined Iam and STATUS)
     __Iam__('HEMCOrun_ (HEMCO_GridCompMod.F90)') 
@@ -1005,9 +998,6 @@ CONTAINS
     ! ------------------------------------------------------------------
     ! Pre-run assignments 
     ! ------------------------------------------------------------------
-   
-    ! Root CPU?
-    am_I_Root = MAPL_am_I_Root()
 
     ! Pass ESMF/MAPL states to HEMCO state object
     Inst%HcoState%GRIDCOMP => GC
@@ -1021,7 +1011,7 @@ CONTAINS
     CALL ESMF_TimeGet ( currTime, yy=yyyy, mm=mm, dd=dd, &
                         dayOfYear=doy, h=h, m=m, s=s, __RC__ )
 
-    CALL HcoClock_Set ( am_I_Root, Inst%HcoState, yyyy, mm, dd, h, &
+    CALL HcoClock_Set ( Inst%HcoState, yyyy, mm, dd, h, &
                         m, s, cDOY=doy, IsEmisTime=.TRUE., RC=STAT )
     _ASSERT(STAT==HCO_SUCCESS,'needs informative message')
 
@@ -1030,10 +1020,10 @@ CONTAINS
     ! ------------------------------------------------------------------
     ! Make sure all required extension imports (met-fields and grid 
     ! quantities) are filled.
-    CALL SetExtFields( am_I_Root, Clock, Inst, __RC__ ) 
+    CALL SetExtFields( Clock, Inst, __RC__ ) 
 
 !    ! testing only
-!    IF ( am_I_Root ) write(*,*) 'HEMCO debug 333: ',SUM(Inst%ExtState%SUNCOS%Arr%Val),Inst%ExtState%Megan
+!    IF ( MAPL_Am_I_Root() ) write(*,*) 'HEMCO debug 333: ',SUM(Inst%ExtState%SUNCOS%Arr%Val),Inst%ExtState%Megan
 
     ! ------------------------------------------------------------------
     ! Run HEMCO core
@@ -1052,7 +1042,7 @@ CONTAINS
 
     ! Now run driver routine. This calculates all 'core' emissions, 
     ! i.e. all emissions that are not extensions.
-    CALL HCO_Run( am_I_Root, Inst%HcoState, -1, STAT )
+    CALL HCO_Run( Inst%HcoState, -1, STAT )
     _ASSERT(STAT==HCO_SUCCESS,'needs informative message')
 
     ! ------------------------------------------------------------------
@@ -1061,25 +1051,25 @@ CONTAINS
     ! Calculate parameterized emissions
 
 !    ! testing only
-!    IF ( am_I_Root ) write(*,*) 'HEMCO debug 334: ',SUM(Inst%ExtState%SUNCOS%Arr%Val),SUM(Inst%ExtState%T2M%Arr%Val)
+!    IF ( MAPL_Am_I_Root() ) write(*,*) 'HEMCO debug 334: ',SUM(Inst%ExtState%SUNCOS%Arr%Val),SUM(Inst%ExtState%T2M%Arr%Val)
 
-    CALL HCOX_Run( am_I_Root, Inst%HcoState, Inst%ExtState, STAT )
+    CALL HCOX_Run( Inst%HcoState, Inst%ExtState, STAT )
     _ASSERT(STAT==HCO_SUCCESS,'needs informative message')
 
 !    ! testing only
-!    IF ( am_I_Root ) write(*,*) 'HEMCO debug 335: ',SUM(Inst%ExtState%SUNCOS%Arr%Val),Inst%ExtState%Megan
+!    IF ( MAPL_Am_I_Root() ) write(*,*) 'HEMCO debug 335: ',SUM(Inst%ExtState%SUNCOS%Arr%Val),Inst%ExtState%Megan
 
     ! ------------------------------------------------------------------
     ! Diagnostics 
     ! ------------------------------------------------------------------
 
     ! Update HEMCO diagnostics 
-    CALL HcoDiagn_AutoUpdate ( am_I_Root, Inst%HcoState, STAT )
+    CALL HcoDiagn_AutoUpdate ( Inst%HcoState, STAT )
     _ASSERT(STAT==HCO_SUCCESS,'needs informative message')
  
     ! Fill exports (from HEMCO diagnostics)
     !IF ( HcoState%Options%HcoWritesDiagn ) THEN 
-    CALL HcoDiagn_Write( am_I_Root, Inst%HcoState, .FALSE., STAT ) 
+    CALL HcoDiagn_Write( Inst%HcoState, .FALSE., STAT ) 
     _ASSERT(STAT==HCO_SUCCESS,'needs informative message')
     !ENDIF
 
@@ -1138,7 +1128,6 @@ CONTAINS
 !
 ! !LOCAL VARIABLES:
 !
-    LOGICAL    :: am_I_Root
     INTEGER    :: ERROR
 
     __Iam__('HEMCOfinal')
@@ -1151,15 +1140,12 @@ CONTAINS
     ! TODO
     ! CALL Diagn_Cleanup()
 
-    ! Root CPU?
-    am_I_Root = MAPL_am_I_Root()
-
     ! Cleanup extensions and ExtOpt object 
-    CALL HCOX_Final( am_I_Root, Inst%HcoState, Inst%ExtState, ERROR )
+    CALL HCOX_Final( Inst%HcoState, Inst%ExtState, ERROR )
     _ASSERT(ERROR==HCO_SUCCESS,'needs informative message')
 
     ! Cleanup HCO core
-    CALL HCO_Final( am_I_Root, Inst%HcoState, .FALSE., ERROR ) 
+    CALL HCO_Final( Inst%HcoState, .FALSE., ERROR ) 
     _ASSERT(ERROR==HCO_SUCCESS,'needs informative message')
 
     ! Cleanup diagnostics
@@ -1186,7 +1172,7 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-    SUBROUTINE SetExtFields ( am_I_Root, Clock, Inst, RC )
+    SUBROUTINE SetExtFields ( Clock, Inst, RC )
 !
 ! !USES:
 !
@@ -1196,7 +1182,6 @@ CONTAINS
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,             INTENT(IN   )         :: am_I_Root   ! Root CPU? 
     TYPE(ESMF_Clock),    INTENT(IN)            :: Clock       ! ESMF clock obj 
 !                                                             
 ! !INPUT/OUTPUT PARAMETERS:                                   
@@ -1327,49 +1312,49 @@ CONTAINS
     ! ---------------------------------------------------------------- 
     ! Define extension variables 
     ! ---------------------------------------------------------------- 
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%U10M     , 'U10M'     , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%V10M     , 'V10M'     , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%ALBD     , 'ALBVF'    , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%WLI      ,  'LWI'     , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%T2M      , 'T2M'      , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%TSKIN    , 'TS'       , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%GWETTOP  , 'WET1'     , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%GWETROOT , 'WET2'     , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%SNOWHGT  , 'SNOMAS'   , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%SNODP    , 'SNOWDP'   , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%U10M     , 'U10M'     , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%V10M     , 'V10M'     , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%ALBD     , 'ALBVF'    , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%WLI      ,  'LWI'     , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%T2M      , 'T2M'      , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%TSKIN    , 'TS'       , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%GWETTOP  , 'WET1'     , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%GWETROOT , 'WET2'     , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%SNOWHGT  , 'SNOMAS'   , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%SNODP    , 'SNOWDP'   , __RC__ )
 ! SNICE is not used by any of the extensions - skip
-!    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%SNICE    , 'SNICE'  , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%USTAR    , 'USTAR'    , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%Z0       , 'Z0H'      , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%TROPP    , 'TROPP'    , __RC__ )
-!    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%SZAFACT  , 'SZAFACT'  , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%PARDR    , 'DRPAR'    , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%PARDF    , 'DFPAR'    , __RC__ )
+!    CALL HCO_Imp2Ext ( HcoState, ExtState%SNICE    , 'SNICE'  , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%USTAR    , 'USTAR'    , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%Z0       , 'Z0H'      , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%TROPP    , 'TROPP'    , __RC__ )
+!    CALL HCO_Imp2Ext ( HcoState, ExtState%SZAFACT  , 'SZAFACT'  , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%PARDR    , 'DRPAR'    , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%PARDF    , 'DFPAR'    , __RC__ )
 ! PSC2_WET only used by POPs specialty sim - skip
-!    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%PSC2_WET , 'PSC2_WET' , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%RADSWG   , 'SWNDSRF'  , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%FRCLND   , 'FRLAND'   , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%FRLAND   , 'FRLAND'   , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%FROCEAN  , 'FROCEAN'  , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%FRLAKE   , 'FRLAKE'   , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%FRLANDIC , 'FRLANDICE', __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%CLDFRC   , 'CLDTT'    , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%JNO2     , 'JNO2'     , __RC__ )
-!    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%JOH      , 'JOH'      , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%LAI      , 'LAI'      , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%CHLR     , 'CHLR'     , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%CNV_MFC  , 'CNV_MFC'  , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%SPHU     , 'Q'        , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%TK       , 'T'        , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%O3       , 'HCO_O3'   , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%NO       , 'HCO_NO'   , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%NO2      , 'HCO_NO2'  , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%HNO3     , 'HCO_HNO3' , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%DRY_TOTN , 'DRY_TOTN' , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%WET_TOTN , 'WET_TOTN' , __RC__ )
-    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%BYNCY    , 'BYNCY'    , __RC__ )
-!    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%LFR      , 'LFR'      , __RC__ )
-!    CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%CNV_FRC  , 'CNV_FRC'  , __RC__ )
+!    CALL HCO_Imp2Ext ( HcoState, ExtState%PSC2_WET , 'PSC2_WET' , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%RADSWG   , 'SWNDSRF'  , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%FRCLND   , 'FRLAND'   , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%FRLAND   , 'FRLAND'   , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%FROCEAN  , 'FROCEAN'  , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%FRLAKE   , 'FRLAKE'   , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%FRLANDIC , 'FRLANDICE', __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%CLDFRC   , 'CLDTT'    , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%JNO2     , 'JNO2'     , __RC__ )
+!    CALL HCO_Imp2Ext ( HcoState, ExtState%JOH      , 'JOH'      , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%LAI      , 'LAI'      , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%CHLR     , 'CHLR'     , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%CNV_MFC  , 'CNV_MFC'  , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%SPHU     , 'Q'        , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%TK       , 'T'        , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%O3       , 'HCO_O3'   , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%NO       , 'HCO_NO'   , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%NO2      , 'HCO_NO2'  , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%HNO3     , 'HCO_HNO3' , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%DRY_TOTN , 'DRY_TOTN' , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%WET_TOTN , 'WET_TOTN' , __RC__ )
+    CALL HCO_Imp2Ext ( HcoState, ExtState%BYNCY    , 'BYNCY'    , __RC__ )
+!    CALL HCO_Imp2Ext ( HcoState, ExtState%LFR      , 'LFR'      , __RC__ )
+!    CALL HCO_Imp2Ext ( HcoState, ExtState%CNV_FRC  , 'CNV_FRC'  , __RC__ )
 
     ! SUNCOS
     IF ( ExtState%SUNCOS%DoUse ) THEN
@@ -1381,10 +1366,10 @@ CONTAINS
 
        ALLOCATE( TMP(HcoState%NX,HcoState%NY) )
        TMP = 0.0_hp
-       CALL GetSUNCOS( am_I_Root, Clock, HcoState, TMP, 0, __RC__ )
+       CALL GetSUNCOS( Clock, HcoState, TMP, 0, __RC__ )
        ExtState%SUNCOS%Arr%Val(:,:) = TMP(:,:)
 
-       !CALL HCO_Imp2Ext ( am_I_Root, HcoState, ExtState%SUNCOS, 'SUNCOS', RC=STAT, FLD=TMP )
+       !CALL HCO_Imp2Ext ( HcoState, ExtState%SUNCOS, 'SUNCOS', RC=STAT, FLD=TMP )
        !ASSERT_(STAT==HCO_SUCCESS)
 
        DEALLOCATE(TMP)
@@ -1422,13 +1407,13 @@ CONTAINS
        TMP      = 0.0_hp
 
        ! SUNCOS right now
-       CALL GetSUNCOS( am_I_Root, Clock, HcoState, ZTH, 0, __RC__ )
+       CALL GetSUNCOS( Clock, HcoState, ZTH, 0, __RC__ )
        SUMCOSZA(:,:) = ZTH(:,:)
 
        ! Total SUNCOS over 24 hours
        ! NDYSTEP is # of time steps in this day
        DO N = 1,23
-          CALL GetSUNCOS( am_I_Root, Clock, HcoState, TMP, N, __RC__ )
+          CALL GetSUNCOS( Clock, HcoState, TMP, N, __RC__ )
           WHERE ( TMP < 0.0_hp ) TMP = 0.0_hp
           SUMCOSZA(:,:) = SUMCOSZA(:,:) + TMP(:,:)
        ENDDO
@@ -1504,7 +1489,7 @@ CONTAINS
 
     ! FRAC_OF_PBL
     IF ( ExtState%FRAC_OF_PBL%DoUse ) THEN
-       IF(am_I_Root) WRITE(*,*) 'HEMCO field FRAC_OF_PBL not defined!'
+       IF( MAPL_am_I_Root() ) WRITE(*,*) 'HEMCO field FRAC_OF_PBL not defined!'
        _ASSERT(.FALSE.,'needs informative message')
     ENDIF
 
@@ -1514,7 +1499,7 @@ CONTAINS
     ! Check for vector DRYCOEFF
     IF ( ExtState%WET_TOTN%DoUse .OR. ExtState%DRY_TOTN%DoUse ) THEN
        IF ( .NOT. ASSOCIATED(ExtState%DRYCOEFF) ) THEN
-          IF(am_I_Root) WRITE(*,*) 'HEMCO vector DRYCOEFF not defined!'
+          IF( MAPL_am_I_Root() ) WRITE(*,*) 'HEMCO vector DRYCOEFF not defined!'
           _ASSERT(.FALSE.,'needs informative message')
        ENDIF
     ENDIF
@@ -1699,7 +1684,7 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE GetSUNCOS( am_I_Root, Clock, HcoState, SUNCOS, DT, RC )
+  SUBROUTINE GetSUNCOS( Clock, HcoState, SUNCOS, DT, RC )
 !
 ! !USES
 !
@@ -1707,7 +1692,6 @@ CONTAINS
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
-    LOGICAL,          INTENT(IN   )  :: am_I_Root      ! Root CPU? 
     TYPE(ESMF_Clock), INTENT(IN)     :: Clock          ! ESMF clock obj 
     TYPE(HCO_State),  POINTER        :: HcoState       ! HEMCO state object
     INTEGER,          INTENT(IN   )  :: DT             ! Time shift relative to current date [hrs]
