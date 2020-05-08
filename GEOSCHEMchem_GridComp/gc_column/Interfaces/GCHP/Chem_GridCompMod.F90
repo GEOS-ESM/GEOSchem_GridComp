@@ -714,8 +714,7 @@ CONTAINS
 
           ! Get long name
           iName = TRIM(SUBSTRS(1))
-          CALL Spc_Info ( am_I_Root = MAPL_am_I_Root(), &
-                          iName=iName,                  &
+          CALL Spc_Info ( iName=iName,                  &
                           KppSpcID=-1,                  &
                           oDiagName = FullName,         &
                           oFormula = Formula,           &
@@ -789,7 +788,7 @@ CONTAINS
 
              ! Get long name
              iName = TRIM(SpcName)
-             CALL Spc_Info ( am_I_Root = MAPL_am_I_Root(), iName=iName, &
+             CALL Spc_Info ( iName=iName, &
                              KppSpcID=-1, oDiagName = FullName, &
                              oFormula = Formula, &
                              Found=Found, Underscores = .TRUE., RC = RC )
@@ -1013,7 +1012,7 @@ CONTAINS
     !-- Exports
     DO I=1,Nadv
        iName = TRIM(AdvSpc(I))
-       CALL Spc_Info ( am_I_Root = MAPL_am_I_Root(), iName=iName, &
+       CALL Spc_Info ( iName=iName, &
                        KppSpcID=-1, oDiagName = FullName, Found=Found, &
                        Underscores = .FALSE., RC = RC )
        IF ( .NOT. FOUND ) FullName = TRIM(SpcName)
@@ -1120,7 +1119,7 @@ CONTAINS
     DO I=1,SIZE(COLLIST,1)
        SpcName = COLLIST(I)
        iName = TRIM(SpcName)
-       CALL Spc_Info ( am_I_Root = MAPL_am_I_Root(), iName=iName, &
+       CALL Spc_Info ( iName=iName, &
                        KppSpcID=-1, oDiagName = FullName,         &
                        Found = Found, Underscores = .TRUE., RC = RC )
        IF ( .NOT. Found ) FullName = TRIM(SpcName)
@@ -1748,10 +1747,10 @@ CONTAINS
 !
     USE TIME_MOD,  ONLY : GET_TS_CHEM, GET_TS_EMIS
     USE TIME_MOD,  ONLY : GET_TS_DYN,  GET_TS_CONV
-#if defined( MODEL_GEOS )
-    USE TENDENCIES_MOD, ONLY : Tend_CreateClass
-    USE TENDENCIES_MOD, ONLY : Tend_Add
-#endif
+!#if defined( MODEL_GEOS )
+!    USE TENDENCIES_MOD, ONLY : Tend_CreateClass
+!    USE TENDENCIES_MOD, ONLY : Tend_Add
+!#endif
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
@@ -2521,31 +2520,31 @@ CONTAINS
 
     ENDDO
 
-#if defined( MODEL_GEOS )
-    !=======================================================================
-    ! Make sure that GEOS-Chem calculates chemistry tendencies of O3 and H2O
-    ! if it is the analysis OX and RATS provider, respectively. 
-    !=======================================================================
-    IF ( DoAnox ) THEN
-       GCID = ind_('O3')
-       IF ( GCID > 0 ) THEN
-          CALL Tend_CreateClass( am_I_Root, Input_Opt, State_Chm,             &
-                                 'CHEM',    __RC__ )
-          CALL Tend_Add        ( am_I_Root, Input_Opt, State_Chm, State_Grid, &
-                                 'CHEM',    GCID,      __RC__ )
-       ENDIF
-    ENDIF
-
-    IF ( DoRATS ) THEN
-       GCID = ind_('H2O')
-       IF ( GCID > 0 ) THEN
-          CALL Tend_CreateClass( am_I_Root, Input_Opt, State_Chm,             &
-                                 'CHEM',    __RC__ )
-          CALL Tend_Add        ( am_I_Root, Input_Opt, State_Chm, State_Grid, &
-                                 'CHEM',    GCID,      __RC__ )
-       ENDIF
-    ENDIF
-#endif
+!#if defined( MODEL_GEOS )
+!    !=======================================================================
+!    ! Make sure that GEOS-Chem calculates chemistry tendencies of O3 and H2O
+!    ! if it is the analysis OX and RATS provider, respectively. 
+!    !=======================================================================
+!    IF ( DoAnox ) THEN
+!       GCID = ind_('O3')
+!       IF ( GCID > 0 ) THEN
+!          CALL Tend_CreateClass( am_I_Root, Input_Opt, State_Chm,             &
+!                                 'CHEM',    __RC__ )
+!          CALL Tend_Add        ( am_I_Root, Input_Opt, State_Chm, State_Grid, &
+!                                 'CHEM',    GCID,      __RC__ )
+!       ENDIF
+!    ENDIF
+!
+!    IF ( DoRATS ) THEN
+!       GCID = ind_('H2O')
+!       IF ( GCID > 0 ) THEN
+!          CALL Tend_CreateClass( am_I_Root, Input_Opt, State_Chm,             &
+!                                 'CHEM',    __RC__ )
+!          CALL Tend_Add        ( am_I_Root, Input_Opt, State_Chm, State_Grid, &
+!                                 'CHEM',    GCID,      __RC__ )
+!       ENDIF
+!    ENDIF
+!#endif
 
     !=======================================================================
     ! Error trap: make sure that chemistry / emission time step are same and
@@ -2940,7 +2939,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE HCO_INTERFACE_MOD,       ONLY : HcoState
+    USE HCO_State_GC_Mod,        ONLY : HcoState
     USE MAPL_MemUtilsMod
     USE Olson_Landmap_Mod,       ONLY : Compute_Olson_Landmap
     USE Precision_Mod
@@ -4506,9 +4505,9 @@ CONTAINS
     USE State_Diag_Mod,        ONLY : DgnState, Cleanup_State_Diag
     USE State_Grid_Mod,        ONLY : GrdState, Cleanup_State_Grid
     USE State_Met_Mod,         ONLY : MetState, Cleanup_State_Met
-    USE HCOI_GC_MAIN_MOD,      ONLY : HCOI_GC_FINAL
+    USE HCO_Interface_GC_Mod,  ONLY : HCOI_GC_FINAL
 #if defined( MODEL_GEOS )
-    USE HCO_INTERFACE_MOD,     ONLY : HcoState
+    USE HCO_State_GC_Mod,      ONLY : HcoState
 #endif
 !
 ! !INPUT/OUTPUT PARAMETERS:
@@ -5727,216 +5726,216 @@ CONTAINS
 
   END SUBROUTINE CalcColumns_
 !EOC
-!------------------------------------------------------------------------------
-!     NASA/GSFC, Global Modeling and Assimilation Office, Code 910.1 and      !
-!          Harvard University Atmospheric Chemistry Modeling Group            !
-!------------------------------------------------------------------------------
-!BOP
+!!------------------------------------------------------------------------------
+!!     NASA/GSFC, Global Modeling and Assimilation Office, Code 910.1 and      !
+!!          Harvard University Atmospheric Chemistry Modeling Group            !
+!!------------------------------------------------------------------------------
+!!BOP
+!!
+!! !IROUTINE: CalcTendencies_ 
+!!
+!! !DESCRIPTION: CalcTendencies_ computes tendencies. 
+!!\\
+!!\\
+!! !INTERFACE:
+!!
+!  SUBROUTINE CalcTendencies_( am_I_Root, Input_Opt, State_Met, State_Chm, &
+!                              IsChemTime, Phase, EXPORT, OX_TEND, H2O_TEND, &
+!                              LM, RC )
+!!
+!! !USES:
+!!
+!!    USE TENDENCIES_MOD,          ONLY : Tend_Get
+!!
+!! !INPUT/OUTPUT PARAMETERS:
+!!
+!    LOGICAL,             INTENT(IN)            :: am_I_Root
+!    TYPE(OptInput),      INTENT(INOUT)         :: Input_Opt 
+!    TYPE(MetState),      INTENT(INOUT)         :: State_Met 
+!    TYPE(ChmState),      INTENT(INOUT)         :: State_Chm 
+!    LOGICAL,             INTENT(IN)            :: IsChemTime
+!    INTEGER,             INTENT(IN)            :: Phase    
+!    TYPE(ESMF_State),    INTENT(INOUT)         :: Export   ! Export State
+!    REAL,                POINTER               :: OX_TEND(:,:,:)
+!    REAL,                POINTER               :: H2O_TEND(:,:,:)
+!    INTEGER,             INTENT(IN)            :: LM
+!!
+!! !OUTPUT PARAMETERS:
+!!
+!    INTEGER,             INTENT(OUT)           :: RC       ! Success or failure?
+!!
+!! !REMARKS:
+!!
+!! !REVISION HISTORY:
+!!  05 Dec 2017 - C. Keller   - Initial version
+!!EOP
+!!------------------------------------------------------------------------------
+!!BOC
+!!
+!! LOCAL VARIABLES:
+!!
+!    ! Objects
+! 
+!    ! Scalars
+!    INTEGER                    :: STATUS
+!    INTEGER                    :: I, N, IND
+!    INTEGER                    :: Stage
+!    CHARACTER(LEN=ESMF_MAXSTR) :: Iam           ! Gridded component name
+!    CHARACTER(LEN=ESMF_MAXSTR) :: FldName
+!    REAL, POINTER              :: Ptr3D(:,:,:), Ptr2D(:,:)
+!    REAL(f4), POINTER          :: Tend(:,:,:)
 !
-! !IROUTINE: CalcTendencies_ 
+!    
+!    !=======================================================================
+!    ! Initialization
+!    !=======================================================================
 !
-! !DESCRIPTION: CalcTendencies_ computes tendencies. 
-!\\
-!\\
-! !INTERFACE:
+!    ! Identify this routine to MAPL
+!    Iam = 'GCC::CalcTendencies_'
 !
-  SUBROUTINE CalcTendencies_( am_I_Root, Input_Opt, State_Met, State_Chm, &
-                              IsChemTime, Phase, EXPORT, OX_TEND, H2O_TEND, &
-                              LM, RC )
+!    ! O3 tendencies due to chemistry.
+!    IF ( IsChemTime .AND. Phase==2 ) THEN
+!       CALL MAPL_GetPointer( EXPORT, Ptr3D, 'MTEND_CHEM_O3', &
+!                             NotFoundOk=.TRUE., __RC__ )
+!       IF ( ASSOCIATED(OX_TEND) .OR. ASSOCIATED(Ptr3D) ) THEN
 !
-! !USES:
+!          ! Get O3 tracer ID
+!          IND = Ind_('O3')
+!          _ASSERT(IND>0,'O3 tracer ID is negative')
 !
-    USE TENDENCIES_MOD,          ONLY : Tend_Get
+!          ! Get tracer tendency in kg/kg dry air/s 
+!          CALL Tend_Get( am_I_Root, Input_Opt, 'CHEM', IND, Stage, &
+!                         Tend, __RC__ )
+!          ! Fill OX_TEND (in kg/kg/s)
+!          IF ( ASSOCIATED(Tend) .AND. Stage==2 ) THEN
+!             OX_TEND = Tend(:,:,LM:1:-1)
+!          ELSE
+!             OX_TEND = 0.0
+!          ENDIF
 !
-! !INPUT/OUTPUT PARAMETERS:
+!          ! export as kg/m2/s:
+!          IF ( ASSOCIATED(Ptr3D) .AND. ASSOCIATED(Tend) .AND. Stage==2 ) THEN
+!             Ptr3D(:,:,LM:1:-1) = Tend(:,:,1:LM) * ( g0_100 &
+!                                  * State_Met%DELP_DRY(:,:,LM:1:-1) )
+!          ENDIF
 !
-    LOGICAL,             INTENT(IN)            :: am_I_Root
-    TYPE(OptInput),      INTENT(INOUT)         :: Input_Opt 
-    TYPE(MetState),      INTENT(INOUT)         :: State_Met 
-    TYPE(ChmState),      INTENT(INOUT)         :: State_Chm 
-    LOGICAL,             INTENT(IN)            :: IsChemTime
-    INTEGER,             INTENT(IN)            :: Phase    
-    TYPE(ESMF_State),    INTENT(INOUT)         :: Export   ! Export State
-    REAL,                POINTER               :: OX_TEND(:,:,:)
-    REAL,                POINTER               :: H2O_TEND(:,:,:)
-    INTEGER,             INTENT(IN)            :: LM
+!          ! Cleanup
+!          Ptr3D => NULL()
+!          Tend  => NULL()
+!       ENDIF
+!    ENDIF
 !
-! !OUTPUT PARAMETERS:
+!    ! H2O tendencies due to chemistry.
+!    IF ( ASSOCIATED(H2O_TEND) .AND. IsChemTime .AND. Phase==2 ) THEN
+!       ! Initialize
+!       H2O_TEND = 0.0
+!       ! Get tracer ID
+!       IND = Ind_('H2O')
+!       IF ( IND > 0 ) THEN
+!          ! Get tendency due to chemistry in kg/kg/s
+!          CALL Tend_Get( am_I_Root, Input_Opt, 'CHEM', IND, Stage, &
+!                         Tend, __RC__ )
+!          ! Fill H2O_TEND. Convert to kg/kg/s
+!          IF ( ASSOCIATED(Tend) .AND. Stage==2 ) THEN
+!             H2O_TEND = Tend(:,:,LM:1:-1)
+!          ENDIF
 !
-    INTEGER,             INTENT(OUT)           :: RC       ! Success or failure?
+!!          ! It looks like H2O_TEND is not preserved in the MAPL restart files, 
+!!          ! which causes the time regression to fail. Force GCC H2O tendencies
+!!          ! to zero until this problem is resolved! (ckeller, 11/02/2015) 
+!!          H2O_TEND = 0.0
+!!          if(am_I_Root) write(*,*) 'GCC: H2O_TEND set to zero!'
+!       ENDIF
+!       ! Cleanup
+!       Tend => NULL()
+!    ENDIF
 !
-! !REMARKS:
+!    ! Drydep mass tendencies
+!    ! MTEND_FLUX is a 2D diagnostics and reflects the mass flux due to dry 
+!    ! deposition
+!    IF ( PHASE == 1 ) THEN 
+!       DO I = 1, State_Chm%nDryDep
+!          N = State_Chm%Map_DryDep(I)
+!          FldName = 'MTEND_FLUX_'//TRIM(State_Chm%SpcData(N)%Info%Name)
+!          CALL MAPL_GetPointer( Export, Ptr2D, TRIM(FldName), &
+!                                NotFoundOk=.TRUE., __RC__ )
+!          IF ( ASSOCIATED(Ptr2D) ) THEN
+!             ! Tracer index 
+!             IND = Ind_(TRIM(State_Chm%SpcData(N)%Info%Name))
+!             _ASSERT(IND>0,'Tracer ID is negative')
+!             ! Get tracer tendency in kg/kg dry air/s 
+!             CALL Tend_Get( am_I_Root, Input_Opt, 'FLUX', IND, Stage, &
+!                            Tend, __RC__ )
+!             ! Export as kg/m2/s:
+!             IF ( ASSOCIATED(Tend) .AND. Stage==2 ) THEN
+!                Tend(:,:,1:LM) = Tend(:,:,1:LM) * ( g0_100  &
+!                                 * State_Met%DELP_DRY(:,:,LM:1:-1) )
+!                Ptr2D(:,:) = SUM(Tend,DIM=3) 
+!             ENDIF
+!             Ptr2D => NULL()
+!          END IF
+!       ENDDO
+!    ENDIF
 !
-! !REVISION HISTORY:
-!  05 Dec 2017 - C. Keller   - Initial version
-!EOP
-!------------------------------------------------------------------------------
-!BOC
+!    ! Wetdep mass tendencies
+!    ! MTEND_WETD is a 2D diagnostics and reflects the mass flux due to 
+!    ! large-scale wet deposition
+!    IF ( PHASE == 2 ) THEN 
+!       DO I = 1, State_Chm%nWetDep
+!          N = State_Chm%Map_WetDep(I)
+!          FldName = 'MTEND_WETD_'//TRIM(State_Chm%SpcData(N)%Info%Name)
+!          CALL MAPL_GetPointer( Export, Ptr2D, TRIM(FldName), &
+!                                NotFoundOk=.TRUE., __RC__ )
+!          IF ( ASSOCIATED(Ptr2D) ) THEN
+!             ! Tracer index 
+!             IND = Ind_(TRIM(State_Chm%SpcData(N)%Info%Name))
+!             _ASSERT(IND>0,'Tracer ID is negative')
+!             ! Get tracer tendency in kg/kg dry air/s 
+!             CALL Tend_Get( am_I_Root, Input_Opt, 'WETD', IND, Stage, &
+!                            Tend, __RC__ )
+!             ! Export as kg/m2/s:
+!             IF ( ASSOCIATED(Tend) .AND. Stage==2 ) THEN
+!                Tend(:,:,1:LM) = Tend(:,:,1:LM) * ( g0_100 &
+!                                 * State_Met%DELP_DRY(:,:,LM:1:-1) )
+!                Ptr2D(:,:) = SUM(Tend,DIM=3) 
+!             ENDIF
+!             Ptr2D => NULL()
+!          END IF
+!       ENDDO
+!    ENDIF
 !
-! LOCAL VARIABLES:
+!    ! Convection mass tendencies
+!    ! MTEND_CONV is a 2D diagnostics and reflects the mass flux due to 
+!    ! convective wet deposition
+!    IF ( PHASE == 1 ) THEN 
+!       DO I = 1, State_Chm%nWetDep
+!          N = State_Chm%Map_WetDep(I)
+!          FldName = 'MTEND_CONV_'//TRIM(State_Chm%SpcData(N)%Info%Name)
+!          CALL MAPL_GetPointer( Export, Ptr2D, TRIM(FldName),  &
+!                                NotFoundOk=.TRUE., __RC__ )
+!          IF ( ASSOCIATED(Ptr2D) ) THEN
+!             ! Tracer index 
+!             IND = Ind_(TRIM(State_Chm%SpcData(N)%Info%Name))
+!             _ASSERT(IND>0,'Tracer ID is negative')
+!             ! Get tracer tendency in kg/kg dry air/s 
+!             CALL Tend_Get( am_I_Root, Input_Opt, 'CONV', IND, Stage, &
+!                            Tend, __RC__ )
+!             ! Export as kg/m2/s:
+!             IF ( ASSOCIATED(Tend) .AND. Stage==2 ) THEN
+!                Tend(:,:,1:LM) = Tend(:,:,1:LM) * ( g0_100  &
+!                                 * State_Met%DELP_DRY(:,:,LM:1:-1) )
+!                Ptr2D(:,:) = SUM(Tend,DIM=3) 
+!             ENDIF
+!             Ptr2D => NULL()
+!          END IF
+!       ENDDO
+!    ENDIF
 !
-    ! Objects
- 
-    ! Scalars
-    INTEGER                    :: STATUS
-    INTEGER                    :: I, N, IND
-    INTEGER                    :: Stage
-    CHARACTER(LEN=ESMF_MAXSTR) :: Iam           ! Gridded component name
-    CHARACTER(LEN=ESMF_MAXSTR) :: FldName
-    REAL, POINTER              :: Ptr3D(:,:,:), Ptr2D(:,:)
-    REAL(f4), POINTER          :: Tend(:,:,:)
-
-    
-    !=======================================================================
-    ! Initialization
-    !=======================================================================
-
-    ! Identify this routine to MAPL
-    Iam = 'GCC::CalcTendencies_'
-
-    ! O3 tendencies due to chemistry.
-    IF ( IsChemTime .AND. Phase==2 ) THEN
-       CALL MAPL_GetPointer( EXPORT, Ptr3D, 'MTEND_CHEM_O3', &
-                             NotFoundOk=.TRUE., __RC__ )
-       IF ( ASSOCIATED(OX_TEND) .OR. ASSOCIATED(Ptr3D) ) THEN
-
-          ! Get O3 tracer ID
-          IND = Ind_('O3')
-          _ASSERT(IND>0,'O3 tracer ID is negative')
-
-          ! Get tracer tendency in kg/kg dry air/s 
-          CALL Tend_Get( am_I_Root, Input_Opt, 'CHEM', IND, Stage, &
-                         Tend, __RC__ )
-          ! Fill OX_TEND (in kg/kg/s)
-          IF ( ASSOCIATED(Tend) .AND. Stage==2 ) THEN
-             OX_TEND = Tend(:,:,LM:1:-1)
-          ELSE
-             OX_TEND = 0.0
-          ENDIF
-
-          ! export as kg/m2/s:
-          IF ( ASSOCIATED(Ptr3D) .AND. ASSOCIATED(Tend) .AND. Stage==2 ) THEN
-             Ptr3D(:,:,LM:1:-1) = Tend(:,:,1:LM) * ( g0_100 &
-                                  * State_Met%DELP_DRY(:,:,LM:1:-1) )
-          ENDIF
-
-          ! Cleanup
-          Ptr3D => NULL()
-          Tend  => NULL()
-       ENDIF
-    ENDIF
-
-    ! H2O tendencies due to chemistry.
-    IF ( ASSOCIATED(H2O_TEND) .AND. IsChemTime .AND. Phase==2 ) THEN
-       ! Initialize
-       H2O_TEND = 0.0
-       ! Get tracer ID
-       IND = Ind_('H2O')
-       IF ( IND > 0 ) THEN
-          ! Get tendency due to chemistry in kg/kg/s
-          CALL Tend_Get( am_I_Root, Input_Opt, 'CHEM', IND, Stage, &
-                         Tend, __RC__ )
-          ! Fill H2O_TEND. Convert to kg/kg/s
-          IF ( ASSOCIATED(Tend) .AND. Stage==2 ) THEN
-             H2O_TEND = Tend(:,:,LM:1:-1)
-          ENDIF
-
-!          ! It looks like H2O_TEND is not preserved in the MAPL restart files, 
-!          ! which causes the time regression to fail. Force GCC H2O tendencies
-!          ! to zero until this problem is resolved! (ckeller, 11/02/2015) 
-!          H2O_TEND = 0.0
-!          if(am_I_Root) write(*,*) 'GCC: H2O_TEND set to zero!'
-       ENDIF
-       ! Cleanup
-       Tend => NULL()
-    ENDIF
-
-    ! Drydep mass tendencies
-    ! MTEND_FLUX is a 2D diagnostics and reflects the mass flux due to dry 
-    ! deposition
-    IF ( PHASE == 1 ) THEN 
-       DO I = 1, State_Chm%nDryDep
-          N = State_Chm%Map_DryDep(I)
-          FldName = 'MTEND_FLUX_'//TRIM(State_Chm%SpcData(N)%Info%Name)
-          CALL MAPL_GetPointer( Export, Ptr2D, TRIM(FldName), &
-                                NotFoundOk=.TRUE., __RC__ )
-          IF ( ASSOCIATED(Ptr2D) ) THEN
-             ! Tracer index 
-             IND = Ind_(TRIM(State_Chm%SpcData(N)%Info%Name))
-             _ASSERT(IND>0,'Tracer ID is negative')
-             ! Get tracer tendency in kg/kg dry air/s 
-             CALL Tend_Get( am_I_Root, Input_Opt, 'FLUX', IND, Stage, &
-                            Tend, __RC__ )
-             ! Export as kg/m2/s:
-             IF ( ASSOCIATED(Tend) .AND. Stage==2 ) THEN
-                Tend(:,:,1:LM) = Tend(:,:,1:LM) * ( g0_100  &
-                                 * State_Met%DELP_DRY(:,:,LM:1:-1) )
-                Ptr2D(:,:) = SUM(Tend,DIM=3) 
-             ENDIF
-             Ptr2D => NULL()
-          END IF
-       ENDDO
-    ENDIF
-
-    ! Wetdep mass tendencies
-    ! MTEND_WETD is a 2D diagnostics and reflects the mass flux due to 
-    ! large-scale wet deposition
-    IF ( PHASE == 2 ) THEN 
-       DO I = 1, State_Chm%nWetDep
-          N = State_Chm%Map_WetDep(I)
-          FldName = 'MTEND_WETD_'//TRIM(State_Chm%SpcData(N)%Info%Name)
-          CALL MAPL_GetPointer( Export, Ptr2D, TRIM(FldName), &
-                                NotFoundOk=.TRUE., __RC__ )
-          IF ( ASSOCIATED(Ptr2D) ) THEN
-             ! Tracer index 
-             IND = Ind_(TRIM(State_Chm%SpcData(N)%Info%Name))
-             _ASSERT(IND>0,'Tracer ID is negative')
-             ! Get tracer tendency in kg/kg dry air/s 
-             CALL Tend_Get( am_I_Root, Input_Opt, 'WETD', IND, Stage, &
-                            Tend, __RC__ )
-             ! Export as kg/m2/s:
-             IF ( ASSOCIATED(Tend) .AND. Stage==2 ) THEN
-                Tend(:,:,1:LM) = Tend(:,:,1:LM) * ( g0_100 &
-                                 * State_Met%DELP_DRY(:,:,LM:1:-1) )
-                Ptr2D(:,:) = SUM(Tend,DIM=3) 
-             ENDIF
-             Ptr2D => NULL()
-          END IF
-       ENDDO
-    ENDIF
-
-    ! Convection mass tendencies
-    ! MTEND_CONV is a 2D diagnostics and reflects the mass flux due to 
-    ! convective wet deposition
-    IF ( PHASE == 1 ) THEN 
-       DO I = 1, State_Chm%nWetDep
-          N = State_Chm%Map_WetDep(I)
-          FldName = 'MTEND_CONV_'//TRIM(State_Chm%SpcData(N)%Info%Name)
-          CALL MAPL_GetPointer( Export, Ptr2D, TRIM(FldName),  &
-                                NotFoundOk=.TRUE., __RC__ )
-          IF ( ASSOCIATED(Ptr2D) ) THEN
-             ! Tracer index 
-             IND = Ind_(TRIM(State_Chm%SpcData(N)%Info%Name))
-             _ASSERT(IND>0,'Tracer ID is negative')
-             ! Get tracer tendency in kg/kg dry air/s 
-             CALL Tend_Get( am_I_Root, Input_Opt, 'CONV', IND, Stage, &
-                            Tend, __RC__ )
-             ! Export as kg/m2/s:
-             IF ( ASSOCIATED(Tend) .AND. Stage==2 ) THEN
-                Tend(:,:,1:LM) = Tend(:,:,1:LM) * ( g0_100  &
-                                 * State_Met%DELP_DRY(:,:,LM:1:-1) )
-                Ptr2D(:,:) = SUM(Tend,DIM=3) 
-             ENDIF
-             Ptr2D => NULL()
-          END IF
-       ENDDO
-    ENDIF
-
-    ! Successful return
-    _RETURN(ESMF_SUCCESS)
-
-  END SUBROUTINE CalcTendencies_ 
-!EOC
+!    ! Successful return
+!    _RETURN(ESMF_SUCCESS)
+!
+!  END SUBROUTINE CalcTendencies_ 
+!!EOC
 !------------------------------------------------------------------------------
 !     NASA/GSFC, Global Modeling and Assimilation Office, Code 910.1 and      !
 !          Harvard University Atmospheric Chemistry Modeling Group            !
@@ -6114,7 +6113,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE TENDENCIES_MOD,          ONLY : Tend_Get
+!    USE TENDENCIES_MOD,          ONLY : Tend_Get
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
@@ -7407,7 +7406,7 @@ CONTAINS
     USE HCO_ERROR_MOD
     USE HCO_TYPES_MOD,     ONLY : DiagnCont
     USE HCO_DIAGN_MOD,     ONLY : Diagn_Get
-    USE HCO_INTERFACE_MOD, ONLY : HcoState
+    USE HCO_State_GC_Mod,  ONLY : HcoState
 !
 ! !INPUT PARAMETERS:
 !
@@ -7518,7 +7517,7 @@ CONTAINS
             
              ! Get diagnostics 
              DgnID = 44500 + TrcID
-             CALL Diagn_Get( am_I_Root, HcoState, .FALSE., DgnCont,  &
+             CALL Diagn_Get( HcoState, .FALSE., DgnCont,  &
                              FLAG, ERR, cID=DgnID, AutoFill=-1,      &
                              COL=Input_Opt%DIAG_COLLECTION ) 
 
@@ -7553,7 +7552,7 @@ CONTAINS
                 END SELECT
 
                 ! Get diagnostics 
-                CALL Diagn_Get( am_I_Root, HcoState, .FALSE., DgnCont,  &
+                CALL Diagn_Get( HcoState, .FALSE., DgnCont,  &
                                 FLAG, ERR, cID=DgnID, AutoFill=-1,      &
                                 COL=Input_Opt%DIAG_COLLECTION ) 
 

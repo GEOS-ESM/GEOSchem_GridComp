@@ -64,9 +64,9 @@ SUBROUTINE CLEANUP( Input_Opt, State_Grid, ERROR, RC )
   USE TOMAS_MOD,               ONLY : CLEANUP_TOMAS  !sfarina, 1/16/13
 #endif
   USE TOMS_MOD,                ONLY : CLEANUP_TOMS
+#if !defined( ESMF_ ) && !defined( MODEL_ )
   USE TPCORE_FVDAS_MOD,        ONLY : EXIT_TPCORE
   USE TPCORE_WINDOW_MOD,       ONLY : EXIT_TPCORE_WINDOW
-#if !defined( ESMF_ ) && !defined( MODEL_ )
   USE TRANSPORT_MOD,           ONLY : CLEANUP_TRANSPORT
 #endif
 #ifdef RRTMG
@@ -197,11 +197,13 @@ SUBROUTINE CLEANUP( Input_Opt, State_Grid, ERROR, RC )
      RETURN
   ENDIF
 
+#if !defined( ESMF_ ) && !defined( MODEL_ )
   IF ( State_Grid%NestedGrid ) THEN
      CALL EXIT_TPCORE_WINDOW()
   ELSE
      CALL EXIT_TPCORE()
   ENDIF
+#endif
 
   ! Cleanup Tagged CO code
   CALL CLEANUP_TAGGED_CO( RC )
@@ -285,10 +287,6 @@ SUBROUTINE CLEANUP( Input_Opt, State_Grid, ERROR, RC )
 #endif
 
 #if !defined( ESMF_ ) && !defined( MODEL_ )
-  !=====================================================================
-  ! These routines are only needed when GEOS-Chem
-  ! is compiled for GCHP, or for external ESMs.
-  !=====================================================================
   CALL CLEANUP_TRANSPORT()
 #endif
 

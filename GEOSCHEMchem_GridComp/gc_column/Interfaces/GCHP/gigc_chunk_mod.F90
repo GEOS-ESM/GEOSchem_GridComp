@@ -86,9 +86,9 @@ CONTAINS
     USE State_Grid_Mod,          ONLY : GrdState, Init_State_Grid
     USE State_Met_Mod,           ONLY : MetState
     USE Strat_Chem_Mod,          ONLY : Init_Strat_Chem
-#if defined( MODEL_GEOS )
-    USE Tendencies_Mod,          ONLY : TEND_INIT
-#endif
+!#if defined( MODEL_GEOS )
+!    USE Tendencies_Mod,          ONLY : TEND_INIT
+!#endif
     USE Time_Mod,                ONLY : Set_Timesteps
     USE UCX_MOD,                 ONLY : INIT_UCX
     USE UnitConv_Mod,            ONLY : Convert_Spc_Units
@@ -268,15 +268,15 @@ CONTAINS
     ! Diagnostics and tendencies 
     !-------------------------------------------------------------------------
 
-#if defined( MODEL_GEOS )
-    ! The GEOS-Chem diagnostics list, stored in HistoryConfig, is initialized 
-    ! during GIGC_INIT_SIMULATION, and corresponding arrays in State_Diag are 
-    ! allocated accordingly when initializing State_Diag. Here, we thus 
-    ! only need to initialize the tendencies, which have not been initialized
-    ! yet (ckeller, 11/29/17). 
-    CALL Tend_Init ( Input_Opt, State_Chm, State_Grid, State_Met, RC ) 
-    _ASSERT(RC==GC_SUCCESS, 'Error calling Tend_Init')
-#endif
+!#if defined( MODEL_GEOS )
+!    ! The GEOS-Chem diagnostics list, stored in HistoryConfig, is initialized 
+!    ! during GIGC_INIT_SIMULATION, and corresponding arrays in State_Diag are 
+!    ! allocated accordingly when initializing State_Diag. Here, we thus 
+!    ! only need to initialize the tendencies, which have not been initialized
+!    ! yet (ckeller, 11/29/17). 
+!    CALL Tend_Init ( Input_Opt, State_Chm, State_Grid, State_Met, RC ) 
+!    _ASSERT(RC==GC_SUCCESS, 'Error calling Tend_Init')
+!#endif
 
 #if !defined( MODEL_GEOS )
     ! GCHP only: Convert species units to internal state units (v/v dry)
@@ -317,7 +317,6 @@ CONTAINS
 ! !USES:
 !
     ! GEOS-Chem state objects 
-    USE HCO_Interface_Mod,  ONLY : HcoState
     USE Input_Opt_Mod,      ONLY : OptInput
     USE State_Chm_Mod,      ONLY : ChmState
     USE State_Diag_Mod
@@ -332,6 +331,10 @@ CONTAINS
     USE Mixing_Mod,         ONLY : Do_Tend, Do_Mixing
     USE WetScav_Mod,        ONLY : Setup_WetScav, Do_WetDep
 
+    ! HEMCO components (eventually moved to a separate GridComp?)
+    USE HCO_State_GC_Mod,   ONLY : HcoState, ExtState
+    USE HCO_Interface_Common, ONLY : SetHcoTime
+
     ! Specialized subroutines
     USE Calc_Met_Mod,       ONLY : AirQnt, Set_Dry_Surface_Pressure
     USE Calc_Met_Mod,       ONLY : GIGC_Cap_Tropopause_Prs
@@ -345,7 +348,6 @@ CONTAINS
     ! Utilities
     USE ErrCode_Mod
     USE HCO_Error_Mod
-    USE HCO_Interface_Mod,  ONLY : SetHcoTime
     USE MAPL_MemUtilsMod
     USE Pressure_Mod,       ONLY : Accept_External_Pedge
     USE State_Chm_Mod,      ONLY : IND_
@@ -357,8 +359,8 @@ CONTAINS
     USE Aerosol_Mod,        ONLY : Set_AerMass_Diagnostic
 
 #if defined( MODEL_GEOS )
-    USE Derived_Met_Mod,    ONLY : GET_COSINE_SZA
-    USE HCOI_GC_MAIN_MOD,   ONLY : HCOI_GC_WriteDiagn
+    USE Calc_Met_Mod,           ONLY : GET_COSINE_SZA
+    USE HCO_Interface_GC_Mod,   ONLY : HCOI_GC_WriteDiagn
 #endif
 !
 ! !INPUT PARAMETERS:
@@ -586,8 +588,9 @@ CONTAINS
                                     value_UTC      = utc,        &
                                     RC             = RC         )
 
-    ! Set HEMCO time
-    CALL SetHcoTime ( DoEmis, RC )
+    ! Pass time values obtained from the ESMF environment to HEMCO
+    CALL SetHcoTime ( HcoState,   ExtState,   year,    month,   day,   &
+                      dayOfYr,    hour,       minute,  second,  DoEmis,  RC )
 
     ! Calculate MODIS leaf area indexes needed for dry deposition
     CALL Compute_XLAI( Input_Opt, State_Grid, State_Met, RC )
