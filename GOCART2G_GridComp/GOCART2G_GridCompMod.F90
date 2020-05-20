@@ -18,7 +18,7 @@ module GOCART2G_GridCompMod
 ! !Establish the Childen's SetServices
  !-----------------------------------
    use DU2G_GridCompMod,    only   : DU2GSetServices  => SetServices
-   use SSng_GridCompMod,    only   : SSngSetServices  => SetServices
+   use SS2G_GridCompMod,    only   : SS2GSetServices  => SetServices
 !   use SUng_GridCompMod,    only   : SUngSetServices  => SetServices
 !   use BCng_GridCompMod,    only   : BCngSetServices  => SetServices
 !   use OCng_GridCompMod,    only   : OCngSetServices  => SetServices
@@ -68,7 +68,7 @@ module GOCART2G_GridCompMod
 !-------------------------------------------------------------------------
 
   integer ::     DU2G = -1
-  integer ::     SSng = -1
+  integer ::     SS2G = -1
   integer ::     SUng = -1
   integer ::     BCng = -1
   integer ::     OCng = -1
@@ -334,11 +334,11 @@ if (mapl_am_I_root()) print*,'GOCART2G self%active_DU = ',self%active_DU
 
 
     ! Add variables to AERO_RAD state. Used in aerosol optics calculations
-    call addAero (aero, label='air_pressure_for_aerosol_optics',             label2='PLE', grid=grid, typekind=MAPL_R4, __RC__)
-    call addAero (aero, label='relative_humidity_for_aerosol_optics',        label2='RH',  grid=grid, typekind=MAPL_R4, __RC__)
-    call addAero (aero, label='extinction_in_air_due_to_ambient_aerosol',    label2='EXT', grid=grid, typekind=MAPL_R4, __RC__)
-    call addAero (aero, label='single_scattering_albedo_of_ambient_aerosol', label2='SSA', grid=grid, typekind=MAPL_R4, __RC__)
-    call addAero (aero, label='asymmetry_parameter_of_ambient_aerosol',      label2='ASY', grid=grid, typekind=MAPL_R4, __RC__)
+    call add_aero (aero, label='air_pressure_for_aerosol_optics',             label2='PLE', grid=grid, typekind=MAPL_R4, __RC__)
+    call add_aero (aero, label='relative_humidity_for_aerosol_optics',        label2='RH',  grid=grid, typekind=MAPL_R4, __RC__)
+    call add_aero (aero, label='extinction_in_air_due_to_ambient_aerosol',    label2='EXT', grid=grid, typekind=MAPL_R4, __RC__)
+    call add_aero (aero, label='single_scattering_albedo_of_ambient_aerosol', label2='SSA', grid=grid, typekind=MAPL_R4, __RC__)
+    call add_aero (aero, label='asymmetry_parameter_of_ambient_aerosol',      label2='ASY', grid=grid, typekind=MAPL_R4, __RC__)
 
     call ESMF_AttributeSet(aero, name='band_for_aerosol_optics',             value=0,     __RC__)
 
@@ -552,7 +552,7 @@ if(mapl_am_i_root()) print*,'getInstances_ instances(:) = ', instances(:)
 !   filing the AERO states that are passed to radiation.
 
     call addChild__ (gc, names=self%instances_DU(1:self%active_DU), SS=DU2GSetServices, instInt=DU2G, __RC__)
-    call addChild__ (gc, names=self%instances_SS(1:self%active_SS), SS=SSngSetServices, instInt=SSng, __RC__)
+    call addChild__ (gc, names=self%instances_SS(1:self%active_SS), SS=SS2GSetServices, instInt=SS2G, __RC__)
 
 
 !   Create passive instances after active instances
@@ -562,7 +562,7 @@ if(mapl_am_i_root()) print*,'getInstances_ instances(:) = ', instances(:)
     end if
 
     if ((size(self%instances_SS)) >= (self%active_SS+1)) then
-        call addChild__ (gc, names=self%instances_SS(self%active_SS+1:size(self%instances_SS)), SS=SSngSetServices, instInt=SSng, __RC__)
+        call addChild__ (gc, names=self%instances_SS(self%active_SS+1:size(self%instances_SS)), SS=SS2GSetServices, instInt=SS2G, __RC__)
 
     end if
 
