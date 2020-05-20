@@ -3,7 +3,6 @@
 #
 
 variable_table::
-
 # Name     Units        Long Name
 # -----    ------       ----------------------
 du001      'kg kg-1'    'Dust Mixing Ratio (bin001)'
