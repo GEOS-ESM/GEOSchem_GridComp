@@ -2,7 +2,7 @@ esma_set_this ()
 
 set (alldirs
   DU2G_GridComp
-  SSng_GridComp
+  SS2G_GridComp
   SUng_GridComp
   BCng_GridComp
   BRCng_GridComp
