@@ -1,5 +1,10 @@
 TR_GridComp ChangeLog
 
+2020-05-22 <michael.manyin@nasa.gov>
+        * Fixed memory leak
+        * 3D emissions diagnostic is now kg/m2/s instead of kg/m2
+        * Several diagnostics now account for moist air
+
 2019-07-05 <michael.manyin@nasa.gov>, Tag: Icarus-3_2_p9_MEM_15
         * Added Elliot's aoa_bl tracer, and vertical specification "boundary_layer"
 

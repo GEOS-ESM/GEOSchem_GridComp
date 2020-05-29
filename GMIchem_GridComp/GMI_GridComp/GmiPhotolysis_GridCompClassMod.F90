@@ -22,7 +22,6 @@
    USE GmiSpcConcentrationMethod_mod, ONLY : t_SpeciesConcentration
    USE GmiGrid_mod,                   ONLY : t_gmiGrid
    USE GmiTimeControl_mod,            ONLY : t_GmiClock
-   USE GmiESMFrcFileReading_mod,      ONLY : rcEsmfReadLogical
    USE GmiESMFrcFileReading_mod,      ONLY : rcEsmfReadTable
    use GmiArrayBundlePointer_mod,     ONLY : t_GmiArrayBundle, CleanArrayPointer
    use GmiFieldBundleESMF_mod,        ONLY : updateTracerToBundle
@@ -383,28 +382,28 @@ CONTAINS
       ! Emission related variables
       !------------------------------
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_synoz, &
-     &           "do_synoz:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_synoz, &
+     &           label="do_synoz:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_semiss_inchem, &
-     &           "do_semiss_inchem:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_semiss_inchem, &
+     &           label="do_semiss_inchem:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_ShipEmission, &
-     &           "do_ShipEmission:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_ShipEmission, &
+     &           label="do_ShipEmission:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       !------------------------------
       ! Diagnostics related variables
       !------------------------------
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_diag, &
-     &           "pr_diag:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_diag, &
+     &           label="pr_diag:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%verbose, &
-     &           "verbose:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%verbose, &
+     &           label="verbose:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       !-------------------------------------------
@@ -412,8 +411,8 @@ CONTAINS
       ! Useful for mission support and replays.
       !--------------------------------------------
       
-      call rcEsmfReadLogical(gmiConfigFile, self%BCRealTime, &
-     &           "BCRealTime:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%BCRealTime, &
+     &           label="BCRealTime:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
       
       !-----------------------------
@@ -455,7 +454,7 @@ CONTAINS
      &                default = 1, rc=STATUS )
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_clear_sky, "do_clear_sky:", &
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_clear_sky, label="do_clear_sky:", &
      &                       default=.false., rc=STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%fastj_offset_sec, &
@@ -495,7 +494,7 @@ CONTAINS
 
 !... do solar cycle in incoming solar flux?
 
-      CALL rcEsmfReadLogical(gmiConfigFile, self%do_solar_cycle, "do_solar_cycle:", &
+      CALL ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_solar_cycle, label="do_solar_cycle:", &
      &                       default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
@@ -645,8 +644,8 @@ CONTAINS
      &                default = '', rc=STATUS )
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_ozone_inFastJX, &
-     &              "do_ozone_inFastJX:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_ozone_inFastJX, &
+     &              label="do_ozone_inFastJX:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       !=================================================================
@@ -656,7 +655,7 @@ CONTAINS
       !                 and not do any aerosol/dust calculations.
       !=================================================================
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_AerDust_Calc, "do_AerDust_Calc:", &
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_AerDust_Calc, label="do_AerDust_Calc:", &
      &                       default=.false., rc=STATUS)
 
       !=================================================================
@@ -698,10 +697,10 @@ CONTAINS
 
       !!if (self%num_qjs > 0) self%qj_labels(1:self%num_qjs) = lqjchem(1:self%num_qjs)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_qj_o3_o1d, "pr_qj_o3_o1d:", &
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_qj_o3_o1d, label="pr_qj_o3_o1d:", &
      &                       default=.false., rc=STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_qj_opt_depth, "pr_qj_opt_depth:", &
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_qj_opt_depth, label="pr_qj_opt_depth:", &
      &                       default=.false., rc=STATUS)
 
 !      if (self%pr_qj_o3_o1d) then
@@ -745,24 +744,24 @@ CONTAINS
       ! Do we want to couple to GOCART aerosols?
       ! ----------------------------------------
       
-      call rcEsmfReadLogical(gmiConfigFile, self%usingGOCART_BC, &
-     &           "usingGOCART_BC:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%usingGOCART_BC, &
+     &           label="usingGOCART_BC:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
       
-      call rcEsmfReadLogical(gmiConfigFile, self%usingGOCART_DU, &
-     &           "usingGOCART_DU:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%usingGOCART_DU, &
+     &           label="usingGOCART_DU:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
       
-      call rcEsmfReadLogical(gmiConfigFile, self%usingGOCART_OC, &
-     &           "usingGOCART_OC:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%usingGOCART_OC, &
+     &           label="usingGOCART_OC:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
       
-      call rcEsmfReadLogical(gmiConfigFile, self%usingGOCART_SS, &
-     &           "usingGOCART_SS:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%usingGOCART_SS, &
+     &           label="usingGOCART_SS:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
       
-      call rcEsmfReadLogical(gmiConfigFile, self%usingGOCART_SU, &
-     &           "usingGOCART_SU:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%usingGOCART_SU, &
+     &           label="usingGOCART_SU:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
 
@@ -2200,6 +2199,7 @@ CONTAINS
 
   TYPE(ESMF_State)           :: aero
   TYPE(ESMF_FieldBundle)     :: aerosols
+  TYPE(ESMF_StateItem_Flag)  :: itemtype
 
   rc = 0
   IAm = "Acquire_SU"
@@ -2233,19 +2233,19 @@ CONTAINS
      END IF
 
      ! If volcanic SU exists, use it too:
-     NULLIFY(SO4)
-     CALL MAPL_GetPointer(impChem, SO4, 'GOCART::SO4v')
-     IF( ASSOCIATED(SO4) ) THEN
+     CALL ESMF_StateGet(impChem, 'GOCART::SO4v', itemtype, RC=STATUS)
+     VERIFY_(STATUS)
+
+     IF ( itemtype == ESMF_STATEITEM_FIELD ) THEN
+       CALL MAPL_GetPointer(impChem, SO4, 'GOCART::SO4v', RC=STATUS)
+       VERIFY_(STATUS)
 
        self%wAersl(:,:,km:1:-1,1) = &
        self%wAersl(:,:,km:1:-1,1) + SO4(:,:,1:km)*airdens(:,:,1:km)
 
        IF(self%verbose) THEN
-        CALL pmaxmin('SO4v:', SO4, qmin, qmax, iXj, km, 1. )
+         CALL pmaxmin('SO4v:', SO4, qmin, qmax, iXj, km, 1. )
        END IF
-
-       NULLIFY(SO4)
-
      END IF
 
     END IF
