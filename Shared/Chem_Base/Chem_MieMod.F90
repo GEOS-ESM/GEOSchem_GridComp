@@ -530,6 +530,12 @@ contains
    call ESMF_ConfigGetAttribute( CF, this%channels       , Label= "BANDS:" , &
                                  count=this%nch, rc=rc )
 
+!do i=1,this%nch
+!if(mapl_am_i_root())print*,'DU TEST2 band = ',this%channels(i)
+!end do
+!if(mapl_am_i_root())print*,'DU TEST2 nch = ',this%nch
+
+
 !  If there is no BAND definition on CF, make something up
 !  -------------------------------------------------------
    if(rc /= ESMF_SUCCESS) then
