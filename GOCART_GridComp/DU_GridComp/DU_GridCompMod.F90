@@ -325,7 +325,6 @@ CONTAINS
     rc = 40
    END IF
 
-
 !   call ESMF_StateGet( expChem, 'DUMASS', field, RC=status )
 !  verify_(status)
 !   call ESMF_FieldGet( field, farrayPtr=ptr_test, RC=status )
@@ -619,7 +618,9 @@ real :: gcdu_test(nhres)
    call init_()
    if ( rc /= 0 ) return
 
-
+do n=1,5
+  if(mapl_am_i_root()) print*,'n = ', n, ' : INIT DU sum(du00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+end do
 !                       -------------------
 !                       Parse resource file
 !                       -------------------
@@ -785,13 +786,6 @@ gcdu_test = gcdu_test * 1.00E-09
       return
    end if
 
-if(mapl_am_i_root()) print*,'Ch_DU(:) = ',Ch_DU(:)
-if(mapl_am_i_root()) print*,'gcDU%Ch_DU = ',gcDU%Ch_DU
-if(mapl_am_i_root()) print*,'gcdu_test = ',gcdu_test
-if(mapl_am_i_root()) print*,'DU im = ', im
-if(mapl_am_i_root()) print*,'DU jm = ', jm
-
-
 !  Settling velocity correction following Maring et al, 2003
 !  ---------------
    call i90_label ( 'maringFlag:', ier(1) )
@@ -926,6 +920,8 @@ CONTAINS
    real, pointer, dimension(:,:)   :: frlake
    real, pointer, dimension(:,:)   :: du_src => null()
 
+   real, allocatable :: emissions_(:,:)
+
 #define EXPORT        expChem
 #define iNAME         TRIM(gcDU%iname)
 
@@ -953,8 +949,6 @@ CONTAINS
    n1    = w_c%reg%i_DU
    n2    = w_c%reg%j_DU
 
-if(mapl_am_i_root()) print*,'DU km = ',km
-
    ijl  = ( i2 - i1 + 1 ) * ( j2 - j1 + 1 )
    ijkl = ijl * km
 
@@ -962,6 +956,11 @@ if(mapl_am_i_root()) print*,'DU km = ',km
         nbins /= NBIN_DUDP .OR. nbins /= NBIN_DUSD ) then
       call die(myname,'inconsistent bins in resource file and registry')
    endif
+
+
+!do n=1,5
+!  if(mapl_am_i_root()) print*,'n = ', n, ' : Run1 B DU sum(du00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+!end do
 
 ! Update emissions/production if necessary (daily)
 !  ------------------------------------------
@@ -1009,6 +1008,7 @@ if(mapl_am_i_root()) print*,'DU km = ',km
    allocate( emissions(i1:i2,j1:j2), dqa(i1:i2,j1:j2), stat=STATUS)
    VERIFY_(STATUS)
 
+allocate(emissions_(i1:i2,j1:j2), __STAT__)
 
 #ifdef DEBUG
    do n = n1, n2
@@ -1041,7 +1041,7 @@ if(mapl_am_i_root()) print*,'DU km = ',km
 
 #endif
 
-
+#if 0
 !  Dust Source
 !  -----------
    do n = 1, nbins
@@ -1054,12 +1054,43 @@ if(mapl_am_i_root()) print*,'DU km = ',km
 
        dqa = gcDU%Ch_DU * gcDU%sfrac(n)*gcDU%src * emissions * cdt * grav / w_c%delp(:,:,km)
 
-if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum emissions = ',sum(emissions)
-if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(dqa) = ',sum(dqa)
+!if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum emissions = ',sum(emissions)
+!if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(dqa) = ',sum(dqa)
+
        w_c%qa(n1+n-1)%data3d(:,:,km) = w_c%qa(n1+n-1)%data3d(:,:,km) + dqa
+!if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(du00n) = ',sum(w_c%qa(n1+n-1)%data3d)
 
        if (associated(DU_emis(n)%data2d)) then
            DU_emis(n)%data2d = gcDU%Ch_DU*gcDU%sfrac(n)*gcDU%src * emissions
+!if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(DUEM) = ',sum(DU_emis(n)%data2d)
+       end if
+   end do
+#endif
+
+   emissions_ = 0.0
+   do n = 1, nbins
+       emissions = 0.0
+       dqa = 0.0
+
+       call DustEmissionGOCART( i1, i2, j1, j2, km, DU_radius(n), &
+                                frlake, gwettop, oro, u10m, v10m, &
+                                emissions, rc )
+       emissions_ = emissions_ + emissions
+   end do
+ 
+   do n = 1, nbins
+!       dqa = gcDU%Ch_DU * gcDU%sfrac(n)*gcDU%src * emissions_ * cdt * grav / w_c%delp(:,:,km)
+       dqa = gcDU%Ch_DU * gcDU%sfrac(n)*gcDU%src * emissions_ * cdt * mapl_grav / w_c%delp(:,:,km)
+
+!if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum emissions = ',sum(emissions)
+!if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(dqa) = ',sum(dqa)
+
+       w_c%qa(n1+n-1)%data3d(:,:,km) = w_c%qa(n1+n-1)%data3d(:,:,km) + dqa
+!if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(du00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+
+       if (associated(DU_emis(n)%data2d)) then
+           DU_emis(n)%data2d = gcDU%Ch_DU*gcDU%sfrac(n)*gcDU%src * emissions_
+!if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(DUEM) = ',sum(DU_emis(n)%data2d)
        end if
    end do
 
@@ -1079,9 +1110,6 @@ if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(dqa) = ',sum(dqa)
 !    Get indices for point emissions
 !    -------------------------------
      allocate(iPoint(gcDU%nPts), jPoint(gcDU%nPts), stat=ios)
-
-!if (mapl_am_I_root()) print*,'DU lon = ',gcDU%pLon/radToDeg
-!if (mapl_am_I_root()) print*,'DU lat = ',gcDU%pLat/radToDeg
 
      call MAPL_GetHorzIJIndex(gcDU%nPts, iPoint, jPoint, &
                               grid = w_c%grid_esmf,      &
@@ -1122,9 +1150,9 @@ if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(dqa) = ',sum(dqa)
    endif POINTWISE_SOURCES
 
 
-!    do n = 1, nbins
-!       print*,'DU n = ',n,' sum(w_c%qa%data3d) = ',sum( w_c%qa(n1+n-1)%data3d(i,j,:))
-!    end do
+!do n=1,5
+!   if(mapl_am_i_root()) print*,'n = ', n, ' : Run1 E DU sum(du00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+!end do
 
 
 !  Clean up
@@ -1345,6 +1373,9 @@ CONTAINS
       call die(myname,'inconsistent bins in resource file and registry')
    endif
 
+!do n=1,5
+!  if(mapl_am_i_root()) print*,'n = ', n, ' : Run2 B DU sum(du00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+!end do
 
 #ifdef DEBUG
    do n = n1, n2
@@ -1417,6 +1448,11 @@ CONTAINS
 #endif
 
 
+do n=1,5
+   if(mapl_am_i_root()) print*,'n = ', n, ' :Run2 B DU sum(du00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+end do
+
+
 RUN_ALARM: if (gcDU%run_alarm) then
 
 !  Dust particle radius [m] and density [kg m-3]
@@ -1435,6 +1471,10 @@ RUN_ALARM: if (gcDU%run_alarm) then
    call Chem_Settling ( i1, i2, j1, j2, km, n1, n2, nbins, gcDU%rhFlag, &
                         DU_radius, DU_rhop, cdt, w_c, tmpu, rhoa, hsurf,    &
                         hghte, DU_set, rc, correctionMaring=gcDU%maringFlag )
+
+do n=1,5
+   if(mapl_am_i_root()) print*,'n = ', n,' : sum DU_set(n) = ', sum(DU_set(n)%data2d)
+end do
 
 #ifdef DEBUG
    do n = n1, n2
@@ -1457,8 +1497,16 @@ RUN_ALARM: if (gcDU%run_alarm) then
     w_c%qa(n1+n-1)%data3d(:,:,km) = &
             w_c%qa(n1+n-1)%data3d(:,:,km) - dqa
     if( associated(DU_dep(n)%data2d) ) &
-     DU_dep(n)%data2d = dqa*w_c%delp(:,:,km)/grav/cdt
+!     DU_dep(n)%data2d = dqa*w_c%delp(:,:,km)/grav/cdt
+     DU_dep(n)%data2d = dqa*w_c%delp(:,:,km)/MAPL_GRAV/cdt
+
+
+if(mapl_am_i_root()) print*,'n = ', n,' : DU dqa = ',sum(dqa)
+if(mapl_am_i_root()) print*,'n = ', n,' : DU drydepf = ',sum(drydepositionfrequency)
+!if(mapl_am_i_root()) print*,'n = ', n,' : DU sum(du00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+if(mapl_am_i_root()) print*,'n = ', n,' : sum DU_dep(n) = ',sum(DU_dep(n)%data2d)
    end do
+
 
 #ifdef DEBUG
    do n = n1, n2
@@ -1477,6 +1525,9 @@ RUN_ALARM: if (gcDU%run_alarm) then
                           w_c%qa, ple, tmpu, rhoa, pfllsan, pfilsan, &
                           precc, precl, fluxout, rc )
     if(associated(DU_wet(n)%data2d)) DU_wet(n)%data2d = fluxout%data2d
+
+if(mapl_am_i_root()) print*,'n = ', n,' : DU DUWT = ',sum(DU_wet(n)%data2d)
+!if(mapl_am_i_root()) print*,'n = ', n,' : DU sum(du00n) = ',sum(w_c%qa(n1+n-1)%data3d)
    end do
 
 #ifdef DEBUG
@@ -1553,6 +1604,13 @@ RUN_ALARM: if (gcDU%run_alarm) then
 
    end if RUN_ALARM
 
+
+
+do n=1,5
+  if(mapl_am_i_root()) print*,'n = ', n, ' : Run2 E DU sum(du00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+end do
+
+
 !  Compute the desired output diagnostics here
 !  Ideally this will go where chemout is called in fvgcm.F since that
 !  will reflect the distributions after transport, etc.
@@ -1563,6 +1621,12 @@ RUN_ALARM: if (gcDU%run_alarm) then
                          DU_exttau25, DU_scatau25,  DU_aeridx, DU_fluxu,      &
                          DU_fluxv, DU_conc, DU_extcoef, DU_scacoef,           &
                          DU_exttaufm, DU_scataufm, DU_angstrom, rc)
+
+if(mapl_am_i_root()) print*,'DU sum(DUCMASS25) = ',sum(ptrDUCMASS25%data2d)
+if(mapl_am_i_root()) print*,'DU sum(DUMASS) = ',sum(ptrDUMASS%data3d)
+if(mapl_am_i_root()) print*,'DU sum(DUSCATAU) = ',sum(ptrDUSCATAU%data2d)
+if(mapl_am_i_root()) print*,'DU sum(DUANGSTR) = ',sum(ptrDUANGSTR%data2d)
+
 
    return
 
@@ -1711,7 +1775,8 @@ CONTAINS
        do k = 1, km
         colmass%data2d(i1:i2,j1:j2) &
          =   colmass%data2d(i1:i2,j1:j2) &
-           + w_c%qa(n+n1-1)%data3d(i1:i2,j1:j2,k)*w_c%delp(i1:i2,j1:j2,k)/grav
+!           + w_c%qa(n+n1-1)%data3d(i1:i2,j1:j2,k)*w_c%delp(i1:i2,j1:j2,k)/grav
+           + w_c%qa(n+n1-1)%data3d(i1:i2,j1:j2,k)*w_c%delp(i1:i2,j1:j2,k)/mapl_grav
        end do
       end do
    endif
@@ -1721,7 +1786,8 @@ CONTAINS
        do k = 1, km
         colmass25%data2d(i1:i2,j1:j2) &
          =   colmass25%data2d(i1:i2,j1:j2) &
-           + w_c%qa(n+n1-1)%data3d(i1:i2,j1:j2,k)*w_c%delp(i1:i2,j1:j2,k)/grav*fPM25(n)
+!           + w_c%qa(n+n1-1)%data3d(i1:i2,j1:j2,k)*w_c%delp(i1:i2,j1:j2,k)/grav*fPM25(n)
+           + w_c%qa(n+n1-1)%data3d(i1:i2,j1:j2,k)*w_c%delp(i1:i2,j1:j2,k)/mapl_grav*fPM25(n)
        end do
       end do
    endif
@@ -1761,7 +1827,8 @@ CONTAINS
        do k = 1, km
         fluxu%data2d(i1:i2,j1:j2) &
          =   fluxu%data2d(i1:i2,j1:j2) &
-           + w_c%qa(n+n1-1)%data3d(i1:i2,j1:j2,k)*w_c%delp(i1:i2,j1:j2,k)/grav*u(i1:i2,j1:j2,k)
+!           + w_c%qa(n+n1-1)%data3d(i1:i2,j1:j2,k)*w_c%delp(i1:i2,j1:j2,k)/grav*u(i1:i2,j1:j2,k)
+           + w_c%qa(n+n1-1)%data3d(i1:i2,j1:j2,k)*w_c%delp(i1:i2,j1:j2,k)/mapl_grav*u(i1:i2,j1:j2,k)
        end do
       end do
    endif   
@@ -1773,7 +1840,8 @@ CONTAINS
        do k = 1, km
         fluxv%data2d(i1:i2,j1:j2) &
          =   fluxv%data2d(i1:i2,j1:j2) &
-           + w_c%qa(n+n1-1)%data3d(i1:i2,j1:j2,k)*w_c%delp(i1:i2,j1:j2,k)/grav*v(i1:i2,j1:j2,k)
+!           + w_c%qa(n+n1-1)%data3d(i1:i2,j1:j2,k)*w_c%delp(i1:i2,j1:j2,k)/grav*v(i1:i2,j1:j2,k)
+           + w_c%qa(n+n1-1)%data3d(i1:i2,j1:j2,k)*w_c%delp(i1:i2,j1:j2,k)/mapl_grav*v(i1:i2,j1:j2,k)
        end do
       end do
    endif      
@@ -1804,17 +1872,21 @@ CONTAINS
         do j = j1, j2
          do i = i1, i2
           call Chem_MieQuery(gcDU%mie_tables, idx, ilam550, &
-              w_c%qa(n1+n-1)%data3d(i,j,k)*w_c%delp(i,j,k)/grav, &
+!              w_c%qa(n1+n-1)%data3d(i,j,k)*w_c%delp(i,j,k)/grav, &
+              w_c%qa(n1+n-1)%data3d(i,j,k)*w_c%delp(i,j,k)/mapl_grav, &
               w_c%rh(i,j,k), tau=tau, ssa=ssa)
 
 !         Calculate the total ext. and scat. coefficients
           if( associated(extcoef%data3d) ) then
               extcoef%data3d(i,j,k) = extcoef%data3d(i,j,k) + &
-                                      tau * (grav * rhoa(i,j,k) / w_c%delp(i,j,k))
+!                                      tau * (grav * rhoa(i,j,k) / w_c%delp(i,j,k))
+                                      tau * (mapl_grav * rhoa(i,j,k) / w_c%delp(i,j,k))
+
           endif
           if( associated(scacoef%data3d) ) then
               scacoef%data3d(i,j,k) = scacoef%data3d(i,j,k) + &
-                                      ssa * tau * (grav * rhoa(i,j,k) / w_c%delp(i,j,k))
+!                                      ssa * tau * (grav * rhoa(i,j,k) / w_c%delp(i,j,k))
+                                      ssa * tau * (mapl_grav * rhoa(i,j,k) / w_c%delp(i,j,k))
           endif
 
 !         Integrate in the vertical
@@ -1858,12 +1930,14 @@ CONTAINS
          do i = i1, i2
 
           call Chem_MieQuery(gcDU%mie_tables, idx, ilam470, &
-              w_c%qa(n1+n-1)%data3d(i,j,k)*w_c%delp(i,j,k)/grav, &
+!              w_c%qa(n1+n-1)%data3d(i,j,k)*w_c%delp(i,j,k)/grav, &
+              w_c%qa(n1+n-1)%data3d(i,j,k)*w_c%delp(i,j,k)/mapl_grav, &
               w_c%rh(i,j,k), tau=tau)
           tau470(i,j) = tau470(i,j) + tau
 
           call Chem_MieQuery(gcDU%mie_tables, idx, ilam870, &
-              w_c%qa(n1+n-1)%data3d(i,j,k)*w_c%delp(i,j,k)/grav, &
+!              w_c%qa(n1+n-1)%data3d(i,j,k)*w_c%delp(i,j,k)/grav, &
+              w_c%qa(n1+n-1)%data3d(i,j,k)*w_c%delp(i,j,k)/mapl_grav, &
               w_c%rh(i,j,k), tau=tau)
           tau870(i,j) = tau870(i,j) + tau
 
