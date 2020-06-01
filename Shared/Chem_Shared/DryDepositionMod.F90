@@ -38,6 +38,7 @@
 !
 !EOP
   real, parameter :: OCEAN=0.0, LAND = 1.0, SEA_ICE = 2.0
+real,parameter ::grav_mapl=9.80665
 
 !-------------------------------------------------------------------------
 CONTAINS
@@ -84,7 +85,8 @@ CONTAINS
    obk = 1.e5
    where(abs(shflux) > 1.e-32) &
        obk =   - rhoa * cpd * t * ustar**3. &
-             / (von_karman * grav * shflux)
+!             / (von_karman * grav * shflux)
+             / (von_karman * grav_mapl * shflux)
 
    return
    end subroutine ObukhovLength
@@ -150,6 +152,7 @@ CONTAINS
 !-------------------------------------------------------------------------
 
 ! !Local Variables
+
    character(len=*), parameter :: myname = 'DryDepositionGOCART'
    integer :: i, j
    real, parameter :: rhow = 1000.      ! density of water [kg m-3]
@@ -242,8 +245,10 @@ CONTAINS
          present(radius) .and. present(rhop) .and. present(gwettop)) then
 
 !      Calculate the threshold velocity for dust emissions
-       u_thresh0 = 0.13 * sqrt(rhop*grav*2.*radius/rhoa(i,j,km)) &
-                        * sqrt(1.+6.e-7/(rhop*grav*(2.*radius)**2.5)) &
+!       u_thresh0 = 0.13 * sqrt(rhop*grav*2.*radius/rhoa(i,j,km)) &
+       u_thresh0 = 0.13 * sqrt(rhop*grav_mapl*2.*radius/rhoa(i,j,km)) &
+!                        * sqrt(1.+6.e-7/(rhop*grav*(2.*radius)**2.5)) &
+                        * sqrt(1.+6.e-7/(rhop*grav_mapl*(2.*radius)**2.5)) &
               / sqrt(1.928*(1331.*(100.*2.*radius)**1.56+0.38)**0.092 - 1.)
        w10m = sqrt(u10m(i,j)**2. + v10m(i,j)**2.)
 
