@@ -38,6 +38,7 @@
 !
 !EOP
   real, parameter :: OCEAN=0.0, LAND = 1.0, SEA_ICE = 2.0
+real,parameter ::grav_mapl=9.80665
 
 !-------------------------------------------------------------------------
 CONTAINS
@@ -143,6 +144,9 @@ CONTAINS
 
    Td_ls = cdt
    nbins = n2-n1+1
+!print*,'DU n1 = ',n1
+!print*,'DU n2 = ',n2
+!print*,'DU nbins = ',nbins
    if( associated(fluxout%data2d) ) fluxout%data2d(i1:i2,j1:j2) = 0.0
 
 !  Allocate the dynamic arrays
@@ -154,7 +158,8 @@ CONTAINS
    if(ios .ne. 0) stop
 
 !  Accumulate the 3-dimensional arrays of rhoa and pdog
-   pdog = (ple(:,:,1:km)-ple(:,:,0:km-1)) / grav
+!   pdog = (ple(:,:,1:km)-ple(:,:,0:km-1)) / grav
+   pdog = (ple(:,:,1:km)-ple(:,:,0:km-1)) / grav_mapl
    delz = pdog / rhoa
    dpfli = pfllsan(:,:,1:km)-pfllsan(:,:,0:km-1)+pfilsan(:,:,1:km)-pfilsan(:,:,0:km-1)
    if (.not. KIN) then              ! Gases
