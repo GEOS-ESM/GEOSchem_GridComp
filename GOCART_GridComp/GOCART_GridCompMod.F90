@@ -1091,6 +1091,7 @@ if ( r%doing_GOCART ) then
              call ESMF_ConfigGetAttribute(CF, AEROFRIENDLY, Label='AERO_FRIENDLIES:', default=trim(FRIENDLIES), __RC__)
 
              if (index(trim(FRIENDLIES), 'MOIST') > 0)  call Disable_Convection
+!             if (index(trim(AEROFRIENDLY), 'MOIST') > 0)  call Disable_Convection
           endif
 
        end if ! data or computational GC
@@ -1537,6 +1538,7 @@ end if ! doing GOCART
 
       N = chemReg%i_GOCART + L - 1
       call MAPL_GetPointer(internal, NAME=short_name, ptr=w_c%qa(N)%data3d, __RC__)
+if(mapl_am_i_root()) print *,'n = ',n ,' : shortname = ',trim(short_name)
    end do
 
 #ifdef PRINT_STATES
@@ -3202,7 +3204,6 @@ subroutine aerosol_optics(state, rc)
   band = 0
   call ESMF_AttributeGet(state, name='band_for_aerosol_optics', value=band, __RC__)
   offset = band - n_bands
-
 ! Pressure at layer edges 
 ! ------------------------
   call ESMF_AttributeGet(state, name='air_pressure_for_aerosol_optics', value=fld_name, __RC__)
