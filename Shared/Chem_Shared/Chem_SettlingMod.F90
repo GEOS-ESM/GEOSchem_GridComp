@@ -69,7 +69,7 @@ CONTAINS
    integer, intent(in) :: i1, i2, j1, j2, km, nbeg, nend, nbins
    integer, intent(in) :: flag     ! flag to control particle swelling (see note)
    real, intent(in)    :: cdt
-   real, pointer, dimension(:)     :: radiusInp, rhopInp
+   real, dimension(:), intent(in)  :: radiusInp, rhopInp
    real, pointer, dimension(:,:)   :: hsurf
    real, pointer, dimension(:,:,:) :: tmpu, rhoa, hghte
 
@@ -108,6 +108,8 @@ CONTAINS
 !-------------------------------------------------------------------------
 
 ! !Local Variables
+real,parameter ::grav_mapl=9.80665
+
    integer  ::  i, j, k, iit, n
    real, parameter ::  rhow = 1000.  ! Density of water [kg m-3]
    real :: vsettle(i1:i2,j1:j2,km)               ! fall speed [m s-1]
@@ -147,12 +149,13 @@ CONTAINS
    rc = 0
 
    ijl  = ( i2 - i1 + 1 ) * ( j2 - j1 + 1 )
-   g = grav
+!   g = grav
+    g = grav_mapl
 
 !  Handle the fact that hghte may be in the range [1,km+1] or [0,km]
 !  -----------------------------------------------------------------
    dk = lbound(hghte,3) - 1  ! This is either 0 or 1
-  
+ 
 !  Layer thickness from hydrostatic equation
    k = km
    dz(:,:,k) = hghte(:,:,k+dk)-hsurf(:,:)
@@ -256,8 +259,8 @@ CONTAINS
 !   Determine global max/min time to cross grid cell
     call pmaxmin ( 'Chem_Settling: dt', dz(i1:i2,j1:j2,1:km)/vsettle(i1:i2,j1:j2,1:km), &
                                         qmin, qmax, ijl, km, 0. )
-    minTime = min(minTime,qmin)
 
+    minTime = min(minTime,qmin)
 
 !   Now, how many iterations do we need to do?
     if ( minTime < 0 ) then
