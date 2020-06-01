@@ -280,6 +280,8 @@ CONTAINS
    real            ::  u_thresh
    real            ::  w10m
 
+real,parameter ::grav_mapl=9.80665
+
    _UNUSED_DUMMY(km)
 
 !  Initialize local variables
@@ -292,8 +294,10 @@ CONTAINS
 !  = 1.25 kg m-3 to speed the calculation.  The error in air density is
 !  small compared to errors in other parameters.
    diameter = 2. * radius
-   u_thresh0 = 0.13 * sqrt(soil_density*grav*diameter/air_dens) &
-                    * sqrt(1.+6.e-7/(soil_density*grav*diameter**2.5)) &
+!   u_thresh0 = 0.13 * sqrt(soil_density*grav*diameter/air_dens) &
+   u_thresh0 = 0.13 * sqrt(soil_density*grav_mapl*diameter/air_dens) &
+!                    * sqrt(1.+6.e-7/(soil_density*grav*diameter**2.5)) &
+                    * sqrt(1.+6.e-7/(soil_density*grav_mapl*diameter**2.5)) &
            / sqrt(1.928*(1331.*(100.*diameter)**1.56+0.38)**0.092 - 1.)
 
 !if(mapl_am_i_root())print*,'DustEmissionGOCART u_thresh0 = ', u_thresh0
