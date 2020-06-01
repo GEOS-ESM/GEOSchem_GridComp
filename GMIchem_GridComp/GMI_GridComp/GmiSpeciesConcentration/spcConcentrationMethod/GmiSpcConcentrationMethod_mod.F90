@@ -12,7 +12,7 @@
 ! !USES:
       use ESMF
       use MAPL
-      use GmiESMFrcFileReading_mod, only : rcEsmfReadTable, rcEsmfReadLogical
+      use GmiESMFrcFileReading_mod, only : rcEsmfReadTable
       use GmiArrayBundlePointer_mod, only : t_GmiArrayBundle, CleanArrayPointer
       use GmiArrayBundlePointer_mod, only : setArrayPointer
       use GmiGrid_mod              , only : t_gmiGrid
@@ -149,8 +149,8 @@
 !BOC
       IAm = "ReadSpcConcentrationResourceFile"
 
-      call rcEsmfReadLogical(config, pr_diag, &
-     &               "pr_diag:", default = .false., rc=STATUS )
+      call ESMF_ConfigGetAttribute(config, value=pr_diag, &
+     &               label="pr_diag:", default = .false., rc=STATUS )
       VERIFY_(STATUS)
 
       if (pr_diag) Write(6,*) IAm, 'called by ', loc_proc
