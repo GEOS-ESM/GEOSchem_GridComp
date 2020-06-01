@@ -822,7 +822,11 @@ CONTAINS
      end do
    end do
 
-
+!if(mapl_am_i_root()) print*,'SS sum(w_c%grid%lon) = ', sum(w_c%grid%lon)
+!if(mapl_am_i_root()) print*,'SS sum(w_c%grid%lat) = ', sum(w_c%grid%lat)
+!if(mapl_am_i_root()) print*,'SS shape(w_c%grid%lon) = ', shape(w_c%grid%lon)
+!if(mapl_am_i_root()) print*,'SS shape(w_c%grid%lat) = ', shape(w_c%grid%lat)
+!if(mapl_am_i_root()) print*,'SS deep_lake_mask = ',gcSS%deep_lakes_mask
 
 !  All done
 !  --------
