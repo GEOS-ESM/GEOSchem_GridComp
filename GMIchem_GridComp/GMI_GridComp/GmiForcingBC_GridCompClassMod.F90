@@ -23,7 +23,6 @@
    USE GmiSpcConcentrationMethod_mod, ONLY : t_SpeciesConcentration
    USE GmiGrid_mod,                   ONLY : t_gmiGrid
    USE GmiTimeControl_mod,            ONLY : t_GmiClock
-   USE GmiESMFrcFileReading_mod,      ONLY : rcEsmfReadLogical
    USE GmiESMFrcFileReading_mod,      ONLY : rcEsmfReadTable
    use GmiArrayBundlePointer_mod,     only : t_GmiArrayBundle, CleanArrayPointer
    use GmiSpeciesRegistry_mod,        only : getSpeciesIndex, UNKNOWN_SPECIES
@@ -279,16 +278,16 @@ CONTAINS
       ! Diagnostics related variables
       !------------------------------
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_diag, &
-     &           "pr_diag:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_diag, &
+     &           label="pr_diag:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%verbose, &
-     &           "verbose:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%verbose, &
+     &           label="verbose:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_synoz, &
-     &           "do_synoz:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_synoz, &
+     &           label="do_synoz:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
 !     ---------------------------

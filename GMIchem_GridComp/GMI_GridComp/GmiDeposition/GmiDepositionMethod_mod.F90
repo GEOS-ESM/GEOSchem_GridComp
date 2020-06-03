@@ -19,7 +19,6 @@
       use GmiPrintError_mod            , only : GmiPrintError
       use GmiEmissionMethod_mod        , only : t_Emission
       use GmiESMFrcFileReading_mod     , only : rcEsmfReadTable
-      use GmiESMFrcFileReading_mod     , only : rcEsmfReadLogical
       use GmiArrayBundlePointer_mod    , only : t_GmiArrayBundle
       use GmiSpcConcentrationMethod_mod, only : t_SpeciesConcentration
       use GmiSpcConcentrationMethod_mod, only : Get_concentration
@@ -114,17 +113,14 @@
      &                default = 1, rc=STATUS )
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(config, self%do_drydep, &
-     &               "do_drydep:", default=.false., rc=STATUS )
-      VERIFY_(STATUS)
+      call ESMF_ConfigGetAttribute(config, value=self%do_drydep,    &
+     &               label="do_drydep:",    default=.false., __RC__ )
 
-      call rcEsmfReadLogical(config, self%do_wetdep, &
-     &               "do_wetdep:", default=.false., rc=STATUS )
-      VERIFY_(STATUS)
+      call ESMF_ConfigGetAttribute(config, value=self%do_wetdep,    &
+     &               label="do_wetdep:",    default=.false., __RC__ )
 
-      call rcEsmfReadLogical(config, self%do_simpledep, &
-     &               "do_simpledep:", default=.false., rc=STATUS )
-      VERIFY_(STATUS)
+      call ESMF_ConfigGetAttribute(config, value=self%do_simpledep, &
+     &               label="do_simpledep:", default=.false., __RC__ )
 
      ! ----------------------------------------------------------------
      ! wetdep_eff : wet deposition (scavenging) efficiencies; should be

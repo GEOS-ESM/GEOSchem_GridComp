@@ -1,4 +1,9 @@
 GMIchem ChangeLog
+2020-05-25 <michael.manyin@nasa.gov> Branch: feature/mmanyin/allow_GMI_stubbing
+        * Replace routine rcEsmfReadLogical with ESMF_ConfigGetAttribute
+        * Eliminate spurious FAIL message from photolysis
+        * New boundary condition file
+
 2019-08-15 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_16
         * Added Jules' ship emissions, with some refinements
 
