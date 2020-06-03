@@ -21,7 +21,7 @@
       use GmiTimeControl_mod,       only : t_GmiClock, Get_curGmiDate, GmiSplitDateTime
       use GmiSpeciesRegistry_mod,   only : getSpeciesIndex, UNKNOWN_SPECIES
       use GmiPrintError_mod,        only : GmiPrintError
-      use GmiESMFrcFileReading_mod, only : rcEsmfReadTable, rcEsmfReadLogical
+      use GmiESMFrcFileReading_mod, only : rcEsmfReadTable
       use GmiArrayBundlePointer_mod, only : t_GmiArrayBundle
       use GmiSavedVariables_mod,     only : t_ChemistrySaved
 
@@ -266,14 +266,14 @@
      &                default = 263.0d0, rc=STATUS )
       VERIFY_(STATUS) 
 
-      call rcEsmfReadLogical(config, self%do_chem_grp, "do_chem_grp:", &
-     &                       default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(config, value=self%do_chem_grp,  label="do_chem_grp:",  &
+     &                       default=.false., __RC__ )
      
-      call rcEsmfReadLogical(config, self%do_smv_reord, "do_smv_reord:", &
-     &                       default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(config, value=self%do_smv_reord, label="do_smv_reord:", &
+     &                       default=.false., __RC__ )
 
-      call rcEsmfReadLogical(config, self%do_wetchem, "do_wetchem:", &
-     &                       default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(config, value=self%do_wetchem,   label="do_wetchem:",   &
+     &                       default=.false., __RC__ )
 
 !     ---------------------------
 !     Surface Area Density (SAD):

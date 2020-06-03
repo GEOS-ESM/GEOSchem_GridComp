@@ -20,7 +20,7 @@
 !
 ! !PUBLIC MEMBER FUNCTIONS:
       public  :: rcEsmfReadTable
-      public  :: rcEsmfReadLogical
+!     public  :: rcEsmfReadLogical
       public  :: reconstructPhrase
 
       interface rcEsmfReadTable
@@ -296,60 +296,60 @@
       end subroutine rcEsmfReadTable2String
 !EOC
 !------------------------------------------------------------------------------
-!BOP
+!!BOP
 !
-! !IROUTINE: rcEsmfReadLogical
+!! !IROUTINE: rcEsmfReadLogical     INSTEAD USE: ESMF_ConfigGetAttribute
+!!
+!! !INTERFACE:
+!!
+!      subroutine rcEsmfReadLogical(config, value, label, default, rc)
+!!
+!      implicit none
+!!
+!! !INPUT PARAMETERS:
+!    character(len=*) , intent(in) :: label
+!    logical, optional, intent(in) :: default
+!!
+!! !OUTPUT PARAMETERS:
+!    logical, intent(out) :: value
+!    integer, optional, intent(out) :: rc
+!!
+!! !INPUT/OUTPUT PARAMETERS:
+!    type(ESMF_Config), intent(inOut) :: config
+!!
+!! !DESCRIPTION:
+!! Reads in a logical variable from a resource file.
+!! Note that ESMF does not have a routine to read logical variables.
+!! We assume that the variable in the resource file is character and we
+!! do the conversion after the reading.
+!!
+!! !LOCAL VARIABLES:
+!      integer :: STATUS
+!      character(len=1) :: cDefault, cValue
+!      character(len=ESMF_MAXSTR), parameter :: IAm = "rcEsmfReadLogical"
+!!EOP
+!!------------------------------------------------------------------------------
+!!BOC
+!      cDefault = 'F'
+!      if (present(default)) then
+!         if (default) cDefault = 'T'
+!      end if
 !
-! !INTERFACE:
+!      call ESMF_ConfigGetChar(config, cValue, label=label, default=cDefault, rc=STATUS )
+!      VERIFY_(STATUS)
 !
-      subroutine rcEsmfReadLogical(config, value, label, default, rc)
+!      if (present(rc)) rc = STATUS
 !
-      implicit none
-!
-! !INPUT PARAMETERS:
-    character(len=*) , intent(in) :: label
-    logical, optional, intent(in) :: default
-!
-! !OUTPUT PARAMETERS:
-    logical, intent(out) :: value
-    integer, optional, intent(out) :: rc
-!
-! !INPUT/OUTPUT PARAMETERS:
-    type(ESMF_Config), intent(inOut) :: config
-!
-! !DESCRIPTION:
-! Reads in a logical variable from a resource file.
-! Note that ESMF does not have a routine to read logical variables.
-! We assume that the variable in the resource file is character and we
-! do the conversion after the reading.
-!
-! !LOCAL VARIABLES:
-      integer :: STATUS
-      character(len=1) :: cDefault, cValue
-      character(len=ESMF_MAXSTR), parameter :: IAm = "rcEsmfReadLogical"
-!EOP
-!------------------------------------------------------------------------------
-!BOC
-      cDefault = 'F'
-      if (present(default)) then
-         if (default) cDefault = 'T'
-      end if
-
-      call ESMF_ConfigGetChar(config, cValue, label=label, default=cDefault, rc=STATUS )
-      VERIFY_(STATUS)
-
-      if (present(rc)) rc = STATUS
-
-      if ((cValue == 'T') .or. (cValue == 't')) then
-         value = .true.
-      else
-         value = .false.
-      end if
-      
-      return
-      
-      end subroutine rcEsmfReadLogical
-!EOC
+!      if ((cValue == 'T') .or. (cValue == 't')) then
+!         value = .true.
+!      else
+!         value = .false.
+!      end if
+!      
+!      return
+!      
+!      end subroutine rcEsmfReadLogical
+!!EOC
 !------------------------------------------------------------------------------
 !BOP
 !

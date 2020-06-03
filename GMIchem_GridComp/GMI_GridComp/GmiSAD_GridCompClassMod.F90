@@ -23,7 +23,6 @@
    USE GmiSpcConcentrationMethod_mod, ONLY : t_SpeciesConcentration
    USE GmiGrid_mod,                   ONLY : t_gmiGrid
    USE GmiTimeControl_mod,            ONLY : t_GmiClock
-   USE GmiESMFrcFileReading_mod,      ONLY : rcEsmfReadLogical
    USE GmiESMFrcFileReading_mod,      ONLY : rcEsmfReadTable
    use GmiArrayBundlePointer_mod, only : t_GmiArrayBundle
    use GmiPrintError_mod,        only : GmiPrintError
@@ -292,17 +291,17 @@ CONTAINS
       call ESMF_ConfigLoadFile(gmiConfigFile, TRIM(rcfilen), rc=STATUS )
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, importRestartFile, &
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=importRestartFile, &
      &                label   = "importRestartFile:", &
      &                default = ' ', rc=STATUS )
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%chem_mecha, &
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%chem_mecha, &
      &                label   = "chem_mecha:", &
      &                default = 'strat_trop', rc=STATUS )
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%metdata_name_model, &
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%metdata_name_model, &
      &                label   = "metdata_name_model:", &
      &                default = 'GEOS-5', rc=STATUS )
 
@@ -310,19 +309,19 @@ CONTAINS
       ! Diagnostics related variables
       !------------------------------
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_diag, &
-     &           "pr_diag:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_diag, &
+     &           label="pr_diag:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%verbose, &
-     &           "verbose:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%verbose, &
+     &           label="verbose:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_synoz, &
-     &           "do_synoz:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_synoz, &
+     &           label="do_synoz:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%chem_opt, &
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%chem_opt, &
      &                label   = "chem_opt:", &
      &                default = 2, rc=STATUS )
       VERIFY_(STATUS)
@@ -402,8 +401,8 @@ CONTAINS
      &                default = 0.0d0, rc=STATUS )
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_sad, &
-     &           "pr_sad:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_sad, &
+     &           label="pr_sad:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
 !     ------------------------------------------------

@@ -237,7 +237,7 @@ forc_bc_kmax: 2
 # CO2 is not included in this file; it is specified in getco2.F90 which has different RCP versions too.
 # Be sure to use the same RCP versions of forc_bc_infile and getco2.F90 .
 #
-forc_bc_infile_name: /discover/nobackup/ldoman/fvInput/RCP6.0_5BrWMO2014_ch4latvar_1950_2100.asc
+forc_bc_infile_name: /discover/nobackup/ldoman/fvInput/RCP6.0_5BrWMO2018_ch4latvar_1950_2100.asc
 
 forcedBcSpeciesNames:: 
 CFCl3
