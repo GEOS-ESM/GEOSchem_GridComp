@@ -94,7 +94,11 @@ set (deposParam ${gmi_gc}/GmiChemistry/stratTropMech/setkin_depos.h)
 set (mechParam ${gmi_gc}/GmiChemistry/stratTropMech/setkin_par.h)
 set (mechRC ${gmi_gc}/GmiChemistry/stratTropMech/setkin_chem_mech.txt)
 set (first_stage_files Deposition_Registry___.rc Reactions_Registry___.rc GMI_Tendency_Registry___.rc setkin_chem_mech.txt___.rc)
-set (generator ${esma_include}/MAPL_Base/mapl_acg.pl)
+
+find_file (generator
+  NAME mapl_acg.pl
+  PATHS ${esma_include}/MAPL_Base ${esma_etc}/MAPL)
+
 set (name GMICHEM)
 
 add_custom_command (
