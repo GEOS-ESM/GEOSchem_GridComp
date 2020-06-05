@@ -69,7 +69,7 @@ category: INTERNAL
 #----------------------------------------------------------------------------------------
 #  VARIABLE                | DIMENSION        |          Additional Metadata
 #----------------------------------------------------------------------------------------
-  NAME | UNITS | DIMS | VLOC | UNGRIDDED | RESTART | ADD2EXPORT |FRIENDLYTO | LONG NAME
+  NAME | UNITS | DIMS | VLOC | UNGRIDDED | RESTART | ADD2EXPORT | FRIENDLYTO | LONG NAME
 #----------------------------------------------------------------------------------------
  DU    |kg kg-1| xyz  | C    | self%nbins | MAPL_RestartOptional | .true. | DYNAMICS:TURBULENCE:MOIST | Dust Mixing Ratio all bins
 
