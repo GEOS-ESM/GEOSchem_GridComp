@@ -2,25 +2,12 @@
 # Resource file Dust parameters. 
 #
 
+aerosol_radBands_optics_file: ExtData/MERRA2/x/opticsBands_DU.v15_3.RRTMG.nc 
 
-variable_table::
+aerosol_monochromatic_optics_file:ExtData/AeroCom/x/optics_DU.v15_3.nc
+aerosol_monochromatic_optics_wavelength: 470 550 670 870 ! units: nm
 
-# Name     Units        Long Name
-# -----    ------       ----------------------
-du001      'kg kg-1'    'Dust Mixing Ratio (bin001)'
-du002      'kg kg-1'    'Dust Mixing Ratio (bin002)'
-du003      'kg kg-1'    'Dust Mixing Ratio (bin003)'
-du004      'kg kg-1'    'Dust Mixing Ratio (bin004)'
-du005      'kg kg-1'    'Dust Mixing Ratio (bin005)'
-::
-
-#OPTICS_FILE: ExtData/MERRA2/x/opticsBands_DU.v15_3.RRTMG.nc
-radiation_optics: ExtData/MERRA2/x/opticsBands_DU.v15_3.RRTMG.nc
-#monochromatic_optics: look in aod_registry.rc and fill this later
-
-monochromatic_wavelengths: 4.7e-7 5.5e-7 6.7e-7 8.7e-7 # in meters
-
-particle_radius: 0.73 1.4 2.4 4.5 8.0
+particle_radius_microns: 0.73 1.4 2.4 4.5 8.0
 
 radius_lower: 0.1 1.0 1.8 3.0 6.0
 
@@ -28,6 +15,7 @@ radius_upper: 1.0 1.8 3.0 6.0 10.0
 
 source_fraction: 0.1 0.25 0.25 0.25 0.25
 
+# units [kg/m-3]
 soil_density: 2500. 2650. 2650. 2650. 2650.
 
 # Resolution dependent tuning constant for emissions (a,b,c,d,e,f)
@@ -42,6 +30,16 @@ molecular_weight: 0.1  0.1  0.1  0.1  0.1
 # Number of particles per kg mass
 fnum: 2.45e14  3.28e13  6.52e12  9.89e11 1.76e11
 
+rhFlag: 0
+
 # Maring settling velocity correction
-maringFlag: 1
+maringFlag: .true. 
+
+n_channels: 4
+
+r_channels: 4.7e-7 5.5e-7 6.7e-7 8.7e-7
+
+nbins: 5
+
+#point_emissions_srcfilen:  /gpfsm/dnb32/esherman/GOCART_REFACTOR_develop1/RC/dust_point_src_test.rc
 
