@@ -57,7 +57,6 @@ module DU2G_GridCompMod
        real                   :: CDT            ! chemistry timestep (secs)
        integer                :: instance       ! data or computational instance
        integer                :: day_save = -1      
-!       character (len=ESMF_MAXSTR), allocatable    :: aerosol_names(:)
 !      !Workspae for point emissions
        logical                :: doing_point_emissions = .false.
        character(len=255)     :: point_emissions_srcfilen   ! filename for pointwise emissions
@@ -152,8 +151,6 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
              self%rhop(nbins), self%fscav(nbins), self%molwght(nbins), self%fnum(nbins), &
              __STAT__)
 
-!    self%aerosol_names = aerosol_names
-
     call ESMF_ConfigGetAttribute (cfg, self%radius,     label='particle_radius_microns:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%rlow,       label='radius_lower:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%rup,        label='radius_upper:', __RC__)
@@ -167,7 +164,6 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
     call ESMF_ConfigGetAttribute (cfg, self%maringFlag, label='maringFlag:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%point_emissions_srcfilen, &
                                   label='point_emissions_srcfilen:', default='/dev/null', __RC__)
-
 
 !   Is DU data driven?
 !   ------------------
@@ -365,8 +361,6 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
     logical                              :: data_driven
     integer                              :: NUM_BANDS
 
-real, pointer :: duptr(:,:,:,:)
-
     __Iam__('Initialize')
 
 !****************************************************************************
@@ -439,8 +433,6 @@ real, pointer :: duptr(:,:,:,:)
         prefix = ''
     end if
 
-if(mapl_am_i_root()) print*,'DU2G INIT data_driven = ',data_driven
-
 !   Add attribute information to internal state varaibles
 !   -----------------------------------------------------
     call ESMF_StateGet (internal, itemNameList=varList, __RC__)
@@ -458,12 +450,6 @@ if(mapl_am_i_root()) print*,'DU2G INIT data_driven = ',data_driven
 
     ! ADD OTHER ATTRIBUTE, HENTRY COEFFICIENTS?
     call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(1), __RC__)
-
-call MAPL_GetPointer(internal, duptr, 'DU', __RC__)
-do i = 1, self%nbins
- if(mapl_am_i_root()) print*,'n = ', i,' : INIT DU2G sum(du00n) = ',sum(duptr(:,:,:,i))
-end do
-
 
 !   Dry deposition
 !   ---------------
@@ -552,13 +538,12 @@ if(mapl_am_i_root()) print*,'DU2G size(channels) = ',size(self%rad_MieTable(inst
     call ESMF_AttributeSet(aero, name='band_for_aerosol_optics',             value=0,     __RC__)
 
     mieTable_pointer = transfer(c_loc(self), [1])
-
     call ESMF_AttributeSet(aero, name='mieTable_pointer', valueList=mieTable_pointer, itemCount=size(mieTable_pointer), __RC__)
 
-    ! attach the aerosol optics method
+    call ESMF_AttributeSet(aero, name='internal_varaible_name', value='DU', __RC__)
+
     call ESMF_MethodAdd (aero, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
 
-if (mapl_am_I_root()) print*,trim(comp_name),' INIT END'
 
     RETURN_(ESMF_SUCCESS)
 
@@ -601,8 +586,6 @@ if (mapl_am_I_root()) print*,trim(comp_name),' INIT END'
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) //'::'// Iam
 
-if (mapl_am_I_root()) print*,trim(comp_name),' Run BEGIN'
-
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
     call MAPL_GetObjectFromGC (GC, MAPL, __RC__)
@@ -622,8 +605,6 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run BEGIN'
     else
        call Run1 (GC, import, export, clock, __RC__)
     end if
-
-if (mapl_am_I_root()) print*,trim(comp_name),' Run END'
 
     RETURN_(ESMF_SUCCESS)
 
@@ -666,7 +647,6 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run END'
     integer, pointer, dimension(:)  :: iPoint, jPoint
     integer :: i, n, kmin
     real, parameter ::  UNDEF  = 1.e15 
-    real, parameter ::  grav   = 9.80616
 
 
 real, allocatable, dimension(:,:)     :: dqa
@@ -682,8 +662,6 @@ real, allocatable, dimension(:,:)     :: dqa
 !   ---------------------------------------
     call ESMF_GridCompGet (GC, grid=grid, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) //'::'// Iam
-
-!if(mapl_am_i_root()) print*,'DU2G Run1 BEGIN'
 
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
@@ -704,9 +682,6 @@ real, allocatable, dimension(:,:)     :: dqa
     call ESMF_UserCompGetInternalState(GC, 'DU2G_GridComp', wrap, STATUS)
     VERIFY_(STATUS)
     self => wrap%ptr
-
-!call StateStatistics(import)
-!call ESMFL_statistics(export)
 
 !   Extract nymd(yyyymmdd) from clock
 !   ---------------------------------
@@ -729,23 +704,11 @@ real, allocatable, dimension(:,:)     :: dqa
     emissions_surface = 0.0
     allocate(dqa(i2,j2), __STAT__)
 
-
-!do n = 1, self%nbins
-!  if(mapl_am_i_root()) print*,'n = ', n,' : Run1 B DU2G sum(du00n) = ',sum(DU(:,:,:,n))
-!end do
-
-
 !   Get surface gridded emissions
 !   -----------------------------
     call DustEmissionGOCART2G(self%radius*1.e-6, frlake, wet1, lwi, u10m, v10m, &
                               self%Ch_DU, du_src, MAPL_GRAV, &
                               emissions_surface, __RC__)
-
-!do n = 1, self%nbins
-!  dqa = 0.0
-!  dqa = emissions_surface * self%sfrac(n) * self%cdt * MAPL_GRAV / delp(:,:,self%km)
-!  if(mapl_am_i_root()) print*,'n = ', n, ' : DU2G sum(dqa) = ',sum(dqa)
-!end do
 
 !   Read point emissions file once per day
 !   --------------------------------------
@@ -786,15 +749,9 @@ real, allocatable, dimension(:,:)     :: dqa
                              self%sfrac, self%nPts, self%km, self%CDT, MAPL_GRAV, &
                              self%nbins, delp, DU, rc)
 
-
     if (associated(DUEM)) then
        DUEM = sum(emissions, dim=3)
     end if
-
-
-!do n = 1, self%nbins
-!   if(mapl_am_i_root()) print*,'n = ', n,' : Run1 E DU2G sum(du00n) = ',sum(DU(:,:,:,n))
-!end do
 
 !   Clean up
 !   --------
@@ -836,15 +793,9 @@ real, allocatable, dimension(:,:)     :: dqa
     integer                           :: import_shape(2), i2, j2
     integer                           :: n
     real, allocatable, dimension(:,:) :: drydepositionfrequency, dqa
-!    real, dimension(:,:)     :: fluxout
     real                              :: fwet
     logical                           :: KIN
-    
 
-!   Varaibles for testing/dev - to be removed
-    real, pointer, dimension(:,:,:)   :: ptr3d_int
-
-    real, parameter ::  von_karman = 0.4
     real, parameter ::  cpd    = 1004.16
 
 
@@ -859,8 +810,6 @@ real, allocatable, dimension(:,:)     :: dqa
 !   ---------------------------------------
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) // '::' // Iam
-
-!if(mapl_am_i_root()) print*,trim(comp_name),' Run2 BEGIN'
 
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
@@ -887,66 +836,38 @@ real, allocatable, dimension(:,:)     :: dqa
     i2 = import_shape(1)
     j2 = import_shape(2)
 
-!if(mapl_am_i_root())print*,'DU2G State Stats = '
-!call ESMFL_statistics(import,__RC__)
-
-
-!do n = 1, self%nbins
-! if(mapl_am_i_root()) print*,'n = ', n,' :Run2 B DU2G sum(du00n) = ',sum(DU(:,:,:,n))
-!end do
-
 !   Dust Settling
 !   -----------
-!    call Chem_Settling2G(self%km, self%rhFlag, DU, MAPL_GRAV, delp, &
-!                         self%radius*1.e-6, self%rhop, self%cdt, t, &
-!                         airdens, rh2, zle, DUSD, rc, &
-!                         correctionMaring=.true.)
-
     call Chem_Settling2Gorig (self%km, self%rhFlag, DU, MAPL_grav, delp, &
                               self%radius*1.e-6, self%rhop, self%cdt, t, airdens, &
                               rh2, zle, DUSD, correctionMaring=.true., __RC__)
-
-!do n=1,self%nbins
-!   if(mapl_am_i_root()) print*,'n = ', n,' : sum DUSD(n) = ', sum(DUSD(:,:,n))
-!end do
 
 !   Dust Deposition
 !   ----------------
    do n = 1, self%nbins
       drydepositionfrequency = 0.
       call DryDeposition(self%km, t, airdens, zle, lwi, ustar, zpbl, sh,&
-                         von_karman, cpd, MAPL_GRAV, z0h, drydepositionfrequency, rc, &
+                         MAPL_KARMAN, cpd, MAPL_GRAV, z0h, drydepositionfrequency, rc, &
                          self%radius(n)*1.e-6, self%rhop(n), u10m, v10m, frlake, wet1)
 
       dqa = 0.
       dqa = max(0.0, DU(:,:,self%km,n)*(1.-exp(-drydepositionfrequency*self%cdt)))
       DU(:,:,self%km,n) = DU(:,:,self%km,n) - dqa
 
-!if(mapl_am_i_root()) print*,'n = ', n,' : DU2G dqa = ',sum(dqa)
-!if(mapl_am_i_root()) print*,'n = ', n,' : DU2G drydepf = ',sum(drydepositionfrequency)
-!if(mapl_am_i_root()) print*,'n = ', n,' : DU2G sum(du00n) = ',sum(DU(:,:,:,n))
-
     if (associated(DUDP)) then
        DUDP(:,:,n) = dqa*delp(:,:,self%km)/MAPL_GRAV/self%cdt
-!if(mapl_am_i_root()) print*,'n = ', n,' : DU2G DUDP = ',sum(DUDP(:,:,n))
     end if
    end do
 
 !  Dust Large-scale Wet Removal
 !  ----------------------------
-!#if 0
    KIN = .TRUE.
    do n = 1, self%nbins
-      fwet = 0.3 ! Set this in DU2G_GridComp_DUxx.rc?
+      fwet = 0.3
 
       call WetRemovalGOCART2G(self%km, self%nbins, self%nbins, n, self%cdt, 'dust', &
                               KIN, MAPL_GRAV, fwet, DU(:,:,:,n), ple, t, airdens, &
                               pfl_lsan, pfi_lsan, cn_prcp, ncn_prcp, DUWT, __RC__)
-!      if (associated(DUWT)) DUWT(:,:,n) = fluxout
-
-!if(mapl_am_i_root()) print*,'n = ', n,' : DU2G fluxout = ',sum(fluxout)
-!if(mapl_am_i_root()) print*,'n = ', n,' : DU2G DUWT = ',sum(DUWT(:,:,n))
-!if(mapl_am_i_root()) print*,'n = ', n,' : DU2G sum(du00n) = ',sum(DU(:,:,:,n))
    end do
 
 
@@ -956,23 +877,6 @@ real, allocatable, dimension(:,:)     :: dqa
                            DUSMASS25, DUCMASS25, DUMASS25, DUEXTT25, DUSCAT25, &
                            DUFLUXU, DUFLUXV, DUCONC, DUEXTCOEF, DUSCACOEF, &
                            DUEXTTFM, DUSCATFM, DUANGSTR, DUAERIDX, __RC__ )
-
-
-
-!if(mapl_am_i_root()) print*,'DU2G sum(DUCMASS25) = ',sum(DUCMASS25)
-!if(mapl_am_i_root()) print*,'DU2G sum(DUMASS) = ',sum(DUMASS)
-!if(mapl_am_i_root()) print*,'DU2G sum(DUSCATAU) = ',sum(DUSCATAU)
-!if(mapl_am_i_root()) print*,'DU2G sum(DUANGSTR) = ',sum(DUANGSTR)
-
-
-!do n = 1, self%nbins
-!  if(mapl_am_i_root()) print*,'n = ', n,' : Run2 E DU2G sum(du00n) = ',sum(DU(:,:,:,n))
-!end do
-
-
-
-
-!if(mapl_am_i_root()) print*,trim(comp_name),' Run2 END'
 
     RETURN_(ESMF_SUCCESS)
 
