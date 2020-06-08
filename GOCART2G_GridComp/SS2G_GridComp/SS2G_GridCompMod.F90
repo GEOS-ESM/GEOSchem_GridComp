@@ -123,9 +123,6 @@ contains
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) // '::' // Iam
 
-if (mapl_am_i_root()) print*,'SS2G SetServices BEGIN'           ! for testing - to be deleted
-if (mapl_am_i_root()) print*,'SS2G COMP_NAME = ', trim(COMP_NAME) ! for testing - to be deleted
-
 !   Wrap internal state for storing in GC
 !   -------------------------------------
     allocate (self, __STAT__)
@@ -296,8 +293,6 @@ if (mapl_am_i_root()) print*,'SS2G COMP_NAME = ', trim(COMP_NAME) ! for testing 
        DATATYPE   = MAPL_BundleItem, __RC__)
 
 
-if (mapl_am_i_root()) print*,'SS2G SetServices END' ! for testing - to be deleted
-
 !   Store internal state in GC
 !   --------------------------
     call ESMF_UserCompSetInternalState ( GC, 'SS2G_GridComp', wrap, STATUS )
@@ -362,7 +357,6 @@ if (mapl_am_i_root()) print*,'SS2G SetServices END' ! for testing - to be delete
 
 real, pointer :: ssptr(:,:,:,:)
 
-
     __Iam__('Initialize')
 
 !****************************************************************************
@@ -373,9 +367,6 @@ real, pointer :: ssptr(:,:,:,:)
 !   -----------------------------------------------------------
     call ESMF_GridCompGet (GC, grid=grid, name=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) // '::' //trim(Iam)
-
-
-if (mapl_am_i_root()) print*,'SS2G Initialize BEGIN' ! for testing - to be deleted
 
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
@@ -397,7 +388,6 @@ if (mapl_am_i_root()) print*,'SS2G Initialize BEGIN' ! for testing - to be delet
 !   emissions by.  Applies to all size bins.
 !   ----------------------------------------
     self%emission_scale = Chem_UtilResVal(dims(1), dims(2), self%emission_scale_res(:), __RC__)
-if(mapl_am_i_root()) print*,'SS2G self%emission_scale = ', self%emission_scale
 
 !   Get DTs
 !   -------
@@ -451,13 +441,6 @@ if(mapl_am_i_root()) print*,'SS2G self%emission_scale = ', self%emission_scale
     call MAPL_StateAdd (aero, fld, __RC__)
     call MAPL_StateAdd (aero_aci, fld, __RC__)
 
-
-call MAPL_GetPointer(internal, ssptr, 'SS', __RC__)
-do i = 1, self%nbins
- if(mapl_am_i_root()) print*,'n = ', i,' : INIT SS2G sum(ss00n) = ',sum(ssptr(:,:,:,i))
-end do
-
-
     ! ADD OTHER ATTRIBUTE, HENTRY COEFFICIENTS?
     call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(1), __RC__)
 
@@ -506,9 +489,6 @@ end do
        end do
     end if
 
-if(mapl_am_i_root()) print*,'SS2G channels = ',self%rad_MieTable(instance)%channels
-if(mapl_am_i_root()) print*,'SS2G size(channels) = ',size(self%rad_MieTable(instance)%channels)
-
     allocate (self%rad_MieTable(instance)%mie_aerosol, __STAT__)
     self%rad_MieTable(instance)%mie_aerosol = Chem_MieTableCreate (self%rad_MieTable(instance)%optics_file, rc)
     call Chem_MieTableRead (self%rad_MieTable(instance)%mie_aerosol, NUM_BANDS, self%rad_MieTable(instance)%channels, rc)
@@ -528,8 +508,6 @@ if(mapl_am_i_root()) print*,'SS2G size(channels) = ',size(self%rad_MieTable(inst
     call Chem_MieTableRead (self%diag_MieTable(instance)%mie_aerosol, self%diag_MieTable(instance)%nch, &
                             self%diag_MieTable(instance)%channels, rc, nmom=self%diag_MieTable(instance)%nmom)
 
-if(mapl_am_i_root()) print*,'SS2G rchannels = ',self%diag_MieTable(instance)%channels
-
     ! Mie Table instance/index
     call ESMF_AttributeSet(aero, name='mie_table_instance', value=instance, __RC__)
 
@@ -548,20 +526,16 @@ if(mapl_am_i_root()) print*,'SS2G rchannels = ',self%diag_MieTable(instance)%cha
     call ESMF_AttributeSet(aero, name='band_for_aerosol_optics',             value=0,     __RC__)
 
     mieTable_pointer = transfer(c_loc(self), [1])
-
     call ESMF_AttributeSet(aero, name='mieTable_pointer', valueList=mieTable_pointer, itemCount=size(mieTable_pointer), __RC__)
 
-    ! attach the aerosol optics method
+    call ESMF_AttributeSet(aero, name='internal_varaible_name', value='SS', __RC__)
+
     call ESMF_MethodAdd(AERO, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
 
 !   Mask to prevent emissions from the Great Lakes and the Caspian Sea
 !   ------------------------------------------------------------------
     allocate(self%deep_lakes_mask(ubound(lons, 1),ubound(lons, 2)), __STAT__)
     call deepLakesMask (lons, lats, real(MAPL_RADIANS_TO_DEGREES), self%deep_lakes_mask, rc)
-
-!if (mapl_am_I_root()) print*,'SS2G sum(self%deep_lakes_mask)', sum(self%deep_lakes_mask)
-
-if (mapl_am_I_root()) print*,trim(comp_name),' INIT END'
 
     RETURN_(ESMF_SUCCESS)
 
@@ -673,7 +647,7 @@ if (mapl_am_I_root()) print*,trim(comp_name),' INIT END'
 !*****************************************************************************
 !   Begin... 
 
-if(mapl_am_i_root()) print*,'SS2G Run1 BEGIN'
+!if(mapl_am_i_root()) print*,'SS2G Run1 BEGIN'
 
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
@@ -696,12 +670,8 @@ if(mapl_am_i_root()) print*,'SS2G Run1 BEGIN'
     VERIFY_(STATUS)
     self => wrap%ptr
 
-!do n=1,5
-!   if(mapl_am_i_root()) print*,'n = ', n,' : Run1 B SS2G sum(SS) = ',sum(SS(:,:,:,n))
-!end do
-
-!   Seasalt Source (and modifications)
-!   ----------------------------------
+!   Sea Salt Source (and modifications)
+!   -----------------------------------
 !   Grid box efficiency to emission (fraction of sea water)
     allocate(fgridefficiency, mold=frocean, __STAT__ )
     fgridefficiency = min(max(0.,(frocean-fraci)*self%deep_lakes_mask),1.)
@@ -711,14 +681,10 @@ if(mapl_am_i_root()) print*,'SS2G Run1 BEGIN'
     allocate(fsstemis, mold=frocean, __STAT__ )
     call jeagleSSTcorrection(self%sstEmisFlag, fsstemis, ts, __RC__)
 
-!if(mapl_am_I_root()) print*,'SS2G sum(fsstemis) = ',sum(fsstemis)
-
 !   Apply a Weibull distribution to emissions wind speeds
 !   -----------------------------------------------------    
     allocate(gweibull(ubound(u10m,1), ubound(u10m,2)), __STAT__ )
     call weibullDistribution (gweibull, self%weibullFlag, u10m, v10m, __RC__)
-
-!if(mapl_am_I_root()) print*,'SS2G sum(gweibull) = ',sum(gweibull)
 
 !   Loop over bins and do emission calculation
 !   Possibly apply the Hoppel correction based on fall speed (Fan and Toon, 2011)
@@ -748,23 +714,12 @@ if(mapl_am_i_root()) print*,'SS2G Run1 BEGIN'
  
        memissions = self%emission_scale * fgridefficiency * fsstemis * fhoppel * gweibull * memissions
        dqa = memissions * self%cdt * chemgrav / delp(:,:,self%km)
-
-!if(mapl_am_i_root()) print*,'n = ', n,' : SS2G sum(dqa) = ',sum(dqa)
-
        SS(:,:,self%km,n) = SS(:,:,self%km,n) + dqa
-
-!if(mapl_am_i_root()) print*,'n = ', n,' : SS2G sum(SS(:,:,n)) = ',sum(SS(:,:,:,n))
 
        if (associated(SSEM)) then
           SSEM(:,:,n) = memissions
        end if
     end do !n = 1
-
-!do n=1,5
-!   if(mapl_am_i_root()) print*,'n = ', n,' : Run1 E SS2G sum(SS) = ',sum(SS(:,:,:,n))
-!end do
-
-if(mapl_am_i_root()) print*,'SS2G Run1 END'
 
     deallocate(fhoppel, memissions, nemissions, dqa, gweibull, &
                fsstemis, fgridefficiency, __STAT__)
@@ -802,7 +757,6 @@ if(mapl_am_i_root()) print*,'SS2G Run1 END'
     real                              :: fwet
     logical                           :: KIN
 
-real, parameter ::  von_karman = 0.4
 real, parameter ::  cpd    = 1004.16
 
 
@@ -812,8 +766,6 @@ real, parameter ::  cpd    = 1004.16
 
 !*****************************************************************************
 !   Begin... 
-
-if(mapl_am_i_root()) print*,'SS2G Run2 BEGIN'
 
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
@@ -839,26 +791,17 @@ if(mapl_am_i_root()) print*,'SS2G Run2 BEGIN'
     allocate(dqa, mold=lwi, __STAT__)
     allocate(drydepositionfrequency, mold=lwi, __STAT__)
 
-
-!do n=1,5
-!   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 B SS2G sum(SS) = ',sum(SS(:,:,:,n))
-!end do
-
-
 !   Sea Salt Settling
 !   -----------------
     call Chem_Settling2Gorig (self%km, self%rhFlag, SS, CHEMgrav, delp, &
                               self%radius*1.e-6, self%rhop, self%cdt, t, airdens, &
                               rh2, zle, SSSD, __RC__)
-!do n = 1, self%nbins
-!  if(mapl_am_i_root()) print*,'n = ', n, ' : SS2G sum(SSSD) =', sum(SSSD(:,:,n))
-!end do
 
 !   Sea Salt Deposition
 !   -------------------
     drydepositionfrequency = 0.
     call DryDeposition(self%km, t, airdens, zle, lwi, ustar, zpbl, sh,&
-                       von_karman, cpd, chemGRAV, z0h, drydepositionfrequency, __RC__ )
+                       MAPL_KARMAN, cpd, chemGRAV, z0h, drydepositionfrequency, __RC__ )
 
     ! increase deposition velocity over land
     where (abs(lwi - LAND) < 0.5)
@@ -872,10 +815,7 @@ if(mapl_am_i_root()) print*,'SS2G Run2 BEGIN'
        if (associated(SSDP)) then
           SSDP(:,:,n) = dqa * delp(:,:,self%km) / chemGRAV / self%cdt
        end if
-!if(mapl_am_i_root()) print*,'n = ', n, ' : SS2G sum(dqa) =', sum(dqa)
-!if(mapl_am_i_root()) print*,'n = ', n, ' : SS2G sum(SSDP) =', sum(SSDP(:,:,n))
     end do
-
 
 !   Sea Salt Large-scale Wet Removal
 !   -------------------------------
@@ -886,8 +826,6 @@ if(mapl_am_i_root()) print*,'SS2G Run2 BEGIN'
        call WetRemovalGOCART2G(self%km, self%nbins, self%nbins, n, self%cdt, 'sea_salt', &
                                KIN, chemGRAV, fwet, SS(:,:,:,n), ple, t, airdens, &
                                pfl_lsan, pfi_lsan, cn_prcp, ncn_prcp, SSWT, rc)
-
-!if(mapl_am_i_root()) print*,'n = ', n,' : SS2G SSWT = ',sum(SSWT(:,:,n))
     end do
 
     call Aero_Compute_Diags (self%diag_MieTable(self%instance), self%km, self%nbins, self%rlow, self%rup, &
@@ -897,36 +835,6 @@ if(mapl_am_i_root()) print*,'SS2G Run2 BEGIN'
                            SSFLUXU, SSFLUXV, SSCONC, SSEXTCOEF, SSSCACOEF,    &
                            SSEXTTFM, SSSCATFM ,SSANGSTR, SSAERIDX, __RC__)
 
-
-
-if(mapl_am_i_root()) print*,'SS2G sum(SSSMASS) = ', sum(SSSMASS)
-if(mapl_am_i_root()) print*,'SS2G sum(SSCMASS) = ', sum(SSCMASS)
-if(mapl_am_i_root()) print*,'SS2G sum(SSMASS) = ', sum(SSMASS)
-if(mapl_am_i_root()) print*,'SS2G sum(SSEXTTAU ) = ', sum(SSEXTTAU)
-if(mapl_am_i_root()) print*,'SS2G sum(SSSCATAU) = ', sum(SSSCATAU)
-if(mapl_am_i_root()) print*,'SS2G sum(SSSMASS25) = ', sum(SSSMASS25)
-if(mapl_am_i_root()) print*,'SS2G sum(SSCMASS25) = ',sum(SSCMASS25)
-if(mapl_am_i_root()) print*,'SS2G sum(SSMASS25) = ', sum(SSMASS25)
-if(mapl_am_i_root()) print*,'SS2G sum(SSEXTT25) = ', sum(SSEXTT25)
-if(mapl_am_i_root()) print*,'SS2G sum(SSSCAT25) = ', sum(SSSCAT25)
-if(mapl_am_i_root()) print*,'SS2G sum(SSCONC) = ', sum(SSCONC)
-if(mapl_am_i_root()) print*,'SS2G sum(SSEXTCOEF) = ', sum(SSEXTCOEF)
-if(mapl_am_i_root()) print*,'SS2G sum(SSSCACOEF) = ', sum(SSSCACOEF)
-if(mapl_am_i_root()) print*,'SS2G sum(SSEXTTFM) = ', sum(SSEXTTFM)
-if(mapl_am_i_root()) print*,'SS2G sum(SSSCATFM) = ', sum(SSSCATFM)
-if(mapl_am_i_root()) print*,'SS2G sum(SSANGSTR) = ',sum(SSANGSTR)
-if(mapl_am_i_root()) print*,'SS2G sum(SSFLUXU) = ', sum(SSFLUXU)
-if(mapl_am_i_root()) print*,'SS2G sum(SSFLUXV) = ', sum(SSFLUXV)
-
-
-
-
-
-!do n=1,5
-!   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 E SS2G sum(SS) = ',sum(SS(:,:,:,n))
-!end do
-
-if(mapl_am_i_root()) print*,'SS2G Run2 END'
 
     RETURN_(ESMF_SUCCESS)
 
@@ -1013,7 +921,7 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
     type(C_PTR)                                      :: address
     type(SS2G_GridComp), pointer                     :: self
 
-    character (len=ESMF_MAXSTR)                      :: fld_name
+    character (len=ESMF_MAXSTR)                      :: fld_name, int_fld_name
     type(ESMF_Field)                                 :: fld
     character (len=ESMF_MAXSTR)                      :: COMP_NAME
 
@@ -1064,7 +972,8 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
              asy_s(i1:i2, j1:j2, km), &
                  x(i1:i2, j1:j2, km), __STAT__)
 
-    call ESMF_StateGet (state, 'SS', field=fld, __RC__) !add as attribute - dont hard code?
+    call ESMF_AttributeGet(state, name='internal_varaible_name', value=int_fld_name, __RC__)
+    call ESMF_StateGet (state, trim(int_fld_name), field=fld, __RC__) !add as attribute - dont hard code?
     call ESMF_FieldGet (fld, farrayPtr=q, __RC__)
 
     nbins = size(q,4)
