@@ -2,7 +2,7 @@ esma_set_this ()
 
 esma_add_library (${this}
   SRCS ${this}Mod.F90
-  DEPENDENCIES MAPL Chem_Shared2G Chem_Shared)
+  DEPENDENCIES GA_GridComp MAPL Chem_Shared2G Chem_Shared)
 target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 
 #esma_generate_gocart_code (${this} "-B\;-E\;-N\;DU2G")
