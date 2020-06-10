@@ -6,7 +6,7 @@ set (alldirs
   SUng_GridComp
   BCng_GridComp
   BRCng_GridComp
-  OCng_GridComp
+  CA2G_GridComp
   NIng_GridComp
   )
 
