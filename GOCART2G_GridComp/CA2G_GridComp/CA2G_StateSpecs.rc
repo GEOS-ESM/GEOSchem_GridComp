@@ -1,0 +1,104 @@
+schema_version: 2.0.0
+component: SS
+
+category: IMPORT
+#----------------------------------------------------------------------------------------
+#  VARIABLE          | DIMENSIONS|          Additional Metadata
+#----------------------------------------------------------------------------------------
+     NAME   | UNITS  | DIMS | VLOC| COND | LONG NAME
+#----------------------------------------------------------------------------------------
+ FROCEAN    | 1      | xy   | N   |      | fraction_of_ocean
+ FRACI      | 1      | xy   | N   |      | ice_covered_fraction_of_tile
+# LWI        | 1      | xy   | N   |      | land-ocean-ice_mask
+# U10M       | m s-1  | xy   | N   |      | 10-meter_eastward_wind
+# V10M       | m s-1  | xy   | N   |      | 10-meter_northward_wind
+# USTAR      | m s-1  | xy   | N   |      | surface_velocity_scale
+# TS         | K      | xy   | N   |      | surface skin temperature
+# DZ         | m      | xy   | N   |      | surface_layer_height
+# FRLAKE     | 1      | xy   | N   |      | fraction_of_lake
+# AREA       | m^2    | xy   | N   |      | agrid_cell_area
+# ZPBL       | m      | xy   | N   |      | planetary_boundary_layer_height
+# SH         | w m-2  | xy   | N   |      | sensible_heat_flux_from_turbulence
+# Z0H        | m      | xy   | N   |      | surface_roughness_for_heat
+# CN_PRCP    |kg/m^2/s| xy   | N   |      | surface_conv._rain_flux_needed_by_land
+# NCN_PRCP   |kg/m^2/s| xy   | N   |      | Non-convective precipitation
+#........................................................................................
+# AIRDENS    | kg/m^3 | xyz  | C   |      | moist_air_density
+# DELP       | Pa     | xyz  | C   |      | pressure_thickness
+# T          | K      | xyz  | C   |      | air_temperature
+# RH2        | 1      | xyz  | C   |      | Rel_Hum_after_moist
+# ZLE        | m      | xyz  | E   |      | geopotential_height
+# PLE        | Pa     | xyz  | E   |      | air_pressure
+# PFL_LSAN   | kg/m2/s| xyz  | E   |      | 3D_flux_of_liquid_nonconvective_precipitation
+# PFI_LSAN   | kg/m2/s| xyz  | E   |      | 3D_flux_of_ice_nonconvective_precipitation
+# U          | m s-1  | xyz  | C   |      | eastward_wind
+# V          | m s-1  | xyz  | C   |      | northward_wind
+#........................................................................................
+ OC_BIOMASS  | 1      | xy   | N   |      | source species
+ OC_TERPENE  | 1      | xy   | N   |      | source species
+ OC_BIOFUEL  | 1      | xy   | N   |      | source species
+ OC_ANTEOC1  | 1      | xy   | N   |      | source species
+ OC_ANTEOC2  | 1      | xy   | N   |      | source species
+ OC_SHIP     | 1      | xy   | N   |      | source species
+ OC_AVIATION_LTO | 1  | xy   | N   |      | source species
+ OC_AVIATION_CDS | 1  | xy   | N   |      | source species
+ OC_AVIATION_CRS | 1  | xy   | N   |      | source species
+
+
+
+category: EXPORT
+#----------------------------------------------------------------------------------------
+#  VARIABLE              | DIMENSIONS |          Additional Metadata
+#----------------------------------------------------------------------------------------
+ NAME       | UNITS      | DIMS| VLOC| UNGRIDDED | LONG_NAME
+#----------------------------------------------------------------------------------------
+ OCMASS    | kg kg-1    | xyz | C   |            | Organic Carbon Mass Mixing Ratio                     __ENSEMBLE__
+ OCCONC    | kg m-3     | xyz | C   |            | Organic Carbon Mass Concentration                    __ENSEMBLE__
+ OCEXTCOEF | m-1        | xyz | C   |            | Organic Carbon Extinction Coefficient [550 nm]       __ENSEMBLE__
+ OCSCACOEF | m-1        | xyz | C   |            | Organic Carbon Scattering Coefficient [550 nm]       __ENSEMBLE__
+#..........|............|.....|.....|............|..................................
+ OCEM      | kg m-2 s-1 | xy  | N   | nbins | Organic Carbon Emission All Bins                      __ENSEMBLE__
+ OCSD      | kg m-2 s-1 | xy  | N   | nbins | Organic Carbon Sedimentation All Bins                 __ENSEMBLE__
+ OCDP      | kg m-2 s-1 | xy  | N   | nbins | Organic Carbon Dry Deposition All Bins                __ENSEMBLE__
+ OCWT      | kg m-2 s-1 | xy  | N   | nbins | Organic Carbon Wet Deposition All Bins                __ENSEMBLE__
+ OCSV      | kg m-2 s-1 | xy  | N   | nbins | Organic Carbon Convective Scavenging All Bins         __ENSEMBLE__
+
+
+category: INTERNAL
+#----------------------------------------------------------------------------------------
+#  VARIABLE                | DIMENSION        |          Additional Metadata
+#----------------------------------------------------------------------------------------
+  NAME    | UNITS | DIMS | VLOC | UNGRIDDED | RESTART | ADD2EXPORT | FRIENDLYTO | LONG NAME
+#----------------------------------------------------------------------------------------
+ OCphobic |kg kg-1| xyz  | C |  | MAPL_RestartOptional | .true. | DYNAMICS:TURBULENCE:MOIST | Organic Carbon Mixing Ratio all bins
+ OCphilic |kg kg-1| xyz  | C |  | MAPL_RestartOptional | .true. | DYNAMICS:TURBULENCE:MOIST | Organic Carbon Mixing Ratio all bins
+
+
+#********************************************************
+#
+# Legend
+#
+#------------------------------------------------------------------
+# Column label | MAPL keyword/interpretation |  Default
+#--------------|---------------------------------------------------
+# NAME         | short_name                  |
+# UNITS        | units                       |
+# DIMS         | dims                        |
+# VLOC         | VLocation                   | MAPL_VLocationNone
+# LONG NAME    | long_name                   |
+# COND         | if (<logical-expr>) then    |  .FALSE.
+# NUM_SUBTILES | num_subtiles
+# ...
+#------------------------------------------------------------------
+#
+#--------------------------------------------
+# Entry alias  | Column | MAPL keyword/interpretation
+#--------------|-----------------------------
+# xyz          | DIMS   | MAPL_HorzVert
+# xy           | DIMS   | MAPL_HorzOnly
+# z            | DIMS   | MAPL_VertOnly  (plus ungridded)
+# C            | VLOC   | MAPL_VlocationCenter
+# E            | VLOC   | MAPL_VlocationEdge
+# N            | VLOC   | MAPL_VlocationNone
+#--------------------------------------------
+
