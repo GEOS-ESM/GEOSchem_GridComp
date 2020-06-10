@@ -21,7 +21,7 @@ module GOCART2G_GridCompMod
    use SS2G_GridCompMod,    only   : SS2GSetServices  => SetServices
 !   use SUng_GridCompMod,    only   : SUngSetServices  => SetServices
 !   use BCng_GridCompMod,    only   : BCngSetServices  => SetServices
-!   use OCng_GridCompMod,    only   : OCngSetServices  => SetServices
+   use CA2G_GridCompMod,    only   : CA2GSetServices  => SetServices
 !   use NIng_GridCompMod,    only   : NIngSetServices  => SetServices
 
    implicit none
@@ -37,13 +37,13 @@ module GOCART2G_GridCompMod
      character (len=ESMF_MAXSTR), pointer    :: instances_SS(:) => null()
      character (len=ESMF_MAXSTR), pointer    :: instances_SU(:) => null()
      character (len=ESMF_MAXSTR), pointer    :: instances_BC(:) => null()
-     character (len=ESMF_MAXSTR), pointer    :: instances_OC(:) => null()
+     character (len=ESMF_MAXSTR), pointer    :: instances_CA(:) => null()
      character (len=ESMF_MAXSTR), pointer    :: instances_NI(:) => null()
      integer                                 :: active_DU = 0
      integer                                 :: active_SS = 0
      integer                                 :: active_SU = 0
      integer                                 :: active_BC = 0
-     integer                                 :: active_OC = 0
+     integer                                 :: active_CA = 0
      integer                                 :: active_NI = 0
   end type GOCART_State
 
@@ -71,7 +71,7 @@ module GOCART2G_GridCompMod
   integer ::     SS2G = -1
   integer ::     SUng = -1
   integer ::     BCng = -1
-  integer ::     OCng = -1
+  integer ::     CA2g = -1
   integer ::     NIng = -1
 
 
@@ -149,7 +149,7 @@ contains
     call getInstances_('SS', myCF, instances=self%instances_SS, active_instances=self%active_SS, __RC__)
 !    call getInstances_('SU', myCF, instances=self%instances_SU, active_instances=self%active_SU, __RC__)
 !    call getInstances_('BC', myCF, instances=self%instances_BC, active_instances=self%active_BC, __RC__)
-!    call getInstances_('OC', myCF, instances=self%instances_OC, active_instances=self%active_OC, __RC__)
+    call getInstances_('CA', myCF, instances=self%instances_CA, active_instances=self%active_CA, __RC__)
 !    call getInstances_('NI', myCF, instances=self%instances_NI, active_instances=self%active_NI, __RC__)
 
 
@@ -313,7 +313,7 @@ if (mapl_am_I_root()) print*,'GOCART2G self%active_DU = ',self%active_DU
 !   active instances will provide the last index for active instances within gcs
 !   -----------------------------------------------------------------------   
     tot_active_inst = self%active_DU + self%active_SS + self%active_SU + &
-                      self%active_BC + self%active_OC + self%active_NI
+                      self%active_BC + self%active_CA + self%active_NI
 
     do i = 1, tot_active_inst
         call ESMF_GridCompGet (gcs(i), NAME=child_name, __RC__ )
@@ -553,7 +553,7 @@ if(mapl_am_i_root()) print*,'getInstances_ instances(:) = ', instances(:)
 
     call addChild__ (gc, names=self%instances_DU(1:self%active_DU), SS=DU2GSetServices, instInt=DU2G, __RC__)
     call addChild__ (gc, names=self%instances_SS(1:self%active_SS), SS=SS2GSetServices, instInt=SS2G, __RC__)
-
+    call addChild__ (gc, names=self%instances_CA(1:self%active_SS), SS=CA2GSetServices, instInt=CA2G, __RC__)
 
 !   Create passive instances after active instances
     if ((size(self%instances_DU)) >= (self%active_DU+1)) then
@@ -566,6 +566,10 @@ if(mapl_am_i_root()) print*,'getInstances_ instances(:) = ', instances(:)
 
     end if
 
+    if ((size(self%instances_CA)) >= (self%active_CA+1)) then
+        call addChild__ (gc, names=self%instances_CA(self%active_CA+1:size(self%instances_CA)), SS=CA2GSetServices, instInt=CA2G, __RC__)
+
+    end if
 
     RETURN_(ESMF_SUCCESS)
 
