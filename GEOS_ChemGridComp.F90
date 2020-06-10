@@ -18,23 +18,22 @@ module GEOS_ChemGridCompMod
   use Chem_UtilMod
   use Bundle_IncrementMod
 
-  use GEOS_ChemEnvGridCompMod,  only : ChemEnv_SetServices   => SetServices
-  use GOCART_GridCompMod,       only : GOCART_SetServices    => SetServices
-  use GOCART2G_GridCompMod,     only : GOCART2G_SetServices  => SetServices !GOCART REFACTOR
-  use StratChem_GridCompMod,    only : StratChem_SetServices => SetServices
-  use GMIchem_GridCompMod,      only : GMI_SetServices       => SetServices
-  use CARMAchem_GridCompMod,    only : CARMA_SetServices     => SetServices
-  use GEOSCHEMchem_GridCompMod, only : GCChem_SetServices    => SetServices
-  use MATRIXchem_GridCompMod,   only : MATRIX_SetServices    => SetServices
-  use MAMchem_GridCompMod,      only : MAM_SetServices       => SetServices
-  use GEOS_PChemGridCompMod,    only : PChem_SetServices     => SetServices
-  use GEOS_AChemGridCompMod,    only : AChem_SetServices     => SetServices
-  use GAAS_GridCompMod,         only : GAAS_SetServices      => SetServices
-  use H2O_GridCompMod,          only : H2O_SetServices       => SetServices
-  use TR_GridCompMod,           only : TR_SetServices        => SetServices
-  use DNA_GridCompMod,          only : DNA_SetServices       => SetServices
-  use HEMCO_GridCompMod,        only : HEMCO_SetServices     => SetServices
-  use GmiESMFrcFileReading_mod, only : rcEsmfReadLogical
+  use  GEOS_ChemEnvGridCompMod,  only :   ChemEnv_SetServices => SetServices
+  use       GOCART_GridCompMod,  only :    GOCART_SetServices => SetServices
+  use     GOCART2G_GridCompMod,  only : GOCART2G_SetServices  => SetServices !GOCART REFACTOR
+  use    StratChem_GridCompMod,  only : StratChem_SetServices => SetServices
+  use      GMIchem_GridCompMod,  only :       GMI_SetServices => SetServices
+  use    CARMAchem_GridCompMod,  only :     CARMA_SetServices => SetServices
+  use GEOSCHEMchem_GridCompMod,  only :    GCChem_SetServices => SetServices
+  use   MATRIXchem_GridCompMod,  only :    MATRIX_SetServices => SetServices
+  use      MAMchem_GridCompMod,  only :       MAM_SetServices => SetServices
+  use    GEOS_PChemGridCompMod,  only :     PChem_SetServices => SetServices
+  use    GEOS_AChemGridCompMod,  only :     AChem_SetServices => SetServices
+  use         GAAS_GridCompMod,  only :      GAAS_SetServices => SetServices
+  use          H2O_GridCompMod,  only :       H2O_SetServices => SetServices
+  use           TR_GridCompMod,  only :        TR_SetServices => SetServices
+  use          DNA_GridCompMod,  only :       DNA_SetServices => SetServices
+  use        HEMCO_GridCompMod,  only :     HEMCO_SetServices => SetServices
 
   implicit none
   private
@@ -830,11 +829,11 @@ contains
      gmi_config = ESMF_ConfigCreate(__RC__ )
      call ESMF_ConfigLoadFile(gmi_config, TRIM(gmi_rcfilen), __RC__ )
 
-     call rcEsmfReadLogical(gmi_config, doMEGANemission, &
-                                       "doMEGANemission:", default=.false., __RC__ )
+     call ESMF_ConfigGetAttribute(gmi_config, value=doMEGANemission, &
+                                             label="doMEGANemission:", default=.FALSE., __RC__ )
 
-     call rcEsmfReadLogical(gmi_config, doMEGANviaHEMCO, &
-                                       "doMEGANviaHEMCO:", default=.false., __RC__ )
+     call ESMF_ConfigGetAttribute(gmi_config, value=doMEGANviaHEMCO, &
+                                             label="doMEGANviaHEMCO:", default=.FALSE., __RC__ )
        
      ! make sure we don't have inconsistent HEMCO flags
      IF ( GMI_instance_of_HEMCO .neqv. doMEGANviaHEMCO ) THEN
@@ -953,7 +952,6 @@ contains
                                             "STRATCHEM   ",    &
                                             "GMICHEM     ",    &
                                             "GEOSCHEMCHEM",    &
-                                            "DU",        &
                                             "TR          " /), &
                                            fBUNDLE, AddGCPrefix=.true., __RC__ )
 

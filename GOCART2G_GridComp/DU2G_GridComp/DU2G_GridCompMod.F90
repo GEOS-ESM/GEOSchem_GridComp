@@ -361,11 +361,14 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
     logical                              :: data_driven
     integer                              :: NUM_BANDS
 
+real,pointer :: duptr(:,:,:,:)
+
     __Iam__('Initialize')
 
 !****************************************************************************
 
 !   Begin... 
+if(mapl_am_i_root()) print*,'DU2G Init BEGIN'
 
 !   Get the target components name and set-up traceback handle.
 !   -----------------------------------------------------------
@@ -417,6 +420,11 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
 !   Get parameters from generic state.
 !   -----------------------------------
     call MAPL_Get (MAPL, INTERNAL_ESMF_STATE=internal, __RC__)
+
+!call MAPL_GetPointer(internal, duptr, 'DU', __RC__)
+!do i=1,5
+!  if(mapl_am_i_root()) print*,'DU2G sum(DU at i) = ',sum(duptr(:,:,:,i))
+!end do
 
 !   Is DU data driven?
 !   ------------------
@@ -580,6 +588,7 @@ if(mapl_am_i_root()) print*,'DU2G size(channels) = ',size(self%rad_MieTable(inst
 
 !*****************************************************************************
 !   Begin... 
+if(mapl_am_i_root()) print*,'DU2G Run BEGIN'
 
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
@@ -666,6 +675,8 @@ real, allocatable, dimension(:,:)     :: dqa
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
     call MAPL_GetObjectFromGC (GC, mapl, __RC__)
+
+if(mapl_am_i_root()) print*,'DU2G Run1 BEGIN'
 
 !   Get parameters from generic state.
 !   -----------------------------------

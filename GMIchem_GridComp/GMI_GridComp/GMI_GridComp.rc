@@ -237,7 +237,7 @@ forc_bc_kmax: 2
 # CO2 is not included in this file; it is specified in getco2.F90 which has different RCP versions too.
 # Be sure to use the same RCP versions of forc_bc_infile and getco2.F90 .
 #
-forc_bc_infile_name: /discover/nobackup/ldoman/fvInput/RCP6.0_5BrWMO2014_ch4latvar_1950_2100.asc
+forc_bc_infile_name: /discover/nobackup/ldoman/fvInput/RCP6.0_5BrWMO2018_ch4latvar_1950_2100.asc
 
 forcedBcSpeciesNames:: 
 CFCl3
@@ -260,38 +260,137 @@ CH4
 N2O
 ::
 
+#     ------------------------------------------------
+#     h2oclim_opt
+#       1:  set all h2oclim values to h2oclim_init_val
+#       2:  read in h2oclim
+#       3:  h2oclim, ch4clim not used.  Instead, transported
+#           H2O and CH4 are provided by the host AGCM.
+#     ------------------------------------------------
+#     (as listed in GmiChemistryMethod_mod.F90)
+
 h2oclim_opt: 3
+
+#     ----------------------------------------------------
+#     sad_opt
+#       0:  do not allocate or process SAD array
+#       1:  allocate, but zero out SAD array
+#       2:  call Considine code (i.e., Condense)
+#       3:  read SAD array from a file of monthly averages
+#     ----------------------------------------------------
+#     (as listed in GmiChemistryMethod_mod.F90)
+
 sad_opt: 2
+
+#     ----------------------------------------------
+#     lbssad_opt
+#       1:  set all lbssad values to lbssad_init_val
+#       2:  read in lbssad 3d fields
+#       3:  read in lbssad zonal average fields
+#       4:  lbssad provided by AGCM, current month only.
+#     ----------------------------------------------
+#     (as listed in GmiSAD_GridCompClassMod.F90)
+
 lbssad_opt: 4
 
         ##############################
         # Photolysis related variables
         ##############################
 
+#     -----------------------------------------------------
+#     phot_opt
+#       0:  no photolysis
+#       1:  set all qj values to qj_init_val 
+#       2:  read in qj values 
+#       3:  use fastj routine (for fastJ, fastJx, fastJx53b)
+#           This option should be combined with fastj_opt.
+#       4:  lookup table for qj (Kawa style)
+#       5:  lookup table for qj (Kawa style) +
+#           use ozone climatology for column ozone calc.
+#       6:  calculate from table and Gmimod data (Quadchem)
+#       7:  read in qj values (2-D, 12 months)
+#       8:  use fast-JX routine (troposphere/stratosphere)
+#     -----------------------------------------------------
+#     (as listed in GmiChemistryMethod_mod.F90)
+
 phot_opt: 3
- #####
- # fastj_opt: 0 - FastJ
- #            1 - FastJX       (supported)
- #            2 - FastJX 5.3b
- #            3 - FastJX 5.3c
- #            4 - FastJX 6.5   (supported)
- #####
-fastj_opt: 4
+
 do_clear_sky: F
+
+#     --------------------------------------------------------
+#     uvalbedo_opt
+#       0:  no uvalbedo
+#       1:  set all uvalbedo values to uvalbedo_init_val
+#       2:  read in monthly uvalbedo values from an ASCII file
+#       3:  read in surface albedo values from the met data
+#     --------------------------------------------------------
+#     (as listed in GmiPhotolysis_GridCompClassMod.F90)
+
 uvalbedo_opt: 2
+
+#     ----------------------------------------------------------------------
+#     sfalbedo_opt
+#       0:  no sfalbedo
+#       1:  set each type of sfalbedo to an intial value
+#       2:  read in monthly sfalbedo values from a NetCDF file
+#       3:  read in values of four types of surface albedo from the met data
+#     ----------------------------------------------------------------------
+#     (as listed in GmiPhotolysis_GridCompClassMod.F90)
+
 sfalbedo_opt: 3
-# For FastJX & JPL02
-# cross section file: ExtData/g5chem/x/xsec_jx_06a.dat
-# For FastJX & JPL10
-# cross section file: /discover/nobackup/ldoman/fvInput/xsec_jx_jpl10update2_JNOx1_0.dat
-# For FastJX 6.5 & JPL10
-cross_section_file: /discover/nobackup/mmanyin/fvInput/fastjx/65/xsec_jx65_jpl10update2_JNOx1_0.dat
+
 Prather_jNO_factor: 1.0
-#rate_file not needed for FastJX6.5 and later; new approach only differs by roundoff
-#rate_file: ExtData/g5chem/x/ratec_124spc_jx_gmiv2.dat
-rate_file: /discover/nobackup/mmanyin/CCM/fvInput/fastjx/ratec_119spc_jx_gmiv3.dat
-T_O3_climatology_file: ExtData/g5chem/x/atms_jx_o3andtemp.dat
+
+# Use ozone climatology in FastJX (otherwise use model ozone)
 do_ozone_inFastJX: F
+
+#     -----------------------------------------------------
+#     fastj_opt: set when phot_opt=3
+#       0:  FastJ
+#       1:  FastJx       (supported)
+#       2:  FastJx 5.3b
+#       3:  FastJx 5.3c
+#       4:  FastJx 6.5   (supported)
+#       5:  CloudJ       (supported) (FastJX 7.4)
+#     -----------------------------------------------------
+#     (as listed in GmiPhotolysis_GridCompClassMod.F90)
+
+## For FastJX & JPL02
+# cross section file: ExtData/g5chem/x/xsec_jx_06a.dat
+
+## For FastJX & JPL10
+# cross section file: /discover/nobackup/ldoman/fvInput/xsec_jx_jpl10update2_JNOx1_0.dat
+
+## For FastJX 6.5 & JPL10
+ fastj_opt: 4
+ cross_section_file: /discover/nobackup/mmanyin/fvInput/fastjx/65/xsec_jx65_jpl10update2_JNOx1_0.dat
+# rate_file not needed for FastJX6.5; new approach only differs by roundoff
+# rate_file: ExtData/g5chem/x/ratec_124spc_jx_gmiv2.dat
+# rate_file: /discover/nobackup/mmanyin/CCM/fvInput/fastjx/ratec_119spc_jx_gmiv3.dat
+ T_O3_climatology_file: ExtData/g5chem/x/atms_jx_o3andtemp.dat
+
+##
+##... For CloudJ (FastJX 7.4) & JPL10
+# fastj_opt: 5
+### CloudJ_cldflag options:
+###   1: clear sky
+###   2: grid-box avg clouds cloud: fract*(in cloud ODs) (minamal overlap?)
+###   3: cloud-fract**3/2*(in cloud ODs) (random overlap?) 
+###   4: NOT ALLOWED
+###   5: Random select NRANDO ICA's (Independent Column Atmos.) from all
+###   6: Use all (up to 4) quadrature cloud cover QCAs (mid-pts of bin)
+###   7: RECOMMENDED - Use all (up to 4) QCAs (average clouds within each Q-bin)
+###   8: Calculate Js for ALL ICAs (up to 20,000 per cell!)
+# CloudJ_cldflag:  7
+# cross_section_file:       /home/ssteenro/gmi/gmi_gsfc/Components/GmiChemistry/photolysis/CloudJ/reference/data/FJX_spec_JNOx1_0.dat
+# cloud_scat_file:          /home/ssteenro/gmi/gmi_gsfc/Components/GmiChemistry/photolysis/CloudJ/reference/data/FJX_scat-cld.dat
+# ssa_scat_file:            /home/ssteenro/gmi/gmi_gsfc/Components/GmiChemistry/photolysis/CloudJ/reference/data/FJX_scat-ssa.dat
+# aer_scat_file:            /home/ssteenro/gmi/gmi_gsfc/Components/GmiChemistry/photolysis/CloudJ/reference/data/FJX_scat-aer.dat
+# UMaer_scat_file:          /home/ssteenro/gmi/gmi_gsfc/Components/GmiChemistry/photolysis/CloudJ/reference/data/FJX_scat-UMa.dat
+# GMI_scat_file:            /home/ssteenro/gmi/gmi_gsfc/Components/GmiChemistry/photolysis/CloudJ/reference/data/GMI_scat-aer.dat
+# T_O3_climatology_file:    /home/ssteenro/gmi/gmi_gsfc/Components/GmiChemistry/photolysis/CloudJ/reference/data/atmos_std.dat
+# H2O_CH4_climatology_file: /home/ssteenro/gmi/gmi_gsfc/Components/GmiChemistry/photolysis/CloudJ/reference/data/atmos_h2och4.dat
+##
 
  #####################################################
  #    PSC related variables controlling HNO3COND

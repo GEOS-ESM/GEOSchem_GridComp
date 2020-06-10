@@ -1326,6 +1326,9 @@ RUN_ALARM: if (gcSS%run_alarm) then
    allocate( fluxout%data2d(i1:i2,j1:j2), dqa(i1:i2,j1:j2), &
              drydepositionfrequency(i1:i2,j1:j2), __STAT__)
 
+do n = 1, 5
+  if(mapl_am_i_root()) print*,'n = ', n,' : Run2 B SS sum(ss00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+end do
 
 !  Seasalt Settling
 !  ----------------
@@ -1467,6 +1470,9 @@ RUN_ALARM: if (gcSS%run_alarm) then
                          SS_conc, SS_extcoef, SS_scacoef, SS_exttaufm, SS_scataufm, &
                          SS_angstrom, SS_fluxu, SS_fluxv, rc)
 
+do n = 1, 5
+  if(mapl_am_i_root()) print*,'n = ', n,' : Run2 E SS sum(ss00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+end do
    return
 
 CONTAINS

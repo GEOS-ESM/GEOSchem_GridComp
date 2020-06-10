@@ -1054,8 +1054,8 @@ if(mapl_am_i_root()) print*,'DU km = ',km
 
        dqa = gcDU%Ch_DU * gcDU%sfrac(n)*gcDU%src * emissions * cdt * grav / w_c%delp(:,:,km)
 
-if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum emissions = ',sum(emissions)
-if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(dqa) = ',sum(dqa)
+!if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum emissions = ',sum(emissions)
+!if(mapl_am_i_root()) print*,'n = ', n, ' : DU sum(dqa) = ',sum(dqa)
        w_c%qa(n1+n-1)%data3d(:,:,km) = w_c%qa(n1+n-1)%data3d(:,:,km) + dqa
 
        if (associated(DU_emis(n)%data2d)) then

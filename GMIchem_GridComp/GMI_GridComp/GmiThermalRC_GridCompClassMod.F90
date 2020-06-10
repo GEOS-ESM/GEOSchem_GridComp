@@ -26,7 +26,6 @@
    USE GmiSpcConcentrationMethod_mod, ONLY : t_SpeciesConcentration
    USE GmiGrid_mod,                   ONLY : t_gmiGrid
    USE GmiTimeControl_mod,            ONLY : t_GmiClock
-   USE GmiESMFrcFileReading_mod,      ONLY : rcEsmfReadLogical
    USE GmiESMFrcFileReading_mod,      ONLY : rcEsmfReadTable
    use GmiArrayBundlePointer_mod, only : t_GmiArrayBundle, CleanArrayPointer
    use GmiFieldBundleESMF_mod,        ONLY : obtainTracerFromBundle
@@ -252,24 +251,24 @@ CONTAINS
      &                default = 'strat_trop', rc=STATUS )
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_synoz, &
-     &           "do_synoz:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_synoz, &
+     &           label="do_synoz:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       !------------------------------
       ! Diagnostics related variables
       !------------------------------
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_diag, &
-     &           "pr_diag:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_diag, &
+     &           label="pr_diag:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%verbose, &
-     &           "verbose:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%verbose, &
+     &           label="verbose:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_wetchem, &
-     &           "do_wetchem:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_wetchem, &
+     &           label="do_wetchem:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%metdata_name_org, &
@@ -287,32 +286,32 @@ CONTAINS
      &                default = 1, rc=STATUS )
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_AerDust_Calc, &
-     &           "do_AerDust_Calc:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_AerDust_Calc, &
+     &           label="do_AerDust_Calc:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_qqjk, &
-     &           "pr_qqjk:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_qqjk, &
+     &           label="pr_qqjk:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_qqjk_reset, &
-     &           "do_qqjk_reset:", default=.true., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_qqjk_reset, &
+     &           label="do_qqjk_reset:", default=.true., rc=STATUS)
       VERIFY_(STATUS)
 
       !----------------------------
       ! Chemistry Related Variables
       !----------------------------
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_qqjk_inchem, &
-     &           "do_qqjk_inchem:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_qqjk_inchem, &
+     &           label="do_qqjk_inchem:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
 !     -------------------------
 !     Reaction rate adjustment:
 !     -------------------------
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_rxnr_adjust, &
-     &           "do_rxnr_adjust:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_rxnr_adjust, &
+     &           label="do_rxnr_adjust:", default=.false., rc=STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%rxnr_adjust_infile_name, &
      &                label   = "rxnr_adjust_infile_name:", &
@@ -563,7 +562,7 @@ CONTAINS
 !  Local
 !  -----
    INTEGER :: cymd, dymd, emiss_opt, hms
-   INTEGER :: i, i1, i2, ic, idehyd_num, im, iXj, iTile(1)
+   INTEGER :: i, i1, i2, ic, im, iXj, iTile(1)
    INTEGER :: j, j1, j2, jm, jTile(1)
    INTEGER :: k, km, kReverse
    INTEGER :: i1_gl, i2_gl, ju1_gl, j2_gl, ilo, gmi_nborder
@@ -929,7 +928,7 @@ CONTAINS
 !---------------------------------------------------------------------------
 !BOP
 !
-! !ROUTINE:  populateBundleQJ
+! !ROUTINE:  populateBundleQK
 !
 ! !INTERFACE:
 

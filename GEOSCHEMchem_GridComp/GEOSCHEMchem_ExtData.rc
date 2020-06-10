@@ -543,7 +543,7 @@ HTAP_MONTHLY_SO2_RESIDENTIAL '1' Y N 2010-%m2-01T00:00:00 none none emi_so2    /
 
 # Lightning inputs - currently read from external file but eventually this needs to be taken from the online model
 LFR_OFFLINE            'km-2s-1' Y N 2017-%m2-01T00:00:00 none none LDENS /discover/nobackup/projects/gmao/geos_cf_dev/gcc_inputs/OFFLINE_LIGHTNING/FLASH_CTH_MERRA2_0.5x0.625_2017_%m2_mean.nc4
-CCTH                         'm' Y N 2017-%m2-01T00:00:00 none none CTH   /discover/nobackup/projects/gmao/geos_cf_dev/gcc_inputs/OFFLINE_LIGHTNING/FLASH_CTH_MERRA2_0.5x0.625_2017_%m2_mean.nc4
+CCTH_OFFLINE                 'm' Y N 2017-%m2-01T00:00:00 none none CTH   /discover/nobackup/projects/gmao/geos_cf_dev/gcc_inputs/OFFLINE_LIGHTNING/FLASH_CTH_MERRA2_0.5x0.625_2017_%m2_mean.nc4
 
 # Masks
 DEAD_SFC_TYP  NA  N V - none none  SFC_TYP    /discover/nobackup/cakelle2/data/dst_tibds.esmf.2x25.nc
