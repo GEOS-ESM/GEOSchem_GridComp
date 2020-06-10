@@ -17,6 +17,7 @@ module SS2G_GridCompMod
 
    use Chem_UtilMod
    use GOCART2G_Process       ! GOCART2G process library
+   use GA_GridCompMod
 
    implicit none
    private
@@ -41,17 +42,7 @@ real, parameter ::  chemgrav   = 9.80616
    integer, parameter         :: NHRES = 6  ! DEV NOTE!!! should this be allocatable, and not a parameter?
 
 !  !Sea Salt state
-   type SS2G_GridComp
-       type(Chem_Mie), dimension(2)    :: rad_MieTable, diag_MieTable
-       real, allocatable      :: radius(:)      ! particle effective radius [um]
-       real, allocatable      :: rlow(:)        ! particle effective radius lower bound [um]
-       real, allocatable      :: rup(:)         ! particle effective radius upper bound [um]
-       real, allocatable      :: fscav(:)       ! scavenging efficiency
-       real, allocatable      :: molwght(:)     ! molecular weight
-       real, allocatable      :: rhop(:)        ! dry particle density
-       real, allocatable      :: fnum(:)        ! number of particles per kg mass
-       real                   :: maringFlag     ! maring settling velocity correction
-       integer                :: rhFlag         ! RH swelling of Seasalt (1 for Fitzgerald 1975; 2 for Gerber 1985)
+   type, extends(GA_GridComp) :: SS2G_GridComp
        integer                :: sstEmisFlag    ! Choice of SST correction to emissions: 0 - none; 1 - Jaegle et al. 2011; 2 - GEOS5
        logical                :: hoppelFlag     ! Apply the Hoppel correction to emissions (Fan and Toon, 2011)
        logical                :: weibullFlag    ! Apply the Weibull distribution to wind speed for emissions (Fan and Toon, 2011)
@@ -137,26 +128,14 @@ contains
        call ESMF_ConfigLoadFile (cfg, 'SS2G_GridComp_SS.rc', __RC__)
     end if
 
-!   Get nbins from cfg
-    call ESMF_ConfigGetAttribute (cfg, self%nbins, label='nbins:', __RC__)
-    nbins = self%nbins
+    ! process generic config items
+    call self%GA_GridComp%load_resource_file(cfg, __RC__)
 
-!   Parse config file into private internal state
-!   ----------------------------------------------
-    allocate(self%radius(nbins), self%rlow(nbins), self%rup(nbins), self%fscav(nbins), &
-             self%molwght(nbins), self%fnum(nbins), self%rhop(nbins), __STAT__)
-
-    call ESMF_ConfigGetAttribute (cfg, self%radius,     label='particle_radius_microns:', __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%rlow,       label='radius_lower:', __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%rup,        label='radius_upper:', __RC__)
+    ! process SS-specific items
     call ESMF_ConfigGetAttribute (cfg, self%fscav,      label='fscav:', __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%molwght,    label='molecular_weight:', __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%rhop,       label='SS_density:', __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%fnum,       label='fnum:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%sstEmisFlag, label='sstEmisFlag:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%weibullFlag,  label='weibullFlag:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%hoppelFlag, label='hoppelFlag:', __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%rhFlag, label='rhFlag:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%emission_scheme, label='emission_scheme:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%emission_scale_res, label='emission_scale:', __RC__)
 

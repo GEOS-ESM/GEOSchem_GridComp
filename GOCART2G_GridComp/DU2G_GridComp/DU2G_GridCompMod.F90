@@ -17,6 +17,7 @@ module DU2G_GridCompMod
 
    use Chem_UtilMod          
    use GOCART2G_Process       ! GOCART2G process library
+   use GA_GridCompMod
    
    implicit none
    private
@@ -38,7 +39,7 @@ module DU2G_GridCompMod
 
    integer, parameter         :: NHRES = 6  ! DEV NOTE!!! should this be allocatable, and not a parameter?
 !  !Dust state
-   type DU2G_GridComp
+   type, extends(GA_GridComp) :: DU2G_GridComp
        type(Chem_Mie), dimension(2)    :: rad_MieTable, diag_MieTable
        real, allocatable      :: radius(:)      ! particle effective radius [um]
        real, allocatable      :: rlow(:)        ! particle effective radius lower bound [um]
@@ -136,32 +137,18 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
 !   -------------------
     cfg = ESMF_ConfigCreate (__RC__)
     call ESMF_ConfigLoadFile (cfg, 'DU2G_GridComp_'//trim(COMP_NAME)//'.rc', rc=status)
+
     if (status /= 0) then
         if (mapl_am_i_root()) print*,'DU2G_GridComp_'//trim(COMP_NAME)//'.rc does not exist! Loading DU2G_GridComp_DU.rc instead'
         call ESMF_ConfigLoadFile (cfg, 'DU2G_GridComp_DU.rc', __RC__)
     end if
 
-!   Get nbins from cfg
-    call ESMF_ConfigGetAttribute (cfg, self%nbins, label='nbins:', __RC__)
-    nbins = self%nbins
+    ! process generic config items
+    call self%GA_GridComp%load_resource_file(cfg, __RC__)
 
-!   Parse config file into private internal state
-!   ----------------------------------------------
-    allocate(self%radius(nbins), self%rlow(nbins), self%rup(nbins), self%sfrac(nbins), &
-             self%rhop(nbins), self%fscav(nbins), self%molwght(nbins), self%fnum(nbins), &
-             __STAT__)
-
-    call ESMF_ConfigGetAttribute (cfg, self%radius,     label='particle_radius_microns:', __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%rlow,       label='radius_lower:', __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%rup,        label='radius_upper:', __RC__)
+    ! process DU-specific items
     call ESMF_ConfigGetAttribute (cfg, self%sfrac,      label='source_fraction:', __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%rhop,       label='soil_density:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%Ch_DU_res,  label='Ch_DU:', __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%fscav,      label='fscav:', __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%molwght,    label='molecular_weight:', __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%fnum,       label='fnum:', __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%rhFlag,     label='rhFlag:', __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%maringFlag, label='maringFlag:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%point_emissions_srcfilen, &
                                   label='point_emissions_srcfilen:', default='/dev/null', __RC__)
 
