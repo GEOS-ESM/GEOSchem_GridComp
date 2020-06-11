@@ -30,7 +30,6 @@
    use GmiStateFieldESMF_mod,         ONLY : initDataInStateField
    use GmiSwapSpeciesBundlesMod,      ONLY : SwapSpeciesBundles, speciesReg_for_CCM
    USE GmiFastJX_includeMod,          ONLY : t_fastJXbundle
-   USE GmiFastJX_ParametersMod,       ONLY : NW
 
    IMPLICIT NONE
    INTEGER, PARAMETER :: DBL = KIND(0.00D+00)
@@ -42,6 +41,7 @@
 #include "setkin_lchem.h"
 #include "gmi_AerDust_const.h"
 #include "gmi_time_constants.h"
+#include "parm_MIE_fastJX65.h"
 ! !TYPES:
 
    PRIVATE
@@ -244,19 +244,14 @@ CONTAINS
    USE GmiTimeControl_mod,            ONLY : Set_begGmiDate, Set_begGmiTime
    USE GmiTimeControl_mod,            ONLY : Set_numTimeSteps
    use GmiCheckNamelistFile_mod, only : CheckNamelistOptionRange
-   use fastj           , only : InitializeFastj
-   use fast_JX         , only : InitializeFastJX
-   use Fast_JX53b      , only : InitializeFastJX53b
-   use Fast_JX53c      , only : InitializeFastJX53c
-   use fastJX65_mod,     only : initializeFastJX65
-   use CloudJ_mod,       only : initializeFastJX74
-   USE ReadSolarCycle_mod,            ONLY : readSolarCycleData
+!
+   use fastJX65_mod,       only : initializeFastJX65
+   use CloudJ_mod,         only : initializeFastJX74
+   USE ReadSolarCycle_mod, ONLY : readSolarCycleData
 
    IMPLICIT none
    INTEGER, PARAMETER :: DBL = KIND(0.00D+00)
 
-#     include "phot_lookup.h"
-#     include "phot_monthly.h"
 !
 ! !INPUT PARAMETERS:
 !
@@ -305,10 +300,10 @@ CONTAINS
    INTEGER :: gmi_nborder
    INTEGER :: numSpecies
    INTEGER :: inyr,inmon,iscyr
+!
    REAL, dimension(2628)     :: s_cycle_dates    ! 2628 months : 1882 - 2100
-   REAL, dimension(NW,2628)  :: s_cycle          ! 2628 months : 1882 - 2100
+   REAL, dimension(W_ ,2628) :: s_cycle          ! 2628 months : 1882 - 2100
    REAL(r8), POINTER         :: fjx_solar_cycle_param(:)
-
 
    INTEGER :: loc_proc, locGlobProc, commu_slaves
    LOGICAL :: one_proc, rootProc
@@ -424,14 +419,8 @@ CONTAINS
 !       0:  no photolysis
 !       1:  set all qj values to qj_init_val
 !       2:  read in qj values
-!       3:  use fastj routine (for fastJ, fastJx, fastJx53b)
+!       3:  use fastj routine (for fastJX, CloudJ)
 !           This option should be combined with fastj_opt.
-!       4:  lookup table for qj (Kawa style)
-!       5:  lookup table for qj (Kawa style) +
-!           use ozone climatology for column ozone calc.
-!       6:  calculate from table and Gmimod data (Quadchem)
-!       7:  read in qj values (2-D, 12 months)
-!       8:  use fast-JX routine (troposphere/stratosphere)
 !     -----------------------------------------------------
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%phot_opt, &
@@ -441,17 +430,13 @@ CONTAINS
 
 !     -----------------------------------------------------
 !     fastj_opt: set when phot_opt=3
-!       0:  FastJ
-!       1:  FastJx       (supported)
-!       2:  FastJx 5.3b
-!       3:  FastJx 5.3c
 !       4:  FastJx 6.5   (supported)
 !       5:  CloudJ       (supported) (FastJX 7.4)
 !     -----------------------------------------------------
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%fastj_opt, &
      &                label   = "fastj_opt:", &
-     &                default = 1, rc=STATUS )
+     &                default = 4, rc=STATUS )
       VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_clear_sky, label="do_clear_sky:", &
@@ -854,22 +839,22 @@ CONTAINS
    CALL Set_numTimeSteps(self%gmiClock, 0)
 
 !... solar cycle parameter
-       if(self%do_solar_cycle) then
+   if(self%do_solar_cycle) then
 
-   CALL readSolarCycleData( s_cycle_dates, s_cycle, self%sc_infile_name )
+     CALL readSolarCycleData( s_cycle_dates, s_cycle, self%sc_infile_name )
 
 !... figure out index for solar cycle array from year and month
-          inyr = int(nymd/10000)
-          inmon = int(nymd/100)-100*inyr
-          iscyr = nint(((inyr+inmon/12.0)-s_cycle_dates(1))*12.)+1
+     inyr = int(nymd/10000)
+     inmon = int(nymd/100)-100*inyr
+     iscyr = nint(((inyr+inmon/12.0)-s_cycle_dates(1))*12.)+1
 
-    IF( MAPL_AM_I_ROOT() ) THEN
-      PRINT *,"Solar cycle: ",s_cycle_dates(iscyr),s_cycle(:,iscyr)
-    ENDIF
-         self%JXbundle%fjx_solar_cycle_param(:) = s_cycle(:,iscyr)
-       else
-         self%JXbundle%fjx_solar_cycle_param(:) = 1.000
-       endif
+     IF( MAPL_AM_I_ROOT() ) THEN
+       PRINT *,"Solar cycle: ",s_cycle_dates(iscyr),s_cycle(:,iscyr)
+     ENDIF
+     self%JXbundle%fjx_solar_cycle_param(:) = s_cycle(:,iscyr)
+   else
+     self%JXbundle%fjx_solar_cycle_param(:) = 1.000
+   endif
 
 ! Grid box surface area, m^{2}
 ! ----------------------------
@@ -971,33 +956,6 @@ CONTAINS
          select case (self%fastj_opt)
          !===========================
 
-            !=======
-            case (0)
-            !=======
-                call InitializeFastJ (self%cross_section_file, self%rate_file, &
-     &                         self%T_O3_climatology_file, n_qj_O3_2OH,   &
-     &                         NUM_J, self%chem_mask_khi, k2, k1)
-            !=======
-            case (1)
-            !=======
-               call InitializeFastJX (self%JXbundle, self%cross_section_file, &
-                                      self%rate_file, &
-     &                        self%T_O3_climatology_file, rootProc,            &
-     &                        n_qj_O3_2OH, NUM_J, self%chem_mask_khi, k2, k1)
-            !=======
-            case (2)
-            !=======
-                call InitializeFastJX53b (k1, k2, self%chem_mask_khi,          &
-     &                         NUM_J, self%cross_section_file,                 &
-     &                         self%scattering_data_file, self%rate_file,      &
-     &                         self%T_O3_climatology_file)
-            !=======
-            case (3)
-            !=======
-                call InitializeFastJX53c (k1, k2, self%chem_mask_khi,          &
-     &                         NUM_J, self%cross_section_file,                 &
-     &                         self%scattering_data_file, self%rate_file,      &
-     &                         self%T_O3_climatology_file)
             !=======
             case (4)
             !=======

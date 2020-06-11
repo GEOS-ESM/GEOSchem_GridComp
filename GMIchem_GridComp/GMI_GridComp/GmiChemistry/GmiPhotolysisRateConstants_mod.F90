@@ -8,12 +8,6 @@
       module GmiPhotRateConst_mod
 !
 ! !USES:
-      use fastj                    , only : Control_Fastj, GetQAA_RAAinFastj
-      use fast_JX                  , only : Control_Fast_JX, GetQAA_RAAinFastJX
-      use fast_JX53b               , only : Control_Fast_JX53b
-      use fast_JX53b               , only : GetQAA_RAAinFastJX53b
-      use fast_JX53c               , only : Control_Fast_JX53c
-      use fast_JX53c               , only : GetQAA_RAAinFastJX53c
       use fastJX65_mod             , only : controlFastJX65
       use fastJX65_mod             , only : getQAA_RAAinFastJX65
       use CloudJ_mod               , only : controlFastJX74
@@ -94,8 +88,6 @@
 !
 #     include "gmi_phys_constants.h"
 #     include "gmi_time_constants.h"
-#     include "phot_lookup.h"
-#     include "phot_monthly.h"
 #     include "setkin_par.h"
 #     include "gmi_AerDust_const.h"
 !
@@ -172,6 +164,7 @@
       integer :: il, ij, it, ic, n
       integer :: jday, ich4_num
       integer :: month_gmi
+      integer, parameter :: four = 4
       real*8  :: time_sec, sza_ij, lat_ij
       real*8  :: overheadO3col_ij (k1:k2)
       real*8  ::           kel_ij (k1:k2)
@@ -207,47 +200,19 @@
      &          (TRIM(chem_mecha) ==         'strat_trop') .OR. &
      &          (TRIM(chem_mecha) == 'strat_trop_aerosol')) THEN
                if (do_AerDust_Calc) then
-                  if (fastj_opt == 0) then
-                     call  GetQAA_RAAinFastj (RAA_b, QAA_b)
-                  end if
-                  if (fastj_opt == 1) then
-                     call  GetQAA_RAAinFastJX (JXbundle, RAA_b, QAA_b)
-                  end if
-                  if (fastj_opt == 2) then
-                     call  GetQAA_RAAinFastJX53b (RAA_b, QAA_b)
-                  end if
-                  if (fastj_opt == 3) then
-                     call  GetQAA_RAAinFastJX53c (RAA_b, QAA_b)
-                  end if         
                   if (fastj_opt == 4) then
-                     call  GetQAA_RAAinFastJX65 (RAA_b, QAA_b)
+                     call  GetQAA_RAAinFastJX65 (RAA_b, QAA_b, four, NP_b)
                   end if
                end if
             end if
          end if
 
 !      end if
-
+!
 !     ==================
-      if (phot_opt == 2) then
+      if (phot_opt == 3) then
 !     ==================
-
-        if (qj_timpyr == MONTHS_PER_YEAR) then
-          call GmiSplitDateTime (nymd, idumyear, month_gmi, idumday)
-          it = month_gmi
-        else
-          it = 1
-        endif 
-
-          do ic = 1, num_qjs
-             qjgmi(ic)%pArray3D(i1:i2,ju1:j2,k1:k2) =  &
-     &                          qjmon(i1:i2,ju1:j2,k1:k2,ic,it)
-          end do
-
-!     ==================
-      elseif (phot_opt == 3) then
-!     ==================
-
+!
 !       --------------------------------------------------------------
 !       First form some non-grid dependent arguments needed for Fastj.
 !       --------------------------------------------------------------
@@ -344,61 +309,9 @@
               cldOD_ij(:) = tau_cloud(il,ij,:)
             endif
 !
-            if (fastj_opt == 0) then
-
-!                 ==================
-                  call Control_Fastj  &
-!                 ==================
-     &              (k1, k2, chem_mask_khi,  &
-     &               num_qjs, month_gmi, jday, time_sec, fastj_offset_sec,  &
-     &               sza_ij, pres3e(il,ij,k1-1:k2),  &
-     &               kel_ij, cldOD_ij, surf_alb_uv(il,ij), qjgmi_ij, overheadO3col_ij, &
-     &               ODAER_ij, ODMDUST_ij)
-
-            elseif (fastj_opt == 1) then
-               if (.not. do_ozone_inFastJX) then
-!                 ==================
-                  call Control_Fast_JX  &
-!                 ==================
-     &              (JXbundle, k1, k2, chem_mask_khi,  &
-     &               num_qjs, month_gmi, jday, time_sec, fastj_offset_sec,  &
-     &               sza_ij, pres3e(il,ij,k1:k2), pctm2(il,ij),  &
-     &               kel_ij, cldOD_ij, surf_alb_uv(il,ij), qjgmi_ij, overheadO3col_ij, &
-     &               ODAER_ij, ODMDUST_ij, ozone_ij)
-               else
-!                 ==================
-                  call Control_Fast_JX  &
-!                 ==================
-     &              (JXbundle, k1, k2, chem_mask_khi,  &
-     &               num_qjs, month_gmi, jday, time_sec, fastj_offset_sec,  &
-     &               sza_ij, pres3e(il,ij,k1:k2), pctm2(il,ij),  &
-     &               kel_ij, cldOD_ij, surf_alb_uv(il,ij), qjgmi_ij, overheadO3col_ij, &
-     &               ODAER_ij, ODMDUST_ij)
-               endif
-            elseif (fastj_opt == 2) then
-!                    ==================
-                     call Control_Fast_JX53b  &
-!                    ==================
-     &                 (k1, k2, chem_mask_khi,  &
-     &                  num_qjs, month_gmi, jday, time_sec,  &
-     &                  sza_ij, pres3e(il,ij,k1:k2), pctm2(il,ij),  &
-     &                  kel_ij, cldOD_ij, surf_alb_uv(il,ij), qjgmi_ij, overheadO3col_ij, &
-     &                  ozone_ij)
-            elseif (fastj_opt == 3) then
-!                    ==================
-                     call Control_Fast_JX53c  &
-!                    ==================
-     &                 (k1, k2, chem_mask_khi, num_qjs, month_gmi, jday, time_sec,  &
-     &                  sza_ij, pres3e(il,ij,k1:k2), pctm2(il,ij),  &
-     &                  kel_ij, cldOD_ij, surf_alb_uv(il,ij), qjgmi_ij, overheadO3col_ij, &
-     &                   ODAER_ij, ODMDUST_ij, ozone_ij)
-!!                    ==================
-!                     call RunFastJX53c  &
-!!                    ==================
-!     &                 (k1, k2, jday, time_sec, month_gmi,  &
-!     &                  sza_ij, pres3e(il,ij,k1:k2), pctm2(il,ij),  &
-!     &                  kel_ij, cldOD_ij, surf_alb_uv(il,ij), qjgmi_ij,  &
-!     &                  ozone_ij)
+            if (fastj_opt <= 3) then
+              print *,'This fastj_opt no longer supported: ', fastj_opt
+              stop
             elseif (fastj_opt == 4) then
                if (.not. do_ozone_inFastJX) then
                   call controlFastJX65 (k1, k2, chem_mask_khi, num_qjs, month_gmi,          &
@@ -418,7 +331,7 @@
      &                        JXbundle%fjx_solar_cycle_param)
                endif
 !
-!... use CloudJ (aka FastJX7.4
+!... use CloudJ (aka FastJX7.4)
             elseif (fastj_opt == 5) then
                cldOD_ij(:)     = MAPL_UNDEF
                eradius_ij(:,:) = 0.0d0
@@ -505,45 +418,6 @@
           end do
         end do
 
-!     ==============================================
-      else if ((phot_opt == 4) .or. (phot_opt == 5)) then
-!     ==============================================
-
-!       ==============
-        call Lookup_Qj  &
-!       ==============
-     &    (chem_mecha, do_clear_sky, phot_opt, io3_num, nymd, photintv,  &
-     &     rsec_jan1, pres3c, temp3, concentration, solarZenithAngle,    &
-     &     mcor, mass3,  fracCloudCover, qjgmi, &
-     &     pr_diag, loc_proc, num_species, num_qjs, num_qjo, &
-     &     ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1, k2)
-
-      end if
-
-      if (TRIM(chem_mecha) == 'troposphere') then
-!        ----------------------------------------------------------------------
-!        Check to see if the mechanism has a photolysis reaction O3 + hv = 2OH.
-!        If so, save the rate in the last entry of qjgmi and then the real rate
-!        needs to be adjusted.  Updated to JPL 06-2 (Bryan Duncan 10/2006).
-!        ----------------------------------------------------------------------
-                   
-         if (n_qj_O3_2OH > 0) then
-                   
-            n2adj(:,:,:) = 2.15d-11 * Exp (110.0d0 / temp3(i1:i2,ju1:j2,:)) * MXRN2
-            o2adj(:,:,:) = 3.30d-11 * Exp ( 55.0d0 / temp3(i1:i2,ju1:j2,:)) * MXRO2
-                   
-            if (pr_qj_o3_o1d) then
-               qjgmi(num_qjs+1)%pArray3D(:,:,:) = &
-                     qjgmi(n_qj_O3_2OH)%pArray3D(:,:,:)
-            end if
-
-            qjgmi(n_qj_O3_2OH)%pArray3D(:,:,:) = &
-                     qjgmi(n_qj_O3_2OH)%pArray3D(:,:,:) / &
-     &                         (1.0d0 + ((n2adj(:,:,:) + o2adj(:,:,:)) /     &
-     &                         (1.63d-10 * Exp(60.0d0/temp3(i1:i2,ju1:j2,:)) &
-     &                        * concentration(ih2o_num)%pArray3D(:,:,:))))
-                   
-         end if
       end if
 
 !!     ----------------------------------------------------------------------
