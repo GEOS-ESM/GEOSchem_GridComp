@@ -674,7 +674,7 @@ CONTAINS
       VERIFY_(STATUS)
 
       call CheckNamelistOptionRange ('phot_opt', self%phot_opt, 0, 7)
-      call CheckNamelistOptionRange ('fastj_opt', self%fastj_opt, 0, 5)
+      call CheckNamelistOptionRange ('fastj_opt', self%fastj_opt, 4, 5)
       call CheckNamelistOptionRange ('AerDust_Effect_opt', self%AerDust_Effect_opt, 0, 3)
 
       self%num_qjs       = NUM_J

@@ -309,10 +309,7 @@
               cldOD_ij(:) = tau_cloud(il,ij,:)
             endif
 !
-            if (fastj_opt <= 3) then
-              print *,'This fastj_opt no longer supported: ', fastj_opt
-              stop
-            elseif (fastj_opt == 4) then
+            if (fastj_opt == 4) then
                if (.not. do_ozone_inFastJX) then
                   call controlFastJX65 (k1, k2, chem_mask_khi, num_qjs, month_gmi,          &
      &                        jday, time_sec, sza_ij, do_clear_sky,                         &
