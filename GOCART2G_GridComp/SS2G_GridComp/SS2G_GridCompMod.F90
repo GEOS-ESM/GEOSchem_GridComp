@@ -46,10 +46,10 @@ real, parameter ::  chemgrav   = 9.80616
        integer                :: sstEmisFlag    ! Choice of SST correction to emissions: 0 - none; 1 - Jaegle et al. 2011; 2 - GEOS5
        logical                :: hoppelFlag     ! Apply the Hoppel correction to emissions (Fan and Toon, 2011)
        logical                :: weibullFlag    ! Apply the Weibull distribution to wind speed for emissions (Fan and Toon, 2011)
-       integer                :: nbins
-       integer                :: km             ! vertical grid dimension
-       real                   :: CDT            ! chemistry timestep (secs)
-       integer                :: instance       ! data or computational instance
+!       integer                :: nbins
+!       integer                :: km             ! vertical grid dimension
+!       real                   :: CDT            ! chemistry timestep (secs)
+!       integer                :: instance       ! data or computational instance
        real, allocatable      :: deep_lakes_mask(:,:)
        integer                :: emission_scheme
        real                   :: emission_scale ! global scaling factor
@@ -129,10 +129,10 @@ contains
     end if
 
     ! process generic config items
-    call self%GA_GridComp%load_resource_file(cfg, __RC__)
+    call self%GA_GridComp%load_from_config( cfg, __RC__)
 
     ! process SS-specific items
-    call ESMF_ConfigGetAttribute (cfg, self%fscav,      label='fscav:', __RC__)
+!    call ESMF_ConfigGetAttribute (cfg, self%fscav,      label='fscav:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%sstEmisFlag, label='sstEmisFlag:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%weibullFlag,  label='weibullFlag:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%hoppelFlag, label='hoppelFlag:', __RC__)
@@ -776,9 +776,11 @@ real, parameter ::  cpd    = 1004.16
 
 !   Sea Salt Settling
 !   -----------------
-    call Chem_Settling2Gorig (self%km, self%rhFlag, SS, CHEMgrav, delp, &
-                              self%radius*1.e-6, self%rhop, self%cdt, t, airdens, &
-                              rh2, zle, SSSD, __RC__)
+    do n = 1, self%nbins
+       call Chem_Settling2Gorig (self%km, self%rhFlag, n, SS(:,:,:,n), CHEMgrav, delp, &
+                                 self%radius(n)*1.e-6, self%rhop(n), self%cdt, t, airdens, &
+                                 rh2, zle, SSSD, __RC__)
+    end do
 
 !   Sea Salt Deposition
 !   -------------------
@@ -811,17 +813,24 @@ real, parameter ::  cpd    = 1004.16
                                pfl_lsan, pfi_lsan, cn_prcp, ncn_prcp, SSWT, rc)
     end do
 
-    call Aero_Compute_Diags (self%diag_MieTable(self%instance), self%km, self%nbins, self%rlow, self%rup, &
+!   Compute diagnostics
+!   -------------------
+    call Aero_Compute_Diags (self%diag_MieTable(self%instance), self%km, 1, self%nbins, self%rlow, self%rup, &
                            self%diag_MieTable(self%instance)%channels, SS, chemGRAV, t, airdens, &
                            rh2, u, v, delp, SSSMASS, SSCMASS, SSMASS, SSEXTTAU, SSSCATAU,     &
                            SSSMASS25, SSCMASS25, SSMASS25, SSEXTT25, SSSCAT25, &
                            SSFLUXU, SSFLUXV, SSCONC, SSEXTCOEF, SSSCACOEF,    &
                            SSEXTTFM, SSSCATFM ,SSANGSTR, SSAERIDX, __RC__)
 
-!do n=1,5
-!   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 E SS2G sum(ss00n) = ',sum(SS(:,:,:,n))
-!end do
+if(mapl_am_i_root()) print*,'SS2G SSSMASS = ',sum(SSSMASS)
+if(mapl_am_i_root()) print*,'SS2G SSMASS = ',sum(SSMASS)
+if(mapl_am_i_root()) print*,'SS2G SSEXTTAU = ',sum(SSEXTTAU)
+if(mapl_am_i_root()) print*,'SS2G SSSCATAU = ',sum(SSSCATAU)
 
+
+do n=1,5
+   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 E SS2G sum(ss00n) = ',sum(SS(:,:,:,n))
+end do
 
     RETURN_(ESMF_SUCCESS)
 
