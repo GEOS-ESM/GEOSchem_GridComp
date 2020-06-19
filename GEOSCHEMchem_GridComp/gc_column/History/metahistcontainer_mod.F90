@@ -6,7 +6,7 @@
 ! !MODULE: metahistcontainer_mod.F90
 !
 ! !DESCRIPTION: Contains types and methods to create a METAHISTORY CONTAINER
-!  object, which is a container for a HISTORY CONTAINER.  In other words, 
+!  object, which is a container for a HISTORY CONTAINER.  In other words,
 !  a METAHISTORY CONTAINER represents a single node of a linked list that is
 !  used to contain HISTORY CONTAINERS.
 !\\
@@ -44,9 +44,9 @@ MODULE MetaHistContainer_Mod
 ! !PUBLIC TYPES:
 !
   !=========================================================================
-  ! This is the derived type for a METAHISTORY CONTAINER object, which 
-  ! represents a SINGLE NODE OF A LINKED LIST consisting of HISTORY 
-  ! CONTAINERS.  
+  ! This is the derived type for a METAHISTORY CONTAINER object, which
+  ! represents a SINGLE NODE OF A LINKED LIST consisting of HISTORY
+  ! CONTAINERS.
   !
   ! As such, the METAHISTORY CONTAINER does not contain any data itself,
   ! but is a wrapper for a single HISTORY CONTAINER object, plus a pointer
@@ -58,34 +58,35 @@ MODULE MetaHistContainer_Mod
      ! (i.e. the next node in the linked list)
      TYPE(MetaHistContainer), POINTER :: Next      => NULL()
 
-     ! The HISTORY CONTAINER object (which represents a diagnostic 
+     ! The HISTORY CONTAINER object (which represents a diagnostic
      ! quantity that will be archived to netCDF file format)
      TYPE(HistContainer),     POINTER :: Container => NULL()
 
   END TYPE MetaHistContainer
 !
 ! !REMARKS:
-!  As described above, a METAHISTORY CONTAINER can be thought of as a SINGLE 
-!  NODE OF A LINKED LIST INTENDED TO HOLD HISTORY CONTAINERS.  It looks like 
+!  As described above, a METAHISTORY CONTAINER can be thought of as a SINGLE
+!  NODE OF A LINKED LIST INTENDED TO HOLD HISTORY CONTAINERS.  It looks like
 !  this:
-!   
+!
 !      +----------------------------+   +----------------------------+
-!      | METAHISTORY CONTAINER n    |   | METAHISTORY CONTAINER n+1  | 
-!      | (aka NODE n of list)       |   | (aka NODE n+1 of list)     |  
+!      | METAHISTORY CONTAINER n    |   | METAHISTORY CONTAINER n+1  |
+!      | (aka NODE n of list)       |   | (aka NODE n+1 of list)     |
 !      |                            |   |                            |
 !      | Contains:                  |   | Contains:                  |
 !      |                            |   |                            |
 !      |   HISTORY CONTAINER n      |   |   HISTORY CONTAINER n+1    |
 !      |                            |   |                            |
 ! =======> Pointer to next    ============> Pointer to next    =========> etc
-!      |    METAHISTORY CONTAINER   |   |    METAHISTORY CONTAINER   | 
+!      |    METAHISTORY CONTAINER   |   |    METAHISTORY CONTAINER   |
 !      +----------------------------+   +----------------------------+
 !
-!  Linked list routines taken from original code (linkedlist.f90) 
+!  Linked list routines taken from original code (linkedlist.f90)
 !  by Arjen Markus; http://flibs.sourceforge.net/linked_list.html
 
 ! !REVISION HISTORY:
 !  16 Jun 2017 - R. Yantosca - Initial version, based on code by Arjen Markus
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -98,27 +99,28 @@ CONTAINS
 !
 ! !IROUTINE: MetaHistContainer_AddNew
 !
-! !DESCRIPTION: Wrapper for methods MetaHistContainer\_Create and 
-!  MetaHistContainer\_Insert.  Will create a METAHISTORY CONTAINER (containing 
-!  a HISTORY CONTAINER) and (1) set it as the head node of a new linked list, 
+! !DESCRIPTION: Wrapper for methods MetaHistContainer\_Create and
+!  MetaHistContainer\_Insert.  Will create a METAHISTORY CONTAINER (containing
+!  a HISTORY CONTAINER) and (1) set it as the head node of a new linked list,
 !  or (2) append it to an existing linked list.
 !\\
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE MetaHistContainer_AddNew( am_I_Root, Node, Container, RC )
+  SUBROUTINE MetaHistContainer_AddNew( Input_Opt, Node, Container, RC )
 !
 ! !USES:
 !
     USE ErrCode_Mod
     USE HistContainer_Mod, ONLY : HistContainer
+    USE Input_Opt_Mod,     ONLY : OptInput
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
-    LOGICAL,                 INTENT(IN)  :: am_I_Root ! Are we on the root CPU?
+    TYPE(OptInput),          INTENT(IN)  :: Input_Opt ! Input Options object
     TYPE(HistContainer),     POINTER     :: Container ! HISTORY CONTAINER
 !
-! !INPUT/OUTPUT PARAMETERS: 
+! !INPUT/OUTPUT PARAMETERS:
 !
     TYPE(MetaHistContainer), POINTER     :: Node      ! METAHISTORY CONTAINER
 !
@@ -128,6 +130,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  16 Jun 2017 - R. Yantosca - Initial version, based on code by Arjen Markus
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -136,7 +139,7 @@ CONTAINS
 !
     ! Strings
     CHARACTER(LEN=255) :: ErrMsg, ThisLoc
- 
+
     !=======================================================================
     ! Initialize
     !=======================================================================
@@ -144,9 +147,9 @@ CONTAINS
     ErrMsg  = ''
     ThisLoc = &
       ' -> at MetaHistContainer_Add (in History/metahistcontainer_mod.F90)'
- 
+
     !=======================================================================
-    ! Test if the METAHISTORY CONTAINER (aka "Node") has been allocated 
+    ! Test if the METAHISTORY CONTAINER (aka "Node") has been allocated
     ! memory  and is therefore part of an existing linked list
     !=======================================================================
     IF ( .not. ASSOCIATED( Node ) ) THEN
@@ -155,7 +158,7 @@ CONTAINS
        ! If not, then create a new METAHISTORY CONTAINER (named "Node"),
        ! and set it at the head of a new linked list
        !--------------------------------------------------------------------
-       CALL MetaHistContainer_Create( am_I_Root, Node, Container, RC )
+       CALL MetaHistContainer_Create( Input_Opt, Node, Container, RC )
        IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Could not create "Node" as the head node of a list!'
           CALL GC_Error( ErrMsg, RC, ThisLoc )
@@ -168,7 +171,7 @@ CONTAINS
        ! Otherwise, create a new METAHISTORY CONTAINER (named "Node"),
        ! and append it to the list, immediately following the head node
        !--------------------------------------------------------------------
-       CALL MetaHistContainer_Insert( am_I_Root, Node, Container, RC )
+       CALL MetaHistContainer_Insert( Input_Opt, Node, Container, RC )
        IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Could not insert "Node" into an existing linked list!'
           CALL GC_Error( ErrMsg, RC, ThisLoc )
@@ -192,19 +195,20 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE MetaHistContainer_Create( am_I_Root, Node, Container, RC )
+  SUBROUTINE MetaHistContainer_Create( Input_Opt, Node, Container, RC )
 !
 ! !USES:
 !
     USE ErrCode_Mod
     USE HistContainer_Mod, ONLY : HistContainer
+    USE Input_Opt_Mod,     ONLY : OptInput
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
-    LOGICAL,                 INTENT(IN)  :: am_I_Root ! Are we on the root CPU?
+    TYPE(OptInput),          INTENT(IN)  :: Input_Opt ! Input Options object
     TYPE(HistContainer),     POINTER     :: Container ! HISTORY CONTAINER
 !
-! !INPUT/OUTPUT PARAMETERS: 
+! !INPUT/OUTPUT PARAMETERS:
 !
     TYPE(MetaHistContainer), POINTER     :: Node      ! METAHISTORY CONTAINER
 !
@@ -218,6 +222,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  16 Jun 2017 - R. Yantosca - Initial version, based on code by Arjen Markus
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -234,7 +239,7 @@ CONTAINS
     ErrMsg  = ''
     ThisLoc = &
       ' -> at MetaHistContainer_Create (in History/metahistcontainer_mod.F90)'
-    
+
     !=======================================================================
     ! Initialize the METAHISTORY CONTAINER itself
     !=======================================================================
@@ -256,7 +261,7 @@ CONTAINS
 
     ! Because this is the first METAHISTORY CONTAINER that is being created,
     ! we can consider this to be the head node of a linked list.
-    IF ( .not. ASSOCIATED( Node%Container ) ) THEN 
+    IF ( .not. ASSOCIATED( Node%Container ) ) THEN
        ALLOCATE( Node%Container, STAT=RC )
        IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Could not allocate "Node%Container"!'
@@ -265,7 +270,7 @@ CONTAINS
        ENDIF
     ENDIF
 
-    ! Attach the given HISTORY CONTAINER to the METAHISTORY CONTAINER 
+    ! Attach the given HISTORY CONTAINER to the METAHISTORY CONTAINER
     ! (i.e. place it into the head node of a linked list)
     Node%Container = Container
 
@@ -285,19 +290,20 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE MetaHistContainer_Insert( am_I_Root, Node, Container, RC )
+  SUBROUTINE MetaHistContainer_Insert( Input_Opt, Node, Container, RC )
 !
 ! !USES:
 !
     USE ErrCode_Mod
     USE HistContainer_Mod, ONLY : HistContainer
+    USE Input_Opt_Mod,     ONLY : OptInput
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
-    LOGICAL,                 INTENT(IN)  :: am_I_Root ! Are we on the root CPU?
+    TYPE(OptInput),          INTENT(IN)  :: Input_Opt ! Input Options object
     TYPE(HistContainer),     POINTER     :: Container ! HISTORY CONTAINER
 !
-! !INPUT/OUTPUT PARAMETERS: 
+! !INPUT/OUTPUT PARAMETERS:
 !
     TYPE(MetaHistContainer), POINTER     :: Node      ! METAHISTORY CONTAINER
 !
@@ -311,7 +317,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  16 Jun 2017 - R. Yantosca - Initial version, based on code by Arjen Markus
-!  06 Oct 2017 - R. Yantosca - Now insert new node at the head of the list
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -320,7 +326,7 @@ CONTAINS
 !
     ! Strings
     CHARACTER(LEN=255)               :: ErrMsg, ThisLoc
-    
+
     ! Objects
     TYPE(MetaHistContainer), POINTER :: Head
 
@@ -331,10 +337,10 @@ CONTAINS
     ErrMsg  = ''
     ThisLoc = &
       ' -> at MetaHistContainer_Insert (in History/metahistcontainer_mod.F90)'
-    
+
     !=======================================================================
-    ! Initialize a METAHISTORY CONTAINER named "Head", which will 
-    ! become  the head of the existing list.  "Head" will contain 
+    ! Initialize a METAHISTORY CONTAINER named "Head", which will
+    ! become  the head of the existing list.  "Head" will contain
     ! a new HISTORY CONTAINER.
     !=======================================================================
 
@@ -346,7 +352,7 @@ CONTAINS
        RETURN
     ENDIF
 
-    ! Allocate the "HeadContainer" field, 
+    ! Allocate the "HeadContainer" field,
     ! which will hold the HISTORY CONTAINER
     ALLOCATE( Head%Container, STAT=RC )
     IF ( RC /= GC_SUCCESS ) THEN
@@ -377,8 +383,8 @@ CONTAINS
 !
 ! !IROUTINE: MetaHistContainer_Count
 !
-! !DESCRIPTION: Counts the number of METAHISTORY CONTAINERS stored in a linked 
-!  list.  By extension, this is also the number of HISTORY CONTAINERS stored in 
+! !DESCRIPTION: Counts the number of METAHISTORY CONTAINERS stored in a linked
+!  list.  By extension, this is also the number of HISTORY CONTAINERS stored in
 !  the list, because each METAHISTORY CONTAINER contains only one HISTORY !
 !  CONTAINER.
 !\\
@@ -388,7 +394,7 @@ CONTAINS
   FUNCTION MetaHistContainer_Count( List ) RESULT( nNodes )
 
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
     TYPE(MetaHistContainer), POINTER :: List   ! List of METAHISTORY CONTAINERS
 !
@@ -399,12 +405,13 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  16 Jun 2017 - R. Yantosca - Initial version, based on code by Arjen Markus
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
 !
 ! !LOCAL VARIABLES:
-!  
+!
     ! Objects
     TYPE(MetaHistContainer), POINTER  :: Current
 
@@ -458,22 +465,23 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE MetaHistContainer_Print( am_I_Root, List, RC )
+  SUBROUTINE MetaHistContainer_Print( Input_Opt, List, RC )
 !
 ! !USES:
 !
     USE ErrCode_Mod
     USE HistContainer_Mod, ONLY : HistContainer, HistContainer_Print
+    USE Input_Opt_Mod,     ONLY : OptInput
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
-    LOGICAL,                 INTENT(IN)  :: am_I_Root ! Are we on the root CPU?
+    TYPE(OptInput),          INTENT(IN)  :: Input_Opt ! Input Options object
 !
-! !INPUT/OUTPUT PARAMETERS: 
+! !INPUT/OUTPUT PARAMETERS:
 !
     TYPE(MetaHistContainer), POINTER     :: List      ! List of METAHISTORY
                                                       !  CONTAINERS
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
     INTEGER,                 INTENT(OUT) :: RC        ! Success or failure
 !
@@ -481,6 +489,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  16 Jun 2017 - R. Yantosca - Initial version, based on code by Arjen Markus
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -492,7 +501,7 @@ CONTAINS
 
     ! Objects
     TYPE(MetaHistcontainer), POINTER :: Current
- 
+
     !=======================================================================
     ! Initialize
     !=======================================================================
@@ -503,10 +512,10 @@ CONTAINS
       ' -> at MetaHistContainer_Print (in History/metahistcontainer_mod.F90)'
 
     !=======================================================================
-    ! Print information about each METAHISTORY CONTAINER (aka node) 
+    ! Print information about each METAHISTORY CONTAINER (aka node)
     ! of the linked list, only if we are on the root CPU.
     !=======================================================================
-    IF ( am_I_Root ) THEN
+    IF ( Input_Opt%amIRoot ) THEN
 
        ! Point CURRENT to the head node of the list
        Current => List
@@ -515,7 +524,7 @@ CONTAINS
        DO WHILE( ASSOCIATED( Current ) )
 
           ! Print info about the history container corresponding to this node
-          CALL HistContainer_Print( am_I_Root, Current%Container, RC )
+          CALL HistContainer_Print( Input_Opt, Current%Container, RC )
           IF ( RC /= GC_SUCCESS ) THEN
              ErrMsg = 'Could not print info for "Current%Container"!'
              CALL GC_Error( ErrMsg, RC, ThisLoc )
@@ -525,7 +534,7 @@ CONTAINS
           ! Point to the next node for the next iteration
           Current => Current%Next
        ENDDO
-    
+
        ! Free pointers
        Current => NULL()
     ENDIF
@@ -540,34 +549,31 @@ CONTAINS
 ! !IROUTINE: MetaHistContainer_Destroy
 !
 ! !DESCRIPTION:  This method will destroy the HISTORY CONTAINER belonging to
-!  each METAHISTORY CONTAINER (aka node) of a linked list.  It will then 
+!  each METAHISTORY CONTAINER (aka node) of a linked list.  It will then
 !  destroy each METAHISTORY CONTAINER in the list.
 !\\
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE MetaHistContainer_Destroy( am_I_Root, List, RC )
+  SUBROUTINE MetaHistContainer_Destroy( List, RC )
 !
 ! !USES:
 !
     USE ErrCode_Mod
     USE HistContainer_Mod, ONLY : HistContainer, HistContainer_Destroy
 !
-! !INPUT PARAMETERS:
+! !INPUT/OUTPUT PARAMETERS:
 !
-    LOGICAL,                 INTENT(IN)  :: am_I_Root ! Are we on the root CPU?
-!
-! !INPUT/OUTPUT PARAMETERS: 
-!
-    TYPE(MetaHistContainer), POINTER     :: List      ! List of METAHISTORY 
+    TYPE(MetaHistContainer), POINTER     :: List      ! List of METAHISTORY
                                                       !  CONTAINERS
 !
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
     INTEGER,                 INTENT(OUT) :: RC        ! Success or failure?
 !
 ! !REVISION HISTORY:
 !  16 Jun 2017 - R. Yantosca - Initial version, based on code by Arjen Markus
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -602,10 +608,10 @@ CONTAINS
 
        ! Set the CURRENT pointer to the current METAHISTORY CONTAINER
        Current => Node
-       
-       ! Destroy the HISTORY CONTAINER contained within 
+
+       ! Destroy the HISTORY CONTAINER contained within
        ! this METAHISTORY CONTAINER
-       CALL HistContainer_Destroy( am_I_Root, Current%Container, RC )
+       CALL HistContainer_Destroy( Current%Container, RC )
        IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = &
             'Cannot deallocate the "Current%Container" HISTORY CONTAINER!'

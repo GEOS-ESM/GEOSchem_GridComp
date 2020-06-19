@@ -5,8 +5,8 @@
 !
 ! !MODULE: histitem_mod.F90
 !
-! !DESCRIPTION: Contains types and methods to create a HISTORY ITEM object.  
-!  A HISTORY ITEM represents a single GEOS-Chem diagnostic quantity that 
+! !DESCRIPTION: Contains types and methods to create a HISTORY ITEM object.
+!  A HISTORY ITEM represents a single GEOS-Chem diagnostic quantity that
 !  will be archived to netCDF file output.
 !\\
 !\\
@@ -81,7 +81,7 @@ MODULE HistItem_Mod
      INTEGER,  POINTER  :: Source_3d_I(:,:,:)    ! Ptr to 3D integer   data
 
      !----------------------------------------------------------------------
-     ! Data arrays 
+     ! Data arrays
      !----------------------------------------------------------------------
      INTEGER            :: SpaceDim              ! # of dims (0-3)
      REAL(f8), POINTER  :: Data_0d               ! 0D scalar
@@ -94,28 +94,23 @@ MODULE HistItem_Mod
      LOGICAL            :: OnLevelEdges          ! =T if data is defined on
                                                  !    vertical level edges;
                                                  ! =F if on level centers
-     
+
      !----------------------------------------------------------------------
      ! Data archival
      !----------------------------------------------------------------------
      REAL(f8)           :: nUpdates              ! # of times updated
      INTEGER            :: Operation             ! Operation code
-                                                 !  0=copy from source 
+                                                 !  0=copy from source
                                                  !  1=accumulate from source
    END TYPE HistItem
 !
 ! !REMARKS:
-!  Linked list routines taken from original code (linkedlist.f90) 
+!  Linked list routines taken from original code (linkedlist.f90)
 !  by Arjen Markus; http://flibs.sourceforge.net/linked_list.html
 !
 ! !REVISION HISTORY:
 !  13 Jun 2017 - R. Yantosca - Initial version, based on code by Arjen Markus
-!  06 Jul 2017 - R. Yantosca - Add source pointers to 4-byte and integer data
-!  04 Aug 2017 - R. Yantosca - Declare Data_* accumulator arrays as REAL(fp),
-!                              which should avoid roundoff for long runs
-!  11 Aug 2017 - R. Yantosca - Remove 0d pointers and data arrays
-!  25 Aug 2017 - R. Yantosca - Added Source_0d_8 and Source_1d_8 pointers
-!  25 Aug 2017 - R. Yantosca - Added Source_2d_8 and Source_3d_8 pointers
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -128,47 +123,52 @@ CONTAINS
 !
 ! !IROUTINE: HistItem_Create
 !
-! !DESCRIPTION: Initializes a single history item that will be archived 
+! !DESCRIPTION: Initializes a single history item that will be archived
 !  via History (and eventually sent to netCDF output).
 !\\
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE HistItem_Create( am_I_Root,    Item,           Id,              &
+  SUBROUTINE HistItem_Create( Input_Opt,    Item,           Id,              &
                               ContainerId,  Name,           RC,              &
                               LongName,     Units,          SpaceDim,        &
                               OnLevelEdges, AddOffset,      MissingValue,    &
                               ScaleFactor,  Source_KindVal, Operation,       &
-                              DimNames,     Dimensions,     Source_0d_8,     &
+                              DimNames,     Dimensions,     Subset_X,        &
+                              Subset_Y,     Subset_Z,       Source_0d_8,     &
                               Source_1d,    Source_1d_8,    Source_1d_4,     &
                               Source_1d_I,  Source_2d,      Source_2d_8,     &
                               Source_2d_4,  Source_2d_I,    Source_3d,       &
-                              Source_3d_8,  Source_3d_4,    Source_3d_I     )  
+                              Source_3d_8,  Source_3d_4,    Source_3d_I     )
 !
 ! !USES:
 !
   USE CharPak_Mod,         ONLY : TranLc
   USE ErrCode_Mod
   USE History_Util_Mod
+    USE Input_Opt_Mod,     ONLY : OptInput
   USE Registry_Params_Mod
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
     ! Required arguments
-    LOGICAL,           INTENT(IN)  :: am_I_Root          ! Root CPU?
+    TYPE(OptInput),    INTENT(IN)  :: Input_Opt          ! Input Options object
     INTEGER,           INTENT(IN)  :: Id                 ! History item Id #
     INTEGER,           INTENT(IN)  :: ContainerId        ! Container Id #
     CHARACTER(LEN=*),  INTENT(IN)  :: Name               ! Item's short name
     CHARACTER(LEN=*),  INTENT(IN)  :: LongName           ! Item's long name
     CHARACTER(LEN=*),  INTENT(IN)  :: Units              ! Units of the data
     INTEGER,           INTENT(IN)  :: SpaceDim           ! Dimension of data
-    
+    INTEGER,           INTENT(IN)  :: Subset_X(2)        ! X0, X1 indices
+    INTEGER,           INTENT(IN)  :: Subset_Y(2)        ! Y0, Y1 indices
+    INTEGER,           INTENT(IN)  :: Subset_Z(2)        ! Z0, Z1 indices
+
     ! Optional arguments
     LOGICAL,           OPTIONAL    :: OnLevelEdges       ! =T if data defined
                                                          !  on level edges;
                                                          ! =F if on centers
-    REAL(f4),          OPTIONAL    :: AddOffset          ! COARDS-compliant 
-    REAL(f4),          OPTIONAL    :: MissingValue       !  attributes for 
+    REAL(f4),          OPTIONAL    :: AddOffset          ! COARDS-compliant
+    REAL(f4),          OPTIONAL    :: MissingValue       !  attributes for
     REAL(f4),          OPTIONAL    :: ScaleFactor        !  netCDF output
     INTEGER,           OPTIONAL    :: Operation          ! Operation code
                                                          !  0=copy  from source
@@ -176,7 +176,7 @@ CONTAINS
     CHARACTER(LEN=*),  OPTIONAL    :: DimNames           ! Use this to specify
                                                          !  dimensions of data
                                                          !  ("yz", "z", etc.)
-                                                       
+
     ! Optional pointers to data targets
     INTEGER,           OPTIONAL    :: Source_KindVal     ! Type of source data
     REAL(fp), POINTER, OPTIONAL    :: Source_0d_8        ! 0D 8-byte    data
@@ -193,31 +193,22 @@ CONTAINS
     REAL(f4), POINTER, OPTIONAL    :: Source_3d_4(:,:,:) ! 3D 4-byte    data
     INTEGER,  POINTER, OPTIONAL    :: Source_3d_I(:,:,:) ! 3D integer   data
 !
-! !INPUT/OUTPUT PARAMETERS: 
+! !INPUT/OUTPUT PARAMETERS:
 !
     TYPE(HistItem),    POINTER     :: Item               ! HISTORY ITEM object
 !
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
     INTEGER,           OPTIONAL    :: Dimensions(3)      ! Spatial dims of data
     INTEGER,           INTENT(OUT) :: RC                 ! Success or failure
 !
 ! !REMARKS:
-!  (1) We need to copy string data to a temporary string of length 255 
+!  (1) We need to copy string data to a temporary string of length 255
 !       characters, or else Gfortran will choke.
 !
 ! !REVISION HISTORY:
 !  13 Jun 2017 - R. Yantosca - Initial version
-!  03 Aug 2017 - R. Yantosca - Add OPERATION as an optional argument
-!  08 Aug 2017 - R. Yantosca - Now assign NcVarId a default value
-!  11 Aug 2017 - R. Yantosca - Remove 0d pointers and data arrays
-!  11 Aug 2017 - R. Yantosca - Added optional DimNames argument
-!  24 Aug 2017 - R. Yantosca - Now size the data accumulator array from
-!                              the size of the data pointer
-!  24 Aug 2017 - R. Yantosca - Set the NcILevDim field to undefined
-!  25 Aug 2017 - R. Yantosca - Added Source_0d_8 and Source_1d_8 arguments
-!  28 Aug 2017 - R. Yantosca - Now define the NcChunkSizes field
-!  25 Aug 2017 - R. Yantosca - Added Source_2d_8 and Source_3d_8 arguments
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -230,7 +221,8 @@ CONTAINS
     LOGICAL            :: Is_1d,      Is_1d_8,  Is_1d_4,  Is_1d_I
     LOGICAL            :: Is_2d,      Is_2d_8,  Is_2d_4,  Is_2d_I
     LOGICAL            :: Is_3d,      Is_3d_8,  Is_3d_4,  Is_3d_I
-    INTEGER            :: N
+    INTEGER            :: X0,         X1,       Y0,       Y1
+    INTEGER            :: Z0,         Z1,       N
 
     ! Arrays
     INTEGER            :: Dims(3)
@@ -290,6 +282,14 @@ CONTAINS
     IF ( Is_3d_8 ) Item%Source_3d_8 => NULL()
     IF ( Is_3d_4 ) Item%Source_3d_4 => NULL()
     IF ( Is_3d_I ) Item%Source_3d_I => NULL()
+
+    ! Initialize indices
+    X0 = UNDEFINED_INT
+    X1 = UNDEFINED_INT
+    X1 = UNDEFINED_INT
+    Y1 = UNDEFINED_INT
+    Z1 = UNDEFINED_INT
+    Z1 = UNDEFINED_INT
 
     !========================================================================
     ! Required inputs, handle these first
@@ -420,8 +420,8 @@ CONTAINS
        Item%Source_KindVal = Source_KindVal
     ELSE
        Item%Source_KindVal = KINDVAL_FP
-    ENDIF  
-  
+    ENDIF
+
     !--------------------------------------------
     ! Operation
     !--------------------------------------------
@@ -429,7 +429,7 @@ CONTAINS
        Item%Operation = Operation
     ELSE
        Item%Operation = COPY_FROM_SOURCE
-    ENDIF  
+    ENDIF
 
     !--------------------------------------------
     ! DimNames
@@ -489,42 +489,48 @@ CONTAINS
     ENDIF
 
     !========================================================================
-    ! Attach pointers to the data source.  Also get the values of NX, NY, 
+    ! Attach pointers to the data source.  Also get the values of NX, NY,
     ! and NZ from the relevant source pointer if they were not passed.
     !========================================================================
-    SELECT CASE( Item%SpaceDim ) 
+    SELECT CASE( Item%SpaceDim )
 
        ! Attach pointer to 3D data source, depending on its type
        CASE( 3 )
+
+          ! Subsets: assume all 3d are xyz
+          X0 = Subset_X(1); X1 = Subset_X(2)
+          Y0 = Subset_Y(1); Y1 = Subset_Y(2)
+          Z0 = Subset_Z(1); Z1 = Subset_Z(2)
+
           IF ( Item%Source_KindVal == KINDVAL_FP ) THEN
              IF ( Is_3d   ) THEN
-                Item%Source_3d => Source_3d
+                Item%Source_3d => Source_3d(X0:X1, Y0:Y1, Z0:Z1)
                 DO N = 1, Item%SpaceDim
-                   Dims(N) = SIZE( Source_3d, N )
+                   Dims(N) = SIZE( Source_3d(X0:X1, Y0:Y1, Z0:Z1), N )
                 ENDDO
                 GOTO 99
              ENDIF
           ELSE IF ( Item%Source_KindVal == KINDVAL_F8 ) THEN
              IF ( Is_3d_8 ) THEN
-                Item%Source_3d_8 => Source_3d_8
+                Item%Source_3d_8 => Source_3d_8(X0:X1, Y0:Y1, Z0:Z1)
                 DO N = 1, Item%SpaceDim
-                   Dims(N) = SIZE( Source_3d_8, N )
+                   Dims(N) = SIZE( Source_3d_8(X0:X1, Y0:Y1, Z0:Z1), N )
                 ENDDO
                 GOTO 99
              ENDIF
           ELSE IF ( Item%Source_KindVal == KINDVAL_F4 ) THEN
              IF ( Is_3d_4 ) THEN
-                Item%Source_3d_4 => Source_3d_4
+                Item%Source_3d_4 => Source_3d_4(X0:X1, Y0:Y1, Z0:Z1)
                 DO N = 1, Item%SpaceDim
-                   Dims(N) = SIZE( Source_3d_4, N )
+                   Dims(N) = SIZE( Source_3d_4(X0:X1, Y0:Y1, Z0:Z1), N )
                 ENDDO
                 GOTO 99
              ENDIF
           ELSE IF ( Item%Source_KindVal == KINDVAL_I4 ) THEN
              IF ( Is_3d_I ) THEN
-                Item%Source_3d_I => Source_3d_I
+                Item%Source_3d_I => Source_3d_I(X0:X1, Y0:Y1, Z0:Z1)
                 DO N = 1, Item%SpaceDim
-                   Dims(N) = SIZE( Source_3d_I, N )
+                   Dims(N) = SIZE( Source_3d_I(X0:X1, Y0:Y1, Z0:Z1), N )
                 ENDDO
                 GOTO 99
              ENDIF
@@ -532,35 +538,40 @@ CONTAINS
 
        ! Attach pointer to 2D data source, depending on its type
        CASE( 2 )
+
+          ! Subsets: assume all 2D are xy (for now)
+          X0 = Subset_X(1); X1 = Subset_X(2)
+          Y0 = Subset_Y(1); Y1 = Subset_Y(2)
+
           IF ( Item%Source_KindVal == KINDVAL_FP ) THEN
              IF ( Is_2d   ) THEN
-                Item%Source_2d => Source_2d
+                Item%Source_2d => Source_2d(X0:X1, Y0:Y1)
                 DO N = 1, Item%SpaceDim
-                   Dims(N) = SIZE( Source_2d, N )
+                   Dims(N) = SIZE( Source_2d(X0:X1, Y0:Y1), N )
                 ENDDO
                 GOTO 99
              ENDIF
           ELSE IF ( Item%Source_KindVal == KINDVAL_F8 ) THEN
              IF ( Is_2d_8 ) THEN
-                Item%Source_2d_8 => Source_2d_8
+                Item%Source_2d_8 => Source_2d_8(X0:X1, Y0:Y1)
                 DO N = 1, Item%SpaceDim
-                   Dims(N) = SIZE( Source_2d_8, N )
+                   Dims(N) = SIZE( Source_2d_8(X0:X1, Y0:Y1), N )
                 ENDDO
                 GOTO 99
              ENDIF
           ELSE IF ( Item%Source_KindVal == KINDVAL_F4 ) THEN
              IF ( Is_2d_4 ) THEN
-                Item%Source_2d_4 => Source_2d_4
+                Item%Source_2d_4 => Source_2d_4(X0:X1, Y0:Y1)
                 DO N = 1, Item%SpaceDim
-                   Dims(N) = SIZE( Source_2d_4, N )
+                   Dims(N) = SIZE( Source_2d_4(X0:X1, Y0:Y1), N )
                 ENDDO
                 GOTO 99
              ENDIF
           ELSE IF ( Item%Source_KindVal == KINDVAL_I4 ) THEN
              IF ( Is_2d_I ) THEN
-                Item%Source_2d_I => Source_2d_I
+                Item%Source_2d_I => Source_2d_I(X0:X1, Y0:Y1)
                 DO N = 1, Item%SpaceDim
-                   Dims(N) = SIZE( Source_2d_I, N )
+                   Dims(N) = SIZE( Source_2d_I(X0:X1, Y0:Y1), N )
                 ENDDO
                 GOTO 99
              ENDIF
@@ -568,35 +579,48 @@ CONTAINS
 
        ! Attach pointer to 1D data source, depending on its type
        CASE( 1 )
+
+          ! Subsets
+          SELECT CASE( TRIM( Item%DimNames ) )
+             CASE( 'x' )
+                X0 = Subset_X(1); X1 = Subset_X(2)
+             CASE( 'y' )
+                X0 = Subset_Y(1); X1 = Subset_Y(2)
+             CASE( 'z' )
+                X0 = Subset_Z(1); X1 = Subset_Z(2)
+             CASE DEFAULT
+                X0 = 1;           X1 = 1
+          END SELECT
+
           IF ( Item%Source_KindVal == KINDVAL_FP ) THEN
              IF ( Is_1d   ) THEN
-                Item%Source_1d   => Source_1d
+                Item%Source_1d   => Source_1d(X0:X1)
                 DO N = 1, Item%SpaceDim
-                   Dims(N) = SIZE( Source_1d, N )
+                   Dims(N) = SIZE( Source_1d(X0:X1), N )
                 ENDDO
                 GOTO 99
              ENDIF
           ELSE IF ( Item%Source_KindVal == KINDVAL_F8 ) THEN
              IF ( Is_1d_8 ) THEN
-                Item%Source_1d_8 => Source_1d_8
+                Item%Source_1d_8 => Source_1d_8(X0:X1)
                 DO N = 1, Item%SpaceDim
-                   Dims(N) = SIZE( Source_1d_8, N )
+                   Dims(N) = SIZE( Source_1d_8(X0:X1), N )
                 ENDDO
                 GOTO 99
              ENDIF
           ELSE IF ( Item%Source_KindVal == KINDVAL_F4 ) THEN
              IF ( Is_1d_4 ) THEN
-                Item%Source_1d_4 => Source_1d_4
+                Item%Source_1d_4 => Source_1d_4(X0:X1)
                 DO N = 1, Item%SpaceDim
-                   Dims(N) = SIZE( Source_1d_4, N )
+                   Dims(N) = SIZE( Source_1d_4(X0:X1), N )
                 ENDDO
                 GOTO 99
              ENDIF
           ELSE IF ( Item%Source_KindVal == KINDVAL_I4 ) THEN
              IF ( Is_1d_I ) THEN
-                Item%Source_1d_I => Source_1d_I
+                Item%Source_1d_I => Source_1d_I(X0:X1)
                 DO N = 1, Item%SpaceDim
-                   Dims(N) = SIZE( Source_1d_I, N )
+                   Dims(N) = SIZE( Source_1d_I(X0:X1), N )
                 ENDDO
                 GOTO 99
              ENDIF
@@ -620,7 +644,7 @@ CONTAINS
 
     ! Allocate data field, based on SpaceDim
     SELECT CASE( Item%SpaceDim )
-       
+
        !------------
        ! 3-D data
        !------------
@@ -645,7 +669,7 @@ CONTAINS
              CALL GC_Error( ErrMsg, RC, ThisLoc )
              RETURN
           ENDIF
-          
+
        !------------
        ! 2-D data
        !------------
@@ -684,7 +708,7 @@ CONTAINS
           ELSE
              ErrMsg = 'Could not allocate "Item%Data_1d" array!'
              CALL GC_Error( ErrMsg, RC, ThisLoc )
-             RETURN             
+             RETURN
           ENDIF
 
           ! Allocate the NcChunkSizes array
@@ -711,7 +735,7 @@ CONTAINS
           ELSE
              ErrMsg = 'Could not allocate "Item%Data_0d" variable!'
              CALL GC_Error( ErrMsg, RC, ThisLoc )
-             RETURN             
+             RETURN
           ENDIF
 
           ! Allocate the NcChunkSizes array
@@ -746,16 +770,17 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE HistItem_Print( am_I_Root, Item, RC, ShortFormat )
+  SUBROUTINE HistItem_Print( Input_Opt, Item, RC, ShortFormat )
 !
 ! !USES:
 !
     USE ErrCode_Mod
     USE History_Util_Mod
+    USE Input_Opt_Mod,   ONLY : OptInput
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
-    LOGICAL,        INTENT(IN)  :: am_I_Root    ! Are we on the root CPU?
+    TYPE(OptInput), INTENT(IN)  :: Input_Opt    ! Input Options object
     TYPE(HistItem), POINTER     :: Item         ! History Item
     LOGICAL,        OPTIONAL    :: ShortFormat  ! Print truncated format
 !
@@ -765,12 +790,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  13 Jun 2017 - R. Yantosca - Initial version
-!  06 Jul 2017 - R. Yantosca - Add option to print truncated output format
-!  11 Aug 2017 - R. Yantosca - Remove 0d pointers and data arrays
-!  24 Aug 2017 - R. Yantosca - Now print OnLevelEdges for the full format
-!  24 Aug 2017 - R. Yantosca - Now print NcIDimId for the full format
-!  25 Aug 2017 - R. Yantosca - Now print the vertical cell position: C or E
-!  28 Aug 2017 - R. Yantosca - Now prints the netCDF chunksizes (full format)
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -801,7 +821,7 @@ CONTAINS
     !=======================================================================
     ! Print information about this HISTORY ITEM (only on the root CPU)
     !=======================================================================
-    IF ( ASSOCIATED( Item ) .and. am_I_Root ) THEN
+    IF ( ASSOCIATED( Item ) .and. Input_Opt%amIRoot ) THEN
 
        IF ( Use_ShortFormat ) THEN
 
@@ -809,7 +829,7 @@ CONTAINS
           ! Use truncated output format
           !-----------------------------------------------------------------
 
-          ! Denote if the data is defined on 
+          ! Denote if the data is defined on
           ! level edges (E) or centers (C)
           IF ( Item%SpaceDim == 3 ) THEN
              IF ( Item%OnLevelEdges ) THEN
@@ -852,18 +872,18 @@ CONTAINS
           PRINT*, ''
           PRINT*, 'SpaceDim       : ', Item%SpaceDim, ' (', Item%DimNames, ')'
           PRINT*, 'NcChunkSizes   : ', Item%NcChunkSizes
-       
-          IF ( ASSOCIATED( Item%Data_0d ) ) THEN 
+
+          IF ( ASSOCIATED( Item%Data_0d ) ) THEN
              PRINT*, 'Value Data_0d  : ', Item%Data_0d
           ENDIF
 
-          IF ( ASSOCIATED( Item%Data_1d ) ) THEN 
+          IF ( ASSOCIATED( Item%Data_1d ) ) THEN
              PRINT*, 'Min   Data_1d  : ', MINVAL( Item%Data_1d    )
              PRINT*, 'Max   Data_1d  : ', MAXVAL( Item%Data_1d    )
              PRINT*, 'Total Data_1d  : ', SUM   ( Item%Data_1d    )
              PRINT*, 'Size  Data_1d  : ', SIZE  ( Item%Data_1d    )
           ENDIF
-          
+
           IF ( ASSOCIATED( Item%Data_2d ) ) THEN
              PRINT*, 'Min   Data_2d  : ', MINVAL( Item%Data_2d    )
              PRINT*, 'Max   Data_2d  : ', MAXVAL( Item%Data_2d    )
@@ -900,18 +920,14 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE HistItem_Destroy( am_I_Root, Item, RC )
+  SUBROUTINE HistItem_Destroy( Item, RC )
 !
 ! !USES:
 !
-  USE ErrCode_Mod
-  USE History_Util_Mod
+    USE ErrCode_Mod
+    USE History_Util_Mod
 !
-! !INPUT PARAMETERS:
-!
-    LOGICAL,        INTENT(IN)  :: am_I_Root   ! Are we on the root CPU?
-!
-! !INPUT/OUTPUT PARAMETERS: 
+! !INPUT/OUTPUT PARAMETERS:
 !
     TYPE(HistItem), POINTER     :: Item        ! History item
 !
@@ -923,10 +939,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  13 Jun 2017 - R. Yantosca - Initial version
-!  06 Jul 2017 - R. Yantosca - Nullify source pointers to 4-byte & integer data
-!  11 Aug 2017 - R. Yantosca - Remove 0d pointers and data arrays
-!  28 Aug 2017 - R. Yantosca - Deallocate Data_0d and NcChunkSizes fields
-!  06 Oct 2017 - R. Yantosca - Nullify Source_2d_8 and Source_3d_8 pointers
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -943,7 +956,7 @@ CONTAINS
     ThisLoc = ' -> at HistItem_Destroy (in History/histitem_mod.F90)'
 
     !=======================================================================
-    ! Nullify fields that are just pointing to other objects   
+    ! Nullify fields that are just pointing to other objects
     !======================================================================
     Item%Source_0d_8 => NULL()
     Item%Source_1d   => NULL()
@@ -969,8 +982,8 @@ CONTAINS
           CALL GC_Error( ErrMsg, RC, ThisLoc )
           RETURN
        ENDIF
-    ENDIF 
-      
+    ENDIF
+
     IF ( ASSOCIATED( Item%Data_2d ) ) THEN
        DEALLOCATE( Item%Data_2d, STAT=RC )
        IF ( RC /= GC_SUCCESS ) THEN
@@ -978,7 +991,7 @@ CONTAINS
           CALL GC_Error( ErrMsg, RC, ThisLoc )
           RETURN
        ENDIF
-    ENDIF       
+    ENDIF
 
     IF ( ASSOCIATED( Item%Data_1d ) ) THEN
        DEALLOCATE( Item%Data_1d, STAT=RC )

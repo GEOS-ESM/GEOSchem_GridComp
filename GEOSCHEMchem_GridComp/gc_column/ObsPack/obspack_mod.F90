@@ -51,6 +51,7 @@ MODULE ObsPack_Mod
 !  04 Jun 2015 - A. Jacobson - Adapted from v10.1 planeflight_mod.f, following
 !                              similar work done in v9.2 by Andrew Schuh.
 !  05 Dec 2018 - R. Yantosca - Implemented into the standard GEOS-Chem code
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -80,8 +81,7 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE ObsPack_Init( am_I_Root,  yyyymmdd,   hhmmss,                   &
-                           Input_Opt,  State_Diag, RC                       )
+  SUBROUTINE ObsPack_Init( yyyymmdd, hhmmss, Input_Opt, State_Diag, RC )
 !
 ! !USES:
 !
@@ -94,7 +94,6 @@ CONTAINS
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,        INTENT(IN)    :: am_I_Root   ! Is this the root core?
     INTEGER,        INTENT(IN)    :: yyyymmdd    ! Current date
     INTEGER,        INTENT(IN)    :: hhmmss      ! Current time
     TYPE(OptInput), INTENT(IN)    :: Input_Opt   ! Input Options object
@@ -109,6 +108,7 @@ CONTAINS
 !
 ! !REVISION HISTORY
 !  05 Dec 2018 - R. Yantosca - Implemented into the standard GEOS-Chem code
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -128,7 +128,7 @@ CONTAINS
 
     ! Initialize
     RC       =  GC_SUCCESS
-    prtDebug = ( am_I_Root .and. Input_Opt%LPRT )
+    prtDebug = ( Input_Opt%LPRT .and. Input_Opt%amIRoot )
     ErrMsg   = ''
     ThisLoc  = ' -> at ObsPack_Init (in module ObsPack/obspack_mod.F90' 
 
@@ -148,7 +148,7 @@ CONTAINS
 
        ! Write any remaining ObsPack data to disk, and immediately
        ! thereafter free the ObsPack pointer fields of State_Diag
-       CALL ObsPack_Write_Output( am_I_Root, Input_Opt, State_Diag, RC )
+       CALL ObsPack_Write_Output( Input_Opt, State_Diag, RC )
        IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Error encountered in "ObsPack_Write_Output"!'
           CALL GC_Error( ErrMsg, RC, ThisLoc )
@@ -185,7 +185,7 @@ CONTAINS
     !-----------------------------------------------------------------------
     ! Get the list of lon/lat/alt at which to save out GEOS-Chem data
     !-----------------------------------------------------------------------
-    CALL ObsPack_Read_Input( am_I_Root, Input_Opt, State_Diag, RC )
+    CALL ObsPack_Read_Input( Input_Opt, State_Diag, RC )
     IF ( RC /= GC_SUCCESS ) THEN
        ErrMsg = 'Error encountered in "ObsPack_Write_Output"!'
        CALL GC_Error( ErrMsg, RC, ThisLoc )
@@ -195,7 +195,7 @@ CONTAINS
     !-----------------------------------------------------------------------
     ! Print info about diagnostics that will be saved out
     !-----------------------------------------------------------------------
-    IF ( am_I_Root ) THEN
+    IF ( Input_Opt%amIRoot ) THEN
 
        ! Print info
        WRITE( 6, '(/,a)' ) REPEAT( '=', 79 )
@@ -231,7 +231,7 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE ObsPack_Read_Input( am_I_root, Input_Opt, State_Diag, RC )
+  SUBROUTINE ObsPack_Read_Input( Input_Opt, State_Diag, RC )
 !
 ! !USES:
 !
@@ -244,10 +244,10 @@ CONTAINS
     USE m_netcdf_io_get_dimlen, ONLY : Ncget_Dimlen
     USE m_netcdf_io_read
     USE m_netcdf_io_close,      ONLY : Nccl
+    USE m_netcdf_io_checks,     ONLY : NcDoes_Var_Exist
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,        INTENT(IN)    :: am_I_Root   ! Is this the root core
     TYPE(OptInput), INTENT(IN)    :: Input_Opt   ! Input Options object
 !
 ! !OUTPUT PARAMETERS:
@@ -266,6 +266,7 @@ CONTAINS
 ! !REVISION HISTORY: 
 !  05 Jun 2015 - A. Jacobson - first version
 !  06 Dec 2018 - R. Yantosca - Implemented into the standard GEOS_Chem code
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -273,6 +274,7 @@ CONTAINS
 ! !LOCAL VARIABLES:
 !
     ! Scalars
+    LOGICAL              :: It_Exists
     INTEGER              :: fId, N, nObs, nSpecies
 
     ! Arrays
@@ -300,7 +302,7 @@ CONTAINS
     ! could happen in a multi-day run with daily input files.
     !=======================================================================
     IF ( ASSOCIATED( State_Diag%ObsPack_Id ) ) THEN
-       CALL ObsPack_Write_Output( am_I_Root, Input_Opt, State_Diag, RC )
+       CALL ObsPack_Write_Output( Input_Opt, State_Diag, RC )
        IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Error encountered in "ObsPack_Write_Output"!'
           CALL GC_Error( ErrMsg, RC, ThisLoc )
@@ -313,7 +315,7 @@ CONTAINS
     !
     ! Or for MPI (e.g. WRF-GC), gather inforamation here from all cores
     !=======================================================================
-    IF ( .not. am_I_Root ) RETURN
+    IF ( .not. Input_Opt%amIRoot ) RETURN
 
     !=======================================================================
     ! Get the number of observations in the input netCDF file
@@ -434,8 +436,19 @@ CONTAINS
     varName = 'altitude'
     CALL NcRd( State_Diag%ObsPack_Altitude,  fId, TRIM(varName), st1d, ct1d )
 
+    ! First check if the "CT_sampling_strategy" variable exists.
+    ! If it does not, assume hourly sampling (strategy value = 2).
     varName = 'CT_sampling_strategy'
-    CALL NcRd( State_Diag%ObsPack_Strategy,  fId, TRIM(varName), st1d, ct1d )  
+    It_Exists = NcDoes_Var_Exist( fId, varName )
+    IF ( It_Exists ) THEN
+       CALL NcRd( State_Diag%ObsPack_Strategy,  fId, TRIM(varName), st1d, ct1d)
+    ELSE
+       ErrMsg = 'Could not find "CT_sampling_strategy" in file: '         // &
+                TRIM( State_Diag%ObsPack_InFile  )                        // &
+                '.  Will use hourly sampling by default.'
+       CALL GC_Warning( ErrMsg, RC, ThisLoc )
+       State_Diag%ObsPack_Strategy = 2
+    ENDIF
 
     !----------------------------
     ! Read ID string
@@ -502,6 +515,7 @@ CONTAINS
                                central_time(5,N),                            & 
                                central_time(6,N)  )
 
+
        ! Pick the start and end time of the averaging interval
        ! depending on the averaging strategy listed in the file
        SELECT CASE ( State_Diag%ObsPack_Strategy(N) )
@@ -546,6 +560,17 @@ CONTAINS
              State_Diag%ObsPack_Ival_End(N) =                                &
                 State_Diag%ObsPack_Ival_Center(N) + 2700.0_f8
 
+          !---------------------
+          ! Instaneous Sampling
+          !---------------------
+          CASE( 4 )
+             State_Diag%ObsPack_Ival_Start(N) =                              &
+                State_Diag%ObsPack_Ival_Center(N)
+                                                              
+             State_Diag%ObsPack_Ival_End(N) =                                &
+                State_Diag%ObsPack_Ival_Center(N) 
+
+
           !------------------
           ! Exit w/ error
           !------------------
@@ -582,7 +607,7 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
- SUBROUTINE ObsPack_Cleanup( am_I_Root, Input_Opt, State_Diag, RC )
+ SUBROUTINE ObsPack_Cleanup( Input_Opt, State_Diag, RC )
 !
 ! !USES:
 !     
@@ -592,7 +617,6 @@ CONTAINS
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,        INTENT(IN)    :: am_I_Root   ! Are we on the root core?
     TYPE(OptInput), INTENT(IN)    :: Input_Opt   ! Input Options object
 !
 ! !INPUT/OUTPUT PARAMETERS:
@@ -606,6 +630,7 @@ CONTAINS
 ! !REVISION HISTORY: 
 !  05 Jun 2015 - A. Jacobson - first version
 !  05 Dec 2018 - R. Yantosca - Implemented into GEOS-Chem standard code
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -743,7 +768,7 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE ObsPack_Write_Output( am_I_Root, Input_Opt, State_Diag, RC )
+  SUBROUTINE ObsPack_Write_Output( Input_Opt, State_Diag, RC )
 !
 ! !USES:
 !
@@ -765,7 +790,6 @@ CONTAINS
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,        INTENT(IN)    :: am_I_Root   ! Is this the root CPU?
     TYPE(OptInput), INTENT(IN)    :: Input_Opt   ! Input Options object
 !
 ! !INPUT/OUTPUT PARAMETERS:
@@ -779,6 +803,7 @@ CONTAINS
 ! !REVISION HISTORY: 
 !  05 Jun 2015 - A. Jacobson - First version
 !  06 Dec 2018 - R. Yantosca - Implemented into the standard GEOS-Chem code
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -890,7 +915,7 @@ CONTAINS
     !=======================================================================
 
     ! Print info
-    IF ( am_I_Root ) THEN
+    IF ( Input_Opt%amIRoot ) THEN
        WRITE( 6, 100 ) TRIM( State_Diag%ObsPack_OutFile )
 100    FORMAT( '     - OBSPACK: Writing file ', a ) 
     ENDIF
@@ -1161,7 +1186,7 @@ CONTAINS
        IF ( RC /= GC_SUCCESS ) RETURN
     ENDIF
 
-    CALL ObsPack_Cleanup( am_I_Root, Input_Opt, State_Diag, RC )
+    CALL ObsPack_Cleanup( Input_Opt, State_Diag, RC )
     IF ( RC /= GC_SUCCESS ) THEN
        ErrMsg = 'Error encountered in "ObsPack_Cleanup!"'
        CALL GC_Error( ErrMsg, RC, ThisLoc )
@@ -1183,8 +1208,8 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE ObsPack_Sample( am_I_Root, yyyymmdd,   hhmmss,     Input_Opt,    &
-                             State_Chm, State_Diag, State_Grid, State_Met, RC )
+  SUBROUTINE ObsPack_Sample( yyyymmdd,   hhmmss,     Input_Opt, State_Chm, &
+                             State_Diag, State_Grid, State_Met, RC )
 !
 ! !USES:
 !
@@ -1200,7 +1225,6 @@ CONTAINS
 !
 ! !INPUT PARAMETERS: 
 !
-    LOGICAL,        INTENT(IN)    :: am_I_Root   ! Are we on the root CPU?
     INTEGER,        INTENT(IN)    :: yyyymmdd    ! Current date
     INTEGER,        INTENT(IN)    :: hhmmss      ! Current time
     TYPE(OptInput), INTENT(IN)    :: Input_Opt   ! Input Options object
@@ -1224,6 +1248,7 @@ CONTAINS
 !                                        ct_mod.F, itself modified from
 !                                        planeflight_mod.F
 !  03 Mar 2017 - A. Jacobson - Update to v11 (get species in "v/v dry")
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1231,7 +1256,7 @@ CONTAINS
 ! !LOCAL VARIABLES:
 !
     ! Scalars
-    LOGICAL             :: prtLog,  prtDebug
+    LOGICAL             :: prtLog,  prtDebug, doSample
     INTEGER             :: I,       J,        L,  N,  R,  S
     INTEGER             :: Yr,      Mo,       Da, Hr, Mn, Sc
     REAL(f8)            :: TsStart, TsEnd
@@ -1247,8 +1272,8 @@ CONTAINS
     RC       =  GC_SUCCESS
     ErrMsg   = ''
     ThisLoc  = ' -> at ObsPack_Sample (in module ObsPack/obspack_mod.F90)'
-    prtLog   = ( am_I_Root .and. ( .not. Input_Opt%ObsPack_Quiet ) )
-    prtDebug = ( am_I_Root .and. Input_Opt%LPRT                    )
+    prtLog   = (Input_Opt%amIRoot .and. ( .not. Input_Opt%ObsPack_Quiet ) )
+    prtDebug = (Input_Opt%amIRoot .and. Input_Opt%LPRT                    )
 
     ! Return if ObsPack sampling is turned off (perhaps
     ! because there are no data at this time).
@@ -1259,8 +1284,8 @@ CONTAINS
     ! what the units are prior to this call.  After we sample
     ! the species, we'll call this again requesting that the
     ! species are converted back to the InUnit values.
-    CALL Convert_Spc_Units( am_I_root, Input_Opt, State_Chm, State_Grid,    &
-                            State_Met, "v/v dry", RC,       PriorUnit       )
+    CALL Convert_Spc_Units( Input_Opt, State_Chm, State_Grid,  State_Met, &
+                            'v/v dry', RC, PriorUnit )
 
     ! Trap potential errors
     IF ( RC /= GC_SUCCESS ) THEN
@@ -1279,6 +1304,7 @@ CONTAINS
  
     ! Compute elapsed seconds since 1970
     TsEnd   = Seconds_Since_1970( Yr, Mo, Da, Hr, Mn, Sc )
+       
     TsStart = TsEnd - Input_Opt%TS_DYN
 
     ! Logfile header
@@ -1294,14 +1320,33 @@ CONTAINS
 
     ! Loop over observations
     DO N = 1, State_Diag%ObsPack_nObs
+       
+       !initializing flag for whether sampling should occur at this timestep
+       doSample = .false.
 
-       ! Skip observation if the sampling strategy says to do so
-       IF ( State_Diag%ObsPack_Strategy(N) == 0 ) CYCLE
+       SELECT CASE ( State_Diag%ObsPack_Strategy(N) )
+          CASE ( 0 )
+             ! Skip observation if the sampling strategy says to do so
+             CYCLE
+          CASE ( 1:3 )
+             ! If the sample covers the entire dynamic timestep, then...
+             IF ( State_Diag%ObsPack_Ival_Start(N) <= TsStart .and.                &
+                  State_Diag%ObsPack_Ival_End(N)   >= TsEnd ) doSample = .true.
+          CASE ( 4 )
+             ! If Instantaneous sampling choose the closest timestep
+             IF ( (TsEnd - State_Diag%ObsPack_Ival_Center(N)) <= (Input_Opt%TS_DYN/2.) .and.    &
+                  (State_Diag%ObsPack_Ival_Center(N) - TsEnd) < (Input_Opt%TS_DYN/2.) ) doSample =.true.
+          CASE DEFAULT
+             ErrMsg = "Sample Strategy not implemented in ObsPack_Sample Subroutine"
+             CALL GC_Error( ErrMsg, RC, ThisLoc )     
+             RETURN
+       END SELECT
+                
+                
 
-       ! If the sample covers the entire dynamic timestep, then...
-       IF ( State_Diag%ObsPack_Ival_Start(N) <= TsStart .and.                &
-            State_Diag%ObsPack_Ival_End(N)   >= TsEnd ) THEN
-
+       ! If sampling strategy time-step conditions are met, sample at these times
+       IF ( doSample ) THEN 
+          
           ! Print the observations that are sampled here
           IF ( prtLog ) THEN
              WRITE( 6, '(i6,1x,a)' ) N, TRIM( State_Diag%ObsPack_Id(N) )
@@ -1376,8 +1421,8 @@ CONTAINS
 
     ! Return State_Chm%SPECIES to whatever units they had
     ! coming into this routine
-    call Convert_Spc_Units( am_I_root, Input_Opt, State_Chm, State_Grid,     &
-                            State_Met, PriorUnit, RC                        )
+    call Convert_Spc_Units( Input_Opt, State_Chm, State_Grid, State_Met, &
+                            PriorUnit, RC )
 
     ! Trap potential errors
     IF ( RC /= GC_SUCCESS ) THEN
@@ -1429,6 +1474,7 @@ CONTAINS
 ! !REVISION HISTORY:
 !  5 Jun 2015 - A. Jacobson - First version
 !  3 Mar 2017 - A. Jacobson - Update to v11 (use State_Met%BXHEIGHT instead of my own hypsometry)
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1552,6 +1598,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  06 Dec 2018 - R. Yantosca - Initial version
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1567,7 +1614,7 @@ CONTAINS
 
     ! Compute the fractional day
     FracDay = DBLE( Day ) + ( DBLE( Hour   ) /    24.0_f8 )  +               & 
-                            ( DBLE( Minute ) /  3600.0_f8 )  +               &
+                            ( DBLE( Minute ) /  1440.0_f8 )  +               &
                             ( DBLE( Second ) / 86400.0_f8 ) 
 
     ! Compute the Astronomical Julian Date (in decimal days)
@@ -1595,8 +1642,7 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE ObsPack_SpeciesMap_Init( am_I_Root,  Input_Opt,                 &
-                                      State_Chm,  State_Diag, RC            )
+  SUBROUTINE ObsPack_SpeciesMap_Init( Input_Opt, State_Chm, State_Diag, RC )
 !
 ! !USES:
 !
@@ -1608,7 +1654,6 @@ CONTAINS
 !
 ! !INPUT PARAMETERS: 
 !
-    LOGICAL,        INTENT(IN)    :: am_I_Root   ! Are we on the root CPU?
     TYPE(OptInput), INTENT(IN)    :: Input_Opt   ! Input Options object
 !
 ! !INPUT/OUTPUT PARAMETERS: 
@@ -1626,6 +1671,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  04 Jan 2019 - R. Yantosca - Initial version
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1758,7 +1804,7 @@ CONTAINS
     !=======================================================================
     ! Print output of Obspack requested species names
     !=======================================================================
-    IF ( am_I_Root .and. ( .not. Input_Opt%ObsPack_Quiet ) ) THEN
+    IF ( Input_Opt%amIRoot .and. ( .not. Input_Opt%ObsPack_Quiet ) ) THEN
 
        ! Header
        WRITE( 6, '(/,a)' ) REPEAT( '=', 79 )
@@ -1797,8 +1843,7 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE ObsPack_SpeciesMap_Cleanup( am_I_Root,  Input_Opt,              &
-                                         State_Diag, RC                     )
+  SUBROUTINE ObsPack_SpeciesMap_Cleanup( Input_Opt, State_Diag, RC )
 !
 ! !USES:
 !
@@ -1809,7 +1854,6 @@ CONTAINS
 !
 ! !INPUT PARAMETERS: 
 !
-    LOGICAL,        INTENT(IN)    :: am_I_Root   ! Are we on the root CPU?
     TYPE(OptInput), INTENT(IN)    :: Input_Opt   ! Input Options object
 !
 ! !INPUT/OUTPUT PARAMETERS: 
@@ -1826,6 +1870,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  04 Jan 2019 - R. Yantosca - Initial version
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC

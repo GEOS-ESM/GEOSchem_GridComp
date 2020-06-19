@@ -9,7 +9,7 @@
 !  report success or failure) returned by GEOS-Chem routines.
 !\\
 !\\
-! !INTERFACE: 
+! !INTERFACE:
 !
 MODULE ErrCode_Mod
 !
@@ -24,7 +24,7 @@ MODULE ErrCode_Mod
   PUBLIC :: GC_Warning
   PUBLIC :: GC_CheckVar
 !
-! !DEFINED PARAMETERS: 
+! !DEFINED PARAMETERS:
 !
   INTEGER, PUBLIC, PARAMETER :: GC_SUCCESS =  0   ! Routine returns success
   INTEGER, PUBLIC, PARAMETER :: GC_FAILURE = -1   ! Routine returns failure
@@ -32,14 +32,9 @@ MODULE ErrCode_Mod
 ! !REMARKS:
 !  The error codes are returned by routines at various levels of GEOS-Chem.
 !
-! !REVISION HISTORY: 
+! !REVISION HISTORY:
 !  19 Oct 2012 - R. Yantosca - Initial version
-!  16 Aug 2016 - M. Sulprizio- Rename from gigc_errcode_mod.F90 to
-!                              errcode_mod.F90. The "gigc" nomenclature is
-!                              no longer used.
-!  23 Jun 2017 - R. Yantosca - Moved subroutine GC_Error here
-!  27 Jun 2017 - R. Yantosca - Added routine GC_CheckVar
-!  20 Dec 2017 - R. Yantosca - Added routine GC_Warning
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -52,9 +47,9 @@ CONTAINS
 !
 ! !IROUTINE: GC_Error
 !
-! !DESCRIPTION: Subroutine GC\_Error prints an error message and sets RC to 
-!  GC\_FAILURE. Note that this routine does not stop a run, but it will cause 
-!  a stop at a higher level if you add a catch for RC /= GC\_SUCCESS. 
+! !DESCRIPTION: Subroutine GC\_Error prints an error message and sets RC to
+!  GC\_FAILURE. Note that this routine does not stop a run, but it will cause
+!  a stop at a higher level if you add a catch for RC /= GC\_SUCCESS.
 !\\
 !\\
 ! !INTERFACE:
@@ -77,11 +72,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  13 Aug 2015 - E. Lundgren - Initial version, based on C. Keller's HCO_ERROR
-!  16 Aug 2016 - M. Sulprizio- Rename from GIGC_ERROR to GC_ERROR
-!  23 Jun 2017 - R. Yantosca - Now moved from error_mod.F to errcode_mod.F90
-!  28 Aug 2017 - R. Yantosca - Now flush the error msg to stdout/log file
-!  28 Nov 2017 - R. Yantosca - Add separator lines to make msgs more visible
-!  22 Jan 2018 - R. Yantosca - Add optional instructions text
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -89,7 +80,7 @@ CONTAINS
     CHARACTER(LEN=1000) :: Message
 
     !=======================================================================
-    ! GC_ERROR begins here 
+    ! GC_ERROR begins here
     !=======================================================================
 
     ! Separator
@@ -98,7 +89,7 @@ CONTAINS
     ! Print error message to log
     Message =  'GEOS-Chem ERROR: ' // TRIM( ErrMsg )
     CALL WordWrapPrint( Message, 78 )
-      
+
     ! Print error location to log
     IF ( PRESENT( ThisLoc ) ) THEN
        Message = 'ERROR LOCATION: ' // TRIM( ThisLoc )
@@ -133,7 +124,7 @@ CONTAINS
 ! !IROUTINE: GC_Warning
 !
 ! !DESCRIPTION: Subroutine GC\_Warning prints an warning (i.e. non-fatal
-!  error message) and sets RC to GC\_SUCCESS. 
+!  error message) and sets RC to GC\_SUCCESS.
 !\\
 !\\
 ! !INTERFACE:
@@ -152,15 +143,11 @@ CONTAINS
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
-    INTEGER,          INTENT(INOUT)            :: RC 
+    INTEGER,          INTENT(INOUT)            :: RC
 !
 ! !REVISION HISTORY:
 !  13 Aug 2015 - E. Lundgren - Initial version, based on C. Keller's HCO_ERROR
-!  16 Aug 2016 - M. Sulprizio- Rename from GIGC_ERROR to GC_ERROR
-!  23 Jun 2017 - R. Yantosca - Now moved from error_mod.F to errcode_mod.F90
-!  28 Aug 2017 - R. Yantosca - Now flush the error msg to stdout/log file
-!  08 Nov 2017 - R. Yantosca - Add separator lines to make msgs more visible
-!  22 Jan 2018 - R. Yantosca - Add optional instructions text
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -168,7 +155,7 @@ CONTAINS
     CHARACTER(LEN=1000) :: Message
 
     !=======================================================================
-    ! GC_ERROR begins here 
+    ! GC_ERROR begins here
     !=======================================================================
 
     ! Separator
@@ -177,7 +164,7 @@ CONTAINS
     ! Print error message to log
     Message =  'GEOS-Chem WARNING: ' // TRIM( WarnMsg )
     CALL WordWrapPrint( Message, 78 )
-      
+
     ! Print error location to log
     IF ( PRESENT( ThisLoc ) ) THEN
        Message = 'WARNING LOCATION: ' // TRIM( ThisLoc )
@@ -218,24 +205,25 @@ CONTAINS
 !
   SUBROUTINE GC_CheckVar( Variable, Operation, RC )
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
     CHARACTER(LEN=*), INTENT(IN)    :: Variable   ! Name of variable to check
-    INTEGER,          INTENT(IN)    :: Operation  ! 0=Allocate 
+    INTEGER,          INTENT(IN)    :: Operation  ! 0=Allocate
                                                   ! 1=Register
                                                   ! 2=Deallocate
 !
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
     INTEGER,          INTENT(INOUT) :: RC         ! Success or failure
 !
 ! !REMARKS:
-!  You also need to add an 
+!  You also need to add an
 !    IF ( RC /= GC_SUCCESS ) RETURN
 !  from the calling routine for proper error handling.
 !
 ! !REVISION HISTORY:
 !  27 Jun 2017 - R. Yantosca - Initial version
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -244,7 +232,7 @@ CONTAINS
 !
   ! Strings
   CHARACTER(LEN=255) :: ErrMsg, ThisLoc
-  
+
   !=========================================================================
   ! Initialize
   !=========================================================================
@@ -253,7 +241,7 @@ CONTAINS
   SELECT CASE( Operation )
      CASE( 1 )
         ErrMsg = 'Could not register '   // TRIM( Variable ) // '!'
-     CASE( 2 ) 
+     CASE( 2 )
         ErrMsg = 'Could not deallocate ' // TRIM( Variable ) // '!'
      CASE DEFAULT
         ErrMsg = 'Could not allocate '   // TRIM( Variable ) // '!'

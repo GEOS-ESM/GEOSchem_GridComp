@@ -11,7 +11,7 @@
 !  instantaneous, hourly, daily, monthly, end-of-run, etc.)
 !\\
 !\\
-!  In other words, the HISTORY CONTAINER provides metadata for the 
+!  In other words, the HISTORY CONTAINER provides metadata for the
 !  netCDF file, and the HISTORY ITEMS belonging to the HISTORY CONTAINER
 !  contains the data and attributes for each variable that will be
 !  saved to the netCDF file.
@@ -60,19 +60,22 @@ MODULE HistContainer_Mod
      INTEGER                     :: nX                  ! X (or lon) dim size
      INTEGER                     :: nY                  ! Y (or lat) dim size
      INTEGER                     :: nZ                  ! Z (or lev) dim size
+     INTEGER                     :: X0, X1              ! X (or lon) indices
+     INTEGER                     :: Y0, Y1              ! Y (or lon) indices
+     INTEGER                     :: Z0                  ! Z (or lev) indices
      LOGICAL                     :: OnLevelEdges        ! =T if data is defined
                                                         !    on level edges;
                                                         ! =F if on centers
-     
+
      !----------------------------------------------------------------------
      ! List of history items in this collection
      !----------------------------------------------------------------------
-     TYPE(MetaHistItem), POINTER :: HistItems => NULL() ! List and # of 
+     TYPE(MetaHistItem), POINTER :: HistItems => NULL() ! List and # of
      INTEGER                     :: nHistItems          !  HISTORY ITEMS
-                                                        !  in this container 
+                                                        !  in this container
 
      !----------------------------------------------------------------------
-     ! Time quantities measured since start of simulation             
+     ! Time quantities measured since start of simulation
      !----------------------------------------------------------------------
      REAL(f8)                    :: EpochJd             ! Astronomical Julian
                                                         !  date @ start of sim
@@ -94,9 +97,9 @@ MODULE HistContainer_Mod
                                                         !  for file write
 
      !----------------------------------------------------------------------
-     ! Time quantities measured since the time of netCDF file creation          
+     ! Time quantities measured since the time of netCDF file creation
      !----------------------------------------------------------------------
-     INTEGER                     :: ReferenceYmd        ! Reference YMD & hms 
+     INTEGER                     :: ReferenceYmd        ! Reference YMD & hms
      INTEGER                     :: ReferenceHms        !  for the "time" dim
      REAL(f8)                    :: ReferenceJd         ! Julian Date at the
                                                         !  reference YMD & hms
@@ -166,27 +169,12 @@ MODULE HistContainer_Mod
   END TYPE HistContainer
 !
 ! !REMARKS:
-!  Linked list routines taken from original code (linkedlist.f90) 
+!  Linked list routines taken from original code (linkedlist.f90)
 !  by Arjen Markus; http://flibs.sourceforge.net/linked_list.html
 !
 ! !REVISION HISTORY:
 !  12 Jun 2017 - R. Yantosca - Initial version, based on history_list_mod.F90
-!  07 Aug 2017 - R. Yantosca - Add FileWriteYmd, FileWriteHms
-!  08 Aug 2017 - R. Yantosca - Add IsFileDefined, IsFileOpen, nX, nY, nZ and 
-!                              the ouptuts xDimId, yIDimd, zDimId, tDimId
-!  16 Aug 2017 - R. Yantosca - Rename Archival* variables to Update*
-!  17 Aug 2017 - R. Yantosca - Added the *Alarm variables
-!  18 Aug 2017 - R. Yantosca - Added EpochJd so that we can compute Julian
-!                              dates as relative to the start of the run
-!  18 Aug 2017 - R. Yantosca - Added ElapsedMin
-!  18 Aug 2017 - R. Yantosca - Add HistContainer_ElapsedTime routine
-!  21 Aug 2017 - R. Yantosca - Removed *_AlarmCheck, *_AlarmSet routines
-!  24 Aug 2017 - R. Yantosca - Added iDimId as the dimension ID for ilev,
-!                               which is the vertical dimension on interfaces
-!  28 Aug 2017 - R. Yantosca - Added SpcUnits, FirstInst to type HistContainer
-!  06 Sep 2017 - R. Yantosca - Split HistContainer_AlarmIntervalSet into 3
-!                               separate routines, now made public
-!  18 Sep 2017 - R. Yantosca - Elapsed time and alarms are now in seconds
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -200,13 +188,13 @@ CONTAINS
 ! !IROUTINE: HistContainer_Create
 !
 ! !DESCRIPTION: Initializes a single HISTORY CONTAINER object, which
-!  will hold a METAHISTORY ITEM (which is a list of HISTORY ITEMS), to 
+!  will hold a METAHISTORY ITEM (which is a list of HISTORY ITEMS), to
 !  archive to netCDF output.
 !\\
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE HistContainer_Create( am_I_Root,      Container,                &
+  SUBROUTINE HistContainer_Create( Input_Opt,      Container,                &
                                    Id,             Name,                     &
                                    RC,             EpochJd,                  &
                                    CurrentYmd,     CurrentHms,               &
@@ -226,16 +214,17 @@ CONTAINS
 !
 ! !USES:
 !
-  USE ErrCode_Mod
-  USE History_Util_Mod
-  USE MetaHistItem_Mod, ONLY : MetaHistItem
+    USE ErrCode_Mod
+    USE History_Util_Mod
+    USE Input_Opt_Mod,    ONLY : OptInput
+    USE MetaHistItem_Mod, ONLY : MetaHistItem
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
     !-----------------------------------------------------------------------
     ! REQUIRED INPUTS
     !-----------------------------------------------------------------------
-    LOGICAL,             INTENT(IN)  :: am_I_Root      ! Root CPU?
+    TYPE(OptInput),      INTENT(IN)  :: Input_Opt      ! Input Options object
     INTEGER,             INTENT(IN)  :: Id             ! Container Id #
     CHARACTER(LEN=*),    INTENT(IN)  :: Name           ! Container name
 
@@ -243,7 +232,7 @@ CONTAINS
     ! OPTIONAL INPUTS: Time and date quantities
     !-----------------------------------------------------------------------
     REAL(f8),            OPTIONAL    :: EpochJd        ! Astronomical Julian
-                                                       !  date @ start of sim  
+                                                       !  date @ start of sim
     INTEGER,             OPTIONAL    :: CurrentYmd     ! Current YMD date
     INTEGER,             OPTIONAL    :: CurrentHms     ! Current hms time
 
@@ -257,7 +246,7 @@ CONTAINS
     INTEGER,             OPTIONAL    :: Operation      ! Operation code:
                                                        !  0=copy  from source
                                                        !  1=accum from source
-    REAL(f8),            OPTIONAL    :: HeartBeatDtSec ! Model "heartbeat" 
+    REAL(f8),            OPTIONAL    :: HeartBeatDtSec ! Model "heartbeat"
                                                        !  timestep [sec]
 
     !-----------------------------------------------------------------------
@@ -289,42 +278,21 @@ CONTAINS
     CHARACTER(LEN=*),    OPTIONAL    :: StartTimeStamp ! Timestamps at start
     CHARACTER(LEN=*),    OPTIONAL    :: EndTimeStamp   !  & end of simulation
 !
-! !INPUT/OUTPUT PARAMETERS: 
+! !INPUT/OUTPUT PARAMETERS:
 !
     TYPE(HistContainer), POINTER     :: Container      ! Collection object
 !
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
     INTEGER,             INTENT(OUT) :: RC             ! Success or failure
 !
 ! !REMARKS:
-!  (1) We need to copy string data to a temporary string of length 255 
+!  (1) We need to copy string data to a temporary string of length 255
 !       characters, or else Gfortran will choke.
 !
 ! !REVISION HISTORY:
 !  16 Jun 2017 - R. Yantosca - Initial version, based on history_list_mod.F90
-!  07 Aug 2017 - R. Yantosca - Add FileWriteYmd and FileWriteHms
-!  09 Aug 2017 - R. Yantosca - Add nX, ny, and, nZ
-!  11 Aug 2017 - R. Yantosca - Add FileCloseYmd, FileCloseHms, ReferenceYmd,
-!                              ReferenceHms, and CurrTimeSlice 
-!  14 Aug 2017 - R. Yantosca - Add FileCloseYmd and FileCloseHms arguments
-!  16 Aug 2017 - R. Yantosca - Renamed Archival* variables to Update*
-!  17 Aug 2017 - R. Yantosca - Add *Alarm and Reference* arguments
-!  18 Aug 2017 - R. Yantosca - Now initialize CurrentJd with EpochJd
-!  21 Aug 2017 - R. Yantosca - Reorganize arguments, now define several time
-!                              fields from EpochJd, CurrentYmd, CurrentHms
-!  21 Aug 2017 - R. Yantosca - Now define initial alarm intervals and alarms
-!  28 Aug 2017 - R. Yantosca - Now initialize Container%Spc_Units to null str
-!  29 Aug 2017 - R. Yantosca - Reset NcFormat if netCDF compression is off
-!                              for GEOS-Chem "Classic" simulations.
-!  29 Aug 2017 - R. Yantosca - Now define the heartbeat timestep fields
-!  30 Aug 2017 - R. Yantosca - Subtract the heartbeat timestep from the
-!                               UpdateAlarm value so as to update collections
-!                               at the same times w/r/t the "legacy" diags
-!  18 Sep 2017 - R. Yantosca - Now accept heartbeat dt in seconds
-!  02 Jan 2018 - R. Yantosca - Fix construction of default file template
-!  05 Mar 2019 - R. Yantosca - Do not subtract the heartbeat timestep from
-!                              the initial update alarm.
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -353,7 +321,7 @@ CONTAINS
        CALL GC_Error( ErrMsg, RC, ThisLoc )
        RETURN
     ENDIF
-    
+
     ! Local value for ID
     ThisId = 0
 
@@ -428,7 +396,7 @@ CONTAINS
     ! Update frequency in YYYYMMDD
     !----------------------------------
     IF ( PRESENT( UpdateYmd ) ) THEN
-       Container%UpdateYmd = UpdateYmd 
+       Container%UpdateYmd = UpdateYmd
     ELSE
        Container%UpdateYmd = 0
     ENDIF
@@ -437,7 +405,7 @@ CONTAINS
     ! Update frequency in hhmmss
     !----------------------------------
     IF ( PRESENT( UpdateHms ) ) THEN
-       Container%UpdateHms = UpdateHms 
+       Container%UpdateHms = UpdateHms
     ELSE
        Container%UpdateHms = 0
     ENDIF
@@ -473,7 +441,7 @@ CONTAINS
     ! File write frequency in YYYYMMDD
     !----------------------------------
     IF ( PRESENT( FileWriteYmd ) ) THEN
-       Container%FileWriteYmd = FileWriteYmd 
+       Container%FileWriteYmd = FileWriteYmd
     ELSE
        Container%FileWriteYmd = 0
     ENDIF
@@ -482,7 +450,7 @@ CONTAINS
     ! File write frequency in hhmmss
     !----------------------------------
     IF ( PRESENT( FileWriteHms ) ) THEN
-       Container%FileWriteHms = FileWriteHms 
+       Container%FileWriteHms = FileWriteHms
     ELSE
        Container%FileWriteHms = 0
     ENDIF
@@ -500,7 +468,7 @@ CONTAINS
     ! File close frequency in YYYYMMDD
     !----------------------------------
     IF ( PRESENT( FileCloseYmd ) ) THEN
-       Container%FileCloseYmd = FileCloseYmd 
+       Container%FileCloseYmd = FileCloseYmd
     ELSE
        Container%FileCloseYmd = 0
     ENDIF
@@ -509,7 +477,7 @@ CONTAINS
     ! File close frequency in hhmmss
     !----------------------------------
     IF ( PRESENT( FileCloseHms ) ) THEN
-       Container%FileCloseHms = FileCloseHms 
+       Container%FileCloseHms = FileCloseHms
     ELSE
        Container%FileCloseHms = 0
     ENDIF
@@ -568,8 +536,8 @@ CONTAINS
 
     ELSE
 
-       ! If the FILETEMPLATE argument isn't passed, 
-       ! then construct a default template 
+       ! If the FILETEMPLATE argument isn't passed,
+       ! then construct a default template
        Container%FileTemplate = '%y4%m2%d2_%h2%n2z.nc4'
 
     ENDIF
@@ -592,8 +560,8 @@ CONTAINS
        ENDIF
 
     ELSE
-       
-       ! If the FILENAME argument isn't passed, 
+
+       ! If the FILENAME argument isn't passed,
        ! construct a default file name
        Container%FileName = TRIM( Container%FilePrefix   ) // &
                             TRIM( Container%FileTemplate )
@@ -701,7 +669,7 @@ CONTAINS
     !=======================================================================
     ! Set other fields to initial or undefined values
     !=======================================================================
-    
+
     ! These fields won't get defined until we open/write the netCDF file
     Container%IsFileDefined   = .FALSE.
     Container%IsFileOpen      = .FALSE.
@@ -728,14 +696,19 @@ CONTAINS
     Container%TimeStamp       = 0.0_f8
 
     ! Spatial information fields will be defined according to the
-    ! dimensions of the HISTORY TTEMS belonging to the collection
+    ! dimensions of the HISTORY ITEMS belonging to the collection
     Container%NX              = UNDEFINED_INT
     Container%NY              = UNDEFINED_INT
     Container%NZ              = UNDEFINED_INT
+    Container%X0              = UNDEFINED_INT
+    Container%X1              = UNDEFINED_INT
+    Container%Y0              = UNDEFINED_INT
+    Container%Y1              = UNDEFINED_INT
+    Container%Z0              = UNDEFINED_INT
     Container%OnLevelEdges    = .FALSE.
-    
+
     ! If the collection is instantaneous, then set a flag to denote that
-    ! first the netCDF file reference date/time should be the start-of-the- 
+    ! first the netCDF file reference date/time should be the start-of-the-
     ! simulation time.  This will ensure that all timestamps and filenames
     ! for instantaneous collections are consistent.
     IF ( Container%Operation == COPY_FROM_SOURCE ) THEN
@@ -751,7 +724,7 @@ CONTAINS
     !----------------------------------
     ! Initial UpdateAlarm interval
     !----------------------------------
-    CALL HistContainer_UpdateIvalSet( am_I_Root, Container, RC )
+    CALL HistContainer_UpdateIvalSet( Input_Opt, Container, RC )
 
     ! Trap potential errors
     IF ( RC /= GC_SUCCESS ) THEN
@@ -763,7 +736,7 @@ CONTAINS
     !----------------------------------
     ! Initial FileCloseAlarm interval
     !----------------------------------
-    CALL HistContainer_FileCloseIvalSet( am_I_Root, Container, RC )
+    CALL HistContainer_FileCloseIvalSet( Input_Opt, Container, RC )
 
     ! Trap potential errors
     IF ( RC /= GC_SUCCESS ) THEN
@@ -775,7 +748,7 @@ CONTAINS
     !----------------------------------
     ! Initial FileWriteAlarm interval
     !----------------------------------
-    CALL HistContainer_FileWriteIvalSet( am_I_Root, Container, RC )
+    CALL HistContainer_FileWriteIvalSet( Input_Opt, Container, RC )
 
     ! Trap potential errors
     IF ( RC /= GC_SUCCESS ) THEN
@@ -871,27 +844,25 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE HistContainer_Print( am_I_Root, Container, RC )
+  SUBROUTINE HistContainer_Print( Input_Opt, Container, RC )
 !
 ! !USES:
-! 
+!
     USE ErrCode_Mod
+    USE Input_Opt_Mod, ONLY : OptInput
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
-    LOGICAL,             INTENT(IN)  :: am_I_Root  ! Are we on the root CPU?
+    TYPE(OptInput),      INTENT(IN)  :: Input_Opt  ! Input Options object
     TYPE(HistContainer), POINTER     :: Container  ! HISTORY CONTAINER object
 !
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
-    INTEGER,             INTENT(OUT) :: RC         ! Success or failure 
+    INTEGER,             INTENT(OUT) :: RC         ! Success or failure
 !
 ! !REVISION HISTORY:
 !  16 Jun 2017 - R. Yantosca - Initial version
-!  16 Aug 2017 - R. Yantosca - Renamed Archival* variables to Update*
-!  17 Aug 2017 - R. Yantosca - Now print *Alarm variables.  Also use the
-!                              Item%DimNames field to print the data dims
-!  18 Sep 2017 - R. Yantosca - Updated for elapsed time in seconds
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -920,10 +891,10 @@ CONTAINS
     Current => NULL()
 
     !=======================================================================
-    ! Print information about this HISTORY CONTAINER 
+    ! Print information about this HISTORY CONTAINER
     ! only if we are on the root CPU
     !=======================================================================
-    IF ( ASSOCIATED( Container ) .and. am_I_Root ) THEN
+    IF ( ASSOCIATED( Container ) .and. Input_Opt%amIRoot ) THEN
        WRITE( 6, 110 ) REPEAT( '-', 78 )
        WRITE( 6, 110 ) REPEAT( '-', 78 )
        WRITE( 6, 120 ) 'Container Name   : ', TRIM( Container%Name  )
@@ -961,10 +932,10 @@ CONTAINS
        WRITE( 6, 150 ) 'IsFileOpen       : ', Container%IsFileOpen
        WRITE( 6, 150 ) 'IsFileDefined    : ', Container%IsFileDefined
        WRITE( 6, 130 ) 'FileId           : ', Container%FileId
-       WRITE( 6, 130 ) 'xDimId           : ', Container%xDimId 
-       WRITE( 6, 130 ) 'yDimId           : ', Container%yDimId 
-       WRITE( 6, 130 ) 'zDimId           : ', Container%zDimId 
-       WRITE( 6, 130 ) 'tDimId           : ', Container%tDimId 
+       WRITE( 6, 130 ) 'xDimId           : ', Container%xDimId
+       WRITE( 6, 130 ) 'yDimId           : ', Container%yDimId
+       WRITE( 6, 130 ) 'zDimId           : ', Container%zDimId
+       WRITE( 6, 130 ) 'tDimId           : ', Container%tDimId
        WRITE( 6, 120 ) 'FileExpId        : ', TRIM( Container%FileExpId    )
        WRITE( 6, 120 ) 'FilePrefix       : ', TRIM( Container%FilePrefix   )
        WRITE( 6, 120 ) 'FileTemplate     : ', TRIM( Container%FileTemplate )
@@ -992,16 +963,16 @@ CONTAINS
  160   FORMAT( 1x, a, f17.1    )
 
        ! If there are HISTORY ITEMS belonging to this container ...
-       IF ( ASSOCIATED( Container%HistItems ) ) THEN 
-          
+       IF ( ASSOCIATED( Container%HistItems ) ) THEN
+
           ! Point to the start of the list of HISTORY ITEMS
           Current => Container%HistItems
 
           ! As long as this HISTORY ITEM is valid ...
-          DO WHILE ( ASSOCIATED( Current ) ) 
+          DO WHILE ( ASSOCIATED( Current ) )
 
-             ! Print the name, long-name, and units of each HISTORY ITEM 
-             ! that is stored in the METAHISTORY ITEM belonging to this 
+             ! Print the name, long-name, and units of each HISTORY ITEM
+             ! that is stored in the METAHISTORY ITEM belonging to this
              ! HISTORY CONTAINER.  In other words, these are the diagnostic
              ! quantities that will get archived to the netCDF file.
              WRITE( 6, 100 ) Current%Item%Name,        &
@@ -1034,18 +1005,14 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE HistContainer_Destroy( am_I_Root, Container, RC )
+  SUBROUTINE HistContainer_Destroy( Container, RC )
 !
 ! !USES:
 !
     USE ErrCode_Mod
-    USE MetaHistItem_Mod, ONLY : MetaHistItem_Destroy 
+    USE MetaHistItem_Mod, ONLY : MetaHistItem_Destroy
 !
-! !INPUT PARAMETERS:
-!
-    LOGICAL,             INTENT(IN)  :: am_I_Root  ! Are we on the root CPU?
-!
-! !INPUT/OUTPUT PARAMETERS: 
+! !INPUT/OUTPUT PARAMETERS:
 !
     TYPE(HistContainer), POINTER     :: Container  ! HISTORY CONTAINER object
 !
@@ -1055,6 +1022,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  16 Jun 2017 - R. Yantosca - Initial version, based on code by Arjen Markus
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1075,7 +1043,7 @@ CONTAINS
     ! Destroy the METAHISTORY ITEM belonging to this HISTORY CONTAINER
     !=======================================================================
     IF ( ASSOCIATED( Container%HistItems ) ) THEN
-       CALL MetaHistItem_Destroy( am_I_Root, Container%HistItems, RC )
+       CALL MetaHistItem_Destroy( Container%HistItems, RC )
        IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'MetaHistItem_Destroy returned with error!'
           CALL GC_Error( ErrMsg, RC, ThisLoc )
@@ -1109,17 +1077,18 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE HistContainer_UpdateIvalSet( am_I_root, Container, RC )
+  SUBROUTINE HistContainer_UpdateIvalSet( Input_Opt, Container, RC )
 !
 ! !USES:
 !
     USE ErrCode_Mod
     USE History_Util_Mod
+    USE Input_Opt_Mod,    ONLY : OptInput
     USE Time_Mod,         ONLY : Its_A_Leapyear, Ymd_Extract
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,             INTENT(IN)  :: am_I_Root  ! Are we on the root CPU?
+    TYPE(OptInput),      INTENT(IN)  :: Input_Opt  ! Input Options object
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
@@ -1136,15 +1105,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  06 Sep 2017 - R. Yantosca - Initial version
-!  18 Sep 2017 - R. Yantosca - Now return update interval in seconds
-!  26 Oct 2017 - R. Yantosca - Now allow update interval to be greater
-!                              than one month (similar to write, close)
-!  08 Mar 2018 - R. Yantosca - Fixed logic bug that was causing incorrect
-!                              computation of UpdateIvalSec for simulations
-!                              longer than a day.
-!  08 Aug 2018 - R. Yantosca - Modify algorithm following FileWriteAlarm:
-!                              allow for update intervals of months or years
-!  26 Feb 2019 - R. Yantosca - Alarm intervals are more robust for leap years
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1167,7 +1128,7 @@ CONTAINS
      ' -> at HistContainer_UpdateIvalSet (in History/histcontainer_mod.F90)'
 
     !=======================================================================
-    ! Compute the interval for the "UpdateAlarm" 
+    ! Compute the interval for the "UpdateAlarm"
     !=======================================================================
     IF ( Container%UpdateYmd >= 010000 ) THEN
 
@@ -1177,15 +1138,15 @@ CONTAINS
 
        ! Split the current date & time into its constituent values
        CALL Ymd_Extract( Container%CurrentYmd, Year, Month, Day )
-    
+
        ! Update the alarm increment
        CALL AlarmIncrementYears( IntervalYmd = Container%UpdateYmd,          &
                                  Year        = Year,                         &
                                  Increment   = Container%UpdateIvalSec      )
-       
+
     ELSE IF ( Container%UpdateYmd <  001200  .and.                           &
               Container%UpdateYmd >= 000100 ) THEN
-       
+
        !--------------------------------------------------------------------
        ! Update interval is between 1 month and 1 year
        !--------------------------------------------------------------------
@@ -1230,17 +1191,18 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE HistContainer_FileCloseIvalSet( am_I_Root, Container, RC )
+  SUBROUTINE HistContainer_FileCloseIvalSet( Input_Opt, Container, RC )
 !
 ! !USES:
 !
     USE ErrCode_Mod
     USE History_Util_Mod
+    USE Input_Opt_Mod,    ONLY : OptInput
     USE Time_Mod,         ONLY : Its_A_Leapyear, Ymd_Extract
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,             INTENT(IN)  :: am_I_Root  ! Are we on the root CPU?
+    TYPE(OptInput),      INTENT(IN)  :: Input_Opt  ! Input Options object
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
@@ -1257,9 +1219,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  06 Sep 2017 - R. Yantosca - Initial version
-!  18 Sep 2017 - R. Yantosca - Now return file close interval in seconds
-!  26 Oct 2017 - R. Yantosca - Add modifications for a little more efficiency
-!  26 Feb 2019 - R. Yantosca - Alarm intervals are more robust for leap years
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1292,7 +1252,7 @@ CONTAINS
 
        ! Split the current date & time into its constituent values
        CALL Ymd_Extract( Container%CurrentYmd, Year, Month, Day )
-    
+
        ! Update the alarm increment
        CALL AlarmIncrementYears( IntervalYmd = Container%FileCloseYmd,       &
                                  Year        = Year,                         &
@@ -1300,7 +1260,7 @@ CONTAINS
 
     ELSE IF ( Container%FileCloseYmd <  001200  .and.                        &
               Container%FileCloseYmd >= 000100 ) THEN
-       
+
        !--------------------------------------------------------------------
        ! File close interval is between 1 month and 1 year
        !--------------------------------------------------------------------
@@ -1345,17 +1305,18 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE HistContainer_FileWriteIvalSet( am_I_Root, Container, RC )
+  SUBROUTINE HistContainer_FileWriteIvalSet( Input_Opt, Container, RC )
 !
 ! !USES:
 !
     USE ErrCode_Mod
     USE History_Util_Mod
+    USE Input_Opt_Mod,    ONLY : OptInput
     USE Time_Mod,         ONLY : Its_A_Leapyear, Ymd_Extract
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,             INTENT(IN)  :: am_I_Root  ! Are we on the root CPU?
+    TYPE(OptInput),      INTENT(IN)  :: Input_Opt  ! Input Options object
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
@@ -1372,9 +1333,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  06 Jan 2015 - R. Yantosca - Initial version
-!  18 Sep 2017 - R. Yantosca - Now return file write interval in seconds
-!  26 Oct 2017 - R. Yantosca - Add modifications for a little more efficiency
-!  26 Feb 2019 - R. Yantosca - Alarm intervals are more robust for leap years
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1414,10 +1373,10 @@ CONTAINS
 
     ELSE IF ( Container%FileWriteYmd <  001200  .and.                        &
               Container%FileWriteYmd >= 000100 ) THEN
-       
+
        !--------------------------------------------------------------------
        ! File write interval is one or more months but less than a year
-       ! 
+       !
        ! This will probably be the most common option.
        ! Now accounts properly for leap year days. (bmy, 2/26/19)
        !--------------------------------------------------------------------
@@ -1464,22 +1423,23 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE HistContainer_SetTime( am_I_Root, Container, HeartBeatDt, RC )
+  SUBROUTINE HistContainer_SetTime( Input_Opt, Container, HeartBeatDt, RC )
 !
 ! !USES:
 !
     USE ErrCode_Mod
     USE History_Util_Mod
+    USE Input_Opt_Mod,   ONLY : OptInput
     USE Julday_Mod,      ONLY :CALDATE
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
-    LOGICAL,             INTENT(IN)  :: am_I_Root   ! Are we on the root CPU?
+    TYPE(OptInput),      INTENT(IN)  :: Input_Opt   ! Input Options object
     TYPE(HistContainer), POINTER     :: Container   ! HISTORY CONTAINER object
     REAL(f8),            OPTIONAL    :: HeartBeatDt ! Heartbeat increment for
                                                     !  for timestepping [days]
 !
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
     INTEGER,             INTENT(OUT) :: RC          ! Success or failure
 !
@@ -1490,10 +1450,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  21 Aug 2017 - R. Yantosca - Initial version
-!  29 Aug 2017 - R. Yantosca - Now make HeartBeatDt an optional field; if not
-!                              specified, use Container%HeartBeatDtDays
-!  11 Jul 2018 - R. Yantosca - Now increment time in seconds instead of days
-!                              to avoid roundoff error in computation
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1507,14 +1464,14 @@ CONTAINS
     ! Initialize
     !=======================================================================
     RC      =  GC_SUCCESS
-    ErrMsg  =  '' 
+    ErrMsg  =  ''
     ThisLoc =  &
-         ' -> at HistContainer_SetTime (in History/history_mod.F90)' 
+         ' -> at HistContainer_SetTime (in History/history_mod.F90)'
 
     !========================================================================
     ! Update the current time by the heartbeat time (in seconds)
     !========================================================================
- 
+
     ! Update the Astronomical Julian seconds value by the heartbeat interval.
     ! Increment in seconds instead of days to avoid roundoff errors.
     IF ( PRESENT( HeartBeatDt ) ) THEN
@@ -1579,6 +1536,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  26 Feb 2019 - R. Yantosca - Initial version
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1645,6 +1603,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  26 Feb 2019 - R. Yantosca - Initial version
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC

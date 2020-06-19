@@ -1,4 +1,4 @@
-#if defined( ESMF_ ) 
+#ifdef ESMF_
 ! We only need to refer to this include file if we are connecting
 ! to the GEOS-5 GCM via the ESMF/MAPL framework (bmy, 8/3/12)
 #include "MAPL_Generic.h"
@@ -13,17 +13,17 @@
 ! !DESCRIPTION: Module inquireMod contains functions to find free and
 !  unopened logical file units (LUNs) for Fortran I/O.
 !
-! !INTERFACE: 
+! !INTERFACE:
 !
 MODULE inquireMod
-! 
+!
 ! !USES:
 !
-#if defined( ESMF_ )
+#ifdef ESMF_
   ! We only need to refer to these modules if we are connecting
   ! to the GEOS-5 GCM via the ESMF/MAPL framework (bmy, 8/3/12)
   USE ESMF
-  USE MAPL
+  USE MAPL_Mod
 #endif
 
   IMPLICIT NONE
@@ -34,15 +34,14 @@ MODULE inquireMod
   PUBLIC  :: findFreeLUN
   PUBLIC  :: I_Am_UnOPENed
 !
-! !REVISION HISTORY:
+! !REVI<SION HISTORY:
 !  14 Jun 2012 - E. Nielsen  - Initial version
-!  03 Aug 2012 - R. Yantosca - Block off ESMF-specific code with #ifdefs
-!  03 Aug 2012 - R. Yantosca - Cosmetic changes
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
   CONTAINS
-!EOC      
+!EOC
 !------------------------------------------------------------------------
 !     NASA/GSFC, Global Modeling and Assimilation Office, Code 910.1    !
 !------------------------------------------------------------------------
@@ -71,13 +70,11 @@ MODULE inquireMod
 !
 ! !REVISION HISTORY:
 !  14 Jun 2012 - E. Nielsen  - Initial version
-!  03 Aug 2012 - R. Yantosca - Block off ESMF-specific code with #ifdefs
-!  03 Aug 2012 - R. Yantosca - Cosmetic changes
-!  06 Aug 2012 - R. Yantosca - Now make LUN range 11..199
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
-! 
+!
 ! !LOCAL VARIABLES:
 !
     INTEGER                    :: i, rc, status
@@ -85,7 +82,7 @@ MODULE inquireMod
     LOGICAL                    :: found         ! Detect unused logical unit
     LOGICAL                    :: open          ! Is open?
 
-#if defined( ESMF_ )
+#ifdef ESMF_
     CHARACTER(LEN=ESMF_MAXSTR) :: Iam
 #else
     CHARACTER(LEN=255)         :: Iam
@@ -93,7 +90,7 @@ MODULE inquireMod
 !
 ! !DEFINED PARAMETERS
 !
-    INTEGER, PARAMETER         :: iTop = 199     ! Maximum LUN limit 
+    INTEGER, PARAMETER         :: iTop = 199     ! Maximum LUN limit
 
     !======================================================================
     ! Initialization
@@ -103,7 +100,7 @@ MODULE inquireMod
     rc     = 0
 
     !======================================================================
-    ! Find an available logical unit 
+    ! Find an available logical unit
     !======================================================================
     found = .FALSE.
     i     = 11
@@ -116,13 +113,13 @@ MODULE inquireMod
        ENDIF
        i = i + 1
     ENDDO
-    
+
     IF ( .NOT. found ) THEN
        status = 1
        PRINT *,TRIM( Iam ) // ": No available logical units"
     ENDIF
 
-#if defined( ESMF_ )
+#ifdef ESMF_
     VERIFY_(status)
 #endif
 
@@ -156,23 +153,22 @@ MODULE inquireMod
 !
 ! !REVISION HISTORY:
 !  14 Jun 2012 - E. Nielsen  - Initial version
-!  03 Aug 2012 - R. Yantosca - Block off ESMF-specific code with #ifdefs
-!  03 Aug 2012 - R. Yantosca - Cosmetic changes
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
-! 
+!
 ! !LOCAL VARIABLES:
 !
     INTEGER                    :: rc, status
     LOGICAL                    :: exists       ! File existence
     LOGICAL                    :: open         ! Is open?
 
-#if defined( ESMF_ )
+#ifdef ESMF_
     CHARACTER(LEN=ESMF_MAXSTR) :: Iam
 #else
     CHARACTER(LEN=255)         :: Iam
-#endif 
+#endif
 
     !======================================================================
     ! Initialization

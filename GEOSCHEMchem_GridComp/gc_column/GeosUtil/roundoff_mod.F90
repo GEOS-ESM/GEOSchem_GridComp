@@ -5,14 +5,14 @@
 !
 ! !MODULE: roundoff_mod.F90
 !
-! !DESCRIPTION: Contains routines to round floating point values to a 
+! !DESCRIPTION: Contains routines to round floating point values to a
 !  given number of decimal places.
-!\\  
 !\\
-! !INTERFACE: 
+!\\
+! !INTERFACE:
 !
 MODULE Roundoff_Mod
-! 
+!
 ! !USES:
 !
   USE Precision_Mod
@@ -23,9 +23,9 @@ MODULE Roundoff_Mod
 ! !PUBLIC MEMBER FUNCTIONS:
 !
   PUBLIC :: Roundoff
-  INTERFACE RoundOff 
+  INTERFACE RoundOff
      MODULE PROCEDURE RoundOff_F4
-     MODULE PROCEDURE RoundOff_F8 
+     MODULE PROCEDURE RoundOff_F8
   END INTERFACE
 !
 ! !PRIVATE MEMBER FUNCTIONS:
@@ -35,6 +35,7 @@ MODULE Roundoff_Mod
 !
 ! !REVISION HISTORY:
 !  18 Aug 2017 - R. Yantosca - Initial version, split off from gc_grid_mod.F90
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -56,7 +57,7 @@ CONTAINS
   FUNCTION RoundOff_f4( X, N ) RESULT( Y )
 !
 ! !INPUT PARAMETERS:
-! 
+!
     REAL(f4), INTENT(IN) :: X   ! Number to be rounded
     INTEGER,  INTENT(IN) :: N   ! Number of decimal places to keep
 !
@@ -72,7 +73,7 @@ CONTAINS
 !  (4) Divide X by 10**(N+1)
 !  (5) Truncate X to N decimal places: INT( X * 10**N ) / 10**N
 !                                                                             .
-!  Rounding algorithm from: Hultquist, P.F, "Numerical Methods for Engineers 
+!  Rounding algorithm from: Hultquist, P.F, "Numerical Methods for Engineers
 !   and Computer Scientists", Benjamin/Cummings, Menlo Park CA, 1988, p. 20.
 !                                                                             .
 !  Truncation algorithm from: http://en.wikipedia.org/wiki/Truncation
@@ -81,12 +82,11 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  14 Jul 2010 - R. Yantosca - Initial version
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
-!
-! !LOCAL VARIABLES
-!
+
     ! Round and truncate X to N decimal places
     Y = INT( NINT( X*(10.0_f4**(N+1)) + SIGN( 5.0_f4, X ) ) / 10.0_f4 ) / (10.0_f4**N)
 
@@ -108,7 +108,7 @@ CONTAINS
   FUNCTION RoundOff_f8( X, N ) RESULT( Y )
 !
 ! !INPUT PARAMETERS:
-! 
+!
     REAL(f8), INTENT(IN) :: X   ! Number to be rounded
     INTEGER,  INTENT(IN) :: N   ! Number of decimal places to keep
 !
@@ -124,7 +124,7 @@ CONTAINS
 !  (4) Divide X by 10**(N+1)
 !  (5) Truncate X to N decimal places: INT( X * 10**N ) / 10**N
 !                                                                             .
-!  Rounding algorithm from: Hultquist, P.F, "Numerical Methods for Engineers 
+!  Rounding algorithm from: Hultquist, P.F, "Numerical Methods for Engineers
 !   and Computer Scientists", Benjamin/Cummings, Menlo Park CA, 1988, p. 20.
 !                                                                             .
 !  Truncation algorithm from: http://en.wikipedia.org/wiki/Truncation
@@ -133,12 +133,11 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  14 Jul 2010 - R. Yantosca - Initial version
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
-!
-! !LOCAL VARIABLES
-!
+
     ! Round and truncate X to N decimal places
     Y = INT( NINT( X*(10.0_f8**(N+1)) + SIGN( 5.0_f8, X ) ) / 10.0_f8 ) / (10.0_f8**N)
 

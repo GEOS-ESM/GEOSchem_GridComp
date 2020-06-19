@@ -9,9 +9,9 @@
 !  used to define the Meteorology State object for GEOS-Chem.
 !\\
 !\\
-!  This module also contains the routines that allocate and deallocate memory 
-!  to the Meteorology State object.  The Meteorology State object is not 
-!  defined in this module.  It must be be declared as variable in the top-level 
+!  This module also contains the routines that allocate and deallocate memory
+!  to the Meteorology State object.  The Meteorology State object is not
+!  defined in this module.  It must be be declared as variable in the top-level
 !  driver routine, and then passed to lower-level routines as an argument.
 !\\
 !\\
@@ -21,6 +21,7 @@ MODULE State_Met_Mod
 !
 ! USES:
 !
+  USE Dictionary_M, ONLY : dictionary_t
   USE ErrCode_Mod
   USE Precision_Mod
   USE Registry_Mod
@@ -53,7 +54,9 @@ MODULE State_Met_Mod
      INTEGER,  POINTER :: ChemGridLev   (:,:  ) ! Chemistry grid level
      REAL(fp), POINTER :: CLDFRC        (:,:  ) ! Column cloud fraction [1]
      INTEGER,  POINTER :: CLDTOPS       (:,:  ) ! Max cloud top height [levels]
+     REAL(fp), POINTER :: CONV_DEPTH    (:,:  ) ! Convective cloud depth [m]
      REAL(fp), POINTER :: EFLUX         (:,:  ) ! Latent heat flux [W/m2]
+     REAL(fp), POINTER :: FLASH_DENS    (:,:  ) ! Lightning flash density [#/km2/s]
      REAL(fp), POINTER :: FRCLND        (:,:  ) ! Olson land fraction [1]
      REAL(fp), POINTER :: FRLAKE        (:,:  ) ! Fraction of lake [1]
      REAL(fp), POINTER :: FRLAND        (:,:  ) ! Fraction of land [1]
@@ -64,7 +67,10 @@ MODULE State_Met_Mod
      REAL(fp), POINTER :: GWETROOT      (:,:  ) ! Root soil wetness [1]
      REAL(fp), POINTER :: GWETTOP       (:,:  ) ! Top soil moisture [1]
      REAL(fp), POINTER :: HFLUX         (:,:  ) ! Sensible heat flux [W/m2]
-     REAL(fp), POINTER :: LAI           (:,:  ) ! Leaf area index [m2/m2]  
+     LOGICAL,  POINTER :: IsLand        (:,:  ) ! Is this a land  grid box?
+     LOGICAL,  POINTER :: IsWater       (:,:  ) ! Is this a water grid box?
+     LOGICAL,  POINTER :: IsIce         (:,:  ) ! Is this a ice   grid box?
+     REAL(fp), POINTER :: LAI           (:,:  ) ! Leaf area index [m2/m2]
                                                 !  (online)
      REAL(fp), POINTER :: LWI           (:,:  ) ! Land/water indices [1]
      REAL(fp), POINTER :: PARDR         (:,:  ) ! Direct photsynthetically
@@ -72,19 +78,23 @@ MODULE State_Met_Mod
      REAL(fp), POINTER :: PARDF         (:,:  ) ! Diffuse photsynthetically
                                                 !  active radiation [W/m2]
      REAL(fp), POINTER :: PBLH          (:,:  ) ! PBL height [m]
-     INTEGER,  POINTER :: PBL_TOP_L     (:,:  ) ! PBL top layer [1]
-     REAL(fp), POINTER :: PHIS          (:,:  ) ! Surface geopotential height 
+     REAL(fp), POINTER :: PBL_TOP_hPa   (:,:  ) ! PBL top [hPa]
+     REAL(fp), POINTER :: PBL_TOP_L     (:,:  ) ! PBL top [level]
+     REAL(fp), POINTER :: PBL_TOP_m     (:,:  ) ! PBL top [m]
+     REAL(fp), POINTER :: PBL_THICK     (:,:  ) ! PBL thickness [hPa]
+     REAL(fp), POINTER :: PHIS          (:,:  ) ! Surface geopotential height
                                                 !  [m2/s2]
-     REAL(fp), POINTER :: PRECANV       (:,:  ) ! Anvil previp @ ground 
-                                                !  [kg/m2/s]
-     REAL(fp), POINTER :: PRECCON       (:,:  ) ! Conv  precip @ ground 
-                                                !  [kg/m2/s]
-     REAL(fp), POINTER :: PRECTOT       (:,:  ) ! Total precip @ ground 
-                                                !  [kg/m2/s]
-     REAL(fp), POINTER :: PRECLSC       (:,:  ) ! LS precip @ ground [kg/m2/s]
+     REAL(fp), POINTER :: PRECANV       (:,:  ) ! Anvil previp @ ground
+                                                !  [kg/m2/s] -> [mm/day]
+     REAL(fp), POINTER :: PRECCON       (:,:  ) ! Conv  precip @ ground
+                                                !  [kg/m2/s] -> [mm/day]
+     REAL(fp), POINTER :: PRECLSC       (:,:  ) ! Large-scale precip @ ground
+                                                !  [kg/m2/s] -> [mm/day]
+     REAL(fp), POINTER :: PRECTOT       (:,:  ) ! Total precip @ ground
+                                                !  [kg/m2/s] -> [mm/day]
      REAL(fp), POINTER :: PS1_WET       (:,:  ) ! Wet surface pressure at
                                                 !  start of timestep [hPa]
-     REAL(fp), POINTER :: PS2_WET       (:,:  ) ! Wet surface pressure at 
+     REAL(fp), POINTER :: PS2_WET       (:,:  ) ! Wet surface pressure at
                                                 !  end of timestep [hPa]
      REAL(fp), POINTER :: PSC2_WET      (:,:  ) ! Wet interpolated surface
                                                 !  pressure [hPa]
@@ -114,7 +124,7 @@ MODULE State_Met_Mod
      REAL(fp), POINTER :: SWGDN         (:,:  ) ! Incident radiation @ ground
                                                 !  [W/m2]
      REAL(fp), POINTER :: TO3           (:,:  ) ! Total overhead O3 column [DU]
-     REAL(fp), POINTER :: TROPP         (:,:  ) ! Tropopause pressure [hPa]     
+     REAL(fp), POINTER :: TROPP         (:,:  ) ! Tropopause pressure [hPa]
      INTEGER,  POINTER :: TropLev       (:,:  ) ! Tropopause level [1]
      REAL(fp), POINTER :: TropHt        (:,:  ) ! Tropopause height [km]
      REAL(fp), POINTER :: TS            (:,:  ) ! Surface temperature [K]
@@ -124,47 +134,49 @@ MODULE State_Met_Mod
      REAL(fp), POINTER :: UVALBEDO      (:,:  ) ! UV surface albedo [1]
      REAL(fp), POINTER :: V10M          (:,:  ) ! N/S wind speed @ 10m ht [m/s]
      REAL(fp), POINTER :: Z0            (:,:  ) ! Surface roughness height [m]
-     REAL(fp), POINTER :: CNV_FRC       (:,:  ) ! Convective fraction [1] 
-            
+     REAL(fp), POINTER :: CNV_FRC       (:,:  ) ! Convective fraction [1]
+
      !----------------------------------------------------------------------
-     ! 3-D Fields                  
+     ! 3-D Fields
      !----------------------------------------------------------------------
      REAL(fp), POINTER :: CLDF          (:,:,:) ! 3-D cloud fraction [1]
      REAL(fp), POINTER :: CMFMC         (:,:,:) ! Cloud mass flux [kg/m2/s]
-     REAL(fp), POINTER :: DQRCU         (:,:,:) ! Conv precip production rate 
-                                                !  [kg/kg/s] (assume per 
+     REAL(fp), POINTER :: DQRCU         (:,:,:) ! Conv precip production rate
+                                                !  [kg/kg/s] (assume per
                                                 !  dry air)
      REAL(fp), POINTER :: DQRLSAN       (:,:,:) ! LS precip prod rate [kg/kg/s]
                                                 !  (assume per dry air)
      REAL(fp), POINTER :: DTRAIN        (:,:,:) ! Detrainment flux [kg/m2/s]
+     REAL(fp), POINTER :: F_OF_PBL      (:,:,:) ! Fraction of box within PBL [1]
+     REAL(fp), POINTER :: F_UNDER_PBLTOP(:,:,:) ! Fraction of box under PBL top
      REAL(fp), POINTER :: OMEGA         (:,:,:) ! Updraft velocity [Pa/s]
      REAL(fp), POINTER :: OPTD          (:,:,:) ! Visible optical depth [1]
-     REAL(fp), POINTER :: PEDGE         (:,:,:) ! Wet air press @ level 
+     REAL(fp), POINTER :: PEDGE         (:,:,:) ! Wet air press @ level
                                                 !  edges [hPa]
-     REAL(fp), POINTER :: PFICU         (:,:,:) ! Dwn flux ice prec:conv 
+     REAL(fp), POINTER :: PFICU         (:,:,:) ! Dwn flux ice prec:conv
                                                 !  [kg/m2/s]
-     REAL(fp), POINTER :: PFILSAN       (:,:,:) ! Dwn flux ice prec:LS+anv 
+     REAL(fp), POINTER :: PFILSAN       (:,:,:) ! Dwn flux ice prec:LS+anv
                                                 !  [kg/m2/s]
-     REAL(fp), POINTER :: PFLCU         (:,:,:) ! Dwn flux liq prec:conv 
+     REAL(fp), POINTER :: PFLCU         (:,:,:) ! Dwn flux liq prec:conv
                                                 !  [kg/m2/s]
-     REAL(fp), POINTER :: PFLLSAN       (:,:,:) ! Dwn flux ice prec:LS+anv 
+     REAL(fp), POINTER :: PFLLSAN       (:,:,:) ! Dwn flux ice prec:LS+anv
                                                 !  [kg/m2/s]
-     REAL(fp), POINTER :: QI            (:,:,:) ! Ice mixing ratio 
+     REAL(fp), POINTER :: QI            (:,:,:) ! Ice mixing ratio
                                                 !  [kg/kg dry air]
-     REAL(fp), POINTER :: QL            (:,:,:) ! Water mixing ratio 
+     REAL(fp), POINTER :: QL            (:,:,:) ! Water mixing ratio
                                                 !  [kg/kg dry air]
      REAL(fp), POINTER :: REEVAPCN      (:,:,:) ! Evap of precip conv [kg/kg/s]
                                                 !  (assume per dry air)
-     REAL(fp), POINTER :: REEVAPLS      (:,:,:) ! Evap of precip LS+anvil 
-                                                !  [kg/kg/s] (assume per 
+     REAL(fp), POINTER :: REEVAPLS      (:,:,:) ! Evap of precip LS+anvil
+                                                !  [kg/kg/s] (assume per
                                                 !  dry air)
      REAL(fp), POINTER :: RH            (:,:,:) ! Relative humidity [%]
-     REAL(fp), POINTER :: SPHU          (:,:,:) ! Specific humidity 
+     REAL(fp), POINTER :: SPHU          (:,:,:) ! Specific humidity
                                                 !  [g H2O/kg tot air]
      REAL(fp), POINTER :: SPHU1         (:,:,:) ! Specific humidity at start
                                                 !  of timestep [g/kg]
      REAL(fp), POINTER :: SPHU2         (:,:,:) ! Specific humidity at end
-                                                !  of timestep [g/kg]  
+                                                !  of timestep [g/kg]
      REAL(fp), POINTER :: T             (:,:,:) ! Temperature [K]
      REAL(fp), POINTER :: TAUCLI        (:,:,:) ! Opt depth of ice clouds [1]
      REAL(fp), POINTER :: TAUCLW        (:,:,:) ! Opt depth of H2O clouds [1]
@@ -173,29 +185,28 @@ MODULE State_Met_Mod
      REAL(fp), POINTER :: TMPU2         (:,:,:) ! Temperature at end of
                                                 !  timestep [K]
      REAL(fp), POINTER :: U             (:,:,:) ! E/W component of wind [m s-1]
-     REAL(fp), POINTER :: UPDVVEL       (:,:,:) ! Updraft vertical velocity 
+     REAL(fp), POINTER :: UPDVVEL       (:,:,:) ! Updraft vertical velocity
                                                 !  [hPa/s]
      REAL(fp), POINTER :: V             (:,:,:) ! N/S component of wind [m s-1]
-
      !----------------------------------------------------------------------
      ! Air quantities assigned in AIRQNT
      !----------------------------------------------------------------------
-     ! Note on pressures: PMID is calculated from PEDGE, 
+     ! Note on pressures: PMID is calculated from PEDGE,
      ! and dry air pressures assume constant RH and T across grid box
-     REAL(fp), POINTER :: PEDGE_DRY     (:,:,:) ! Dry air partial pressure 
+     REAL(fp), POINTER :: PEDGE_DRY     (:,:,:) ! Dry air partial pressure
                                                 !  @ level edges [hPa]
      REAL(fp), POINTER :: PMID          (:,:,:) ! Average wet air pressure [hPa]
                                                 !  defined as arithmetic
                                                 !  average of edge pressures
      REAL(fp), POINTER :: PMID_DRY      (:,:,:) ! Dry air partial pressure [hPa]
                                                 !  defined as arithmetic avg
-                                                !  of edge pressures 
+                                                !  of edge pressures
      REAL(fp), POINTER :: THETA         (:,:,:) ! Potential temperature [K]
      REAL(fp), POINTER :: TV            (:,:,:) ! Virtual temperature [K]
      REAL(fp), POINTER :: MAIRDEN       (:,:,:) ! Moist air density [kg/m3]
      REAL(fp), POINTER :: AIRDEN        (:,:,:) ! Dry air density [kg/m3]
      REAL(fp), POINTER :: AIRNUMDEN     (:,:,:) ! Dry air density [molec/cm3]
-     REAL(fp), POINTER :: AVGW          (:,:,:) ! Water vapor volume mixing 
+     REAL(fp), POINTER :: AVGW          (:,:,:) ! Water vapor volume mixing
                                                 !  ratio [vol H2O/vol dry air]
      REAL(fp), POINTER :: BXHEIGHT      (:,:,:) ! Grid box height [m] (dry air)
      REAL(fp), POINTER :: DELP          (:,:,:) ! Delta-P (wet) across box [hPa]
@@ -209,32 +220,24 @@ MODULE State_Met_Mod
      ! Age of air for diagnosing transport
      !----------------------------------------------------------------------
      INTEGER,  POINTER :: AgeOfAir      (:,:,:) ! Age of air [s]
-     
+
      !----------------------------------------------------------------------
      ! Offline land type, leaf area index, and chlorophyll fields
      !----------------------------------------------------------------------
-     INTEGER,  POINTER :: IREG          (:,:  ) ! # of landtypes in box (I,J) 
-     INTEGER,  POINTER :: ILAND         (:,:,:) ! Land type at (I,J); 
+     INTEGER,  POINTER :: IREG          (:,:  ) ! # of landtypes in box (I,J)
+     INTEGER,  POINTER :: ILAND         (:,:,:) ! Land type at (I,J);
                                                 !  1..IREG(I,J)
      INTEGER,  POINTER :: IUSE          (:,:,:) ! Fraction (per mil) of box
-                                                !  (I,J) occupied by each land 
+                                                !  (I,J) occupied by each land
                                                 !  type
-     REAL(fp), POINTER :: MODISLAI      (:,:  ) ! Daily LAI computed from 
+     REAL(fp), POINTER :: MODISLAI      (:,:  ) ! Daily LAI computed from
                                                 !  monthly offline MODIS [m2/m2]
-     REAL(fp), POINTER :: MODISCHLR     (:,:  ) ! Daily chlorophyll-a computed 
-                                                !  from offline monthly MODIS
-     REAL(fp), POINTER :: XLAI          (:,:,:) ! MODIS LAI per land type, 
-                                                !  for this month
-     REAL(fp), POINTER :: XCHLR         (:,:,:) ! MODIS CHLR per land type,
+     REAL(fp), POINTER :: XLAI          (:,:,:) ! MODIS LAI per land type,
                                                 !  for this month
      REAL(fp), POINTER :: LandTypeFrac  (:,:,:) ! Olson frac per type (I,J,type)
      REAL(fp), POINTER :: XLAI_NATIVE   (:,:,:) ! avg LAI per type (I,J,type)
-     REAL(fp), POINTER :: XCHLR_NATIVE  (:,:,:) ! avg CHLR per type (I,J,type)
-
-     REAL(fp), POINTER :: XLAI2         (:,:,:) ! MODIS LAI per land type, 
+     REAL(fp), POINTER :: XLAI2         (:,:,:) ! MODIS LAI per land type,
                                                 !  for next month
-     REAL(fp), POINTER :: XCHLR2        (:,:,:) ! MODIS CHLR per land type,
-                                                !  for next month    
 
      !----------------------------------------------------------------------
      ! Fields for querying in which vertical regime a grid box is in
@@ -245,82 +248,31 @@ MODULE State_Met_Mod
      LOGICAL,  POINTER :: InStratMeso   (:,:,:) ! Are we in the stratosphere
                                                 !            or mesosphere?
      LOGICAL,  POINTER :: InStratosphere(:,:,:) ! Are we in the stratosphere?
-     LOGICAL,  POINTER :: InTroposphere (:,:,:) ! Are we in the troposphere?  
+     LOGICAL,  POINTER :: InTroposphere (:,:,:) ! Are we in the troposphere?
      REAL(fp), POINTER :: LocalSolarTime(:,:  ) ! Local solar time
      LOGICAL,  POINTER :: IsLocalNoon   (:,:  ) ! Is it local noon (between 11
                                                 !  and 13 local solar time?
 
      !----------------------------------------------------------------------
-     ! Offline lightning fields
+     ! Scalars
      !----------------------------------------------------------------------
-     REAL(fp), POINTER :: FLASH_DENS    (:,:  ) ! Lightning flash density [#/km2/s]
-     REAL(fp), POINTER :: CONV_DEPTH    (:,:  ) ! Convective cloud depth [m]
+     INTEGER           :: PBL_MAX_L             ! Max level where PBL top occurs
 
      !----------------------------------------------------------------------
      ! Registry of variables contained within State_Met
      !----------------------------------------------------------------------
      CHARACTER(LEN=3)             :: State     = 'MET'    ! Name of this state
-     TYPE(MetaRegItem), POINTER   :: Registry  => NULL()  ! Registry object  
+     TYPE(MetaRegItem), POINTER   :: Registry  => NULL()  ! Registry object
+     TYPE(dictionary_t)           :: RegDict              ! Reg. lookup table
 
   END TYPE MetState
 !
 ! !REMARKS:
 !  In MERRA2, PS and SLP are kept in Pa (not converted to hPa).
 !
-! !REVISION HISTORY: 
+! !REVISION HISTORY:
 !  19 Oct 2012 - R. Yantosca - Initial version, split off from gc_type_mod.F90
-!  23 Oct 2012 - R. Yantosca - Added QI, QL met fields to the derived type
-!  15 Nov 2012 - M. Payer    - Added all remaining met fields
-!  12 Dec 2012 - R. Yantosca - Add IREG, ILAND, IUSE fields for dry deposition
-!  13 Dec 2012 - R. Yantosca - Add XLAI, XLAI2 fields for dry deposition
-!  20 Aug 2013 - R. Yantosca - Removed "define.h", this is now obsolete
-!  15 Nov 2013 - R. Yantosca - Now denote that RH fields have units of [%]
-!  10 Oct 2014 - C. Keller   - Added ITY (needed for GIGC). For now, this value
-!                              is just initialized to 1.0 and not modified any
-!                              more.
-!  05 Nov 2014 - M. Yannetti - Changed REAL*8 to REAL(fp)
-!  12 Feb 2015 - C. Keller   - Added UPDVVEL (for use in wet scavenging).
-!  24 Feb 2015 - E. Lundgren - Add PEDGE_DRY, PMID_DRY, and MAIRDEN
-!  03 Mar 2015 - E. Lundgren - Add TV (virtual temperature)
-!  16 Apr 2015 - E. Lundgren - Add mean pressures PMEAN and PMEAN_DRY. Clarify
-!                              definition of PMID as arithmetic average P. 
-!                              Add MOISTMW to use TCVV with moist mixing ratio. 
-!  25 May 2015 - C. Keller   - Removed SUNCOSmid5 (now calculated by HEMCO).
-!  08 Jul 2015 - E. Lundgren - Add XCHLR and XCHLR2 for organic marine aerosols
-!  11 Aug 2015 - R. Yantosca - Extend #ifdefs for MERRA2 met fields
-!  22 Sep 2015 - E. Lundgren - Add SWGDN for incident radiation at ground
-!  28 Oct 2015 - E. Lundgren - Add previous delta-P and specific humidity for
-!                              tracer mass conservation in mixing ratio update
-!  04 Mar 2016 - C. Keller   - Add CNV_FRC for convective fraction. Currently
-!                              not a standard GEOS-FP output, only used in 
-!                              online model (ESMF). 
-!  21 Dec 2015 - M. Sulprizio- Add AIRNUMDEN, which is the same as AIRDEN but
-!                              has units molec/cm3 for the chemistry routines.
-!  17 Mar 2016 - M. Sulprizio- Remove OPTDEP. Instead, we now solely use OPTD.
-!  03 May 2016 - E. Lundgren - Add PSC2_DRY, PS1_DRY, and PS2_DRY
-!  06 Jul 2016 - E. Lundgren - Rename PS1, PS2, and PSC1: add '_WET' suffix
-!  06 Jul 2016 - E. Lundgren - Add DELP_DRY and DP_DRY_PREV
-!  19 Jul 2016 - E. Lundgren - Remove PMEAN, PMEAN_DRY, MOISTMW, and ADMOIST  
-!  16 Aug 2016 - M. Sulprizio- Rename from gigc_state_chm_mod.F90 to
-!                              state_chm_mod.F90. The "gigc" nomenclature is
-!                              no longer used.
-!  18 Oct 2016 - E. Lundgren - Remove XLAI2, CHLR2; add MODISLAI, MODISCHLR to
-!                              replace modis_lai_mod-level GC_LAI and GC_CHLR
-!  19 Oct 2016 - E. Lundgren - Use NSURFTYPE as the # of land types
-!  03 Feb 2017 - M. Sulprizio- Add OMEGA for use in sulfate_mod.F (Q. Chen)
-!  26 Jun 2017 - R. Yantosca - Added StateName and Registry to type MetState
-!  27 Jun 2017 - R. Yantosca - Add fields of State_Met to the registry
-!  24 Aug 2017 - M. Sulprizio- Remove support for GCAP, GEOS-4, GEOS-5 and MERRA
-!                              and remove obsolete met fields from State_Met
-!  07 Sep 2017 - E. Lundgren - Add Register_MetField interface for init
-!  13 Sep 2017 - M. Sulprizio- Remove DELP_PREV and SPHU_PREV; they're not used
-!  14 Sep 2017 - M. Sulprizio- Comment out met fields that aren't actually used
-!                              in GEOS-Chem (EVAP, GRN, PRECSNO, PV, RADLWG)
-!  26 Sep 2017 - E. Lundgren - Remove Lookup_State_Met and Print_State_Met
-!  07 Nov 2017 - R. Yantosca - Add tropht and troplev fields
-!  08 Jan 2018 - R. Yantosca - Added logical query fields
-!  31 Jan 2018 - E. Lundgren - Remove underscores from diagnostic names
-!  20 Jan 2019 - L. Murray   - Add offline lightning flash rates
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -343,22 +295,23 @@ CONTAINS
 !
 ! !IROUTINE: Init_State_Met
 !
-! !DESCRIPTION: Subroutine INIT\_STATE\_MET allocates all fields of 
+! !DESCRIPTION: Subroutine INIT\_STATE\_MET allocates all fields of
 !  the meteorology state object.
 !\\
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE Init_State_Met( am_I_Root, State_Grid, State_Met, RC )
+  SUBROUTINE Init_State_Met( Input_Opt, State_Grid, State_Met, RC )
 !
 ! !USES:
 !
     USE CMN_SIZE_MOD,   ONLY : NSURFTYPE
+    USE Input_Opt_Mod,  ONLY : OptInput
     USE State_Grid_Mod, ONLY : GrdState
 !
 ! !INPUT PARAMETERS:
-! 
-    LOGICAL,        INTENT(IN)    :: am_I_Root   ! Is this the root CPU?
+!
+    TYPE(OptInput), INTENT(IN)    :: Input_Opt   ! Input Options object
     TYPE(GrdState), INTENT(IN)    :: State_Grid  ! Grid State object
 !
 ! !INPUT/OUTPUT PARAMETERS:
@@ -372,31 +325,9 @@ CONTAINS
 ! !REMARKS:
 !  For consistency, maybe this should be moved to a different module.
 !
-! !REVISION HISTORY: 
+! !REVISION HISTORY:
 !  19 Oct 2012 - R. Yantosca - Initial version, based on gc_environment_mod.F90
-!  19 Oct 2012 - R. Yantosca - Now pass all dimensions as arguments
-!  23 Oct 2012 - R. Yantosca - Now allocate QI, QL fields
-!  15 Nov 2012 - M. Payer    - Added all remaining met fields
-!  16 Nov 2012 - R. Yantosca - Now zero all fields after allocating
-!  27 Nov 2012 - R. Yantosca - Now allocate SUNCOS fields (IM,JM)
-!  12 Dec 2012 - R. Yantosca - Now allocate the IREG, ILAND, IUSE fields
-!  13 Dec 2012 - R. Yantosca - Now allocate the XLAI, XLAI2 fields
-!  07 Mar 2013 - R. Yantosca - Now allocate PF*LSAN, PF*CU fields properly
-!                              for GEOS-5.7.x met (they are edged)
-!  26 Sep 2013 - R. Yantosca - Renamed GEOS_57 Cpp switch to GEOS_FP
-!  22 Aug 2014 - R. Yantosca - Allocate PBL_TOP_L field
-!  05 Nov 2014 - R. Yantosca - Now use 0.0_fp instead of 0d0
-!  06 Nov 2014 - R. Yantosca - Now make all fields (IM,JM,LM) instead of 
-!                              (LM,JM,IM), to facilitate use w/in GEOS-5 GCM
-!  05 Oct 2016 - R. Yantosca - Swapped order of HKETA and HKBETA allocation
-!  28 Nov 2016 - R. Yantosca - Nullify fields that may or may not be allocated
-!  01 Jun 2017 - C. Keller   - Initialize UPDVVEL to -999.0 to ensure that 
-!                              GET_VUD (wetscav_mod.F) works properly.
-!  26 Jun 2017 - R. Yantosca - Now register each variable after it's allocated
-!  24 Aug 2017 - R. Yantosca - Now register level-edged variables appropriately
-!  07 Sep 2017 - E. Lundgren - Abstract the metadata and method add to registry
-!  16 Nov 2017 - E. Lundgren - Get grid params from CMN_Size_Mod not arguments
-!  05 Nov 2018 - R. Yantosca - Now nullify all fields before allocating
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -405,7 +336,7 @@ CONTAINS
 !
     ! Scalars
     INTEGER            :: LX, IM, JM, LM
-    
+
     ! Strings
     CHARACTER(LEN=255) :: ErrMsg, ThisLoc
 
@@ -428,7 +359,9 @@ CONTAINS
     State_Met%ChemGridLev    => NULL()
     State_Met%CLDFRC         => NULL()
     State_Met%CLDTOPS        => NULL()
+    State_Met%CONV_DEPTH     => NULL()
     State_Met%EFLUX          => NULL()
+    State_Met%FLASH_DENS     => NULL()
     State_Met%FRCLND         => NULL()
     State_Met%FRLAKE         => NULL()
     State_Met%FRLAND         => NULL()
@@ -436,15 +369,23 @@ CONTAINS
     State_Met%FROCEAN        => NULL()
     State_Met%FRSEAICE       => NULL()
     State_Met%FRSNO          => NULL()
+    State_Met%F_OF_PBL       => NULL()
+    State_Met%F_UNDER_PBLTOP => NULL()
     State_Met%GWETROOT       => NULL()
     State_Met%GWETTOP        => NULL()
     State_Met%HFLUX          => NULL()
+    State_Met%IsWater        => NULL()
+    State_Met%IsLand         => NULL()
+    State_Met%IsIce          => NULL()
     State_Met%LAI            => NULL()
     State_Met%LWI            => NULL()
     State_Met%PARDR          => NULL()
     State_Met%PARDF          => NULL()
     State_Met%PBLH           => NULL()
+    State_Met%PBL_TOP_hPa    => NULL()
     State_Met%PBL_TOP_L      => NULL()
+    State_Met%PBL_TOP_m      => NULL()
+    State_Met%PBL_THICK      => NULL()
     State_Met%PHIS           => NULL()
     State_Met%PRECANV        => NULL()
     State_Met%PRECCON        => NULL()
@@ -489,7 +430,6 @@ CONTAINS
     State_Met%IUSE           => NULL()
     State_Met%LANDTYPEFRAC   => NULL()
     State_Met%MODISLAI       => NULL()
-    State_Met%MODISCHLR      => NULL()
     State_Met%AD             => NULL()
     State_Met%AIRDEN         => NULL()
     State_Met%MAIRDEN        => NULL()
@@ -531,9 +471,7 @@ CONTAINS
     State_Met%UPDVVEL        => NULL()
     State_Met%V              => NULL()
     State_Met%XLAI           => NULL()
-    State_Met%XCHLR          => NULL()
     State_Met%XLAI_NATIVE    => NULL()
-    State_Met%XCHLR_NATIVE   => NULL()
     State_Met%InChemGrid     => NULL()
     State_Met%InPbl          => NULL()
     State_Met%InStratMeso    => NULL()
@@ -542,8 +480,14 @@ CONTAINS
     State_Met%IsLocalNoon    => NULL()
     State_Met%LocalSolarTime => NULL()
     State_Met%AgeOfAir       => NULL()
-    State_Met%FLASH_DENS     => NULL()
-    State_Met%CONV_DEPTH     => NULL()
+
+    !=======================================================================
+    ! Exit if this is a dry-run simulation
+    !=======================================================================
+    IF ( Input_Opt%DryRun ) THEN
+       RC = GC_SUCCESS
+       RETURN
+    ENDIF
 
     !=======================================================================
     ! Allocate 2-D Fields
@@ -556,7 +500,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%ALBD', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%ALBD = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'ALBD', State_Met%ALBD, &
+    CALL Register_MetField( Input_Opt, 'ALBD', State_Met%ALBD, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -567,7 +511,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%AREA_M2', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%AREA_M2 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'AREAM2', State_Met%AREA_M2, &
+    CALL Register_MetField( Input_Opt, 'AREAM2', State_Met%AREA_M2, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -578,7 +522,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%ChemGridLev', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%ChemGridLev = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'CHEMGRIDLEV',  &
+    CALL Register_MetField( Input_Opt, 'CHEMGRIDLEV',  &
                             State_Met%ChemGridLev,     &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
@@ -590,7 +534,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%CLDFRC', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%CLDFRC = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'CLDFRC', State_Met%CLDFRC, &
+    CALL Register_MetField( Input_Opt, 'CLDFRC', State_Met%CLDFRC, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -601,7 +545,33 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%CLDTOPS', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%CLDTOPS = 0
-    CALL Register_MetField( am_I_Root, 'CLDTOPS', State_Met%CLDTOPS, &
+    CALL Register_MetField( Input_Opt, 'CLDTOPS', State_Met%CLDTOPS, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    ! Convective fractions are not yet a standard GEOS-FP
+    ! field. Only available to online model (ckeller, 3/4/16)
+#if defined( ESMF_ ) || defined( MODEL_ )
+    !-------------------------
+    ! CNV_FRC [1]
+    !-------------------------
+    ALLOCATE( State_Met%CNV_FRC( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%CNV_FRC', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%CNV_FRC = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'CNVFRC', State_Met%CNV_FRC, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+#endif
+
+    !-------------------------
+    ! Convective Depth [m]
+    !-------------------------
+    ALLOCATE( State_Met%CONV_DEPTH( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%CONV_DEPTH', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%CONV_DEPTH = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'CONVDEPTH', State_Met%CONV_DEPTH, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -612,7 +582,18 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%EFLUX', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%EFLUX    = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'EFLUX', State_Met%EFLUX, &
+    CALL Register_MetField( Input_Opt, 'EFLUX', State_Met%EFLUX, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-----------------------------
+    ! Lightning density [#/km2/s]
+    !-----------------------------
+    ALLOCATE( State_Met%FLASH_DENS( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%FLASH_DENS', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%FLASH_DENS = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'FLASHDENS', State_Met%FLASH_DENS, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -623,7 +604,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%FRCLND', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%FRCLND = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'FRCLND', State_Met%FRCLND, &
+    CALL Register_MetField( Input_Opt, 'FRCLND', State_Met%FRCLND, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -634,7 +615,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%FRLAKE', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%FRLAKE = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'FRLAKE', State_Met%FRLAKE, &
+    CALL Register_MetField( Input_Opt, 'FRLAKE', State_Met%FRLAKE, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -644,8 +625,8 @@ CONTAINS
     ALLOCATE( State_Met%FRLAND( IM, JM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%FRLAND', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%FRLAND = 0.0_fp 
-    CALL Register_MetField( am_I_Root, 'FRLAND', State_Met%FRLAND, &
+    State_Met%FRLAND = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'FRLAND', State_Met%FRLAND, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -655,8 +636,8 @@ CONTAINS
     ALLOCATE( State_Met%FRLANDIC( IM, JM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%FRLANDIC', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%FRLANDIC = 0.0_fp 
-    CALL Register_MetField( am_I_Root, 'FRLANDIC', State_Met%FRLANDIC, &
+    State_Met%FRLANDIC = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'FRLANDIC', State_Met%FRLANDIC, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -667,409 +648,9 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%FROCEAN', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%FROCEAN = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'FROCEAN', State_Met%FROCEAN, &
+    CALL Register_MetField( Input_Opt, 'FROCEAN', State_Met%FROCEAN, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! GWETROOT [1]
-    !-------------------------
-    ALLOCATE( State_Met%GWETROOT( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%GWETROOT', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%GWETROOT = 0.0_fp 
-    CALL Register_MetField( am_I_Root, 'GWETROOT', State_Met%GWETROOT, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! GWETTOP [1]
-    !-------------------------
-    ALLOCATE( State_Met%GWETTOP( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%GWETTOP', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%GWETTOP = 0.0_fp 
-    CALL Register_MetField( am_I_Root, 'GWETTOP', State_Met%GWETTOP, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! HFLUX [W m-2]
-    !-------------------------
-    ALLOCATE( State_Met%HFLUX( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%HFLUX', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%HFLUX = 0.0_fp 
-    CALL Register_MetField( am_I_Root, 'HFLUX', State_Met%HFLUX, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! LAI [1]
-    !-------------------------  
-    ALLOCATE( State_Met%LAI( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%LAI', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%LAI = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'LAI', State_Met%LAI, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! LWI [1]
-    !-------------------------
-    ALLOCATE( State_Met%LWI( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%LWI', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%LWI = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'LWI', State_Met%LWI, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! PARDR [W m-2]
-    !-------------------------
-    ALLOCATE( State_Met%PARDR( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%PARDR', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%PARDR = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PARDR', State_Met%PARDR, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! PARDF [W m-2]
-    !-------------------------
-    ALLOCATE( State_Met%PARDF( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%PARDF', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%PARDF= 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PARDF', State_Met%PARDF, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! PBLH [m]
-    !-------------------------
-    ALLOCATE( State_Met%PBLH( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%PBLH', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%PBLH = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PBLH', State_Met%PBLH, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! PBL_TOP_L [1]
-    !-------------------------
-    ALLOCATE( State_Met%PBL_TOP_L( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%PBL_TOP_L', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%PBL_TOP_L = 0
-    CALL Register_MetField( am_I_Root, 'PBLTOPL', State_Met%PBL_TOP_L, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! PHIS [m2 s-2]
-    !-------------------------
-    ALLOCATE( State_Met%PHIS( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%PHIS', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%PHIS = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PHIS', State_Met%PHIS, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! PRECCON [kg m-2 s-1]
-    !-------------------------
-    ALLOCATE( State_Met%PRECCON( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%PRECCON', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%PRECCON = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PRECCON', State_Met%PRECCON, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! PRECTOT [kg m-2 s-1]
-    !-------------------------
-    ALLOCATE( State_Met%PRECTOT( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%PRECTOT', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%PRECTOT = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PRECTOT', State_Met%PRECTOT, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! PS1_WET [hPa]
-    !-------------------------
-    ALLOCATE( State_Met%PS1_WET( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%PS1_WET', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%PS1_WET = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PS1WET', State_Met%PS1_WET, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! PS2_WET [hPa]
-    !-------------------------
-    ALLOCATE( State_Met%PS2_WET( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%PS2_WET', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%PS2_WET = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PS2WET', State_Met%PS2_WET, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! PSC2_WET [hPa]
-    !-------------------------
-    ALLOCATE( State_Met%PSC2_WET( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%PSC2_WET', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%PSC2_WET = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PSC2WET', State_Met%PSC2_WET, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! PS1_DRY [hPa]
-    !-------------------------
-    ALLOCATE( State_Met%PS1_DRY( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%PS1_DRY', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%PS1_DRY = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PS1DRY', State_Met%PS1_DRY, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! PS2_DRY [hPa]
-    !-------------------------
-    ALLOCATE( State_Met%PS2_DRY( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%PS2_DRY', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%PS2_DRY   = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PS2DRY', State_Met%PS2_DRY, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! PSC2_DRY [hPa]
-    !-------------------------
-    ALLOCATE( State_Met%PSC2_DRY( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%PSC2_DRY', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%PSC2_DRY = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PSC2DRY', State_Met%PSC2_DRY, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! SLP [hPa]
-    !-------------------------
-    ALLOCATE( State_Met%SLP( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%SLP', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%SLP = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SLP', State_Met%SLP, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! SNODP [m]
-    !-------------------------
-    ALLOCATE( State_Met%SNODP( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%SNODP', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%SNODP = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SNODP', State_Met%SNODP, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! SNOMAS [kg m-2]
-    !-------------------------
-    ALLOCATE( State_Met%SNOMAS( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%SNOMAS', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%SNOMAS = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SNOMAS', State_Met%SNOMAS, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! SUNCOS [1]
-    !-------------------------
-    ALLOCATE( State_Met%SUNCOS( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%SUNCOS', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%SUNCOS = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SUNCOS', State_Met%SUNCOS, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! SUNCOSmid [1]
-    !-------------------------
-    ALLOCATE( State_Met%SUNCOSmid( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%SUNCOSmid', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%SUNCOSmid = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SUNCOSmid', State_Met%SUNCOSmid, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! SWGDN [W m-2]
-    !-------------------------
-    ALLOCATE( State_Met%SWGDN( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%SWGDN', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%SWGDN = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SWGDN', State_Met%SWGDN, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! TO3 [dobsons]
-    !-------------------------
-    ALLOCATE( State_Met%TO3( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%TO3', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%TO3 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'TO3', State_Met%TO3, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! TropLev [1]
-    !-------------------------
-    ALLOCATE( State_Met%TropLev( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%TropLev', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%TropLev = 0
-    CALL Register_MetField( am_I_Root, 'TROPLEV', State_Met%TropLev, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! TropHt [hPa]
-    !-------------------------
-    ALLOCATE( State_Met%TropHt( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%TropHt', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%TropHt = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'TROPHT', State_Met%TropHt, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! TROPP [hPa]
-    !-------------------------
-    ALLOCATE( State_Met%TROPP( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%TROPP', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%TROPP = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'TROPP', State_Met%TROPP, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! TS [K]
-    !-------------------------
-    ALLOCATE( State_Met%TS( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%TS', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%TS = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'TS', State_Met%TS, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! TSKIN [K]
-    !-------------------------
-    ALLOCATE( State_Met%TSKIN( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%TSKIN', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%TSKIN = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'TSKIN', State_Met%TSKIN, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! U10M [m s-1]
-    !-------------------------
-    ALLOCATE( State_Met%U10M( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%U10M', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%U10M = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'U10M', State_Met%U10M, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! USTAR [m -s]
-    !-------------------------
-    ALLOCATE( State_Met%USTAR( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%USTAR', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%USTAR = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'USTAR', State_Met%USTAR, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! UVALBEDO [1]
-    !-------------------------
-    ALLOCATE( State_Met%UVALBEDO( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%UVALBEDO', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%UVALBEDO = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'UVALBEDO', State_Met%UVALBEDO, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! V10M [m s-1]
-    !-------------------------
-    ALLOCATE( State_Met%V10M( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%V10M', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%V10M = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'V10M', State_Met%V10M, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! Z0 [m]
-    !-------------------------
-    ALLOCATE( State_Met%Z0( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%Z0', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%Z0 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'Z0', State_Met%Z0, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    ! Convective fractions are not yet a standard GEOS-FP
-    ! field. Only available to online model (ckeller, 3/4/16) 
-#if defined( ESMF_ ) || defined( MODEL_ )
-    !-------------------------
-    ! CNV_FRC [1]
-    !-------------------------
-    ALLOCATE( State_Met%CNV_FRC( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%CNV_FRC', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%CNV_FRC = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'CNVFRC', State_Met%CNV_FRC, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-#endif
 
     !-------------------------
     ! FRESEAICE [1]
@@ -1078,7 +659,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%FRSEAICE', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%FRSEAICE = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'FRSEAICE', State_Met%FRSEAICE, &
+    CALL Register_MetField( Input_Opt, 'FRSEAICE', State_Met%FRSEAICE, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1089,29 +670,294 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%FRSNO', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%FRSNO = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'FRSNO', State_Met%FRSNO, &
+    CALL Register_MetField( Input_Opt, 'FRSNO', State_Met%FRSNO, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
     !-------------------------
-    ! PRECANV [kg m-2 s-1]
+    ! GWETROOT [1]
+    !-------------------------
+    ALLOCATE( State_Met%GWETROOT( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%GWETROOT', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%GWETROOT = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'GWETROOT', State_Met%GWETROOT, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! GWETTOP [1]
+    !-------------------------
+    ALLOCATE( State_Met%GWETTOP( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%GWETTOP', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%GWETTOP = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'GWETTOP', State_Met%GWETTOP, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! HFLUX [W m-2]
+    !-------------------------
+    ALLOCATE( State_Met%HFLUX( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%HFLUX', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%HFLUX = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'HFLUX', State_Met%HFLUX, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! IsWater
+    !-------------------------
+    ALLOCATE( State_Met%IsWater( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%IsWater', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%IsWater = .FALSE.
+!    CALL Register_MetField( Input_Opt, 'IsWater', State_Met%IsWater, &
+!                            State_Met, RC )
+!    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! IsLand
+    !-------------------------
+    ALLOCATE( State_Met%IsLand( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%IsLand', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%IsLand = .FALSE.
+!    CALL Register_MetField( Input_Opt, 'IsLand', State_Met%IsLand, &
+!                            State_Met, RC )
+!    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! IsIce
+    !-------------------------
+    ALLOCATE( State_Met%IsIce( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%IsIce', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%IsIce = .FALSE.
+!    CALL Register_MetField( Input_Opt, 'IsIce', State_Met%IsIce, &
+!                            State_Met, RC )
+!    IF ( RC /= GC_SUCCESS ) RETURN
+
+
+    !-------------------------
+    ! LAI [1]
+    !-------------------------
+    ALLOCATE( State_Met%LAI( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%LAI', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%LAI = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'LAI', State_Met%LAI, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! LWI [1]
+    !-------------------------
+    ALLOCATE( State_Met%LWI( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%LWI', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%LWI = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'LWI', State_Met%LWI, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PARDR [W m-2]
+    !-------------------------
+    ALLOCATE( State_Met%PARDR( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%PARDR', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%PARDR = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'PARDR', State_Met%PARDR, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PARDF [W m-2]
+    !-------------------------
+    ALLOCATE( State_Met%PARDF( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%PARDF', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%PARDF= 0.0_fp
+    CALL Register_MetField( Input_Opt, 'PARDF', State_Met%PARDF, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PBLH [m]
+    !-------------------------
+    ALLOCATE( State_Met%PBLH( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%PBLH', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%PBLH = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'PBLH', State_Met%PBLH, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PBL top [hPa]
+    !-------------------------
+    ALLOCATE( State_Met%PBL_TOP_hPa( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%PBL_TOP_hPa', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%PBL_TOP_hPa = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'PBLTOPHPA', State_Met%PBL_TOP_hPa, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PBL top [level]
+    !-------------------------
+    ALLOCATE( State_Met%PBL_TOP_L( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%PBL_TOP_L', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%PBL_TOP_L = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'PBLTOPL', State_Met%PBL_TOP_L, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PBL top [m]
+    !-------------------------
+    ALLOCATE( State_Met%PBL_TOP_m( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%PBL_TOP_m', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%PBL_TOP_m = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'PBLTOPM', State_Met%PBL_TOP_m,     &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PBL thickness [hPa]
+    !-------------------------
+    ALLOCATE( State_Met%PBL_THICK( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%PBL_THICK', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%PBL_THICK   = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'PBLTHICK', State_Met%PBL_THICK,    &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PHIS [m2 s-2]
+    !-------------------------
+    ALLOCATE( State_Met%PHIS( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%PHIS', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%PHIS = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'PHIS', State_Met%PHIS, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PRECANV [kg m-2 s-1], converted to [mm day-1]
     !-------------------------
     ALLOCATE( State_Met%PRECANV( IM, JM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%PRECANV', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%PRECANV = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PRECANV', State_Met%PRECANV, &
+    CALL Register_MetField( Input_Opt, 'PRECANV', State_Met%PRECANV, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
     !-------------------------
-    ! PRECLSC [kg m-2 s-1]
+    ! PRECCON [kg m-2 s-1], converted to [mm day-1]
+    !-------------------------
+    ALLOCATE( State_Met%PRECCON( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%PRECCON', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%PRECCON = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'PRECCON', State_Met%PRECCON, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PRECLSC [kg m-2 s-1], converted to [mm day-1]
     !-------------------------
     ALLOCATE( State_Met%PRECLSC( IM, JM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%PRECLSC', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%PRECLSC  = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PRECLSC', State_Met%PRECLSC, &
+    CALL Register_MetField( Input_Opt, 'PRECLSC', State_Met%PRECLSC, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PRECTOT [kg m-2 s-1], converted to [mm day-1]
+    !-------------------------
+    ALLOCATE( State_Met%PRECTOT( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%PRECTOT', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%PRECTOT = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'PRECTOT', State_Met%PRECTOT, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PS1_WET [hPa]
+    !-------------------------
+    ALLOCATE( State_Met%PS1_WET( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%PS1_WET', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%PS1_WET = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'PS1WET', State_Met%PS1_WET, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PS2_WET [hPa]
+    !-------------------------
+    ALLOCATE( State_Met%PS2_WET( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%PS2_WET', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%PS2_WET = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'PS2WET', State_Met%PS2_WET, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PSC2_WET [hPa]
+    !-------------------------
+    ALLOCATE( State_Met%PSC2_WET( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%PSC2_WET', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%PSC2_WET = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'PSC2WET', State_Met%PSC2_WET, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PS1_DRY [hPa]
+    !-------------------------
+    ALLOCATE( State_Met%PS1_DRY( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%PS1_DRY', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%PS1_DRY = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'PS1DRY', State_Met%PS1_DRY, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PS2_DRY [hPa]
+    !-------------------------
+    ALLOCATE( State_Met%PS2_DRY( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%PS2_DRY', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%PS2_DRY   = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'PS2DRY', State_Met%PS2_DRY, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! PSC2_DRY [hPa]
+    !-------------------------
+    ALLOCATE( State_Met%PSC2_DRY( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%PSC2_DRY', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%PSC2_DRY = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'PSC2DRY', State_Met%PSC2_DRY, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1122,7 +968,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%SEAICE00', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%SEAICE00 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SEAICE00', State_Met%SEAICE00, &
+    CALL Register_MetField( Input_Opt, 'SEAICE00', State_Met%SEAICE00, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1133,7 +979,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%SEAICE10', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%SEAICE10 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SEAICE10', State_Met%SEAICE10, &
+    CALL Register_MetField( Input_Opt, 'SEAICE10', State_Met%SEAICE10, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1144,7 +990,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%SEAICE20', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%SEAICE20 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SEAICE20', State_Met%SEAICE20, &
+    CALL Register_MetField( Input_Opt, 'SEAICE20', State_Met%SEAICE20, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1155,7 +1001,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%SEAICE30', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%SEAICE30 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SEAICE30', State_Met%SEAICE30, &
+    CALL Register_MetField( Input_Opt, 'SEAICE30', State_Met%SEAICE30, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1166,7 +1012,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%SEAICE40', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%SEAICE40 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SEAICE40', State_Met%SEAICE40, &
+    CALL Register_MetField( Input_Opt, 'SEAICE40', State_Met%SEAICE40, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1177,7 +1023,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%SEAICE50', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%SEAICE50 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SEAICE50', State_Met%SEAICE50, &
+    CALL Register_MetField( Input_Opt, 'SEAICE50', State_Met%SEAICE50, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1188,7 +1034,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%SEAICE60', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%SEAICE60 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SEAICE60', State_Met%SEAICE60, &
+    CALL Register_MetField( Input_Opt, 'SEAICE60', State_Met%SEAICE60, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1199,7 +1045,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%SEAICE70', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%SEAICE70 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SEAICE70', State_Met%SEAICE70, &
+    CALL Register_MetField( Input_Opt, 'SEAICE70', State_Met%SEAICE70, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1210,7 +1056,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%SEAICE80', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%SEAICE80 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SEAICE80', State_Met%SEAICE80, &
+    CALL Register_MetField( Input_Opt, 'SEAICE80', State_Met%SEAICE80, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1221,7 +1067,194 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%SEAICE90', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%SEAICE90 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SEAICE90', State_Met%SEAICE90, &
+    CALL Register_MetField( Input_Opt, 'SEAICE90', State_Met%SEAICE90, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! SLP [hPa]
+    !-------------------------
+    ALLOCATE( State_Met%SLP( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%SLP', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%SLP = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'SLP', State_Met%SLP, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! SNODP [m]
+    !-------------------------
+    ALLOCATE( State_Met%SNODP( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%SNODP', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%SNODP = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'SNODP', State_Met%SNODP, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! SNOMAS [kg m-2]
+    !-------------------------
+    ALLOCATE( State_Met%SNOMAS( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%SNOMAS', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%SNOMAS = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'SNOMAS', State_Met%SNOMAS, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! SUNCOS [1]
+    !-------------------------
+    ALLOCATE( State_Met%SUNCOS( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%SUNCOS', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%SUNCOS = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'SUNCOS', State_Met%SUNCOS, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! SUNCOSmid [1]
+    !-------------------------
+    ALLOCATE( State_Met%SUNCOSmid( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%SUNCOSmid', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%SUNCOSmid = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'SUNCOSmid', State_Met%SUNCOSmid, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! SWGDN [W m-2]
+    !-------------------------
+    ALLOCATE( State_Met%SWGDN( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%SWGDN', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%SWGDN = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'SWGDN', State_Met%SWGDN, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! TO3 [dobsons]
+    !-------------------------
+    ALLOCATE( State_Met%TO3( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%TO3', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%TO3 = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'TO3', State_Met%TO3, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! TropLev [1]
+    !-------------------------
+    ALLOCATE( State_Met%TropLev( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%TropLev', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%TropLev = 0
+    CALL Register_MetField( Input_Opt, 'TROPLEV', State_Met%TropLev, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! TropHt [hPa]
+    !-------------------------
+    ALLOCATE( State_Met%TropHt( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%TropHt', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%TropHt = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'TROPHT', State_Met%TropHt, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! TROPP [hPa]
+    !-------------------------
+    ALLOCATE( State_Met%TROPP( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%TROPP', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%TROPP = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'TROPP', State_Met%TROPP, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! TS [K]
+    !-------------------------
+    ALLOCATE( State_Met%TS( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%TS', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%TS = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'TS', State_Met%TS, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! TSKIN [K]
+    !-------------------------
+    ALLOCATE( State_Met%TSKIN( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%TSKIN', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%TSKIN = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'TSKIN', State_Met%TSKIN, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! U10M [m s-1]
+    !-------------------------
+    ALLOCATE( State_Met%U10M( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%U10M', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%U10M = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'U10M', State_Met%U10M, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! USTAR [m -s]
+    !-------------------------
+    ALLOCATE( State_Met%USTAR( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%USTAR', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%USTAR = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'USTAR', State_Met%USTAR, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! UVALBEDO [1]
+    !-------------------------
+    ALLOCATE( State_Met%UVALBEDO( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%UVALBEDO', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%UVALBEDO = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'UVALBEDO', State_Met%UVALBEDO, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! V10M [m s-1]
+    !-------------------------
+    ALLOCATE( State_Met%V10M( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%V10M', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%V10M = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'V10M', State_Met%V10M, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! Z0 [m]
+    !-------------------------
+    ALLOCATE( State_Met%Z0( IM, JM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%Z0', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%Z0 = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'Z0', State_Met%Z0, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1234,42 +1267,42 @@ CONTAINS
     !-------------------------
     ALLOCATE( State_Met%AD( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%AD', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%AD = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'AD', State_Met%AD, &
+    CALL Register_MetField( Input_Opt, 'AD', State_Met%AD, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
     !-------------------------
     ! AIRDEN [kg m-3]
     !-------------------------
-    ALLOCATE( State_Met%AIRDEN( IM, JM, LM ), STAT=RC )  
+    ALLOCATE( State_Met%AIRDEN( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%AIRDEN', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%AIRDEN = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'AIRDEN', State_Met%AIRDEN, &
+    CALL Register_MetField( Input_Opt, 'AIRDEN', State_Met%AIRDEN, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
     !-------------------------
     ! MAIRDEN [kg m-3]
     !-------------------------
-    ALLOCATE( State_Met%MAIRDEN( IM, JM, LM   ), STAT=RC )  
+    ALLOCATE( State_Met%MAIRDEN( IM, JM, LM   ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%MAIRDEN', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%MAIRDEN = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'MAIRDEN', State_Met%MAIRDEN, &
+    CALL Register_MetField( Input_Opt, 'MAIRDEN', State_Met%MAIRDEN, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
     !-------------------------
     ! AIRNUMDEN [1]
-    !-------------------------        
+    !-------------------------
     ALLOCATE( State_Met%AIRNUMDEN( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%AIRNUMDEN', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%AIRNUMDEN = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'AIRNUMDEN', State_Met%AIRNUMDEN, &
+    CALL Register_MetField( Input_Opt, 'AIRNUMDEN', State_Met%AIRNUMDEN, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1278,9 +1311,9 @@ CONTAINS
     !-------------------------
     ALLOCATE( State_Met%AIRVOL( IM, JM, LM  ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%AIRVOL', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%AIRVOL = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'AIRVOL', State_Met%AIRVOL, &
+    CALL Register_MetField( Input_Opt, 'AIRVOL', State_Met%AIRVOL, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1291,7 +1324,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%AVGW', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%AVGW = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'AVGW', State_Met%AVGW, &
+    CALL Register_MetField( Input_Opt, 'AVGW', State_Met%AVGW, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1300,20 +1333,20 @@ CONTAINS
     !-------------------------
     ALLOCATE( State_Met%BXHEIGHT( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%BXHEIGHT', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%BXHEIGHT = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'BXHEIGHT', State_Met%BXHEIGHT, &
+    CALL Register_MetField( Input_Opt, 'BXHEIGHT', State_Met%BXHEIGHT, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
     !-------------------------
     ! CLDF [1]
-    !-------------------------                 
+    !-------------------------
     ALLOCATE( State_Met%CLDF( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%CLDF', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%CLDF = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'CLDF', State_Met%CLDF, &
+    CALL Register_MetField( Input_Opt, 'CLDF', State_Met%CLDF, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1322,20 +1355,20 @@ CONTAINS
     !-------------------------
     ALLOCATE( State_Met%CMFMC( IM, JM, LM+1 ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%CMFMC', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%CMFMC = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'CMFMC', State_Met%CMFMC, &
+    CALL Register_MetField( Input_Opt, 'CMFMC', State_Met%CMFMC, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
     !-------------------------
     ! DELP [hPa]
-    !-------------------------           
+    !-------------------------
     ALLOCATE( State_Met%DELP( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%DELP', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%DELP = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'DELP', State_Met%DELP, &
+    CALL Register_MetField( Input_Opt, 'DELP', State_Met%DELP, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1346,7 +1379,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%DELP_DRY', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%DELP_DRY = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'DELPDRY', State_Met%DELP_DRY, &
+    CALL Register_MetField( Input_Opt, 'DELPDRY', State_Met%DELP_DRY, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1357,7 +1390,30 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%DP_DRY_PREV', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%DP_DRY_PREV= 0.0_fp
-    CALL Register_MetField( am_I_Root, 'DPDRYPREV', State_Met%DP_DRY_PREV, &
+    CALL Register_MetField( Input_Opt, 'DPDRYPREV', State_Met%DP_DRY_PREV, &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! Fraction of PBL
+    !-------------------------
+    ALLOCATE( State_Met%F_OF_PBL( IM, JM, LM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%F_OF_PBL', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%F_OF_PBL = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'FOFPBL', State_Met%F_OF_PBL,       &
+                            State_Met, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+
+    !-------------------------
+    ! Fraction of box under PBL top
+    !-------------------------
+    ALLOCATE( State_Met%F_UNDER_PBLTOP( IM, JM, LM ), STAT=RC )
+    CALL GC_CheckVar( 'State_Met%F_UNDER_PBLTOP', 0, RC )
+    IF ( RC /= GC_SUCCESS ) RETURN
+    State_Met%F_UNDER_PBLTOP = 0.0_fp
+    CALL Register_MetField( Input_Opt, 'FUNDERPBLTOP',                     &
+                            State_Met%F_UNDER_PBLTOP,                      &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1368,7 +1424,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%SPHU_PREV', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%SPHU_PREV= 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SPHUPREV', State_Met%SPHU_PREV, &
+    CALL Register_MetField( Input_Opt, 'SPHUPREV', State_Met%SPHU_PREV, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1379,7 +1435,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%DQRCU', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%DQRCU = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'DQRCU', State_Met%DQRCU, &
+    CALL Register_MetField( Input_Opt, 'DQRCU', State_Met%DQRCU, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1390,7 +1446,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%DQRLSAN', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%DQRLSAN = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'DQRLSAN', State_Met%DQRLSAN, &
+    CALL Register_MetField( Input_Opt, 'DQRLSAN', State_Met%DQRLSAN, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1399,9 +1455,9 @@ CONTAINS
     !-------------------------
     ALLOCATE( State_Met%DTRAIN( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%DTRAIN', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%DTRAIN = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'DTRAIN', State_Met%DTRAIN, &
+    CALL Register_MetField( Input_Opt, 'DTRAIN', State_Met%DTRAIN, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1412,7 +1468,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%OMEGA', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%OMEGA = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'OMEGA', State_Met%OMEGA, &
+    CALL Register_MetField( Input_Opt, 'OMEGA', State_Met%OMEGA, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1421,20 +1477,20 @@ CONTAINS
     !-------------------------
     ALLOCATE( State_Met%OPTD( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%OPTD', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%OPTD = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'OPTD', State_Met%OPTD, &
+    CALL Register_MetField( Input_Opt, 'OPTD', State_Met%OPTD, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
-                            
+
     !-------------------------
     ! PEDGE [hPa]
     !-------------------------
     ALLOCATE( State_Met%PEDGE( IM, JM, LM+1 ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%PEDGE', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%PEDGE = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PEDGE', State_Met%PEDGE, &
+    CALL Register_MetField( Input_Opt, 'PEDGE', State_Met%PEDGE, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1443,9 +1499,9 @@ CONTAINS
     !-------------------------
     ALLOCATE( State_Met%PEDGE_DRY ( IM, JM, LM+1 ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%PEDGE_DRY', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%PEDGE_DRY = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PEDGEDRY', State_Met%PEDGE_DRY, &
+    CALL Register_MetField( Input_Opt, 'PEDGEDRY', State_Met%PEDGE_DRY, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1454,9 +1510,9 @@ CONTAINS
     !-------------------------
     ALLOCATE( State_Met%PMID( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%PMID', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%PMID = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PMID', State_Met%PMID, &
+    CALL Register_MetField( Input_Opt, 'PMID', State_Met%PMID, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1465,9 +1521,9 @@ CONTAINS
     !-------------------------
     ALLOCATE( State_Met%PMID_DRY( IM, JM, LM   ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%PMID_DRY', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%PMID_DRY = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PMIDDRY', State_Met%PMID_DRY, &
+    CALL Register_MetField( Input_Opt, 'PMIDDRY', State_Met%PMID_DRY, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1476,9 +1532,9 @@ CONTAINS
     !-------------------------
     ALLOCATE( State_Met%QI( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%QI', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%QI = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'QI', State_Met%QI, &
+    CALL Register_MetField( Input_Opt, 'QI', State_Met%QI, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1487,9 +1543,9 @@ CONTAINS
     !-------------------------
     ALLOCATE( State_Met%QL( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%QL', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%QL = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'QL', State_Met%QL, &
+    CALL Register_MetField( Input_Opt, 'QL', State_Met%QL, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1498,9 +1554,9 @@ CONTAINS
     !-------------------------
     ALLOCATE( State_Met%RH ( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%RH', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN                               
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%RH = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'RH', State_Met%RH, &
+    CALL Register_MetField( Input_Opt, 'RH', State_Met%RH, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1509,20 +1565,20 @@ CONTAINS
     !-------------------------
     ALLOCATE( State_Met%SPHU( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%SPHU', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%SPHU = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SPHU', State_Met%SPHU, &
+    CALL Register_MetField( Input_Opt, 'SPHU', State_Met%SPHU, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
     !-------------------------
     ! T [K]
-    !-------------------------                                               
+    !-------------------------
     ALLOCATE( State_Met%T( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%T', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%T = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'T', State_Met%T, &
+    CALL Register_MetField( Input_Opt, 'T', State_Met%T, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1531,9 +1587,9 @@ CONTAINS
     !-------------------------
     ALLOCATE( State_Met%THETA( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%THETA', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%THETA = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'THETA', State_Met%THETA, &
+    CALL Register_MetField( Input_Opt, 'THETA', State_Met%THETA, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1542,9 +1598,9 @@ CONTAINS
     !-------------------------
     ALLOCATE( State_Met%TV( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%TV', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%TV = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'TV', State_Met%TV, &
+    CALL Register_MetField( Input_Opt, 'TV', State_Met%TV, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1553,9 +1609,9 @@ CONTAINS
     !-------------------------
     ALLOCATE( State_Met%TAUCLI( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%TAUCLI', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN           
+    IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%TAUCLI = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'TAUCLI', State_Met%TAUCLI, &
+    CALL Register_MetField( Input_Opt, 'TAUCLI', State_Met%TAUCLI, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1566,7 +1622,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%TAUCLW', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%TAUCLW = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'TAUCLW', State_Met%TAUCLW, &
+    CALL Register_MetField( Input_Opt, 'TAUCLW', State_Met%TAUCLW, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1577,7 +1633,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%U', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%U = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'U', State_Met%U, &
+    CALL Register_MetField( Input_Opt, 'U', State_Met%U, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1588,12 +1644,12 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%V', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%V = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'V', State_Met%V, &
+    CALL Register_MetField( Input_Opt, 'V', State_Met%V, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
     ! Updraft vertical velocity is not yet a standard GEOS-FP
-    ! field. Only available to online model (ckeller, 3/4/16) 
+    ! field. Only available to online model (ckeller, 3/4/16)
 #if defined( ESMF_ ) || defined( MODEL_ )
     !-------------------------
     ! UPDVVEL [hPa s-1]
@@ -1602,14 +1658,14 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%UPDVVEL', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%UPDVVEL  = -999.0_fp
-    CALL Register_MetField( am_I_Root, 'UPDVVEL', State_Met%UPDVVEL, &
+    CALL Register_MetField( Input_Opt, 'UPDVVEL', State_Met%UPDVVEL, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 #endif
 
     ! Pick the proper vertical dimension
     LX = LM + 1           ! For fields that are on level edges
-    
+
     !-------------------------
     ! PFICU [kg m-2 s-1]
     !-------------------------
@@ -1617,7 +1673,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%PFICU', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%PFICU = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PFICU', State_Met%PFICU, &
+    CALL Register_MetField( Input_Opt, 'PFICU', State_Met%PFICU, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1628,7 +1684,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%PFILSAN', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%PFILSAN = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PFILSAN', State_Met%PFILSAN, &
+    CALL Register_MetField( Input_Opt, 'PFILSAN', State_Met%PFILSAN, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1639,7 +1695,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%PFLCU', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%PFLCU = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PFLCU', State_Met%PFLCU, &
+    CALL Register_MetField( Input_Opt, 'PFLCU', State_Met%PFLCU, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1650,7 +1706,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%PFLLSAN', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%PFLLSAN = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'PFLLSAN', State_Met%PFLLSAN, &
+    CALL Register_MetField( Input_Opt, 'PFLLSAN', State_Met%PFLLSAN, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1661,7 +1717,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%REEVAPCN', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%REEVAPCN = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'REEVAPCN', State_Met%REEVAPCN, &
+    CALL Register_MetField( Input_Opt, 'REEVAPCN', State_Met%REEVAPCN, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1672,7 +1728,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%REEVAPLS', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%REEVAPLS = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'REEVAPLS', State_Met%REEVAPLS, &
+    CALL Register_MetField( Input_Opt, 'REEVAPLS', State_Met%REEVAPLS, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1683,7 +1739,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%SPHU1', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%SPHU1 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SPHU1', State_Met%SPHU1, &
+    CALL Register_MetField( Input_Opt, 'SPHU1', State_Met%SPHU1, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1694,7 +1750,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%SPHU2', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%SPHU2 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'SPHU2', State_Met%SPHU2, &
+    CALL Register_MetField( Input_Opt, 'SPHU2', State_Met%SPHU2, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1705,7 +1761,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%TMPU1', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%TMPU1 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'TMPU1', State_Met%TMPU1, &
+    CALL Register_MetField( Input_Opt, 'TMPU1', State_Met%TMPU1, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1716,7 +1772,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%TMPU2', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%TMPU2 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'TMPU2', State_Met%TMPU2, &
+    CALL Register_MetField( Input_Opt, 'TMPU2', State_Met%TMPU2, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1727,10 +1783,10 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%AgeOfAir', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%AgeOfAir = 0
-    CALL Register_MetField( am_I_Root, 'AgeOfAir', State_Met%AgeOfAir, &
+    CALL Register_MetField( Input_Opt, 'AgeOfAir', State_Met%AgeOfAir, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
-    
+
     !=======================================================================
     ! Allocate land type and leaf area index fields for dry deposition
     !=======================================================================
@@ -1742,7 +1798,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%IREG', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%IREG = 0
-    CALL Register_MetField( am_I_Root, 'IREG', State_Met%IREG, &
+    CALL Register_MetField( Input_Opt, 'IREG', State_Met%IREG, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1753,7 +1809,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%ILAND', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%ILAND = 0
-    CALL Register_MetField( am_I_Root, 'ILAND', State_Met%ILAND, &
+    CALL Register_MetField( Input_Opt, 'ILAND', State_Met%ILAND, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1764,7 +1820,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%IUSE', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%IUSE = 0
-    CALL Register_MetField( am_I_Root, 'IUSE', State_Met%IUSE, &
+    CALL Register_MetField( Input_Opt, 'IUSE', State_Met%IUSE, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1775,7 +1831,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%XLAI', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%XLAI = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'XLAI', State_Met%XLAI, &
+    CALL Register_MetField( Input_Opt, 'XLAI', State_Met%XLAI, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1786,18 +1842,7 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%MODISLAI', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%MODISLAI = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'MODISLAI', State_Met%MODISLAI, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! XCHLR [mg m-3]
-    !-------------------------
-    ALLOCATE( State_Met%XCHLR( IM, JM, NSURFTYPE ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%XCHLR', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%XCHLR = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'XCHLR', State_Met%XCHLR, &
+    CALL Register_MetField( Input_Opt, 'MODISLAI', State_Met%MODISLAI, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
@@ -1808,77 +1853,43 @@ CONTAINS
     CALL GC_CheckVar( 'State_Met%XLAI2', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%XLAI2 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'XLAI2', State_Met%XLAI2, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! XCHLR2 [mg m-3]
-    !-------------------------
-    ALLOCATE( State_Met%XCHLR2( IM, JM, NSURFTYPE ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%XCHLR2', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%XCHLR2 = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'XCHLR2', State_Met%XCHLR2, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! MODISCHLR [mg m-3]
-    !-------------------------
-    ALLOCATE( State_Met%MODISCHLR( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%MODISCHLR', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%MODISCHLR = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'MODISCHLR', State_Met%MODISCHLR, &
+    CALL Register_MetField( Input_Opt, 'XLAI2', State_Met%XLAI2, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
     !-------------------------
     ! LANDTYPEFRAC [1]
-    !-------------------------    
-    ALLOCATE( State_Met%LANDTYPEFRAC( IM, JM, NSURFTYPE ), STAT=RC )        
+    !-------------------------
+    ALLOCATE( State_Met%LANDTYPEFRAC( IM, JM, NSURFTYPE ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%LANDTYPEFRAC', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%LANDTYPEFRAC = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'LANDTYPEFRAC', State_Met%LANDTYPEFRAC, &
+    CALL Register_MetField( Input_Opt, 'LANDTYPEFRAC', State_Met%LANDTYPEFRAC, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
 
     !-------------------------
     ! XLAI_NATIVE [1]
     !-------------------------
-    ALLOCATE( State_Met%XLAI_NATIVE( IM, JM, NSURFTYPE ), STAT=RC )        
+    ALLOCATE( State_Met%XLAI_NATIVE( IM, JM, NSURFTYPE ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%XLAI_NATIVE', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%XLAI_NATIVE  = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'XLAINATIVE', State_Met%XLAI_NATIVE, &
+    CALL Register_MetField( Input_Opt, 'XLAINATIVE', State_Met%XLAI_NATIVE, &
                             State_Met, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! XCHLR_NATIVE [1]
-    !-------------------------
-    ALLOCATE( State_Met%XCHLR_NATIVE( IM, JM, NSURFTYPE ), STAT=RC )        
-    CALL GC_CheckVar( 'State_Met%XCHLR_NATIVE', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%XCHLR_NATIVE = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'XCHLRNATIVE', State_Met%XCHLR_NATIVE, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
 
     !=======================================================================
     ! Allocate fields for querying which vertical regime a grid box is in
     ! or if a grid box is near local solar noontime.
-    ! 
+    !
     ! %%%%% NOTE: Do not register these query fields %%%%%
     !=======================================================================
 
     !-------------------------
     ! InChemGrid
     !-------------------------
-    ALLOCATE( State_Met%InChemGrid( IM, JM, LM ), STAT=RC )        
+    ALLOCATE( State_Met%InChemGrid( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%IsChemGrid', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%InChemGrid = .FALSE.
@@ -1886,7 +1897,7 @@ CONTAINS
     !-------------------------
     ! InPBL
     !-------------------------
-    ALLOCATE( State_Met%InPbl( IM, JM, LM ), STAT=RC )        
+    ALLOCATE( State_Met%InPbl( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%InPbl', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%InPbl = .FALSE.
@@ -1894,7 +1905,7 @@ CONTAINS
     !-------------------------
     ! InStratosphere
     !-------------------------
-    ALLOCATE( State_Met%InStratosphere( IM, JM, LM ), STAT=RC )        
+    ALLOCATE( State_Met%InStratosphere( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%InStratosphere', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%InStratosphere = .FALSE.
@@ -1902,7 +1913,7 @@ CONTAINS
     !-------------------------
     ! InStratMeso
     !-------------------------
-    ALLOCATE( State_Met%InStratMeso( IM, JM, LM ), STAT=RC )        
+    ALLOCATE( State_Met%InStratMeso( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%InStratMeso', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%InStratMeso = .FALSE.
@@ -1910,7 +1921,7 @@ CONTAINS
     !-------------------------
     ! InTroposphere
     !-------------------------
-    ALLOCATE( State_Met%InTroposphere( IM, JM, LM ), STAT=RC )        
+    ALLOCATE( State_Met%InTroposphere( IM, JM, LM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%InTropoSphere', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%InTroposphere = .FALSE.
@@ -1918,7 +1929,7 @@ CONTAINS
     !-------------------------
     ! IsLocalNoon
     !-------------------------
-    ALLOCATE( State_Met%IsLocalNoon( IM, JM ), STAT=RC )        
+    ALLOCATE( State_Met%IsLocalNoon( IM, JM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%IsLocalNoon', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%IsLocalNoon = .FALSE.
@@ -1926,46 +1937,39 @@ CONTAINS
     !-------------------------
     ! LocalSolarTime
     !-------------------------
-    ALLOCATE( State_Met%LocalSolarTime( IM, JM ), STAT=RC )        
+    ALLOCATE( State_Met%LocalSolarTime( IM, JM ), STAT=RC )
     CALL GC_CheckVar( 'State_Met%LocalSolarTime', 0, RC )
     IF ( RC /= GC_SUCCESS ) RETURN
     State_Met%LocalSolarTime = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'LOCALSOLARTIME',                     &
+    CALL Register_MetField( Input_Opt, 'LOCALSOLARTIME',                     &
                             State_Met%LocalSolarTime,                        &
                             State_Met, RC                             )
     IF ( RC /= GC_SUCCESS ) RETURN
 
-    !-----------------------------
-    ! Lightning density [#/km2/s]
-    !-----------------------------
-    ALLOCATE( State_Met%FLASH_DENS( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%FLASH_DENS', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%FLASH_DENS = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'FLASH_DENS', State_Met%FLASH_DENS, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
-    !-------------------------
-    ! Convective Depth [m]
-    !-------------------------
-    ALLOCATE( State_Met%CONV_DEPTH( IM, JM ), STAT=RC )
-    CALL GC_CheckVar( 'State_Met%CONV_DEPTH', 0, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-    State_Met%CONV_DEPTH = 0.0_fp
-    CALL Register_MetField( am_I_Root, 'CONV_DEPTH', State_Met%CONV_DEPTH, &
-                            State_Met, RC )
-    IF ( RC /= GC_SUCCESS ) RETURN
-
     !=======================================================================
+    ! Once we are done registering all fields, we need to define the
+    ! registry lookup table.  This algorithm will avoid hash collisions.
+    !=======================================================================
+    CALL Registry_Set_LookupTable( Registry  = State_Met%Registry,           &
+                                   RegDict   = State_Met%RegDict,            &
+                                   RC        = RC                           )
+
+    ! Trap potential errors
+    IF ( RC /= GC_SUCCESS ) THEN
+       ErrMsg = 'Error encountered in routine "Registry_Set_LookupTable"!'
+       CALL GC_Error( ErrMsg, RC, ThisLoc )
+       RETURN
+    ENDIF
+
+    !========================================================================
     ! Print information about the registered fields (short format)
-    !=======================================================================
-    IF ( am_I_Root ) THEN
+    !========================================================================
+    IF ( Input_Opt%amIRoot ) THEN
        WRITE( 6, 10 )
 10     FORMAT( /, 'Registered variables contained within the State_Met object:')
        WRITE( 6, '(a)' ) REPEAT( '=', 79 )
     ENDIF
-    CALL Registry_Print( am_I_Root   = am_I_Root,                            &
+    CALL Registry_Print( Input_Opt   = Input_Opt,                            &
                          Registry    = State_Met%Registry,                   &
                          ShortFormat = .TRUE.,                               &
                          RC          = RC                                   )
@@ -1986,21 +1990,17 @@ CONTAINS
 !
 ! !IROUTINE: Cleanup_State_Met
 !
-! !DESCRIPTION: Subroutine CLEANUP\_STATE\_MET deallocates all fields 
+! !DESCRIPTION: Subroutine CLEANUP\_STATE\_MET deallocates all fields
 !  of the meteorology state object.
 !\\
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE Cleanup_State_Met( am_I_Root, State_Met, RC )
+  SUBROUTINE Cleanup_State_Met( State_Met, RC )
 !
 ! !USES:
 !
     USE ErrCode_Mod
-!
-! !INPUT PARAMETERS:
-! 
-    LOGICAL,        INTENT(IN)    :: am_I_Root   ! Is this the root CPU?
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
@@ -2010,18 +2010,9 @@ CONTAINS
 !
     INTEGER,        INTENT(OUT)   :: RC          ! Return code
 !
-! !REVISION HISTORY: 
+! !REVISION HISTORY:
 !  19 Oct 2012 - R. Yantosca - Initial version, based on gc_environment_mod.F90
-!  23 Oct 2012 - R. Yantosca - Now deallocate QI, QL fields
-!  15 Nov 2012 - M. Payer    - Added all remaining met fields
-!  19 Nov 2012 - R. Yantosca - Segregate DEALLOCATE statements w/ #ifdefs
-!                              for each met field data product type
-!  27 Nov 2012 - R. Yantosca - Now deallocate the SUNCOS fields
-!  12 Dec 2012 - R. Yantosca - Now deallocate the IREG, ILAND, IUSE fields
-!  26 Sep 2013 - R. Yantosca - Renamed GEOS_57 Cpp switch to GEOS_FP
-!  22 Aug 2014 - R. Yantosca - Deallocate PBL_TOP_L field
-!  05 Nov 2018 - R. Yantosca - Now deallocate AND nullify all pointer fields
-!                              (except 3D fields for GCHP/GEOS/WRF interfaces)
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -2076,11 +2067,25 @@ CONTAINS
        State_Met%CLDTOPS => NULL()
     ENDIF
 
+    IF ( ASSOCIATED( State_Met%CONV_DEPTH ) ) THEN
+       DEALLOCATE( State_Met%CONV_DEPTH, STAT=RC  )
+       CALL GC_CheckVar( 'State_Met%CONV_DEPTH', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Met%CONV_DEPTH => NULL()
+    ENDIF
+
     IF ( ASSOCIATED( State_Met%EFLUX ) ) THEN
        DEALLOCATE( State_Met%EFLUX, STAT=RC )
        CALL GC_CheckVar( 'State_Met%EFLUX', 2, RC )
        IF ( RC /= GC_SUCCESS ) RETURN
        State_Met%EFLUX => NULL()
+    ENDIF
+
+    IF ( ASSOCIATED( State_Met%FLASH_DENS ) ) THEN
+       DEALLOCATE( State_Met%FLASH_DENS, STAT=RC  )
+       CALL GC_CheckVar( 'State_Met%FLASH_DENS', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Met%FLASH_DENS => NULL()
     ENDIF
 
     IF ( ASSOCIATED( State_Met%FRCLND ) ) THEN
@@ -2153,6 +2158,27 @@ CONTAINS
        State_Met%HFLUX => NULL()
     ENDIF
 
+    IF ( ASSOCIATED( State_Met%IsWater ) ) THEN
+       DEALLOCATE( State_Met%IsWater, STAT=RC )
+       CALL GC_CheckVar( 'State_Met%IsWater', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Met%IsWater => NULL()
+    ENDIF
+
+    IF ( ASSOCIATED( State_Met%IsLand ) ) THEN
+       DEALLOCATE( State_Met%IsLand, STAT=RC )
+       CALL GC_CheckVar( 'State_Met%IsLand', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Met%IsLand => NULL()
+    ENDIF
+
+    IF ( ASSOCIATED( State_Met%IsIce ) ) THEN
+       DEALLOCATE( State_Met%IsIce, STAT=RC )
+       CALL GC_CheckVar( 'State_Met%IsIce', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Met%IsIce => NULL()
+    ENDIF
+
     IF ( ASSOCIATED( State_Met%LAI ) ) THEN
        DEALLOCATE( State_Met%LAI, STAT=RC )
        CALL GC_CheckVar( 'State_Met%LAI', 2, RC )
@@ -2188,11 +2214,32 @@ CONTAINS
        State_Met%PBLH => NULL()
     ENDIF
 
+    IF ( ASSOCIATED( State_Met%PBL_TOP_hPa ) ) THEN
+       DEALLOCATE( State_Met%PBL_TOP_hPa, STAT=RC  )
+       CALL GC_CheckVar( 'State_Met%PBL_TOP_hPa', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Met%PBL_TOP_hPa => NULL()
+    ENDIF
+
     IF ( ASSOCIATED( State_Met%PBL_TOP_L ) ) THEN
        DEALLOCATE( State_Met%PBL_TOP_L, STAT=RC  )
        CALL GC_CheckVar( 'State_Met%PBL_TOP_L', 2, RC )
        IF ( RC /= GC_SUCCESS ) RETURN
        State_Met%PBL_TOP_L => NULL()
+    ENDIF
+
+    IF ( ASSOCIATED( State_Met%PBL_TOP_m ) ) THEN
+       DEALLOCATE( State_Met%PBL_TOP_m, STAT=RC  )
+       CALL GC_CheckVar( 'State_Met%PBL_TOP_m', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Met%PBL_TOP_m => NULL()
+    ENDIF
+
+    IF ( ASSOCIATED( State_Met%PBL_THICK ) ) THEN
+       DEALLOCATE( State_Met%PBL_THICK, STAT=RC  )
+       CALL GC_CheckVar( 'State_Met%PBL_THICK', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Met%PBL_THICK => NULL()
     ENDIF
 
     IF ( ASSOCIATED( State_Met%PHIS ) ) THEN
@@ -2482,25 +2529,11 @@ CONTAINS
        State_Met%IREG => NULL()
     ENDIF
 
-    IF ( ASSOCIATED( State_Met%FLASH_DENS ) ) THEN
-       DEALLOCATE( State_Met%FLASH_DENS, STAT=RC  )
-       CALL GC_CheckVar( 'State_Met%FLASH_DENS', 2, RC )
-       IF ( RC /= GC_SUCCESS ) RETURN
-       State_Met%FLASH_DENS => NULL()
-    ENDIF
-
-    IF ( ASSOCIATED( State_Met%CONV_DEPTH ) ) THEN
-       DEALLOCATE( State_Met%CONV_DEPTH, STAT=RC  )
-       CALL GC_CheckVar( 'State_Met%CONV_DEPTH', 2, RC )
-       IF ( RC /= GC_SUCCESS ) RETURN
-       State_Met%CONV_DEPTH => NULL()
-    ENDIF
-
     !========================================================================
     ! Deallocate 3-D fields
     !
-    ! NOTE: If using GEOS-Chem as GCHP, or coupled to GMAO/GEOS, then just 
-    ! nullify the fields without deallocating.  This will prevent abnormal 
+    ! NOTE: If using GEOS-Chem as GCHP, or coupled to GMAO/GEOS, then just
+    ! nullify the fields without deallocating.  This will prevent abnormal
     ! exits in MAPL.  This is probably due to the fact that the State_Met
     ! fields point to ESMF/MAPL Imports, and cannot be deallocated
     ! before the Import itself is finalized.
@@ -2540,17 +2573,6 @@ CONTAINS
        CALL GC_CheckVar( 'State_Met%MODISLAI', 2, RC )
        IF ( RC /= GC_SUCCESS ) RETURN
        State_Met%MODISLAI => NULL()
-#endif
-    ENDIF
-
-    IF ( ASSOCIATED( State_Met%MODISCHLR ) ) THEN
-#if defined( ESMF_ ) || defined( MODEL_WRF )
-       State_Met%MODISCHLR => NULL()
-#else
-       DEALLOCATE( State_Met%MODISCHLR, STAT=RC  )
-       CALL GC_CheckVar( 'State_Met%MODISCHLR', 2, RC )
-       IF ( RC /= GC_SUCCESS ) RETURN
-       State_Met%MODISCHLR => NULL()
 #endif
     ENDIF
 
@@ -2697,6 +2719,28 @@ CONTAINS
        CALL GC_CheckVar( 'State_Met%DTRAIN', 2, RC )
        IF ( RC /= GC_SUCCESS ) RETURN
        State_Met%DTRAIN => NULL()
+#endif
+    ENDIF
+
+    IF ( ASSOCIATED( State_Met%F_OF_PBL ) ) THEN
+#if defined( ESMF_ ) || defined( MODEL_WRF )
+       State_Met%F_OF_PBL => NULL()
+#else
+       DEALLOCATE( State_Met%F_OF_PBL, STAT=RC  )
+       CALL GC_CheckVar( 'State_Met%F_OF_PBL', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Met%F_OF_PBL => NULL()
+#endif
+    ENDIF
+
+    IF ( ASSOCIATED( State_Met%F_UNDER_PBLTOP ) ) THEN
+#if defined( ESMF_ ) || defined( MODEL_WRF )
+       State_Met%F_UNDER_PBLTOP => NULL()
+#else
+       DEALLOCATE( State_Met%F_UNDER_PBLTOP, STAT=RC  )
+       CALL GC_CheckVar( 'State_Met%F_UNDER_PBLTOP', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Met%F_UNDER_PBLTOP => NULL()
 #endif
     ENDIF
 
@@ -3008,17 +3052,6 @@ CONTAINS
 #endif
     ENDIF
 
-    IF ( ASSOCIATED( State_Met%XCHLR ) ) THEN
-#if defined( ESMF_ ) || defined( MODEL_WRF )
-       State_Met%XCHLR => NULL()
-#else
-       DEALLOCATE( State_Met%XCHLR, STAT=RC  )
-       CALL GC_CheckVar( 'State_Met%XCHLR', 2, RC )
-       IF ( RC /= GC_SUCCESS ) RETURN
-       State_Met%XCHLR => NULL()
-#endif
-    ENDIF
-
     IF ( ASSOCIATED( State_Met%XLAI2 ) ) THEN
 #if defined( ESMF_ ) || defined( MODEL_WRF )
        State_Met%XLAI2 => NULL()
@@ -3027,17 +3060,6 @@ CONTAINS
        CALL GC_CheckVar( 'State_Met%XLAI2', 2, RC )
        IF ( RC /= GC_SUCCESS ) RETURN
        State_Met%XLAI2 => NULL()
-#endif
-    ENDIF
-
-    IF ( ASSOCIATED( State_Met%XCHLR2 ) ) THEN
-#if defined( ESMF_ ) || defined( MODEL_WRF )
-       State_Met%XCHLR2 => NULL()
-#else
-       DEALLOCATE( State_Met%XCHLR2, STAT=RC  )
-       CALL GC_CheckVar( 'State_Met%XCHLR2', 2, RC )
-       IF ( RC /= GC_SUCCESS ) RETURN
-       State_Met%XCHLR2 => NULL()
 #endif
     ENDIF
 
@@ -3052,17 +3074,6 @@ CONTAINS
 #endif
     ENDIF
 
-    IF ( ASSOCIATED( State_Met%XCHLR_NATIVE ) ) THEN
-#if defined( ESMF_ ) || defined( MODEL_WRF )
-       State_Met%XCHLR_NATIVE => NULL()
-#else
-       DEALLOCATE( State_Met%XCHLR_NATIVE, STAT=RC  )
-       CALL GC_CheckVar( 'State_Met%XCHLR_NATIVE', 2, RC )
-       IF ( RC /= GC_SUCCESS ) RETURN
-       State_Met%XCHLR_NATIVE => NULL()
-#endif
-    ENDIF
-
     IF ( ASSOCIATED( State_Met%AgeOfAir ) ) THEN
 #if defined( ESMF_ ) || defined( MODEL_WRF )
        State_Met%AgeOfAir => NULL()
@@ -3073,7 +3084,7 @@ CONTAINS
        State_Met%AgeOfAir => NULL()
 #endif
     ENDIF
-    
+
     !=======================================================================
     ! Fields for querying which vertical regime a grid box is in
     ! or if it is near local solar noon at a grid box
@@ -3119,7 +3130,7 @@ CONTAINS
        IF ( RC /= GC_SUCCESS ) RETURN
        State_Met%IsLocalNoon => NULL()
     ENDIF
- 
+
     IF ( ASSOCIATED( State_Met%LocalSolarTime ) ) THEN
        DEALLOCATE( State_Met%LocalSolarTime, STAT=RC )
        CALL GC_CheckVar( 'State_Met%LocalSolarTime', 2, RC )
@@ -3140,7 +3151,7 @@ CONTAINS
     !=======================================================================
     ! Destroy the registry of fields for this module
     !=======================================================================
-    CALL Registry_Destroy( am_I_Root, State_Met%Registry, RC )
+    CALL Registry_Destroy( State_Met%Registry, State_Met%RegDict, RC )
     IF ( RC /= GC_SUCCESS ) THEN
        ErrMsg = 'Could not destroy registry object State_Met%Registry!'
        CALL GC_Error( ErrMsg, RC, ThisLoc )
@@ -3159,7 +3170,7 @@ CONTAINS
 !
 ! !IROUTINE: Get_Metadata_State_Met
 !
-! !DESCRIPTION: Subroutine GET\_METDATA\_STATE\_MET retrieves basic 
+! !DESCRIPTION: Subroutine GET\_METDATA\_STATE\_MET retrieves basic
 !  information about each State\_Met field.
 !\\
 !\\
@@ -3175,8 +3186,8 @@ CONTAINS
     USE Registry_Params_Mod
 !
 ! !INPUT PARAMETERS:
-! 
-    LOGICAL,             INTENT(IN)  :: am_I_Root  ! Is this the root CPU?
+!
+    LOGICAL,             INTENT(IN)  :: am_I_Root
     CHARACTER(LEN=*),    INTENT(IN)  :: metadataID ! State_Met field ID
 !
 ! !OUTPUT PARAMETERS:
@@ -3189,11 +3200,9 @@ CONTAINS
     INTEGER,             OPTIONAL    :: Type       ! Desc of data type
     INTEGER,             OPTIONAL    :: VLoc       ! Vertical placement
 !
-! !REMARKS:
-!
-! !REVISION HISTORY: 
+! !REVISION HISTORY:
 !  28 Aug 2017 - E. Lundgren - Initial version
-!  01 Nov 2017 - R. Yantosca - Now get To_UpperCase from charpak_mod.F90
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -3219,12 +3228,12 @@ CONTAINS
     isType  = PRESENT( Type  )
     isVLoc  = PRESENT( VLoc  )
 
-    ! Set defaults for optional arguments. Assume type and vertical 
-    ! location are real (flexible precision) and center unless specified 
+    ! Set defaults for optional arguments. Assume type and vertical
+    ! location are real (flexible precision) and center unless specified
     ! otherwise
     IF ( isUnits ) Units = ''
-    IF ( isDesc  ) Desc  = ''              
-    IF ( isRank  ) Rank  = -1              ! initialize as bad value 
+    IF ( isDesc  ) Desc  = ''
+    IF ( isRank  ) Rank  = -1              ! initialize as bad value
     IF ( isType  ) Type  = KINDVAL_FP      ! Assume real with flex precision
     IF ( isVLoc  ) VLoc  = VLocationNone   ! Assume no vertical location
 
@@ -3236,6 +3245,9 @@ CONTAINS
     !=======================================================================
     SELECT CASE ( TRIM( Name_AllCaps) )
 
+       !--------------------------------------------------------------------
+       ! 2-D Fields
+       !--------------------------------------------------------------------
        CASE ( 'ALBD' )
           IF ( isDesc  ) Desc  = 'Visible surface albedo'
           IF ( isUnits ) Units = '1'
@@ -3262,18 +3274,28 @@ CONTAINS
           IF ( isRank  ) Rank  = 2
           IF ( isType  ) Type  = KINDVAL_I4
 
+#if defined( ESMF_ ) || defined( MODEL_ )
+       CASE ( 'CNVFRC' )
+          IF ( isDesc  ) Desc  = 'Convective fraction'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 2
+
+#endif
+
+       CASE ( 'CONVDEPTH' )
+          IF ( isDesc  ) Desc  = 'Convective cloud depth'
+          IF ( isUnits ) Units = 'm'
+          IF ( isRank  ) Rank  = 2
+
        CASE ( 'EFLUX' )
           IF ( isDesc  ) Desc  = 'Latent heat flux'
           IF ( isUnits ) Units = 'W m-2'
           IF ( isRank  ) Rank  = 2
 
-!------------------------------------------------------------------------------
-! Comment out for now. State_Met%EVAP is not used in the code. (mps, 9/14/17)
-!       CASE ( 'EVAP' )
-!          IF ( isDesc  ) Desc  = 'Surface evaporation'
-!          IF ( isUnits ) Units = 'kg m-2 s-1'
-!          IF ( isRank  ) Rank  = 2
-!------------------------------------------------------------------------------
+       CASE ( 'FLASHDENS' )
+          IF ( isDesc  ) Desc  = 'Lightning flash density'
+          IF ( isUnits ) Units = 'km-2 s-1'
+          IF ( isRank  ) Rank  = 2
 
        CASE ( 'FRCLND' )
           IF ( isDesc  ) Desc  = 'Olson land fraction'
@@ -3296,17 +3318,19 @@ CONTAINS
           IF ( isRank  ) Rank  = 2
 
        CASE ( 'FROCEAN' )
-          IF ( isUnits ) Units = '1'   
+          IF ( isUnits ) Units = '1'
           IF ( isDesc  ) Desc  = 'Fraction of ocean'
           IF ( isRank  ) Rank  = 2
 
-!------------------------------------------------------------------------------
-! Comment out for now. State_Met%EVAP is not used in the code. (mps, 9/14/17)
-!       CASE ( 'GRN' )
-!          IF ( isDesc  ) Desc  = 'Greenness fraction'
-!          IF ( isUnits ) Units = '1'
-!          IF ( isRank  ) Rank  = 2
-!------------------------------------------------------------------------------
+       CASE ( 'FRSEAICE' )
+          IF ( isDesc  ) Desc  = 'Fraction of sea ice'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 2
+
+       CASE ( 'FRSNO' )
+          IF ( isDesc  ) Desc  = 'Fraction of snow on surface'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 2
 
        CASE ( 'GWETROOT' )
           IF ( isDesc  ) Desc  = 'Root soil wetness'
@@ -3348,34 +3372,50 @@ CONTAINS
           IF ( isUnits ) Units = 'm'
           IF ( isRank  ) Rank  = 2
 
+       CASE ( 'PBLTOPHPA' )
+          IF ( isDesc  ) Desc  = 'Planetary boundary layer top'
+          IF ( isUnits ) Units = 'hPa'
+          IF ( isRank  ) Rank  = 2
+
        CASE ( 'PBLTOPL' )
-          IF ( isDesc  ) Desc  = 'Model layer of the planetary boundary ' // &
-                                 'layer top occurs'
+          IF ( isDesc  ) Desc  = 'Planetary boundary layer top'
           IF ( isUnits ) Units = 'layer'
           IF ( isRank  ) Rank  = 2
           IF ( isType  ) Type  = KINDVAL_I4
+
+       CASE ( 'PBLTOPM' )
+          IF ( isDesc  ) Desc  = 'Planetary boundary layer top'
+          IF ( isUnits ) Units = 'm'
+          IF ( isRank  ) Rank  = 2
+
+       CASE ( 'PBLTHICK' )
+          IF ( isDesc  ) Desc  = 'Planetary boundary layer thickness'
+          IF ( isUnits ) Units = 'hPa'
+          IF ( isRank  ) Rank  = 2
 
        CASE ( 'PHIS' )
           IF ( isDesc  ) Desc  = 'Surface geopotential height'
           IF ( isUnits ) Units = 'm2 s-1'
           IF ( isRank  ) Rank  = 2
 
-       CASE ( 'PRECCON' )
-          IF ( isDesc  ) Desc  = 'Convective precipitation at the ground'
+       CASE ( 'PRECANV' )
+          IF ( isDesc  ) Desc  = 'Anvil precipitation at the ground'
           IF ( isUnits ) Units = 'kg m-2 s-1'
           IF ( isRank  ) Rank  = 2
 
-!------------------------------------------------------------------------------
-! Comment out for now. State_Met%EVAP is not used in the code. (mps, 9/14/17)
-!       CASE ( 'PRECSNO' )
-!          IF ( isDesc  ) Desc  = 'Snow precipitation'
-!          IF ( isUnits ) Units = 'kg m-2 s-1'
-!          IF ( isRank  ) Rank  = 2
-!------------------------------------------------------------------------------
+       CASE ( 'PRECCON' )
+          IF ( isDesc  ) Desc  = 'Convective precipitation at the ground'
+          IF ( isUnits ) Units = 'mm day-1'
+          IF ( isRank  ) Rank  = 2
+
+       CASE ( 'PRECLSC' )
+          IF ( isDesc  ) Desc  = 'Large-scale precipitation at the ground'
+          IF ( isUnits ) Units = 'kg m-2 s-1'
+          IF ( isRank  ) Rank  = 2
 
        CASE ( 'PRECTOT' )
           IF ( isDesc  ) Desc  = 'Total precipitation at the ground'
-          IF ( isUnits ) Units = 'kg m-2 s-1'
+          IF ( isUnits ) Units = 'mm day-1'
           IF ( isRank  ) Rank  = 2
 
        CASE ( 'PS1WET' )
@@ -3408,14 +3448,56 @@ CONTAINS
           IF ( isUnits ) Units = 'hPa'
           IF ( isRank  ) Rank  = 2
 
-!------------------------------------------------------------------------------
-! Comment out for now. State_Met%EVAP is not used in the code. (mps, 9/14/17)
-!       CASE ( 'RADLWG' )
-!          IF ( isDesc  ) Desc  = 'Net longwave radiation at ground'
-!          IF ( isUnits ) Units = 'W m-2'
-!          IF ( isRank  ) Rank  = 2
-!------------------------------------------------------------------------------
- 
+       CASE ( 'SEAICE00' )
+          IF ( isDesc  ) Desc  = 'Sea ice coverage 00-10%'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 2
+
+       CASE ( 'SEAICE10' )
+          IF ( isDesc  ) Desc  = 'Sea ice coverage 10-20%'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 2
+
+       CASE ( 'SEAICE20' )
+          IF ( isDesc  ) Desc  = 'Sea ice coverage 20-30%'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 2
+
+       CASE ( 'SEAICE30' )
+          IF ( isDesc  ) Desc  = 'Sea ice coverage 30-40%'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 2
+
+       CASE ( 'SEAICE40' )
+          IF ( isDesc  ) Desc  = 'Sea ice coverage 40-50%'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 2
+
+       CASE ( 'SEAICE50' )
+          IF ( isDesc  ) Desc  = 'Sea ice coverage 50-60%'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 2
+
+       CASE ( 'SEAICE60' )
+          IF ( isDesc  ) Desc  = 'Sea ice coverage 60-70%'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 2
+
+       CASE ( 'SEAICE70' )
+          IF ( isDesc  ) Desc  = 'Sea ice coverage 70-80%'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 2
+
+       CASE ( 'SEAICE80' )
+          IF ( isDesc  ) Desc  = 'Sea ice coverage 80-90%'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 2
+
+       CASE ( 'SEAICE90' )
+          IF ( isDesc  ) Desc  = 'Sea ice coverage 90-100%'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 2
+
        CASE ( 'SLP' )
           IF ( isDesc  ) Desc  = 'Sea level pressure'
           IF ( isUnits ) Units = 'hPa'
@@ -3507,98 +3589,14 @@ CONTAINS
           IF ( isUnits ) Units = 'm'
           IF ( isRank  ) Rank  = 2
 
-#if defined( ESMF_ ) || defined( MODEL_ )
-       CASE ( 'CNVFRC' )
-          IF ( isDesc  ) Desc  = 'Convective fraction'
-          IF ( isUnits ) Units = '1'
-          IF ( isRank  ) Rank  = 2
-
-#endif
-       CASE ( 'FRSEAICE' )
-          IF ( isDesc  ) Desc  = 'Fraction of sea ice'
-          IF ( isUnits ) Units = '1'
-          IF ( isRank  ) Rank  = 2
-
-       CASE ( 'FRSNO' )
-          IF ( isDesc  ) Desc  = 'Fraction of snow on surface'
-          IF ( isUnits ) Units = '1'
-          IF ( isRank  ) Rank  = 2
-
-       CASE ( 'PRECANV' )
-          IF ( isDesc  ) Desc  = 'Anvil precipitation at the ground'
-          IF ( isUnits ) Units = 'kg m-2 s-1'
-          IF ( isRank  ) Rank  = 2
-
-       CASE ( 'PRECLSC' )
-          IF ( isDesc  ) Desc  = 'Large-scale precipitation at the ground'
-          IF ( isUnits ) Units = 'kg m-2 s-1'
-          IF ( isRank  ) Rank  = 2
-
-       CASE ( 'SEAICE00' )
-          IF ( isDesc  ) Desc  = 'Sea ice coverage 00-10%'
-          IF ( isUnits ) Units = '1'
-          IF ( isRank  ) Rank  = 2
-
-       CASE ( 'SEAICE10' )
-          IF ( isDesc  ) Desc  = 'Sea ice coverage 10-20%'
-          IF ( isUnits ) Units = '1'
-          IF ( isRank  ) Rank  = 2
-
-       CASE ( 'SEAICE20' )
-          IF ( isDesc  ) Desc  = 'Sea ice coverage 20-30%'
-          IF ( isUnits ) Units = '1'
-          IF ( isRank  ) Rank  = 2
-
-       CASE ( 'SEAICE30' )
-          IF ( isDesc  ) Desc  = 'Sea ice coverage 30-40%'
-          IF ( isUnits ) Units = '1'
-          IF ( isRank  ) Rank  = 2
-
-       CASE ( 'SEAICE40' )
-          IF ( isDesc  ) Desc  = 'Sea ice coverage 40-50%'
-          IF ( isUnits ) Units = '1'
-          IF ( isRank  ) Rank  = 2
-
-       CASE ( 'SEAICE50' )
-          IF ( isDesc  ) Desc  = 'Sea ice coverage 50-60%'
-          IF ( isUnits ) Units = '1'
-          IF ( isRank  ) Rank  = 2
-
-       CASE ( 'SEAICE60' )
-          IF ( isDesc  ) Desc  = 'Sea ice coverage 60-70%'
-          IF ( isUnits ) Units = '1'
-          IF ( isRank  ) Rank  = 2
-
-       CASE ( 'SEAICE70' )
-          IF ( isDesc  ) Desc  = 'Sea ice coverage 70-80%'
-          IF ( isUnits ) Units = '1'
-          IF ( isRank  ) Rank  = 2
-
-       CASE ( 'SEAICE80' )
-          IF ( isDesc  ) Desc  = 'Sea ice coverage 80-90%'
-          IF ( isUnits ) Units = '1'
-          IF ( isRank  ) Rank  = 2
-
-       CASE ( 'SEAICE90' )
-          IF ( isDesc  ) Desc  = 'Sea ice coverage 90-100%'
-          IF ( isUnits ) Units = '1'
-          IF ( isRank  ) Rank  = 2
-
        CASE ( 'LOCALSOLARTIME' )
           IF ( isDesc  ) Desc  = 'Local solar time'
           IF ( isUnits ) Units = 'hours'
           IF ( isRank  ) Rank  = 2
 
-       CASE ( 'FLASH_DENS' )
-          IF ( isDesc  ) Desc  = 'Lightning flash density'
-          IF ( isUnits ) Units = 'km-2 s-1'
-          IF ( isRank  ) Rank  = 2
-
-       CASE ( 'CONV_DEPTH' )
-          IF ( isDesc  ) Desc  = 'Convective cloud depth'
-          IF ( isUnits ) Units = 'm'
-          IF ( isRank  ) Rank  = 2
-
+       !--------------------------------------------------------------------
+       ! 3-D Fields
+       !--------------------------------------------------------------------
        CASE ( 'AD' )
           IF ( isDesc  ) Desc  = 'Dry air mass'
           IF ( isUnits ) Units = 'kg'
@@ -3697,6 +3695,16 @@ CONTAINS
           IF ( isRank  ) Rank  = 3
           IF ( isVLoc  ) VLoc  = VLocationCenter
 
+       CASE ( 'FOFPBL' )
+          IF ( isDesc  ) Desc  = 'Fraction of PBL'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 3
+
+       CASE ( 'FUNDERPBLTOP' )
+          IF ( isDesc  ) Desc  = 'Fraction of box under PBL top'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 3
+
        CASE ( 'OMEGA' )
           IF ( isDesc  ) Desc  = 'Updraft velocity'
           IF ( isUnits ) Units = 'Pa s-1'
@@ -3721,6 +3729,34 @@ CONTAINS
           IF ( isRank  ) Rank  = 3
           IF ( isVLoc  ) VLoc  = VLocationEdge
 
+       CASE ( 'PFICU' )
+          IF ( isDesc  ) Desc  = 'Downward flux of ice precipitation ' // &
+                                 '(convective)'
+          IF ( isUnits ) Units = 'kg m-2 s-1'
+          IF ( isRank  ) Rank  = 3
+          IF ( isVLoc  ) VLoc  = VLocationEdge
+
+       CASE ( 'PFILSAN' )
+          IF ( isDesc  ) Desc  = 'Downwared flux of ice precipitation ' // &
+                                 '(large-scale + anvil)'
+          IF ( isRank  ) Rank  = 3
+          IF ( isUnits ) Units = 'kg m-2 s-1'
+          IF ( isVLoc  ) VLoc  = VLocationEdge
+
+       CASE ( 'PFLCU' )
+          IF ( isDesc  ) Desc  = 'Downward flux of liquid precipitation ' // &
+                                 '(convective)'
+          IF ( isUnits ) Units = 'kg m-2 s-1'
+          IF ( isRank  ) Rank  = 3
+          IF ( isVLoc  ) VLoc  = VLocationEdge
+
+       CASE ( 'PFLLSAN' )
+          IF ( isDesc  ) Desc  = 'Downward flux of liquid precipitation ' // &
+                                 '(large-scale + anvil)'
+          IF ( isUnits ) Units = 'kg m-2 s-1'
+          IF ( isRank  ) Rank  = 3
+          IF ( isVLoc  ) VLoc  = VLocationEdge
+
        CASE ( 'PMID' )
           IF ( isDesc  ) Desc  = 'Pressure (w/r/t moist air) at level centers'
           IF ( isUnits ) Units = 'hPa'
@@ -3732,15 +3768,6 @@ CONTAINS
           IF ( isUnits ) Units = 'hPa'
           IF ( isRank  ) Rank  = 3
           IF ( isVLoc  ) VLoc  = VLocationCenter
-
-!------------------------------------------------------------------------------
-! Comment out for now. State_Met%EVAP is not used in the code. (mps, 9/14/17)
-!       CASE ( 'PV' )
-!          IF ( isDesc  ) Desc  = 'Ertel potential vorticity'
-!          IF ( isUnits ) Units = 'kg m2 kg-1 s-1'
-!          IF ( isRank  ) Rank  = 3
-!          IF ( isVLoc  ) VLoc  = VLocationCenter
-!------------------------------------------------------------------------------
 
        CASE ( 'QI' )
           IF ( isDesc  ) Desc  = 'Ice mixing ratio (w/r/t dry air)'
@@ -3754,6 +3781,20 @@ CONTAINS
           IF ( isRank  ) Rank  = 3
           IF ( isVLoc  ) VLoc  = VLocationCenter
 
+       CASE ( 'REEVAPCN' )
+          IF ( isDesc  ) Desc  = 'Evaporation of convective ' // &
+                                 'precipitation (w/r/t dry air)'
+          IF ( isUnits ) Units = 'kg kg-1 s-1'
+          IF ( isRank  ) Rank  = 3
+          IF ( isVLoc  ) VLoc  = VLocationCenter
+
+       CASE ( 'REEVAPLS' )
+          IF ( isDesc  ) Desc  = 'Evaporation of large-scale + anvil ' // &
+                                 'precipitation (w/r/t dry air)'
+          IF ( isUnits ) Units = 'kg '
+          IF ( isRank  ) Rank  = 3
+          IF ( isVLoc  ) VLoc  = VLocationCenter
+
        CASE ( 'RH' )
           IF ( isDesc  ) Desc  = 'Relative humidity'
           IF ( isUnits ) Units = '%'
@@ -3762,6 +3803,18 @@ CONTAINS
 
        CASE ( 'SPHU' )
           IF ( isDesc  ) Desc  = 'Specific humidity (w/r/t moist air)'
+          IF ( isUnits ) Units = 'g kg-1'
+          IF ( isRank  ) Rank  = 3
+          IF ( isVLoc  ) VLoc  = VLocationCenter
+
+       CASE ( 'SPHU1' )
+          IF ( isDesc  ) Desc  = 'Instantaneous specific humidity at time=T'
+          IF ( isUnits ) Units = 'g kg-1'
+          IF ( isRank  ) Rank  = 3
+          IF ( isVLoc  ) VLoc  = VLocationCenter
+
+       CASE ( 'SPHU2' )
+          IF ( isDesc  ) Desc  = 'Instantaneous specific humidity at time=T+dt'
           IF ( isUnits ) Units = 'g kg-1'
           IF ( isRank  ) Rank  = 3
           IF ( isVLoc  ) VLoc  = VLocationCenter
@@ -3796,78 +3849,6 @@ CONTAINS
           IF ( isRank  ) Rank  = 3
           IF ( isVLoc  ) VLoc  = VLocationCenter
 
-       CASE ( 'U' )
-          IF ( isDesc  ) Desc  = 'East-west component of wind'
-          IF ( isUnits ) Units = 'm s-1'
-          IF ( isRank  ) Rank  = 3
-          IF ( isVLoc  ) VLoc  = VLocationCenter
-
-       CASE ( 'V' )
-          IF ( isDesc  ) Desc  = 'North-south component of wind'
-          IF ( isUnits ) Units = 'm s-1'
-          IF ( isRank  ) Rank  = 3
-          IF ( isVLoc  ) VLoc  = VLocationCenter
-
-       CASE ( 'UPDVVEL' )
-          IF ( isDesc  ) Desc  = 'Updraft vertical velocity'
-          IF ( isUnits ) Units = 'hPa s-1'
-          IF ( isRank  ) Rank  = 3
-          IF ( isVLoc  ) VLoc  = VLocationCenter
-
-       CASE ( 'PFICU' )
-          IF ( isDesc  ) Desc  = 'Downward flux of ice precipitation ' // &
-                                 '(convective)'
-          IF ( isUnits ) Units = 'kg m-2 s-1'
-          IF ( isRank  ) Rank  = 3
-          IF ( isVLoc  ) VLoc  = VLocationEdge
-
-       CASE ( 'PFILSAN' )
-          IF ( isDesc  ) Desc  = 'Downwared flux of ice precipitation ' // &
-                                 '(large-scale + anvil)'
-          IF ( isRank  ) Rank  = 3
-          IF ( isUnits ) Units = 'kg m-2 s-1'
-          IF ( isVLoc  ) VLoc  = VLocationEdge
-
-       CASE ( 'PFLCU' )
-          IF ( isDesc  ) Desc  = 'Downward flux of liquid precipitation ' // &
-                                 '(convective)'
-          IF ( isUnits ) Units = 'kg m-2 s-1'
-          IF ( isRank  ) Rank  = 3
-          IF ( isVLoc  ) VLoc  = VLocationEdge
-
-       CASE ( 'PFLLSAN' )
-          IF ( isDesc  ) Desc  = 'Downward flux of liquid precipitation ' // &
-                                 '(large-scale + anvil)'
-          IF ( isUnits ) Units = 'kg m-2 s-1'
-          IF ( isRank  ) Rank  = 3
-          IF ( isVLoc  ) VLoc  = VLocationEdge
-
-       CASE ( 'REEVAPCN' )
-          IF ( isDesc  ) Desc  = 'Evaporation of convective ' // &
-                                 'precipitation (w/r/t dry air)'
-          IF ( isUnits ) Units = 'kg kg-1 s-1'
-          IF ( isRank  ) Rank  = 3
-          IF ( isVLoc  ) VLoc  = VLocationCenter
-
-       CASE ( 'REEVAPLS' )
-          IF ( isDesc  ) Desc  = 'Evaporation of large-scale + anvil ' // &
-                                 'precipitation (w/r/t dry air)'
-          IF ( isUnits ) Units = 'kg '
-          IF ( isRank  ) Rank  = 3
-          IF ( isVLoc  ) VLoc  = VLocationCenter
-
-       CASE ( 'SPHU1' )
-          IF ( isDesc  ) Desc  = 'Instantaneous specific humidity at time=T'
-          IF ( isUnits ) Units = 'g kg-1'
-          IF ( isRank  ) Rank  = 3
-          IF ( isVLoc  ) VLoc  = VLocationCenter
-
-       CASE ( 'SPHU2' )
-          IF ( isDesc  ) Desc  = 'Instantaneous specific humidity at time=T+dt'
-          IF ( isUnits ) Units = 'g kg-1'
-          IF ( isRank  ) Rank  = 3
-          IF ( isVLoc  ) VLoc  = VLocationCenter
-
        CASE ( 'TMPU1' )
           IF ( isDesc  ) Desc  = 'Instantaneous temperature at time=T'
           IF ( isUnits ) Units = 'K'
@@ -3880,6 +3861,27 @@ CONTAINS
           IF ( isRank  ) Rank  = 3
           IF ( isVLoc  ) VLoc  = VLocationCenter
 
+       CASE ( 'U' )
+          IF ( isDesc  ) Desc  = 'East-west component of wind'
+          IF ( isUnits ) Units = 'm s-1'
+          IF ( isRank  ) Rank  = 3
+          IF ( isVLoc  ) VLoc  = VLocationCenter
+
+       CASE ( 'UPDVVEL' )
+          IF ( isDesc  ) Desc  = 'Updraft vertical velocity'
+          IF ( isUnits ) Units = 'hPa s-1'
+          IF ( isRank  ) Rank  = 3
+          IF ( isVLoc  ) VLoc  = VLocationCenter
+
+       CASE ( 'V' )
+          IF ( isDesc  ) Desc  = 'North-south component of wind'
+          IF ( isUnits ) Units = 'm s-1'
+          IF ( isRank  ) Rank  = 3
+          IF ( isVLoc  ) VLoc  = VLocationCenter
+
+       !--------------------------------------------------------------------
+       ! Offline land type, leaf area index, and chlorophyll fields
+       !--------------------------------------------------------------------
        CASE ( 'IREG' )
           IF ( isDesc  ) Desc  = 'Number of Olson land types in each grid box'
           IF ( isUnits ) Units = '1'
@@ -3917,24 +3919,6 @@ CONTAINS
           IF ( isUnits ) Units = 'm2 m-2'
           IF ( isRank  ) Rank  = 2
 
-       CASE ( 'XCHLR' )
-          IF ( isDesc  ) Desc  = 'MODIS chlorophyll-a per land type, ' // &
-                                 'current month'
-          IF ( isUnits ) Units = 'mg m-3'
-          IF ( isRank  ) Rank  = 3
-
-       CASE ( 'XCHLR2' )
-          IF ( isDesc  ) Desc  = 'MODIS chlorophyll-a per land type, ' // &
-                                 'next month'
-          IF ( isUnits ) Units = 'mg m-3'
-          IF ( isRank  ) Rank  = 3
-
-       CASE ( 'MODISCHLR' )
-          IF ( isDesc  ) Desc  = 'Daily chlorophyll-a computed ' // &
-                                 'from offline MODIS monthly values'
-          IF ( isUnits ) Units = 'mg m-3'
-          IF ( isRank  ) Rank  = 2
-
        CASE ( 'LANDTYPEFRAC' )
           IF ( isDesc  ) Desc  = 'Olson fraction per land type'
           IF ( isUnits ) Units = '1'
@@ -3945,17 +3929,15 @@ CONTAINS
           IF ( isUnits ) Units = 'm2 m-2'
           IF ( isRank  ) Rank  = 3
 
-       CASE ( 'XCHLRNATIVE' )
-          IF ( isDesc  ) Desc  = 'Average CHLR per Olson type'
-          IF ( isUnits ) Units = 'mg m-3'
-          IF ( isRank  ) Rank  = 3
-
+       !--------------------------------------------------------------------
+       ! Age of air for diagnosing transport
+       !--------------------------------------------------------------------
        CASE ( 'AGEOFAIR' )
           IF ( isDesc  ) Desc  = 'Age of air'
           IF ( isUnits ) Units = 's'
           IF ( isRank  ) Rank  = 3
           IF ( isVLoc  ) VLoc  = VLocationCenter
-          
+
 !       CASE ( 'INCHEMGRID' )
 !          IF ( isDesc  ) Desc  = 'Is each grid box in the chemistry grid?'
 !          IF ( isUnits ) Units = 'boolean'
@@ -3999,16 +3981,17 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE Register_MetField_Rfp_2D( am_I_Root, metadataID, Ptr2Data,      &
+  SUBROUTINE Register_MetField_Rfp_2D( Input_Opt, metadataID, Ptr2Data,      &
                                        State_Met, RC                        )
 !
 ! !USES:
 !
+    USE Input_Opt_Mod,      ONLY : OptInput
     USE Registry_Params_Mod
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,           INTENT(IN)    :: am_I_Root       ! Root CPU?
+    TYPE(OptInput),    INTENT(IN)    :: Input_Opt       ! Input Options object
     CHARACTER(LEN=*),  INTENT(IN)    :: metadataID      ! Name
     REAL(fp),          POINTER       :: Ptr2Data(:,:)   ! pointer to met
     TYPE(MetState),    INTENT(IN)    :: State_Met       ! Obj for met state
@@ -4017,24 +4000,23 @@ CONTAINS
 !
     INTEGER,           INTENT(OUT)   :: RC              ! Success/failure
 !
-! !REMARKS:
-!
 ! !REVISION HISTORY:
 !  07 Sep 2017 - E. Lundgren - Initial version
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
 !
 ! !LOCAL VARIABLES:
-!   
+!
     CHARACTER(LEN=512)     :: ErrMsg
     CHARACTER(LEN=255)     :: desc,  units, ErrMsg_reg, ThisLoc
     INTEGER                :: rank,  type,  vloc
     LOGICAL                :: found
 
-    !---------------------   
+    !---------------------
     ! Initialize
-    !---------------------   
+    !---------------------
     RC      = GC_SUCCESS
     ThisLoc = ' -> at Register_MetField_Rfp_2D (in Headers/state_met_mod.F90)'
     ErrMsg  = ''
@@ -4043,10 +4025,10 @@ CONTAINS
     !---------------------
     ! Get metadata
     !---------------------
-    CALL Get_Metadata_State_Met( am_I_Root, metadataID,  found, RC,          &
+    CALL Get_Metadata_State_Met( Input_Opt%amIRoot, metadataID,  found, RC,  &
                                  desc=desc, units=units, rank=rank,          &
                                  type=type, vloc=vloc                       )
-    
+
     ! Trap potential errors
     IF ( RC /= GC_SUCCESS ) THEN
        ErrMsg = TRIM( ErrMsg_reg ) // TRIM( MetadataID ) //                  &
@@ -4067,7 +4049,7 @@ CONTAINS
     !---------------------
     ! Add to registry
     !---------------------
-    CALL Registry_AddField( am_I_Root   = am_I_Root,                         &
+    CALL Registry_AddField( Input_Opt   = Input_Opt,                         &
                             Registry    = State_Met%Registry,                &
                             State       = State_Met%State,                   &
                             Variable    = TRIM( MetadataID ),                &
@@ -4098,16 +4080,17 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE Register_MetField_Rfp_3D( am_I_Root, metadataID, Ptr2Data,      &
+  SUBROUTINE Register_MetField_Rfp_3D( Input_Opt, metadataID, Ptr2Data,      &
                                        State_Met, RC                        )
 !
 ! !USES:
 !
+    USE Input_Opt_Mod,      ONLY : OptInput
     USE Registry_Params_Mod
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,           INTENT(IN)    :: am_I_Root       ! Root CPU?
+    TYPE(OptInput),    INTENT(IN)    :: Input_Opt       ! Input Options object
     CHARACTER(LEN=*),  INTENT(IN)    :: metadataID      ! Name
     REAL(fp),          POINTER       :: Ptr2Data(:,:,:) ! pointer to met
     TYPE(MetState),    INTENT(IN)    :: State_Met       ! Obj for met state
@@ -4116,33 +4099,32 @@ CONTAINS
 !
     INTEGER,           INTENT(OUT)   :: RC              ! Success/failure
 !
-! !REMARKS:
-!
 ! !REVISION HISTORY:
 !  07 Sep 2017 - E. Lundgren - Initial version
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
 !
 ! !LOCAL VARIABLES:
-!   
+!
     CHARACTER(LEN=512)     :: ErrMsg
     CHARACTER(LEN=255)     :: desc,  units,  ErrMsg_reg, ThisLoc
     INTEGER                :: rank,  type,   vloc
     LOGICAL                :: found, onEdges
 
-    !---------------------   
+    !---------------------
     ! Initialize
-    !---------------------   
+    !---------------------
     RC      = GC_SUCCESS
     ThisLoc = ' -> at Register_MetField_Rfp_3D (in Headers/state_met_mod.F90)'
     ErrMsg  = ''
     ErrMsg_reg = 'Error encountered while registering State_Met%'
 
-    !---------------------   
+    !---------------------
     ! Get metadata
     !---------------------
-    CALL Get_Metadata_State_Met( am_I_Root, metadataID,  found, RC,          &
+    CALL Get_Metadata_State_Met( Input_Opt%amIRoot, metadataID,  found, RC,  &
                                  desc=desc, units=units, rank=rank,          &
                                  type=type, vloc=vloc )
 
@@ -4154,9 +4136,9 @@ CONTAINS
        RETURN
     ENDIF
 
-    !---------------------   
+    !---------------------
     ! Check dimensions
-    !---------------------  
+    !---------------------
     IF ( rank /= 3 ) THEN
        ErrMsg = 'Data and metadata rank do not match for ' // TRIM(metadataID)
        CALL GC_Error( ErrMsg, RC, ThisLoc )
@@ -4166,10 +4148,10 @@ CONTAINS
     ! Is the data placed on vertical edges?
     onEdges = ( vLoc == vLocationEdge )
 
-    !---------------------   
+    !---------------------
     ! Add to registry
-    !---------------------   
-    CALL Registry_AddField( am_I_Root    = am_I_Root,                        &
+    !---------------------
+    CALL Registry_AddField( Input_Opt    = Input_Opt,                        &
                             Registry     = State_Met%Registry,               &
                             State        = State_Met%State,                  &
                             Variable     = TRIM( MetadataID ),               &
@@ -4201,16 +4183,17 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE Register_MetField_Int_2D( am_I_Root, metadataID, Ptr2Data,      &
+  SUBROUTINE Register_MetField_Int_2D( Input_Opt, metadataID, Ptr2Data,      &
                                        State_Met, RC                        )
 !
 ! !USES:
 !
+    USE Input_Opt_Mod,      ONLY : OptInput
     USE Registry_Params_Mod
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,           INTENT(IN)    :: am_I_Root       ! Root CPU?
+    TYPE(OptInput),    INTENT(IN)    :: Input_Opt       ! Input Options object
     CHARACTER(LEN=*),  INTENT(IN)    :: metadataID      ! Name
     INTEGER,           POINTER       :: Ptr2Data(:,:)   ! pointer to met
     TYPE(MetState),    INTENT(INOUT) :: State_Met       ! Obj for met state
@@ -4219,33 +4202,32 @@ CONTAINS
 !
     INTEGER,           INTENT(OUT)   :: RC               ! Success/failure
 !
-! !REMARKS:
-!
 ! !REVISION HISTORY:
 !  07 Sep 2017 - E. Lundgren - Initial version
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
 !
 ! !LOCAL VARIABLES:
-!   
+!
     CHARACTER(LEN=512)     :: ErrMsg
     CHARACTER(LEN=255)     :: desc, units, ErrMsg_reg, ThisLoc
     INTEGER                :: rank, type,  vloc
     LOGICAL                :: found
 
-    !---------------------   
+    !---------------------
     ! Initialize
-    !---------------------   
+    !---------------------
     RC = GC_SUCCESS
     ThisLoc = ' -> at Register_MetField_Int_2D (in Headers/state_met_mod.F90)'
     ErrMsg  = ''
     ErrMsg_reg = 'Error encountered while registering State_Met%'
 
-    !---------------------   
+    !---------------------
     ! Get metadata
-    !---------------------   
-    CALL Get_Metadata_State_Met( am_I_Root, metadataID,  found, RC,          &
+    !---------------------
+    CALL Get_Metadata_State_Met( Input_Opt%amIRoot, metadataID,  found, RC,  &
                                  desc=desc, units=units, rank=rank,          &
                                  type=type, vloc=vloc                       )
 
@@ -4266,10 +4248,10 @@ CONTAINS
        RETURN
     ENDIF
 
-    !---------------------   
+    !---------------------
     ! Add to registry
-    !---------------------   
-    CALL Registry_AddField( am_I_Root   = am_I_Root,                         &
+    !---------------------
+    CALL Registry_AddField( Input_Opt   = Input_Opt,                         &
                             Registry    = State_Met%Registry,                &
                             State       = State_Met%State,                   &
                             Variable    = TRIM( metadataID ),                &
@@ -4300,16 +4282,17 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE Register_MetField_Int_3D( am_I_Root, metadataID, Ptr2Data,      &
+  SUBROUTINE Register_MetField_Int_3D( Input_Opt, metadataID, Ptr2Data,      &
                                        State_Met, RC                        )
 !
 ! !USES:
 !
+    USE Input_Opt_Mod, ONLY : OptInput
     USE Registry_Params_Mod
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,           INTENT(IN)    :: am_I_Root       ! Root CPU?
+    TYPE(OptInput),    INTENT(IN)    :: Input_Opt       ! Input Options object
     CHARACTER(LEN=*),  INTENT(IN)    :: metadataID      ! Name
     INTEGER,           POINTER       :: Ptr2Data(:,:,:) ! pointer to met
     TYPE(MetState),    INTENT(IN)    :: State_Met       ! Obj for met state
@@ -4318,33 +4301,32 @@ CONTAINS
 !
     INTEGER,           INTENT(OUT)   :: RC              ! Success/failure
 !
-! !REMARKS:
-!
 ! !REVISION HISTORY:
 !  07 Sep 2017 - E. Lundgren - Initial version
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
 !
 ! !LOCAL VARIABLES:
-!   
+!
     CHARACTER(LEN=512)     :: ErrMsg
     CHARACTER(LEN=255)     :: desc,   units,  ErrMsg_reg, ThisLoc
     INTEGER                :: rank,   type,   vloc
     LOGICAL                :: found,  onEdges
 
-    !---------------------   
+    !---------------------
     ! Initialize
-    !---------------------   
+    !---------------------
     RC      = GC_SUCCESS
     ThisLoc = ' -> at Register_MetField_Int_3D (in Headers/state_met_mod.F90)'
     ErrMsg  = ''
     ErrMsg_reg = 'Error encountered while registering State_Met%'
 
-    !---------------------   
+    !---------------------
     ! Get metadata
-    !---------------------   
-    CALL Get_Metadata_State_Met( am_I_Root, metadataID,  found, RC,          &
+    !---------------------
+    CALL Get_Metadata_State_Met( Input_Opt%amIRoot, metadataID,  found, RC,  &
                                  desc=desc, units=units, rank=rank,          &
                                  type=type, vloc=vloc                       )
 
@@ -4368,10 +4350,10 @@ CONTAINS
     ! Is the data placed on vertical edges?
     onEdges = ( vLoc == vLocationEdge )
 
-    !---------------------   
+    !---------------------
     ! Add to registry
-    !---------------------   
-    CALL Registry_AddField( am_I_Root    = am_I_Root,                        &
+    !---------------------
+    CALL Registry_AddField( Input_Opt    = Input_Opt,                        &
                             Registry     = State_Met%Registry,               &
                             State        = State_Met%State,                  &
                             Variable     = TRIM( metadataID ),               &

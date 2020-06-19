@@ -9,10 +9,10 @@ set (src_directories
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/History
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosUtil
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/NcdfUtil
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/ISOROPIA
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/ISORROPIA
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/KPP/Standard
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/Interfaces/GCHP
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/ObsPack
   )
 
@@ -26,32 +26,28 @@ endforeach()
 
 list (REMOVE_ITEM srcs
    # this one is moved to HEMCO
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosUtil/regrid_a2a_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/NcdfUtil/charpak_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/Headers/charpak_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/NcdfUtil/julday_mod.F
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosUtil/julday_mod.F
+   #${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosUtil/regrid_a2a_mod.F90
+   #${CMAKE_CURRENT_SOURCE_DIR}/gc_column/NcdfUtil/charpak_mod.F90
+   #${CMAKE_CURRENT_SOURCE_DIR}/gc_column/Headers/charpak_mod.F90
+   #${CMAKE_CURRENT_SOURCE_DIR}/gc_column/NcdfUtil/julday_mod.F90
+   #${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosUtil/julday_mod.F90
 
    # not sure about the rest
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/main.F
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/tpcore_fvdas_mod.F
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/tpcore_geos57_window_mod.F
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/tpcore_geos5_window_mod.F
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/transport_mod.F
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/rrtmg_rad_transfer_mod.F
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/tomas_mod.F
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/exchange_mod.F
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/main.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/tpcore_fvdas_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/tpcore_geos57_window_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/tpcore_geos5_window_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/transport_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/rrtmg_rad_transfer_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/tomas_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/exchange_mod.F90
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/get_met_mod.F90
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/flexgrid_read_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/aero_drydep.F
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/exchange_mod.F
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/YuIMN_Code.F
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC/gigc_manualexports_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC/GIGC_GridCompMod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC/Chem_GridCompMod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC/GEOS_ctmEnvGridComp.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GIGC/GEOSChem.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/Headers/inquireMod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/aero_drydep.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/exchange_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/YuIMN_Code.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/apm_driv_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/Interfaces/GCHP/Chem_GridCompMod.F90
    )
 
 if (CMAKE_Fortran_COMPILER_ID MATCHES Intel)

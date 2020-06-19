@@ -6,7 +6,7 @@
 ! !MODULE: registry_mod.F90
 !
 ! !DESCRIPTION: Contains derived types and methods to create a registry
-!  of each variable contained within a given module.  This will allow the 
+!  of each variable contained within a given module.  This will allow the
 !  user to obtain a pointer to each module variable by searching for its name.
 !\\
 !\\
@@ -28,6 +28,7 @@ MODULE Registry_Mod
   PUBLIC  :: Registry_Lookup
   PUBLIC  :: Registry_Print
   PUBLIC  :: Registry_Destroy
+  PUBLIC  :: Registry_Set_LookupTable
 !
 ! !PRIVATE MEMBER FUNCTIONS:
 !
@@ -113,11 +114,7 @@ MODULE Registry_Mod
 !
 ! !REVISION HISTORY:
 !  23 Jun 2017 - R. Yantosca - Initial version
-!  27 Jun 2017 - R. Yantosca - Added integer data fields, and description
-!  29 Jun 2017 - R. Yantosca - Added Ptr1DI to type RegItem
-!  30 Jun 2017 - R. Yantosca - Add more pointers to 4-byte and integer data
-!  23 Aug 2017 - R. Yantosca - Added OnLevelEdges field
-!  31 Oct 2017 - R. Yantosca - Move Str2Hash, To_UpperCase to charpak_mod.F90
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -130,17 +127,17 @@ CONTAINS
 !
 ! !IROUTINE: Registry_AddField
 !
-! !DESCRIPTION: Creates a REGISTRY ITEM, which contains information (i.e. 
+! !DESCRIPTION: Creates a REGISTRY ITEM, which contains information (i.e.
 !  metadata plus a pointer to the data) about a variable within a module.
-!  The REGISTRY ITEM will then be added to the METAREGISTRY ITEM, which is 
-!  the master list of all variables in the module.  This will allow the user 
+!  The REGISTRY ITEM will then be added to the METAREGISTRY ITEM, which is
+!  the master list of all variables in the module.  This will allow the user
 !  to obtain a pointer to any variable by searching for its name.
 !\\
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE Registry_AddField( am_I_Root, Registry,  State,                 &
-                                Variable,  RC,        Description,           &  
+  SUBROUTINE Registry_AddField( Input_Opt, Registry,  State,                 &
+                                Variable,  RC,        Description,           &
                                 Units,     DimNames,  OnLevelEdges,          &
                                 Data0d,    Data1d,    Data2d,                &
                                 Data3d,    Data0d_8,  Data1d_8,              &
@@ -151,13 +148,14 @@ CONTAINS
 !
 ! !USES:
 !
-    USE CharPak_Mod, ONLY : Str2Hash31, To_Uppercase
+    USE CharPak_Mod,   ONLY : To_Uppercase
     USE ErrCode_Mod
+    USE Input_Opt_Mod, ONLY : OptInput
 !
 ! !INPUT PARAMETERS:
 !
     ! General identifying information
-    LOGICAL,           INTENT(IN)       :: am_I_Root       ! Root CPU?
+    TYPE(OptInput),    INTENT(IN)       :: Input_Opt       ! Input options
     CHARACTER(LEN=*),  INTENT(IN)       :: State           ! State name
     CHARACTER(LEN=*),  INTENT(IN)       :: Variable        ! variable
     CHARACTER(LEN=*),  OPTIONAL         :: Description     ! Long description
@@ -170,19 +168,19 @@ CONTAINS
     REAL(fp),          OPTIONAL, TARGET :: Data0d          ! 0D flex-prec data
     REAL(fp),          OPTIONAL, TARGET :: Data1d  (:    ) ! 1D flex_prec data
     REAL(fp),          OPTIONAL, TARGET :: Data2d  (:,:  ) ! 2D flex-prec data
-    REAL(fp),          OPTIONAL, TARGET :: Data3d  (:,:,:) ! 3D flex-prec data 
+    REAL(fp),          OPTIONAL, TARGET :: Data3d  (:,:,:) ! 3D flex-prec data
 
     ! Floating-point data targets (8-byte precision)
     REAL(f8),          OPTIONAL, TARGET :: Data0d_8        ! 0D flex-prec data
     REAL(f8),          OPTIONAL, TARGET :: Data1d_8(:    ) ! 1D flex_prec data
     REAL(f8),          OPTIONAL, TARGET :: Data2d_8(:,:  ) ! 2D flex-prec data
-    REAL(f8),          OPTIONAL, TARGET :: Data3d_8(:,:,:) ! 3D flex-prec data 
+    REAL(f8),          OPTIONAL, TARGET :: Data3d_8(:,:,:) ! 3D flex-prec data
 
     ! Floating-point data targets (4-byte precision)
     REAL(f4),          OPTIONAL, TARGET :: Data0d_4        ! 0D 4-byte data
     REAL(f4),          OPTIONAL, TARGET :: Data1d_4(:    ) ! 1D 4-byte data
     REAL(f4),          OPTIONAL, TARGET :: Data2d_4(:,:  ) ! 2D 4-byte data
-    REAL(f4),          OPTIONAL, TARGET :: Data3d_4(:,:,:) ! 3D 4-byte data 
+    REAL(f4),          OPTIONAL, TARGET :: Data3d_4(:,:,:) ! 3D 4-byte data
 
     ! Integer data targets
     INTEGER,           OPTIONAL, TARGET :: Data0d_I        ! 1D int data
@@ -206,26 +204,13 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  23 Jun 2017 - R. Yantosca - Initial version
-!  26 Jun 2017 - R. Yantosca - Changed "StateName" to "State", "Name" to
-!                              "Variable", and added "MemoryInKb"
-!  27 Jun 2017 - R. Yantosca - Now assigns description and KIND value
-!  29 Jun 2017 - R. Yantosca - Added Data1dI for 1D integer data
-!  14 Jul 2017 - R. Yantosca - Now use KINDVAL parameters defined at the top
-!                              of the module to denote the different data types
-!  23 Aug 2017 - R. Yantosca - Added OnLevelEdges argument so that we can
-!                               register data placed on level edges
-!  24 Aug 2017 - R. Yantosca - Added the DimNames argument
-!  25 Aug 2017 - R. Yantosca - Added Data0d_8 and Data1d_8 so that we can
-!                               register netCDF index variables.  Most other
-!                               data should be either REAL(fp) or REAL(f4)
-!  25 Sep 2017 - E. Lundgren - Only use state name prefix if not from state_diag
-!  06 Oct 2017 - R. Yantosca - Add pointers for 2D and 3D, 8-byte data
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
 !
 ! !LOCAL VARIABLES:
-!   
+!
     ! Scalars
     LOGICAL                :: IsOnLevelEdges
     REAL(fp)               :: KbPerElement
@@ -243,7 +228,7 @@ CONTAINS
     RC             = GC_SUCCESS
     IsOnLevelEdges = .FALSE.
     KbPerElement   = DBLE( fp ) / 1024.0_fp
-    ErrMsg         = ''    
+    ErrMsg         = ''
     ThisLoc        = ' -> at Registry_AddField (in Headers/registry_mod.F90)'
     TmpState       = To_UpperCase( State    )
     TmpVariable    = To_UpperCase( Variable )
@@ -270,7 +255,7 @@ CONTAINS
        CALL GC_Error( ErrMsg, RC, ThisLoc )
        RETURN
     ENDIF
-    
+
     ! Save identifying info
     Item%FullName      =  TmpFullName
     Item%State         =  TmpState
@@ -406,7 +391,7 @@ CONTAINS
        CALL GC_Error( ErrMsg, RC, ThisLoc )
        RETURN
     ENDIF
-    
+
     !=======================================================================
     ! Define the "dimnames" field
     !=======================================================================
@@ -416,10 +401,10 @@ CONTAINS
        Item%DimNames = TRIM( DimNames )
 
     ELSE
-       
+
        ! Otherwise, set default DimNames based on the rank
        SELECT CASE( Item%Rank )
-          CASE( 3 ) 
+          CASE( 3 )
              Item%DimNames = 'xyz'
           CASE( 2 )
              Item%DimNames = 'xy '
@@ -430,12 +415,12 @@ CONTAINS
         END SELECT
 
      ENDIF
-       
+
     !=======================================================================
     ! Add the REGISTRY ITEM to the METAREGISTRY ITEM, which represents
     ! the list of all data fields contained in a module.
     !=======================================================================
-    CALL MetaRegItem_AddNew( am_I_Root, Registry, Item, RC )
+    CALL MetaRegItem_AddNew( Input_Opt, Registry, Item, RC )
     IF ( RC /= GC_SUCCESS ) THEN
        ErrMsg = 'Could not add ' // TRIM( TmpVariable ) // ' to the registry!'
        CALL GC_Error( ErrMsg, RC, ThisLoc )
@@ -451,37 +436,39 @@ CONTAINS
 !
 ! !IROUTINE: Registry_Lookup
 !
-! !DESCRIPTION: Get a pointer to any variable in a module (aka "state") by 
+! !DESCRIPTION: Get a pointer to any variable in a module (aka "state") by
 !  searching for its name.  Also returns associated metadata.
 !\\
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE Registry_Lookup( am_I_Root,    Registry,  State,                &
-                              Variable,     RC,        Description,          &
-                              Dimensions,   KindVal,   MemoryInKb,           &
-                              OnLevelEdges, Rank,      Units,                &
-                              DimNames,     Ptr0d,     Ptr1d,                &
-                              Ptr2d,        Ptr3d,     Ptr0d_8,              &
-                              Ptr1d_8,      Ptr2d_8,   Ptr3d_8,              &
-                              Ptr0d_4,      Ptr1d_4,   Ptr2d_4,              &
-                              Ptr3d_4,      Ptr0d_I,   Ptr1d_I,              &
-                              Ptr2d_I,      Ptr3d_I                         )
+  SUBROUTINE Registry_Lookup( am_I_Root,    Registry,     RegDict,           &
+                              State,        Variable,     RC,                &
+                              Description,  Dimensions,   KindVal,           &
+                              MemoryInKb,   OnLevelEdges, Rank,              &
+                              Units,        DimNames,     Ptr0d,             &
+                              Ptr1d,        Ptr2d,        Ptr3d,             &
+                              Ptr0d_8,      Ptr1d_8,      Ptr2d_8,           &
+                              Ptr3d_8,      Ptr0d_4,      Ptr1d_4,           &
+                              Ptr2d_4,      Ptr3d_4,      Ptr0d_I,           &
+                              Ptr1d_I,      Ptr2d_I,      Ptr3d_I           )
 !
 ! !USES:
 !
-    USE Charpak_Mod, ONLY : Str2Hash31, To_UpperCase
+    USE Charpak_Mod,   ONLY : To_UpperCase
+    USE Dictionary_M,  ONLY : dictionary_t
     USE ErrCode_Mod
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,           INTENT(IN) :: am_I_Root         ! Root CPU?  
-    TYPE(MetaRegItem),    POINTER :: Registry          ! Registry obj
+    LOGICAL,           INTENT(IN) :: am_I_Root         ! Root CPU?
+    TYPE(MetaRegItem), POINTER    :: Registry          ! Registry obj
+    TYPE(dictionary_t)            :: RegDict           ! Registry lookup table
     CHARACTER(LEN=*),  INTENT(IN) :: State             ! State name
     CHARACTER(LEN=*),  INTENT(IN) :: Variable          ! Variable name
-!                                                     
-! !OUTPUT PARAMETERS:                                 
-!                                                     
+!
+! !OUTPUT PARAMETERS:
+!
     ! Required outputs
     INTEGER,          INTENT(OUT) :: RC                ! Success or failure
 
@@ -528,23 +515,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  23 Jun 2017 - R. Yantosca - Initial version
-!  26 Jun 2017 - R. Yantosca - Changed "StateName" to "State", "Name" to
-!                              "Variable", and added "MemoryInKb"
-!  27 Jun 2017 - R. Yantosca - Also added "Description" and "KindVal" outputs
-!  30 Jun 2017 - R. Yantosca - Added more pointers for 4-byte and integer data
-!  14 Jul 2017 - R. Yantosca - Now return the appropriate pointer variable
-!                              based on the KINDVAL parameter, and set other
-!                              passed pointer arguments to NULL.
-!  14 Jul 2017 - R. Yantosca - Now throw an error if the variable cannot
-!                              be found in the registry
-!  23 Aug 2017 - R. Yantosca - Added optional OnLevelEdges argument
-!  24 Aug 2017 - R. Yantosca - Added optional DimNames argument
-!  25 Aug 2017 - R. Yantosca - Added optional Data0d_8 and Data1d_8 arguments
-!  25 Sep 2017 - E. Lundgren - Only use state name prefix if not from state_diag
-!  06 Oct 2017 - R. Yantosca - Add Ptr2d_8, Ptr3d_8 optional arguments
-!  01 Nov 2017 - R. Yantosca - Now use Str2Hash31 from charpak_mod.F90, which
-!                              computes a hash from an input string of 31 chars
-!  01 Nov 2017 - R. Yantosca - Make the registry lookup case-insensitive
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -567,8 +538,7 @@ CONTAINS
 
     ! Strings
     CHARACTER(LEN=5)           :: TmpState
-    CHARACTER(LEN=31)          :: FullName31,      ItemName31
-    CHARACTER(LEN=255)         :: TmpName,         TmpFullName
+    CHARACTER(LEN=67)          :: FullName,        ItemName
     CHARACTER(LEN=255)         :: ErrMsg,          ThisLoc
     CHARACTER(LEN=255)         :: VariableUC
 
@@ -582,7 +552,7 @@ CONTAINS
     Current         => NULL()
     ErrMsg          =  ''
     ThisLoc         =  ' -> at Registry_Lookup (in Headers/registry_mod.F90)'
-    TmpState        = TRIM( State ) // '_' 
+    TmpState        = TRIM( State ) // '_'
     VariableUC      =  To_UpperCase( Variable )
 
     ! Prefix the the state name (always uppercase) to the variable, unless:
@@ -590,19 +560,26 @@ CONTAINS
     ! (2) If it's a field from State_Diag, which requires no prefix
     IF ( ( TRIM( State ) == 'DIAG' ) .OR.  &
          ( INDEX( VariableUC, TRIM( TmpState ) ) > 0 ) ) THEN
-       TmpFullName  = VariableUC
+       FullName  = VariableUC
     ELSE
-       TmpFullName  = TRIM( TmpState ) // TRIM( VariableUC )
+       FullName  = TRIM( TmpState ) // TRIM( VariableUC )
     ENDIF
 
-    ! Construct a hash for the full name (i.e. "State_Variable"
-    FullName31      =  TmpFullName
-    FullHash        =  Str2Hash31( FullName31 )
+    ! Construct a hash for the full name (i.e. "State_Variable")
+    FullHash =  RegDict%Get( TRIM( FullName ) )
+
+    ! Return with an error if fullname is not found in this registry
+    IF ( FullHash == -1 ) THEN
+       errMsg = TRIM( fullName ) // ' is not found in the registry for '  // &
+                'the ' // TRIM( State ) // ' object!'
+       CALL GC_Error( errMsg, RC, thisLoc )
+       RETURN
+    ENDIF
 
     ! Set a flag to denote that we've found the field
-    Found           = .FALSE.
+    Found = .FALSE.
 
-    !=======================================================================   
+    !=======================================================================
     ! Test if the optional variables are present outside of the main loop.
     !=======================================================================
 
@@ -665,16 +642,15 @@ CONTAINS
 
     ! Point to head of linked list
     Current => Registry
-    
+
     ! As long as this entry of the linked list isn't NULL
     DO WHILE( ASSOCIATED( Current ) )
 
-       ! Construct a hash for the full name of this REGISTRY ITEM 
-       ItemName31 = Current%Item%FullName
-       ItemHash   = Str2Hash31( ItemName31 )
+       ! Construct a hash for the full name of this REGISTRY ITEM
+       ItemHash   = RegDict%Get( TRIM( Current%Item%FullName ) )
 
-       ! If the name-hashes match ...
-       IF ( FullHash == ItemHash ) THEN
+       ! If the name-hashes match (and are not missing data "-1")
+       IF ( FullHash == ItemHash .and. ItemHash > 0 ) THEN
 
           ! Return rank, units and memory usage, etc. if found
           IF ( Is_Description  ) Description  = Current%Item%Description
@@ -685,12 +661,12 @@ CONTAINS
           If ( Is_OnLevelEdges ) OnLevelEdges = Current%Item%OnLevelEdges
 
           ! Then return a pointer to the field
-          SELECT CASE( Current%Item%Rank ) 
+          SELECT CASE( Current%Item%Rank )
 
              ! Return the appropriate 3D DATA POINTER (and dimensions)
-             CASE( 3 ) 
+             CASE( 3 )
                 IF ( Current%Item%KindVal == KINDVAL_FP ) THEN
-                   IF ( Is_3d ) THEN 
+                   IF ( Is_3d ) THEN
                       Ptr3d => Current%Item%Ptr3d
                       Found =  .TRUE.
                       IF ( Is_Dimensions ) THEN
@@ -734,7 +710,7 @@ CONTAINS
                    ENDIF
                    EXIT
                 ENDIF
-                   
+
              ! Return the appropriate 2D DATA POINTER (and dimensions)
              CASE( 2 )
                 IF ( Current%Item%KindVal == KINDVAL_FP ) THEN
@@ -756,7 +732,7 @@ CONTAINS
                          DO N = 1, Current%Item%Rank
                             Dimensions(N) = SIZE( Ptr2d_8, N )
                          ENDDO
-                      ENDIF                      
+                      ENDIF
                    ENDIF
                    EXIT
                 ELSE IF ( Current%Item%KindVal == KINDVAL_F4 ) THEN
@@ -767,7 +743,7 @@ CONTAINS
                          DO N = 1, Current%Item%Rank
                             Dimensions(N) = SIZE( Ptr2d_4, N )
                          ENDDO
-                      ENDIF                      
+                      ENDIF
                    ENDIF
                    EXIT
                 ELSE IF ( Current%Item%KindVal == KINDVAL_I4 ) THEN
@@ -793,7 +769,7 @@ CONTAINS
                          DO N = 1, Current%Item%Rank
                             Dimensions(N) = SIZE( Ptr1d, N )
                          ENDDO
-                      ENDIF                     
+                      ENDIF
                    ENDIF
                    EXIT
                 ELSE IF ( Current%Item%KindVal == KINDVAL_F8 ) THEN
@@ -830,7 +806,7 @@ CONTAINS
                    ENDIF
                    EXIT
                 ENDIF
-                
+
              ! Return the appropriate 0D DATA POINTER (and dimensions)
              CASE( 0 )
                 IF ( Current%Item%KindVal == KINDVAL_FP ) THEN
@@ -871,7 +847,7 @@ CONTAINS
 
           END SELECT
        ENDIF
-       
+
        ! Point to next node for next iteration
        Current => Current%Next
     ENDDO
@@ -903,15 +879,16 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE Registry_Print( am_I_Root, Registry, RC, ShortFormat )
+  SUBROUTINE Registry_Print( Input_Opt, Registry, RC, ShortFormat )
 !
 ! !USES:
 !
+    USE Input_Opt_Mod,      ONLY : OptInput
     USE ErrCode_Mod
 !
 ! !INPUT PARAMETERS:
 !
-    LOGICAL,           INTENT(IN)  :: am_I_Root     ! Are we on the root CPU?
+    TYPE(OptInput),    INTENT(IN)  :: Input_Opt     ! Input Options object
     LOGICAL,           OPTIONAL    :: ShortFormat   ! Print less information
 !
 ! !INPUT/OUTPUT PARAMETERS:
@@ -924,15 +901,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  23 Jun 2017 - R. Yantosca - Initial version
-!  26 Jun 2017 - R. Yantosca - Also print memory usage in Kb
-!  27 Jun 2017 - R. Yantosca - Now print numeric KIND value and description
-!  27 Jun 2017 - R. Yantosca - Also print Ptr1dI, Ptr2dI, Ptr3dI 
-!  29 Jun 2017 - R. Yantosca - Add SHORTFORMAT option to print less output
-!  23 Aug 2017 - R. Yantosca - Now print OnLevelEdges in full format
-!  24 Aug 2017 - R. Yantosca - Now use the DimNames field when printing
-!  25 Aug 2017 - R. Yantosca - Now print the vertical cell position: C or E
-!  25 Aug 2017 - R. Yantosca - Now print info about Data0d_8 and Data1d_8
-!  29 Aug 2017 - R. Yantosca - Minor fix, skip C/E printing for non-3D fields
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -955,7 +924,7 @@ CONTAINS
     !=======================================================================
 
     ! Only print information on the root CPU
-    IF ( .not. am_I_Root ) RETURN
+    IF ( .not. Input_Opt%amIRoot ) RETURN
 
     ! Initialize fields
     RC      =  GC_SUCCESS
@@ -965,7 +934,7 @@ CONTAINS
     Current => NULL()
     Item    => NULL()
 
-    ! Save the value of ShortFormat (if passed) in a shadow variable 
+    ! Save the value of ShortFormat (if passed) in a shadow variable
     IF ( PRESENT( ShortFormat ) ) THEN
        Use_ShortFormat = ShortFormat
     ELSE
@@ -980,8 +949,8 @@ CONTAINS
     Current => Registry
 
     ! As long as the current node isn't NULL
-    DO WHILE( ASSOCIATED( Current ) ) 
-       
+    DO WHILE( ASSOCIATED( Current ) )
+
        ! Get the REGISTRY ITEM belonging to this node of the Registry
        Item => Current%Item
 
@@ -1081,7 +1050,7 @@ CONTAINS
                 PRINT*, 'Dimensions   : ', SIZE  ( Item%Ptr2d, 1   ),        &
                                            SIZE  ( Item%Ptr2d, 2   )
 
-             ! 8-byte 
+             ! 8-byte
              ELSE IF ( ASSOCIATED( Item%Ptr2d_8 ) ) THEN
                 PRINT*, 'Min value    : ', MINVAL( Item%Ptr2d_8    )
                 PRINT*, 'Max value    : ', MAXVAL( Item%Ptr2d_8    )
@@ -1089,7 +1058,7 @@ CONTAINS
                 PRINT*, 'Dimensions   : ', SIZE  ( Item%Ptr2d_8, 1 ),        &
                                            SIZE  ( Item%Ptr2d_8, 2 )
 
-             ! 4-byte 
+             ! 4-byte
              ELSE IF ( ASSOCIATED( Item%Ptr2d_4 ) ) THEN
                 PRINT*, 'Min value    : ', MINVAL( Item%Ptr2d_4    )
                 PRINT*, 'Max value    : ', MAXVAL( Item%Ptr2d_4    )
@@ -1155,7 +1124,7 @@ CONTAINS
              ! Integer
              ELSE IF ( ASSOCIATED( Item%Ptr0d_I ) ) THEN
                 PRINT*, 'Value        : ', Item%Ptr0d_I
-  
+
              ENDIF
           ENDIF
        ENDIF
@@ -1169,8 +1138,107 @@ CONTAINS
     !=======================================================================
     Current => NULL()
     Item    => NULL()
-       
+
   END SUBROUTINE Registry_Print
+!EOC
+!------------------------------------------------------------------------------
+!                  GEOS-Chem Global Chemical Transport Model                  !
+!------------------------------------------------------------------------------
+!BOP
+!
+! !IROUTINE: Registry_Set_LookupTable
+!
+! !DESCRIPTION: Defines the lookup table for registry items, using the
+!  dictionary_m algorithm.  This will avoid hash collisions.
+!\\
+!\\
+! !INTERFACE:
+!
+  SUBROUTINE Registry_Set_LookupTable( Registry, RegDict, RC )
+!
+! !USES:
+!
+    USE Dictionary_M
+    USE ErrCode_Mod
+    USE Input_Opt_Mod, ONLY : OptInput
+!
+! !INPUT PARAMETERS:
+!
+    TYPE(MetaRegItem),  POINTER       :: Registry   ! Registry of state fields
+!
+! !INPUT/OUTPUT PARAMETERS:
+!
+    TYPE(dictionary_t), INTENT(INOUT) :: RegDict    ! Registry lookup table
+!
+! !OUTPUT PARAMETERS:
+!
+    INTEGER,            INTENT(OUT)   :: RC         ! Success or failure?!
+!
+! !REVISION HISTORY:
+!  07 Apr 2020 - R. Yantosca - Initial version
+!  See the subsequent Git history with the gitk browser!
+!EOP
+!------------------------------------------------------------------------------
+!BOC
+!
+! !LOCAL VARIABLES:
+!
+    ! Scalars
+    INTEGER                    :: index
+    INTEGER                    :: nDiags
+
+
+    ! Strings
+    CHARACTER(LEN=255)         :: errMsg
+    CHARACTER(LEN=255)         :: thisLoc
+
+    ! Objects
+    TYPE(MetaRegItem), POINTER :: current
+
+    !=======================================================================
+    ! Registry_Set_LookupTable begins here!
+    !=======================================================================
+
+    ! Initialize
+    RC      = GC_SUCCESS
+    index   = 0
+    nDiags  = 0
+    errMsg  = ''
+    thisLoc = &
+     ' -> at Registry_Set_LookupTable (in module Headers/registry_mod.F90)'
+
+    !-----------------------------------------------------------------------
+    ! First find out how many diagnostics have been registered
+    ! so that we can initialize the lookup table accordingly.
+    !-----------------------------------------------------------------------
+    current => Registry
+    DO WHILE( ASSOCIATED( current ) )
+       IF ( ASSOCIATED( current%Item ) ) THEN
+          nDiags = nDiags + 1
+       ENDIF
+       current => current%next
+    ENDDO
+    current => NULL()
+    
+    ! Initialize the lookup table
+    CALL RegDict%Init( nDiags )
+
+    !-----------------------------------------------------------------------
+    ! Then populate the lookup table with the index with which each
+    ! diagnostic is found in the list.  NOTE: Registry names are
+    ! already uppercase, so no need to convert again.
+    !-----------------------------------------------------------------------
+    current => Registry
+    DO WHILE( ASSOCIATED( current ) )
+       IF ( ASSOCIATED( current%Item ) ) THEN
+          index = index + 1
+          CALL RegDict%Set( TRIM( current%Item%fullName ), index )
+       ENDIF
+       current => current%next
+    ENDDO
+    current => NULL()
+
+  END SUBROUTINE Registry_Set_LookupTable
 !EOC
 !------------------------------------------------------------------------------
 !                  GEOS-Chem Global Chemical Transport Model                  !
@@ -1186,26 +1254,25 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE Registry_Destroy( am_I_Root, Registry, RC )
+  SUBROUTINE Registry_Destroy( Registry, RegDict, RC )
 !
 ! !USES:
 !
+    USE Dictionary_M
     USE ErrCode_Mod
-!
-! !INPUT PARAMETERS:
-!
-    LOGICAL,           INTENT(IN)  :: am_I_Root   ! Are we on the root CPU?
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
-    TYPE(MetaRegItem), POINTER     :: Registry    ! Registry of state fields
+    TYPE(MetaRegItem), POINTER     :: Registry   ! Registry of state fields
+    TYPE(dictionary_t)             :: RegDict    ! Registry lookup table
 !
 ! !OUTPUT PARAMETERS:
 !
-    INTEGER,           INTENT(OUT) :: RC          ! Success or failure?
+    INTEGER,           INTENT(OUT) :: RC         ! Success or failure?
 !
 ! !REVISION HISTORY:
 !  23 Jun 2017 - R. Yantosca - Initial version
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1223,12 +1290,17 @@ CONTAINS
     ! Destroy each REGISTRY ITEM contained in the registry,
     ! then destroy the registry itself.
     !=======================================================================
-    CALL MetaRegItem_Destroy( am_I_Root, Registry, RC )
+    CALL MetaRegItem_Destroy( Registry, RC )
     IF ( RC /= GC_SUCCESS ) THEN
        ErrMsg = 'Could not destroy the registry object!'
        CALL GC_Error( ErrMsg, RC, ThisLoc )
        RETURN
     ENDIF
+
+    !=======================================================================
+    ! Destroy the lookup table for this registry
+    !=======================================================================
+    CALL RegDict%Destroy()
 
   END SUBROUTINE Registry_Destroy
 !EOC
@@ -1239,7 +1311,7 @@ CONTAINS
 !
 ! !IROUTINE: MetaRegItem_AddNew
 !
-! !DESCRIPTION: Wrapper for methods MetaRegItem\_Create and 
+! !DESCRIPTION: Wrapper for methods MetaRegItem\_Create and
 !  MetaRegItem\_Insert.  Will create a METAREGISTRY ITEM (containing a
 !  REGISTRY ITEM) and (1) set it as the head node of a new linked list, or
 !  (2) append it to an existing linked list.
@@ -1247,18 +1319,19 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE MetaRegItem_AddNew( am_I_Root, Node, Item, RC )
+  SUBROUTINE MetaRegItem_AddNew( Input_Opt, Node, Item, RC )
 !
 ! !USES:
 !
     USE ErrCode_Mod
+    USE Input_Opt_Mod, ONLY : OptInput
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
-    LOGICAL,           INTENT(IN)  :: am_I_Root  ! Are we on the root CPU?
+    TYPE(OptInput),    INTENT(IN)  :: Input_Opt  ! Input Options object
     TYPE(RegItem),     POINTER     :: Item       ! REGISTRY ITEM object
 !
-! !INPUT/OUTPUT PARAMETERS: 
+! !INPUT/OUTPUT PARAMETERS:
 !
     TYPE(MetaRegItem), POINTER     :: Node       ! METAREGISTRY ITEM object
 !
@@ -1268,6 +1341,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  23 Jun 2017 - R. Yantosca - Initial version, based on code by Arjen Markus
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1276,14 +1350,14 @@ CONTAINS
 !
     ! Strings
     CHARACTER(LEN=255) :: ErrMsg, ThisLoc
- 
+
     !=======================================================================
     ! Initialize
     !=======================================================================
     RC      = GC_SUCCESS
     ErrMsg  = ''
     ThisLoc = ' -> at MetaRegItem_AddNew (in Headers/registry_mod.F90)'
- 
+
     !=======================================================================
     ! Test if the METAREGISTRY ITEM (aka "Node") has been allocated memory
     ! and is therefore part of an existing linked list
@@ -1294,7 +1368,7 @@ CONTAINS
        ! If not, then create a new METAREGISTRY ITEM (named "Node"),
        ! and set it at the head of a new linked list
        !--------------------------------------------------------------------
-       CALL MetaRegItem_Create( am_I_Root, Node, Item, RC )
+       CALL MetaRegItem_Create( Input_Opt, Node, Item, RC )
        IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Could not create "Node" as the head node of a list!'
           CALL GC_Error( ErrMsg, RC, ThisLoc )
@@ -1307,7 +1381,7 @@ CONTAINS
        ! Otherwise, create a new METAREGISTRY ITEM (named "Node"),
        ! and append it to the list, immediately following the head node
        !--------------------------------------------------------------------
-       CALL MetaRegItem_Insert( am_I_Root, Node, Item, RC )
+       CALL MetaRegItem_Insert( Input_Opt, Node, Item, RC )
        IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Could not insert "Node" into an existing linked list!'
           CALL GC_Error( ErrMsg, RC, ThisLoc )
@@ -1331,18 +1405,19 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE MetaRegItem_Create( am_I_Root, Node, Item, RC )
+  SUBROUTINE MetaRegItem_Create( Input_Opt, Node, Item, RC )
 !
 ! !USES:
 !
     USE ErrCode_Mod
+    USE Input_Opt_Mod, ONLY : OptInput
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
-    LOGICAL,           INTENT(IN)  :: am_I_Root  ! Are we on the root CPU?
+    TYPE(OptInput),    INTENT(IN)  :: Input_Opt  ! Input Options object
     TYPE(RegItem),     POINTER     :: Item       ! REGISTRY ITEM object
 !
-! !INPUT/OUTPUT PARAMETERS: 
+! !INPUT/OUTPUT PARAMETERS:
 !
     TYPE(MetaRegItem), POINTER     :: Node       ! METAREGISTRY ITEM object
 !
@@ -1356,6 +1431,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  23 Jun 2017 - R. Yantosca - Initial version, based on code by Arjen Markus
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1371,7 +1447,7 @@ CONTAINS
     RC      = GC_SUCCESS
     ErrMsg  = ''
     ThisLoc = ' -> at MetaRegItem_Create (in Headers/registry_mod.F90)'
-    
+
     !=======================================================================
     ! Initialize the METAREGISTRY ITEM itself
     !=======================================================================
@@ -1393,7 +1469,7 @@ CONTAINS
 
     ! Because this is the first METAREGISTRY ITEM that is being created,
     ! we can consider this to be the head node of a linked list.
-    IF ( .not. ASSOCIATED( Node%Item ) ) THEN 
+    IF ( .not. ASSOCIATED( Node%Item ) ) THEN
        ALLOCATE( Node%Item, STAT=RC )
        IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Could not allocate "Node%Item"!'
@@ -1402,7 +1478,7 @@ CONTAINS
        ENDIF
     ENDIF
 
-    ! Attach the given REGISTRY ITEM to the METAREGISTRY ITEM 
+    ! Attach the given REGISTRY ITEM to the METAREGISTRY ITEM
     ! (i.e. place it into the head node of a linked list)
     Node%Item = Item
 
@@ -1422,18 +1498,19 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE MetaRegItem_Insert( am_I_Root, Node, Item, RC )
+  SUBROUTINE MetaRegItem_Insert( Input_Opt, Node, Item, RC )
 !
 ! !USES:
 !
     USE ErrCode_Mod
+    USE Input_Opt_Mod, ONLY : OptInput
 !
-! !INPUT PARAMETERS: 
+! !INPUT PARAMETERS:
 !
-    LOGICAL,           INTENT(IN)  :: am_I_Root ! Are we on the root CPU?
+    TYPE(OptInput),    INTENT(IN)  :: Input_Opt ! Input Options object
     TYPE(RegItem),     POINTER     :: Item      ! REGISTRY ITEM object
 !
-! !INPUT/OUTPUT PARAMETERS: 
+! !INPUT/OUTPUT PARAMETERS:
 !
     TYPE(MetaRegItem), POINTER     :: Node      ! METAREGISTRY ITEM object
 !
@@ -1447,7 +1524,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  23 Jun 2017 - R. Yantosca - Initial version, based on code by Arjen Markus
-!  06 Oct 2017 - R. Yantosca - Now insert new node at the head of the list
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1456,7 +1533,7 @@ CONTAINS
 !
     ! Strings
     CHARACTER(LEN=255)         :: ErrMsg, ThisLoc
-    
+
     ! Objects
     TYPE(MetaRegItem), POINTER :: Head
 
@@ -1466,9 +1543,9 @@ CONTAINS
     RC      = GC_SUCCESS
     ErrMsg  = ''
     ThisLoc = ' -> at MetaRegItem_Insert (in Headers/registry_mod.F90)'
-    
+
     !=======================================================================
-    ! Initialize a METAREGISTRY ITEM named "Next", which will be inserted 
+    ! Initialize a METAREGISTRY ITEM named "Next", which will be inserted
     ! into the existing list.  "Next" will contain a new REGISTRY ITEM.
     !=======================================================================
 
@@ -1517,21 +1594,17 @@ CONTAINS
 !\\
 ! !INTERFACE:
 !
-  SUBROUTINE MetaRegItem_Destroy( am_I_Root, List, RC )
+  SUBROUTINE MetaRegItem_Destroy( List, RC )
 !
 ! !USES:
 !
     USE ErrCode_Mod
 !
-! !INPUT PARAMETERS:
-!
-    LOGICAL,           INTENT(IN)  :: am_I_Root  ! Are we on the root CPU?
-!
-! !INPUT/OUTPUT PARAMETERS: 
+! !INPUT/OUTPUT PARAMETERS:
 !
     TYPE(MetaRegItem), POINTER     :: List       ! List of METAREGISTRY ITEMS
 !
-! !OUTPUT PARAMETERS: 
+! !OUTPUT PARAMETERS:
 !
     INTEGER,           INTENT(OUT) :: RC         ! Success or failure?
 !
@@ -1539,7 +1612,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !  23 Jun 2017 - R. Yantosca - Initial version, based on code by Arjen Markus
-!  29 Jun 2017 - R. Yantosca - Now nullify pointers to integer fields
+!  See https://github.com/geoschem/geos-chem for complete history
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1597,7 +1670,7 @@ CONTAINS
        Current%Item%Ptr1d_I => NULL()
        Current%Item%Ptr2d_I => NULL()
        Current%Item%Ptr3d_I => NULL()
-       
+
        ! Destroy the REGISTRY ITEM itself
 #if defined( ESMF_ )
        IF ( ASSOCIATED( Current%Item ) ) NULLIFY( Current%Item )
