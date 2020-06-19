@@ -22,7 +22,6 @@
    USE GmiSpcConcentrationMethod_mod, ONLY : t_SpeciesConcentration
    USE GmiGrid_mod,                   ONLY : t_gmiGrid
    USE GmiTimeControl_mod,            ONLY : t_GmiClock
-   USE GmiESMFrcFileReading_mod,      ONLY : rcEsmfReadLogical
    USE GmiESMFrcFileReading_mod,      ONLY : rcEsmfReadTable
    use GmiArrayBundlePointer_mod,     ONLY : t_GmiArrayBundle, CleanArrayPointer
    use GmiFieldBundleESMF_mod,        ONLY : updateTracerToBundle
@@ -31,7 +30,6 @@
    use GmiStateFieldESMF_mod,         ONLY : initDataInStateField
    use GmiSwapSpeciesBundlesMod,      ONLY : SwapSpeciesBundles, speciesReg_for_CCM
    USE GmiFastJX_includeMod,          ONLY : t_fastJXbundle
-   USE GmiFastJX_ParametersMod,       ONLY : NW
 
    IMPLICIT NONE
    INTEGER, PARAMETER :: DBL = KIND(0.00D+00)
@@ -43,6 +41,7 @@
 #include "setkin_lchem.h"
 #include "gmi_AerDust_const.h"
 #include "gmi_time_constants.h"
+#include "parm_MIE_fastJX65.h"
 ! !TYPES:
 
    PRIVATE
@@ -245,19 +244,14 @@ CONTAINS
    USE GmiTimeControl_mod,            ONLY : Set_begGmiDate, Set_begGmiTime
    USE GmiTimeControl_mod,            ONLY : Set_numTimeSteps
    use GmiCheckNamelistFile_mod, only : CheckNamelistOptionRange
-   use fastj           , only : InitializeFastj
-   use fast_JX         , only : InitializeFastJX
-   use Fast_JX53b      , only : InitializeFastJX53b
-   use Fast_JX53c      , only : InitializeFastJX53c
-   use fastJX65_mod,     only : initializeFastJX65
-   use CloudJ_mod,       only : initializeFastJX74
-   USE ReadSolarCycle_mod,            ONLY : readSolarCycleData
+!
+   use fastJX65_mod,       only : initializeFastJX65
+   use CloudJ_mod,         only : initializeFastJX74
+   USE ReadSolarCycle_mod, ONLY : readSolarCycleData
 
    IMPLICIT none
    INTEGER, PARAMETER :: DBL = KIND(0.00D+00)
 
-#     include "phot_lookup.h"
-#     include "phot_monthly.h"
 !
 ! !INPUT PARAMETERS:
 !
@@ -306,10 +300,10 @@ CONTAINS
    INTEGER :: gmi_nborder
    INTEGER :: numSpecies
    INTEGER :: inyr,inmon,iscyr
+!
    REAL, dimension(2628)     :: s_cycle_dates    ! 2628 months : 1882 - 2100
-   REAL, dimension(NW,2628)  :: s_cycle          ! 2628 months : 1882 - 2100
+   REAL, dimension(W_ ,2628) :: s_cycle          ! 2628 months : 1882 - 2100
    REAL(r8), POINTER         :: fjx_solar_cycle_param(:)
-
 
    INTEGER :: loc_proc, locGlobProc, commu_slaves
    LOGICAL :: one_proc, rootProc
@@ -383,28 +377,28 @@ CONTAINS
       ! Emission related variables
       !------------------------------
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_synoz, &
-     &           "do_synoz:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_synoz, &
+     &           label="do_synoz:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_semiss_inchem, &
-     &           "do_semiss_inchem:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_semiss_inchem, &
+     &           label="do_semiss_inchem:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_ShipEmission, &
-     &           "do_ShipEmission:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_ShipEmission, &
+     &           label="do_ShipEmission:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       !------------------------------
       ! Diagnostics related variables
       !------------------------------
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_diag, &
-     &           "pr_diag:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_diag, &
+     &           label="pr_diag:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%verbose, &
-     &           "verbose:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%verbose, &
+     &           label="verbose:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       !-------------------------------------------
@@ -412,8 +406,8 @@ CONTAINS
       ! Useful for mission support and replays.
       !--------------------------------------------
       
-      call rcEsmfReadLogical(gmiConfigFile, self%BCRealTime, &
-     &           "BCRealTime:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%BCRealTime, &
+     &           label="BCRealTime:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
       
       !-----------------------------
@@ -425,14 +419,8 @@ CONTAINS
 !       0:  no photolysis
 !       1:  set all qj values to qj_init_val
 !       2:  read in qj values
-!       3:  use fastj routine (for fastJ, fastJx, fastJx53b)
+!       3:  use fastj routine (for fastJX, CloudJ)
 !           This option should be combined with fastj_opt.
-!       4:  lookup table for qj (Kawa style)
-!       5:  lookup table for qj (Kawa style) +
-!           use ozone climatology for column ozone calc.
-!       6:  calculate from table and Gmimod data (Quadchem)
-!       7:  read in qj values (2-D, 12 months)
-!       8:  use fast-JX routine (troposphere/stratosphere)
 !     -----------------------------------------------------
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%phot_opt, &
@@ -442,20 +430,16 @@ CONTAINS
 
 !     -----------------------------------------------------
 !     fastj_opt: set when phot_opt=3
-!       0:  FastJ
-!       1:  FastJx       (supported)
-!       2:  FastJx 5.3b
-!       3:  FastJx 5.3c
 !       4:  FastJx 6.5   (supported)
 !       5:  CloudJ       (supported) (FastJX 7.4)
 !     -----------------------------------------------------
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%fastj_opt, &
      &                label   = "fastj_opt:", &
-     &                default = 1, rc=STATUS )
+     &                default = 4, rc=STATUS )
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_clear_sky, "do_clear_sky:", &
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_clear_sky, label="do_clear_sky:", &
      &                       default=.false., rc=STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%fastj_offset_sec, &
@@ -495,7 +479,7 @@ CONTAINS
 
 !... do solar cycle in incoming solar flux?
 
-      CALL rcEsmfReadLogical(gmiConfigFile, self%do_solar_cycle, "do_solar_cycle:", &
+      CALL ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_solar_cycle, label="do_solar_cycle:", &
      &                       default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
@@ -645,8 +629,8 @@ CONTAINS
      &                default = '', rc=STATUS )
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_ozone_inFastJX, &
-     &              "do_ozone_inFastJX:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_ozone_inFastJX, &
+     &              label="do_ozone_inFastJX:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       !=================================================================
@@ -656,7 +640,7 @@ CONTAINS
       !                 and not do any aerosol/dust calculations.
       !=================================================================
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_AerDust_Calc, "do_AerDust_Calc:", &
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_AerDust_Calc, label="do_AerDust_Calc:", &
      &                       default=.false., rc=STATUS)
 
       !=================================================================
@@ -690,7 +674,7 @@ CONTAINS
       VERIFY_(STATUS)
 
       call CheckNamelistOptionRange ('phot_opt', self%phot_opt, 0, 7)
-      call CheckNamelistOptionRange ('fastj_opt', self%fastj_opt, 0, 5)
+      call CheckNamelistOptionRange ('fastj_opt', self%fastj_opt, 4, 5)
       call CheckNamelistOptionRange ('AerDust_Effect_opt', self%AerDust_Effect_opt, 0, 3)
 
       self%num_qjs       = NUM_J
@@ -698,10 +682,10 @@ CONTAINS
 
       !!if (self%num_qjs > 0) self%qj_labels(1:self%num_qjs) = lqjchem(1:self%num_qjs)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_qj_o3_o1d, "pr_qj_o3_o1d:", &
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_qj_o3_o1d, label="pr_qj_o3_o1d:", &
      &                       default=.false., rc=STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_qj_opt_depth, "pr_qj_opt_depth:", &
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_qj_opt_depth, label="pr_qj_opt_depth:", &
      &                       default=.false., rc=STATUS)
 
 !      if (self%pr_qj_o3_o1d) then
@@ -745,24 +729,24 @@ CONTAINS
       ! Do we want to couple to GOCART aerosols?
       ! ----------------------------------------
       
-      call rcEsmfReadLogical(gmiConfigFile, self%usingGOCART_BC, &
-     &           "usingGOCART_BC:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%usingGOCART_BC, &
+     &           label="usingGOCART_BC:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
       
-      call rcEsmfReadLogical(gmiConfigFile, self%usingGOCART_DU, &
-     &           "usingGOCART_DU:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%usingGOCART_DU, &
+     &           label="usingGOCART_DU:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
       
-      call rcEsmfReadLogical(gmiConfigFile, self%usingGOCART_OC, &
-     &           "usingGOCART_OC:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%usingGOCART_OC, &
+     &           label="usingGOCART_OC:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
       
-      call rcEsmfReadLogical(gmiConfigFile, self%usingGOCART_SS, &
-     &           "usingGOCART_SS:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%usingGOCART_SS, &
+     &           label="usingGOCART_SS:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
       
-      call rcEsmfReadLogical(gmiConfigFile, self%usingGOCART_SU, &
-     &           "usingGOCART_SU:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%usingGOCART_SU, &
+     &           label="usingGOCART_SU:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
 
@@ -855,22 +839,22 @@ CONTAINS
    CALL Set_numTimeSteps(self%gmiClock, 0)
 
 !... solar cycle parameter
-       if(self%do_solar_cycle) then
+   if(self%do_solar_cycle) then
 
-   CALL readSolarCycleData( s_cycle_dates, s_cycle, self%sc_infile_name )
+     CALL readSolarCycleData( s_cycle_dates, s_cycle, self%sc_infile_name )
 
 !... figure out index for solar cycle array from year and month
-          inyr = int(nymd/10000)
-          inmon = int(nymd/100)-100*inyr
-          iscyr = nint(((inyr+inmon/12.0)-s_cycle_dates(1))*12.)+1
+     inyr = int(nymd/10000)
+     inmon = int(nymd/100)-100*inyr
+     iscyr = nint(((inyr+inmon/12.0)-s_cycle_dates(1))*12.)+1
 
-    IF( MAPL_AM_I_ROOT() ) THEN
-      PRINT *,"Solar cycle: ",s_cycle_dates(iscyr),s_cycle(:,iscyr)
-    ENDIF
-         self%JXbundle%fjx_solar_cycle_param(:) = s_cycle(:,iscyr)
-       else
-         self%JXbundle%fjx_solar_cycle_param(:) = 1.000
-       endif
+     IF( MAPL_AM_I_ROOT() ) THEN
+       PRINT *,"Solar cycle: ",s_cycle_dates(iscyr),s_cycle(:,iscyr)
+     ENDIF
+     self%JXbundle%fjx_solar_cycle_param(:) = s_cycle(:,iscyr)
+   else
+     self%JXbundle%fjx_solar_cycle_param(:) = 1.000
+   endif
 
 ! Grid box surface area, m^{2}
 ! ----------------------------
@@ -972,33 +956,6 @@ CONTAINS
          select case (self%fastj_opt)
          !===========================
 
-            !=======
-            case (0)
-            !=======
-                call InitializeFastJ (self%cross_section_file, self%rate_file, &
-     &                         self%T_O3_climatology_file, n_qj_O3_2OH,   &
-     &                         NUM_J, self%chem_mask_khi, k2, k1)
-            !=======
-            case (1)
-            !=======
-               call InitializeFastJX (self%JXbundle, self%cross_section_file, &
-                                      self%rate_file, &
-     &                        self%T_O3_climatology_file, rootProc,            &
-     &                        n_qj_O3_2OH, NUM_J, self%chem_mask_khi, k2, k1)
-            !=======
-            case (2)
-            !=======
-                call InitializeFastJX53b (k1, k2, self%chem_mask_khi,          &
-     &                         NUM_J, self%cross_section_file,                 &
-     &                         self%scattering_data_file, self%rate_file,      &
-     &                         self%T_O3_climatology_file)
-            !=======
-            case (3)
-            !=======
-                call InitializeFastJX53c (k1, k2, self%chem_mask_khi,          &
-     &                         NUM_J, self%cross_section_file,                 &
-     &                         self%scattering_data_file, self%rate_file,      &
-     &                         self%T_O3_climatology_file)
             !=======
             case (4)
             !=======
@@ -2200,6 +2157,7 @@ CONTAINS
 
   TYPE(ESMF_State)           :: aero
   TYPE(ESMF_FieldBundle)     :: aerosols
+  TYPE(ESMF_StateItem_Flag)  :: itemtype
 
   rc = 0
   IAm = "Acquire_SU"
@@ -2233,19 +2191,19 @@ CONTAINS
      END IF
 
      ! If volcanic SU exists, use it too:
-     NULLIFY(SO4)
-     CALL MAPL_GetPointer(impChem, SO4, 'GOCART::SO4v')
-     IF( ASSOCIATED(SO4) ) THEN
+     CALL ESMF_StateGet(impChem, 'GOCART::SO4v', itemtype, RC=STATUS)
+     VERIFY_(STATUS)
+
+     IF ( itemtype == ESMF_STATEITEM_FIELD ) THEN
+       CALL MAPL_GetPointer(impChem, SO4, 'GOCART::SO4v', RC=STATUS)
+       VERIFY_(STATUS)
 
        self%wAersl(:,:,km:1:-1,1) = &
        self%wAersl(:,:,km:1:-1,1) + SO4(:,:,1:km)*airdens(:,:,1:km)
 
        IF(self%verbose) THEN
-        CALL pmaxmin('SO4v:', SO4, qmin, qmax, iXj, km, 1. )
+         CALL pmaxmin('SO4v:', SO4, qmin, qmax, iXj, km, 1. )
        END IF
-
-       NULLIFY(SO4)
-
      END IF
 
     END IF

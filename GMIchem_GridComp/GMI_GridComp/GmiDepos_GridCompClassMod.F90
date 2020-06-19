@@ -24,7 +24,6 @@
    USE GmiSpcConcentrationMethod_mod, ONLY : t_SpeciesConcentration
    USE GmiGrid_mod,                   ONLY : t_gmiGrid
    USE GmiTimeControl_mod,            ONLY : t_GmiClock
-   USE GmiESMFrcFileReading_mod,      ONLY : rcEsmfReadLogical
    USE GmiESMFrcFileReading_mod,      ONLY : rcEsmfReadTable
    USE GmiSwapSpeciesBundlesMod,      ONLY : SwapSpeciesBundles, speciesReg_for_CCM
    USE VegLaiMod,                     ONLY : Decode_Land_Types, Decode_XLAI
@@ -253,8 +252,8 @@ CONTAINS
      &                default = ' ', rc=STATUS )
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_synoz, &
-     &           "do_synoz:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_synoz, &
+     &           label="do_synoz:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%chem_opt, &
@@ -266,39 +265,39 @@ CONTAINS
       ! Deposition related variables
       !------------------------------
       
-      call rcEsmfReadLogical(gmiConfigFile, self%do_drydep, &
-     &           "do_drydep:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_drydep, &
+     &           label="do_drydep:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_wetdep, &
-     &           "do_wetdep:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_wetdep, &
+     &           label="do_wetdep:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       !------------------------------
       ! Diagnostics related variables
       !------------------------------
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_grav_set, &
-     &           "do_grav_set:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_grav_set, &
+     &           label="do_grav_set:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_diag, &
-     &           "pr_diag:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_diag, &
+     &           label="pr_diag:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%verbose, &
-     &           "verbose:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%verbose, &
+     &           label="verbose:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_scav, &
-     &           "pr_scav:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_scav, &
+     &           label="pr_scav:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_dry_depos, &
-     &           "pr_dry_depos:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_dry_depos, &
+     &           label="pr_dry_depos:", default=.false., rc=STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_wet_depos, &
-     &           "pr_wet_depos:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_wet_depos, &
+     &           label="pr_wet_depos:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%metdata_name_org, &
