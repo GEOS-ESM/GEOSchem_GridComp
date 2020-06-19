@@ -40,23 +40,23 @@ module DU2G_GridCompMod
    integer, parameter         :: NHRES = 6  ! DEV NOTE!!! should this be allocatable, and not a parameter?
 !  !Dust state
    type, extends(GA_GridComp) :: DU2G_GridComp
-       type(Chem_Mie), dimension(2)    :: rad_MieTable, diag_MieTable
-       real, allocatable      :: radius(:)      ! particle effective radius [um]
-       real, allocatable      :: rlow(:)        ! particle effective radius lower bound [um]
-       real, allocatable      :: rup(:)         ! particle effective radius upper bound [um]
+!       type(Chem_Mie), dimension(2)    :: rad_MieTable, diag_MieTable
+!       real, allocatable      :: radius(:)      ! particle effective radius [um]
+!       real, allocatable      :: rlow(:)        ! particle effective radius lower bound [um]
+!       real, allocatable      :: rup(:)         ! particle effective radius upper bound [um]
        real, allocatable      :: sfrac(:)       ! fraction of total source
-       real, allocatable      :: rhop(:)        ! soil class density [kg m-3]
+!       real, allocatable      :: rhop(:)        ! soil class density [kg m-3]
        real                   :: Ch_DU_res(NHRES) ! resolutions used for Ch_DU
        real                   :: Ch_DU          ! dust emission tuning coefficient [kg s2 m-5].
-       real, allocatable      :: fscav(:)       ! scavenging efficiency
-       real, allocatable      :: molwght(:)     ! molecular weight
-       real, allocatable      :: fnum(:)        ! number of particles per kg mass
-       integer                :: rhFlag
+!       real, allocatable      :: fscav(:)       ! scavenging efficiency
+!       real, allocatable      :: molwght(:)     ! molecular weight
+!       real, allocatable      :: fnum(:)        ! number of particles per kg mass
+!       integer                :: rhFlag
        logical                :: maringFlag=.false.  ! maring settling velocity correction
-       integer                :: nbins
-       integer                :: km             ! vertical grid dimension
-       real                   :: CDT            ! chemistry timestep (secs)
-       integer                :: instance       ! data or computational instance
+!       integer                :: nbins
+!       integer                :: km             ! vertical grid dimension
+!       real                   :: CDT            ! chemistry timestep (secs)
+!       integer                :: instance       ! data or computational instance
        integer                :: day_save = -1      
 !      !Workspae for point emissions
        logical                :: doing_point_emissions = .false.
@@ -144,9 +144,11 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
     end if
 
     ! process generic config items
-    call self%GA_GridComp%load_resource_file(cfg, __RC__)
+    call self%GA_GridComp%load_from_config(cfg, __RC__)
 
+    allocate(self%sfrac(self%nbins), __STAT__)
     ! process DU-specific items
+    call ESMF_ConfigGetAttribute (cfg, self%maringFlag, label='maringFlag:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%sfrac,      label='source_fraction:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%Ch_DU_res,  label='Ch_DU:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%point_emissions_srcfilen, &
@@ -339,8 +341,7 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
     integer                              :: instance
     type (ESMF_Field)                    :: field, fld
     character (len=ESMF_MAXSTR)          :: field_name, prefix
-    integer                              :: varCount
-    character (len=ESMF_MAXSTR), allocatable   :: varList(:)
+!    character (len=ESMF_MAXSTR), allocatable   :: varList(:)
 
     real                                 :: CDT         ! chemistry timestep (secs)
     integer                              :: HDT         ! model     timestep (secs)
@@ -430,7 +431,7 @@ if(mapl_am_i_root()) print*,'DU2G Init BEGIN'
 
 !   Add attribute information to internal state varaibles
 !   -----------------------------------------------------
-    call ESMF_StateGet (internal, itemNameList=varList, __RC__)
+!    call ESMF_StateGet (internal, itemNameList=varList, __RC__)
 
 !   Fill AERO States with dust fields
 !   ------------------------------------
@@ -758,6 +759,8 @@ if(mapl_am_i_root()) print*,'DU2G Run1 BEGIN'
         deallocate(iPoint, jPoint, __STAT__)
     end if
 
+if(mapl_am_i_root()) print*,'DU2G Run1 END'
+
     RETURN_(ESMF_SUCCESS)
 
   end subroutine Run1
@@ -804,6 +807,8 @@ if(mapl_am_i_root()) print*,'DU2G Run1 BEGIN'
 !*****************************************************************************
 !   Begin... 
 
+if(mapl_am_i_root()) print*,'DU2G Run2 BEGIN'
+
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
@@ -836,9 +841,11 @@ if(mapl_am_i_root()) print*,'DU2G Run1 BEGIN'
 
 !   Dust Settling
 !   -----------
-    call Chem_Settling2Gorig (self%km, self%rhFlag, DU, MAPL_grav, delp, &
-                              self%radius*1.e-6, self%rhop, self%cdt, t, airdens, &
-                              rh2, zle, DUSD, correctionMaring=.true., __RC__)
+    do n = 1, self%nbins
+       call Chem_Settling2Gorig (self%km, self%rhFlag, n, DU(:,:,:,n), MAPL_grav, delp, &
+                                 self%radius(n)*1.e-6, self%rhop(n), self%cdt, t, airdens, &
+                                 rh2, zle, DUSD, correctionMaring=self%maringFlag, __RC__)
+    end do
 
 !   Dust Deposition
 !   ----------------
@@ -869,12 +876,14 @@ if(mapl_am_i_root()) print*,'DU2G Run1 BEGIN'
    end do
 
 
-   call Aero_Compute_Diags ( self%diag_MieTable(self%instance), self%km, self%nbins, self%rlow, self%rup, &
+   call Aero_Compute_Diags ( self%diag_MieTable(self%instance), self%km, 1, self%nbins, self%rlow, self%rup, &
                            self%diag_MieTable(self%instance)%channels, DU, MAPL_GRAV, t, airdens, &
                            rh2, u, v, delp, DUSMASS, DUCMASS, DUMASS, DUEXTTAU, DUSCATAU,     &
                            DUSMASS25, DUCMASS25, DUMASS25, DUEXTT25, DUSCAT25, &
                            DUFLUXU, DUFLUXV, DUCONC, DUEXTCOEF, DUSCACOEF, &
                            DUEXTTFM, DUSCATFM, DUANGSTR, DUAERIDX, __RC__ )
+
+if(mapl_am_i_root()) print*,'DU2G Run2 END'
 
     RETURN_(ESMF_SUCCESS)
 
