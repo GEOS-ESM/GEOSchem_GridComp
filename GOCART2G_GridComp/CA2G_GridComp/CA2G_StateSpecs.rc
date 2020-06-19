@@ -9,30 +9,31 @@ category: IMPORT
 #----------------------------------------------------------------------------------------
  FROCEAN    | 1      | xy   | N   |      | fraction_of_ocean
  FRACI      | 1      | xy   | N   |      | ice_covered_fraction_of_tile
-# LWI        | 1      | xy   | N   |      | land-ocean-ice_mask
-# U10M       | m s-1  | xy   | N   |      | 10-meter_eastward_wind
-# V10M       | m s-1  | xy   | N   |      | 10-meter_northward_wind
-# USTAR      | m s-1  | xy   | N   |      | surface_velocity_scale
+ LWI        | 1      | xy   | N   |      | land-ocean-ice_mask
+ U10M       | m s-1  | xy   | N   |      | 10-meter_eastward_wind
+ V10M       | m s-1  | xy   | N   |      | 10-meter_northward_wind
+ USTAR      | m s-1  | xy   | N   |      | surface_velocity_scale
 # TS         | K      | xy   | N   |      | surface skin temperature
 # DZ         | m      | xy   | N   |      | surface_layer_height
-# FRLAKE     | 1      | xy   | N   |      | fraction_of_lake
-# AREA       | m^2    | xy   | N   |      | agrid_cell_area
-# ZPBL       | m      | xy   | N   |      | planetary_boundary_layer_height
-# SH         | w m-2  | xy   | N   |      | sensible_heat_flux_from_turbulence
-# Z0H        | m      | xy   | N   |      | surface_roughness_for_heat
-# CN_PRCP    |kg/m^2/s| xy   | N   |      | surface_conv._rain_flux_needed_by_land
-# NCN_PRCP   |kg/m^2/s| xy   | N   |      | Non-convective precipitation
+ FRLAKE     | 1      | xy   | N   |      | fraction_of_lake
+ AREA       | m^2    | xy   | N   |      | agrid_cell_area
+ ZPBL       | m      | xy   | N   |      | planetary_boundary_layer_height
+ SH         | w m-2  | xy   | N   |      | sensible_heat_flux_from_turbulence
+ Z0H        | m      | xy   | N   |      | surface_roughness_for_heat
+ CN_PRCP    |kg/m^2/s| xy   | N   |      | surface_conv._rain_flux_needed_by_land
+ NCN_PRCP   |kg/m^2/s| xy   | N   |      | Non-convective precipitation
 #........................................................................................
-# AIRDENS    | kg/m^3 | xyz  | C   |      | moist_air_density
-# DELP       | Pa     | xyz  | C   |      | pressure_thickness
-# T          | K      | xyz  | C   |      | air_temperature
-# RH2        | 1      | xyz  | C   |      | Rel_Hum_after_moist
-# ZLE        | m      | xyz  | E   |      | geopotential_height
-# PLE        | Pa     | xyz  | E   |      | air_pressure
-# PFL_LSAN   | kg/m2/s| xyz  | E   |      | 3D_flux_of_liquid_nonconvective_precipitation
-# PFI_LSAN   | kg/m2/s| xyz  | E   |      | 3D_flux_of_ice_nonconvective_precipitation
-# U          | m s-1  | xyz  | C   |      | eastward_wind
-# V          | m s-1  | xyz  | C   |      | northward_wind
+ AIRDENS    | kg/m^3 | xyz  | C   |      | moist_air_density
+ DELP       | Pa     | xyz  | C   |      | pressure_thickness
+ T          | K      | xyz  | C   |      | air_temperature
+ RH2        | 1      | xyz  | C   |      | Rel_Hum_after_moist
+ ZLE        | m      | xyz  | E   |      | geopotential_height
+ PLE        | Pa     | xyz  | E   |      | air_pressure
+ PFL_LSAN   | kg/m2/s| xyz  | E   |      | 3D_flux_of_liquid_nonconvective_precipitation
+ PFI_LSAN   | kg/m2/s| xyz  | E   |      | 3D_flux_of_ice_nonconvective_precipitation
+ U          | m s-1  | xyz  | C   |      | eastward_wind
+ V          | m s-1  | xyz  | C   |      | northward_wind
+ pSOA_ANTHRO_VOC | kg m-3 s-1 | xyz | C |   | SOA from Anthropogenic and biomass burning VOC
 #........................................................................................
  OC_BIOMASS  | 1      | xy   | N   |      | source species
  OC_TERPENE  | 1      | xy   | N   |      | source species
@@ -45,34 +46,51 @@ category: IMPORT
  OC_AVIATION_CRS | 1  | xy   | N   |      | source species
 
 
-
 category: EXPORT
 #----------------------------------------------------------------------------------------
 #  VARIABLE              | DIMENSIONS |          Additional Metadata
 #----------------------------------------------------------------------------------------
  NAME       | UNITS      | DIMS| VLOC| UNGRIDDED | LONG_NAME
 #----------------------------------------------------------------------------------------
- OCMASS    | kg kg-1    | xyz | C   |            | Organic Carbon Mass Mixing Ratio                     __ENSEMBLE__
- OCCONC    | kg m-3     | xyz | C   |            | Organic Carbon Mass Concentration                    __ENSEMBLE__
- OCEXTCOEF | m-1        | xyz | C   |            | Organic Carbon Extinction Coefficient [550 nm]       __ENSEMBLE__
- OCSCACOEF | m-1        | xyz | C   |            | Organic Carbon Scattering Coefficient [550 nm]       __ENSEMBLE__
-#..........|............|.....|.....|............|..................................
- OCEM      | kg m-2 s-1 | xy  | N   | nbins | Organic Carbon Emission All Bins                      __ENSEMBLE__
- OCSD      | kg m-2 s-1 | xy  | N   | nbins | Organic Carbon Sedimentation All Bins                 __ENSEMBLE__
- OCDP      | kg m-2 s-1 | xy  | N   | nbins | Organic Carbon Dry Deposition All Bins                __ENSEMBLE__
- OCWT      | kg m-2 s-1 | xy  | N   | nbins | Organic Carbon Wet Deposition All Bins                __ENSEMBLE__
- OCSV      | kg m-2 s-1 | xy  | N   | nbins | Organic Carbon Convective Scavenging All Bins         __ENSEMBLE__
+ CAMASS    | kg kg-1    | xyz | C   |       | Carbonaceous Aerosol Mass Mixing Ratio                     __ENSEMBLE__
+ CACONC    | kg m-3     | xyz | C   |       | Carbonaceous Aerosol Mass Concentration                    __ENSEMBLE__
+ CAEXTCOEF | m-1        | xyz | C   |       | Carbonaceous Aerosol Extinction Coefficient [550 nm]       __ENSEMBLE__
+ CASCACOEF | m-1        | xyz | C   |       | Carbonaceous Aerosol Scattering Coefficient [550 nm]       __ENSEMBLE__
+#..........|............|.....|.....|.......|..................................
+ CAEM      | kg m-2 s-1 | xy  | N   | nbins | Carbonaceous Aerosol Emission All Bins                      __ENSEMBLE__
+ CASD      | kg m-2 s-1 | xy  | N   | nbins | Carbonaceous Aerosol Sedimentation All Bins                 __ENSEMBLE__
+ CADP      | kg m-2 s-1 | xy  | N   | nbins | Carbonaceous Aerosol Dry Deposition All Bins                __ENSEMBLE__
+ CAWT      | kg m-2 s-1 | xy  | N   | nbins | Carbonaceous Aerosol Wet Deposition All Bins                __ENSEMBLE__
+ CASV      | kg m-2 s-1 | xy  | N   | nbins | Carbonaceous Aerosol Convective Scavenging All Bins         __ENSEMBLE__
+ CAEMAN    | kg m-2 s-1 | xy  | N   |       | Carbonaceous Aerosol Anthropogenic Emissions       __ENSEMBLE__
+ CAEMBB    | kg m-2 s-1 | xy  | N   |       | Carbonaceous Aerosol Biomass Burning Emissions     __ENSEMBLE__
+ CAEMBF    | kg m-2 s-1 | xy  | N   |       | Carbonaceous Aerosol Biofuel Emissions             __ENSEMBLE__
+ CAEMBG    | kg m-2 s-1 | xy  | N   |       | Carbonaceous Aerosol Biogenic Emissions            __ENSEMBLE__
+ CAHYPHIL  | kg m-2 s-1 | xy  | N   |       | Carbonaceous Aerosol Hydrophobic to Hydrophilic    __ENSEMBLE__
+ CAPSOA    | kg m-2 s-1 | xy  | N   |       | Carbonaceous Aerosol SOA Production                __ENSEMBLE__
+ CASMASS   | kg m-3     | xy  | N   |       | Carbonaceous Aerosol Surface Mass Concentration    __ENSEMBLE__
+ CACMASS   | kg m-2     | xy  | N   |       | Carbonaceous Aerosol Column Mass Density           __ENSEMBLE__
+ CAEXTTAU  |      1     | xy  | N   |       | Carbonaceous Aerosol Extinction AOT [550 nm]       __ENSEMBLE__
+ CASCATAU  |      1     | xy  | N   |       | Carbonaceous Aerosol Scattering AOT [550 nm]       __ENSEMBLE__
+ CAANGSTR  |      1     | xy  | N   |       | Carbonaceous Aerosol Angstrom parameter [470-870 nm] __ENSEMBLE__
+ CAFLUXU   | kg m-1 s-1 | xy  | N   |       | Carbonaceous Aerosol column u-wind mass flux       __ENSEMBLE__
+ CAFLUXV   | kg m-1 s-1 | xy  | N   |       | Carbonaceous Aerosol column v-wind mass flux       __ENSEMBLE__
+ CAAERIDX  |    1       | xy  | N   |       | Carbonaceous Aerosol TOMS UV Aerosol Index                 __ENSEMBLE__
 
 
+
+
+# NEED TO ADD CONDITIONAL BASED ON CA2G_GridComp_CA.rc (enable_OC, enable_BC, enable_BRC)
 category: INTERNAL
 #----------------------------------------------------------------------------------------
 #  VARIABLE                | DIMENSION        |          Additional Metadata
 #----------------------------------------------------------------------------------------
-  NAME    | UNITS | DIMS | VLOC | UNGRIDDED | RESTART | ADD2EXPORT | FRIENDLYTO | LONG NAME
+  NAME    | UNITS | DIMS | VLOC | RESTART | COND | ADD2EXPORT | FRIENDLYTO | LONG NAME
 #----------------------------------------------------------------------------------------
- OCphobic |kg kg-1| xyz  | C |  | MAPL_RestartOptional | .true. | DYNAMICS:TURBULENCE:MOIST | Organic Carbon Mixing Ratio all bins
- OCphilic |kg kg-1| xyz  | C |  | MAPL_RestartOptional | .true. | DYNAMICS:TURBULENCE:MOIST | Organic Carbon Mixing Ratio all bins
-
+ OCphobic |kg kg-1| xyz  | C    | MAPL_RestartOptional | if (self%enable_OC) then | T | DYNAMICS:TURBULENCE:MOIST | Organic Carbon Mixing Ratio all bins
+ OCphilic |kg kg-1| xyz  | C    | MAPL_RestartOptional | if (self%enable_OC) then | T | DYNAMICS:TURBULENCE:MOIST | Organic Carbon Mixing Ratio all bins
+# BCphobic |kg kg-1| xyz  | C    | MAPL_RestartOptional | if (self%enable_BC) then | T | DYNAMICS:TURBULENCE:MOIST | Black Carbon Mixing Ratio all bins
+# BCphilic |kg kg-1| xyz  | C    | MAPL_RestartOptional | if (self%enable_BC) then | T | DYNAMICS:TURBULENCE:MOIST | Black Carbon Mixing Ratio all bins
 
 #********************************************************
 #
