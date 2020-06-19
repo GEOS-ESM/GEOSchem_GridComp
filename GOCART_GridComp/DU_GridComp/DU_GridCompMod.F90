@@ -785,12 +785,6 @@ gcdu_test = gcdu_test * 1.00E-09
       return
    end if
 
-if(mapl_am_i_root()) print*,'Ch_DU(:) = ',Ch_DU(:)
-if(mapl_am_i_root()) print*,'gcDU%Ch_DU = ',gcDU%Ch_DU
-if(mapl_am_i_root()) print*,'gcdu_test = ',gcdu_test
-if(mapl_am_i_root()) print*,'DU im = ', im
-if(mapl_am_i_root()) print*,'DU jm = ', jm
-
 
 !  Settling velocity correction following Maring et al, 2003
 !  ---------------
@@ -952,8 +946,6 @@ CONTAINS
    nbins = w_c%reg%n_DU
    n1    = w_c%reg%i_DU
    n2    = w_c%reg%j_DU
-
-if(mapl_am_i_root()) print*,'DU km = ',km
 
    ijl  = ( i2 - i1 + 1 ) * ( j2 - j1 + 1 )
    ijkl = ijl * km
