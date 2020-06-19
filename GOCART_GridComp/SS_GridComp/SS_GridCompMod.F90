@@ -1326,15 +1326,19 @@ RUN_ALARM: if (gcSS%run_alarm) then
    allocate( fluxout%data2d(i1:i2,j1:j2), dqa(i1:i2,j1:j2), &
              drydepositionfrequency(i1:i2,j1:j2), __STAT__)
 
-do n = 1, 5
-  if(mapl_am_i_root()) print*,'n = ', n,' : Run2 B SS sum(ss00n) = ',sum(w_c%qa(n1+n-1)%data3d)
-end do
+!do n = 1, 5
+!  if(mapl_am_i_root()) print*,'n = ', n,' : Run2 B SS sum(ss00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+!end do
 
 !  Seasalt Settling
 !  ----------------
    call Chem_Settling ( i1, i2, j1, j2, km, n1, n2, nbins, gcSS%rhFlag, &
                         SS_radius, SS_rhop, cdt, w_c, tmpu, rhoa, hsurf,    &
                         hghte, SS_set, rc )
+!do n=1,5
+! if(mapl_am_i_root()) print*,'n = ',n ,' : SS sum(SSSD) = ',sum(SSSD(n)%data2d)
+!end do
+
 
 #ifdef DEBUG
    do n = n1, n2
@@ -1469,6 +1473,11 @@ end do
                          SS_sfcmass25, SS_colmass25, SS_mass25, SS_exttau25, SS_scatau25, &
                          SS_conc, SS_extcoef, SS_scacoef, SS_exttaufm, SS_scataufm, &
                          SS_angstrom, SS_fluxu, SS_fluxv, rc)
+
+if(mapl_am_i_root()) print*,'SS SSSMASS = ',sum(SSSMASS%data2d)
+if(mapl_am_i_root()) print*,'SS SSMASS = ',sum(SSMASS%data3d)
+if(mapl_am_i_root()) print*,'SS SSEXTTAU = ',sum(SSEXTTAU%data2d)
+if(mapl_am_i_root()) print*,'SS SSSCATAU = ',sum(SSSCATAU%data2d)
 
 do n = 1, 5
   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 E SS sum(ss00n) = ',sum(w_c%qa(n1+n-1)%data3d)
