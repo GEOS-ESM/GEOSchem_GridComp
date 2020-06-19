@@ -71,7 +71,7 @@ module GOCART2G_GridCompMod
   integer ::     SS2G = -1
   integer ::     SUng = -1
   integer ::     BCng = -1
-  integer ::     CA2g = -1
+  integer ::     CA2G = -1
   integer ::     NIng = -1
 
 
@@ -155,7 +155,8 @@ contains
 
 if (mapl_am_I_root()) print*,'GOCART2G self%instances_DU = ',self%instances_DU
 if (mapl_am_I_root()) print*,'GOCART2G self%active_DU = ',self%active_DU
-
+if (mapl_am_I_root()) print*,'GOCART2G self%instances_CA = ',self%instances_CA
+if (mapl_am_I_root()) print*,'GOCART2G self%active_cA = ',self%active_CA
 
     call ESMF_ConfigDestroy(myCF, __RC__)
 
@@ -553,22 +554,22 @@ if(mapl_am_i_root()) print*,'getInstances_ instances(:) = ', instances(:)
 
     call addChild__ (gc, names=self%instances_DU(1:self%active_DU), SS=DU2GSetServices, instInt=DU2G, __RC__)
     call addChild__ (gc, names=self%instances_SS(1:self%active_SS), SS=SS2GSetServices, instInt=SS2G, __RC__)
-    call addChild__ (gc, names=self%instances_CA(1:self%active_SS), SS=CA2GSetServices, instInt=CA2G, __RC__)
+    call addChild__ (gc, names=self%instances_CA(1:self%active_CA), SS=CA2GSetServices, instInt=CA2G, __RC__)
 
 !   Create passive instances after active instances
     if ((size(self%instances_DU)) >= (self%active_DU+1)) then
-        call addChild__ (gc, names=self%instances_DU(self%active_DU+1:size(self%instances_DU)), SS=DU2GSetServices, instInt=DU2G, __RC__)
-
+        call addChild__ (gc, names=self%instances_DU(self%active_DU+1:size(self%instances_DU)), &
+                         SS=DU2GSetServices, instInt=DU2G, __RC__)
     end if
 
     if ((size(self%instances_SS)) >= (self%active_SS+1)) then
-        call addChild__ (gc, names=self%instances_SS(self%active_SS+1:size(self%instances_SS)), SS=SS2GSetServices, instInt=SS2G, __RC__)
-
+        call addChild__ (gc, names=self%instances_SS(self%active_SS+1:size(self%instances_SS)), &
+                         SS=SS2GSetServices, instInt=SS2G, __RC__)
     end if
 
     if ((size(self%instances_CA)) >= (self%active_CA+1)) then
-        call addChild__ (gc, names=self%instances_CA(self%active_CA+1:size(self%instances_CA)), SS=CA2GSetServices, instInt=CA2G, __RC__)
-
+        call addChild__ (gc, names=self%instances_CA(self%active_CA+1:size(self%instances_CA)), &
+                         SS=CA2GSetServices, instInt=CA2G, __RC__)
     end if
 
     RETURN_(ESMF_SUCCESS)
