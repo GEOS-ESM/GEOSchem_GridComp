@@ -19,7 +19,7 @@
       use GmiGrid_mod, only : Get_ilong, Get_ilat, Get_ivert
       use GmiPrintError_mod, only : GmiPrintError
       use GmiCheckRange_mod, only : CheckRange3d
-      use GmiESMFrcFileReading_mod, only : rcEsmfReadTable, rcEsmfReadLogical
+      use GmiESMFrcFileReading_mod, only : rcEsmfReadTable
       use GmiArrayBundlePointer_mod, only : t_GmiArrayBundle, CleanArrayPointer
       use GmiSpcConcentrationMethod_mod, only : t_SpeciesConcentration
       use GmiSpcConcentrationMethod_mod, only : Get_concentration, Set_concentration
@@ -332,8 +332,8 @@
      &                default = 1.0d0, rc=STATUS )
       VERIFY_(STATUS)
 
-      CALL rcEsmfReadLogical(config, self%clim_emiss_by_area, &
-     &           "clim_emiss_by_area:", DEFAULT=.TRUE., RC=STATUS)
+      CALL ESMF_ConfigGetAttribute(config, value=self%clim_emiss_by_area, &
+     &           label="clim_emiss_by_area:", DEFAULT=.TRUE., RC=STATUS)
       VERIFY_(STATUS)
 
      ! Save the number of emitting layers for each emissionSpeciesName
@@ -425,8 +425,8 @@
      ! -----------------------------------------------------
 
      ! Fossil fuel
-      call rcEsmfReadLogical(config, self%doScaleNOffEmiss, &
-     &           "doScaleNOffEmiss:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(config, value=self%doScaleNOffEmiss, &
+     &           label="doScaleNOffEmiss:", default=.false., rc=STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%scFactorNOff_infile_name, &
      &                label   = "scFactorNOff_infile_name:", &
@@ -434,8 +434,8 @@
       VERIFY_(STATUS)
 
      ! Biomass burning
-      call rcEsmfReadLogical(config, self%doScaleNObbEmiss, &
-     &           "doScaleNObbEmiss:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(config, value=self%doScaleNObbEmiss, &
+     &           label="doScaleNObbEmiss:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%scFactorNObb_infile_name, &
@@ -456,73 +456,61 @@
     
       ! turn on Galactic Cosmic ray emmission of N and NO
 
-      call rcEsmfReadLogical(config, self%do_gcr, &
-     &           "do_gcr:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(config, value=self%do_gcr, &
+     &           label="do_gcr:", default=.false., __RC__ )
 
       call ESMF_ConfigGetAttribute(config, self%gcr_infile_name, &
      &                label   = "gcr_infile_name:", &
-     &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS)
+     &                default = ' ', __RC__ )
 
     !... do Ship Emission Calculations
 
-      call rcEsmfReadLogical(config, self%do_ShipEmission, &
-     &           "do_ShipEmission:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(config, value=self%do_ShipEmission, &
+     &           label="do_ShipEmission:", default=.false., __RC__ )
 
     !... do MEGAN emission calculations
 
-      call rcEsmfReadLogical(config, self%doMEGANemission, &
-     &           "doMEGANemission:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+      call ESMF_ConfigGetAttribute(config, value=self%doMEGANemission, &
+     &           label="doMEGANemission:", default=.false., __RC__ )
 
-      call rcEsmfReadLogical(config, self%doMEGANviaHEMCO, &  
-     &           "doMEGANviaHEMCO:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+      call ESMF_ConfigGetAttribute(config, value=self%doMEGANviaHEMCO, &  
+     &           label="doMEGANviaHEMCO:", default=.false., __RC__ )
 
       call ESMF_ConfigGetAttribute(config, self%MEGAN_infile_name, &
      &                label   = "MEGAN_infile_name:", &
-     &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS)
+     &                default = ' ', __RC__ )
 
       call ESMF_ConfigGetAttribute(config, self%laiMEGAN_InfileName, &
      &                label   = "laiMEGAN_InfileName:", &
-     &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS)
+     &                default = ' ', __RC__ )
 
       call ESMF_ConfigGetAttribute(config, self%aefMboMEGAN_InfileName, &
      &                label   = "aefMboMEGAN_InfileName:", &
-     &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS)
+     &                default = ' ', __RC__ )
      
       call ESMF_ConfigGetAttribute(config, self%aefIsopMEGAN_InfileName, &
      &                label   = "aefIsopMEGAN_InfileName:", &
-     &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS) 
+     &                default = ' ', __RC__ )
       
       call ESMF_ConfigGetAttribute(config, self%aefOvocMEGAN_InfileName, &
      &                label   = "aefOvocMEGAN_InfileName:", &
-     &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS)
+     &                default = ' ', __RC__ )
      
       call ESMF_ConfigGetAttribute(config, self%aefMonotMEGAN_InfileName, &
      &                label   = "aefMonotMEGAN_InfileName:", &
-     &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS)
+     &                default = ' ', __RC__ )
      
       call ESMF_ConfigGetAttribute(config, self%soil_infile_name, &
      &                label   = "soil_infile_name:", &
-     &                default = 'soiltype.asc', rc=STATUS )
-      VERIFY_(STATUS)
+     &                default = 'soiltype.asc', __RC__ )
 
       call ESMF_ConfigGetAttribute(config, self%isopconv_infile_name, &
      &                label   = "isopconv_infile_name:", &
-     &                default = 'isopconvtable.asc', rc=STATUS )
-      VERIFY_(STATUS)
+     &                default = 'isopconvtable.asc', __RC__ )
 
       call ESMF_ConfigGetAttribute(config, self%monotconv_infile_name, &
      &                label   = "monotconv_infile_name:", &
-     &                default = 'monotconvtable.asc', rc=STATUS )
-      VERIFY_(STATUS)
+     &                default = 'monotconvtable.asc', __RC__ )
 
     ! ---------------------------------------------------------------------------------------
     ! lightning_opt = 0 --> default lightning
