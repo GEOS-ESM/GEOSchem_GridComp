@@ -2,6 +2,9 @@ esma_set_this ()
 
 add_subdirectory(Shared)
 
+set (HEMCO_EXTERNAL_CONFIG TRUE)
+set (MAPL_ESMF TRUE)
+
 set (alldirs
   GEOSpchem_GridComp
   GOCART_GridComp

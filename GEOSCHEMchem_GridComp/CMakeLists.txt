@@ -26,11 +26,11 @@ endforeach()
 
 list (REMOVE_ITEM srcs
    # this one is moved to HEMCO
-   #${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosUtil/regrid_a2a_mod.F90
-   #${CMAKE_CURRENT_SOURCE_DIR}/gc_column/NcdfUtil/charpak_mod.F90
-   #${CMAKE_CURRENT_SOURCE_DIR}/gc_column/Headers/charpak_mod.F90
-   #${CMAKE_CURRENT_SOURCE_DIR}/gc_column/NcdfUtil/julday_mod.F90
-   #${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosUtil/julday_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosUtil/regrid_a2a_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/NcdfUtil/charpak_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/Headers/charpak_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/NcdfUtil/julday_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosUtil/julday_mod.F90
 
    # not sure about the rest
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore/main.F90
@@ -65,10 +65,11 @@ endif ()
 
 esma_add_library (${this}
    SRCS ${srcs}
-   DEPENDENCIES MAPL MAPL_cfio_r4 Chem_Base Chem_Shared HEMCO
+   DEPENDENCIES MAPL MAPL_cfio_r4 Chem_Base Chem_Shared HEMCO HCO HCOI_Shared HCOI_MAPL_ESMF GeosUtilHco
    )
 
 target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
+target_link_libraries(${this} PUBLIC HCOI_MAPL_ESMF)
 
 target_compile_definitions(${this} PRIVATE ESMF_ DEVEL NO_BPCH UCX 
    EXTERNAL_GRID EXTERNAL_FORCING GEOS_FP USE_REAL8 USE_TEND NC_DIAG DISCOVER MODEL_GEOS)
