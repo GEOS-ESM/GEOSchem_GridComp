@@ -269,7 +269,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE CharPak_Mod,          ONLY : To_UpperCase
+    USE HCO_CharPak_Mod,          ONLY : To_UpperCase
     USE CMN_Size_Mod,         ONLY : NDUST, NAER
     USE GCKPP_Parameters,     ONLY : NSPEC
     USE Input_Opt_Mod,        ONLY : OptInput
@@ -2390,7 +2390,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod,        ONLY : To_UpperCase
+    USE HCO_Charpak_Mod,        ONLY : To_UpperCase
     USE Registry_Params_Mod
 !
 ! !INPUT PARAMETERS:
@@ -3694,7 +3694,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE CharPak_Mod, ONLY : To_UpperCase
+    USE HCO_CharPak_Mod, ONLY : To_UpperCase
 
 !
 ! !INPUT PARAMETERS:

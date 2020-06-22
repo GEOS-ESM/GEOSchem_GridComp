@@ -143,7 +143,7 @@ CONTAINS
 !
 ! !USES:
 !
-  USE CharPak_Mod,         ONLY : TranLc
+  USE HCO_CharPak_Mod,         ONLY : TranLc
   USE ErrCode_Mod
   USE History_Util_Mod
     USE Input_Opt_Mod,     ONLY : OptInput

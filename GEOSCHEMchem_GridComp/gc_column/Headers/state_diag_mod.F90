@@ -8393,7 +8393,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod,         ONLY : StrSplit, To_UpperCase
+    USE HCO_Charpak_Mod,         ONLY : StrSplit, To_UpperCase
     USE DiagList_Mod,        ONLY : IsFullChem
     USE Registry_Params_Mod
 !
@@ -10191,7 +10191,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod,   ONLY : To_Uppercase
+    USE HCO_Charpak_Mod,   ONLY : To_Uppercase
     USE Input_Opt_Mod, ONLY : OptInput
 !
 ! !INPUT PARAMETERS:

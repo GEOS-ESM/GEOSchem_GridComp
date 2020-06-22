@@ -52,7 +52,7 @@ MODULE Chem_GridCompMod
   USE CMN_Size_Mod
   USE ESMF                                           ! ESMF library
   USE MAPL_Mod                                       ! MAPL library
-  USE Charpak_Mod                                    ! String functions
+  USE HCO_Charpak_Mod                                    ! String functions
   USE Hco_Types_Mod, ONLY : ConfigObj
   USE Input_Opt_Mod                                  ! Input Options obj
   USE GIGC_Chunk_Mod                                 ! GIGC IRF methods
@@ -419,7 +419,7 @@ CONTAINS
 !
     USE HCOI_ESMF_MOD,        ONLY : HCO_SetServices
     USE GCKPP_Model
-    USE CHARPAK_MOD,          ONLY : STRSPLIT, CSTRIP
+    USE HCO_CHARPAK_MOD,          ONLY : STRSPLIT, CSTRIP
     USE inquireMod,           ONLY : findFreeLUN
     USE FILE_MOD,             ONLY : IOERROR
 #if defined( MODEL_GEOS )

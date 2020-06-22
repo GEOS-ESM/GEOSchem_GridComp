@@ -140,7 +140,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod
+    USE HCO_Charpak_Mod
     USE InquireMod,       ONLY : findFreeLun
 !
 ! !INPUT PARAMETERS:
@@ -1285,7 +1285,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod, ONLY : To_UpperCase
+    USE HCO_Charpak_Mod, ONLY : To_UpperCase
 !
 ! !INPUT PARAMETERS:
 !

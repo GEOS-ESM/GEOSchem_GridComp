@@ -148,7 +148,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE CharPak_Mod,   ONLY : To_Uppercase
+    USE HCO_CharPak_Mod,   ONLY : To_Uppercase
     USE ErrCode_Mod
     USE Input_Opt_Mod, ONLY : OptInput
 !
@@ -455,7 +455,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod,   ONLY : To_UpperCase
+    USE HCO_Charpak_Mod,   ONLY : To_UpperCase
     USE Dictionary_M,  ONLY : dictionary_t
     USE ErrCode_Mod
 !

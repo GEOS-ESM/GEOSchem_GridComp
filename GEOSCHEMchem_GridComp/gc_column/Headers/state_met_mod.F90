@@ -3182,7 +3182,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod,         ONLY: To_UpperCase
+    USE HCO_Charpak_Mod,         ONLY: To_UpperCase
     USE Registry_Params_Mod
 !
 ! !INPUT PARAMETERS:

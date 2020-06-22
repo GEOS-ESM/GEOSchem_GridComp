@@ -350,7 +350,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE CharPak_Mod,        ONLY : To_UpperCase
+    USE HCO_CharPak_Mod,        ONLY : To_UpperCase
     USE Input_Opt_Mod,      ONLY : OptInput
     USE PhysConstants,      ONLY : AIRMW,      AVO
 !

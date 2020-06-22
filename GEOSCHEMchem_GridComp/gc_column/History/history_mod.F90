@@ -201,7 +201,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod
+    USE HCO_Charpak_Mod
     USe DiagList_Mod,      ONLY : CollList, ColItem
     USE ErrCode_Mod
     USE History_Util_Mod
@@ -474,7 +474,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod
+    USE HCO_Charpak_Mod
     USE DiagList_Mod,          ONLY : CollList, Search_CollList
     USE ErrCode_Mod
     USE Grid_Registry_Mod,     ONLY : Lookup_Grid
@@ -1841,7 +1841,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod,           ONLY : To_UpperCase
+    USE HCO_Charpak_Mod,           ONLY : To_UpperCase
     USE ErrCode_Mod
     USE HistContainer_Mod
     USE HistItem_Mod
@@ -3016,7 +3016,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod,      ONLY : CleanText, StrSplit
+    USE HCO_Charpak_Mod,      ONLY : CleanText, StrSplit
     USE DiagList_Mod,     ONLY : CollList,  Search_CollList
     USE History_Util_Mod
     USE Input_Opt_Mod,    ONLY : OptInput

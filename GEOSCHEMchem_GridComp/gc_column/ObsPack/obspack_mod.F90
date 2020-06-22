@@ -235,7 +235,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE CharPak_Mod,            ONLY : CStrip
+    USE HCO_CharPak_Mod,            ONLY : CStrip
     USE ErrCode_Mod
     USE File_Mod,               ONLY : File_Exists
     USE Input_Opt_Mod,          ONLY : OptInput 

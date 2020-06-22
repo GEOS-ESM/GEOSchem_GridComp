@@ -2870,7 +2870,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod,   ONLY : CStrip
+    USE HCO_Charpak_Mod,   ONLY : CStrip
     USE ErrCode_Mod
     USE Input_Opt_Mod, ONLY : OptInput
 !

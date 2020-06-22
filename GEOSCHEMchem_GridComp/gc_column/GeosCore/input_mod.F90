@@ -16,7 +16,7 @@ MODULE INPUT_MOD
 !
 ! !USES:
 !
-  USE CharPak_Mod,   ONLY : MAXDIM  => MAXSTRLEN
+  USE HCO_CharPak_Mod,   ONLY : MAXDIM  => MAXSTRLEN
   USE inquireMod,    ONLY : findFreeLUN
   USE PRECISION_MOD       ! For GEOS-Chem Precision (fp)
 
@@ -68,7 +68,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE CHARPAK_MOD,        ONLY : ReadOneLine, STRREPL
+    USE HCO_CHARPAK_MOD,        ONLY : ReadOneLine, STRREPL
     USE ErrCode_Mod
     USE FILE_MOD,           ONLY : IOERROR
     USE Input_Opt_Mod,      ONLY : OptInput
@@ -413,7 +413,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod, ONLY: ReadOneLine, StrSplit
+    USE HCO_Charpak_Mod, ONLY: ReadOneLine, StrSplit
     Use ErrCode_Mod
     USE File_Mod,    ONLY: IoError
 !
@@ -519,7 +519,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod,        ONLY : To_UpperCase
+    USE HCO_Charpak_Mod,        ONLY : To_UpperCase
     USE ErrCode_Mod
     USE Input_Opt_Mod,      ONLY : OptInput
     USE TIME_MOD
@@ -919,7 +919,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE CharPak_Mod,        ONLY : StrSplit
+    USE HCO_CharPak_Mod,        ONLY : StrSplit
     USE ErrCode_Mod
     USE Input_Opt_Mod,      ONLY : OptInput
     USE State_Grid_Mod,     ONLY : GrdState
@@ -3776,7 +3776,7 @@ CONTAINS
 ! !USES:
 !
 #ifdef TOMAS
-    USE CHARPAK_MOD,   ONLY : TXTEXT   ! (win, 7/14/09)
+    USE HCO_CHARPAK_MOD,   ONLY : TXTEXT   ! (win, 7/14/09)
 #endif
     USE CMN_DIAG_MOD        ! TMAX, TINDEX
     USE Input_Opt_Mod, ONLY : OptInput

@@ -935,7 +935,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod, ONLY : StrRepl
+    USE HCO_Charpak_Mod, ONLY : StrRepl
     USE Time_Mod,    ONLY : Ymd_Extract
 !
 ! !INPUT PARAMETERS:
