@@ -1171,8 +1171,8 @@ CONTAINS
    ijkl  = ijl * km
    ijk1l = ijl * (km+1)
 
-if(mapl_am_i_root()) print*,'CA Run1 B sum(OCphobic) = ',sum(w_c%qa(n1)%data3d)
-if(mapl_am_i_root()) print*,'CA Run1 B sum(OCphilic) = ',sum(w_c%qa(n2)%data3d)
+!if(mapl_am_i_root()) print*,'CA Run1 B sum(OCphobic) = ',sum(w_c%qa(n1)%data3d)
+!if(mapl_am_i_root()) print*,'CA Run1 B sum(OCphilic) = ',sum(w_c%qa(n2)%data3d)
 
 ! Reset tracer to zero at 0Z on specific day of week
 ! --------------------------------------------------
@@ -2133,6 +2133,8 @@ K_LOOP: do k = km, 1, -1
 #endif
 
 
+if(mapl_am_i_root()) print*,'CA Run2 B sum(OCphobic) = ',sum(w_c%qa(n1)%data3d)
+if(mapl_am_i_root()) print*,'CA Run2 B sum(OCphilic) = ',sum(w_c%qa(n2)%data3d)
 
 !  Get 2D Imports
 !  --------------
@@ -2396,6 +2398,9 @@ if(mapl_am_i_root()) print*,'OC OCSMASS = ',sum(OCSMASS%data2d)
 if(mapl_am_i_root()) print*,'OC OCMASS = ',sum(OCMASS%data3d)
 if(mapl_am_i_root()) print*,'OC OCEXTTAU = ',sum(OCEXTTAU%data2d)
 if(mapl_am_i_root()) print*,'OC OCSCATAU = ',sum(OCSCATAU%data2d)
+
+if(mapl_am_i_root()) print*,'CA Run2 E sum(OCphobic) = ',sum(w_c%qa(n1)%data3d)
+if(mapl_am_i_root()) print*,'CA Run2 E sum(OCphilic) = ',sum(w_c%qa(n2)%data3d)
 
    return
 
