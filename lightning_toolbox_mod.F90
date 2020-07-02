@@ -197,7 +197,7 @@ CONTAINS
 !$OMP PRIVATE( Z_IC,        LBOTTOM,  HBOTTOM,  CC,     FLASHRATE ) &
 !$OMP PRIVATE( IC_CG_RATIO, RATE                                  ) &
 !$OMP PRIVATE( X,           TOTAL_IC, TOTAL_CG, TOTAL,  REDIST    ) &
-!$OMP PRIVATE( RATE_SAVE,   SFCTYPE,                              ) &
+!$OMP PRIVATE( RATE_SAVE,   SFCTYPE                               ) &
 !$OMP PRIVATE( LTOP1,       LTOP2                                 ) &
 !$OMP SCHEDULE( DYNAMIC )
 
