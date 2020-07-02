@@ -4,6 +4,7 @@ add_subdirectory(Shared)
 
 set (HEMCO_EXTERNAL_CONFIG TRUE)
 set (MAPL_ESMF TRUE)
+set (BUILD_GEOS_INTERFACE TRUE)
 
 set (alldirs
   GEOSpchem_GridComp
