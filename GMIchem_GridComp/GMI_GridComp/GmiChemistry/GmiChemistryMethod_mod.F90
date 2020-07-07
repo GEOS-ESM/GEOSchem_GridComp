@@ -315,7 +315,7 @@
 !!       0:  no photolysis
 !!       1:  set all qj values to qj_init_val 
 !!       2:  read in qj values 
-!!       3:  use fastj routine (for fastJ, fastJx, fastJx53b)
+!!       3:  use fastj routine (for fastJX65 or CloudJ)
 !!           This option should be combined with fastj_opt.
 !!       4:  lookup table for qj (Kawa style)
 !!       5:  lookup table for qj (Kawa style) +
@@ -355,7 +355,7 @@
       
       call CheckNamelistOptionRange ('chem_opt', self%chem_opt, 0, 8)
       call CheckNamelistOptionRange ('h2oclim_opt', self%h2oclim_opt, 1, 3)
-      call CheckNamelistOptionRange ('phot_opt', self%phot_opt, 0, 7)
+      call CheckNamelistOptionRange ('phot_opt', self%phot_opt, 0, 3)
       call CheckNamelistOptionRange ('sad_opt', self%sad_opt, 0, 3)
       call CheckNamelistOptionRange ('oz_eq_synoz_opt', self%oz_eq_synoz_opt, 0, 1)
       call CheckNamelistOptionRange ('cloudDroplet_opt', self%cloudDroplet_opt, 1, 4)
@@ -517,8 +517,6 @@
       use GmiGrid_mod     , only : Get_i1, Get_i2, Get_ju1, Get_j2, Get_k1, Get_k2
       use ReadForcedBC_mod, only : readForcedBcData
 !
-#     include "phot_lookup.h"
-#     include "phot_monthly.h"
 !
 ! !INPUT PARAMETERS:
       type (t_gmiGrid),  intent(in) :: gmiGrid  
@@ -599,8 +597,6 @@
       subroutine initReadChemistry(self, gmiGrid, loc_proc)
 !
 
-#     include "phot_lookup.h"
-#     include "phot_monthly.h"
 !
 ! !INPUT PARAMETERS:
       type  (t_gmiGrid  ), intent(in) :: gmiGrid
