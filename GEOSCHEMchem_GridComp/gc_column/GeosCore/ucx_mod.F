@@ -19,7 +19,7 @@
 !
       USE CMN_SIZE_MOD
       USE ERROR_MOD,     ONLY : DEBUG_MSG
-      USE inquireMod,    ONLY : findFreeLUN
+      USE HCO_inquireMod,    ONLY : findFreeLUN
       USE PhysConstants       ! Physical constants
       USE PRECISION_MOD       ! For GEOS-Chem Precision (fp)
 

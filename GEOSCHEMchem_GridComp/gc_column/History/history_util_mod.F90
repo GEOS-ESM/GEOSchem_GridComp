@@ -98,7 +98,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Julday_Mod, ONLY : Julday
+    USE HCO_Julday_Mod, ONLY : Julday
     USE Time_Mod,   ONLY : Ymd_Extract
 !
 ! !INPUT PARAMETERS: 

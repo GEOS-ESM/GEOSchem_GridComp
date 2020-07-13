@@ -333,7 +333,7 @@
 !
 ! !USES:
 !
-      USE JULDAY_MOD, ONLY : JULDAY, CALDATE
+      USE HCO_JULDAY_MOD, ONLY : JULDAY, CALDATE
 !
 ! !REMARKS:
 !  The GEOS met fields are assimilated data, and therefore contain data on
@@ -1175,7 +1175,7 @@
 !
 ! !USES:
 !
-      USE JULDAY_MOD, ONLY : JULDAY
+      USE HCO_JULDAY_MOD, ONLY : JULDAY
 !
 ! !INPUT PARAMETERS:
 !
@@ -1438,7 +1438,7 @@
 !
 ! !USES:
 !
-      USE JULDAY_MOD, ONLY : CALDATE
+      USE HCO_JULDAY_MOD, ONLY : CALDATE
 !
 ! !INPUT PARAMETERS:
 !
@@ -4291,7 +4291,7 @@
 !
 ! !USES:
 !
-      USE CHARPAK_MOD, ONLY : STRREPL
+      USE HCO_CHARPAK_MOD, ONLY : STRREPL
 !
 ! !INPUT PARAMETERS: 
 !
@@ -4699,8 +4699,8 @@
 ! !USES:
 !
       USE ErrCode_Mod
-      USE JULDAY_MOD,       ONLY : JULDAY
-      USE JULDAY_MOD,       ONLY : CALDATE
+      USE HCO_JULDAY_MOD,       ONLY : JULDAY
+      USE HCO_JULDAY_MOD,       ONLY : CALDATE
 !
 ! !INPUT PARAMETERS: 
 !

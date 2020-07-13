@@ -505,7 +505,7 @@
       USE CMN_SIZE_MOD              ! Size parameters
       USE ErrCode_Mod
       USE Input_Opt_Mod,       ONLY : OptInput
-      USE inquireMod,          ONLY : findFreeLUN
+      USE HCO_inquireMod,          ONLY : findFreeLUN
       USE TIME_MOD,            ONLY : EXPAND_DATE
       USE TIME_MOD,            ONLY : GET_CT_DYN, GET_CT_CHEM
       USE State_Grid_Mod,      ONLY : GrdState
@@ -644,7 +644,7 @@
       USE ERROR_MOD,            ONLY : DEBUG_MSG
       USE FILE_MOD,             ONLY : IOERROR
       USE Input_Opt_Mod,        ONLY : OptInput
-      USE inquireMod,           ONLY : findFreeLun
+      USE HCO_inquireMod,           ONLY : findFreeLun
       USE State_Chm_Mod,        ONLY : ChmState
       USE State_Grid_Mod,       ONLY : GrdState
       USE TIME_MOD,             ONLY : EXPAND_DATE

@@ -15,8 +15,7 @@
 ! 
 ! !USES:
 !
-      USE inquireMod, ONLY : findFreeLUN
-      USE inquireMod, ONLY : I_Am_UnOPENed
+      USE HCO_inquireMod, ONLY : findFreeLUN
 
       USE PRECISION_MOD    ! For GEOS-Chem Precision (fp)
 
@@ -588,7 +587,7 @@
 ! !USES:
 !
       USE ERROR_MOD,  ONLY : ERROR_STOP
-      USE JULDAY_MOD, ONLY : JULDAY
+      USE HCO_JULDAY_MOD, ONLY : JULDAY
 !
 ! !INPUT PARAMETERS: 
 !

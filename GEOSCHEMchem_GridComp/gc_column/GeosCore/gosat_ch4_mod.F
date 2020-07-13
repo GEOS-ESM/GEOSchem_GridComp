@@ -364,7 +364,7 @@
       USE ERROR_MOD,          ONLY : IT_IS_FINITE
       USE GC_GRID_MOD,        ONLY : GET_IJ
       USE Input_Opt_Mod,      ONLY : OptInput
-      USE JULDAY_MOD,         ONLY : CALDATE,     JULDAY
+      USE HCO_JULDAY_MOD,         ONLY : CALDATE,     JULDAY
       USE TIME_MOD
       USE PhysConstants,      ONLY : XNUMOLAIR, AIRMW
       USE State_Chm_Mod,      ONLY : ChmState, Ind_

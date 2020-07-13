@@ -559,15 +559,15 @@
 
             IF ( LSOA ) THEN
                ! Get offline oxidant fields from HEMCO (mps, 9/23/14)
-               CALL HCO_GetPtr( aIR, HcoState, 'GLOBAL_OH',  OH,  RC )
+               CALL HCO_GetPtr( HcoState, 'GLOBAL_OH',  OH,  RC )
                IF ( RC /= GC_SUCCESS )
      &         CALL ERROR_STOP( 'Cannot get pointer to GLOBAL_OH',  LOC)
 
-               CALL HCO_GetPtr( aIR, HcoState, 'GLOBAL_NO3', NO3, RC )
+               CALL HCO_GetPtr( HcoState, 'GLOBAL_NO3', NO3, RC )
                IF ( RC /= GC_SUCCESS )
      &         CALL ERROR_STOP( 'Cannot get pointer to GLOBAL_NO3', LOC)
 
-               CALL HCO_GetPtr( aIR, HcoState, 'O3',         O3,  RC )
+               CALL HCO_GetPtr( HcoState, 'O3',         O3,  RC )
                IF ( RC /= GC_SUCCESS )
      &         CALL ERROR_STOP( 'Cannot get pointer to O3',         LOC)
             ENDIF

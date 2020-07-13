@@ -56,7 +56,7 @@
       USE PJC_PFIX_MOD,            ONLY : CLEANUP_PJC_PFIX
       USE PLANEFLIGHT_MOD,         ONLY : CLEANUP_PLANEFLIGHT
       USE PRESSURE_MOD,            ONLY : CLEANUP_PRESSURE
-      USE Regrid_A2A_Mod,          ONLY : Cleanup_Map_A2a
+      USE HCO_Regrid_A2A_Mod,          ONLY : Cleanup_Map_A2a
       USE SEASALT_MOD,             ONLY : CLEANUP_SEASALT
       USE Set_Global_CH4_Mod,      ONLY : Cleanup_Set_Global_CH4
       USE SULFATE_MOD,             ONLY : CLEANUP_SULFATE

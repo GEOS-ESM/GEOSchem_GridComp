@@ -74,7 +74,7 @@
       USE ErrCode_Mod
       USE FILE_MOD,       ONLY : IOERROR
       USE Input_Opt_Mod,  ONLY : OptInput
-      USE inquireMod,     ONLY : findFreeLUN
+      USE HCO_inquireMod,     ONLY : findFreeLUN
       USE State_Chm_Mod,  ONLY : ChmState
       USE State_Chm_Mod,  ONLY : Ind_
       USE State_Diag_Mod, ONLY : DgnState

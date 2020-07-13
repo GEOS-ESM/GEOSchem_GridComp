@@ -375,7 +375,7 @@ CONTAINS
     ! state object.  Links the HEMCO configuration file object 
     ! iHcoConfig to HcoState%Config.
     !-----------------------------------------------------------------------
-    CALL HcoState_Init( am_I_Root, HcoState, iHcoConfig, nHcoSpc, HMRC      )
+    CALL HcoState_Init( HcoState, iHcoConfig, nHcoSpc, HMRC      )
 
     ! Trap potential errors
     IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -433,9 +433,9 @@ CONTAINS
     ! is set to the container name since this is the identifying name
     ! used by ExtData.
 #if defined(ESMF_)
-    HcoState%isESMF = .TRUE.
+    HcoState%Options%isESMF = .TRUE.
 #else 
-    HcoState%isESMF = .FALSE.
+    HcoState%Options%isESMF = .FALSE.
 #endif
 
     ! Set deposition length scale. This determines if dry deposition
@@ -450,7 +450,7 @@ CONTAINS
     ! step. This also initializes the HEMCO clock as well as the
     ! HEMCO emissions diagnostics collection.
     !=======================================================================
-    CALL HCO_Init( am_I_Root, HcoState, HMRC                                )
+    CALL HCO_Init( HcoState, HMRC                                )
 
     ! Trap potential errors
     IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -486,7 +486,7 @@ CONTAINS
     ! Initialize all HEMCO extensions. This also selects the required 
     ! met fields used by each extension.
     !=======================================================================
-    CALL HCOX_Init( am_I_Root, HcoState, ExtState, HMRC )
+    CALL HCOX_Init( HcoState, ExtState, HMRC )
 
     ! Trap potential errors
     IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -537,7 +537,7 @@ CONTAINS
     ENDIF
 
     ! Marine organic aerosols
-    IF ( ExtState%MarinePOA > 0 ) THEN
+    IF ( HcoState%MarinePOA ) THEN
        IF ( .not. Input_Opt%LMPOA ) THEN
           ErrMsg = 'MarinePOA is on in HEMCO but LMPOA=F in input.geos'
           CALL GC_Error( ErrMsg, RC, ThisLoc, Instr )
@@ -732,7 +732,7 @@ CONTAINS
     ! be true if this is an emission time step AND emissions have not yet
     ! been calculated for that time step.
     !=======================================================================
-    CALL HcoClock_Get( am_I_Root,             HcoState%Clock,                &
+    CALL HcoClock_Get( HcoState%Clock,                &
                        IsEmisTime=IsEmisTime, RC=HMRC                       )
 
     ! Trap potential errors
@@ -800,7 +800,7 @@ CONTAINS
     ! phase 2 will calculate the emissions. Emissions will be written into 
     ! the corresponding flux arrays in HcoState. 
     !=======================================================================
-    CALL HCO_Run( am_I_Root, HcoState, Phase, HMRC                          )
+    CALL HCO_Run( HcoState, Phase, HMRC                          )
 
     ! Trap potential errors
     IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -880,7 +880,7 @@ CONTAINS
        ! Run HCO extensions. Emissions will be added to corresponding
        ! flux arrays in HcoState.
        !====================================================================
-       CALL HCOX_Run( am_I_Root, HcoState, ExtState, HMRC                   )
+       CALL HCOX_Run( HcoState, ExtState, HMRC                   )
 
        ! Trap potential errors
        IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -898,7 +898,7 @@ CONTAINS
        ! (Diagn_Create).
        !====================================================================
        IF ( DoDiagn ) THEN
-          CALL HcoDiagn_AutoUpdate( am_I_Root, HcoState, HMRC               )
+          CALL HcoDiagn_AutoUpdate( HcoState, HMRC               )
 
           ! Trap potential errors
           IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -922,7 +922,7 @@ CONTAINS
        !====================================================================
        ! Emissions are now done for this time step
        !====================================================================
-       CALL HcoClock_EmissionsDone( am_I_Root, HcoState%Clock, HMRC         )
+       CALL HcoClock_EmissionsDone( HcoState%Clock, HMRC         )
 
        ! Trap potential errors
        IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -1006,7 +1006,7 @@ CONTAINS
     !-----------------------------------------------------------------------
     ! Cleanup HEMCO core 
     !-----------------------------------------------------------------------
-    CALL HCO_Final( am_I_Root, HcoState, Error, HMRC )
+    CALL HCO_Final( HcoState, Error, HMRC )
 
     ! Trap potential errors
     IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -1021,7 +1021,7 @@ CONTAINS
     ! Cleanup extensions and ExtState object
     ! This will also nullify all pointer to the met fields. 
     !-----------------------------------------------------------------------
-    CALL HCOX_Final( am_I_Root, HcoState, ExtState, HMRC ) 
+    CALL HCOX_Final( HcoState, ExtState, HMRC ) 
 
     ! Trap potential errors
     IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -1162,7 +1162,7 @@ CONTAINS
     !-----------------------------------------------------------------------
     ! Write diagnostics
     !-----------------------------------------------------------------------
-    CALL HcoDiagn_Write( am_I_Root, HcoState, RESTART, HMRC )
+    CALL HcoDiagn_Write( HcoState, RESTART, HMRC )
 
     ! Trap potential errors
     IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -1503,7 +1503,7 @@ CONTAINS
     !-----------------------------------------------------------------------
 
     ! SZAFACT
-    CALL ExtDat_Set( am_I_Root,         HcoState, ExtState%SZAFACT,         & 
+    CALL ExtDat_Set( HcoState, ExtState%SZAFACT,         & 
                     'SZAFACT_FOR_EMIS', HMRC,     FIRST,                    &
                      HCO_SZAFACT                                           )
 
@@ -1516,7 +1516,7 @@ CONTAINS
     ENDIF
 
     ! JNO2
-    CALL ExtDat_Set( am_I_Root,         HcoState, ExtState%JNO2,             &
+    CALL ExtDat_Set( HcoState, ExtState%JNO2,             &
                     'JNO2_FOR_EMIS',    HMRC,     FIRST,                     &
                      JNO2                                                   )
 
@@ -1529,7 +1529,7 @@ CONTAINS
     ENDIF
 
     ! JOH
-    CALL ExtDat_Set( am_I_Root,         HcoState, ExtState%JOH,              &
+    CALL ExtDat_Set( HcoState, ExtState%JOH,              &
                     'JOH_FOR_EMIS',     HMRC,     FIRST,                     &
                      JOH                                                    )  
 
@@ -1542,7 +1542,7 @@ CONTAINS
     ENDIF
 
     ! Frac of PBL
-    CALL ExtDat_Set( am_I_Root,             HcoState,                        &
+    CALL ExtDat_Set( HcoState,                        &
                      ExtState%FRAC_OF_PBL, 'FRAC_OF_PBL_FOR_EMIS',           &
                      HMRC,                  FIRST,                           &
                      HCO_FRAC_OF_PBL                                        )  
@@ -1560,7 +1560,7 @@ CONTAINS
     ! ----------------------------------------------------------------------
 
     ! U10M
-    CALL ExtDat_Set( am_I_Root,      HcoState, ExtState%U10M,                &
+    CALL ExtDat_Set( HcoState, ExtState%U10M,                &
                     'U10M_FOR_EMIS',  HMRC   , FIRST,                        &
                      State_Met%U10M                                         )
 
@@ -1573,7 +1573,7 @@ CONTAINS
     ENDIF
 
     ! V10M
-    CALL ExtDat_Set( am_I_Root,      HcoState, ExtState%V10M,                &
+    CALL ExtDat_Set( HcoState, ExtState%V10M,                &
                     'V10M_FOR_EMIS', HMRC,     FIRST,                        & 
                      State_Met%V10M                                         )
 
@@ -1587,7 +1587,7 @@ CONTAINS
     ENDIF
 
     ! ALBD
-    CALL ExtDat_Set( am_I_Root,      HcoState, ExtState%ALBD,                &
+    CALL ExtDat_Set( HcoState, ExtState%ALBD,                &
                     'ALBD_FOR_EMIS', HMRC,     FIRST,                        &
                      State_Met%ALBD                                         )
 
@@ -1600,7 +1600,7 @@ CONTAINS
     ENDIF
 
     ! WLI
-    CALL ExtDat_Set( am_I_Root,     HcoState, ExtState%WLI,                  &
+    CALL ExtDat_Set( HcoState, ExtState%WLI,                  &
                     'WLI_FOR_EMIS', HMRC,     FIRST,                         &
                      State_Met%LWI                                          )
 
@@ -1612,7 +1612,7 @@ CONTAINS
        RETURN
     ENDIF
 
-    CALL ExtDat_Set( am_I_Root,     HcoState, ExtState%T2M,                  &
+    CALL ExtDat_Set( HcoState, ExtState%T2M,                  &
                     'T2M_FOR_EMIS', HMRC,     FIRST,                         &
                      State_Met%TS                                           )
 
@@ -1625,7 +1625,7 @@ CONTAINS
     ENDIF
 
     ! TSKIN
-    CALL ExtDat_Set( am_I_Root,       HcoState, ExtState%TSKIN,              &
+    CALL ExtDat_Set( HcoState, ExtState%TSKIN,              &
                     'TSKIN_FOR_EMIS', HMRC,     FIRST,                       &
                      State_Met%TSKIN                                        )
 
@@ -1638,7 +1638,7 @@ CONTAINS
     ENDIF
 
     ! GWETROOT
-    CALL ExtDat_Set( am_I_Root,          HcoState, ExtState%GWETROOT,        &
+    CALL ExtDat_Set( HcoState, ExtState%GWETROOT,        &
                     'GWETROOT_FOR_EMIS', HMRC,     FIRST,                    &
                      State_Met%GWETROOT                                     )
 
@@ -1651,7 +1651,7 @@ CONTAINS
     ENDIF
 
     ! GWETTOP
-    CALL ExtDat_Set( am_I_Root,         HcoState, ExtState%GWETTOP,          &
+    CALL ExtDat_Set( HcoState, ExtState%GWETTOP,          &
                     'GWETTOP_FOR_EMIS', HMRC,     FIRST,                     &
                     State_Met%GWETTOP                                       )
 
@@ -1663,7 +1663,7 @@ CONTAINS
        RETURN
     ENDIF
 
-    CALL ExtDat_Set( am_I_Root,       HcoState, ExtState%USTAR,              &
+    CALL ExtDat_Set( HcoState, ExtState%USTAR,              &
                     'USTAR_FOR_EMIS', HMRC,     FIRST,                       &
                      State_Met%USTAR                                        )
 
@@ -1676,7 +1676,7 @@ CONTAINS
     ENDIF
 
     ! Z0
-    CALL ExtDat_Set( am_I_Root,    HcoState, ExtState%Z0,                    &
+    CALL ExtDat_Set( HcoState, ExtState%Z0,                    &
                     'Z0_FOR_EMIS', HMRC,     FIRST,                          &
                      State_Met%Z0                                           )
 
@@ -1688,7 +1688,7 @@ CONTAINS
        RETURN
     ENDIF
 
-    CALL ExtDat_Set( am_I_Root,       HcoState, ExtState%PARDR,              &
+    CALL ExtDat_Set( HcoState, ExtState%PARDR,              &
                     'PARDR_FOR_EMIS', HMRC,     FIRST,                       &
                      State_Met%PARDR                                        )
 
@@ -1701,7 +1701,7 @@ CONTAINS
     ENDIF
 
     ! PARDF
-    CALL ExtDat_Set( am_I_Root,        HcoState, ExtState%PARDF,             &
+    CALL ExtDat_Set( HcoState, ExtState%PARDF,             &
                     'PARDF_FOR_EMIS',  HMRC, FIRST,                          &
                      State_Met%PARDF                                        )
 
@@ -1714,7 +1714,7 @@ CONTAINS
     ENDIF
 
     ! PSC2_WET
-    CALL ExtDat_Set( am_I_Root,          HcoState, ExtState%PSC2_WET,        &
+    CALL ExtDat_Set( HcoState, ExtState%PSC2_WET,        &
                     'PSC2_WET_FOR_EMIS', HMRC,     FIRST,                    &
                      State_Met%PSC2_WET                                     )
 
@@ -1727,7 +1727,7 @@ CONTAINS
     ENDIF
 
     ! RADSWG
-    CALL ExtDat_Set( am_I_Root,         HcoState, ExtState%RADSWG,           &
+    CALL ExtDat_Set( HcoState, ExtState%RADSWG,           &
                     'RADSWG_FOR_EMIS',  HMRC,     FIRST,                     &
                      State_Met%SWGDN                                        )
 
@@ -1740,7 +1740,7 @@ CONTAINS
     ENDIF
 
     ! FRCLND
-    CALL ExtDat_Set( am_I_Root,        HcoState, ExtState%FRCLND,            &
+    CALL ExtDat_Set( HcoState, ExtState%FRCLND,            &
                     'FRCLND_FOR_EMIS', HMRC,     FIRST,                      &
                      State_Met%FRCLND                                       )
 
@@ -1753,7 +1753,7 @@ CONTAINS
     ENDIF
 
     ! CLDFRC
-    CALL ExtDat_Set( am_I_Root,          HcoState, ExtState%CLDFRC,          &
+    CALL ExtDat_Set( HcoState, ExtState%CLDFRC,          &
                      'CLDFRC_FOR_EMIS',  HMRC,     FIRST,                    &
                      State_Met%CLDFRC                                       )
 
@@ -1767,7 +1767,7 @@ CONTAINS
 
     ! SNOWHGT is is mm H2O, which is the same as kg H2O/m2.
     ! This is the unit of SNOMAS.
-    CALL ExtDat_Set( am_I_Root,         HcoState, ExtState%SNOWHGT,          &
+    CALL ExtDat_Set( HcoState, ExtState%SNOWHGT,          &
                     'SNOWHGT_FOR_EMIS', HMRC,     FIRST,                     &
                      State_Met%SNOMAS                                       )
 
@@ -1780,7 +1780,7 @@ CONTAINS
     ENDIF
 
     ! SNOWDP is in m
-    CALL ExtDat_Set( am_I_Root,        HcoState, ExtState%SNODP,             &
+    CALL ExtDat_Set( HcoState, ExtState%SNODP,             &
                     'SNODP_FOR_EMIS',  HMRC,    FIRST,                       & 
                      State_Met%SNODP                                        )
 
@@ -1793,7 +1793,7 @@ CONTAINS
     ENDIF
 
     ! FRLAND
-    CALL ExtDat_Set( am_I_Root,        HcoState, ExtState%FRLAND,            &
+    CALL ExtDat_Set( HcoState, ExtState%FRLAND,            &
                     'FRLAND_FOR_EMIS', HMRC,     FIRST,                      &
                      State_Met%FRLAND                                       )
 
@@ -1806,7 +1806,7 @@ CONTAINS
     ENDIF
 
     ! FROCEAN
-    CALL ExtDat_Set( am_I_Root,         HcoState, ExtState%FROCEAN,          &
+    CALL ExtDat_Set( HcoState, ExtState%FROCEAN,          &
                     'FROCEAN_FOR_EMIS', HMRC,     FIRST,                     &
                      State_Met%FROCEAN                                      )
 
@@ -1819,7 +1819,7 @@ CONTAINS
     ENDIF
 
     ! FRLAKE
-    CALL ExtDat_Set( am_I_Root,        HcoState, ExtState%FRLAKE,            &
+    CALL ExtDat_Set( HcoState, ExtState%FRLAKE,            &
                     'FRLAKE_FOR_EMIS', HMRC,     FIRST,                      &
                      State_Met%FRLAKE                                       )
 
@@ -1832,7 +1832,7 @@ CONTAINS
     ENDIF
 
     ! FRLANDIC
-    CALL ExtDat_Set( am_I_Root,          HcoState, ExtState%FRLANDIC,        &
+    CALL ExtDat_Set( HcoState, ExtState%FRLANDIC,        &
                     'FRLANDIC_FOR_EMIS', HMRC,     FIRST,                    &
                      State_Met%FRLANDIC                                     )
 
@@ -1845,7 +1845,7 @@ CONTAINS
     ENDIF
 
     ! LAI
-    CALL ExtDat_Set( am_I_Root,      HcoState, ExtState%LAI,                 &
+    CALL ExtDat_Set( HcoState, ExtState%LAI,                 &
                     'LAI_FOR_EMIS',  HMRC,     FIRST,                        &
                      State_Met%MODISLAI  )
 
@@ -1858,7 +1858,7 @@ CONTAINS
     ENDIF
 
     ! CHLR
-    CALL ExtDat_Set( am_I_Root,           HcoState, ExtState%CHLR,           &
+    CALL ExtDat_Set( HcoState, ExtState%CHLR,           &
                     'CHLR',               HMRC,     FIRST,                   &
                      State_Met%MODISCHLR                                    )
 
@@ -1871,7 +1871,7 @@ CONTAINS
     ENDIF
 
     ! Convective fractions
-    CALL ExtDat_Set( am_I_Root,         HcoState,        ExtState%CNV_FRC,   &
+    CALL ExtDat_Set( HcoState,        ExtState%CNV_FRC,   &
                     'CNV_FRC_FOR_EMIS', HMRC,            FIRST,              &
                      State_Met%CNV_FRC, NotFillOk=.TRUE.                    )
 
@@ -1888,7 +1888,7 @@ CONTAINS
     !-----------------------------------------------------------------------
 
     ! CNV_MFC
-    CALL ExtDat_Set( am_I_Root,         HcoState,        ExtState%CNV_MFC,   &
+    CALL ExtDat_Set( HcoState,        ExtState%CNV_MFC,   &
                     'CNV_MFC_FOR_EMIS', HMRC,            FIRST,              &
                      State_Met%CMFMC,   OnLevEdge=.TRUE.                    )
 
@@ -1900,7 +1900,7 @@ CONTAINS
        RETURN
     ENDIF
 
-    CALL ExtDat_Set( am_I_Root,    HcoState, ExtState%TK,                    &
+    CALL ExtDat_Set( HcoState, ExtState%TK,                    &
                     'TK_FOR_EMIS', HMRC,     FIRST,                          &
                      State_Met%T                                            )
 
@@ -1913,7 +1913,7 @@ CONTAINS
     ENDIF
 
     ! Air mass [kg/grid box]
-    CALL ExtDat_Set( am_I_Root,     HcoState, ExtState%AIR,                  &
+    CALL ExtDat_Set( HcoState, ExtState%AIR,                  &
                     'AIR_FOR_EMIS', HMRC,     FIRST,                         &
                      State_Met%AD                                           )
 
@@ -1926,7 +1926,7 @@ CONTAINS
     ENDIF
 
     ! AIRVOL_FOR_EMIS
-    CALL ExtDat_Set( am_I_Root,         HcoState, ExtState%AIRVOL,           &
+    CALL ExtDat_Set( HcoState, ExtState%AIRVOL,           &
                     'AIRVOL_FOR_EMIS',  HMRC,     FIRST,                     &
                      State_Met%AIRVOL                                       )
 
@@ -1939,7 +1939,7 @@ CONTAINS
     ENDIF
 
     ! Dry air density [kg/m3]
-    CALL ExtDat_Set( am_I_Root, HcoState, ExtState%AIRDEN,                   &
+    CALL ExtDat_Set( HcoState, ExtState%AIRDEN,                   &
                     'AIRDEN',   HMRC,     FIRST,                             &
                      State_Met%AIRDEN                                       )
 
@@ -1952,7 +1952,7 @@ CONTAINS
     ENDIF
 
     ! Tropopause level
-    CALL ExtDat_Set( am_I_Root,        HcoState, ExtState%TropLev,          &
+    CALL ExtDat_Set( HcoState, ExtState%TropLev,          &
                     'TropLev',         HMRC,     FIRST,                     &
                      State_Met%TropLev                                     )
 
@@ -1969,7 +1969,7 @@ CONTAINS
     ! ----------------------------------------------------------------
     IF ( id_O3 > 0 ) THEN
        Trgt3D => State_Chm%Species(:,:,:,id_O3)
-       CALL ExtDat_Set( am_I_Root,          HcoState, ExtState%O3,           &
+       CALL ExtDat_Set( HcoState, ExtState%O3,           &
                        'HEMCO_O3_FOR_EMIS', HMRC,     FIRST,         Trgt3D )
 
        ! Trap potential errors
@@ -1985,7 +1985,7 @@ CONTAINS
 
     IF ( id_NO2 > 0 ) THEN
        Trgt3D => State_Chm%Species(:,:,:,id_NO2)
-       CALL ExtDat_Set( am_I_Root,           HcoState, ExtState%NO2,         &
+       CALL ExtDat_Set( HcoState, ExtState%NO2,         &
                        'HEMCO_NO2_FOR_EMIS', HMRC,     FIRST,        Trgt3D ) 
 
        ! Trap potential errors
@@ -2001,7 +2001,7 @@ CONTAINS
 
     IF ( id_NO > 0 ) THEN
        Trgt3D => State_Chm%Species(:,:,:,id_NO)
-       CALL ExtDat_Set( am_I_Root,          HcoState, ExtState%NO,           &
+       CALL ExtDat_Set( HcoState, ExtState%NO,           &
                        'HEMCO_NO_FOR_EMIS', HMRC,     FIRST,         Trgt3D ) 
 
        ! Trap potential errors
@@ -2017,7 +2017,7 @@ CONTAINS
 
     IF ( id_HNO3 > 0 ) THEN
        Trgt3D => State_Chm%Species(:,:,:,id_HNO3)
-       CALL ExtDat_Set( am_I_Root,            HcoState, ExtState%HNO3,       &
+       CALL ExtDat_Set( HcoState, ExtState%HNO3,       &
                        'HEMCO_HNO3_FOR_EMIS', HMRC,     FIRST,       Trgt3D ) 
 
        ! Trap potential errors
@@ -2033,7 +2033,7 @@ CONTAINS
 
     IF ( id_POPG > 0 ) THEN
        Trgt3D => State_Chm%Species(:,:,:,id_POPG)
-       CALL ExtDat_Set( am_I_Root,            HcoState, ExtState%POPG,       &
+       CALL ExtDat_Set( HcoState, ExtState%POPG,       &
                        'HEMCO_POPG_FOR_EMIS', HMRC,     FIRST,       Trgt3D ) 
 
        ! Trap potential errors
@@ -2052,7 +2052,7 @@ CONTAINS
     ! ----------------------------------------------------------------------
     
     ! DRY_TOTN
-    CALL ExtDat_Set( am_I_Root,           HcoState, ExtState%DRY_TOTN,       &
+    CALL ExtDat_Set( HcoState, ExtState%DRY_TOTN,       &
                     'DRY_TOTN_FOR_EMIS',  HMRC,     FIRST,                   &
                      State_Chm%DryDepNitrogen                               ) 
 
@@ -2065,7 +2065,7 @@ CONTAINS
     ENDIF
 
     ! WET_TOTN
-    CALL ExtDat_Set( am_I_Root,           HcoState, ExtState%WET_TOTN,       &
+    CALL ExtDat_Set( HcoState, ExtState%WET_TOTN,       &
                     'WET_TOTN_FOR_EMIS',  HMRC,     FIRST,                   &
                      State_Chm%WetDepNitrogen                               ) 
 
@@ -2098,7 +2098,7 @@ CONTAINS
     ! ----------------------------------------------------------------
 #if defined( ESMF_ )
     ! IF ( FIRST ) THEN
-    CALL HCO_SetExtState_ESMF ( am_I_Root, HcoState, ExtState, RC )
+    CALL HCO_SetExtState_ESMF ( HcoState, ExtState, RC )
 
     ! Trap potential errors
     IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -2233,7 +2233,7 @@ CONTAINS
 
     ! SUNCOS
     IF ( ExtState%SUNCOS%DoUse ) THEN
-       CALL HCO_GetSUNCOS( am_I_Root,               HcoState,                &
+       CALL HCO_GetSUNCOS( HcoState,                &
                            ExtState%SUNCOS%Arr%Val, 0,        HMRC          ) 
 
        ! Trap potential errors
@@ -2416,7 +2416,7 @@ CONTAINS
     !-----------------------------------------------------------------------
     ! Calculate vertical grid properties
     !-----------------------------------------------------------------------
-    CALL HCO_CalcVertGrid( am_I_Root, HcoState, PSFC,  ZSFC,                &
+    CALL HCO_CalcVertGrid( HcoState, PSFC,  ZSFC,                &
                            TK,        BXHEIGHT, PEDGE, HMRC                )
 
     ! Trap potential errors
@@ -2445,7 +2445,7 @@ CONTAINS
 !$OMP END PARALLEL DO
 
     ! Use the met field PBL field to initialize HEMCO
-    CALL HCO_SetPBLm( am_I_Root, HcoState,         FldName='PBL_HEIGHT',     &
+    CALL HCO_SetPBLm( HcoState,         FldName='PBL_HEIGHT',     &
                       PBLM=PBLM, DefVal=1000.0_hp, RC=HMRC                  )
 
     ! Trap potential errors
@@ -2657,7 +2657,7 @@ CONTAINS
              HcoState%Spc(N)%HenryPKA   = SpcInfo%Henry_pKa  ! [1    ]
 
              ! Write to logfile
-             IF ( am_I_Root ) CALL HCO_SPEC2LOG( am_I_Root, HcoState, N )
+             IF ( am_I_Root ) CALL HCO_SPEC2LOG( HcoState, N )
 
              ! Free pointer memory
              SpcInfo => NULL()
@@ -2680,7 +2680,7 @@ CONTAINS
              HcoState%Spc(N)%HenryPKa    = 0.0_hp
 
              ! Write to logfile
-             IF ( am_I_Root ) CALL HCO_SPEC2LOG( am_I_Root, HcoState, N )
+             IF ( am_I_Root ) CALL HCO_SPEC2LOG( HcoState, N )
           ENDIF
 
           !------------------------------------------------------------------
@@ -2722,7 +2722,7 @@ CONTAINS
                 HcoState%Spc(M)%HenryPKa   = 0.0_hp
 
                 ! Write to log file
-                IF ( am_I_Root ) CALL HCO_SPEC2LOG( am_I_Root, HcoState, M )
+                IF ( am_I_Root ) CALL HCO_SPEC2LOG( HcoState, M )
              ENDDO
           ENDIF
 
@@ -2848,7 +2848,7 @@ CONTAINS
     ENDDO
 
     ! Define the vertical grid
-    CALL HCO_VertGrid_Define( am_I_Root, HcoState%Config,                    &
+    CALL HCO_VertGrid_Define( HcoState%Config,                    &
                               zGrid      = HcoState%Grid%zGrid,              &
                               nz         = State_Grid%NZ,                    &
                               Ap         = Ap,                               & 
@@ -2976,7 +2976,7 @@ CONTAINS
     ! used.  The only exception is the NON-EMISSIONS DATA.
     !-----------------------------------------------------------------------
     IF ( .NOT. Input_Opt%LEMIS ) THEN
-       CALL SetExtNr( am_I_Root, HcoConfig, -999, RC=HMRC                   )
+       CALL SetExtNr( HcoConfig, -999, RC=HMRC                   )
 
        ! Trap potential errors
        IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -3039,7 +3039,7 @@ CONTAINS
        ELSE
           OptName = '+UValbedo+ : false'
        ENDIF
-       CALL AddExtOpt( am_I_Root, HcoConfig, TRIM(OptName), CoreNr, RC=HMRC )
+       CALL AddExtOpt( HcoConfig, TRIM(OptName), CoreNr, RC=HMRC )
 
        ! Trap potential errors
        IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -3093,7 +3093,7 @@ CONTAINS
           OptName = '+STATE_PSC+ : false'
        ENDIF
 #endif
-       CALL AddExtOpt( am_I_Root, HcoConfig, TRIM(OptName), CoreNr, RC=HMRC ) 
+       CALL AddExtOpt( HcoConfig, TRIM(OptName), CoreNr, RC=HMRC ) 
 
        ! Trap potential errors
        IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -3167,7 +3167,7 @@ CONTAINS
        ELSE
           OptName = '+LinStratChem+ : false'
        ENDIF
-       CALL AddExtOpt( am_I_Root, HcoConfig, TRIM(OptName), CoreNr, RC=HMRC ) 
+       CALL AddExtOpt( HcoConfig, TRIM(OptName), CoreNr, RC=HMRC ) 
 
        ! Trap potential errors
        IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -3212,7 +3212,7 @@ CONTAINS
     ELSE
        OptName = '+TOMS_SBUV_O3+ : false'          
     ENDIF
-    CALL AddExtOpt( am_I_Root, HcoConfig, TRIM(OptName), CoreNr, RC=HMRC    ) 
+    CALL AddExtOpt( HcoConfig, TRIM(OptName), CoreNr, RC=HMRC    ) 
 
     ! Trap potential errors
     IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -3266,7 +3266,7 @@ CONTAINS
        ELSE
           OptName = '+OCEAN_Hg+ : false'
        ENDIF
-       CALL AddExtOpt( am_I_Root, HcoConfig, TRIM(OptName), CoreNr, RC=HMRC  )
+       CALL AddExtOpt( HcoConfig, TRIM(OptName), CoreNr, RC=HMRC  )
 
        ! Trap potential errors
        IF ( HMRC /= HCO_SUCCESS ) THEN
@@ -3323,7 +3323,7 @@ CONTAINS
        ELSE
           OptName = '+RRTMG+ : false'
        ENDIF
-       CALL AddExtOpt( am_I_Root, HcoConfig, TRIM(OptName), CoreNr, RC=HMRC  )
+       CALL AddExtOpt( HcoConfig, TRIM(OptName), CoreNr, RC=HMRC  )
 
        ! Trap potential errors
        IF ( HMRC /= HCO_SUCCESS ) THEN

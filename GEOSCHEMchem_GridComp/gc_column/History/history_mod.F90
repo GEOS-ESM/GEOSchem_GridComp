@@ -217,12 +217,12 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod
+    USE HCO_Charpak_Mod
     USe DiagList_Mod,      ONLY : CollList, ColItem
     USE ErrCode_Mod
     USE History_Util_Mod
     USE Input_Opt_Mod,     ONLY : OptInput
-    USE InquireMod,        ONLY : FindFreeLun
+    USE HCO_InquireMod,        ONLY : FindFreeLun
     USE State_Chm_Mod ,    ONLY : ChmState
     USE State_Diag_Mod,    ONLY : DgnState
     USE State_Met_Mod,     ONLY : MetState
@@ -450,14 +450,14 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod
+    USE HCO_Charpak_Mod
     USE DiagList_Mod,          ONLY : CollList, Search_CollList
     USE ErrCode_Mod
     USE HistContainer_Mod
     USE HistItem_Mod
     USE History_Util_Mod
     USE Input_Opt_Mod,         ONLY : OptInput
-    USE InquireMod,            ONLY : FindFreeLun
+    USE HCO_InquireMod,            ONLY : FindFreeLun
     USE MetaHistContainer_Mod
     USE MetaHistItem_Mod
     USE Species_Mod,           ONLY : Species
@@ -1583,7 +1583,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod,           ONLY : To_UpperCase
+    USE HCO_Charpak_Mod,           ONLY : To_UpperCase
     USE ErrCode_Mod
     USE HistContainer_Mod
     USE HistItem_Mod
@@ -2692,7 +2692,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod,      ONLY: CleanText, StrSplit
+    USE HCO_Charpak_Mod,      ONLY: CleanText, StrSplit
     USE DiagList_Mod,     ONLY: CollList,  Search_CollList
     USE History_Util_Mod
 !

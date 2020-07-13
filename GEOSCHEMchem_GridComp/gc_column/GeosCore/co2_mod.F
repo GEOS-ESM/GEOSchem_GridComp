@@ -72,7 +72,7 @@
 ! !USES:
 !     
       USE PhysConstants       ! Physical constants
-      USE inquireMod,    ONLY : findFreeLUN
+      USE HCO_inquireMod,    ONLY : findFreeLUN
       USE PRECISION_MOD       ! For GEOS-Chem Precision (fp)
 
       IMPLICIT NONE
@@ -319,7 +319,7 @@
          ! Get a pointer to the CO2 production from CO oxidation
          ! This is now listed in the NON-EMISSIONS DATA section of
          ! the HEMCO configuration file. (bmy, 4/17/15)
-         CALL HCO_GetPtr( am_I_Root,   HcoState, 
+         CALL HCO_GetPtr( HcoState, 
      &                   'CO2_COPROD', CO2_COPROD, RC )
 
          IF ( RC /= GC_SUCCESS ) THEN

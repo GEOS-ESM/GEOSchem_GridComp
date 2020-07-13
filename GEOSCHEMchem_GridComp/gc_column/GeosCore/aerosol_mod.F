@@ -433,7 +433,7 @@
          ELSE IF ( MONTH == 9  .or. MONTH == 10 .or. MONTH == 11 ) THEN
             FieldName = 'OMOC_SON'
          ENDIF
-         CALL HCO_GetPtr( am_I_Root, HcoState, FIELDNAME, OMOC, RC,
+         CALL HCO_GetPtr( HcoState, FIELDNAME, OMOC, RC,
      &                    FOUND=FND )
 
          ! Trap potential errors

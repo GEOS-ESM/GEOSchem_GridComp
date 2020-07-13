@@ -1103,7 +1103,7 @@
       USE ErrCode_Mod
       USE FILE_MOD,           ONLY : IOERROR
       USE Input_Opt_Mod,      ONLY : OptInput
-      USE InquireMod,         ONLY : findFreeLun
+      USE HCO_InquireMod,         ONLY : findFreeLun
 !
 ! !INPUT PARAMETERS:
 !

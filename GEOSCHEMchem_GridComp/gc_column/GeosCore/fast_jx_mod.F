@@ -1739,7 +1739,7 @@ c---check on overflow of arrays, cut off JXTRA at lower L if too many levels
 #endif
       USE ErrCode_Mod
       USE Input_Opt_Mod,  ONLY : OptInput
-      USE inquireMod,     ONLY : findFreeLUN
+      USE HCO_inquireMod, ONLY : findFreeLUN
       USE State_Chm_Mod,  ONLY : ChmState
       USE State_Chm_Mod,  ONLY : Ind_
       USE State_Diag_Mod, ONLY : DgnState
@@ -2830,7 +2830,7 @@ c---TROP-QUICK  (must scale solar flux for W=5)
 !
 ! !USES:
 !
-      USE Charpak_Mod,   ONLY : CStrip
+      USE HCO_Charpak_Mod,   ONLY : CStrip
       USE ErrCode_Mod
       USE Input_Opt_Mod, ONLY : OptInput
 !

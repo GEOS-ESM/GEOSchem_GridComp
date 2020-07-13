@@ -436,8 +436,7 @@ CONTAINS
 
              HcoID = HCO_GetHcoID( TRIM(SpcName), HcoState )
              IF ( HcoID > 0 ) THEN
-                CALL Diagn_Create ( am_I_Root,                          &
-                                    cName     = 'EMIS_'//TRIM(SpcName), &
+                CALL Diagn_Create ( cName     = 'EMIS_'//TRIM(SpcName), &
                                     HcoState  = HcoState,               &
                                     ExtNr     = -1,                     &
                                     Cat       = -1,                     &
@@ -494,8 +493,7 @@ CONTAINS
                          Cat       = 999
                    END SELECT
 
-                   CALL Diagn_Create ( am_I_Root,                     &
-                                       cName     = DiagnName,         &
+                   CALL Diagn_Create ( cName     = DiagnName,         &
                                        HcoState  = HcoState,          &
                                        ExtNr     = ExtNr,             &
                                        Cat       = Cat,               &
@@ -606,8 +604,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'AD01_Rn_SOURCE'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState = HcoState,           &
+       CALL Diagn_Create( HcoState = HcoState,           &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = -1,                &
@@ -631,8 +628,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'AD01_Be7_SOURCE'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = -1,                &
@@ -656,8 +652,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'AD01_Be7Strat_SOURCE'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = -1,                &
@@ -681,8 +676,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'AD01_Be10_SOURCE'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = -1,                &
@@ -706,8 +700,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'AD01_Be10Strat_SOURCE'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = -1,                &
@@ -851,8 +844,7 @@ CONTAINS
           IF ( RC /= HCO_SUCCESS ) RETURN
 
           ! Create diagnostic container
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -892,8 +884,7 @@ CONTAINS
              IF ( RC /= HCO_SUCCESS ) RETURN
 
              ! Create diagnostic container
-             CALL Diagn_Create( am_I_Root,                     & 
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = ExtNr,             &
                                 Cat       = -1,                &
@@ -1033,8 +1024,7 @@ CONTAINS
              ! Set DiagnName
              DiagnName = "AD07_"//TRIM(SpcName)//"_"//TRIM(SrcName)
 
-             CALL Diagn_Create( am_I_Root,                     & 
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = 0,                 &
                                 Cat       = Cat,               &
@@ -1181,8 +1171,7 @@ CONTAINS
           IF ( RC /= HCO_SUCCESS ) RETURN
 
           ! Create the diagnostic
-          CALL Diagn_Create ( am_I_Root,                     & 
-                              HcoState  = HcoState,          &
+          CALL Diagn_Create ( HcoState  = HcoState,          &
                               cName     = TRIM( DiagnName ), &
                               ExtNr     = ExtNr,             &
                               Cat       = Cat,               &
@@ -1289,8 +1278,7 @@ CONTAINS
 
           ! Create diagnostics. Set AutoFill to on for this diagnostics.
           DiagnName = 'AD11_OCEAN_SOURCE'
-          CALL Diagn_Create ( am_I_Root,                     & 
-                              HcoState  = HcoState,          &
+          CALL Diagn_Create ( HcoState  = HcoState,          &
                               cName     = TRIM( DiagnName ), &
                               ExtNr     = ExtNr,             &
                               Cat       = -1,                &
@@ -1409,8 +1397,7 @@ CONTAINS
 
           ! Create diagnostic container
           DiagnName = 'AD13_DMS_OCEAN_SOURCE'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = -1,                &
@@ -1436,8 +1423,7 @@ CONTAINS
        ! ... from aircrafts ...
        ExtNr     = 0
        DiagnName = 'AD13_SO2_AIRCRAFT'
-       CALL Diagn_Create( am_I_Root,                     &   
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_AIRCRAFT, &
@@ -1454,8 +1440,7 @@ CONTAINS
        ! ... anthropogenic ...
        ExtNr     = 0
        DiagnName = 'AD13_SO2_ANTHROPOGENIC'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -1472,8 +1457,7 @@ CONTAINS
        ! ... biofuel ...
        ExtNr     = 0
        DiagnName = 'AD13_SO2_BIOFUEL'
-       CALL Diagn_Create( am_I_Root,                     &
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_BIOFUEL,  &
@@ -1491,8 +1475,7 @@ CONTAINS
        !ExtNr     = GetExtNr( HcoState%Config%ExtList, 'AeroCom_Volcano' )
        ExtNr     = 0
        DiagnName = 'AD13_SO2_VOLCANO_ERUPT'
-       CALL Diagn_Create( am_I_Root,                           & 
-                          HcoState  = HcoState,                &
+       CALL Diagn_Create( HcoState  = HcoState,                &
                           cName     = TRIM( DiagnName ),       &
                           ExtNr     = ExtNr,                   &
                           Cat       = CATEGORY_VOLCANO_ERUPT,  &
@@ -1510,8 +1493,7 @@ CONTAINS
        !ExtNr     = GetExtNr( HcoState%Config%ExtList, 'AeroCom_Volcano' )
        ExtNr     = 0
        DiagnName = 'AD13_SO2_VOLCANO_DEGAS'
-       CALL Diagn_Create( am_I_Root,                           & 
-                          HcoState  = HcoState,                &
+       CALL Diagn_Create( HcoState  = HcoState,                &
                           cName     = TRIM( DiagnName ),       &
                           ExtNr     = ExtNr,                   &
                           Cat       = CATEGORY_VOLCANO_DEGAS,  &
@@ -1528,8 +1510,7 @@ CONTAINS
        ! ... from ships ...
        ExtNr     = 0
        DiagnName = 'AD13_SO2_SHIP'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_SHIP,     &
@@ -1554,8 +1535,7 @@ CONTAINS
        ! ... anthropogenic ...
        ExtNr     = 0
        DiagnName = 'AD13_NH3_ANTHROPOGENIC'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -1572,8 +1552,7 @@ CONTAINS
        ! ... biofuel ...
        ExtNr     = 0
        DiagnName = 'AD13_NH3_BIOFUEL'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_BIOFUEL,  &
@@ -1590,8 +1569,7 @@ CONTAINS
        ! ... natural
        ExtNr     = 0
        DiagnName = 'AD13_NH3_NATURAL'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_NATURAL,  &
@@ -1616,8 +1594,7 @@ CONTAINS
        ! ... anthropogenic ...
        ExtNr     = 0
        DiagnName = 'AD13_SO4_ANTHROPOGENIC' 
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -1634,8 +1611,7 @@ CONTAINS
        ! ... biofuel ...
        ExtNr     = 0
        DiagnName = 'AD13_SO4_BIOFUEL' 
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_BIOFUEL,  &
@@ -1759,8 +1735,7 @@ CONTAINS
 
           ! Create diagnostic container
           DiagnName = 'BIOMASS_ALK4'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -1785,8 +1760,7 @@ CONTAINS
 
           ! Create diagnostic container
           DiagnName = 'BIOMASS_ACET'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -1811,8 +1785,7 @@ CONTAINS
 
           ! Create diagnostic container
           DiagnName = 'BIOMASS_MEK'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -1837,8 +1810,7 @@ CONTAINS
 
           ! Create diagnostic container
           DiagnName = 'BIOMASS_ALD2'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -1863,8 +1835,7 @@ CONTAINS
 
           ! Create diagnostic container
           DiagnName = 'BIOMASS_PRPE'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -1889,8 +1860,7 @@ CONTAINS
 
           ! Create diagnostic container
           DiagnName = 'BIOMASS_C3H8'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -1915,8 +1885,7 @@ CONTAINS
 
           ! Create diagnostic container
           DiagnName = 'BIOMASS_CH2O'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -1940,8 +1909,7 @@ CONTAINS
        IF ( HcoID > 0 ) THEN  
           ! Create diagnostic container
           DiagnName = 'BIOMASS_C2H6'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -1965,8 +1933,7 @@ CONTAINS
        IF ( HcoID > 0 ) THEN  
           ! Create diagnostic container
           DiagnName = 'BIOMASS_CH4'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -1987,8 +1954,7 @@ CONTAINS
        HcoID = HCO_GetHcoID( 'NH3', HcoState )
        IF ( HcoID > 0 ) THEN  
           DiagnName = 'BIOMASS_NH3'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -2009,8 +1975,7 @@ CONTAINS
        HcoID = HCO_GetHcoID( 'PAN', HcoState )
        IF ( HcoID > 0 ) THEN  
           DiagnName = 'BIOMASS_PAN'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -2031,8 +1996,7 @@ CONTAINS
        HcoID = HCO_GetHcoID( 'HNO3', HcoState )
        IF ( HcoID > 0 ) THEN  
           DiagnName = 'BIOMASS_HNO3'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -2053,8 +2017,7 @@ CONTAINS
        HcoID = HCO_GetHcoID( 'MTPA', HcoState )
        IF ( HcoID > 0 ) THEN  
           DiagnName = 'BIOMASS_MTPA'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -2075,8 +2038,7 @@ CONTAINS
        HcoID = HCO_GetHcoID( 'BENZ', HcoState )
        IF ( HcoID > 0 ) THEN  
           DiagnName = 'BIOMASS_BENZ'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -2097,8 +2059,7 @@ CONTAINS
        HcoID = HCO_GetHcoID( 'TOLU', HcoState )
        IF ( HcoID > 0 ) THEN  
           DiagnName = 'BIOMASS_TOLU'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -2119,8 +2080,7 @@ CONTAINS
        HcoID = HCO_GetHcoID( 'XYLE', HcoState )
        IF ( HcoID > 0 ) THEN  
           DiagnName = 'BIOMASS_XYLE'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -2141,8 +2101,7 @@ CONTAINS
        HcoID = HCO_GetHcoID( 'EOH', HcoState )
        IF ( HcoID > 0 ) THEN  
           DiagnName = 'BIOMASS_EOH'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -2163,8 +2122,7 @@ CONTAINS
        HcoID = HCO_GetHcoID( 'MGLY', HcoState )
        IF ( HcoID > 0 ) THEN  
           DiagnName = 'BIOMASS_MGLY'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -2185,8 +2143,7 @@ CONTAINS
        HcoID = HCO_GetHcoID( 'NAP', HcoState )
        IF ( HcoID > 0 ) THEN  
           DiagnName = 'BIOMASS_NAP'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -2213,8 +2170,7 @@ CONTAINS
        IF ( HcoID > 0 ) THEN
           ! Create diagnostic container
           DiagnName = 'BIOMASS_SO2'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -2244,8 +2200,7 @@ CONTAINS
           HcoID = HCO_GetHcoID( 'POG1', HcoState )
           IF ( HcoID > 0 ) THEN  
              DiagnName = 'BIOMASS_POG1'
-             CALL Diagn_Create( am_I_Root,                     & 
-                  HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                   cName     = TRIM( DiagnName ), &
                   ExtNr     = ExtNr,             &
                   Cat       = Cat,               &
@@ -2263,8 +2218,7 @@ CONTAINS
           HcoID = HCO_GetHcoID( 'POG2', HcoState )
           IF ( HcoID > 0 ) THEN  
              DiagnName = 'BIOMASS_POG2'
-             CALL Diagn_Create( am_I_Root,                     & 
-                  HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                   cName     = TRIM( DiagnName ), &
                   ExtNr     = ExtNr,             &
                   Cat       = Cat,               &
@@ -2285,8 +2239,7 @@ CONTAINS
           HcoID = GetHemcoId( 'OCPI', HcoState, LOC, RC )
           IF ( HcoID > 0 ) THEN
              DiagnName = 'BIOMASS_OCPI'
-             CALL Diagn_Create( am_I_Root,                     & 
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = ExtNr,             &
                                 Cat       = Cat,               &
@@ -2304,8 +2257,7 @@ CONTAINS
           HcoID = GetHemcoId( 'OCPO', HcoState, LOC, RC )
           IF ( HcoID > 0 ) THEN
              DiagnName = 'BIOMASS_OCPO'
-             CALL Diagn_Create( am_I_Root,                     & 
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = ExtNr,             &
                                 Cat       = Cat,               &
@@ -2330,8 +2282,7 @@ CONTAINS
           
           ! Create diagnostic container
           DiagnName = 'BIOMASS_BCPI'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -2351,8 +2302,7 @@ CONTAINS
           
           ! Create diagnostic container
           DiagnName = 'BIOMASS_BCPO'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -2417,8 +2367,7 @@ CONTAINS
              
              ! Define the diagnostic catetory if the HEMCO id is found
              IF ( HcoId > 0 ) THEN
-                CALL Diagn_Create( am_I_Root,                       & 
-                                   HcoState  = HcoState,            &
+                CALL Diagn_Create( HcoState  = HcoState,            &
                                    cName     = TRIM( DiagnName ),   &
                                    ExtNr     = ExtNr,               &
                                    Cat       = Cat,                 &
@@ -2449,8 +2398,7 @@ CONTAINS
 
           ! Create diagnostic container
           DiagnName = 'BIOMASS_NO'
-          CALL Diagn_Create( am_I_Root,                   & 
-                             HcoState  = HcoState,        &
+          CALL Diagn_Create( HcoState  = HcoState,        &
                              cName     = TRIM(DiagnName), &
                              ExtNr     = ExtNr,           &
                              Cat       = Cat,             &
@@ -2477,8 +2425,7 @@ CONTAINS
 !
 !       ! Create diagnostic container
 !       DiagnName = 'BIOMASS_HG0'
-!       CALL Diagn_Create( am_I_Root,                   & 
-!                          HcoState  = HcoState,        &
+!       CALL Diagn_Create( HcoState  = HcoState,        &
 !                          cName     = TRIM(DiagnName), &
 !                          ExtNr     = ExtNr,           &
 !                          Cat       = Cat,             &
@@ -2579,8 +2526,7 @@ CONTAINS
        ! %%%%% Aircraft NO %%%%%
        !----------------------------------------------
        DiagnName = 'AIRCRAFT_NO'
-       CALL Diagn_Create( am_I_Root,                      & 
-                          HcoState  = HcoState,           &
+       CALL Diagn_Create( HcoState  = HcoState,           &
                           cName     = TRIM( DiagnName ),  &
                           ExtNr     = ExtNr,              &
                           Cat       = CATEGORY_AIRCRAFT,  &
@@ -2608,8 +2554,7 @@ CONTAINS
           ExtNr     = 0
           Cat       = CATEGORY_SHIP
           DiagnName = 'SHIP_NO'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -2633,8 +2578,7 @@ CONTAINS
        ExtNr = GetExtNr( HcoState%Config%ExtList, 'LightNOx')
        IF ( ExtNr > 0 ) THEN
           DiagnName = 'LIGHTNING_NO'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -2664,8 +2608,7 @@ CONTAINS
 
        ! %%%%%% Soil NO %%%%%%
        DiagnName = 'SOIL_NO'
-       CALL Diagn_Create ( am_I_Root,                     & 
-                           HcoState  = HcoState,          &
+       CALL Diagn_Create ( HcoState  = HcoState,          &
                            cName     = TRIM( DiagnName ), &
                            ExtNr     = ExtNr,             &
                            Cat       = Cat,               &
@@ -2692,8 +2635,7 @@ CONTAINS
        ENDIF
    
        DiagnName = 'FERTILIZER_NO'
-       CALL Diagn_Create ( am_I_Root,                     & 
-                           HcoState  = HcoState,          &
+       CALL Diagn_Create ( HcoState  = HcoState,          &
                            cName     = TRIM( DiagnName ), &
                            ExtNr     = ExtNr,             &
                            Cat       = Cat,               &
@@ -2846,8 +2788,7 @@ CONTAINS
           IF ( HcoID > 0 ) THEN 
              ! Create diagnostic container
              DiagnName = 'BIOFUEL_'//TRIM(SpcName)
-             CALL Diagn_Create( am_I_Root,                     & 
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = ExtNr,             &
                                 Cat       = CATEGORY_BIOFUEL,  &
@@ -2878,8 +2819,7 @@ CONTAINS
   
          ! Create diagnostic container
          DiagnName = 'BIOFUEL_NO'
-         CALL Diagn_Create( am_I_Root,                     & 
-                            HcoState  = HcoState,          &
+         CALL Diagn_Create( HcoState  = HcoState,          &
                             cName     = TRIM( DiagnName ), &
                             ExtNr     = ExtNr,             &
                             Cat       = CATEGORY_BIOFUEL,  &
@@ -2910,8 +2850,7 @@ CONTAINS
    
          ! Create diagnostic container
          DiagnName = 'BIOFUEL_CO'
-         CALL Diagn_Create( am_I_Root,                     & 
-                            HcoState  = HcoState,          &
+         CALL Diagn_Create( HcoState  = HcoState,          &
                             cName     = TRIM( DiagnName ), &
                             ExtNr     = ExtNr,             &
                             Cat       = CATEGORY_BIOFUEL,  &
@@ -3041,8 +2980,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_O3'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3066,8 +3004,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_ALK4'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3091,8 +3028,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_ACET'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3116,8 +3052,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_MEK'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3141,8 +3076,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_ALD2'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3166,8 +3100,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_RCHO'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3191,8 +3124,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_MACR'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3216,8 +3148,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_PRPE'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3241,8 +3172,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_C3H8'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3266,8 +3196,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_CH2O'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3291,8 +3220,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_C2H6'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3316,8 +3244,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_SO2'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3341,8 +3268,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_SO4'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3366,8 +3292,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_NH3'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3391,8 +3316,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_BCPI'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3420,8 +3344,7 @@ CONTAINS
 
           ! Create diagnostic container
           DiagnName = 'ANTHROPOGENIC_OCPI'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = CATEGORY_ANTHRO,   &
@@ -3447,8 +3370,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_BCPO'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3475,8 +3397,7 @@ CONTAINS
 
           ! Create diagnostic container
           DiagnName = 'ANTHROPOGENIC_OCPO'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = CATEGORY_ANTHRO,   &
@@ -3502,8 +3423,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_NO2'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3527,8 +3447,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_HNO2'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3554,8 +3473,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_BENZ'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3579,8 +3497,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_TOLU'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3604,8 +3521,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_XYLE'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3629,8 +3545,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'ANTHROPOGENIC_EOH'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = CATEGORY_ANTHRO,   &
@@ -3660,8 +3575,7 @@ CONTAINS
 
           ! Create diagnostic container
           DiagnName = 'ANTHROPOGENIC_NO'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = CATEGORY_ANTHRO,   &
@@ -3740,8 +3654,7 @@ CONTAINS
              IF ( HcoId > 0 ) THEN
       
                 ! Anthropogenic
-                CALL Diagn_Create( am_I_Root,                             & 
-                                   HcoState  = HcoState,                  &
+                CALL Diagn_Create( HcoState  = HcoState,                  &
                                    cName     = TRIM( DiagnName_AN ),      &
                                    ExtNr     = ExtNr,                     &
                                    Cat       = CATEGORY_ANTHRO,           &
@@ -3755,8 +3668,7 @@ CONTAINS
                                    RC        = RC                        ) 
 
                 ! Aircraft
-                CALL Diagn_Create( am_I_Root,                             & 
-                                   HcoState  = HcoState,                  &
+                CALL Diagn_Create( HcoState  = HcoState,                  &
                                    cName     = TRIM( DiagnName_AC ),      &
                                    ExtNr     = ExtNr,                     &
                                    Cat       = CATEGORY_AIRCRAFT,         &
@@ -3772,8 +3684,7 @@ CONTAINS
                 ! Biofuel
                 ! (NOTE: For tagged CO, biofuel is lumped in w/ anthro)
                 IF ( LEN_TRIM( DiagnName_BF ) > 0 ) THEN 
-                   CALL Diagn_Create( am_I_Root,                          & 
-                                      HcoState  = HcoState,               &
+                   CALL Diagn_Create( HcoState  = HcoState,               &
                                       cName     = TRIM( DiagnName_BF ),   &
                                       ExtNr     = ExtNr,                  &
                                       Cat       = CATEGORY_BIOFUEL,       &
@@ -3788,8 +3699,7 @@ CONTAINS
                 ENDIF
 
                 ! Ship
-                CALL Diagn_Create( am_I_Root,                             & 
-                                   HcoState  = HcoState,                  &
+                CALL Diagn_Create( HcoState  = HcoState,                  &
                                    cName     = TRIM( DiagnName_SH ),      &
                                    ExtNr     = ExtNr,                     &
                                    Cat       = CATEGORY_SHIP,             &
@@ -3921,8 +3831,7 @@ CONTAINS
           ! Create diagnostic container
           IF ( HcoID > 0 ) THEN
              DiagnName = 'BIOGENIC_SOAS'
-             CALL Diagn_Create( am_I_Root,                     &  
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = ExtNr,             &  
                                 Cat       = Cat,               &
@@ -3954,8 +3863,7 @@ CONTAINS
           ! Create diagnostic container
           IF ( HcoID > 0 ) THEN
              DiagnName = 'BIOGENIC_ISOP'
-             CALL Diagn_Create ( am_I_Root,                     & 
-                                 HcoState  = HcoState,          &
+             CALL Diagn_Create ( HcoState  = HcoState,          &
                                  cName     = TRIM( DiagnName ), &
                                  ExtNr     = ExtNr,             &
                                  Cat       = Cat,               &
@@ -3980,8 +3888,7 @@ CONTAINS
           ! Create diagnostic container (if ALD2 is defined)
           IF ( HcoID > 0 ) THEN
              DiagnName = 'BIOGENIC_ALD2'
-             CALL Diagn_Create( am_I_Root,                     & 
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = ExtNr,             &
                                 Cat       = Cat,               &
@@ -4006,8 +3913,7 @@ CONTAINS
           ! Create diagnostic container (if EOH is defined)
           IF ( HcoID > 0 ) THEN
              DiagnName = 'BIOGENIC_EOH'
-             CALL Diagn_Create( am_I_Root,                     & 
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = ExtNr,             &
                                 Cat       = Cat,               &
@@ -4032,8 +3938,7 @@ CONTAINS
           ! Create diagnostic container
           IF ( HcoID > 0 ) THEN
              DiagnName = 'BIOGENIC_PRPE'
-             CALL Diagn_Create( am_I_Root,                     & 
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = ExtNr,             &
                                 Cat       = Cat,               &
@@ -4058,8 +3963,7 @@ CONTAINS
           ! Create diagnostic container (if C2H4 is defined)
           IF ( HcoID > 0 ) THEN
              DiagnName = 'BIOGENIC_C2H4'
-             CALL Diagn_Create( am_I_Root,                     & 
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = ExtNr,             &
                                 Cat       = Cat,               &
@@ -4086,8 +3990,7 @@ CONTAINS
           ! HEMCO core, i.e. extension number is 0!
           IF ( HcoID > 0 ) THEN
              DiagnName = 'BIOGENIC_CHBR3'
-             CALL Diagn_Create( am_I_Root,                     & 
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = 0,                 &
                                 Cat       = Cat,               &
@@ -4114,8 +4017,7 @@ CONTAINS
           ! HEMCO core, i.e. extension number is 0!
           IF ( HcoID > 0 ) THEN
              DiagnName = 'BIOGENIC_CH2BR2'
-             CALL Diagn_Create( am_I_Root,                     & 
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = 0,                 &
                                 Cat       = Cat,               &
@@ -4151,8 +4053,7 @@ CONTAINS
              ! Create diagnostics. Don't use AutoFill here since the 
              ! diagnostics update calls are explicitly called in 
              ! hcox_megan_mod.F90.
-             CALL Diagn_Create( am_I_Root,                     & 
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = ExtNr,             &
                                 Cat       = -1,                &
@@ -4183,8 +4084,7 @@ CONTAINS
    
              ! Create diagnostic container
              DiagnName = 'BIOGENIC_ACET'
-             CALL Diagn_Create( am_I_Root,                     & 
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = ExtNr,             &
                                 Cat       = Cat,               &
@@ -4221,8 +4121,7 @@ CONTAINS
                 ! Create diagnostics. Don't use AutoFill here since the 
                 ! diagnostics update calls are explicitly called in 
                 ! hcox_megan_mod.F90.
-                CALL Diagn_Create( am_I_Root,                     & 
-                                   HcoState  = HcoState,          &
+                CALL Diagn_Create( HcoState  = HcoState,          &
                                    cName     = TRIM( DiagnName ), &
                                    ExtNr     = ExtNr,             &
                                    Cat       = -1,                &
@@ -4306,8 +4205,7 @@ CONTAINS
              ! Create diagnostics. Don't use AutoFill here since the 
              ! diagnostics update calls are explicitly called in 
              ! hcox_megan_mod.F90.
-             CALL Diagn_Create( am_I_Root,                     & 
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = ExtNr,             &
                                 Cat       = Cat,               &
@@ -4338,8 +4236,7 @@ CONTAINS
           ! Create diagnostic container
           IF ( HcoID > 0 ) THEN
              DiagnName = 'BIOGENIC_OCPI'
-             CALL Diagn_Create( am_I_Root,                     &  
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = ExtNr,             &  
                                 Cat       = Cat,               &
@@ -4368,8 +4265,7 @@ CONTAINS
 
           ! Create diagnostic container
           DiagnName = 'BIOGENIC_CO'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = Cat,               &
@@ -4420,8 +4316,7 @@ CONTAINS
 
           ! Create diagnostic container
           IF ( HcoID > 0 ) THEN
-             CALL Diagn_Create( am_I_Root,                    & 
-                                HcoState  = HcoState,         &
+             CALL Diagn_Create( HcoState  = HcoState,         &
                                 cName     = 'SEASALT_BR2',    &
                                 ExtNr     = ExtNr,            &
                                 Cat       = Cat,              &
@@ -4455,8 +4350,7 @@ CONTAINS
        IF ( HcoID > 0 ) THEN
           ExtNr     = 0
           DiagnName = 'ALD2_PLANTDECAY'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = CATEGORY_BIOGENIC, &
@@ -4482,8 +4376,7 @@ CONTAINS
        IF ( HcoID > 0 ) THEN
           ExtNr     = 0
           DiagnName = 'EOH_PLANTDECAY'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = CATEGORY_BIOGENIC, &
@@ -4525,8 +4418,7 @@ CONTAINS
        ! Create diagnostic container
        IF ( HcoID > 0 ) THEN
           DiagnName = 'ALD2_OCEAN_SOURCE'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = -1,                &
@@ -4652,8 +4544,7 @@ CONTAINS
           N = 56000 + I
 
           ! Create diagnostic container
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              cID       = N,                 &
                              ExtNr     = ExtNr,             &
@@ -4679,8 +4570,7 @@ CONTAINS
        N         = 56004 
 
        ! Create diagnostic container
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           cID       = N,                 & 
                           ExtNr     = ExtNr,             &
@@ -4789,8 +4679,7 @@ CONTAINS
           
           ! Create diagnostic container
           DiagnName = 'SHIP_NO'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = -1,                &
@@ -4812,8 +4701,7 @@ CONTAINS
  
           ! These are the ship NO emissions before PARANOX chemistry
           DiagnName = 'PARANOX_TOTAL_SHIPNOX'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = -1,                &
@@ -4828,8 +4716,7 @@ CONTAINS
           IF ( RC /= HCO_SUCCESS ) RETURN
   
           DiagnName = 'PARANOX_NOXFRAC_REMAINING'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = -1,                &
@@ -4845,8 +4732,7 @@ CONTAINS
           IF ( RC /= HCO_SUCCESS ) RETURN
   
           DiagnName = 'PARANOX_OPE'
-          CALL Diagn_Create( am_I_Root,                     & 
-                             HcoState  = HcoState,          &
+          CALL Diagn_Create( HcoState  = HcoState,          &
                              cName     = TRIM( DiagnName ), &
                              ExtNr     = ExtNr,             &
                              Cat       = -1,                &
@@ -4866,8 +4752,7 @@ CONTAINS
           IF ( RC /= HCO_SUCCESS ) RETURN
           IF ( HcoID > 0 ) THEN
              DiagnName = 'PARANOX_O3_PRODUCTION'
-             CALL Diagn_Create( am_I_Root,                     & 
-                                HcoState  = HcoState,          &
+             CALL Diagn_Create( HcoState  = HcoState,          &
                                 cName     = TRIM( DiagnName ), &
                                 ExtNr     = ExtNr,             &
                                 Cat       = -1,                &
@@ -4984,8 +4869,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'GCPOPS_POPG_SOURCE'
-       CALL Diagn_Create( am_I_Root,                                         & 
-                          HcoState  = HcoState,                              &
+       CALL Diagn_Create( HcoState  = HcoState,                              &
                           cName     = TRIM( DiagnName ),                     &
                           ExtNr     = ExtNr,                                 &
                           Cat       = -1,                                    &
@@ -5016,8 +4900,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'GCPOPS_POPPOCPO_SOURCE'
-       CALL Diagn_Create( am_I_Root,                                         & 
-                          HcoState  = HcoState,                              &
+       CALL Diagn_Create( HcoState  = HcoState,                              &
                           cName     = TRIM( DiagnName ),                     &
                           ExtNr     = ExtNr,                                 &
                           Cat       = -1,                                    &
@@ -5048,8 +4931,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'GCPOPS_POPPBCPO_SOURCE'
-       CALL Diagn_Create( am_I_Root,                                         &
-                          HcoState  = HcoState,                              &
+       CALL Diagn_Create( HcoState  = HcoState,                              &
                           cName     = TRIM(DiagnName),                       &
                           ExtNr     = ExtNr,                                 &
                           Cat       = -1,                                    &
@@ -5117,8 +4999,7 @@ CONTAINS
           ENDIF
 
           ! Create manual diagnostics
-          CALL Diagn_Create( am_I_Root,                                      & 
-                             HcoState  = HcoState,                           &
+          CALL Diagn_Create( HcoState  = HcoState,                           &
                              cName     = TRIM( DiagnName ),                  &
                              ExtNr     = ExtNr,                              &
                              Cat       = -1,                                 &
@@ -5238,8 +5119,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'CH4_OIL'
-       CALL Diagn_Create( am_I_Root,                                         & 
-                          HcoState  = HcoState,                              &
+       CALL Diagn_Create( HcoState  = HcoState,                              &
                           cName     = TRIM( DiagnName ),                     &
                           ExtNr     = ExtNr,                                 &
                           Cat       = Cat,                                   &
@@ -5270,8 +5150,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'CH4_GAS'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -5301,8 +5180,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'CH4_COAL'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -5332,8 +5210,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'CH4_LIVESTOCK'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -5363,8 +5240,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'CH4_LANDFILLS'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -5394,8 +5270,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'CH4_WASTEWATER'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -5425,8 +5300,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'CH4_RICE'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -5456,8 +5330,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'CH4_ANTHROTHER'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -5487,8 +5360,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'CH4_BIOMASS'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -5518,8 +5390,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'CH4_WETLAND'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -5549,8 +5420,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'CH4_SEEPS'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -5580,8 +5450,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'CH4_LAKES'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -5611,8 +5480,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'CH4_TERMITES'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -5642,8 +5510,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'CH4_SOILABSORB'
-       CALL Diagn_Create( am_I_Root,                     & 
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -5733,8 +5600,7 @@ CONTAINS
     ! Create diagnostic container
     DiagnName = 'HG0_ARTISANAL'
     Cat       = 8
-    CALL Diagn_Create( am_I_Root,                                            & 
-                       HcoState  = HcoState,                                 &
+    CALL Diagn_Create( HcoState  = HcoState,                                 &
                        cName     = TRIM(DiagnName),                          &
                        ExtNr     = ExtNr,                                    &
                        Cat       = Cat,                                      &
@@ -5755,8 +5621,7 @@ CONTAINS
     ! Create diagnostic container
     DiagnName = 'HG0_NATURAL'
     Cat       = CATEGORY_NATURAL
-    CALL Diagn_Create( am_I_Root,                                            & 
-                       HcoState  = HcoState,                                 &
+    CALL Diagn_Create( HcoState  = HcoState,                                 &
                        cName     = TRIM(DiagnName),                          &
                        ExtNr     = ExtNr,                                    &
                        Cat       = Cat,                                      &
@@ -5779,8 +5644,7 @@ CONTAINS
 
     ! Create diagnostic container
     DiagnName = 'HG0_ANTHRO'
-    CALL Diagn_Create( am_I_Root,                                            & 
-                       HcoState  = HcoState,                                 &
+    CALL Diagn_Create( HcoState  = HcoState,                                 &
                        cName     = TRIM(DiagnName),                          &
                        ExtNr     = ExtNr,                                    &
                        Cat       = Cat,                                      &
@@ -5801,8 +5665,7 @@ CONTAINS
     ! Create diagnostic container
     IF ( HcoID > 0 ) THEN
        DiagnName = 'HG2_ANTHRO'
-       CALL Diagn_Create( am_I_Root,                                         & 
-                          HcoState  = HcoState,                              &
+       CALL Diagn_Create( HcoState  = HcoState,                              &
                           cName     = TRIM(DiagnName),                       &
                           ExtNr     = ExtNr,                                 &
                           Cat       = Cat,                                   &
@@ -5824,8 +5687,7 @@ CONTAINS
     ! Create diagnostic container
     IF ( HcoID > 0 ) THEN
        DiagnName = 'HGP_ANTHRO'
-       CALL Diagn_Create( am_I_Root,                                         & 
-                          HcoState  = HcoState,                              &
+       CALL Diagn_Create( HcoState  = HcoState,                              &
                           cName     = TRIM(DiagnName),                       &
                           ExtNr     = ExtNr,                                 &
                           Cat       = Cat,                                   &
@@ -5860,8 +5722,7 @@ CONTAINS
 
        ! Create diagnostic container
        DiagnName = 'BIOMASS_HG0'
-       CALL Diagn_Create( am_I_Root,                                         & 
-                          HcoState  = HcoState,                              &
+       CALL Diagn_Create( HcoState  = HcoState,                              &
                           cName     = TRIM(DiagnName),                       &
                           ExtNr     = ExtNr,                                 &
                           Cat       = Cat,                                   &
@@ -5953,8 +5814,7 @@ CONTAINS
        HcoID = id_BCPI
        ! Create diagnostic container
        DiagnName = 'BCPI_ANTH'
-       CALL Diagn_Create( am_I_Root,                     &
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -5976,8 +5836,7 @@ CONTAINS
        HcoID = id_BCPO
        ! Create diagnostic container
        DiagnName = 'BCPO_ANTH'
-       CALL Diagn_Create( am_I_Root,                     &
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -5999,8 +5858,7 @@ CONTAINS
        HcoID = id_OCPI
        ! Create diagnostic container
        DiagnName = 'OCPI_ANTH'
-       CALL Diagn_Create( am_I_Root,                     &
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -6022,8 +5880,7 @@ CONTAINS
        HcoID = id_OCPO
        ! Create diagnostic container
        DiagnName = 'OCPO_ANTH'
-       CALL Diagn_Create( am_I_Root,                     &
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -6045,8 +5902,7 @@ CONTAINS
        HcoID = id_BCPI
        ! Create diagnostic container
        DiagnName = 'BCPI_BF'
-       CALL Diagn_Create( am_I_Root,                     &
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -6068,8 +5924,7 @@ CONTAINS
        HcoID = id_BCPO
        ! Create diagnostic container
        DiagnName = 'BCPO_BF'
-       CALL Diagn_Create( am_I_Root,                     &
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -6091,8 +5946,7 @@ CONTAINS
        HcoID = id_OCPI
        ! Create diagnostic container
        DiagnName = 'OCPI_BF'
-       CALL Diagn_Create( am_I_Root,                     &
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -6114,8 +5968,7 @@ CONTAINS
        HcoID = id_OCPO
        ! Create diagnostic container
        DiagnName = 'OCPO_BF'
-       CALL Diagn_Create( am_I_Root,                     &
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &
@@ -6147,8 +6000,7 @@ CONTAINS
        HcoID = id_BCPI
        ! Create diagnostic container
        DiagnName = 'BCPI_BB'
-       CALL Diagn_Create( am_I_Root,                     &
-                          HcoState  = HcoState,          &
+       CALL Diagn_Create( HcoState  = HcoState,          &
                           cName     = TRIM( DiagnName ), &
                           ExtNr     = ExtNr,             &
                           Cat       = Cat,               &

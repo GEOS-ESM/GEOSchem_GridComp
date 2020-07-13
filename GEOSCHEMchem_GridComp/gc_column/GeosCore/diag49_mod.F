@@ -15,7 +15,7 @@
 !
 ! !USES:
 !
-      USE inquireMod,    ONLY : findFreeLUN ! (ewl, 6/16/15)
+      USE HCO_inquireMod,    ONLY : findFreeLUN ! (ewl, 6/16/15)
       USE PhysConstants
       USE PRECISION_MOD       ! For GEOS-Chem Precision (fp)
 

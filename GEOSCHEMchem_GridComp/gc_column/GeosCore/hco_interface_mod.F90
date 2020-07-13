@@ -120,7 +120,7 @@ CONTAINS
     cSec     = GET_SECOND()
     cDOY     = GET_DAY_OF_YEAR()
 
-    CALL HcoClock_Set ( am_I_Root,  HcoState, cYr, cMt, cDy, cHr, &
+    CALL HcoClock_Set ( HcoState, cYr, cMt, cDy, cHr, &
                         cMin, cSec, cDoy, IsEmisTime=TimeForEmis, RC=RC )
 
   END SUBROUTINE SetHcoTime
@@ -325,7 +325,7 @@ CONTAINS
     ! Get diagnostics by name. Search all diagnostics, i.e. both AutoFill
     ! and manually filled diagnostics. Also include those with a manual
     ! output interval.
-    CALL Diagn_Get( am_I_Root,   HcoState, .FALSE., DgnCont,         &
+    CALL Diagn_Get( HcoState, .FALSE., DgnCont,         &
                     FLAG,        RC,        cName=TRIM(DiagnName),   &
                     AutoFill=AF, COL=PS                            )     
 

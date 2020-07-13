@@ -682,7 +682,7 @@
 
          !-----------------------------------------------------------
          ! Some oxidants always required:
-         CALL HCO_GetPtr( am_I_Root, HcoState, 'GLOBAL_OH_trop',
+         CALL HCO_GetPtr( HcoState, 'GLOBAL_OH_trop',
      &                    OH_trop,   RC                           )
          IF ( RC /= GC_SUCCESS ) THEN
             ErrMsg = 'Cannot get pointer to GLOBAL_OH_trop!'
@@ -690,7 +690,7 @@
             RETURN
          ENDIF
 
-         CALL HCO_GetPtr( am_I_Root, HcoState, 'GLOBAL_OH_strat',
+         CALL HCO_GetPtr( HcoState, 'GLOBAL_OH_strat',
      &                    OH_strat,  RC                           )
          IF ( RC /= GC_SUCCESS ) THEN
             ErrMsg = 'Cannot get pointer to GLOBAL_OH_strat!'
@@ -698,7 +698,7 @@
             RETURN
          ENDIF
 
-         CALL HCO_GetPtr( am_I_Root, HcoState, 'GLOBAL_O3', 
+         CALL HCO_GetPtr( HcoState, 'GLOBAL_O3', 
      &                    O3,        RC                           )
          IF ( RC /= GC_SUCCESS ) THEN
             ErrMsg = 'Cannot get pointer to GLOBAL_O3!'
@@ -721,7 +721,7 @@
          ! Some oxidants only required by certain mechanisms:
          !-------------------------------------------------------------
          IF ( LHALOGENCHEM ) THEN
-            CALL HCO_GetPtr( am_I_Root, HcoState,'GLOBAL_NO2', 
+            CALL HCO_GetPtr( HcoState,'GLOBAL_NO2', 
      &           HEM_NO2, RC )
             IF ( RC /= GC_SUCCESS ) THEN
                ErrMsg = 'Cannot get pointer to GLOBAL_NO2!'
@@ -729,7 +729,7 @@
                RETURN
             ENDIF
 
-            CALL HCO_GetPtr( am_I_Root, HcoState,'GLOBAL_NO', 
+            CALL HCO_GetPtr( HcoState,'GLOBAL_NO', 
      &           HEM_NO, RC )
             IF ( RC /= GC_SUCCESS ) THEN
                ErrMsg = 'Cannot get pointer to GLOBAL_NO!'
@@ -737,7 +737,7 @@
                RETURN
             ENDIF
 
-            CALL HCO_GetPtr( am_I_Root, HcoState,'GLOBAL_HO2_trop',
+            CALL HCO_GetPtr( HcoState,'GLOBAL_HO2_trop',
      &           HEM_HO2_trop, RC )
             IF ( RC /= GC_SUCCESS ) THEN
                ErrMsg = 'Cannot get pointer to GLOBAL_HO2_trop!'
@@ -745,7 +745,7 @@
                RETURN
             ENDIF
 
-            CALL HCO_GetPtr( am_I_Root, HcoState,'GLOBAL_HO2_strat',
+            CALL HCO_GetPtr( HcoState,'GLOBAL_HO2_strat',
      &           HEM_HO2_strat, RC )
             IF ( RC /= GC_SUCCESS ) THEN
                ErrMsg = 'Cannot get pointer to GLOBAL_HO2_strat!'
@@ -753,7 +753,7 @@
                RETURN
             ENDIF
 
-            CALL HCO_GetPtr( am_I_Root, HcoState,'GLOBAL_ClO',
+            CALL HCO_GetPtr( HcoState,'GLOBAL_ClO',
      &           HEM_CLO, RC )
             IF ( RC /= GC_SUCCESS ) THEN
                ErrMsg = 'Cannot get pointer to GLOBAL_ClO!'
@@ -761,7 +761,7 @@
                RETURN
             ENDIF
 
-            CALL HCO_GetPtr( am_I_Root, HcoState,'GLOBAL_Cl',
+            CALL HCO_GetPtr( HcoState,'GLOBAL_Cl',
      &           HEM_CL, RC )
             IF ( RC /= GC_SUCCESS ) THEN
                ErrMsg = 'Cannot get pointer to GLOBAL_NO2!'
@@ -773,7 +773,7 @@
          !-------------------------------------------------------------
 
          IF ( LHGAQCHEM ) THEN
-            CALL HCO_GetPtr( am_I_Root, HcoState,'GLOBAL_HOCl', 
+            CALL HCO_GetPtr( HcoState,'GLOBAL_HOCl', 
      &           HEM_HOCL, RC )
             IF ( RC /= GC_SUCCESS ) THEN
                ErrMsg = 'Cannot get pointer to GLOBAL_HOCl!'
@@ -785,14 +785,14 @@
          !-------------------------------------------------------------
 
          IF ( LRED_JNO2 ) THEN
-            CALL HCO_GetPtr( am_I_Root, HcoState, 'JNO2', JNO2,  RC )
+            CALL HCO_GetPtr( HcoState, 'JNO2', JNO2,  RC )
             IF ( RC /= GC_SUCCESS ) THEN
                ErrMsg = 'Cannot get pointer to JNO2!'
                CALL GC_Error( ErrMsg, RC, ThisLoc )
                RETURN
             ENDIF
 
-            CALL HCO_GetPtr( am_I_Root, HcoState,'GLOBAL_OA',
+            CALL HCO_GetPtr( HcoState,'GLOBAL_OA',
      &        HEM_OA, RC )
             IF ( RC /= GC_SUCCESS ) THEN
                ErrMsg = 'Cannot get pointer to GLOBAL_OA!'
@@ -4618,7 +4618,7 @@ c$$$         k3ano2 = 3.4d-12 * exp(391d0/T)
       Ptr2D    => NULL()
 
       ! Soil distribution 
-      CALL HCO_GetPtr( am_I_Root, HcoState, 'HG0_SOILDIST', Ptr2D, RC )
+      CALL HCO_GetPtr( HcoState, 'HG0_SOILDIST', Ptr2D, RC )
       IF ( RC /= HCO_SUCCESS ) THEN
          ErrMsg = 'Could not get pointer to HEMCO field HG0_SOILDIST!'
          CALL GC_Error( ErrMsg, RC, ThisLoc )
@@ -6308,7 +6308,7 @@ c$$$         k3ano2 = 3.4d-12 * exp(391d0/T)
       E_ELEC_Hg2 => NULL()
 
       ! Get a pointer to the monthly mean OH from HEMCO (bmy, 3/11/15)
-      CALL HCO_GetPtr( am_I_Root, HcoState, 
+      CALL HCO_GetPtr( HcoState, 
      &                'CFPP_NEI2005_Hg2', E_ELEC_Hg2, RC )
       IF ( RC /= GC_SUCCESS ) THEN
          ErrMsg = 
@@ -6489,7 +6489,7 @@ c$$$         k3ano2 = 3.4d-12 * exp(391d0/T)
 
       IF ( ITS_A_NEW_MONTH() ) THEN 
       
-         CALL HCO_GetPtr( am_I_Root, HcoState, 'GLOBAL_OCEAN', 
+         CALL HCO_GetPtr( HcoState, 'GLOBAL_OCEAN', 
      &                    OCEAN_CONC,  RC )
          IF ( RC /= GC_SUCCESS ) THEN
             ErrMsg = 'Cannot get pointer to HEMCO field GLOBAL_OCEAN!'

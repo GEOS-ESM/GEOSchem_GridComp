@@ -151,7 +151,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE CharPak_Mod, ONLY : Str2Hash31, To_Uppercase
+    USE HCO_CharPak_Mod, ONLY : Str2Hash31, To_Uppercase
     USE ErrCode_Mod
 !
 ! !INPUT PARAMETERS:
@@ -470,7 +470,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod, ONLY : Str2Hash31, To_UpperCase
+    USE HCO_Charpak_Mod, ONLY : Str2Hash31, To_UpperCase
     USE ErrCode_Mod
 !
 ! !INPUT PARAMETERS:

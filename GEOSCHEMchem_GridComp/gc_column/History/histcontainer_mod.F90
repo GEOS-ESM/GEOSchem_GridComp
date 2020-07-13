@@ -1470,7 +1470,7 @@ CONTAINS
 !
     USE ErrCode_Mod
     USE History_Util_Mod
-    USE Julday_Mod,      ONLY :CALDATE
+    USE HCO_Julday_Mod,      ONLY :CALDATE
 !
 ! !INPUT PARAMETERS: 
 !

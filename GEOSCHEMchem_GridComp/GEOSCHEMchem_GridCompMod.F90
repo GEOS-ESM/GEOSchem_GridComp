@@ -49,7 +49,7 @@ MODULE GEOSCHEMchem_GridCompMod
   USE CMN_Size_Mod
   USE ESMF                                           ! ESMF library
   USE MAPL                                       ! MAPL library
-  USE Charpak_Mod                                    ! String functions
+  USE HCO_Charpak_Mod                                    ! String functions
   USE Hco_Types_Mod, ONLY : ConfigObj
   USE Input_Opt_Mod                                  ! Input Options obj
   USE GIGC_Chunk_Mod                                 ! GIGC IRF methods
@@ -429,8 +429,8 @@ CONTAINS
 !
     USE HCOI_ESMF_MOD,        ONLY : HCO_SetServices
     USE GCKPP_Model
-    USE CHARPAK_MOD,          ONLY : STRSPLIT, CSTRIP
-    USE inquireMod,           ONLY : findFreeLUN
+    USE HCO_CHARPAK_MOD,          ONLY : STRSPLIT, CSTRIP
+    USE HCO_inquireMod,           ONLY : findFreeLUN
     USE FILE_MOD,             ONLY : IOERROR
 #if defined( MODEL_GEOS )
     USE SPECIES_DATABASE_MOD, ONLY : Spc_Info
@@ -7934,7 +7934,7 @@ CONTAINS
             
              ! Get diagnostics 
              DgnID = 44500 + TrcID
-             CALL Diagn_Get( am_I_Root, HcoState, .FALSE., DgnCont,  &
+             CALL Diagn_Get( HcoState, .FALSE., DgnCont,  &
                              FLAG, ERR, cID=DgnID, AutoFill=-1,      &
                              COL=Input_Opt%DIAG_COLLECTION ) 
 
@@ -7969,7 +7969,7 @@ CONTAINS
                 END SELECT
 
                 ! Get diagnostics 
-                CALL Diagn_Get( am_I_Root, HcoState, .FALSE., DgnCont,  &
+                CALL Diagn_Get( HcoState, .FALSE., DgnCont,  &
                                 FLAG, ERR, cID=DgnID, AutoFill=-1,      &
                                 COL=Input_Opt%DIAG_COLLECTION ) 
 

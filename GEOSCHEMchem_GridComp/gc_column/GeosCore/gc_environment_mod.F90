@@ -994,7 +994,7 @@ CONTAINS
     USE ErrCode_Mod  
     USE Input_Opt_Mod,      ONLY : OptInput
     USE GC_Grid_Mod
-    USE Regrid_A2A_Mod
+    USE HCO_Regrid_A2A_Mod
     USE State_Grid_Mod,     ONLY : GrdState
 !
 ! !INPUT PARAMETERS:

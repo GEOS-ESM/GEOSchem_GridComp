@@ -208,7 +208,7 @@
          !%%% (bmy, 6/30/16)                                         %%%
 
          ! Get a pointer to the HEMCO data structure (bmy, 3/11/15)
-         CALL HCO_GetPtr( am_I_Root, HcoState, 'GLOBAL_OH', OH,  RC )
+         CALL HCO_GetPtr( HcoState, 'GLOBAL_OH', OH,  RC )
          IF ( RC /= GC_SUCCESS ) THEN
             CALL ERROR_STOP ( 'Cannot get pointer to GLOBAL_OH', LOC )
          ENDIF

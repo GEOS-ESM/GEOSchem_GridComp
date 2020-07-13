@@ -536,7 +536,7 @@
       USE BPCH2_MOD,      ONLY : GET_MODELNAME, OPEN_BPCH2_FOR_WRITE
 #endif
       USE CMN_SIZE_MOD         ! Size parameters
-      USE inquireMod,     ONLY : findFreeLUN
+      USE HCO_inquireMod,     ONLY : findFreeLUN
       USE Input_Opt_Mod,  ONLY : OptInput
       USE State_Grid_Mod, ONLY : GrdState
 !

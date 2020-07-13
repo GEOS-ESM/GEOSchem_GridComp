@@ -16,8 +16,8 @@
 !
 ! !USES:
 !
-      USE CharPak_Mod,   ONLY : MAXDIM  => MAXSTRLEN
-      USE inquireMod,    ONLY : findFreeLUN
+      USE HCO_CharPak_Mod,   ONLY : MAXDIM  => MAXSTRLEN
+      USE HCO_inquireMod,    ONLY : findFreeLUN
       USE PRECISION_MOD       ! For GEOS-Chem Precision (fp)
 
       IMPLICIT NONE
@@ -166,7 +166,7 @@
 ! !USES:
 !
       USE CMN_SIZE_MOD
-      USE CHARPAK_MOD,        ONLY : ReadOneLine, STRREPL
+      USE HCO_CHARPAK_MOD,        ONLY : ReadOneLine, STRREPL
       USE ErrCode_Mod
       USE FILE_MOD,           ONLY : IOERROR
       USE Input_Opt_Mod,      ONLY : OptInput
@@ -624,7 +624,7 @@
 !
 ! !USES:
 !
-      USE Charpak_Mod, ONLY: ReadOneLine, StrSplit
+      USE HCO_Charpak_Mod, ONLY: ReadOneLine, StrSplit
       Use ErrCode_Mod
       USE File_Mod,    ONLY: IoError
 !
@@ -732,7 +732,7 @@
 !
 ! !USES:
 !
-      USE Charpak_Mod,        ONLY : To_UpperCase
+      USE HCO_Charpak_Mod,        ONLY : To_UpperCase
       USE ErrCode_Mod
       USE Input_Opt_Mod,      ONLY : OptInput
       USE TIME_MOD

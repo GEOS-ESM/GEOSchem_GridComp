@@ -1684,7 +1684,7 @@ CONTAINS
             
              ! Get diagnostics 
              DgnID = 44500 + TrcID
-             CALL Diagn_Get( am_I_Root, HcoState, .FALSE., DgnCont,  &
+             CALL Diagn_Get( HcoState, .FALSE., DgnCont,  &
                              FLAG, ERR, cID=DgnID, AutoFill=-1,      &
                              COL=Input_Opt%DIAG_COLLECTION ) 
 
@@ -1720,7 +1720,7 @@ CONTAINS
                 END SELECT
 
                 ! Get diagnostics 
-                CALL Diagn_Get( am_I_Root, HcoState, .FALSE., DgnCont, &
+                CALL Diagn_Get( HcoState, .FALSE., DgnCont, &
                                 FLAG, ERR, cID=DgnID, AutoFill=-1,     &
                                 COL=Input_Opt%DIAG_COLLECTION ) 
 

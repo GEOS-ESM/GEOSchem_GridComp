@@ -144,7 +144,7 @@ CONTAINS
        id_CH4 = Ind_( 'CH4' )
 
        ! Get pointer to surface CH4 data
-       CALL HCO_GetPtr( am_I_Root, HcoState, 'NOAA_GMD_CH4', SFC_CH4, RC )
+       CALL HCO_GetPtr( HcoState, 'NOAA_GMD_CH4', SFC_CH4, RC )
        IF ( RC /= GC_SUCCESS ) THEN
           ErrMsg = 'Cannot get pointer to NOAA_GMD_CH4!'
           CALL GC_Error( ErrMsg, RC, ThisLoc )

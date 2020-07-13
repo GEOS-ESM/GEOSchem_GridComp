@@ -69,10 +69,11 @@ endif ()
 
 esma_add_library (${this}
    SRCS ${srcs}
-   DEPENDENCIES MAPL MAPL_cfio_r4 Chem_Base Chem_Shared HEMCO
+   DEPENDENCIES MAPL MAPL_cfio_r4 Chem_Base Chem_Shared
    )
 
 target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
+target_link_libraries(${this} PUBLIC HCOI_MAPL_ESMF)
 
 target_compile_definitions(${this} PRIVATE ESMF_ DEVEL NO_BPCH UCX 
    EXTERNAL_GRID EXTERNAL_FORCING GEOS_FP USE_REAL8 USE_TEND NC_DIAG DISCOVER MODEL_GEOS)

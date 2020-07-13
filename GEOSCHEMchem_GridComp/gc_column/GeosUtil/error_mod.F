@@ -582,7 +582,7 @@
 !
 ! !USES:
 !
-      USE CharPak_Mod, ONLY : WordWrapPrint
+      USE HCO_CharPak_Mod, ONLY : WordWrapPrint
 !
 ! !INPUT PARAMETERS: 
 !

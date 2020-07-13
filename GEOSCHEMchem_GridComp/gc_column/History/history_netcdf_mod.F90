@@ -183,7 +183,7 @@ CONTAINS
     USE ErrCode_Mod
     USE HistContainer_Mod,   ONLY : HistContainer, HistContainer_Print
     USE HistItem_Mod,        ONLY : HistItem,      HistItem_Print
-    USE JulDay_Mod,          ONLY : CalDate
+    USE HCO_JulDay_Mod,          ONLY : CalDate
     USE History_Util_Mod
     USE MetaHistItem_Mod,    ONLY : MetaHistItem
     USE Ncdf_Mod
@@ -941,7 +941,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod, ONLY : StrRepl
+    USE HCO_Charpak_Mod, ONLY : StrRepl
     USE Time_Mod,    ONLY : Ymd_Extract
 !
 ! !INPUT PARAMETERS: 

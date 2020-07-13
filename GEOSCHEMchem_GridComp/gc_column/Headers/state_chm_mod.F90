@@ -2131,7 +2131,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE Charpak_Mod,        ONLY : To_UpperCase
+    USE HCO_Charpak_Mod,        ONLY : To_UpperCase
     USE Registry_Params_Mod
 !
 ! !INPUT PARAMETERS:
@@ -3309,7 +3309,7 @@ CONTAINS
 !
 ! !USES:
 !
-    USE CharPak_Mod, ONLY : Str2Hash14, To_UpperCase
+    USE HCO_CharPak_Mod, ONLY : Str2Hash14, To_UpperCase
 !
 ! !INPUT PARAMETERS:
 !

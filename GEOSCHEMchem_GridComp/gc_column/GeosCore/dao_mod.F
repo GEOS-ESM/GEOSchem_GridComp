@@ -1628,7 +1628,7 @@
 !
       USE ErrCode_Mod
       USE Input_Opt_Mod,      ONLY : OptInput
-      USE JULDAY_MOD,         ONLY : JULDAY
+      USE HCO_JULDAY_MOD,     ONLY : JULDAY
       USE State_Grid_Mod,     ONLY : GrdState
       USE State_Met_Mod,      ONLY : MetState
       USE TIME_MOD,           ONLY : GET_DAY_OF_YEAR
