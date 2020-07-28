@@ -818,23 +818,8 @@ contains
 
     call MAPL_TimerOn (MAPL,"-Read Header"  )
 
-#ifdef H5_HAVE_PARALLEL
-    call MPI_Info_create(info, STATUS)
-    call MPI_Info_set(info, "romio_cb_read", "automatic", STATUS)
-    VERIFY_(STATUS)
-    call ESMF_VMGet(vm, mpiCommunicator=comm, rc=STATUS)
-    VERIFY_(STATUS)
-
-#ifdef NETCDF_NEED_NF_MPIIO
-    STATUS = NF_OPEN_PAR(trim(PCHEMFILE),IOR(NF_NOWRITE,NF_MPIIO),comm,info,UNIT)
-#else
-    STATUS = NF_OPEN_PAR(trim(PCHEMFILE),NF_NOWRITE,comm,info,UNIT)
-#endif
-
-#else
     if ( MAPL_am_I_root() ) then
        STATUS = NF_OPEN(trim(PCHEMFILE),NF_NOWRITE,UNIT)
-#endif
     if(status /= nf_noerr) then
        print*,'Error opening file ',trim(PCHEMFILE), status
        print*, NF_STRERROR(status)
@@ -914,7 +899,6 @@ contains
 
 ! Allocate and read PCHEMFILE's latitudes (radians) and pressures (Pa).
 !----------------------------------------------------------------------
-#ifndef H5_HAVE_PARALLEL
     endif ! MAPL_am_I_root
 
     call MAPL_CommsBcast (vm, PCHEM_STATE%NLATS   ,1, 0, rc=status)
@@ -926,16 +910,13 @@ contains
     call MAPL_CommsBcast (vm, PCHEM_STATE%endClimYear   ,1, 0, rc=status)
     VERIFY_(STATUS)
 
-#endif
 
     allocate ( PCHEM_STATE%LATS (PCHEM_STATE%NLATS), STAT=STATUS )
     VERIFY_(STATUS)
     allocate ( PCHEM_STATE%LEVS (PCHEM_STATE%NLEVS), STAT=STATUS )
     VERIFY_(STATUS)
 
-#ifndef H5_HAVE_PARALLEL
     if ( MAPL_am_I_root() ) then
-#endif
 
     STATUS = NF_INQ_VARID(UNIT, 'lat', varid)
     if(status /= nf_noerr) then
@@ -961,10 +942,6 @@ contains
        print*, NF_STRERROR(status)
        stop
     endif
-#ifdef H5_HAVE_PARALLEL
-    call MPI_Info_free(info, status)
-    VERIFY_(STATUS)
-#else
     endif ! MAPL_am_I_root
 
     call MAPL_CommsBcast (vm, PCHEM_STATE%LATS,size(PCHEM_STATE%LATS), 0, rc=status)
@@ -972,7 +949,6 @@ contains
     call MAPL_CommsBcast (vm, PCHEM_STATE%LEVS,size(PCHEM_STATE%LEVS), 0, rc=status)
     VERIFY_(STATUS)
 
-#endif
     STATUS = NF_CLOSE(UNIT)
     call MAPL_TimerOff (MAPL,"-Read Header"  )
 
@@ -1311,22 +1287,8 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
           call ESMF_VMGet(vm, mpiCommunicator=comm, rc=STATUS)
           VERIFY_(STATUS)
 
-#ifdef H5_HAVE_PARALLEL
-          call MPI_Info_create(info, STATUS)
-          VERIFY_(STATUS)
-          call MPI_Info_set(info, "romio_cb_read", "automatic", STATUS)
-          VERIFY_(STATUS)
-
-#ifdef NETCDF_NEED_NF_MPIIO
-          STATUS = NF_OPEN_PAR(trim(PCHEMFILE),IOR(NF_NOWRITE,NF_MPIIO),comm,info,UNIT)
-#else
-          STATUS = NF_OPEN_PAR(trim(PCHEMFILE),NF_NOWRITE,comm,info,UNIT)
-#endif
-
-#else
           if ( MAPL_am_I_root() ) then
              STATUS = NF_OPEN(trim(PCHEMFILE),NF_NOWRITE,UNIT)
-#endif
           if(status /= nf_noerr) then
              print*,'Error opening file ',trim(PCHEMFILE), status
              print*, NF_STRERROR(status)
@@ -1426,10 +1388,6 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
           STATUS = NF_CLOSE(UNIT)
           VERIFY_(STATUS)
 
-#ifdef H5_HAVE_PARALLEL
-          call MPI_Info_free(info, status)
-          VERIFY_(STATUS)
-#else
           endif ! MAPL_am_I_root
           call MPI_Bcast (PCHEM_STATE%MNCV, size(PCHEM_STATE%MNCV), MPI_REAL, 0, comm, STATUS)
           VERIFY_(STATUS)
@@ -1437,7 +1395,6 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
              call MPI_Bcast (PCHEM_STATE%MNPL, size(PCHEM_STATE%MNPL), MPI_REAL, 0, comm, STATUS)
              VERIFY_(STATUS)
           ENDIF
-#endif
 
           call MAPL_TimerOff (MAPL,"-Read Species"  )
           call MAPL_TimerOn  (MAPL,"RUN"  )
