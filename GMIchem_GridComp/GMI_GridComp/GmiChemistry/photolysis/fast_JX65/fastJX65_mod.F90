@@ -330,22 +330,24 @@
 !
 ! !INTERFACE:
 !
-      subroutine GetQAA_RAAinFastJX65 (bRAA, bQAA)
+      subroutine GetQAA_RAAinFastJX65 (RAA_b, QAA_b, id, jd)
 !
 #     include "parm_CTM_fastJX65.h"
 #     include "cmn_JVdat_fastJX65.h"
 !
+! !INPUT PARAMETERS: this maps a subset of JX65 parameters to use in our aerdust OD calc
+      integer, intent(in)  :: id, jd
 ! !OUTPUT PARAMETERS:
-      real*8 , intent(out) :: bRAA(:,:)
-      real*8 , intent(out) :: bQAA(:,:)
+      real*8 , intent(out) :: RAA_b(id,jd)
+      real*8 , intent(out) :: QAA_b(id,jd)
 !EOP
 !---------------------------------------------------------------------------
 !BOC
       ! Get effective radius associated with aerosol type
-      bRAA(:,:) = RAA(:,:) !<----- Check the dimensions. used to be 2D now 1D
+      RAA_b(1:id,1:jd) = RAA(1:id,1:jd)
 
       ! Get aerosol scattering phase functions
-      bQAA(:,:) = QAA(:,:)
+      QAA_b(1:id,1:jd) = QAA(1:id,1:jd)
 
       RETURN
 
