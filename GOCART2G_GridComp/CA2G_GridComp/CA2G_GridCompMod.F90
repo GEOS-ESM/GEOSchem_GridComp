@@ -34,22 +34,19 @@ real, parameter ::  undefval  = 1.e15   ! missing value
 ! !DESCRIPTION: This module implements GOCART2G's Carbonaceous Aerosol (CA) Gridded Component.
 
 ! !REVISION HISTORY:
-! 16Oct2019  Sherman, da Silva, Darmenov, Clune -  First attempt at refactoring.
+! 15June2020  Sherman, da Silva, Darmenov, Clune -  First attempt at refactoring.
 
 !EOP
 !===========================================================================
 
 !  !Carbonaceous aerosol state
       type, extends(GA_GridComp) :: CA2G_GridComp
-       integer            :: myDOW = -1     ! my Day of the week: Sun=1, Mon=2,...,Sat=7
-       real               :: ratPOM         ! Ratio of POM to OC mass
-       real               :: fTerpene       ! Fraction of terpene emissions -> aerosol
-       real               :: fHydrophobic   ! Initially hydrophobic portion
-       logical            :: diurnal_bb     ! diurnal biomass burning
-       real               :: aviation_layers(4)     ! heights of the LTO, CDS and CRS layers
-!       logical            :: enable_OC = .false.    ! doing organic carbon?
-!       logical            :: enable_BC = .false.    ! doing black carbon?
-!       logical            :: enable_BR = .false.   ! doing brown carbon?
+       integer            :: myDOW = -1   ! my Day of the week: Sun=1, Mon=2,...,Sat=7
+       real               :: ratPOM = 1.0  ! Ratio of POM to OC mass
+       real               :: fTerpene = 0.0 ! Fraction of terpene emissions -> aerosol
+       real               :: fHydrophobic ! Initially hydrophobic portion
+       logical            :: diurnal_bb   ! diurnal biomass burning
+       real               :: aviation_layers(4)  ! heights of the LTO, CDS and CRS layers
 !      !Workspae for point emissions
        logical                :: doing_point_emissions = .false.
        character(len=255)     :: point_emissions_srcfilen   ! filename for pointwise emissions
@@ -95,17 +92,17 @@ contains
 
 !
 !   !Locals
-    character (len=ESMF_MAXSTR)                 :: COMP_NAME
-    type (ESMF_Config)                          :: cfg
-    type (wrap_)                                :: wrap
-    type (CA2G_GridComp), pointer               :: self
-    type (Chem_Mie)                             :: this
+    character (len=ESMF_MAXSTR)              :: COMP_NAME
+    type (ESMF_Config)                       :: cfg
+    type (wrap_)                             :: wrap
+    type (CA2G_GridComp), pointer            :: self
+    type (Chem_Mie)                          :: this
 
-    character (len=ESMF_MAXSTR)                 :: field_name
+    character (len=ESMF_MAXSTR)              :: field_name, GCsuffix
 
-    integer                                     :: n, i, nCols, nbins
-    real                                        :: DEFVAL
-    logical                                     :: data_driven = .true.
+    integer                                  :: n, i, nCols, nbins
+    real                                     :: DEFVAL
+    logical                                  :: data_driven = .true.
 
     __Iam__('SetServices')
 
@@ -118,6 +115,17 @@ contains
     Iam = trim(COMP_NAME) //'::'// Iam
 
 if (mapl_am_I_root()) print*,'CA2G SetServices COMP_NAME = ',trim(COMP_NAME)
+if (mapl_am_I_root()) print*,'CA2G SetServices COMP_NAME(1:4) = ',COMP_NAME(1:4)
+
+    if (comp_name(1:5) == 'CA.oc') then
+       GCsuffix = 'OC'
+    else if (comp_name(1:5) == 'CA.bc') then
+       GCsuffix = 'BC'
+    else if (comp_name(1:5) == 'CA.br') then
+       GCsuffix = 'BR'
+    end if
+
+if (mapl_am_I_root()) print*,'CA2G SetServices GCsuffix = ',trim(GCsuffix)
 
 !   Wrap internal state for storing in GC
 !   -------------------------------------
@@ -130,8 +138,8 @@ if (mapl_am_I_root()) print*,'CA2G SetServices COMP_NAME = ',trim(COMP_NAME)
     call ESMF_ConfigLoadFile (cfg, 'CA2G_GridComp_'//trim(COMP_NAME)//'.rc', rc=status)
     if (status /= 0) then
         if (mapl_am_i_root()) print*,'CA2G_GridComp_'//trim(COMP_NAME)//'.rc does not exist! &
-                                      Loading CA2G_GridComp_CA.rc instead'
-        call ESMF_ConfigLoadFile (cfg, 'CA2G_GridComp_CA.rc', __RC__)
+                                      Loading CA2G_GridComp_CA.oc.rc instead'
+        call ESMF_ConfigLoadFile (cfg, 'CA2G_GridComp_CA.oc.rc', __RC__)
     end if
 
 !   process generic config items
@@ -140,17 +148,13 @@ if (mapl_am_I_root()) print*,'CA2G SetServices COMP_NAME = ',trim(COMP_NAME)
     call ESMF_ConfigGetAttribute (cfg, self%nbins, label='nbins:', __RC__)
     nbins = self%nbins
 
-!    if (trim(comp_name) == 'CA.oc') self%enable_OC = .true.
-!    if (trim(comp_name) == 'CA.bc') self%enable_BC = .true.
-!    if (trim(comp_name) == 'CA.br') self%enable_BR = .true.
-
 !   Parse config file into private internal state
 !   ----------------------------------------------
     call ESMF_ConfigGetAttribute (cfg, self%myDOW, label='my_day_of_week:', default=-1, __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%ratPOM, label='pom_oc_ratio:', __RC__)
-    call ESMF_ConfigGetAttribute (cfg, self%fTerpene, label='terpene_emission_fraction:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%fhydrophobic, label='hydrophobic_fraction:', __RC__)
- 
+    call ESMF_ConfigGetAttribute (cfg, self%ratPOM, label='pom_oc_ratio:', default=1.0, __RC__)
+    call ESMF_ConfigGetAttribute (cfg, self%fTerpene, label='terpene_emission_fraction:', default=0.0, __RC__)
+
     call ESMF_ConfigFindLabel (cfg, 'aviation_vertical_layers:', __RC__)
     do i=1,size(self%aviation_layers)
        call ESMF_ConfigGetAttribute (cfg, self%aviation_layers(i), __RC__)
@@ -176,13 +180,7 @@ if (mapl_am_I_root()) print*,'CA2G SetServices COMP_NAME = ',trim(COMP_NAME)
        call MAPL_GridCompSetEntryPoint (GC, ESMF_Method_Run, Run2, __RC__)
     end if
 
-!   INTERNAL STATE
-!   ---------------
-!   Default internal state values
-!   -----------------------------
     DEFVAL = 0.0
-
-#include "CA2G_Internal___.h"
 
 !   IMPORT STATE
 !   -------------
@@ -208,31 +206,43 @@ if (mapl_am_I_root()) print*,'CA2G SetServices COMP_NAME = ',trim(COMP_NAME)
           VLOCATION  = MAPL_VLocationCenter,                  &
           RESTART    = MAPL_RestartSkip,     __RC__)
 
-! UPDATE  OCphilic and OCphobic METADATA!!!!!
-!       if (self%enable_OC) then
-          call MAPL_AddImportSpec(GC,                            &
-             short_name = 'climOCphobic',                        &
-             long_name  = 'Organic Carbon phobic Mixing Ratio',  &
-             units      = 'kg kg-1',                             &
-             restart    = MAPL_RestartSkip,                      &
-             dims       = MAPL_DimsHorzVert,                     &
-             vlocation  = MAPL_VLocationCenter, __RC__)
+       call MAPL_AddInternalSpec(GC,                          &
+          short_name = 'CAphobic',                            &
+          long_name  = trim(GCsuffix)//' phobic Mixing Ratio',&
+          units      = 'kg kg-1',                             &
+          restart    = MAPL_RestartOptional,                  &
+          dims       = MAPL_DimsHorzVert,                     &
+          vlocation  = MAPL_VLocationCenter, __RC__) 
 
-          call MAPL_AddImportSpec(GC,                            &
-             short_name = 'climOCphilic',                        &
-             long_name  = 'Organic Carbon philic Mixing Ratio',  &
-             units      = 'kg kg-1',                             &
-             restart    = MAPL_RestartSkip,                      &
-             dims       = MAPL_DimsHorzVert,                     &
-             vlocation  = MAPL_VLocationCenter, __RC__)
-!       end if
+       call MAPL_AddInternalSpec(GC,                          &
+          short_name = 'CAphilic',                            &
+          long_name  = trim(GCsuffix)//' philic Mixing Ratio',&
+          units      = 'kg kg-1',                             &
+          restart    = MAPL_RestartOptional,                  &
+          dims       = MAPL_DimsHorzVert,                     &
+          vlocation  = MAPL_VLocationCenter, __RC__) 
 
-       do i = 1, nbins
+       call MAPL_AddImportSpec(GC,                            &
+          short_name = 'clim'//trim(GCsuffix)//'phobic',      &
+          long_name  = trim(GCsuffix)//' phobic Mixing Ratio',&
+          units      = 'kg kg-1',                             &
+          restart    = MAPL_RestartOptional,                  &
+          dims       = MAPL_DimsHorzVert,                     &
+          vlocation  = MAPL_VLocationCenter, __RC__) 
+
+       call MAPL_AddImportSpec(GC,                            &
+          short_name = 'clim'//trim(GCsuffix)//'philic',      &
+          long_name  = trim(GCsuffix)//' philic Mixing Ratio',&
+          units      = 'kg kg-1',                             &
+          restart    = MAPL_RestartOptional,                  &
+          dims       = MAPL_DimsHorzVert,                     &
+          vlocation  = MAPL_VLocationCenter, __RC__)
+
+       do i = 1, self%nbins
          write (field_name, '(A, I0.3)') '', i
-!         if (self%enable_OC) then
 !        !dry deposition
           call MAPL_AddImportSpec(GC,                                       &
-             short_name = 'climOCDP'//trim(field_name),                      &
+             short_name = 'clim'//trim(GCsuffix)//'DP'//trim(field_name),                      &
              long_name  = 'Organic Carbon Mixing Ratio (bin '//trim(field_name)//')',  &
              units      = 'kg kg-1',                                         &
              dims       = MAPL_DimsHorzOnly,                                 &
@@ -241,7 +251,7 @@ if (mapl_am_I_root()) print*,'CA2G SetServices COMP_NAME = ',trim(COMP_NAME)
 
 !        !wet deposition    
           call MAPL_AddImportSpec(GC,                                       &
-             short_name = 'climOCWT'//trim(field_name),                     &
+             short_name = 'clim'//trim(GCsuffix)//'WT'//trim(field_name),                     &
              long_name  = 'Organic Carbon Mixing Ratio (bin '//trim(field_name)//')', &
              units      = 'kg kg-1',                                        &
              dims       = MAPL_DimsHorzOnly,                                &
@@ -250,7 +260,7 @@ if (mapl_am_I_root()) print*,'CA2G SetServices COMP_NAME = ',trim(COMP_NAME)
 
 !        !gravitational settling
           call MAPL_AddImportSpec(GC,                                       &
-             short_name = 'climOCSD'//trim(field_name),                     &
+             short_name = 'clim'//trim(GCsuffix)//'SD'//trim(field_name),                     &
              long_name  = 'Organic Carbon Mixing Ratio (bin '//trim(field_name)//')', &
              units      = 'kg kg-1',                                        &
              dims       = MAPL_DimsHorzOnly,                                &
@@ -259,7 +269,7 @@ if (mapl_am_I_root()) print*,'CA2G SetServices COMP_NAME = ',trim(COMP_NAME)
 
 !        !convective scavenging
           call MAPL_AddImportSpec(GC,                                       &
-             short_name = 'climOCSV'//trim(field_name),                     &
+             short_name = 'clim'//trim(GCsuffix)//'SV'//trim(field_name),                     &
              long_name  = 'Organic Carbon Mixing Ratio (bin '//trim(field_name)//')', &
              units      = 'kg kg-1',                                        &
              dims       = MAPL_DimsHorzOnly,                                &
@@ -275,6 +285,7 @@ if (mapl_am_I_root()) print*,'CA2G SetServices COMP_NAME = ',trim(COMP_NAME)
     if (.not. data_driven) then
 #include "CA2G_Export___.h"
 #include "CA2G_Import___.h"
+#include "CA2G_Internal___.h"
     end if
 
 !   This state holds fields needed by radiation
@@ -365,8 +376,12 @@ if (mapl_am_I_root()) print*,'CA2G SetServices END'
     integer                              :: i, nbins, nCols, dims(3), km
     integer                              :: instance
     type (ESMF_Field)                    :: field, fld
-    character (len=ESMF_MAXSTR)          :: field_name, prefix, diurnal_bb
-!    character (len=ESMF_MAXSTR), allocatable   :: varList(:)
+    character (len=ESMF_MAXSTR)          :: field_name, prefix, GCsuffix, diurnal_bb, bin_index
+    type(ESMF_Field)                     :: new_4d_field, field3d_1,field3d_2
+    real, pointer                        :: ptr3d_1(:,:,:), ptr3d_2(:,:,:)
+    real, pointer                        :: ptr4d(:,:,:,:)
+    integer                              :: lb, ub
+    character (len=ESMF_MAXSTR),allocatable :: aerosol_names(:)
 
     real                                 :: CDT         ! chemistry timestep (secs)
     integer                              :: HDT         ! model     timestep (secs)
@@ -383,12 +398,20 @@ real, dimension(:,:,:), pointer :: OCphilicPTR
 
 !   Begin... 
 
-if (mapl_am_I_root()) print*,'CA2G Init BEGIN'
-
 !   Get the target components name and set-up traceback handle.
 !   -----------------------------------------------------------
     call ESMF_GridCompGet (GC, grid=grid, name=COMP_NAME, config=cf, __RC__)
     Iam = trim(COMP_NAME) // '::' //trim(Iam)
+
+if (mapl_am_I_root()) print*, trim(comp_name),' Init BEGIN'
+
+    if (comp_name(1:5) == 'CA.oc') then
+       GCsuffix = 'OC'
+    else if (comp_name(1:5) == 'CA.bc') then
+       GCsuffix = 'BC'
+    else if (comp_name(1:5) == 'CA.br') then
+       GCsuffix = 'BR'
+    end if
 
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
@@ -441,11 +464,20 @@ if (mapl_am_I_root()) print*,'CA2G Init BEGIN'
 !   -----------------------------------
     call MAPL_Get (MAPL, INTERNAL_ESMF_STATE=internal, __RC__)
 
-call MAPL_GetPointer(internal, OCphobicPTR, 'OCphobic', rc=status); VERIFY_(status)
-call MAPL_GetPointer(internal, OCphilicPTR, 'OCphilic', rc=status); VERIFY_(status)
-if(mapl_am_i_root()) print*,' CA2G Init sum(OCphobic) = ',sum(OCphobicPTR)
-if(mapl_am_i_root()) print*,' CA2G Init sum(OCphilic) = ',sum(OCphilicPTR)
 
+!call MAPL_GetPointer(internal, OCphobicPTR, 'CAphobic', rc=status); VERIFY_(status)
+!call MAPL_GetPointer(internal, OCphilicPTR, 'CAphilic', rc=status); VERIFY_(status)
+
+!if(trim(comp_name) == 'CA.bc') then
+!  if(mapl_am_i_root()) print*,' CA2G Init sum(BCphobic) = ',sum(OCphobicPTR)
+!  if(mapl_am_i_root()) print*,' CA2G Init sum(BCphilic) = ',sum(OCphilicPTR)
+!else if (trim(comp_name) == 'CA.oc') then
+!  if(mapl_am_i_root()) print*,' CA2G Init sum(OCphobic) = ',sum(OCphobicPTR)
+!  if(mapl_am_i_root()) print*,' CA2G Init sum(OCphilic) = ',sum(OCphilicPTR)
+!else if (trim(comp_name) == 'CA.br') then
+!  if(mapl_am_i_root()) print*,' CA2G Init sum(BRphobic) = ',sum(OCphobicPTR)
+!  if(mapl_am_i_root()) print*,' CA2G Init sum(BRphilic) = ',sum(OCphilicPTR)
+!end if
 
 !   Is CA data driven?
 !   ------------------
@@ -468,43 +500,60 @@ if(mapl_am_i_root()) print*,' CA2G Init sum(OCphilic) = ',sum(OCphilicPTR)
     call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO_ACI', aero_aci, __RC__)
     call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO_DP' , Bundle_DP, __RC__)
 
-    call ESMF_StateGet (internal, 'OCphobic', field, __RC__)
-    fld = MAPL_FieldCreate (field, 'OCphobic', __RC__)
+!    if (.not. data_driven) then
+       call ESMF_StateGet (internal, 'CAphobic', field, __RC__)
+       call ESMF_AttributeSet (field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(1), __RC__)
+!    else if (data_driven) then
+!       call ESMF_StateGet (internal,'clim'//trim(GCsuffix)//'phobic', field, __RC__)
+!    end if
+    fld = MAPL_FieldCreate (field, 'CAphobic', __RC__)
     call MAPL_StateAdd (aero, fld, __RC__)
     call MAPL_StateAdd (aero_aci, fld, __RC__)
-    ! ADD OTHER ATTRIBUTE, HENTRY COEFFICIENTS?
-    call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(1), __RC__)
 
-    call ESMF_StateGet (internal, 'OCphilic', field, __RC__)
-    fld = MAPL_FieldCreate (field, 'OCphilic', __RC__)
+!    if (.not. data_driven) then
+       call ESMF_StateGet (internal, 'CAphilic', field, __RC__)
+       call ESMF_AttributeSet (field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(2), __RC__)
+!    else if (data_driven) then
+!       call ESMF_StateGet (internal,'clim'//trim(GCsuffix)//'philic', field, __RC__)
+!    end if
+    fld = MAPL_FieldCreate (field, 'CAphilic', __RC__)
     call MAPL_StateAdd (aero, fld, __RC__)
     call MAPL_StateAdd (aero_aci, fld, __RC__)
-    ! ADD OTHER ATTRIBUTE, HENTRY COEFFICIENTS?
-    call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(2), __RC__)
 
-!   Dry deposition
-!   ---------------
-    call append_to_bundle('CADP'//trim(comp_name), providerState, prefix, Bundle_DP, __RC__)
 
-!   Wet deposition (Convective scavenging)
-!   --------------------------------------
-    call append_to_bundle('CASV'//trim(comp_name), providerState, prefix, Bundle_DP, __RC__)
-
-!   Wet deposition
-!   ---------------
-    call append_to_bundle('CAWT'//trim(comp_name), providerState, prefix, Bundle_DP, __RC__)
-
-!   Gravitational Settling
-!   ----------------------
-    call append_to_bundle('CASD'//trim(comp_name), providerState, prefix, Bundle_DP, __RC__)
-
-!   Set AERO States' attributes
-!   ----------------------------
     if (data_driven) then
        instance = instanceData
+
+       do i = 1, self%nbins
+          write (bin_index, '(A, I0.3)') '', i
+!         Dry deposition
+          call append_to_bundle(trim(GCsuffix)//'DP'//trim(bin_index), providerState, prefix, Bundle_DP, __RC__)
+
+!         Wet deposition (Convective scavenging)
+          call append_to_bundle(trim(GCsuffix)//'SV'//trim(bin_index), providerState, prefix, Bundle_DP, __RC__)
+
+!         Wet deposition
+          call append_to_bundle(trim(GCsuffix)//'WT'//trim(bin_index), providerState, prefix, Bundle_DP, __RC__)
+
+!         Gravitational Settling
+          call append_to_bundle(trim(GCsuffix)//'SD'//trim(bin_index), providerState, prefix, Bundle_DP, __RC__)
+       end do
     else
        instance = instanceComputational
+
+!      Dry deposition
+       call append_to_bundle('CADP'//trim(comp_name), providerState, prefix, Bundle_DP, __RC__)
+
+!      Wet deposition (Convective scavenging)
+       call append_to_bundle('CASV'//trim(comp_name), providerState, prefix, Bundle_DP, __RC__)
+
+!      Wet deposition
+       call append_to_bundle('CAWT'//trim(comp_name), providerState, prefix, Bundle_DP, __RC__)
+
+!      Gravitational Settling
+       call append_to_bundle('CASD'//trim(comp_name), providerState, prefix, Bundle_DP, __RC__)
     end if
+
     self%instance = instance
 
 !   Create Radiation Mie Table
@@ -545,12 +594,14 @@ if(mapl_am_i_root()) print*,' CA2G Init sum(OCphilic) = ',sum(OCphilicPTR)
     call Chem_MieTableRead (self%diag_MieTable(instance)%mie_aerosol, self%diag_MieTable(instance)%nch, &
                             self%diag_MieTable(instance)%channels, rc, nmom=self%diag_MieTable(instance)%nmom)
 
+!   Finish creating AERO state
+!   --------------------------
     ! Mie Table instance/index
     call ESMF_AttributeSet(aero, name='mie_table_instance', value=instance, __RC__)
 
-    ! Add variables to SS instance's aero state. This is used in aerosol optics calculations
-    call add_aero (aero, label='air_pressure_for_aerosol_optics',             label2='PLE', grid=grid, typekind=MAPL_R4, __RC__)
-    call add_aero (aero, label='relative_humidity_for_aerosol_optics',        label2='RH',  grid=grid, typekind=MAPL_R4,__RC__)
+    ! Add variables to CA instance's aero state. This is used in aerosol optics calculations
+    call add_aero (aero, label='air_pressure_for_aerosol_optics',      label2='PLE', grid=grid, typekind=MAPL_R4, __RC__)
+    call add_aero (aero, label='relative_humidity_for_aerosol_optics', label2='RH',  grid=grid, typekind=MAPL_R4,__RC__)
 !   call ESMF_StateGet (import, 'PLE', field, __RC__)
 !   call MAPL_StateAdd (aero, field, __RC__)
 !   call ESMF_StateGet (import, 'RH2', field, __RC__)
@@ -560,15 +611,19 @@ if(mapl_am_i_root()) print*,' CA2G Init sum(OCphilic) = ',sum(OCphilicPTR)
     call add_aero (aero, label='single_scattering_albedo_of_ambient_aerosol', label2='SSA', grid=grid, typekind=MAPL_R8,__RC__)
     call add_aero (aero, label='asymmetry_parameter_of_ambient_aerosol',      label2='ASY', grid=grid, typekind=MAPL_R8,__RC__)
 
-    call ESMF_AttributeSet(aero, name='band_for_aerosol_optics',             value=0,     __RC__)
+    call ESMF_AttributeSet(aero, name='band_for_aerosol_optics', value=0, __RC__)
 
     mieTable_pointer = transfer(c_loc(self), [1])
     call ESMF_AttributeSet(aero, name='mieTable_pointer', valueList=mieTable_pointer, itemCount=size(mieTable_pointer), __RC__)
 
 ! ADD FOR OCphilic
-    call ESMF_AttributeSet(aero, name='internal_varaible_name', value='OCphobic', __RC__)
+    allocate(aerosol_names(self%nbins), __STAT__)
+    aerosol_names(1) = 'CAphobic'
+    aerosol_names(2) = 'CAphilic'
+    call ESMF_AttributeSet(aero, name='internal_varaible_name', valueList=aerosol_names, &
+                           itemCount=size(aerosol_names), __RC__)
 
-!    call ESMF_MethodAdd(AERO, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
+    call ESMF_MethodAdd(AERO, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
 
     RETURN_(ESMF_SUCCESS)
 
@@ -676,8 +731,7 @@ if (mapl_am_I_root()) print*,'CA2G Init END'
     real, dimension(:,:,:), allocatable :: emissions_point
     integer, pointer, dimension(:)  :: iPoint, jPoint
 
-real, pointer, dimension(:,:,:) :: intptr_phobic, intptr_philic
-character(len=2)  :: GCprefix
+    character(len=2)  :: GCsuffix
 
 #include "CA2G_DeclarePointer___.h"
 
@@ -686,12 +740,12 @@ character(len=2)  :: GCprefix
 !*****************************************************************************
 !   Begin... 
 
-if(mapl_am_i_root()) print*,'CA2G Run1 BEGIN'
-
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
     call ESMF_GridCompGet (GC, grid=grid, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) //'::'// Iam
+
+if(mapl_am_i_root()) print*,trim(comp_name),' Run1 BEGIN'
 
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
@@ -702,18 +756,29 @@ if(mapl_am_i_root()) print*,'CA2G Run1 BEGIN'
     call MAPL_Get (mapl, INTERNAL_ESMF_STATE=internal, & 
                         LONS = LONS, &
                         LATS = LATS, __RC__ )
+
 #include "CA2G_GetPointer___.h"
 
-if (trim(comp_name) == 'CA.oc') then
-   intptr_phobic => OCphobic
-   intptr_philic => OCphilic
-   GCprefix = 'OC'
-end if
+    if (comp_name(1:5) == 'CA.oc') then
+       GCsuffix = 'OC'
+    else if (comp_name(1:5) == 'CA.bc') then
+       GCsuffix = 'BC'
+    else if (comp_name(1:5) == 'CA.br') then
+       GCsuffix = 'BR' 
+    end if
 
-!if(mapl_am_i_root()) print*,'CA2G Run1 B sum(OCphobic) = ',sum(OCphobic)
-!if(mapl_am_i_root()) print*,'CA2G Run1 B sum(OCphilic) = ',sum(OCphilic)
-!if(mapl_am_i_root()) print*,'CA2G Run1 B sum(OCphobic) = ',sum(intptr_phobic)
-!if(mapl_am_i_root()) print*,'CA2G Run1 B sum(OCphilic) = ',sum(intptr_philic)
+#if 0
+if (trim(comp_name) == 'CA.oc') then
+  if(mapl_am_i_root()) print*,'CA2G Run1 B sum(OCphobic) = ',sum(CAphobic)
+  if(mapl_am_i_root()) print*,'CA2G Run1 B sum(OCphilic) = ',sum(CAphilic)
+else if (trim(comp_name) == 'CA.bc') then
+  if(mapl_am_i_root()) print*,'CA2G Run1 B sum(BCphobic) = ',sum(CAphobic)
+  if(mapl_am_i_root()) print*,'CA2G Run1 B sum(BCphilic) = ',sum(CAphilic)
+else if (trim(comp_name) == 'CA.br') then
+  if(mapl_am_i_root()) print*,'CA2G Run1 B sum(BRphobic) = ',sum(CAphobic)
+  if(mapl_am_i_root()) print*,'CA2G Run1 B sum(BRphilic) = ',sum(CAphilic)
+end if
+#endif
 
 !   Get my private internal state
 !   ------------------------------
@@ -742,32 +807,46 @@ end if
        cdow = Chem_UtilCdow(nymd)
 !       OCphobic = tiny(1.) ! avoid division by zero
 !       OCphilic = tiny(1.) ! avoid division by zero
-       intptr_phobic = tiny(1.) ! avoid division by zero
-       intptr_philic = tiny(1.) ! avoid division by zero
+       CAphobic = tiny(1.) ! avoid division by zero
+       CAphilic = tiny(1.) ! avoid division by zero
        if ( MAPL_AM_I_ROOT() ) then
-          print *, '<> OC '//cdow//' tracer being set to zero on ', nymd, nhms
+          print *, '<> CA '//cdow//' tracer being set to zero on ', nymd, nhms
        end if
     end if
 
 !   Implicit allocation with Fortran 2003
-!    biomass_src = OC_BIOMASS
-!    terpene_src = OC_TERPENE
-!    biofuel_src = OC_BIOFUEL
-!    eocant1_src = OC_ANTEOC1
-!    eocant2_src = OC_ANTEOC2
-!    oc_ship_src = OC_SHIP
-!    aviation_lto_src = OC_AVIATION_LTO
-!    aviation_cds_src = OC_AVIATION_CDS
-!    aviation_crs_src = OC_AVIATION_CRS
-    biomass_src = OC_BIOMASS
-    terpene_src = OC_TERPENE
-    biofuel_src = OC_BIOFUEL
-    eocant1_src = OC_ANTEOC1
-    eocant2_src = OC_ANTEOC2
-    oc_ship_src = OC_SHIP
-    aviation_lto_src = OC_AVIATION_LTO
-    aviation_cds_src = OC_AVIATION_CDS
-    aviation_crs_src = OC_AVIATION_CRS
+    if (trim(comp_name) == 'CA.oc') then
+       biomass_src = OC_BIOMASS
+       terpene_src = OC_TERPENE
+       biofuel_src = OC_BIOFUEL
+       eocant1_src = OC_ANTEOC1
+       eocant2_src = OC_ANTEOC2
+       oc_ship_src = OC_SHIP
+       aviation_lto_src = OC_AVIATION_LTO
+       aviation_cds_src = OC_AVIATION_CDS
+       aviation_crs_src = OC_AVIATION_CRS
+    else if (trim(comp_name) == 'CA.bc') then
+       biomass_src = BC_BIOMASS
+       biofuel_src = BC_BIOFUEL
+       eocant1_src = BC_ANTEBC1
+       eocant2_src = BC_ANTEBC2
+       oc_ship_src = BC_SHIP
+       aviation_lto_src = BC_AVIATION_LTO
+       aviation_cds_src = BC_AVIATION_CDS
+       aviation_crs_src = BC_AVIATION_CRS
+       allocate(terpene_src, mold=BC_BIOMASS, __STAT__)
+       terpene_src = 1.0
+    else if (trim(comp_name) == 'CA.br') then
+       biomass_src = BRC_BIOMASS
+       terpene_src = BRC_TERPENE
+       biofuel_src = BRC_BIOFUEL
+       eocant1_src = BRC_ANTEBRC1
+       eocant2_src = BRC_ANTEBRC2
+       oc_ship_src = BRC_SHIP
+       aviation_lto_src = BRC_AVIATION_LTO
+       aviation_cds_src = BRC_AVIATION_CDS
+       aviation_crs_src = BRC_AVIATION_CRS
+    end if
 
 !   As a safety check, where value is undefined set to 0
     where(1.01*biomass_src > undefval) biomass_src = 0.
@@ -795,27 +874,35 @@ end if
                                  nhms, self%cdt)
     end if
 
-!if(mapl_am_i_root()) print*,'CA2G sum(biomass_src) = ',sum(biomass_src)
-
-
-!    call OCEmission (self%diag_MieTable(self%instance), self%km, self%nbins, self%cdt, chemgrav, self%ratPOM, &
-!                     self%fTerpene, aviation_lto_src, aviation_cds_src, aviation_crs_src, self%fHydrophobic, &
-!                     zpbl, t, airdens, rh2, OCPhilic, OCPhobic, delp, self%aviation_layers, biomass_src, & 
-!                     terpene_src, eocant1_src, eocant2_src, oc_ship_src, biofuel_src, &
-!                     CAEM, CAEMAN, CAEMBB, CAEMBF, CAEMBG, __RC__ )
-
-    call OCEmission (self%diag_MieTable(self%instance), self%km, self%nbins, self%cdt, chemgrav, self%ratPOM, &
+    call CAEmission (self%diag_MieTable(self%instance), self%km, self%nbins, self%cdt, chemgrav, GCsuffix, self%ratPOM, &
                      self%fTerpene, aviation_lto_src, aviation_cds_src, aviation_crs_src, self%fHydrophobic, &
-                     zpbl, t, airdens, rh2, intptr_Philic, intptr_Phobic, delp, self%aviation_layers, biomass_src, &
+                     zpbl, t, airdens, rh2, CAphilic, CAphobic, delp, self%aviation_layers, biomass_src, &
                      terpene_src, eocant1_src, eocant2_src, oc_ship_src, biofuel_src, &
                      CAEM, CAEMAN, CAEMBB, CAEMBF, CAEMBG, __RC__ )
-
-!if(mapl_am_i_root()) print*,'CA2G sum(OCEM 1) = ',sum(OCEM(:,:,1))
-!if(mapl_am_i_root()) print*,'CA2G sum(OCEM 2) = ',sum(OCEM(:,:,2))
-!if(mapl_am_i_root()) print*,'CA2G sum(OCEMAN) = ',sum(OCEMAN)
-!if(mapl_am_i_root()) print*,'CA2G sum(OCEMBB) = ',sum(OCEMBB)
-!if(mapl_am_i_root()) print*,'CA2G sum(OCEMBF) = ',sum(OCEMBF)
-!if(mapl_am_i_root()) print*,'CA2G sum(OCEMBG) = ',sum(OCEMBG)
+#if 0
+if (trim(comp_name) == 'CA.oc') then
+   if(mapl_am_i_root()) print*,'CA2G sum(OCEM 1) = ',sum(CAEM(:,:,1))
+   if(mapl_am_i_root()) print*,'CA2G sum(OCEM 2) = ',sum(CAEM(:,:,2))
+   if(mapl_am_i_root()) print*,'CA2G sum(OCEMAN) = ',sum(CAEMAN)
+   if(mapl_am_i_root()) print*,'CA2G sum(OCEMBB) = ',sum(CAEMBB)
+   if(mapl_am_i_root()) print*,'CA2G sum(OCEMBF) = ',sum(CAEMBF)
+   if(mapl_am_i_root()) print*,'CA2G sum(OCEMBG) = ',sum(CAEMBG)
+else if (trim(comp_name) == 'CA.bc') then
+   if(mapl_am_i_root()) print*,'CA2G sum(BCEM 1) = ',sum(CAEM(:,:,1))
+   if(mapl_am_i_root()) print*,'CA2G sum(BCEM 2) = ',sum(CAEM(:,:,2))
+   if(mapl_am_i_root()) print*,'CA2G sum(BCEMAN) = ',sum(CAEMAN)
+   if(mapl_am_i_root()) print*,'CA2G sum(BCEMBB) = ',sum(CAEMBB)
+   if(mapl_am_i_root()) print*,'CA2G sum(BCEMBF) = ',sum(CAEMBF)
+   if(mapl_am_i_root()) print*,'CA2G sum(BCEMBG) = ',sum(CAEMBG)
+else if (trim(comp_name) == 'CA.br') then
+   if(mapl_am_i_root()) print*,'CA2G sum(BREM 1) = ',sum(CAEM(:,:,1))
+   if(mapl_am_i_root()) print*,'CA2G sum(BREM 2) = ',sum(CAEM(:,:,2))
+   if(mapl_am_i_root()) print*,'CA2G sum(BREMAN) = ',sum(CAEMAN)
+   if(mapl_am_i_root()) print*,'CA2G sum(BREMBB) = ',sum(CAEMBB)
+   if(mapl_am_i_root()) print*,'CA2G sum(BREMBF) = ',sum(CAEMBF)
+   if(mapl_am_i_root()) print*,'CA2G sum(BREMBG) = ',sum(CAEMBG)
+end if
+#endif
 
 !   Read any pointwise emissions, if requested
 !   ------------------------------------------
@@ -829,8 +916,6 @@ end if
        where(self%pStart < 0) self%pStart = 000000
        where(self%pEnd < 0)   self%pEnd   = 240000
     endif
-
-!IMPLEMENT NEI - NEED USE CASE
 
 !   Get indices for point emissions
 !   -------------------------------
@@ -847,23 +932,29 @@ end if
             end if
 
         call updatePointwiseEmissions (self%km, self%pBase, self%pTop, self%pEmis, self%nPts, &
-                                       self%pStart, self%pEnd, airdens, delp, MAPL_GRAV, &
+                                       self%pStart, self%pEnd, zle, &
                                        area, iPoint, jPoint, nhms, emissions_point, __RC__)
 
-       intptr_phobic = intptr_phobic + self%fHydrophobic * self%cdt * chemgrav / delp * emissions_point
-       intptr_philic = intptr_philic + (1-self%fHydrophobic) * self%cdt * chemgrav / delp * emissions_point
+       CAphobic = CAphobic + self%fHydrophobic * self%cdt * chemgrav / delp * emissions_point
+       CAphilic = CAphilic + (1-self%fHydrophobic) * self%cdt * chemgrav / delp * emissions_point
     end if
 
+#if 0
+if (trim(comp_name) == 'CA.oc') then
+  if(mapl_am_i_root()) print*,'CA2G Run1 E sum(OCphobic) = ',sum(CAphobic)
+  if(mapl_am_i_root()) print*,'CA2G Run1 E sum(OCphilic) = ',sum(CAphilic)
+else if (trim(comp_name) == 'CA.bc') then
+  if(mapl_am_i_root()) print*,'CA2G Run1 E sum(BCphobic) = ',sum(CAphobic)
+  if(mapl_am_i_root()) print*,'CA2G Run1 E sum(BCphilic) = ',sum(CAphilic)
+else if (trim(comp_name) == 'CA.br') then
+  if(mapl_am_i_root()) print*,'CA2G Run1 E sum(BRphobic) = ',sum(CAphobic)
+  if(mapl_am_i_root()) print*,'CA2G Run1 E sum(BRphilic) = ',sum(CAphilic)
+end if
+#endif
 
-!if(mapl_am_i_root()) print*,'CA2G Run1 E sum(OCphobic) = ',sum(OCphobic)
-!if(mapl_am_i_root()) print*,'CA2G Run1 E sum(OCphilic) = ',sum(OCphilic)
-
-!if(mapl_am_i_root()) print*,'CA2G Run1 E sum(OCphobic) = ',sum(intptr_phobic)
-!if(mapl_am_i_root()) print*,'CA2G Run1 E sum(OCphilic) = ',sum(intptr_philic)
+if(mapl_am_i_root()) print*,trim(comp_name),' Run1 END'
 
     RETURN_(ESMF_SUCCESS)
-
-if(mapl_am_i_root()) print*,'CA2G Run1 END'
 
   end subroutine Run1
 
@@ -902,12 +993,11 @@ if(mapl_am_i_root()) print*,'CA2G Run1 END'
     real                              :: fwet
     logical                           :: KIN
     real, allocatable, dimension(:)   :: CA_radius, CA_rhop
-    real, allocatable, dimension(:,:,:)  :: pSOA_ANTHRO_VOC_
+    real, allocatable, dimension(:,:,:)  :: pSOA_VOC
     real, pointer, dimension(:,:,:)    :: int_ptr
     real, allocatable, dimension(:,:,:,:)    :: int_arr
 
-real, pointer, dimension(:,:,:) :: intptr_phobic, intptr_philic
-character(len=2)  :: GCprefix
+    character(len=2)  :: GCsuffix
 
     character(len=ESMF_MAXSTR)      :: short_name
 
@@ -920,12 +1010,13 @@ character(len=2)  :: GCprefix
 
 !*****************************************************************************
 !   Begin... 
-if(mapl_am_i_root()) print*,'CA2G Run2 BEGIN'
 
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) // '::' // Iam
+
+if(mapl_am_i_root()) print*,trim(comp_name),' Run2 BEGIN'
 
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
@@ -938,15 +1029,27 @@ if(mapl_am_i_root()) print*,'CA2G Run2 BEGIN'
 
 #include "CA2G_GetPointer___.h"
 
-if (trim(comp_name) == 'CA.oc') then
-   intptr_phobic => OCphobic
-   intptr_philic => OCphilic
-   GCprefix = 'OC'
-if(mapl_am_i_root()) print*,'CA2G Run2 test ptr'
-end if
 
-!if(mapl_am_i_root()) print*,'CA2G Run2 B sum(OCphobic) = ',sum(OCPhobic)
-!if(mapl_am_i_root()) print*,'CA2G Run2 B sum(OCphilic) = ',sum(OCPhilic)
+    if (comp_name(1:5) == 'CA.oc') then
+       GCsuffix = 'OC'
+    else if (comp_name(1:5) == 'CA.bc') then
+       GCsuffix = 'BC'
+    else if (comp_name(1:5) == 'CA.br') then
+       GCsuffix = 'BR'
+    end if
+
+#if 0
+if (trim(comp_name) == 'CA.oc') then
+  if(mapl_am_i_root()) print*,'CA2G Run2 B sum(OCphobic) = ',sum(CAphobic)
+  if(mapl_am_i_root()) print*,'CA2G Run2 B sum(OCphilic) = ',sum(CAphilic)
+else if (trim(comp_name) == 'CA.bc') then
+  if(mapl_am_i_root()) print*,'CA2G Run2 B sum(BCphobic) = ',sum(CAphobic)
+  if(mapl_am_i_root()) print*,'CA2G Run2 B sum(BCphilic) = ',sum(CAphilic)
+else if (trim(comp_name) == 'CA.br') then
+  if(mapl_am_i_root()) print*,'CA2G Run2 B sum(BRphobic) = ',sum(CAphobic)
+  if(mapl_am_i_root()) print*,'CA2G Run2 B sum(BRphilic) = ',sum(CAphilic)
+end if
+#endif
 
 !   Get my private internal state
 !   ------------------------------
@@ -957,27 +1060,36 @@ end if
 !   Add on SOA from Anthropogenic VOC oxidation
 !   -------------------------------------------
     if (trim(comp_name) == 'CA.oc') then
-       pSOA_ANTHRO_VOC_ = pSOA_ANTHRO_VOC
-       where (1.01 * pSOA_ANTHRO_VOC_ > undefval) pSOA_ANTHRO_VOC_ = 0.0
+       pSOA_VOC = pSOA_ANTHRO_VOC
+       where (1.01 * pSOA_VOC > undefval) pSOA_VOC = 0.0
 
-       do k = 1, self%km
-          do j = 1, ubound(delp, 2) 
-             do i = 1, ubound(delp, 1)
-                OCphilic(i,j,k) = OCphilic(i,j,k) + self%cdt * pSOA_ANTHRO_VOC_(i,j,k)/airdens(i,j,k)
-                if (associated(CAPSOA)) &
-                   CAPSOA(i,j) = CAPSOA(i,j) &
-                   + self%cdt*pSOA_ANTHRO_VOC_(i,j,k)*delp(i,j,k)/airdens(i,j,k)/chemgrav
-             end do
-          end do
-       end do
+       CAphilic = CAphilic + self%cdt * pSOA_VOC/airdens
+       if (associated(CAPSOA)) &
+          CAPSOA = CAPSOA+sum(self%cdt*pSOA_VOC*delp/airdens/chemgrav, 3)
     end if
+
+    if (trim(comp_name) == 'CA.br') then
+       pSOA_VOC = pSOA_BIOB_VOC 
+       where (1.01 * pSOA_VOC > undefval) pSOA_VOC = 0.0
+
+       CAphilic = CAphilic + self%cdt * pSOA_VOC/airdens
+       if (associated(CAPSOA)) &
+          CAPSOA = sum(self%cdt*pSOA_VOC*delp/airdens/chemgrav, 3)
+    end if
+
 
 !   Ad Hoc transfer of hydrophobic to hydrophilic aerosols
 !   Following Chin's parameterization, the rate constant is
 !   k = 4.63e-6 s-1 (.4 day-1; e-folding time = 2.5 days)
-    call phobicTophilic (intptr_phobic, intptr_philic, CAHYPHIL, self%km, self%cdt, chemgrav, delp, __RC__)
+    call phobicTophilic (CAphobic, CAphilic, CAHYPHIL, self%km, self%cdt, chemgrav, delp, __RC__)
+!if (trim(comp_name) == 'CA.oc') then
+!  if(mapl_am_i_root()) print*,'CA2G OC sum(CAHYPHIL) = ',sum(CAHYPHIL)
+!else if (trim(comp_name) == 'CA.bc') then
+!  if(mapl_am_i_root()) print*,'CA2G BC sum(CAHYPHIL) = ',sum(CAHYPHIL)
+!else if (trim(comp_name) == 'CA.br') then
+!  if(mapl_am_i_root()) print*,'CA2G BR sum(CAHYPHIL) = ',sum(CAHYPHIL)
+!end if
 
-!if(mapl_am_i_root()) print*,'CA2G sum(OCHYPHIL) = ',sum(OCHYPHIL)
 
 !   CA Settling
 !   -----------
@@ -988,8 +1100,13 @@ end if
        call Chem_Settling2Gorig (self%km, self%rhFlag, n, int_ptr, CHEMgrav, delp, &
                                  self%radius(n)*1.e-6, self%rhop(n), self%cdt, t, airdens, &
                                  rh2, zle, CASD, __RC__)
-!if(mapl_am_i_root()) print*,'n = ',n, ' : CA2G sum(int_ptr) = ',sum(int_ptr)
-!if(mapl_am_i_root()) print*,'n = ',n, ' : CA2G sum(CASD) = ',sum(CASD(:,:,n))
+!if (trim(comp_name) == 'CA.oc') then
+!  if(mapl_am_i_root()) print*,'n = ',n, ' : CA2G CO sum(CASD) = ',sum(CASD(:,:,n))
+!else if (trim(comp_name) == 'CA.bc') then
+!  if(mapl_am_i_root()) print*,'n = ',n, ' : CA2G BC sum(CASD) = ',sum(CASD(:,:,n))
+!else if (trim(comp_name) == 'CA.br') then
+!  if(mapl_am_i_root()) print*,'n = ',n, ' : CA2G BR sum(CASD) = ',sum(CASD(:,:,n))
+!end if
     end do
 
 !   CA Deposition
@@ -1009,7 +1126,15 @@ end if
        int_ptr(:,:,self%km) = int_ptr(:,:,self%km) - dqa
        if (associated(CADP)) then
           CADP(:,:,n) = dqa * delp(:,:,self%km) / chemGRAV / self%cdt
-!if(mapl_am_i_root()) print*,'n = ',n, ' : CA2G sum(OCDP) = ',sum(OCDP(:,:,n))
+
+!if (trim(comp_name) == 'CA.oc') then
+!  if(mapl_am_i_root()) print*,'n = ',n, ' : CA2G CO sum(CADP) = ',sum(CADP(:,:,n))
+!else if (trim(comp_name) == 'CA.bc') then
+!  if(mapl_am_i_root()) print*,'n = ',n, ' : CA2G BC sum(CADP) = ',sum(CADP(:,:,n))
+!else if (trim(comp_name) == 'CA.br') then
+!  if(mapl_am_i_root()) print*,'n = ',n, ' : CA2G BR sum(CADP) = ',sum(CADP(:,:,n))
+!end if
+
        end if
     end do
 
@@ -1020,30 +1145,23 @@ end if
     KIN = .true.
 !   Hydrophilic mode (second tracer) is removed
     fwet = 1.
-!    call MAPL_VarSpecGet(InternalSpec(2), SHORT_NAME=short_name, __RC__)
-!    call MAPL_GetPointer(internal, NAME=short_name, ptr=int_ptr, __RC__)
-!    call WetRemovalGOCART2G(self%km, self%nbins, self%nbins, 2, self%cdt, short_name(1:2), &
-!                               KIN, chemGRAV, fwet, int_ptr, ple, t, airdens, &
-!                               pfl_lsan, pfi_lsan, cn_prcp, ncn_prcp, CAWT, rc)
-
-    call WetRemovalGOCART2G(self%km, self%nbins, self%nbins, 2, self%cdt, GCprefix, &
-                               KIN, chemGRAV, fwet, intptr_philic, ple, t, airdens, &
+    call WetRemovalGOCART2G(self%km, self%nbins, self%nbins, 2, self%cdt, GCsuffix, &
+                               KIN, chemGRAV, fwet, CAphilic, ple, t, airdens, &
                                pfl_lsan, pfi_lsan, cn_prcp, ncn_prcp, CAWT, rc)
+
+!if (trim(comp_name) == 'CA.oc') then
+!  if(mapl_am_i_root()) print*,'CA2G OC sum(CAWT) = ',sum(CAWT(:,:,2))
+!else if (trim(comp_name) == 'CA.bc') then
+!  if(mapl_am_i_root()) print*,'CA2G BC sum(CAWT) = ',sum(CAWT(:,:,2))
+!else if (trim(comp_name) == 'CA.br') then
+!  if(mapl_am_i_root()) print*,'CA2G BR sum(CAWT) = ',sum(CAWT(:,:,2))
+!end if
 
 !   Compute diagnostics
 !   -------------------
-!    ASSERT_(self%nbins == size(InternalSpec))
-!    allocate(int_arr((ubound(OCphobic,1)), (ubound(OCphobic,2)), self%km, self%nbins), __STAT__)
-
-!    do n = 1, self%nbins
-!       call MAPL_VarSpecGet(InternalSpec(n), SHORT_NAME=short_name, __RC__)
-!       call MAPL_GetPointer(internal, NAME=short_name, ptr=int_ptr, __RC__)
-!       int_arr(:,:,:,n) = int_ptr
-!    end do
-
-    allocate(int_arr((ubound(intptr_phobic,1)), (ubound(intptr_phobic,2)), self%km, self%nbins), __STAT__)
-    int_arr(:,:,:,1) = intptr_phobic
-    int_arr(:,:,:,2) = intptr_philic
+    allocate(int_arr((ubound(CAphobic,1)), (ubound(CAphobic,2)), self%km, self%nbins), __STAT__)
+    int_arr(:,:,:,1) = CAphobic
+    int_arr(:,:,:,2) = CAphilic
 
     call Aero_Compute_Diags (mie_table=self%diag_MieTable(self%instance), km=self%km, nbegin=1, nbins=2, &
                              channels=self%diag_MieTable(self%instance)%channels, aerosol=int_arr, grav=chemgrav, &
@@ -1051,16 +1169,35 @@ end if
                              mass=CAMASS, exttau=CAEXTTAU, scatau=CASCATAU, fluxu=CAFLUXU, fluxv=CAFLUXV, &
                              conc=CACONC, extcoef=CAEXTCOEF, scacoef=CASCACOEF, angstrom=CAANGSTR, aerindx=CAAERIDX,&
                              __RC__)
+!if(mapl_am_i_root()) print*,'CA2G Run2 E sum(OCphobic) = ',sum(OCPhobic)
+!if(mapl_am_i_root()) print*,'CA2G Run2 E sum(OCphilic) = ',sum(OCPhilic)
 
-if(mapl_am_i_root()) print*,'CA2G CASMASS = ',sum(CASMASS)
-if(mapl_am_i_root()) print*,'CA2G CAMASS = ',sum(CAMASS)
-if(mapl_am_i_root()) print*,'CA2G CAEXTTAU = ',sum(CAEXTTAU)
-if(mapl_am_i_root()) print*,'CA2G CASCATAU = ',sum(CASCATAU)
+#if 0
+if (trim(comp_name) == 'CA.oc') then
+  if(mapl_am_i_root()) print*,'CA2G Run2 E sum(OCphobic) = ',sum(CAphobic)
+  if(mapl_am_i_root()) print*,'CA2G Run2 E sum(OCphilic) = ',sum(CAphilic)
+if(mapl_am_i_root()) print*,'CA2G OC CASMASS = ',sum(CASMASS)
+if(mapl_am_i_root()) print*,'CA2G OC CAMASS = ',sum(CAMASS)
+if(mapl_am_i_root()) print*,'CA2G OC CAEXTTAU = ',sum(CAEXTTAU)
+if(mapl_am_i_root()) print*,'CA2G OC CASCATAU = ',sum(CASCATAU)
+else if (trim(comp_name) == 'CA.bc') then
+  if(mapl_am_i_root()) print*,'CA2G Run2 E sum(BCphobic) = ',sum(CAphobic)
+  if(mapl_am_i_root()) print*,'CA2G Run2 E sum(BCphilic) = ',sum(CAphilic)
+if(mapl_am_i_root()) print*,'CA2G BC CASMASS = ',sum(CASMASS)
+if(mapl_am_i_root()) print*,'CA2G BC CAMASS = ',sum(CAMASS)
+if(mapl_am_i_root()) print*,'CA2G BC CAEXTTAU = ',sum(CAEXTTAU)
+if(mapl_am_i_root()) print*,'CA2G BC CASCATAU = ',sum(CASCATAU)
+else if (trim(comp_name) == 'CA.br') then
+  if(mapl_am_i_root()) print*,'CA2G Run2 E sum(BRphobic) = ',sum(CAphobic)
+  if(mapl_am_i_root()) print*,'CA2G Run2 E sum(BRphilic) = ',sum(CAphilic)
+if(mapl_am_i_root()) print*,'CA2G BR CASMASS = ',sum(CASMASS)
+if(mapl_am_i_root()) print*,'CA2G BR CAMASS = ',sum(CAMASS)
+if(mapl_am_i_root()) print*,'CA2G BR CAEXTTAU = ',sum(CAEXTTAU)
+if(mapl_am_i_root()) print*,'CA2G BR CASCATAU = ',sum(CASCATAU)
+end if
+#endif
 
-if(mapl_am_i_root()) print*,'CA2G Run2 E sum(OCphobic) = ',sum(OCPhobic)
-if(mapl_am_i_root()) print*,'CA2G Run2 E sum(OCphilic) = ',sum(OCPhilic)
-
-if(mapl_am_i_root()) print*,'CA2G Run2 END'
+if(mapl_am_i_root()) print*,trim(comp_name),' Run2 END'
 
     RETURN_(ESMF_SUCCESS)
 
@@ -1090,13 +1227,13 @@ if(mapl_am_i_root()) print*,'CA2G Run2 END'
     character (len=ESMF_MAXSTR)        :: COMP_NAME
     type (MAPL_MetaComp), pointer      :: MAPL
     type (ESMF_State)                  :: aero
-    type (wrap_)                      :: wrap
-    type (CA2G_GridComp), pointer     :: self
+    type (wrap_)                       :: wrap
+    type (CA2G_GridComp), pointer      :: self
 
     integer                            :: i, n
-    character (len=ESMF_MAXSTR)        :: field_name
+    character (len=ESMF_MAXSTR)        :: field_name, GCsuffix
 
-    real, pointer, dimension(:,:,:)    :: ptr3d_int
+    real, pointer, dimension(:,:,:)  :: ptr3d_int_phobic, ptr3d_int_philic
     real, pointer, dimension(:,:,:)    :: ptr3d_imp
 
     __Iam__('Run_data')
@@ -1109,17 +1246,32 @@ if(mapl_am_i_root()) print*,'CA2G Run2 END'
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) //'::'//Iam
 
+    if (comp_name(1:5) == 'CA.oc') then
+       GCsuffix = 'OC'
+    else if (comp_name(1:5) == 'CA.bc') then
+       GCsuffix = 'BC'
+    else if (comp_name(1:5) == 'CA.br') then
+       GCsuffix = 'BR'
+    end if
+
 if (mapl_am_I_root()) print*,trim(comp_name),' Run_data BEGIN'
+
+!   Get my private internal state
+!   ------------------------------
+    call ESMF_UserCompGetInternalState(GC, 'CA2G_GridComp', wrap, STATUS)
+    VERIFY_(STATUS)
+    self => wrap%ptr
 
 !   Update interal data pointers with ExtData
 !   -----------------------------------------
-    call MAPL_GetPointer (internal, NAME='OCphobic', ptr=ptr3d_int, __RC__)
-    call MAPL_GetPointer (import, NAME='climOCphobic', ptr=ptr3d_imp, __RC__)
-    ptr3d_int = ptr3d_imp
+    call MAPL_GetPointer (internal, NAME='CAphobic', ptr=ptr3d_int_phobic, __RC__)
+    call MAPL_GetPointer (internal, NAME='CAphilic', ptr=ptr3d_int_philic, __RC__)
 
-    call MAPL_GetPointer (internal, NAME='Cphilic', ptr=ptr3d_int, __RC__)
-    call MAPL_GetPointer (import, NAME='climOCphilic', ptr=ptr3d_imp, __RC__)
-    ptr3d_int = ptr3d_imp
+    call MAPL_GetPointer (import, NAME='clim'//trim(GCsuffix)//'phobic', ptr=ptr3d_imp, __RC__)
+    ptr3d_int_phobic = ptr3d_imp
+
+    call MAPL_GetPointer (import, NAME='clim'//trim(GCsuffix)//'philic', ptr=ptr3d_imp, __RC__)
+    ptr3d_int_philic = ptr3d_imp
 
 if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
 
@@ -1142,17 +1294,18 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
     integer, parameter                               :: DP=kind(1.0d0)
     real, dimension(:,:,:), pointer                  :: ple, rh
     real(kind=DP), dimension(:,:,:), pointer         :: var
-    real, dimension(:,:,:,:), pointer                :: q, q_4d
+    real, dimension(:,:,:), pointer                  :: q
+    real, dimension(:,:,:,:), pointer                :: q_4d
     integer, allocatable                             :: opaque_self(:)
     type(C_PTR)                                      :: address
     type(CA2G_GridComp), pointer                     :: self
 
-    character (len=ESMF_MAXSTR)                      :: fld_name, int_fld_name
+    character (len=ESMF_MAXSTR)                      :: fld_name
     type(ESMF_Field)                                 :: fld
-    character (len=ESMF_MAXSTR)                      :: COMP_NAME
+    character (len=ESMF_MAXSTR),allocatable          :: aerosol_names(:)
 
     real(kind=DP), dimension(:,:,:), allocatable     :: ext_s, ssa_s, asy_s  ! (lon:,lat:,lev:)
-    real, dimension(:,:,:), allocatable              :: x
+    real                                             :: x
     integer                                          :: instance
     integer                                          :: n, nbins, dims(4)
     integer                                          :: i1, j1, i2, j2, km
@@ -1161,13 +1314,19 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
 
     integer :: i, j, k
 
-    __Iam__('SS2G::aerosol_optics')
+    __Iam__('CA2G::aerosol_optics')
 
 !   Begin... 
 
 !   Mie Table instance/index
 !   ------------------------
     call ESMF_AttributeGet(state, name='mie_table_instance', value=instance, __RC__)
+
+!   Get aerosol names
+!   -----------------
+    call ESMF_AttributeGet (state, name='internal_varaible_name', itemCount=nbins, __RC__)
+    allocate (aerosol_names(nbins), __STAT__)
+    call ESMF_AttributeGet (state, name='internal_varaible_name', valueList=aerosol_names, __RC__)
 
 !   Radiation band
 !   --------------
@@ -1195,22 +1354,22 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
 
     allocate(ext_s(i1:i2, j1:j2, km), &
              ssa_s(i1:i2, j1:j2, km), &
-             asy_s(i1:i2, j1:j2, km), &
-                 x(i1:i2, j1:j2, km), __STAT__)
-
-    call ESMF_AttributeGet(state, name='internal_varaible_name', value=int_fld_name, __RC__)
-    call ESMF_StateGet (state, trim(int_fld_name), field=fld, __RC__) !add as attribute - dont hard code?
-    call ESMF_FieldGet (fld, farrayPtr=q, __RC__)
-
-    nbins = size(q,4)
+             asy_s(i1:i2, j1:j2, km), __STAT__)
 
     allocate(q_4d(i1:i2, j1:j2, km, nbins), __STAT__)
 
     do n = 1, nbins
-       do k = 1, km
-          x(:,:,k) = ((PLE(:,:,k) - PLE(:,:,k-1))*0.01)*(100./MAPL_GRAV)
-          q_4d(:,:,k,n) = x(:,:,k) * q(:,:,k,n)
-       end do
+       call ESMF_StateGet (state, trim(aerosol_names(n)), field=fld, __RC__)
+       call ESMF_FieldGet (fld, farrayPtr=q, __RC__)
+
+        do k = 1, km
+           do j = j1, j2
+              do i = i1, i2
+                 x = ((ple(i,j,k) - ple(i,j,k-1))*0.01)*(100./MAPL_GRAV)
+                 q_4d(i,j,k,n) = x * q(i,j,k)
+              end do
+           end do
+        end do
     end do
 
     call ESMF_AttributeGet(state, name='mieTable_pointer', itemCount=n, __RC__)
@@ -1267,7 +1426,7 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
     real                              :: bssa (size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! SSA
     real                              :: gasym(size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! asymmetry parameter
 
-    __Iam__('SS2G::aerosol_optics::mie_')
+    __Iam__('CA2G::aerosol_optics::mie_')
 
      bext_s  = 0.0d0
      bssa_s  = 0.0d0
@@ -1279,6 +1438,7 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
        bext_s  = bext_s  +             bext     ! extinction
        bssa_s  = bssa_s  +       (bssa*bext)    ! scattering extinction
        basym_s = basym_s + gasym*(bssa*bext)    ! asymetry parameter multiplied by scatering extiction 
+
     end do
 
     RETURN_(ESMF_SUCCESS)
