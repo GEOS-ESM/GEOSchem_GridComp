@@ -1315,16 +1315,23 @@ CONTAINS
    if (gcNI%first) then
        gcNI%xhno3 = MAPL_UNDEF
        gcNI%first = .False.
+!if(mapl_am_i_root()) print*,'NI TEST1'
+
    end if
 
    ! Recycle HNO3 every 3 hours
    if (gcNI%recycle_HNO3) then
        gcNI%xhno3 = hno3
        gcNI%recycle_HNO3 = .false.
+!if(mapl_am_i_root()) print*,'NI TEST2'
    end if
+
+!if(mapl_am_i_root()) print*,'NI sum(hno3) = ',sum(hno3)
+!if(mapl_am_i_root()) print*,'NI sum(self%xhno3) = ',sum(gcNI%xhno3)
 
 
 RUN_ALARM: if (gcNI%run_alarm) then
+!if(mapl_am_i_root()) print*,'NI - HNO3 ALARM HAS RUNG!!!!'
 
    allocate( fluxout )
    allocate( fluxout%data2d(i1:i2,j1:j2), dqa(i1:i2,j1:j2), &
@@ -1530,6 +1537,16 @@ RUN_ALARM: if (gcNI%run_alarm) then
          =   HNO3_colmass%data2d(i1:i2,j1:j2) + gcNI%xhno3(i1:i2,j1:j2,k)*w_c%delp(i1:i2,j1:j2,k)/grav
       end do
    endif
+
+!if(mapl_am_i_root()) print*,'NI sum(NIHT 1) = ', sum(NI_phet(1)%data2d)
+!if(mapl_am_i_root()) print*,'NI sum(NIHT 2) = ', sum(NI_phet(2)%data2d)
+!if(mapl_am_i_root()) print*,'NI sum(NIHT 3) = ', sum(NI_phet(3)%data2d)
+!if(mapl_am_i_root()) print*,'NI sum(NO3an1) = ',sum(w_c%qa(nNO3an1)%data3d)
+!if(mapl_am_i_root()) print*,'NI sum(NO3an2) = ',sum(w_c%qa(nNO3an2)%data3d)
+!if(mapl_am_i_root()) print*,'NI sum(NO3an3) = ',sum(w_c%qa(nNO3an3)%data3d)
+!if(mapl_am_i_root()) print*,'NI sum(HNO3CONC) = ',sum(HNO3_conc%data3d)
+!if(mapl_am_i_root()) print*,'NI sum(HNO3SMASS) = ',sum(HNO3_sfcmass%data2d)
+!if(mapl_am_i_root()) print*,'NI sum(HNO3CMASS) = ',sum(HNO3_colmass%data2d)
 
 
 !  NI Settling

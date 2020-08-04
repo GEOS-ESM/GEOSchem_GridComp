@@ -1537,6 +1537,7 @@ end if ! doing GOCART
 
       N = chemReg%i_GOCART + L - 1
       call MAPL_GetPointer(internal, NAME=short_name, ptr=w_c%qa(N)%data3d, __RC__)
+if(mapl_am_i_root()) print*,'GOCART short_name n = ',n, ' : short_name = ',trim(short_name)
    end do
 
 #ifdef PRINT_STATES
@@ -3339,10 +3340,20 @@ contains
         idx = Chem_MieQueryIdx(mie_table, trim(aerosol(l)), __RC__)
 !if ( (trim(aerosol(l)) == 'du001') .OR. (trim(aerosol(l)) == 'du002') .OR. (trim(aerosol(l)) == 'du003') &
 !     .OR. (trim(aerosol(l)) == 'du004') .OR. (trim(aerosol(l)) == 'du005') .OR. (trim(aerosol(l)) == 'ss001') .OR. &
-!(trim(aerosol(l)) == 'ss002') .OR. (trim(aerosol(l)) == 'ss003') .OR. (trim(aerosol(l)) == 'ss004') .OR. (trim(aerosol(l)) == 'ss005')) then
+!(trim(aerosol(l)) == 'ss002') .OR. (trim(aerosol(l)) == 'ss003') .OR. (trim(aerosol(l)) == 'ss004') .OR. &
+!(trim(aerosol(l)) == 'ss005') .OR. (trim(aerosol(l)) == 'OCphilic') .OR. (trim(aerosol(l)) == 'OCphobic') ) then
 
 !if ( (trim(aerosol(l)) == 'ss001') .OR. &
-!(trim(aerosol(l)) == 'ss002') .OR. (trim(aerosol(l)) == 'ss003') .OR. (trim(aerosol(l)) == 'ss004') .OR. (trim(aerosol(l)) == 'ss005')) then
+!(trim(aerosol(l)) == 'ss002') .OR. (trim(aerosol(l)) == 'ss003') .OR. (trim(aerosol(l)) == 'ss004') .OR. &
+!(trim(aerosol(l)) == 'ss005') ) then
+
+!if(mapl_am_i_root()) print*,'GOCART aerosol(l) = ',trim(aerosol(l))
+
+if ((trim(aerosol(l)) == 'OCphilic') .OR. (trim(aerosol(l)) == 'OCphobic')) then
+
+!if ( (trim(aerosol(l)) == 'ss001') .OR. &
+!(trim(aerosol(l)) == 'ss002') .OR. (trim(aerosol(l)) == 'ss003') .OR. (trim(aerosol(l)) == 'ss004') .OR. &
+!(trim(aerosol(l)) == 'ss005') .OR. (trim(aerosol(l)) == 'OCphilic') .OR. (trim(aerosol(l)) == 'OCphobic')) then
 
 !if ( (trim(aerosol(l)) == 'du001') .OR. &
 !(trim(aerosol(l)) == 'du002') .OR. (trim(aerosol(l)) == 'du003') .OR. (trim(aerosol(l)) == 'du004') .OR. (trim(aerosol(l)) == 'du005')) then
@@ -3353,14 +3364,12 @@ contains
         ssa_ = ssa_ +     (ssa*ext)    ! total scattering
         asy_ = asy_ + asy*(ssa*ext)    ! sum of (asy * sca)
 
-!if (trim(aerosol(l)) == 'du002') then
 !  if (mapl_am_i_root()) print*,'GOCART du002 offset = ', offset
-!  if (mapl_am_i_root()) print*,'GOCART ext  = ', sum(ext(:,:,:,1))
-!  if (mapl_am_i_root()) print*,'GOCART ssa  = ', sum(ssa(:,:,:,1))
-!  if (mapl_am_i_root()) print*,'GOCART asy  = ', sum(asy(:,:,:,1))
-!end if
+!  if (mapl_am_i_root()) print*,'l = ',l, ' : GOCART ext  = ', sum(ext(:,:,:,1))
+!  if (mapl_am_i_root()) print*,'l = ',l, ' : GOCART ssa  = ', sum(ssa(:,:,:,1))
+!  if (mapl_am_i_root()) print*,'l = ',l, ' : GOCART asy  = ', sum(asy(:,:,:,1))
 
-!end if ! trim(aerosol(l) == du00x
+end if ! trim(aerosol(l) == du00x
 
      end do
 

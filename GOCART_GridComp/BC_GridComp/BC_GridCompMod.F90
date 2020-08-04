@@ -975,6 +975,12 @@ CONTAINS
     END IF
    END IF
 
+
+
+!if(mapl_am_i_root()) print*,'CA Init E sum(BCphobic) = ',sum(w_c%qa(n1)%data3d)
+!if(mapl_am_i_root()) print*,'CA Init E sum(BCphilic) = ',sum(w_c%qa(n2)%data3d)
+
+
 !  All done
 !  --------
    call i90_release()
@@ -1112,6 +1118,9 @@ CONTAINS
    ijl   = ( i2 - i1 + 1 ) * ( j2 - j1 + 1 )
    ijkl  = ijl * km
    ijk1l = ijl * (km+1)
+
+!if(mapl_am_i_root()) print*,'CA Run1 B sum(BCphobic) = ',sum(w_c%qa(n1)%data3d)
+!if(mapl_am_i_root()) print*,'CA Run1 B sum(BCphilic) = ',sum(w_c%qa(n2)%data3d)
 
 ! Reset tracer to zero at 0Z on specific day of week
 ! --------------------------------------------------
@@ -1286,6 +1295,16 @@ CONTAINS
    call BC_Emission ( i1, i2, j1, j2, km, nbins, cdt, gcBC, w_c, &
                       pblh, tmpu, rhoa, BC_emis, &
                       BC_emisAN, BC_emisBB, BC_emisBF, rc )
+
+!if(mapl_am_i_root()) print*,'CA sum(BCEM 1) = ',sum(BC_emis(1)%data2d)
+!if(mapl_am_i_root()) print*,'CA sum(BCEM 2) = ',sum(BC_emis(2)%data2d)
+!if(mapl_am_i_root()) print*,'CA sum(BCEMAM) = ',sum(BC_emisAN%data2d)
+!if(mapl_am_i_root()) print*,'CA sum(BCEMBB) = ',sum(BC_emisBB%data2d)
+!if(mapl_am_i_root()) print*,'CA sum(BCEMBF) = ',sum(BC_emisBF%data2d)
+
+!if(mapl_am_i_root()) print*,'CA Run1 E sum(BCphobic) = ',sum(w_c%qa(n1)%data3d)
+!if(mapl_am_i_root()) print*,'CA Run1 E sum(BCphilic) = ',sum(w_c%qa(n2)%data3d)
+
 
 #ifdef DEBUG
    do n = n1, n2
@@ -1907,7 +1926,8 @@ K_LOOP: do k = km, 1, -1
    end do
 #endif
 
-
+!if(mapl_am_i_root()) print*,'CA Run2 B sum(BCphobic) = ',sum(w_c%qa(n1)%data3d)
+!if(mapl_am_i_root()) print*,'CA Run2 B sum(BCphilic) = ',sum(w_c%qa(n2)%data3d)
 
 !  Get 2D Imports
 !  --------------
@@ -2007,6 +2027,8 @@ RUN_ALARM: if (gcBC%run_alarm) then
     end do
    end do
 
+!if(mapl_am_i_root()) print*,'CA sum(BCHYPHIL) = ',sum(BC_toHydrophilic%data2d)
+
 !  BC Settling
 !  -----------
    allocate( BC_radius(nbins), BC_rhop(nbins) )
@@ -2017,6 +2039,11 @@ RUN_ALARM: if (gcBC%run_alarm) then
                         BC_radius, BC_rhop, cdt, w_c, tmpu, rhoa, hsurf,    &
                         hghte, BC_set, rc )
    deallocate( BC_radius, BC_rhop)
+
+!if(mapl_am_i_root()) print*,'n = 1', ' : CA BC sum(int_ptr) = ',sum(w_c%qa(n1)%data3d)
+!if(mapl_am_i_root()) print*,'n = 2', ' : CA BC sum(int_ptr) = ',sum(w_c%qa(n1+1)%data3d)
+!if(mapl_am_i_root()) print*,'n = 1', ' : CA sum(BCSD) = ',sum(BC_set(1)%data2d)
+!if(mapl_am_i_root()) print*,'n = 2', ' : CA sum(BCSD) = ',sum(BC_set(2)%data2d)
 
 !  BC Deposition
 !  -----------
@@ -2032,6 +2059,8 @@ RUN_ALARM: if (gcBC%run_alarm) then
             w_c%qa(n1+n-1)%data3d(:,:,km) - dqa
     if( associated(BC_dep(n)%data2d) ) &
      BC_dep(n)%data2d = dqa*w_c%delp(:,:,km)/grav/cdt
+!if(mapl_am_i_root()) print*,'n = ',n, ' : CA sum(BCDP) = ',sum(BC_dep(n)%data2d)
+
    end do
 
 #ifdef DEBUG
@@ -2054,6 +2083,8 @@ RUN_ALARM: if (gcBC%run_alarm) then
                           w_c%qa, ple, tmpu, rhoa, pfllsan, pfilsan, &
                           precc, precl, fluxout, rc )
     if(associated(BC_wet(n)%data2d)) BC_wet(n)%data2d = fluxout%data2d
+!if(mapl_am_i_root()) print*,'n = ',n, ': CA sum(BCWT) = ',sum(BC_wet(n)%data2d)
+
    end do
 
 #ifdef DEBUG
@@ -2135,6 +2166,14 @@ RUN_ALARM: if (gcBC%run_alarm) then
                          BC_sfcmass, BC_colmass, BC_mass, BC_exttau, &
                          BC_scatau, BC_conc, BC_extcoef, BC_scacoef, BC_angstrom, &
                          BC_fluxu, BC_fluxv, rc)
+
+!if(mapl_am_i_root()) print*,'BC BCSMASS = ',sum(BCSMASS%data2d)
+!if(mapl_am_i_root()) print*,'BC BCMASS = ',sum(BCMASS%data3d)
+!if(mapl_am_i_root()) print*,'BC BCEXTTAU = ',sum(BCEXTTAU%data2d)
+!if(mapl_am_i_root()) print*,'BC BCSCATAU = ',sum(BCSCATAU%data2d)
+
+!if(mapl_am_i_root()) print*,'CA Run2 E sum(BCphobic) = ',sum(w_c%qa(n1)%data3d)
+!if(mapl_am_i_root()) print*,'CA Run2 E sum(BCphilic) = ',sum(w_c%qa(n2)%data3d)
 
    return
 

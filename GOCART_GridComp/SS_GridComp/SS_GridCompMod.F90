@@ -1107,6 +1107,9 @@ CONTAINS
    end do
 #endif
 
+!do n = 1, 5
+!  if(mapl_am_i_root()) print*,'n = ', n,' : Run1 E SS sum(ss00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+!end do
 
 !  Clean up
 !  --------
@@ -1347,13 +1350,18 @@ RUN_ALARM: if (gcSS%run_alarm) then
    end do
 #endif
 
+
+!do n = 1, 5
+!  if(mapl_am_i_root()) print*,'n = ', n,' : Run2 before dep SS sum(ss00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+!end do
+
+
 !  Seasalt Deposition
 !  -----------
    drydepositionfrequency = 0.
    call DryDepositionGOCART( i1, i2, j1, j2, km, &
                              tmpu, rhoa, hghte, oro, ustar, &
                              pblh, shflux, z0h, drydepositionfrequency, rc )
-
    ! increase deposition velocity over land
    where (abs(oro - LAND) < 0.5) 
        drydepositionfrequency = 5.0 * drydepositionfrequency
@@ -1474,14 +1482,15 @@ RUN_ALARM: if (gcSS%run_alarm) then
                          SS_conc, SS_extcoef, SS_scacoef, SS_exttaufm, SS_scataufm, &
                          SS_angstrom, SS_fluxu, SS_fluxv, rc)
 
-if(mapl_am_i_root()) print*,'SS SSSMASS = ',sum(SSSMASS%data2d)
-if(mapl_am_i_root()) print*,'SS SSMASS = ',sum(SSMASS%data3d)
-if(mapl_am_i_root()) print*,'SS SSEXTTAU = ',sum(SSEXTTAU%data2d)
-if(mapl_am_i_root()) print*,'SS SSSCATAU = ',sum(SSSCATAU%data2d)
+!if(mapl_am_i_root()) print*,'SS SSSMASS = ',sum(SSSMASS%data2d)
+!if(mapl_am_i_root()) print*,'SS SSMASS = ',sum(SSMASS%data3d)
+!if(mapl_am_i_root()) print*,'SS SSEXTTAU = ',sum(SSEXTTAU%data2d)
+!if(mapl_am_i_root()) print*,'SS SSSCATAU = ',sum(SSSCATAU%data2d)
 
 do n = 1, 5
   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 E SS sum(ss00n) = ',sum(w_c%qa(n1+n-1)%data3d)
 end do
+
    return
 
 CONTAINS

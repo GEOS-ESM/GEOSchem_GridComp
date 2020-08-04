@@ -29,7 +29,7 @@ module DU2G_GridCompMod
    public  SetServices
 
 
-! !DESCRIPTION: This module implements GOCART2G's Dust (DU) Gridded Component.
+! !DESCRIPTION: This module implements GOCART's Dust (DU) Gridded Component.
 
 ! !REVISION HISTORY:
 ! 16Oct2019  Sherman, da Silva, Darmenov, Clune -  First attempt at refactoring.
@@ -40,23 +40,10 @@ module DU2G_GridCompMod
    integer, parameter         :: NHRES = 6  ! DEV NOTE!!! should this be allocatable, and not a parameter?
 !  !Dust state
    type, extends(GA_GridComp) :: DU2G_GridComp
-!       type(Chem_Mie), dimension(2)    :: rad_MieTable, diag_MieTable
-!       real, allocatable      :: radius(:)      ! particle effective radius [um]
-!       real, allocatable      :: rlow(:)        ! particle effective radius lower bound [um]
-!       real, allocatable      :: rup(:)         ! particle effective radius upper bound [um]
        real, allocatable      :: sfrac(:)       ! fraction of total source
-!       real, allocatable      :: rhop(:)        ! soil class density [kg m-3]
        real                   :: Ch_DU_res(NHRES) ! resolutions used for Ch_DU
        real                   :: Ch_DU          ! dust emission tuning coefficient [kg s2 m-5].
-!       real, allocatable      :: fscav(:)       ! scavenging efficiency
-!       real, allocatable      :: molwght(:)     ! molecular weight
-!       real, allocatable      :: fnum(:)        ! number of particles per kg mass
-!       integer                :: rhFlag
        logical                :: maringFlag=.false.  ! maring settling velocity correction
-!       integer                :: nbins
-!       integer                :: km             ! vertical grid dimension
-!       real                   :: CDT            ! chemistry timestep (secs)
-!       integer                :: instance       ! data or computational instance
        integer                :: day_save = -1      
 !      !Workspae for point emissions
        logical                :: doing_point_emissions = .false.
@@ -166,17 +153,23 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
        call MAPL_GridCompSetEntryPoint (GC, ESMF_Method_Run, Run2, __RC__)
     end if
 
-!   INTERNAL STATE
-!   ---------------
-!   Default internal state values
-!   -----------------------------
     DEFVAL = 0.0
 
-#include "DU2G_Internal___.h"
 
 !   IMPORT STATE
 !   -------------
     if (data_driven) then
+
+       call MAPL_AddInternalSpec(gc,&
+          short_name='DU', &
+          long_name='Dust Mixing Ratio all bins', &
+          units='kg kg-1', &
+          dims=MAPL_DimsHorzVert, &
+          vlocation=MAPL_VlocationCenter, &
+          restart=MAPL_RestartOptional, &
+          ungridded_dims=[self%nbins], &
+          friendlyto='DYNAMICS:TURBULENCE:MOIST', &
+          add2export=.true., __RC__)
 
 !      Pressure at layer edges
 !      -----------------------
@@ -198,7 +191,7 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
           VLOCATION  = MAPL_VLocationCenter,                  &
           RESTART    = MAPL_RestartSkip,     __RC__)
 
-       do i = 1, nbins 
+       do i = 1, self%nbins 
           write (field_name, '(A, I0.3)') '', i
           call MAPL_AddImportSpec(GC,                                     &
              short_name = 'climdu'//trim(field_name),                        &
@@ -246,12 +239,12 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
         end do
     end if ! (data_driven)
 
-
-!   EXPORT STATE
-!   -------------
+!   Computational Instance
+!   ----------------------
     if (.not. data_driven) then
 #include "DU2G_Export___.h"
 #include "DU2G_Import___.h"
+#include "DU2G_Internal___.h"
     end if
 
 
@@ -340,7 +333,7 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
     integer                              :: i, nbins, nCols, dims(3), km
     integer                              :: instance
     type (ESMF_Field)                    :: field, fld
-    character (len=ESMF_MAXSTR)          :: field_name, prefix
+    character (len=ESMF_MAXSTR)          :: bin_index, prefix
 !    character (len=ESMF_MAXSTR), allocatable   :: varList(:)
 
     real                                 :: CDT         ! chemistry timestep (secs)
@@ -447,28 +440,37 @@ if(mapl_am_i_root()) print*,'DU2G Init BEGIN'
     ! ADD OTHER ATTRIBUTE, HENTRY COEFFICIENTS?
     call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(1), __RC__)
 
-!   Dry deposition
-!   ---------------
-    call append_to_bundle('DUDP', providerState, prefix, Bundle_DP, __RC__)
-
-!   Wet deposition (Convective scavenging)
-!   --------------------------------------
-    call append_to_bundle('DUSV', providerState, prefix, Bundle_DP, __RC__)
-
-!   Wet deposition
-!   ---------------
-    call append_to_bundle('DUWT', providerState, prefix, Bundle_DP, __RC__)
-
-!   Gravitational Settling
-!   ----------------------
-    call append_to_bundle('DUSD', providerState, prefix, Bundle_DP, __RC__)
-
-!   Set AERO States' attributes
-!   ----------------------------
     if (data_driven) then
        instance = instanceData
+
+       do i = 1, self%nbins
+          write (bin_index, '(A, I0.3)') '', i
+!         Dry deposition
+          call append_to_bundle('DUDP'//trim(bin_index), providerState, prefix, Bundle_DP, __RC__)
+
+!         Wet deposition (Convective scavenging)
+          call append_to_bundle('DUSV'//trim(bin_index), providerState, prefix, Bundle_DP, __RC__)
+
+!         Wet deposition
+          call append_to_bundle('DUWT'//trim(bin_index), providerState, prefix, Bundle_DP, __RC__)
+
+!         Gravitational Settling
+          call append_to_bundle('DUSD'//trim(bin_index), providerState, prefix, Bundle_DP, __RC__)
+       end do
     else
        instance = instanceComputational
+
+!      Dry deposition
+       call append_to_bundle('DUDP', providerState, prefix, Bundle_DP, __RC__)
+
+!      Wet deposition (Convective scavenging)
+       call append_to_bundle('DUSV', providerState, prefix, Bundle_DP, __RC__)
+
+!      Wet deposition
+       call append_to_bundle('DUWT', providerState, prefix, Bundle_DP, __RC__)
+
+!      Gravitational Settling
+       call append_to_bundle('DUSD', providerState, prefix, Bundle_DP, __RC__)
     end if
 
     self%instance = instance
@@ -664,7 +666,7 @@ real, allocatable, dimension(:,:)     :: dqa
 !   -----------------------------------
     call MAPL_GetObjectFromGC (GC, mapl, __RC__)
 
-if(mapl_am_i_root()) print*,'DU2G Run1 BEGIN'
+!if(mapl_am_i_root()) print*,'DU2G Run1 BEGIN'
 
 !   Get parameters from generic state.
 !   -----------------------------------
@@ -738,7 +740,7 @@ if(mapl_am_i_root()) print*,'DU2G Run1 BEGIN'
             end if
 
         call updatePointwiseEmissions (self%km, self%pBase, self%pTop, self%pEmis, self%nPts, &
-                                       self%pStart, self%pEnd, airdens, delp, MAPL_GRAV, &
+                                       self%pStart, self%pEnd, zle, &
                                        area, iPoint, jPoint, nhms, emissions_point, __RC__)
     end if
 
@@ -759,7 +761,7 @@ if(mapl_am_i_root()) print*,'DU2G Run1 BEGIN'
         deallocate(iPoint, jPoint, __STAT__)
     end if
 
-if(mapl_am_i_root()) print*,'DU2G Run1 END'
+!if(mapl_am_i_root()) print*,'DU2G Run1 END'
 
     RETURN_(ESMF_SUCCESS)
 
@@ -807,12 +809,14 @@ if(mapl_am_i_root()) print*,'DU2G Run1 END'
 !*****************************************************************************
 !   Begin... 
 
-if(mapl_am_i_root()) print*,'DU2G Run2 BEGIN'
+!if(mapl_am_i_root()) print*,'DU2G Run2 BEGIN'
 
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) // '::' // Iam
+
+!if(mapl_am_i_root()) print*,'DU2G Run2 BEGIN'
 
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
@@ -838,6 +842,9 @@ if(mapl_am_i_root()) print*,'DU2G Run2 BEGIN'
     import_shape = shape(wet1)
     i2 = import_shape(1)
     j2 = import_shape(2)
+
+!if(mapl_am_i_root()) print*, 'Run2 B DU2G sum(DU) = ',sum(DU)
+
 
 !   Dust Settling
 !   -----------
@@ -875,6 +882,7 @@ if(mapl_am_i_root()) print*,'DU2G Run2 BEGIN'
                               pfl_lsan, pfi_lsan, cn_prcp, ncn_prcp, DUWT, __RC__)
    end do
 
+!if(mapl_am_i_root()) print*, 'Run2 E DU2G sum(DU) = ',sum(DU)
 
    call Aero_Compute_Diags ( self%diag_MieTable(self%instance), self%km, 1, self%nbins, self%rlow, self%rup, &
                            self%diag_MieTable(self%instance)%channels, DU, MAPL_GRAV, t, airdens, &
@@ -883,7 +891,7 @@ if(mapl_am_i_root()) print*,'DU2G Run2 BEGIN'
                            DUFLUXU, DUFLUXV, DUCONC, DUEXTCOEF, DUSCACOEF, &
                            DUEXTTFM, DUSCATFM, DUANGSTR, DUAERIDX, __RC__ )
 
-if(mapl_am_i_root()) print*,'DU2G Run2 END'
+!if(mapl_am_i_root()) print*,'DU2G Run2 END'
 
     RETURN_(ESMF_SUCCESS)
 
@@ -912,12 +920,13 @@ if(mapl_am_i_root()) print*,'DU2G Run2 END'
 ! Locals
     character (len=ESMF_MAXSTR)        :: COMP_NAME
     type (MAPL_MetaComp), pointer      :: MAPL
-    type (ESMF_State)                  :: aero 
+    type (wrap_)                       :: wrap
+    type (DU2G_GridComp), pointer      :: self
 
-    integer                            :: i, n
+    integer                            :: i
     character (len=ESMF_MAXSTR)        :: field_name
 
-    real, pointer, dimension(:,:,:)    :: ptr3d_int
+    real, pointer, dimension(:,:,:,:)  :: ptr4d_int
     real, pointer, dimension(:,:,:)    :: ptr3d_imp
 
     __Iam__('Run_data')
@@ -933,22 +942,24 @@ if(mapl_am_i_root()) print*,'DU2G Run2 END'
 
 if (mapl_am_I_root()) print*,trim(comp_name),' Run_data BEGIN'
 
-    call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO', aero, __RC__)
-!    call ESMF_AttributeGet (aero, name='aerosol_names', itemCount=n, __RC__)
+!   Get my private internal state
+!   ------------------------------
+    call ESMF_UserCompGetInternalState(GC, 'DU2G_GridComp', wrap, STATUS)
+    VERIFY_(STATUS)
+    self => wrap%ptr
 
 !   Update interal data pointers with ExtData
 !   -----------------------------------------
-    do i = 1, n
+    call MAPL_GetPointer (internal, NAME='DU', ptr=ptr4d_int, __RC__)
+
+    do i = 1, self%nbins
     write (field_name, '(A, I0.3)') 'du', i
-        call MAPL_GetPointer (internal, NAME=trim(field_name), ptr=ptr3d_int, __RC__)
         call MAPL_GetPointer (import,  NAME='clim'//trim(field_name), ptr=ptr3d_imp, __RC__)
 
-        ptr3d_int = ptr3d_imp
+        ptr4d_int(:,:,:,i) = ptr3d_imp
     end do
 
-
 if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
-
 
     RETURN_(ESMF_SUCCESS)
 
