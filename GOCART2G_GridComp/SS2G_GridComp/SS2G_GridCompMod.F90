@@ -31,6 +31,7 @@ module SS2G_GridCompMod
    PUBLIC  SetServices
 
 real, parameter ::  chemgrav   = 9.80616
+real, parameter ::  cpd    = 1004.16
 
 ! !DESCRIPTION: This module implements GOCART's Sea Salt (SS) Gridded Component.
 
@@ -164,7 +165,7 @@ contains
          vlocation=MAPL_VlocationCenter, &
          restart=MAPL_RestartOptional, &
          ungridded_dims=[self%nbins], &
-         friendlyto='DYNAMICS:TURBULENCE:MOIST', &
+!         friendlyto='DYNAMICS:TURBULENCE:MOIST', &
          add2export=.true., __RC__)
 
 
@@ -193,7 +194,7 @@ contains
             call MAPL_AddImportSpec(GC,                                           &
               SHORT_NAME = 'climss'//trim(field_name),                            &
               LONG_NAME  = 'Sea Salt Mixing Ratio (bin '//trim(field_name)//')',  &
-              UNITS      = 'kg kg-1',                                             &
+              UNITS      = 'kg kg-1 s-1',                                             &
               RESTART    = MAPL_RestartSkip,                                      &
               DIMS       = MAPL_DimsHorzVert,                                     &
               VLOCATION  = MAPL_VLocationCenter, __RC__)
@@ -202,7 +203,7 @@ contains
             call MAPL_AddImportSpec(GC,                                           &
               SHORT_NAME = 'climSSDP'//trim(field_name),                          &
               LONG_NAME  = 'Sea Salt Mixing Ratio (bin '//trim(field_name)//')',  &
-              UNITS      = 'kg kg-1',                                             &
+              UNITS      = 'kg kg-1 s-1',                                             &
               DIMS       = MAPL_DimsHorzOnly,                                     &
               VLOCATION  = MAPL_VLocationCenter,                                  &
               RESTART    = MAPL_RestartSkip, __RC__)
@@ -210,8 +211,8 @@ contains
 !           ! wet deposition    
             call MAPL_AddImportSpec(GC,                                           &
                SHORT_NAME = 'climSSWT'//trim(field_name),                         &
-               LONG_NAME  = 'Sea Salt Mixing Ratio (bin '//trim(field_name)//')', &
-               UNITS      = 'kg kg-1',                                            &
+               LONG_NAME  = 'Sea Salt wet removal (bin '//trim(field_name)//')', &
+               UNITS      = 'kg kg-1 s-1',                                            &
                DIMS       = MAPL_DimsHorzOnly,                                    &
                VLOCATION  = MAPL_VLocationCenter,                                 &
                RESTART    = MAPL_RestartSkip, __RC__)
@@ -220,7 +221,7 @@ contains
             call MAPL_AddImportSpec(GC,                                           &
                SHORT_NAME = 'climSSSD'//trim(field_name),                         &
                LONG_NAME  = 'Sea Salt Mixing Ratio (bin '//trim(field_name)//')', &
-               UNITS      = 'kg kg-1',                                            &
+               UNITS      = 'kg kg-1 s-1',                                            &
                DIMS       = MAPL_DimsHorzOnly,                                    &
                VLOCATION  = MAPL_VLocationCenter,                                 &
                RESTART    = MAPL_RestartSkip, __RC__)
@@ -229,7 +230,7 @@ contains
             call MAPL_AddImportSpec(GC,                                           &
                SHORT_NAME = 'climSSSV'//trim(field_name),                         &
                LONG_NAME  = 'Sea Salt Mixing Ratio (bin '//trim(field_name)//')', &
-               UNITS      = 'kg kg-1',                                            &
+               UNITS      = 'kg kg-1 s-1',                                            &
                DIMS       = MAPL_DimsHorzOnly,                                    &
                VLOCATION  = MAPL_VLocationCenter,                                 &
                RESTART    = MAPL_RestartSkip, __RC__)
@@ -762,8 +763,6 @@ if(mapl_am_i_root()) print*,'SS2G self%diag_MieTable%nq = ',self%diag_MieTable%n
     real                              :: fwet
     logical                           :: KIN
 
-real, parameter ::  cpd    = 1004.16
-
 
 #include "SS2G_DeclarePointer___.h"
 
@@ -858,15 +857,15 @@ real, parameter ::  cpd    = 1004.16
                            SSFLUXU, SSFLUXV, SSCONC, SSEXTCOEF, SSSCACOEF,    &
                            SSEXTTFM, SSSCATFM ,SSANGSTR, SSAERIDX, __RC__)
 
-!if(mapl_am_i_root()) print*,'SS2G SSSMASS = ',sum(SSSMASS)
-!if(mapl_am_i_root()) print*,'SS2G SSMASS = ',sum(SSMASS)
-!if(mapl_am_i_root()) print*,'SS2G SSEXTTAU = ',sum(SSEXTTAU)
-!if(mapl_am_i_root()) print*,'SS2G SSSCATAU = ',sum(SSSCATAU)
+if(mapl_am_i_root()) print*,'SS2G SSSMASS = ',sum(SSSMASS)
+if(mapl_am_i_root()) print*,'SS2G SSMASS = ',sum(SSMASS)
+if(mapl_am_i_root()) print*,'SS2G SSEXTTAU = ',sum(SSEXTTAU)
+if(mapl_am_i_root()) print*,'SS2G SSSCATAU = ',sum(SSSCATAU)
 
 
-!do n=1,5
-!   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 E SS2G sum(ss00n) = ',sum(SS(:,:,:,n))
-!end do
+do n=1,5
+   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 E SS2G sum(ss00n) = ',sum(SS(:,:,:,n))
+end do
 
 !if(mapl_am_i_root()) print*, 'Run2 E SS2G sum(SS) = ',sum(SS)
 
