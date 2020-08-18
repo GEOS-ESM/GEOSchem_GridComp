@@ -1002,6 +1002,10 @@ CONTAINS
    end do
 #endif
 
+if(mapl_am_i_root()) print*,'NI Run1 BEGIN sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+if(mapl_am_i_root()) print*,'NI Run1 BEGIN sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+if(mapl_am_i_root()) print*,'NI Run1 BEGIN sum(self%xhno3) = ',sum(gcNI%xhno3)
+
 
 !  Emissions
 !  ---------
@@ -1048,6 +1052,10 @@ CONTAINS
    if(associated(emi_nh3_oc)) &
     w_c%qa(nNH3)%data3d(:,:,km) = w_c%qa(nNH3)%data3d(:,:,km) &
                                 + cdt * grav / w_c%delp(:,:,km) * emi_nh3_oc
+
+if(mapl_am_i_root()) print*,'NI Run1 END sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+if(mapl_am_i_root()) print*,'NI Run1 END sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+if(mapl_am_i_root()) print*,'NI Run1 END sum(self%xhno3) = ',sum(gcNI%xhno3)
 
    return
 
@@ -1316,22 +1324,23 @@ CONTAINS
        gcNI%xhno3 = MAPL_UNDEF
        gcNI%first = .False.
 !if(mapl_am_i_root()) print*,'NI TEST1'
-
    end if
 
    ! Recycle HNO3 every 3 hours
    if (gcNI%recycle_HNO3) then
        gcNI%xhno3 = hno3
        gcNI%recycle_HNO3 = .false.
-!if(mapl_am_i_root()) print*,'NI TEST2'
+if(mapl_am_i_root()) print*,'NI recycle alarm TRUE'
+if(mapl_am_i_root()) print*,'NI recycle alarm sum(self%xhno3)',sum(gcNI%xhno3)
    end if
 
-!if(mapl_am_i_root()) print*,'NI sum(hno3) = ',sum(hno3)
-!if(mapl_am_i_root()) print*,'NI sum(self%xhno3) = ',sum(gcNI%xhno3)
+if(mapl_am_i_root()) print*,'NI Run2 BEGIN sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+if(mapl_am_i_root()) print*,'NI Run2 BEGIN sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+if(mapl_am_i_root()) print*,'NI Run2 BEGIN sum(hno3) = ',sum(hno3)
+if(mapl_am_i_root()) print*,'NI Run2 BEGIN before thermo sum(self%xhno3) = ',sum(gcNI%xhno3)
 
 
 RUN_ALARM: if (gcNI%run_alarm) then
-!if(mapl_am_i_root()) print*,'NI - HNO3 ALARM HAS RUNG!!!!'
 
    allocate( fluxout )
    allocate( fluxout%data2d(i1:i2,j1:j2), dqa(i1:i2,j1:j2), &
@@ -1350,6 +1359,11 @@ RUN_ALARM: if (gcNI%run_alarm) then
    if(associated(NI_pnh4aq%data2d)) NI_pnh4aq%data2d(:,:) = 0.
    if(associated(NI_pnh3aq%data2d)) NI_pnh3aq%data2d(:,:) = 0.
 
+
+if(mapl_am_i_root()) print*,'NI before thermo sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+!if(mapl_am_i_root()) print*,'NI before thermo sum(NO3an1) = ',sum(w_c%qa(nNO3an1)%data3d)
+if(mapl_am_i_root()) print*,'NI before thermo sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+
 !  RPMARES - thermodynamic module
 !  ------------------------------
 !  Take as input GOCART provided SO4, model provided RH,
@@ -1362,6 +1376,9 @@ RUN_ALARM: if (gcNI%run_alarm) then
      if(trim(w_c%reg%vname(n)) .eq. 'SO4') nSO4 = n
     enddo
    endif
+
+if(mapl_am_i_root()) print*,'NI before sum(SO4) = ',sum(w_c%qa(nSO4)%data3d)
+
    do k = 1, km
     do j = j1, j2
      do i = i1, i2
@@ -1414,6 +1431,15 @@ RUN_ALARM: if (gcNI%run_alarm) then
      enddo
     enddo
    enddo
+
+if(mapl_am_i_root()) print*,'NI after thermo sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+if(mapl_am_i_root()) print*,'NI after thermo sum(NO3an1) = ',sum(w_c%qa(nNO3an1)%data3d)
+if(mapl_am_i_root()) print*,'NI after thermo sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+if(mapl_am_i_root()) print*,'NI after thermo sum(self%xhno3) = ',sum(gcNI%xhno3)
+!if(mapl_am_i_root()) print*,'NI sum(NIPNO3AQ) = ',sum(NI_pno3aq%data2d)
+!if(mapl_am_i_root()) print*,'NI sum(NIPNH4AQ) = ',sum(NI_pnh4aq%data2d)
+!if(mapl_am_i_root()) print*,'NI sum(NIPNH3AQ) = ',sum(NI_pnh3aq%data2d)
+
 
    ! prepare the variable names for comparison
    if(w_c%reg%doing_DU) then
@@ -1548,7 +1574,11 @@ RUN_ALARM: if (gcNI%run_alarm) then
 !if(mapl_am_i_root()) print*,'NI sum(HNO3SMASS) = ',sum(HNO3_sfcmass%data2d)
 !if(mapl_am_i_root()) print*,'NI sum(HNO3CMASS) = ',sum(HNO3_colmass%data2d)
 
+if(mapl_am_i_root()) print*,'NI after hetchem sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+if(mapl_am_i_root()) print*,'NI after hetchem sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+if(mapl_am_i_root()) print*,'NI after hetchem sum(self%xhno3) = ',sum(gcNI%xhno3)
 
+!if(mapl_am_i_root()) print*,'NI NH4a array = ',w_c%qa(nNH4a)%data3d
 !  NI Settling
 !  -----------
 !  Because different bins having different swelling coefficients I need to
@@ -1563,6 +1593,13 @@ RUN_ALARM: if (gcNI%run_alarm) then
                         NI_radius, NI_rhop, cdt, w_c, tmpu, rhoa, hsurf,    &
                         hghte, fluxout, rc )
    if(associated(NH4_set%data2d)) NH4_set%data2d = fluxout%data2d
+if(mapl_am_i_root()) print*,'NI sum(NH4SD) = ',sum(NH4_set%data2d)
+if(mapl_am_i_root()) print*,'NI sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+!if(mapl_am_i_root()) print*,'NI NH4SD array = ',NH4_set%data2d
+
+!if(mapl_am_i_root()) print*,'NI NH4a array = ',w_c%qa(nNH4a)%data3d
+!if(mapl_am_i_root()) print*,'NI NH4a rhop = ', NI_rhop
+!if(mapl_am_i_root()) print*,'NI NH4a rad = ',NI_radius
 
 !  Nitrate bin 1 - settles like ammonium sulfate (rhflag = 3)
    n = globalnNO3an1
@@ -1573,6 +1610,8 @@ RUN_ALARM: if (gcNI%run_alarm) then
                         NI_radius, NI_rhop, cdt, w_c, tmpu, rhoa, hsurf,    &
                         hghte, fluxout, rc )
    if(associated(NI_set(1)%data2d)) NI_set(1)%data2d = fluxout%data2d
+!if(mapl_am_i_root()) print*,'NI sum(NISD(:,:,1)) = ',sum(NI_set(1)%data2d)
+!if(mapl_am_i_root()) print*,'NI sum(NO3an1) = ',sum(w_c%qa(nNO3an1)%data3d)
 
 !  Nitrate bin 2 - settles like sea salt (rhflag = 2)
    n = globalnNO3an2
@@ -1583,6 +1622,8 @@ RUN_ALARM: if (gcNI%run_alarm) then
                         NI_radius, NI_rhop, cdt, w_c, tmpu, rhoa, hsurf,    &
                         hghte, fluxout, rc )
    if(associated(NI_set(2)%data2d)) NI_set(2)%data2d = fluxout%data2d
+!if(mapl_am_i_root()) print*,'NI sum(NISD(:,:,2)) = ',sum(NI_set(2)%data2d)
+!if(mapl_am_i_root()) print*,'NI sum(NO3an2) = ',sum(w_c%qa(nNO3an2)%data3d)
 
 !  Nitrate bin 3 - settles like dust (rhflag = 0)
    n = globalnNO3an3
@@ -1593,7 +1634,11 @@ RUN_ALARM: if (gcNI%run_alarm) then
                         NI_radius, NI_rhop, cdt, w_c, tmpu, rhoa, hsurf,    &
                         hghte, fluxout, rc )
    if(associated(NI_set(3)%data2d)) NI_set(3)%data2d = fluxout%data2d
+!if(mapl_am_i_root()) print*,'NI sum(NISD(:,:,3)) = ',sum(NI_set(3)%data2d)
+!if(mapl_am_i_root()) print*,'NI sum(NO3an3) = ',sum(w_c%qa(nNO3an3)%data3d)
 
+!if(mapl_am_i_root()) print*,'NI after chemset sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+!if(mapl_am_i_root()) print*,'NI after chemset sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
 
 !  NI Deposition
 !  -----------
@@ -1601,6 +1646,10 @@ RUN_ALARM: if (gcNI%run_alarm) then
    call DryDepositionGOCART( i1, i2, j1, j2, km, &
                              tmpu, rhoa, hghte, oro, ustar, &
                              pblh, shflux, z0h, drydepositionfrequency, rc )
+
+!if(mapl_am_i_root()) print"(g25.17)",'NI drydep = ',drydepositionfrequency
+!if(mapl_am_i_root()) print*,'NI NH3 array = ',w_c%qa(nNH3)%data3d
+!if(mapl_am_i_root()) print*,'NI lwi array = ',oro
     
    n = globalnNH3
    dqa = 0.
@@ -1611,18 +1660,26 @@ RUN_ALARM: if (gcNI%run_alarm) then
    end where
    w_c%qa(n1+n-1)%data3d(:,:,km) = w_c%qa(n1+n-1)%data3d(:,:,km) - dqa
    if( associated(NH3_dep%data2d) ) NH3_dep%data2d = dqa*w_c%delp(:,:,km)/grav/cdt
+if(mapl_am_i_root()) print*,'NI sum(NH3) = ',sum(w_c%qa(n1+n-1)%data3d)
+if(mapl_am_i_root()) print*,'NI sum(NH3DP) = ',sum(NH3_dep%data2d)
+!if(mapl_am_i_root()) print*,'NI dqa array = ',dqa
+!if(mapl_am_i_root()) print"(g25.17)",'NI NH3 array = ',w_c%qa(nNH3)%data3d
 
    n = globalnNH4a
    dqa = 0.
    dqa = max(0.0, w_c%qa(n1+n-1)%data3d(:,:,km)*(1.-exp(-drydepositionfrequency*cdt)))
    w_c%qa(n1+n-1)%data3d(:,:,km) = w_c%qa(n1+n-1)%data3d(:,:,km) - dqa
    if( associated(NH4_dep%data2d) ) NH4_dep%data2d = dqa*w_c%delp(:,:,km)/grav/cdt
+if(mapl_am_i_root()) print*,'NI sum(NH4a) = ',sum(w_c%qa(n1+n-1)%data3d)
+if(mapl_am_i_root()) print*,'NI sum(NH4DP) = ',sum(NH4_dep%data2d)
 
    do n = globalnNO3an1, globalnNO3an3
     dqa = 0.
     dqa = max(0.0, w_c%qa(n1+n-1)%data3d(:,:,km)*(1.-exp(-drydepositionfrequency*cdt)))
     w_c%qa(n1+n-1)%data3d(:,:,km) = w_c%qa(n1+n-1)%data3d(:,:,km) - dqa
     if( associated(NI_dep(n-2)%data2d) ) NI_dep(n-2)%data2d = dqa*w_c%delp(:,:,km)/grav/cdt
+!if(mapl_am_i_root()) print*,'NI sum(NH3an',n,') = ',sum(w_c%qa(n1+n-1)%data3d)
+!if(mapl_am_i_root()) print*,'NI sum(NIDP',n,') = ',sum(NI_dep(n-2)%data2d)
    end do
 
 #ifdef DEBUG
@@ -1640,6 +1697,8 @@ RUN_ALARM: if (gcNI%run_alarm) then
                          w_c%qa, ple, tmpu, rhoa, pfllsan, pfilsan, &
                          precc, precl, fluxout, rc )
    if(associated(NH3_wet%data2d)) NH3_wet%data2d = fluxout%data2d
+if(mapl_am_i_root()) print*,'NI sum(NH3WT) = ',sum(NH3_wet%data2d)
+if(mapl_am_i_root()) print*,'NI sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
 
    w_c%qa(nNH4a)%fwet = 1.
    KIN = .TRUE.
@@ -1647,6 +1706,8 @@ RUN_ALARM: if (gcNI%run_alarm) then
                          w_c%qa, ple, tmpu, rhoa, pfllsan, pfilsan, &
                          precc, precl, fluxout, rc )
    if(associated(NH4_wet%data2d)) NH4_wet%data2d = fluxout%data2d
+if(mapl_am_i_root()) print*,'NI sum(NH4WT) = ',sum(fluxout%data2d)
+if(mapl_am_i_root()) print*,'NI sum(NH4) = ',sum(w_c%qa(nNH4a)%data3d)
 
    do n = nNO3an1, nNO3an3
     w_c%qa(n)%fwet = 1.
@@ -1657,6 +1718,7 @@ RUN_ALARM: if (gcNI%run_alarm) then
                          precc, precl, fluxout, rc )
     na = n - n1 - 1
     if(associated(NI_wet(na)%data2d)) NI_wet(na)%data2d = fluxout%data2d
+!if(mapl_am_i_root()) print*,'NI sum(NIWT(:,:,',n,')) = ',sum(NI_wet(na)%data2d)
    end do
 
 #ifdef DEBUG
@@ -1748,6 +1810,31 @@ RUN_ALARM: if (gcNI%run_alarm) then
                          NI_exttau,  NI_scatau, NI_extcoef, NI_scacoef,  NI_angstrom, &
                          NI_exttau25,  NI_scatau25, NI_exttauFM,  NI_scatauFM, &
                          NI_fluxu, NI_fluxv, rc)
+#if 0
+if(mapl_am_i_root()) print*,'NI sum(NH4SMASS) = ',sum(NH4_sfcmass%data2d)
+if(mapl_am_i_root()) print*,'NI sum(NH4CMASS) = ',sum(NH4_colmass%data2d)
+if(mapl_am_i_root()) print*,'NI sum(NH4MASS) = ',sum(NH4_mass%data3d)
+if(mapl_am_i_root()) print*,'NI sum(NH4CONC) = ',sum(NH4_conc%data3d)
+
+if(mapl_am_i_root()) print*,'NI sum(NH3SMASS) = ',sum(NH3_sfcmass%data2d)
+if(mapl_am_i_root()) print*,'NI sum(NH3CMASS) = ',sum(NH3_colmass%data2d)
+if(mapl_am_i_root()) print*,'NI sum(NH3MASS) = ',sum(NH3_mass%data3d)
+if(mapl_am_i_root()) print*,'NI sum(NH3CONC) = ',sum(NH3_conc%data3d)
+
+if(mapl_am_i_root()) print*,'NI sum(NIEXTTAU) = ',sum(NI_EXTTAU%data2d)
+if(mapl_am_i_root()) print*,'NI sum(NISCATAU) = ',sum(NI_SCATAU%data2d)
+if(mapl_am_i_root()) print*,'NI sum(NIMASS) = ',sum(NI_MASS%data2d)
+if(mapl_am_i_root()) print*,'NI sum(NIFLUXU) = ',sum(NI_FLUXU%data2d)
+#endif
+
+if(mapl_am_i_root()) print*,'NI Run2 END sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+if(mapl_am_i_root()) print*,'NI Run2 END sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+if(mapl_am_i_root()) print*,'NI Run2 END sum(self%xhno3) = ',sum(gcNI%xhno3)
+!if(mapl_am_i_root()) print*,'NI Run2 END array NH3 = ',w_c%qa(nNH3)%data3d
+!if(mapl_am_i_root()) print*,'NI Run2 END array NH4a = ',w_c%qa(nNH4a)%data3d
+if(mapl_am_i_root()) print*,'NI Run2 END sum(NO3an1) = ',sum(w_c%qa(nNO3an1)%data3d)
+if(mapl_am_i_root()) print*,'NI Run2 END sum(NO3an2) = ',sum(w_c%qa(nNO3an2)%data3d)
+if(mapl_am_i_root()) print*,'NI Run2 END sum(NO3an3) = ',sum(w_c%qa(nNO3an3)%data3d)
 
 
    return
