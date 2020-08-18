@@ -1354,8 +1354,8 @@ CONTAINS
 !if(mapl_am_i_root()) print*,'CA sum(OCEMBF) = ',sum(OC_emisBF%data2d)
 !if(mapl_am_i_root()) print*,'CA sum(OCEMBG) = ',sum(OC_emisBG%data2d)
 
-if(mapl_am_i_root()) print*,'CA Run1 E sum(OCphobic) = ',sum(w_c%qa(n1)%data3d)
-if(mapl_am_i_root()) print*,'CA Run1 E sum(OCphilic) = ',sum(w_c%qa(n2)%data3d)
+!if(mapl_am_i_root()) print*,'CA Run1 E sum(OCphobic) = ',sum(w_c%qa(n1)%data3d)
+!if(mapl_am_i_root()) print*,'CA Run1 E sum(OCphilic) = ',sum(w_c%qa(n2)%data3d)
 
 #ifdef DEBUG
    do n = n1, n2
@@ -2133,8 +2133,8 @@ K_LOOP: do k = km, 1, -1
 #endif
 
 
-if(mapl_am_i_root()) print*,'CA Run2 B sum(OCphobic) = ',sum(w_c%qa(n1)%data3d)
-if(mapl_am_i_root()) print*,'CA Run2 B sum(OCphilic) = ',sum(w_c%qa(n2)%data3d)
+!if(mapl_am_i_root()) print*,'CA Run2 B sum(OCphobic) = ',sum(w_c%qa(n1)%data3d)
+!if(mapl_am_i_root()) print*,'CA Run2 B sum(OCphilic) = ',sum(w_c%qa(n2)%data3d)
 
 !  Get 2D Imports
 !  --------------
@@ -2309,7 +2309,7 @@ RUN_ALARM: if (gcOC%run_alarm) then
                           w_c%qa, ple, tmpu, rhoa, pfllsan, pfilsan, &
                           precc, precl, fluxout, rc )
     if(associated(OC_wet(n)%data2d)) OC_wet(n)%data2d = fluxout%data2d
-if(mapl_am_i_root()) print*,'n = ',n, ': CA sum(OCWT) = ',sum(OC_wet(n)%data2d)
+!if(mapl_am_i_root()) print*,'n = ',n, ': CA sum(OCWT) = ',sum(OC_wet(n)%data2d)
    end do
 
 #ifdef DEBUG
@@ -2394,13 +2394,13 @@ if(mapl_am_i_root()) print*,'n = ',n, ': CA sum(OCWT) = ',sum(OC_wet(n)%data2d)
                          OC_scatau, OC_conc, OC_extcoef, OC_scacoef, OC_angstrom, &
                          OC_fluxu, OC_fluxv, rc)
 
-if(mapl_am_i_root()) print*,'OC OCSMASS = ',sum(OCSMASS%data2d)
-if(mapl_am_i_root()) print*,'OC OCMASS = ',sum(OCMASS%data3d)
-if(mapl_am_i_root()) print*,'OC OCEXTTAU = ',sum(OCEXTTAU%data2d)
-if(mapl_am_i_root()) print*,'OC OCSCATAU = ',sum(OCSCATAU%data2d)
+!if(mapl_am_i_root()) print*,'OC OCSMASS = ',sum(OCSMASS%data2d)
+!if(mapl_am_i_root()) print*,'OC OCMASS = ',sum(OCMASS%data3d)
+!if(mapl_am_i_root()) print*,'OC OCEXTTAU = ',sum(OCEXTTAU%data2d)
+!if(mapl_am_i_root()) print*,'OC OCSCATAU = ',sum(OCSCATAU%data2d)
 
-if(mapl_am_i_root()) print*,'CA Run2 E sum(OCphobic) = ',sum(w_c%qa(n1)%data3d)
-if(mapl_am_i_root()) print*,'CA Run2 E sum(OCphilic) = ',sum(w_c%qa(n2)%data3d)
+!if(mapl_am_i_root()) print*,'CA Run2 E sum(OCphobic) = ',sum(w_c%qa(n1)%data3d)
+!if(mapl_am_i_root()) print*,'CA Run2 E sum(OCphilic) = ',sum(w_c%qa(n2)%data3d)
 
    return
 
