@@ -52,6 +52,8 @@ real, parameter ::  cpd    = 1004.16
        logical           :: first
        logical           :: recycle_HNO3 = .false.
        real, allocatable :: xhno3(:,:,:)   ! buffer for NITRATE_HNO3 [kg/(m^2 sec)]
+       real, allocatable :: rmedDU(:), rmedSS(:) ! DU and SS radius
+       real, allocatable :: fnumDU(:), fnumSS(:) ! DU and SS particles per kg mass
    end type NI2G_GridComp
 
    type wrap_
@@ -93,7 +95,6 @@ contains
     type (Chem_Mie)                             :: this
 
     character (len=ESMF_MAXSTR)                 :: field_name
-    character (len=ESMF_MAXSTR), allocatable    :: aerosol_names(:)
 
     integer                                     :: n, i, nCols, nbins
     real                                        :: DEFVAL
@@ -259,6 +260,7 @@ if(mapl_am_i_root()) print*,trim(comp_name),' SetServices END'
 
     logical                              :: data_driven
     integer                              :: NUM_BANDS
+    character (len=ESMF_MAXSTR), allocatable    :: aerosol_names(:)
 
     type(ESMF_Calendar)     :: calendar
     type(ESMF_Time)         :: currentTime
@@ -268,6 +270,8 @@ if(mapl_am_i_root()) print*,trim(comp_name),' SetServices END'
     integer                 :: year, month, day, hh, mm, ss
 
     real, dimension(4)   :: Vect_Hcts
+!    real, allocatable, dimension(:) :: rmedDU, rmedSS, fnumDU, fnumSS
+    integer :: itemCount
 
 real, pointer :: ssptr(:,:,:,:)
 
@@ -329,6 +333,21 @@ if(mapl_am_i_root())print*,'NI2G dims(3) = ',dims(3)
 !   Get parameters from generic state.
 !   -----------------------------------
     call MAPL_Get ( mapl, INTERNAL_ESMF_STATE = internal, __RC__)
+
+!   Get DU and SS attribute information for use in heterogenous chemistry
+    call ESMF_StateGet(import, 'DU', field, __RC__)
+    call ESMF_AttributeGet(field, name='radius', itemCount=itemCount, __RC__)
+    allocate(self%rmedDU(itemCount), __STAT__)
+    allocate(self%fnumDU(itemCount), __STAT__)
+    call ESMF_AttributeGet(field, name='radius', valueList=self%rmedDU, __RC__)
+    call ESMF_AttributeGet(field, name='fnum', valueList=self%fnumDU, __RC__)
+
+    call ESMF_StateGet(import, 'SS', field, __RC__)
+    call ESMF_AttributeGet(field, name='radius', itemCount=itemCount, __RC__)
+    allocate(self%rmedSS(itemCount), __STAT__)
+    allocate(self%fnumSS(itemCount), __STAT__)
+    call ESMF_AttributeGet(field, name='radius', valueList=self%rmedSS, __RC__)
+    call ESMF_AttributeGet(field, name='fnum', valueList=self%fnumSS, __RC__)
 
 !   Is NI data driven?
 !   ------------------
@@ -462,8 +481,14 @@ if(mapl_am_i_root())print*,'NI2G dims(3) = ',dims(3)
     call ESMF_AttributeSet(aero, name='mieTable_pointer', valueList=mieTable_pointer, itemCount=size(mieTable_pointer), __RC__)
 
 !    call ESMF_AttributeSet(aero, name='internal_varaible_name', value='SS', __RC__)
+    allocate(aerosol_names(3), __STAT__)
+    aerosol_names(1) = 'NO3an1'
+    aerosol_names(2) = 'NO3an2'
+    aerosol_names(3) = 'NO3an3'
+    call ESMF_AttributeSet(aero, name='internal_varaible_name', valueList=aerosol_names, &
+                           itemCount=size(aerosol_names), __RC__)
 
-!    call ESMF_MethodAdd(AERO, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
+    call ESMF_MethodAdd(AERO, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
 
 !#endif
 if(mapl_am_i_root()) print*,trim(comp_name),' Init END'
@@ -684,7 +709,7 @@ if(mapl_am_i_root()) print*,'NI2G Run1 END sum(self%xhno3) = ',sum(self%xhno3)
     integer :: rhFlag
 
 integer :: i,j
-real :: rmedDU(5), rmedSS(5), fnumDU(5), fnumSS(5)
+!real :: rmedDU(5), rmedSS(5), fnumDU(5), fnumSS(5)
 
 #include "NI2G_DeclarePointer___.h"
 
@@ -771,15 +796,15 @@ if(mapl_am_i_root()) print*,'NI2G after thermo sum(xhno3) = ',sum(self%xhno3)
 
 
 !FOR TESTING ONLY
-rmedDU=(/0.73, 1.4, 2.4, 4.5, 8.0/)
-fnumDU=(/2.45e14, 3.28e13, 6.52e12, 9.89e11, 1.76e11/)
-rmedSS=(/0.079, 0.316, 1.119, 2.818, 7.772/)
-fnumSS=(/3.017e17, 1.085e16, 1.207e14, 9.391e12, 2.922e11/)
+!rmedDU=(/0.73, 1.4, 2.4, 4.5, 8.0/)
+!fnumDU=(/2.45e14, 3.28e13, 6.52e12, 9.89e11, 1.76e11/)
+!rmedSS=(/0.079, 0.316, 1.119, 2.818, 7.772/)
+!fnumSS=(/3.017e17, 1.085e16, 1.207e14, 9.391e12, 2.922e11/)
 
 !    call NIheterogenousChem (NIHT, self%xhno3, MAPL_AVOGAD, MAPL_AIRMW, MAPL_PI, MAPL_RUNIV, &
     call NIheterogenousChem (NIHT, self%xhno3, MAPL_AVOGAD, MAPL_AIRMW, MAPL_PI, MAPL_RUNIV/1000., &
-                             airdens, t, rh2, delp, DU, SS, rmedDU*1.e-6, rmedSS*1.e-6, &
-                             fnumDU, fnumSS, 5, 5, self%km, self%cdt, chemgrav, fMassHNO3, &
+                             airdens, t, rh2, delp, DU, SS, self%rmedDU*1.e-6, self%rmedSS*1.e-6, &
+                             self%fnumDU, self%fnumSS, 5, 5, self%km, self%cdt, chemgrav, fMassHNO3, &
                              fMassNO3, fmassair, NO3an1, NO3an2, NO3an3, HNO3CONC, HNO3SMASS, &
                              HNO3CMASS, rc)
 
@@ -1029,6 +1054,175 @@ if(mapl_am_i_root()) print*,trim(comp_name),'2G Run2 END'
     RETURN_(ESMF_SUCCESS)
   
   end subroutine Run2
+
+
+
+!-------------------------------------------------------------------------------------
+
+ subroutine aerosol_optics(state, rc)
+
+    implicit none
+
+!   !ARGUMENTS:
+    type (ESMF_State)                                :: state
+    integer,            intent(out)                  :: rc
+
+!   !Local
+    integer, parameter                               :: DP=kind(1.0d0)
+    real, dimension(:,:,:), pointer                  :: ple, rh
+    real(kind=DP), dimension(:,:,:), pointer         :: var
+    real, dimension(:,:,:), pointer                  :: q
+    real, dimension(:,:,:,:), pointer                :: q_4d
+    integer, allocatable                             :: opaque_self(:)
+    type(C_PTR)                                      :: address
+    type(NI2G_GridComp), pointer                     :: self
+
+    character (len=ESMF_MAXSTR)                      :: fld_name
+    type(ESMF_Field)                                 :: fld
+    character (len=ESMF_MAXSTR),allocatable          :: aerosol_names(:)
+
+    real(kind=DP), dimension(:,:,:), allocatable     :: ext_s, ssa_s, asy_s  ! (lon:,lat:,lev:)
+    real                                             :: x
+    integer                                          :: instance
+    integer                                          :: n, nbins, dims(4)
+    integer                                          :: i1, j1, i2, j2, km
+    integer                                          :: band, offset
+    integer, parameter                               :: n_bands = 1
+
+    integer :: i, j, k
+
+    __Iam__('NI2G::aerosol_optics')
+
+!   Begin... 
+
+!   Mie Table instance/index
+!   ------------------------
+    call ESMF_AttributeGet(state, name='mie_table_instance', value=instance, __RC__)
+
+!   Get aerosol names
+!   -----------------
+    call ESMF_AttributeGet (state, name='internal_varaible_name', itemCount=nbins, __RC__)
+    allocate (aerosol_names(nbins), __STAT__)
+    call ESMF_AttributeGet (state, name='internal_varaible_name', valueList=aerosol_names, __RC__)
+
+!   Radiation band
+!   --------------
+    band = 0
+    call ESMF_AttributeGet(state, name='band_for_aerosol_optics', value=band, __RC__)
+    offset = band - n_bands
+
+!   Pressure at layer edges 
+!   ------------------------
+    call ESMF_AttributeGet(state, name='air_pressure_for_aerosol_optics', value=fld_name, __RC__)
+    call MAPL_GetPointer(state, ple, trim(fld_name), __RC__)
+
+!    call MAPL_GetPointer (state, ple, 'PLE', __RC__)
+
+    i1 = lbound(ple, 1); i2 = ubound(ple, 1)
+    j1 = lbound(ple, 2); j2 = ubound(ple, 2)
+                         km = ubound(ple, 3)
+
+!   Relative humidity
+!   -----------------
+    call ESMF_AttributeGet(state, name='relative_humidity_for_aerosol_optics', value=fld_name, __RC__)
+    call MAPL_GetPointer(state, rh, trim(fld_name), __RC__)
+
+!    call MAPL_GetPointer (state, rh, 'RH2', __RC__)
+
+    allocate(ext_s(i1:i2, j1:j2, km), &
+             ssa_s(i1:i2, j1:j2, km), &
+             asy_s(i1:i2, j1:j2, km), __STAT__)
+
+    allocate(q_4d(i1:i2, j1:j2, km, nbins), __STAT__)
+
+    do n = 1, nbins
+       call ESMF_StateGet (state, trim(aerosol_names(n)), field=fld, __RC__)
+       call ESMF_FieldGet (fld, farrayPtr=q, __RC__)
+
+        do k = 1, km
+           do j = j1, j2
+              do i = i1, i2
+                 x = ((ple(i,j,k) - ple(i,j,k-1))*0.01)*(100./MAPL_GRAV)
+                 q_4d(i,j,k,n) = x * q(i,j,k)
+              end do
+           end do
+        end do
+    end do
+
+    call ESMF_AttributeGet(state, name='mieTable_pointer', itemCount=n, __RC__)
+    allocate (opaque_self(n), __STAT__)
+    call ESMF_AttributeGet(state, name='mieTable_pointer', valueList=opaque_self, __RC__)
+
+    address = transfer(opaque_self, address)
+    call c_f_pointer(address, self)
+
+    call mie_ (self%rad_MieTable(instance), nbins, n_bands, offset, q_4d, rh, ext_s, ssa_s, asy_s, __RC__)
+
+    call ESMF_AttributeGet(state, name='extinction_in_air_due_to_ambient_aerosol', value=fld_name, __RC__)
+    if (fld_name /= '') then
+        call MAPL_GetPointer(state, var, trim(fld_name), __RC__)
+        var = ext_s(:,:,:)
+    end if
+
+    call ESMF_AttributeGet(state, name='single_scattering_albedo_of_ambient_aerosol', value=fld_name, __RC__)
+    if (fld_name /= '') then
+        call MAPL_GetPointer(state, var, trim(fld_name), __RC__)
+        var = ssa_s(:,:,:)
+    end if
+
+   call ESMF_AttributeGet(state, name='asymmetry_parameter_of_ambient_aerosol', value=fld_name, __RC__)
+    if (fld_name /= '') then
+        call MAPL_GetPointer(state, var, trim(fld_name), __RC__)
+        var = asy_s(:,:,:)
+    end if
+
+    deallocate(ext_s, ssa_s, asy_s, __STAT__)
+
+    RETURN_(ESMF_SUCCESS)
+
+  contains
+
+!    subroutine mie_(mie_table, aerosol_names, nb, offset, q, rh, bext_s, bssa_s, basym_s, rc)
+    subroutine mie_(mie_table, nbins, nb, offset, q, rh, bext_s, bssa_s, basym_s, rc)
+
+    implicit none
+
+    type(Chem_Mie),                intent(inout) :: mie_table        ! mie table
+    integer,                       intent(in   ) :: nbins            ! number of bins
+    integer,                       intent(in )   :: nb               ! number of bands
+    integer,                       intent(in )   :: offset           ! bands offset 
+    real,                          intent(in )   :: q(:,:,:,:)       ! aerosol mass mixing ratio, kg kg-1
+    real,                          intent(in )   :: rh(:,:,:)        ! relative humidity
+    real(kind=8), intent(  out) :: bext_s (size(ext_s,1),size(ext_s,2),size(ext_s,3))
+    real(kind=8), intent(  out) :: bssa_s (size(ext_s,1),size(ext_s,2),size(ext_s,3))
+    real(kind=8), intent(  out) :: basym_s(size(ext_s,1),size(ext_s,2),size(ext_s,3))
+    integer,           intent(out)  :: rc
+    ! local
+    integer                           :: l
+    real                              :: bext (size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! extinction
+    real                              :: bssa (size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! SSA
+    real                              :: gasym(size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! asymmetry parameter
+
+    __Iam__('NI2G::aerosol_optics::mie_')
+
+     bext_s  = 0.0d0
+     bssa_s  = 0.0d0
+     basym_s = 0.0d0
+
+    do l = 1, nbins
+       call Chem_MieQuery(mie_table, l, real(offset+1.), q(:,:,:,l), rh, bext, gasym=gasym, ssa=bssa)
+
+       bext_s  = bext_s  +             bext     ! extinction
+       bssa_s  = bssa_s  +       (bssa*bext)    ! scattering extinction
+       basym_s = basym_s + gasym*(bssa*bext)    ! asymetry parameter multiplied by scatering extiction 
+
+    end do
+
+    RETURN_(ESMF_SUCCESS)
+
+    end subroutine mie_
+
+  end subroutine aerosol_optics
 
 
 
