@@ -1446,10 +1446,10 @@ CONTAINS
    ijk1l = ijl * (km+1)
 
 
-if(mapl_am_i_root()) print*,'SU Run1 B sum(SO2) =',sum(w_c%qa(n1+gcSU%nSO2-1)%data3d)
-if(mapl_am_i_root()) print*,'SU Run1 B sum(SO4) =',sum(w_c%qa(n1+gcSU%nSO4-1)%data3d)
-if(mapl_am_i_root()) print*,'SU Run1 B sum(DMS) =',sum(w_c%qa(n1+gcSU%nDMS-1)%data3d)
-if(mapl_am_i_root()) print*,'SU Run1 B sum(MSA) =',sum(w_c%qa(n1+gcSU%nMSA-1)%data3d)
+!if(mapl_am_i_root()) print*,'SU Run1 B sum(SO2) =',sum(w_c%qa(n1+gcSU%nSO2-1)%data3d)
+!if(mapl_am_i_root()) print*,'SU Run1 B sum(SO4) =',sum(w_c%qa(n1+gcSU%nSO4-1)%data3d)
+!if(mapl_am_i_root()) print*,'SU Run1 B sum(DMS) =',sum(w_c%qa(n1+gcSU%nDMS-1)%data3d)
+!if(mapl_am_i_root()) print*,'SU Run1 B sum(MSA) =',sum(w_c%qa(n1+gcSU%nMSA-1)%data3d)
 !if(mapl_am_i_root()) print*,'SU Run1 B test sum(SO2) =',sum(w_c%qa(13)%data3d)
 
 
@@ -1552,7 +1552,7 @@ if(mapl_am_i_root()) print*,'SU Run1 B sum(MSA) =',sum(w_c%qa(n1+gcSU%nMSA-1)%da
 !if(mapl_am_i_root()) print*,'SU sum(so2biomass_src_) = ',sum(gcSU%so2biomass_src_)
 
 
-if(mapl_am_i_root()) print*,'SU before volc emiss sum(SO2)',sum(w_c%qa(n1+gcSU%nSO2-1)%data3d)
+!if(mapl_am_i_root()) print*,'SU before volc emiss sum(SO2)',sum(w_c%qa(n1+gcSU%nSO2-1)%data3d)
 
 !  SU Source
 !  -----------
@@ -1582,19 +1582,22 @@ if(mapl_am_i_root()) print*,'SU before volc emiss sum(SO2)',sum(w_c%qa(n1+gcSU%n
                                      aviation_cds_src=gcSU%aviation_cds_src, &
                                      aviation_crs_src=gcSU%aviation_crs_src)
 
-if(mapl_am_i_root()) print*,'SU after volc emiss sum(SO2)',sum(w_c%qa(n1+gcSU%nSO2-1)%data3d)
+if(mapl_am_i_root()) print*,'SU nVolc2 = ',gcSU%nvolc
+if(mapl_am_i_root()) print*,'SU sum(vSO2) = ',sum(gcSU%vSO2)
 
-if(mapl_am_i_root()) print*,'SU sum(SUEM(:,:,nSO2)) = ',sum(SU_emis(2)%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SUEM(:,:,nSO4)) = ',sum(SU_emis(3)%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SO4EMAN) = ',sum(SU_SO4EMAN%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SO2EMAN) = ',sum(SU_SO2EMAN%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SO2EMBB) = ',sum(SU_SO2EMBB%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SO2EMVN) = ',sum(SU_SO2EMVN%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SO2EMVE) = ',sum(SU_SO2EMVE%data2d)
+!if(mapl_am_i_root()) print*,'SU after volc emiss sum(SO2)',sum(w_c%qa(n1+gcSU%nSO2-1)%data3d)
 
-if(mapl_am_i_root()) print*,'SU sum(SUEM(:,:,nDMS)) = ',sum(SU_emis(1)%data2d)
-if(mapl_am_i_root()) print*,'SU sum(dms) = ',sum(w_c%qa(n1+gcSU%nDMS-1)%data3d)
-if(mapl_am_i_root()) print*,'SU sum(SO4) =',sum(w_c%qa(n1+gcSU%nSO4-1)%data3d)
+!if(mapl_am_i_root()) print*,'SU sum(SUEM(:,:,nSO2)) = ',sum(SU_emis(2)%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SUEM(:,:,nSO4)) = ',sum(SU_emis(3)%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SO4EMAN) = ',sum(SU_SO4EMAN%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SO2EMAN) = ',sum(SU_SO2EMAN%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SO2EMBB) = ',sum(SU_SO2EMBB%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SO2EMVN) = ',sum(SU_SO2EMVN%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SO2EMVE) = ',sum(SU_SO2EMVE%data2d)
+
+!if(mapl_am_i_root()) print*,'SU sum(SUEM(:,:,nDMS)) = ',sum(SU_emis(1)%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(dms) = ',sum(w_c%qa(n1+gcSU%nDMS-1)%data3d)
+!if(mapl_am_i_root()) print*,'SU sum(SO4) =',sum(w_c%qa(n1+gcSU%nSO4-1)%data3d)
 
 #ifdef DEBUG
    do n = n1, n2
@@ -1643,6 +1646,8 @@ if(mapl_am_i_root()) print*,'SU sum(SO4) =',sum(w_c%qa(n1+gcSU%nSO4-1)%data3d)
 
    endif POINTWISE_SOURCES
 
+!if(mapl_am_i_root()) print*,'SU Run1 E sum(SO2) =',sum(w_c%qa(n1+gcSU%nSO2-1)%data3d)
+!if(mapl_am_i_root()) print*,'SU Run1 E sum(SO4) =',sum(w_c%qa(n1+gcSU%nSO4-1)%data3d)
 
    return
 
@@ -1882,6 +1887,9 @@ CONTAINS
    xno3  = 0.0
    xh2o2 = gcSU%h2o2_int
 
+!if(mapl_am_i_root()) print*,'SU Run2 B sum(SO2) =',sum(w_c%qa(n1+gcSU%nSO2-1)%data3d)
+!if(mapl_am_i_root()) print*,'SU Run2 B sum(SO4) =',sum(w_c%qa(n1+gcSU%nSO4-1)%data3d)
+
 
 !  Get 2D Imports
 !  --------------
@@ -2010,10 +2018,10 @@ RUN_ALARM: if (gcSU%run_alarm) then
                           SU_radius, SU_rhop, cdt, w_c, tmpu, rhoa, hsurf,    &
                           hghte, SU_set, rc )
 
-if(mapl_am_i_root()) print*,'n = 1', ' : SU sum(SUSD) = ',sum(SU_set(1)%data2d)
-if(mapl_am_i_root()) print*,'n = 2', ' : SU sum(SUSD) = ',sum(SU_set(2)%data2d)
-if(mapl_am_i_root()) print*,'n = 3', ' : SU sum(SUSD) = ',sum(SU_set(3)%data2d)
-if(mapl_am_i_root()) print*,'n = 4', ' : SU sum(SUSD) = ',sum(SU_set(4)%data2d)
+!if(mapl_am_i_root()) print*,'n = 1', ' : SU sum(SUSD) = ',sum(SU_set(1)%data2d)
+!if(mapl_am_i_root()) print*,'n = 2', ' : SU sum(SUSD) = ',sum(SU_set(2)%data2d)
+!if(mapl_am_i_root()) print*,'n = 3', ' : SU sum(SUSD) = ',sum(SU_set(3)%data2d)
+!if(mapl_am_i_root()) print*,'n = 4', ' : SU sum(SUSD) = ',sum(SU_set(4)%data2d)
 
 
 
@@ -2024,7 +2032,6 @@ if(mapl_am_i_root()) print*,'n = 4', ' : SU sum(SUSD) = ',sum(SU_set(4)%data2d)
                     w_c%qa(n1+gcSU%nSO2-1)%data3d + ACHEM_PSO2_OCS*cdt
    ENDIF
 
-
 !  SU Chemistry Driver (dry deposition and chemistry)
 !  -----------
    call SU_ChemDrv ( i1, i2, j1, j2, km, nbins, cdt, nymd, nhms, gcSU, w_c, &
@@ -2034,18 +2041,18 @@ if(mapl_am_i_root()) print*,'n = 4', ' : SU sum(SUSD) = ',sum(SU_set(4)%data2d)
                      xoh, xno3, xh2o2, &                                       ! oxidants
                      rc)
 
-if(mapl_am_i_root()) print*,'SU sum(SU_PSO2) = ',sum(SU_PSO2%data2d)
-if(mapl_am_i_root()) print*,'SU sum(pmsa) = ',sum(pmsa%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SUPSO4) = ',sum(SU_pSO4%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SUPSO4g) = ',sum(SU_pSO4g%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SUPSO4aq) = ',sum(SU_pSO4aq%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SO4) =',sum(w_c%qa(n1+gcSU%nSO4-1)%data3d)
-if(mapl_am_i_root()) print*,'SU sum(SO4) =',sum(w_c%qa(n1+gcSU%nMSA-1)%data3d)
+!if(mapl_am_i_root()) print*,'SU sum(SU_PSO2) = ',sum(SU_PSO2%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(pmsa) = ',sum(pmsa%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SUPSO4) = ',sum(SU_pSO4%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SUPSO4g) = ',sum(SU_pSO4g%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SUPSO4aq) = ',sum(SU_pSO4aq%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SO4) =',sum(w_c%qa(n1+gcSU%nSO4-1)%data3d)
+!if(mapl_am_i_root()) print*,'SU sum(MSA) =',sum(w_c%qa(n1+gcSU%nMSA-1)%data3d)
 
-if(mapl_am_i_root()) print*,'SU DMS sum(SUDP) = ',sum(SU_dep(1)%data2d)
-if(mapl_am_i_root()) print*,'SU SO2 sum(SUDP) = ',sum(SU_dep(2)%data2d)
-if(mapl_am_i_root()) print*,'SU SO4 sum(SUDP) = ',sum(SU_dep(3)%data2d)
-if(mapl_am_i_root()) print*,'SU MSA sum(SUDP) = ',sum(SU_dep(4)%data2d)
+!if(mapl_am_i_root()) print*,'SU DMS sum(SUDP) = ',sum(SU_dep(1)%data2d)
+!if(mapl_am_i_root()) print*,'SU SO2 sum(SUDP) = ',sum(SU_dep(2)%data2d)
+!if(mapl_am_i_root()) print*,'SU SO4 sum(SUDP) = ',sum(SU_dep(3)%data2d)
+!if(mapl_am_i_root()) print*,'SU MSA sum(SUDP) = ',sum(SU_dep(4)%data2d)
 
 !  Sulfate Large-scale Wet Removal
 !  -------------------------------
@@ -2054,16 +2061,15 @@ if(mapl_am_i_root()) print*,'SU MSA sum(SUDP) = ',sum(SU_dep(4)%data2d)
                          ple, rhoa, gcSU, w_c, &
                          precc, precl, pfllsan, pfilsan, &
                          tmpu, SU_wet, SU_pso4, SU_pso4wet, pso4, pso4wet, rc )
-if(mapl_am_i_root()) print*,'SU n=1 sum(SUWT) = ',sum(SU_wet(1)%data2d)
-if(mapl_am_i_root()) print*,'SU n=2 sum(SUWT) = ',sum(SU_wet(2)%data2d)
-if(mapl_am_i_root()) print*,'SU n=3 sum(SUWT) = ',sum(SU_wet(3)%data2d)
-if(mapl_am_i_root()) print*,'SU n=4 sum(SUWT) = ',sum(SU_wet(4)%data2d)
+!if(mapl_am_i_root()) print*,'SU n=1 sum(SUWT) = ',sum(SU_wet(1)%data2d)
+!if(mapl_am_i_root()) print*,'SU n=2 sum(SUWT) = ',sum(SU_wet(2)%data2d)
+!if(mapl_am_i_root()) print*,'SU n=3 sum(SUWT) = ',sum(SU_wet(3)%data2d)
+!if(mapl_am_i_root()) print*,'SU n=4 sum(SUWT) = ',sum(SU_wet(4)%data2d)
 
-if(mapl_am_i_root()) print*,'SU sum(SUPSO4) = ',sum(SU_PSO4%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SUPSO4WT) = ',sum(SU_PSO4WET%data2d)
-if(mapl_am_i_root()) print*,'SU sum(PSO4) = ',sum(PSO4%data3d)
-if(mapl_am_i_root()) print*,'SU sum(PSO4WET) = ',sum(PSO4WET%data3d)
-
+!if(mapl_am_i_root()) print*,'SU sum(SUPSO4) = ',sum(SU_PSO4%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SUPSO4WT) = ',sum(SU_PSO4WET%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(PSO4) = ',sum(PSO4%data3d)
+!if(mapl_am_i_root()) print*,'SU sum(PSO4WET) = ',sum(PSO4WET%data3d)
 
 !  Sulfate Convective-scale Mixing and Wet Removal
 !  -----------------------------------------------
@@ -2158,26 +2164,28 @@ if(mapl_am_i_root()) print*,'SU sum(PSO4WET) = ',sum(PSO4WET%data3d)
                          SU_sarea, SU_snum, rc)
 
 
-if(mapl_am_i_root()) print*,'SU sum(DMSSMASS)',sum(SU_DMSsfcmass%data2d)
-if(mapl_am_i_root()) print*,'SU sum(DMSCMASS)',sum(SU_DMScolmass%data2d)
-if(mapl_am_i_root()) print*,'SU sum(MSASMASS)',sum(SU_MSAsfcmass%data2d)
-if(mapl_am_i_root()) print*,'SU sum(MSACMASS)',sum(SU_MSAcolmass%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SO2SMASS)',sum(SU_SO2sfcmass%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SO2CMASS)',sum(SU_SO2colmass%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SO4CMASS)',sum(SU_SO4colmass%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SO4SMASS)',sum(SU_SO4sfcmass%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SUEXTTAU)',sum(SU_exttau%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SUSCATAU)',sum(SU_scatau%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SO4MASS)',sum(SU_SO4mass%data3d)
-if(mapl_am_i_root()) print*,'SU sum(SUCONC)',sum(SU_conc%data3d)
-if(mapl_am_i_root()) print*,'SU sum(SUEXTCOEF)',sum(SU_extcoef%data3d)
-if(mapl_am_i_root()) print*,'SU sum(SUSCACOEF)',sum(SU_scacoef%data3d)
-if(mapl_am_i_root()) print*,'SU sum(SUANGSTR)',sum(SU_angstrom%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SUFLUXU)',sum(SU_fluxu%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SUFLUXV)',sum(SU_fluxv%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SO4SAREA)',sum(SU_sarea%data3d)
-if(mapl_am_i_root()) print*,'SU sum(SO4SNUM)',sum(SU_snum%data3d)
+!if(mapl_am_i_root()) print*,'SU sum(DMSSMASS)',sum(SU_DMSsfcmass%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(DMSCMASS)',sum(SU_DMScolmass%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(MSASMASS)',sum(SU_MSAsfcmass%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(MSACMASS)',sum(SU_MSAcolmass%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SO2SMASS)',sum(SU_SO2sfcmass%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SO2CMASS)',sum(SU_SO2colmass%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SO4CMASS)',sum(SU_SO4colmass%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SO4SMASS)',sum(SU_SO4sfcmass%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SUEXTTAU)',sum(SU_exttau%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SUSCATAU)',sum(SU_scatau%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SO4MASS)',sum(SU_SO4mass%data3d)
+!if(mapl_am_i_root()) print*,'SU sum(SUCONC)',sum(SU_conc%data3d)
+!if(mapl_am_i_root()) print*,'SU sum(SUEXTCOEF)',sum(SU_extcoef%data3d)
+!if(mapl_am_i_root()) print*,'SU sum(SUSCACOEF)',sum(SU_scacoef%data3d)
+!if(mapl_am_i_root()) print*,'SU sum(SUANGSTR)',sum(SU_angstrom%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SUFLUXU)',sum(SU_fluxu%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SUFLUXV)',sum(SU_fluxv%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SO4SAREA)',sum(SU_sarea%data3d)
+!if(mapl_am_i_root()) print*,'SU sum(SO4SNUM)',sum(SU_snum%data3d)
 
+if(mapl_am_i_root()) print*,'SU Run2 E sum(SO2) =',sum(w_c%qa(n1+gcSU%nSO2-1)%data3d)
+if(mapl_am_i_root()) print*,'SU Run2 E sum(SO4) =',sum(w_c%qa(n1+gcSU%nSO4-1)%data3d)
 
    deallocate(xoh, xno3, xh2o2, SU_radius, SU_rhop, stat=STATUS)
    VERIFY_(STATUS)
