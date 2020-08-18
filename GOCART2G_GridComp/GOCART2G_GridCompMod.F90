@@ -198,8 +198,8 @@ contains
        datatype   = MAPL_BundleItem, __RC__)
 
 !   Add connectivities for Nitrate component
-!   Currently only supports 1 Nirate component. Only uses the 1st 
-!   active dust and sea salt instance.
+!   Nitrate currently only supports one  Nitrate component. Nitrate only 
+!   uses the first active dust and sea salt instance.
 !#if 0
     if ((self%DU%instances(1)%is_active)) then
        call MAPL_AddConnectivity (GC, SHORT_NAME = ["DU"], &
@@ -211,6 +211,12 @@ contains
        call MAPL_AddConnectivity (GC, SHORT_NAME = ["SS"] , &
                                   DST_ID=self%NI%instances(1)%id, &
                                   SRC_ID=self%SS%instances(1)%id, __RC__)
+    end if
+
+    if ((self%SU%instances(1)%is_active)) then
+       call MAPL_AddConnectivity (GC, SHORT_NAME = ["SO4"] , &
+                                  DST_ID=self%NI%instances(1)%id, &
+                                  SRC_ID=self%SU%instances(1)%id, __RC__)
     end if
 !#endif
 
@@ -599,8 +605,8 @@ if(mapl_am_i_root()) print*,'GOCART2G passive species%instances(i)%name = ', spe
     call addChildren__ (gc, self%DU, setServices=DU2G_setServices, __RC__)
     call addChildren__ (gc, self%SS, setServices=SS2G_setServices, __RC__)
     call addChildren__ (gc, self%CA, setServices=CA2G_setServices, __RC__)
-    call addChildren__ (gc, self%NI, setServices=NI2G_setServices, __RC__)
     call addChildren__ (gc, self%SU, setServices=SU2G_setServices, __RC__)
+    call addChildren__ (gc, self%NI, setServices=NI2G_setServices, __RC__)
 
     RETURN_(ESMF_SUCCESS)
 
@@ -715,7 +721,7 @@ if(mapl_am_i_root()) print*,'GOCART2G addChildren__ = ',species%instances(i)%nam
         end if
     end do
 
-if(mapl_am_i_root()) print*,'GOCART2G aeroList = ',aeroList
+!if(mapl_am_i_root()) print*,'GOCART2G aeroList = ',aeroList
     ext = 0.0d0
     ssa = 0.0d0
     asy = 0.0d0
