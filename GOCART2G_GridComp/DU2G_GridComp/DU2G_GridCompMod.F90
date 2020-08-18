@@ -422,10 +422,13 @@ if(mapl_am_i_root()) print*,'DU2G Init BEGIN'
         prefix = ''
     end if
 
+!   Add attribute information for DU export. Used in NI hetergenous chemistry.
+    call ESMF_StateGet (export, 'DU', field, __RC__)
+    call ESMF_AttributeSet(field, NAME='radius', valueList=self%radius, itemCount=self%nbins, __RC__)
+    call ESMF_AttributeSet(field, NAME='fnum', valueList=self%fnum, itemCount=self%nbins, __RC__)
+
 !   Add attribute information to internal state varaibles
 !   -----------------------------------------------------
-!    call ESMF_StateGet (internal, itemNameList=varList, __RC__)
-
 !   Fill AERO States with dust fields
 !   ------------------------------------
     call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO'    , aero    , __RC__)
@@ -438,7 +441,7 @@ if(mapl_am_i_root()) print*,'DU2G Init BEGIN'
     call MAPL_StateAdd (aero_aci, fld, __RC__)
 
     ! ADD OTHER ATTRIBUTE, HENTRY COEFFICIENTS?
-    call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(1), __RC__)
+    call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', value=self%fscav(1), __RC__)
 
     if (data_driven) then
        instance = instanceData
