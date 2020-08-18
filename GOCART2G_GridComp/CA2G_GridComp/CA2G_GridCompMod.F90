@@ -1230,11 +1230,10 @@ if(mapl_am_i_root()) print*,trim(comp_name),' Run2 END'
     type (wrap_)                       :: wrap
     type (CA2G_GridComp), pointer      :: self
 
-    integer                            :: i, n
-    character (len=ESMF_MAXSTR)        :: field_name, GCsuffix
+    character (len=ESMF_MAXSTR)        :: GCsuffix
 
     real, pointer, dimension(:,:,:)  :: ptr3d_int_phobic, ptr3d_int_philic
-    real, pointer, dimension(:,:,:)    :: ptr3d_imp
+    real, pointer, dimension(:,:,:)  :: ptr3d_imp
 
     __Iam__('Run_data')
 
