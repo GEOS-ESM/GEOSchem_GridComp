@@ -413,6 +413,11 @@ real, pointer :: ssptr(:,:,:,:)
        prefix = ''
     end if
 
+!   Add attribute information for SS export. Used in NI hetergenous chemistry.
+    call ESMF_StateGet (export, 'SS', field, __RC__)
+    call ESMF_AttributeSet(field, NAME='radius', valueList=self%radius, itemCount=self%nbins, __RC__)
+    call ESMF_AttributeSet(field, NAME='fnum', valueList=self%fnum, itemCount=self%nbins, __RC__)
+
 !   Fill AERO State with sea salt fields
 !   ----------------------------------------
     call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO'    , aero    , __RC__)
@@ -425,7 +430,7 @@ real, pointer :: ssptr(:,:,:,:)
     call MAPL_StateAdd (aero_aci, fld, __RC__)
 
     ! ADD OTHER ATTRIBUTE, HENTRY COEFFICIENTS?
-    call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(1), __RC__)
+    call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', value=self%fscav(1), __RC__)
 
     if (data_driven) then
        instance = instanceData
