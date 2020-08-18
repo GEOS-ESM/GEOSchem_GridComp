@@ -1482,10 +1482,10 @@ RUN_ALARM: if (gcSS%run_alarm) then
                          SS_conc, SS_extcoef, SS_scacoef, SS_exttaufm, SS_scataufm, &
                          SS_angstrom, SS_fluxu, SS_fluxv, rc)
 
-!if(mapl_am_i_root()) print*,'SS SSSMASS = ',sum(SSSMASS%data2d)
-!if(mapl_am_i_root()) print*,'SS SSMASS = ',sum(SSMASS%data3d)
-!if(mapl_am_i_root()) print*,'SS SSEXTTAU = ',sum(SSEXTTAU%data2d)
-!if(mapl_am_i_root()) print*,'SS SSSCATAU = ',sum(SSSCATAU%data2d)
+if(mapl_am_i_root()) print*,'SS SSSMASS = ',sum(SSSMASS%data2d)
+if(mapl_am_i_root()) print*,'SS SSMASS = ',sum(SSMASS%data3d)
+if(mapl_am_i_root()) print*,'SS SSEXTTAU = ',sum(SSEXTTAU%data2d)
+if(mapl_am_i_root()) print*,'SS SSSCATAU = ',sum(SSSCATAU%data2d)
 
 do n = 1, 5
   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 E SS sum(ss00n) = ',sum(w_c%qa(n1+n-1)%data3d)
