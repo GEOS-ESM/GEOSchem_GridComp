@@ -3349,7 +3349,10 @@ contains
 
 !if(mapl_am_i_root()) print*,'GOCART aerosol(l) = ',trim(aerosol(l))
 
-if ((trim(aerosol(l)) == 'OCphilic') .OR. (trim(aerosol(l)) == 'OCphobic')) then
+!if ((trim(aerosol(l)) == 'OCphilic') .OR. (trim(aerosol(l)) == 'OCphobic')) then
+
+!if (trim(aerosol(l)) == 'SO4') then
+
 
 !if ( (trim(aerosol(l)) == 'ss001') .OR. &
 !(trim(aerosol(l)) == 'ss002') .OR. (trim(aerosol(l)) == 'ss003') .OR. (trim(aerosol(l)) == 'ss004') .OR. &
@@ -3369,7 +3372,7 @@ if ((trim(aerosol(l)) == 'OCphilic') .OR. (trim(aerosol(l)) == 'OCphobic')) then
 !  if (mapl_am_i_root()) print*,'l = ',l, ' : GOCART ssa  = ', sum(ssa(:,:,:,1))
 !  if (mapl_am_i_root()) print*,'l = ',l, ' : GOCART asy  = ', sum(asy(:,:,:,1))
 
-end if ! trim(aerosol(l) == du00x
+!end if ! trim(aerosol(l) == du00x
 
      end do
 
