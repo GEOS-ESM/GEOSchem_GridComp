@@ -7,16 +7,16 @@ category: IMPORT
 #----------------------------------------------------------------------------------------
      NAME    | UNITS    | DIMS | VLOC | UNGRIDDED | LONG NAME
 #----------------------------------------------------------------------------------------
- FROCEAN     | 1        | xy   | N    |           | fraction_of_ocean
- FRACI       | 1        | xy   | N    |           | ice_covered_fraction_of_tile
+# FROCEAN     | 1        | xy   | N    |           | fraction_of_ocean
+# FRACI       | 1        | xy   | N    |           | ice_covered_fraction_of_tile
  LWI         | 1        | xy   | N    |           | land-ocean-ice_mask
- U10M        | m s-1    | xy   | N    |           | 10-meter_eastward_wind
- V10M        | m s-1    | xy   | N    |           | 10-meter_northward_wind
+# U10M        | m s-1    | xy   | N    |           | 10-meter_eastward_wind
+# V10M        | m s-1    | xy   | N    |           | 10-meter_northward_wind
  USTAR       | m s-1    | xy   | N    |           | surface_velocity_scale
- TS          | K        | xy   | N    |           | surface skin temperature
- DZ          | m        | xy   | N    |           | surface_layer_height
- FRLAKE      | 1        | xy   | N    |           | fraction_of_lake
- AREA        | m^2      | xy   | N    |           | agrid_cell_area
+# TS          | K        | xy   | N    |           | surface skin temperature
+# DZ          | m        | xy   | N    |           | surface_layer_height
+# FRLAKE      | 1        | xy   | N    |           | fraction_of_lake
+# AREA        | m^2      | xy   | N    |           | agrid_cell_area
  ZPBL        | m        | xy   | N    |           | planetary_boundary_layer_height
  SH          | w m-2    | xy   | N    |           | sensible_heat_flux_from_turbulence
  Z0H         | m        | xy   | N    |           | surface_roughness_for_heat
@@ -44,6 +44,7 @@ category: IMPORT
  NITRATE_HNO3 |kg m-2 s-1| xyz | C    |           | source species
  DU           | kg kg-1  | xyz | C    | 5         | Dust Mixing Ratio all bins
  SS           | kg kg-1  | xyz | C    | 5         | Sea Salt Mixing Ratio all bins
+ SO4          | kg kg-1  | xyz | C    |           | Sulfate
 
 category: EXPORT
 #----------------------------------------------------------------------------------------
