@@ -208,15 +208,69 @@ if(mapl_am_i_root()) print*,trim(comp_name),'2G SetServices BEGIN'
 
     DEFVAL = 0.0
 
-
 !   Import and Internal states if data instance 
 !   -------------------------------------------
-!    if (data_driven) then
+    if (data_driven) then
+       call MAPL_AddInternalSpec(gc,&
+         short_name='SO4', &
+         long_name='Sulphate aerosol', &
+         units='kg kg-1', &
+         dims=MAPL_DimsHorzVert, &
+         vlocation=MAPL_VlocationCenter, &
+         restart=MAPL_RestartOptional, &
+!         friendlyto='DYNAMICS:TURBULENCE:MOIST', &
+         add2export=.true., __RC__)
 
-! add internal and import states for data instance
+       call MAPL_AddImportSpec(gc,&
+         short_name='climSO4', &
+         long_name='Sulphate aerosol', &
+         units='kg kg-1', &
+         dims=MAPL_DimsHorzVert, &
+         vlocation=MAPL_VlocationCenter, &
+         restart=MAPL_RestartOptional, __RC__) 
 
-!    end if ! (data_driven)
+        do i = 1, self%nbins
+            write(field_name, '(A, I0.3)') '', i
+!           ! dry deposition
+            call MAPL_AddImportSpec(GC,                                           &
+              SHORT_NAME = 'climSUDP'//trim(field_name),                          &
+              LONG_NAME  = 'Sulfate dry deposition (bin '//trim(field_name)//')',  &
+              UNITS      = 'kg kg-1 s-1',                                             &
+              DIMS       = MAPL_DimsHorzOnly,                                     &
+              VLOCATION  = MAPL_VLocationCenter,                                  &
+              RESTART    = MAPL_RestartSkip, __RC__)
 
+!           ! wet deposition    
+            call MAPL_AddImportSpec(GC,                                           &
+               SHORT_NAME = 'climSUWT'//trim(field_name),                         &
+               LONG_NAME  = 'Sulfate wet deposition (bin '//trim(field_name)//')', &
+               UNITS      = 'kg kg-1 s-1',                                            &
+               DIMS       = MAPL_DimsHorzOnly,                                    &
+               VLOCATION  = MAPL_VLocationCenter,                                 &
+               RESTART    = MAPL_RestartSkip, __RC__)
+
+!           ! gravitational settling
+            call MAPL_AddImportSpec(GC,                                           &
+               SHORT_NAME = 'climSUSD'//trim(field_name),                         &
+               LONG_NAME  = 'Sulfate settling (bin '//trim(field_name)//')', &
+               UNITS      = 'kg kg-1 s-1',                                            &
+               DIMS       = MAPL_DimsHorzOnly,                                    &
+               VLOCATION  = MAPL_VLocationCenter,                                 &
+               RESTART    = MAPL_RestartSkip, __RC__)
+
+!        ! convective scavenging
+            call MAPL_AddImportSpec(GC,                                           &
+               SHORT_NAME = 'climSUSV'//trim(field_name),                         &
+               LONG_NAME  = 'Sulfate convective scavenging (bin '//trim(field_name)//')', &
+               UNITS      = 'kg kg-1 s-1',                                            &
+               DIMS       = MAPL_DimsHorzOnly,                                    &
+               VLOCATION  = MAPL_VLocationCenter,                                 &
+               RESTART    = MAPL_RestartSkip, __RC__)
+        end do
+    end if ! (data_driven)
+
+
+    if (.not. data_driven) then
     if (.not. self%using_GMI_H2O2) then
        call MAPL_AddImportSpec(GC,               &
           SHORT_NAME = 'SU_H2O2', &
@@ -250,7 +304,7 @@ if(mapl_am_i_root()) print*,trim(comp_name),'2G SetServices BEGIN'
 
 !   Import, Export, Internal states for computational instance 
 !   ----------------------------------------------------------
-    if (.not. data_driven) then
+!    if (.not. data_driven) then
 #include "SU2G_Export___.h"
 #include "SU2G_Import___.h"
 #include "SU2G_Internal___.h"
@@ -358,7 +412,8 @@ if(mapl_am_i_root()) print*,trim(comp_name),'2G SetServices END'
     type(ESMF_Time)         :: ringTime
     type(ESMF_TimeInterval) :: ringInterval
     integer                 :: year, month, day, hh, mm, ss
-    real,  dimension(4) :: Vect_Hcts
+
+    real, dimension(4)   :: Vect_Hcts
 
 
 real, pointer, dimension(:,:,:) :: SO2, SO4, DMS, MSA
@@ -429,14 +484,14 @@ if(mapl_am_i_root()) print*,trim(comp_name),'2G Init BEGIN'
 
 allocate(self%h2o2_init(size(lats,1),size(lats,2),self%km), __STAT__)
 
-call MAPL_GetPointer(internal, SO2, 'SO2', __RC__)
-if(mapl_am_i_root()) print*,'SU2G INIT sum(SO2) = ',sum(SO2)
-call MAPL_GetPointer(internal, SO4, 'SO4', __RC__)
-if(mapl_am_i_root()) print*,'SU2G INIT sum(SO4) = ',sum(SO4)
-call MAPL_GetPointer(internal, dms, 'DMS', __RC__)
-if(mapl_am_i_root()) print*,'SU2G INIT sum(DMS) = ',sum(dms)
-call MAPL_GetPointer(internal, msa, 'MSA', __RC__)
-if(mapl_am_i_root()) print*,'SU2G INIT sum(MSA) = ',sum(msa)
+!call MAPL_GetPointer(internal, SO2, 'SO2', __RC__)
+!if(mapl_am_i_root()) print*,'SU2G INIT sum(SO2) = ',sum(SO2)
+!call MAPL_GetPointer(internal, SO4, 'SO4', __RC__)
+!if(mapl_am_i_root()) print*,'SU2G INIT sum(SO4) = ',sum(SO4)
+!call MAPL_GetPointer(internal, dms, 'DMS', __RC__)
+!if(mapl_am_i_root()) print*,'SU2G INIT sum(DMS) = ',sum(dms)
+!call MAPL_GetPointer(internal, msa, 'MSA', __RC__)
+!if(mapl_am_i_root()) print*,'SU2G INIT sum(MSA) = ',sum(msa)
 
 
 !   Is SU data driven?
@@ -475,24 +530,34 @@ if(mapl_am_i_root()) print*,'SU2G INIT sum(MSA) = ',sum(msa)
        prefix = ''
     end if
 
-    call ESMF_StateGet (internal, 'DMS', field, __RC__)
-    call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(1), __RC__)
-    Vect_Hcts=(/0.56, 3500.0, 0.0, 0.0/)
-    call ESMF_AttributeSet(field, 'SetofHenryLawCts', Vect_Hcts, __RC__)
-    call ESMF_StateGet (internal, 'SO2', field, __RC__)
-    call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(2), __RC__)
-    Vect_Hcts=(/1.4, 2900.0, 1.3E-02, 2000.0/)
-    call ESMF_AttributeSet(field, 'SetofHenryLawCts', Vect_Hcts, __RC__)
-    call ESMF_StateGet (internal, 'MSA', field, __RC__)
-    call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(4), __RC__)
+    if (.not. data_driven) then
+       call ESMF_StateGet (internal, 'DMS', field, __RC__)
+       call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(1), __RC__)
+!       Vect_Hcts=(/0.56, 3500.0, 0.0, 0.0/)
+       call get_HenrysLawCts('DMS',Vect_Hcts(1),Vect_Hcts(2),Vect_Hcts(3),Vect_Hcts(4),__RC__)
+       call ESMF_AttributeSet(field, 'SetofHenryLawCts', Vect_Hcts, __RC__)
+
+       call ESMF_StateGet (internal, 'SO2', field, __RC__)
+       call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(2), __RC__)
+!       Vect_Hcts=(/1.4, 2900.0, 1.3E-02, 2000.0/)
+       call get_HenrysLawCts('SO2',Vect_Hcts(1),Vect_Hcts(2),Vect_Hcts(3),Vect_Hcts(4),__RC__)
+       call ESMF_AttributeSet(field, 'SetofHenryLawCts', Vect_Hcts, __RC__)
+
+       call ESMF_StateGet (internal, 'MSA', field, __RC__)
+       call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(4), __RC__)
+    end if
 
 !   Fill AERO State with SO4
 !   ----------------------------------------
     call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO'    , aero    , __RC__)
     call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO_ACI', aero_aci, __RC__)
     call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO_DP' , Bundle_DP, __RC__)
+
     call ESMF_StateGet (internal, 'SO4', field, __RC__)
     call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(3), __RC__)
+    fld = MAPL_FieldCreate (field, 'SO4', __RC__)
+    call MAPL_StateAdd (aero, fld, __RC__)
+    call MAPL_StateAdd (aero_aci, fld, __RC__)
 
     if (data_driven) then
        instance = instanceData
@@ -591,9 +656,9 @@ if(mapl_am_i_root()) print*,'SU2G INIT sum(MSA) = ',sum(msa)
     mieTable_pointer = transfer(c_loc(self), [1])
     call ESMF_AttributeSet(aero, name='mieTable_pointer', valueList=mieTable_pointer, itemCount=size(mieTable_pointer), __RC__)
 
-!    call ESMF_AttributeSet(aero, name='internal_varaible_name', value='SS', __RC__)
+    call ESMF_AttributeSet(aero, name='internal_varaible_name', value='SO4', __RC__)
 
-!    call ESMF_MethodAdd(AERO, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
+    call ESMF_MethodAdd(AERO, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
 
 
 if(mapl_am_i_root()) print*,trim(comp_name),'2G Init END'
@@ -654,11 +719,11 @@ if(mapl_am_i_root()) print*,trim(comp_name),'2G Init END'
 
 !   Update INTERNAL state variables with ExtData
 !   ---------------------------------------------
-!    if (data_driven) then
-!       call Run_data (GC, import, export, internal, __RC__)
-!    else
+    if (data_driven) then
+       call Run_data (GC, import, export, internal, __RC__)
+    else
        call Run1 (GC, import, export, clock, __RC__)
-!    end if
+    end if
 
     RETURN_(ESMF_SUCCESS)
 
@@ -709,8 +774,6 @@ if(mapl_am_i_root()) print*,trim(comp_name),'2G Init END'
     logical :: useVolcanicDailyTables = .false.
     real :: so2volcano
 
-  real, parameter :: radToDeg = 57.2957795
-
 
 #include "SU2G_DeclarePointer___.h"
 
@@ -738,10 +801,10 @@ if(mapl_am_i_root()) print*,trim(comp_name),'2G Run1 BEGIN'
 
 #include "SU2G_GetPointer___.h"
 
-if(mapl_am_i_root()) print*,'SU2G Run1 B sum(SO2) = ',sum(SO2)
-if(mapl_am_i_root()) print*,'SU2G Run1 B sum(SO4) = ',sum(SO4)
-if(mapl_am_i_root()) print*,'SU2G Run1 B sum(DMS) = ',sum(DMS)
-if(mapl_am_i_root()) print*,'SU2G Run1 B sum(MSA) = ',sum(MSA)
+!if(mapl_am_i_root()) print*,'SU2G Run1 B sum(SO2) = ',sum(SO2)
+!if(mapl_am_i_root()) print*,'SU2G Run1 B sum(SO4) = ',sum(SO4)
+!if(mapl_am_i_root()) print*,'SU2G Run1 B sum(DMS) = ',sum(DMS)
+!if(mapl_am_i_root()) print*,'SU2G Run1 B sum(MSA) = ',sum(MSA)
 
 
 !   Get my private internal state
@@ -826,8 +889,6 @@ if(mapl_am_i_root()) print*,'SU2G Run1 B sum(MSA) = ',sum(MSA)
                                 grid = grid,               &
                                 lon  = self%vLon/real(MAPL_RADIANS_TO_DEGREES), &
                                 lat  = self%vLat/real(MAPL_RADIANS_TO_DEGREES), &
-!                                lon  = self%vLon/radTodeg, &
-!                                lat  = self%vLat/radTodeg, &
                                 rc   = status)
            if ( status /= 0 ) then
               if (mapl_am_i_root()) print*, trim(Iam), ' - cannot get indices for point emissions'
@@ -848,6 +909,9 @@ if(mapl_am_i_root()) print*,'SU2G Run1 B sum(MSA) = ',sum(MSA)
                                  nhms, self%cdt)
     end if
 
+if(mapl_am_i_root()) print*,'SU2G nVolc = ',self%nVolc
+if(mapl_am_i_root()) print*,'SU2G sum(vSO2) = ',sum(self%vSO2)
+
 !   Apply sulfate emissions
 !   -----------------------
     call SulfateDistributeEmissions ( self%km, self%nbins, self%cdt, chemgrav, nymd, nhms, &
@@ -867,20 +931,20 @@ if(mapl_am_i_root()) print*,'SU2G Run1 B sum(MSA) = ',sum(MSA)
                                       aviation_crs_src, rc) 
 
 
-if(mapl_am_i_root()) print*,'SU2G sum(SUEM(:,:,nSO2)) = ',sum(SUEM(:,:,nSO2))
-if(mapl_am_i_root()) print*,'SU2G sum(SUEM(:,:,nSO4)) = ',sum(SUEM(:,:,nSO4))
-if(mapl_am_i_root()) print*,'SU2G sum(SO4EMAN) = ',sum(SO4EMAN)
-if(mapl_am_i_root()) print*,'SU2G sum(SO2EMAN) = ',sum(SO2EMAN)
-if(mapl_am_i_root()) print*,'SU2G sum(SO2EMBB) = ',sum(SO2EMBB)
-if(mapl_am_i_root()) print*,'SU2G sum(SO4) = ',sum(SO4)
+!if(mapl_am_i_root()) print*,'SU2G sum(SUEM(:,:,nSO2)) = ',sum(SUEM(:,:,nSO2))
+!if(mapl_am_i_root()) print*,'SU2G sum(SUEM(:,:,nSO4)) = ',sum(SUEM(:,:,nSO4))
+!if(mapl_am_i_root()) print*,'SU2G sum(SO4EMAN) = ',sum(SO4EMAN)
+!if(mapl_am_i_root()) print*,'SU2G sum(SO2EMAN) = ',sum(SO2EMAN)
+!if(mapl_am_i_root()) print*,'SU2G sum(SO2EMBB) = ',sum(SO2EMBB)
+!if(mapl_am_i_root()) print*,'SU2G sum(SO4) = ',sum(SO4)
 
 
     if (associated(dms)) then ! NEED TO PUT IN CHECK IF DMS IS INCLUDED IN INTERNAL STATE
        call DMSemission (self%km, self%cdt, chemgrav, t, u10m, v10m, lwi, delp, &
                          fMassDMS, SU_DMSO, dms, SUEM, ndms, rc)
     end if
-if(mapl_am_i_root()) print*,'SU2G sum(dms) = ',sum(dms)
-if(mapl_am_i_root()) print*,'SU2G sum(SUEM(:,:,nDMS)) = ',sum(SUEM(:,:,nDMS))
+!if(mapl_am_i_root()) print*,'SU2G sum(dms) = ',sum(dms)
+!if(mapl_am_i_root()) print*,'SU2G sum(SUEM(:,:,nDMS)) = ',sum(SUEM(:,:,nDMS))
 
 
 !   Read any pointwise emissions, if requested
@@ -919,7 +983,8 @@ if(mapl_am_i_root()) print*,'SU2G sum(SUEM(:,:,nDMS)) = ',sum(SUEM(:,:,nDMS))
         SO4 = SO4 + self%cdt * MAPL_GRAV / delp * emissions_point
      end if
 
-
+!if(mapl_am_i_root()) print*,'SU2G Run1 E sum(SO2) = ',sum(SO2)
+!if(mapl_am_i_root()) print*,'SU2G Run1 E sum(SO4) = ',sum(SO4)
 
 if(mapl_am_i_root()) print*,trim(comp_name),'2G Run1 END'
 
@@ -1006,9 +1071,6 @@ if(mapl_am_i_root()) print*,trim(comp_name),'2G Run2 BEGIN'
     call ESMF_TimeGet (time ,YY=iyr, MM=imm, DD=idd, H=ihr, M=imn, S=isc, __RC__)
     call MAPL_PackTime (nymd, iyr, imm , idd)
     call MAPL_PackTime (nhms, ihr, imn, isc)
-!do n=1,5
-!   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 B SS2G sum(ss00n) = ',sum(SS(:,:,:,n))
-!end do
 
 !   Get my private internal state
 !   ------------------------------
@@ -1016,10 +1078,10 @@ if(mapl_am_i_root()) print*,trim(comp_name),'2G Run2 BEGIN'
     VERIFY_(STATUS)
     self => wrap%ptr
 
-if(mapl_am_i_root()) print*,'SU2G before self%recycle_h2o2 = ', self%recycle_h2o2
+!if(mapl_am_i_root()) print*,'SU2G before self%recycle_h2o2 = ', self%recycle_h2o2
     call ESMF_ClockGetAlarm(clock, 'H2O2_RECYCLE_ALARM', alarm, __RC__)
     self%recycle_h2o2 = ESMF_AlarmIsRinging(alarm, __RC__)
-if(mapl_am_i_root()) print*,'SU2G after self%recycle_h2o2 = ', self%recycle_h2o2
+!if(mapl_am_i_root()) print*,'SU2G after self%recycle_h2o2 = ', self%recycle_h2o2
 
 !   Get oxidant pointers from specified provider
 !   ----------------------------------------------
@@ -1041,12 +1103,14 @@ if(mapl_am_i_root()) print*,'SU2G after self%recycle_h2o2 = ', self%recycle_h2o2
 
     xh2o2 = self%h2o2_init 
 
+if(mapl_am_i_root()) print*,'SU2G Run2 B sum(SO4) = ',sum(SO4)
+
 !if(mapl_am_i_root()) print*,'SU2G MAPL_UNDEF = ', MAPL_UNDEF
 !if(mapl_am_i_root()) print*,'SU2G nymd = ',nymd
 !if(mapl_am_i_root()) print*,'SU2G nymd_oxidants = ',self%nymd_oxidants
 !if(mapl_am_i_root()) print*,'SU2G recycle_H2O2 = ',self%recycle_h2o2
 !if(mapl_am_i_root()) print*,'SU2G before sum(xh2o2) = ',sum(xh2o2)
-!if(mapl_am_i_root()) print*,'SU2G before sum(self%h2o2_init) = ',sum(self%h2o2_init)
+!if(mapl_am_i_root()) print*,'SU2G before sum(h2o2_init) = ',sum(self%h2o2_init)
 
     call SulfateUpdateOxidants (self%using_GMI_OH, self%using_GMI_NO3, self%using_GMI_H2O2, &
                                 nymd, nhms, LONS, LATS, &
@@ -1062,7 +1126,7 @@ if(mapl_am_i_root()) print*,'SU2G after self%recycle_h2o2 = ', self%recycle_h2o2
 !if(mapl_am_i_root()) print*,'SU2G after sum(xh2o2) = ',sum(xh2o2)
 !if(mapl_am_i_root()) print*,'SU2G after sum(self%h2o2_init) = ',sum(self%h2o2_init)
 
-
+if(mapl_am_i_root()) print*,'SU2G Run2 T1 sum(SO4) = ',sum(SO4)
 
 !   SU Settling
 !   -----------
@@ -1075,8 +1139,9 @@ if(mapl_am_i_root()) print*,'SU2G after self%recycle_h2o2 = ', self%recycle_h2o2
                                  rh2, zle, SUSD, rc=rc)
     end do
 
-    allocate(drydepositionf, mold=lwi, __STAT__)
+if(mapl_am_i_root()) print*,'SU2G Run2 T2 sum(SO4) = ',sum(SO4)
 
+    allocate(drydepositionf, mold=lwi, __STAT__)
 
     call SulfateChemDriver (self%km, self%cdt, MAPL_PI, real(MAPL_RADIANS_TO_DEGREES), MAPL_karman, &
                             airmw, nAvogadro, cpd, chemgrav, &
@@ -1084,7 +1149,7 @@ if(mapl_am_i_root()) print*,'SU2G after self%recycle_h2o2 = ', self%recycle_h2o2
                             nymd, nhms, lons, lats, &
                             dms, so2, so4, msa, &
                             nDMS, nSO2, nSO4, nMSA, &
-                            xoh, xno3, xh2o2, &
+                            xoh, xno3, xh2o2, self%h2o2_init, &
                             delp, t, fcld, airdens, zle, &
                             ustar, sh, lwi, zpbl, z0h, &
                             SUDP, SUPSO2, SUPMSA, &
@@ -1092,19 +1157,20 @@ if(mapl_am_i_root()) print*,'SU2G after self%recycle_h2o2 = ', self%recycle_h2o2
                             pso2, pmsa, pso4, pso4g, pso4aq, drydepositionf, & ! 3d diagnostics
                             rc)
 
-if(mapl_am_i_root()) print*,'SU2G sum(pso2) = ',sum(SUPSO2)
-if(mapl_am_i_root()) print*,'SU2G sum(pmsa) = ',sum(pmsa)
-if(mapl_am_i_root()) print*,'SU2G sum(SUPSO4) = ',sum(SUPSO4)
-if(mapl_am_i_root()) print*,'SU2G sum(SUPSO4g) = ',sum(SUPSO4g)
-if(mapl_am_i_root()) print*,'SU2G sum(SUPSO4aq) = ',sum(SUPSO4aq)
-if(mapl_am_i_root()) print*,'SU2G sum(SO4) = ',sum(SO4)
-if(mapl_am_i_root()) print*,'SU2G sum(MSA) = ',sum(MSA)
+if(mapl_am_i_root()) print*,'SU2G Run2 T3 sum(SO4) = ',sum(SO4)
 
-if(mapl_am_i_root()) print*,'SU2G DMS sum(SUDP) = ',sum(SUDP(:,:,1))
-if(mapl_am_i_root()) print*,'SU2G SO2 sum(SUDP) = ',sum(SUDP(:,:,2))
-if(mapl_am_i_root()) print*,'SU2G SO4 sum(SUDP) = ',sum(SUDP(:,:,3))
-if(mapl_am_i_root()) print*,'SU2G MSA sum(SUDP) = ',sum(SUDP(:,:,4))
+!if(mapl_am_i_root()) print*,'SU2G sum(pso2) = ',sum(SUPSO2)
+!if(mapl_am_i_root()) print*,'SU2G sum(pmsa) = ',sum(pmsa)
+!if(mapl_am_i_root()) print*,'SU2G sum(SUPSO4) = ',sum(SUPSO4)
+!if(mapl_am_i_root()) print*,'SU2G sum(SUPSO4g) = ',sum(SUPSO4g)
+!if(mapl_am_i_root()) print*,'SU2G sum(SUPSO4aq) = ',sum(SUPSO4aq)
+!if(mapl_am_i_root()) print*,'SU2G sum(SO4) = ',sum(SO4)
+!if(mapl_am_i_root()) print*,'SU2G sum(MSA) = ',sum(MSA)
 
+!if(mapl_am_i_root()) print*,'SU2G DMS sum(SUDP) = ',sum(SUDP(:,:,1))
+!if(mapl_am_i_root()) print*,'SU2G SO2 sum(SUDP) = ',sum(SUDP(:,:,2))
+!if(mapl_am_i_root()) print*,'SU2G SO4 sum(SUDP) = ',sum(SUDP(:,:,3))
+!if(mapl_am_i_root()) print*,'SU2G MSA sum(SUDP) = ',sum(SUDP(:,:,4))
 
     KIN = .true.
     call SU_Wet_Removal ( self%km, self%nbins, self%cdt, kin, chemgrav, airMW, &
@@ -1113,16 +1179,17 @@ if(mapl_am_i_root()) print*,'SU2G MSA sum(SUDP) = ',sum(SUDP(:,:,4))
                           nDMS, nSO2, nSO4, nMSA, DMS, SO2, SO4, MSA, &
                           SUWT, SUPSO4, SUPSO4WT, PSO4, PSO4WET, rc )
 
-if(mapl_am_i_root()) print*,'SU2G n=1 sum(SUWT) = ',sum(SUWT(:,:,1))
-if(mapl_am_i_root()) print*,'SU2G n=2 sum(SUWT) = ',sum(SUWT(:,:,2))
-if(mapl_am_i_root()) print*,'SU2G n=3 sum(SUWT) = ',sum(SUWT(:,:,3))
-if(mapl_am_i_root()) print*,'SU2G n=4 sum(SUWT) = ',sum(SUWT(:,:,4))
+!if(mapl_am_i_root()) print*,'SU2G n=1 sum(SUWT) = ',sum(SUWT(:,:,1))
+!if(mapl_am_i_root()) print*,'SU2G n=2 sum(SUWT) = ',sum(SUWT(:,:,2))
+!if(mapl_am_i_root()) print*,'SU2G n=3 sum(SUWT) = ',sum(SUWT(:,:,3))
+!if(mapl_am_i_root()) print*,'SU2G n=4 sum(SUWT) = ',sum(SUWT(:,:,4))
 
-if(mapl_am_i_root()) print*,'SU2G sum(SUPSO4) = ',sum(SUPSO4)
-if(mapl_am_i_root()) print*,'SU2G sum(SUPSO4WT) = ',sum(SUPSO4WT)
-if(mapl_am_i_root()) print*,'SU2G sum(PSO4) = ',sum(PSO4)
-if(mapl_am_i_root()) print*,'SU2G sum(PSO4WET) = ',sum(PSO4WET)
+!if(mapl_am_i_root()) print*,'SU2G sum(SUPSO4) = ',sum(SUPSO4)
+!if(mapl_am_i_root()) print*,'SU2G sum(SUPSO4WT) = ',sum(SUPSO4WT)
+!if(mapl_am_i_root()) print*,'SU2G sum(PSO4) = ',sum(PSO4)
+!if(mapl_am_i_root()) print*,'SU2G sum(PSO4WET) = ',sum(PSO4WET)
 
+if(mapl_am_i_root()) print*,'SU2G Run2 T4 sum(SO4) = ',sum(SO4)
 
     call SU_Compute_Diags ( self%km, self%radius(nSO4), self%sigma(nSO4), self%rhop(nSO4), &
                             chemgrav, MAPL_pi, nSO4, self%diag_MieTable(self%instance), &
@@ -1136,26 +1203,29 @@ if(mapl_am_i_root()) print*,'SU2G sum(PSO4WET) = ',sum(PSO4WET)
                             SUSCACOEF, SUANGSTR, SUFLUXU, SUFLUXV, SO4SAREA, SO4SNUM, rc)
 
 
-if(mapl_am_i_root()) print*,'SU2G sum(DMSSMASS)',sum(DMSSMASS)
-if(mapl_am_i_root()) print*,'SU2G sum(DMSCMASS)',sum(DMSCMASS)
-if(mapl_am_i_root()) print*,'SU2G sum(MSASMASS)',sum(MSASMASS)
-if(mapl_am_i_root()) print*,'SU2G sum(MSACMASS)',sum(MSACMASS)
-if(mapl_am_i_root()) print*,'SU2G sum(SO2SMASS)',sum(SO2SMASS)
-if(mapl_am_i_root()) print*,'SU2G sum(SO2CMASS)',sum(SO2CMASS)
-if(mapl_am_i_root()) print*,'SU2G sum(SO4CMASS)',sum(SO4CMASS)
-if(mapl_am_i_root()) print*,'SU2G sum(SO4SMASS)',sum(SO4SMASS)
-if(mapl_am_i_root()) print*,'SU2G sum(SUEXTTAU)',sum(SUEXTTAU)
-if(mapl_am_i_root()) print*,'SU2G sum(SUSCATAU)',sum(SUSCATAU)
-if(mapl_am_i_root()) print*,'SU2G sum(SO4MASS)',sum(SO4MASS)
-if(mapl_am_i_root()) print*,'SU2G sum(SUCONC)',sum(SUCONC)
-if(mapl_am_i_root()) print*,'SU2G sum(SUEXTCOEF)',sum(SUEXTCOEF)
-if(mapl_am_i_root()) print*,'SU2G sum(SUSCACOEF)',sum(SUSCACOEF)
-if(mapl_am_i_root()) print*,'SU2G sum(SUANGSTR)',sum(SUANGSTR)
-if(mapl_am_i_root()) print*,'SU2G sum(SUFLUXU)',sum(SUFLUXU)
-if(mapl_am_i_root()) print*,'SU2G sum(SUFLUXV)',sum(SUFLUXV)
-if(mapl_am_i_root()) print*,'SU2G sum(SO4SAREA)',sum(SO4SAREA)
-if(mapl_am_i_root()) print*,'SU2G sum(SO4SNUM)',sum(SO4SNUM)
+!if(mapl_am_i_root()) print*,'SU2G sum(DMSSMASS)',sum(DMSSMASS)
+!if(mapl_am_i_root()) print*,'SU2G sum(DMSCMASS)',sum(DMSCMASS)
+!if(mapl_am_i_root()) print*,'SU2G sum(MSASMASS)',sum(MSASMASS)
+!if(mapl_am_i_root()) print*,'SU2G sum(MSACMASS)',sum(MSACMASS)
+!if(mapl_am_i_root()) print*,'SU2G sum(SO2SMASS)',sum(SO2SMASS)
+!if(mapl_am_i_root()) print*,'SU2G sum(SO2CMASS)',sum(SO2CMASS)
+!if(mapl_am_i_root()) print*,'SU2G sum(SO4CMASS)',sum(SO4CMASS)
+!if(mapl_am_i_root()) print*,'SU2G sum(SO4SMASS)',sum(SO4SMASS)
+!if(mapl_am_i_root()) print*,'SU2G sum(SUEXTTAU)',sum(SUEXTTAU)
+!if(mapl_am_i_root()) print*,'SU2G sum(SUSCATAU)',sum(SUSCATAU)
+!if(mapl_am_i_root()) print*,'SU2G sum(SO4MASS)',sum(SO4MASS)
+!if(mapl_am_i_root()) print*,'SU2G sum(SUCONC)',sum(SUCONC)
+!if(mapl_am_i_root()) print*,'SU2G sum(SUEXTCOEF)',sum(SUEXTCOEF)
+!if(mapl_am_i_root()) print*,'SU2G sum(SUSCACOEF)',sum(SUSCACOEF)
+!if(mapl_am_i_root()) print*,'SU2G sum(SUANGSTR)',sum(SUANGSTR)
+!if(mapl_am_i_root()) print*,'SU2G sum(SUFLUXU)',sum(SUFLUXU)
+!if(mapl_am_i_root()) print*,'SU2G sum(SUFLUXV)',sum(SUFLUXV)
+!if(mapl_am_i_root()) print*,'SU2G sum(SO4SAREA)',sum(SO4SAREA)
+!if(mapl_am_i_root()) print*,'SU2G sum(SO4SNUM)',sum(SO4SNUM)
 
+
+if(mapl_am_i_root()) print*,'SU2G Run2 E sum(SO2) = ',sum(SO2)
+if(mapl_am_i_root()) print*,'SU2G Run2 E sum(SO4) = ',sum(SO4)
 
 if(mapl_am_i_root()) print*,trim(comp_name),'2G Run2 END'
 
@@ -1183,6 +1253,65 @@ if(mapl_am_i_root()) print*,trim(comp_name),'2G Run2 END'
 
 
   end subroutine Run2
+
+!============================================================================
+!BOP
+! !IROUTINE: Run_data -- ExtData Sea Salt Grid Component
+
+! !INTERFACE:
+
+  subroutine Run_data (GC, IMPORT, EXPORT, INTERNAL, RC)
+
+    ! !ARGUMENTS:
+
+    type (ESMF_GridComp), intent(inout) :: GC       ! Gridded component 
+    type (ESMF_State),    intent(inout) :: IMPORT   ! Import state
+    type (ESMF_State),    intent(inout) :: EXPORT   ! Export state
+    type (ESMF_State),    intent(inout) :: INTERNAL ! Interal state
+    integer, optional,    intent(  out) :: RC       ! Error code:
+
+! !DESCRIPTION: Updates pointers in Internal state with fields from ExtData. 
+
+!EOP
+!============================================================================
+! Locals
+    character (len=ESMF_MAXSTR)        :: COMP_NAME
+    type (MAPL_MetaComp), pointer      :: MAPL
+    type (ESMF_State)                  :: aero
+    type (wrap_)                       :: wrap
+    type (SU2G_GridComp), pointer      :: self
+
+    real, pointer, dimension(:,:,:)  :: ptr3d_int, ptr3d_imp
+
+    __Iam__('Run_data')
+
+!*****************************************************************************
+! Begin... 
+
+! Get my name and set-up traceback handle
+! ---------------------------------------
+    call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
+    Iam = trim(COMP_NAME) //'::'//Iam
+
+if (mapl_am_I_root()) print*,trim(comp_name),' Run_data BEGIN'
+
+!   Get my private internal state
+!   ------------------------------
+    call ESMF_UserCompGetInternalState(GC, 'SU2G_GridComp', wrap, STATUS)
+    VERIFY_(STATUS)
+    self => wrap%ptr
+
+!   Update interal data pointers with ExtData
+!   -----------------------------------------
+    call MAPL_GetPointer (internal, NAME='SO4', ptr=ptr3d_int, __RC__)
+    call MAPL_GetPointer (import, NAME='climSO4', ptr=ptr3d_imp, __RC__)
+    ptr3d_int = ptr3d_imp
+
+if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
+
+    RETURN_(ESMF_SUCCESS)
+
+  end subroutine Run_data
 
 
 !-----------------------------------------------------------------------------------
@@ -1253,10 +1382,172 @@ if(mapl_am_i_root()) print*,trim(comp_name),'2G Run2 END'
   end subroutine GetVolcDailyTables
 
 
+!-------------------------------------------------------------------------------------
+  subroutine aerosol_optics(state, rc)
+
+    implicit none
+
+!   !ARGUMENTS:
+    type (ESMF_State)                                :: state
+    integer,            intent(out)                  :: rc
+
+!   !Local
+    integer, parameter                               :: DP=kind(1.0d0)
+    real, dimension(:,:,:), pointer                  :: ple, rh
+    real(kind=DP), dimension(:,:,:), pointer         :: var
+    real, dimension(:,:,:), pointer                  :: q
+    real, dimension(:,:,:,:), pointer                :: q_4d
+    integer, allocatable                             :: opaque_self(:)
+    type(C_PTR)                                      :: address
+    type(SU2G_GridComp), pointer                     :: self
+
+    character (len=ESMF_MAXSTR)                      :: fld_name
+    type(ESMF_Field)                                 :: fld
+    character (len=ESMF_MAXSTR),allocatable          :: aerosol_names(:)
+
+    real(kind=DP), dimension(:,:,:), allocatable     :: ext_s, ssa_s, asy_s  ! (lon:,lat:,lev:)
+    real                                             :: x
+    integer                                          :: instance
+    integer                                          :: n, nbins, dims(4)
+    integer                                          :: i1, j1, i2, j2, km
+    integer                                          :: band, offset
+    integer, parameter                               :: n_bands = 1
+
+    integer :: i, j, k
+
+    __Iam__('SU2G::aerosol_optics')
+
+!   Begin... 
+
+!   Mie Table instance/index
+!   ------------------------
+    call ESMF_AttributeGet(state, name='mie_table_instance', value=instance, __RC__)
+
+!   Get aerosol names
+!   -----------------
+    call ESMF_AttributeGet (state, name='internal_varaible_name', itemCount=nbins, __RC__)
+    allocate (aerosol_names(nbins), __STAT__)
+    call ESMF_AttributeGet (state, name='internal_varaible_name', valueList=aerosol_names, __RC__)
+
+!   Radiation band
+!   --------------
+    band = 0
+    call ESMF_AttributeGet(state, name='band_for_aerosol_optics', value=band, __RC__)
+    offset = band - n_bands
+
+!   Pressure at layer edges 
+!   ------------------------
+    call ESMF_AttributeGet(state, name='air_pressure_for_aerosol_optics', value=fld_name, __RC__)
+    call MAPL_GetPointer(state, ple, trim(fld_name), __RC__)
+
+!    call MAPL_GetPointer (state, ple, 'PLE', __RC__)
+
+    i1 = lbound(ple, 1); i2 = ubound(ple, 1)
+    j1 = lbound(ple, 2); j2 = ubound(ple, 2)
+                         km = ubound(ple, 3)
+
+!   Relative humidity
+!   -----------------
+    call ESMF_AttributeGet(state, name='relative_humidity_for_aerosol_optics', value=fld_name, __RC__)
+    call MAPL_GetPointer(state, rh, trim(fld_name), __RC__)
+
+!    call MAPL_GetPointer (state, rh, 'RH2', __RC__)
+
+    allocate(ext_s(i1:i2, j1:j2, km), &
+             ssa_s(i1:i2, j1:j2, km), &
+             asy_s(i1:i2, j1:j2, km), __STAT__)
+
+    allocate(q_4d(i1:i2, j1:j2, km, nbins), __STAT__)
+
+    do n = 1, nbins
+       call ESMF_StateGet (state, trim(aerosol_names(n)), field=fld, __RC__)
+       call ESMF_FieldGet (fld, farrayPtr=q, __RC__)
+
+        do k = 1, km
+           do j = j1, j2
+              do i = i1, i2
+                 x = ((ple(i,j,k) - ple(i,j,k-1))*0.01)*(100./MAPL_GRAV)
+                 q_4d(i,j,k,n) = x * q(i,j,k)
+              end do
+           end do
+        end do
+    end do
+
+    call ESMF_AttributeGet(state, name='mieTable_pointer', itemCount=n, __RC__)
+    allocate (opaque_self(n), __STAT__)
+    call ESMF_AttributeGet(state, name='mieTable_pointer', valueList=opaque_self, __RC__)
+
+    address = transfer(opaque_self, address)
+    call c_f_pointer(address, self)
+
+    call mie_ (self%rad_MieTable(instance), nbins, n_bands, offset, q_4d, rh, ext_s, ssa_s, asy_s, __RC__)
+
+    call ESMF_AttributeGet(state, name='extinction_in_air_due_to_ambient_aerosol', value=fld_name, __RC__)
+    if (fld_name /= '') then
+        call MAPL_GetPointer(state, var, trim(fld_name), __RC__)
+        var = ext_s(:,:,:)
+    end if
+
+    call ESMF_AttributeGet(state, name='single_scattering_albedo_of_ambient_aerosol', value=fld_name, __RC__)
+    if (fld_name /= '') then
+        call MAPL_GetPointer(state, var, trim(fld_name), __RC__)
+        var = ssa_s(:,:,:)
+    end if
+
+   call ESMF_AttributeGet(state, name='asymmetry_parameter_of_ambient_aerosol', value=fld_name, __RC__)
+    if (fld_name /= '') then
+        call MAPL_GetPointer(state, var, trim(fld_name), __RC__)
+        var = asy_s(:,:,:)
+    end if
+
+    deallocate(ext_s, ssa_s, asy_s, __STAT__)
+
+    RETURN_(ESMF_SUCCESS)
+
+  contains
+
+!    subroutine mie_(mie_table, aerosol_names, nb, offset, q, rh, bext_s, bssa_s, basym_s, rc)
+    subroutine mie_(mie_table, nbins, nb, offset, q, rh, bext_s, bssa_s, basym_s, rc)
+
+    implicit none
+
+    type(Chem_Mie),                intent(inout) :: mie_table        ! mie table
+    integer,                       intent(in   ) :: nbins            ! number of bins
+    integer,                       intent(in )   :: nb               ! number of bands
+    integer,                       intent(in )   :: offset           ! bands offset 
+    real,                          intent(in )   :: q(:,:,:,:)       ! aerosol mass mixing ratio, kg kg-1
+    real,                          intent(in )   :: rh(:,:,:)        ! relative humidity
+    real(kind=8), intent(  out) :: bext_s (size(ext_s,1),size(ext_s,2),size(ext_s,3))
+    real(kind=8), intent(  out) :: bssa_s (size(ext_s,1),size(ext_s,2),size(ext_s,3))
+    real(kind=8), intent(  out) :: basym_s(size(ext_s,1),size(ext_s,2),size(ext_s,3))
+    integer,           intent(out)  :: rc
+    ! local
+    integer                           :: l
+    real                              :: bext (size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! extinction
+    real                              :: bssa (size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! SSA
+    real                              :: gasym(size(ext_s,1),size(ext_s,2),size(ext_s,3))  ! asymmetry parameter
 
 
+    __Iam__('SU2G::aerosol_optics::mie_')
 
+     bext_s  = 0.0d0
+     bssa_s  = 0.0d0
+     basym_s = 0.0d0
 
+    do l = 1, nbins
+       call Chem_MieQuery(mie_table, l, real(offset+1.), q(:,:,:,l), rh, bext, gasym=gasym, ssa=bssa)
+
+       bext_s  = bext_s  +             bext     ! extinction
+       bssa_s  = bssa_s  +       (bssa*bext)    ! scattering extinction
+       basym_s = basym_s + gasym*(bssa*bext)    ! asymetry parameter multiplied by scatering extiction 
+
+    end do
+
+    RETURN_(ESMF_SUCCESS)
+
+    end subroutine mie_
+
+  end subroutine aerosol_optics
 
 end module SU2G_GridCompMod
 
