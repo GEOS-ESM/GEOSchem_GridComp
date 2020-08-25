@@ -15,7 +15,7 @@ module DU2G_GridCompMod
    use Chem_AeroGeneric
    use iso_c_binding, only: c_loc, c_f_pointer, c_ptr
 
-   use Chem_UtilMod          
+   use Chem_UtilMod, only: Chem_UtilPointEmissions 
    use GOCART2G_Process       ! GOCART2G process library
    use GA_GridCompMod
    
@@ -32,12 +32,13 @@ module DU2G_GridCompMod
 ! !DESCRIPTION: This module implements GOCART's Dust (DU) Gridded Component.
 
 ! !REVISION HISTORY:
-! 16Oct2019  Sherman, da Silva, Darmenov, Clune -  First attempt at refactoring.
+! 16Oct2019  Sherman, da Silva, Darmenov, Clune -  First attempt at refactoring
 
 !EOP
 !===========================================================================
 
-   integer, parameter         :: NHRES = 6  ! DEV NOTE!!! should this be allocatable, and not a parameter?
+   integer, parameter         :: NHRES = 6
+
 !  !Dust state
    type, extends(GA_GridComp) :: DU2G_GridComp
        real, allocatable      :: sfrac(:)       ! fraction of total source
@@ -89,18 +90,15 @@ contains
 
 !
 !   !Locals
-    character (len=ESMF_MAXSTR)                 :: COMP_NAME
-    type (ESMF_Config)                          :: cfg
-    type (wrap_)                                :: wrap
-    type (DU2G_GridComp), pointer               :: self
-    type (Chem_Mie)                             :: this
+    character (len=ESMF_MAXSTR)        :: COMP_NAME
+    type (ESMF_Config)                 :: cfg
+    type (wrap_)                       :: wrap
+    type (DU2G_GridComp), pointer      :: self
 
-    character (len=ESMF_MAXSTR)                 :: field_name
-    character (len=ESMF_MAXSTR), allocatable    :: aerosol_names(:)
-
-    integer                                     :: n, i, nCols, nbins
-    real                                        :: DEFVAL
-    logical                                     :: data_driven = .true.
+    character (len=ESMF_MAXSTR)        :: field_name
+    integer                            :: i
+    real                               :: DEFVAL
+    logical                            :: data_driven = .true.
 
     __Iam__('SetServices')
 
@@ -111,9 +109,6 @@ contains
 !   ---------------------------------------
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) //'::'// Iam
-
-if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAME)
-
 
 !   Wrap internal state for storing in GC
 !   -------------------------------------
@@ -271,7 +266,6 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
 !   This bundle is needed by surface for snow albedo modification
 !   by aerosol settling and deposition
 !   ~~~DEVELOPERS NOTE~~~ Change to StateItem when possible
-!                         This will require refactoring Radiation
 !   ---------------------------------------------------------------
     call MAPL_AddExportSpec (GC,                                  &
        short_name = trim(COMP_NAME)//'_AERO_DP',                                    &
@@ -280,11 +274,10 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
        dims       = MAPL_DimsHorzOnly,                            &
        datatype   = MAPL_BundleItem, __RC__)
 
-
-!  Store internal state in GC
-!  --------------------------
-   call ESMF_UserCompSetInternalState ( GC, 'DU2G_GridComp', wrap, STATUS )
-   VERIFY_(STATUS)
+!   Store internal state in GC
+!   --------------------------
+    call ESMF_UserCompSetInternalState ( GC, 'DU2G_GridComp', wrap, STATUS )
+    VERIFY_(STATUS)
 
 !   Set generic services
 !   ----------------------------------
@@ -313,7 +306,7 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
 !               GOCART's AERO states with its dust fields. 
 
 ! !REVISION HISTORY: 
-! 16oct2019   E.Sherman  First attempt at refactoring
+! 16oct2019  E.Sherman, A.da Silva, T.Clune, A.Darmenov - First attempt at refactoring
 
 !EOP
 !============================================================================
@@ -330,7 +323,7 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
     type (DU2G_GridComp), pointer        :: self
 
     integer, allocatable                 :: mieTable_pointer(:)
-    integer                              :: i, nbins, nCols, dims(3), km
+    integer                              :: i, dims(3), km
     integer                              :: instance
     type (ESMF_Field)                    :: field, fld
     character (len=ESMF_MAXSTR)          :: bin_index, prefix
@@ -341,8 +334,6 @@ if (mapl_am_I_root()) print*,' test DU2G SetServices COMP_NAME = ',trim(COMP_NAM
 
     logical                              :: data_driven
     integer                              :: NUM_BANDS
-
-real,pointer :: duptr(:,:,:,:)
 
     __Iam__('Initialize')
 
@@ -401,11 +392,6 @@ if(mapl_am_i_root()) print*,'DU2G Init BEGIN'
 !   Get parameters from generic state.
 !   -----------------------------------
     call MAPL_Get (MAPL, INTERNAL_ESMF_STATE=internal, __RC__)
-
-!call MAPL_GetPointer(internal, duptr, 'DU', __RC__)
-!do i=1,5
-!  if(mapl_am_i_root()) print*,'DU2G sum(DU at i) = ',sum(duptr(:,:,:,i))
-!end do
 
 !   Is DU data driven?
 !   ------------------
@@ -639,15 +625,13 @@ if(mapl_am_i_root()) print*,'DU2G Run BEGIN'
     type (DU2G_GridComp), pointer     :: self
     type(ESMF_Time)                   :: time
 
-    integer                             :: nymd, nhms, iyr, imm, idd, ihr, imn, isc
-    integer                             :: import_shape(2), i2, j2
-    real, pointer, dimension(:,:,:)     :: ptr3d_int
-    real, pointer, dimension(:,:)     :: emissions_surface
+    integer  :: nymd, nhms, iyr, imm, idd, ihr, imn, isc
+    integer  :: import_shape(2), i2, j2
+    real, dimension(:,:), pointer     :: emissions_surface
     real, dimension(:,:,:,:), allocatable :: emissions
-    real, dimension(:,:,:), allocatable :: emissions_point
+    real, dimension(:,:,:), allocatable   :: emissions_point
 
     integer, pointer, dimension(:)  :: iPoint, jPoint
-    integer :: i, n, kmin
     real, parameter ::  UNDEF  = 1.e15 
 
 
@@ -704,9 +688,9 @@ real, allocatable, dimension(:,:)     :: dqa
     emissions = 0.0
     allocate(emissions_point, mold=delp,  __STAT__)
     emissions_point = 0.0
-    allocate(emissions_surface(i2,j2), __STAT__)
+    allocate(emissions_surface(i2,j2), __STAT__) !if use mold, then crashes. Compiler issue?
     emissions_surface = 0.0
-    allocate(dqa(i2,j2), __STAT__)
+    allocate(dqa, mold=lwi, __STAT__)
 
 !   Get surface gridded emissions
 !   -----------------------------
@@ -804,7 +788,6 @@ real, allocatable, dimension(:,:)     :: dqa
 
     real, parameter ::  cpd    = 1004.16
 
-
 #include "DU2G_DeclarePointer___.h"
 
     __Iam__('Run2')
@@ -846,9 +829,6 @@ real, allocatable, dimension(:,:)     :: dqa
     i2 = import_shape(1)
     j2 = import_shape(2)
 
-!if(mapl_am_i_root()) print*, 'Run2 B DU2G sum(DU) = ',sum(DU)
-
-
 !   Dust Settling
 !   -----------
     do n = 1, self%nbins
@@ -879,13 +859,10 @@ real, allocatable, dimension(:,:)     :: dqa
    KIN = .TRUE.
    do n = 1, self%nbins
       fwet = 0.3
-
       call WetRemovalGOCART2G(self%km, self%nbins, self%nbins, n, self%cdt, 'dust', &
                               KIN, MAPL_GRAV, fwet, DU(:,:,:,n), ple, t, airdens, &
                               pfl_lsan, pfi_lsan, cn_prcp, ncn_prcp, DUWT, __RC__)
    end do
-
-!if(mapl_am_i_root()) print*, 'Run2 E DU2G sum(DU) = ',sum(DU)
 
    call Aero_Compute_Diags ( self%diag_MieTable(self%instance), self%km, 1, self%nbins, self%rlow, self%rup, &
                            self%diag_MieTable(self%instance)%channels, DU, MAPL_GRAV, t, airdens, &
@@ -893,8 +870,6 @@ real, allocatable, dimension(:,:)     :: dqa
                            DUSMASS25, DUCMASS25, DUMASS25, DUEXTT25, DUSCAT25, &
                            DUFLUXU, DUFLUXV, DUCONC, DUEXTCOEF, DUSCACOEF, &
                            DUEXTTFM, DUSCATFM, DUANGSTR, DUAERIDX, __RC__ )
-
-!if(mapl_am_i_root()) print*,'DU2G Run2 END'
 
     RETURN_(ESMF_SUCCESS)
 
@@ -905,11 +880,9 @@ real, allocatable, dimension(:,:)     :: dqa
 ! !IROUTINE: Run_data -- ExtData Dust Grid Component
 
 ! !INTERFACE:
-
   subroutine Run_data (GC, import, export, internal, RC)
 
     ! !ARGUMENTS:
-
     type (ESMF_GridComp), intent(inout) :: GC       ! Gridded component 
     type (ESMF_State),    intent(inout) :: import   ! Import state
     type (ESMF_State),    intent(inout) :: export   ! Export state
@@ -918,11 +891,8 @@ real, allocatable, dimension(:,:)     :: dqa
 
 ! !DESCRIPTION: Updates pointers in Internal state with fields from ExtData. 
 
-!EOP
-!============================================================================
 ! Locals
     character (len=ESMF_MAXSTR)        :: COMP_NAME
-    type (MAPL_MetaComp), pointer      :: MAPL
     type (wrap_)                       :: wrap
     type (DU2G_GridComp), pointer      :: self
 
@@ -934,7 +904,7 @@ real, allocatable, dimension(:,:)     :: dqa
 
     __Iam__('Run_data')
 
-
+!EOP
 !*****************************************************************************
 !   Begin... 
 
@@ -942,8 +912,6 @@ real, allocatable, dimension(:,:)     :: dqa
 !   ---------------------------------------
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) //'::'//Iam
-
-if (mapl_am_I_root()) print*,trim(comp_name),' Run_data BEGIN'
 
 !   Get my private internal state
 !   ------------------------------
@@ -962,12 +930,9 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data BEGIN'
         ptr4d_int(:,:,:,i) = ptr3d_imp
     end do
 
-if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
-
     RETURN_(ESMF_SUCCESS)
 
   end subroutine Run_data
-
 
 !-------------------------------------------------------------------------------------
   subroutine aerosol_optics(state, rc)
@@ -989,17 +954,16 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
 
     character (len=ESMF_MAXSTR)                      :: fld_name
     type(ESMF_Field)                                 :: fld
-    character (len=ESMF_MAXSTR)                      :: COMP_NAME
 
     real(kind=DP), dimension(:,:,:), allocatable     :: ext_s, ssa_s, asy_s  ! (lon:,lat:,lev:)
     real, dimension(:,:,:), allocatable              :: x
     integer                                          :: instance
-    integer                                          :: n, nbins, dims(4)
+    integer                                          :: n, nbins
     integer                                          :: i1, j1, i2, j2, km
     integer                                          :: band, offset
     integer, parameter                               :: n_bands = 1
 
-    integer :: i, j, k
+    integer :: k
 
     __Iam__('DU2G::aerosol_optics')
 
@@ -1038,7 +1002,7 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
              asy_s(i1:i2, j1:j2, km), &
                  x(i1:i2, j1:j2, km),__STAT__)
 
-    call ESMF_StateGet (state, 'DU', field=fld, __RC__) !add as attribute - dont hard code?
+    call ESMF_StateGet (state, 'DU', field=fld, __RC__)
     call ESMF_FieldGet (fld, farrayPtr=q, __RC__)
 
     nbins = size(q,4)

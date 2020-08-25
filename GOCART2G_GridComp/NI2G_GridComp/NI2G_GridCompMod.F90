@@ -15,7 +15,7 @@ module NI2G_GridCompMod
    use Chem_AeroGeneric
    use iso_c_binding, only: c_loc, c_f_pointer, c_ptr
 
-   use Chem_UtilMod
+!   use Chem_UtilMod
    use GOCART2G_Process       ! GOCART2G process library
    use GA_GridCompMod
 
@@ -92,16 +92,9 @@ contains
     type (ESMF_Config)                          :: cfg
     type (wrap_)                                :: wrap
     type (NI2G_GridComp), pointer               :: self
-    type (Chem_Mie)                             :: this
 
-    character (len=ESMF_MAXSTR)                 :: field_name
-
-    integer                                     :: n, i, nCols, nbins
     real                                        :: DEFVAL
     logical                                     :: data_driven=.true.
-
-    !development testing variables - to be deleted
-    real, dimension(:,:), pointer       :: ptr_test
 
     __Iam__('SetServices')
 
@@ -148,12 +141,61 @@ if(mapl_am_i_root()) print*,trim(comp_name),' SetServices BEGIN'
 
 !   Import and Internal states if data instance 
 !   -------------------------------------------
+    if (data_driven) then
+       call MAPL_AddInternalSpec(gc,&
+          & short_name='NO3an1', &
+          & long_name='Nitrate size bin 001', &
+          & units='kg kg-1', &
+          & dims=MAPL_DimsHorzVert, &
+          & vlocation=MAPL_VlocationCenter, &
+          & restart=MAPL_RestartOptional, &
+          & friendlyto='DYNAMICS:TURBULENCE:MOIST', &
+          & add2export=.true., __RC__)
 
-!    if (data_driven) then
+       call MAPL_AddInternalSpec(gc,&
+          & short_name='NO3an2', &
+          & long_name='Nitrate size bin 002', &
+          & units='kg kg-1', &
+          & dims=MAPL_DimsHorzVert, &
+          & vlocation=MAPL_VlocationCenter, &
+          & restart=MAPL_RestartOptional, &
+          & friendlyto='DYNAMICS:TURBULENCE:MOIST', &
+          & add2export=.true., __RC__)
 
-!    do mapl_add*spec
+       call MAPL_AddInternalSpec(gc,&
+          & short_name='NO3an3', &
+          & long_name='Nitrate size bin 003', &
+          & units='kg kg-1', &
+          & dims=MAPL_DimsHorzVert, &
+          & vlocation=MAPL_VlocationCenter, &
+          & restart=MAPL_RestartOptional, &
+          & friendlyto='DYNAMICS:TURBULENCE:MOIST', &
+          & add2export=.true., __RC__)
 
-!    end if ! (data_driven)
+       call MAPL_AddImportSpec(gc,&
+          short_name='climNO3an1', &
+          long_name='Nitrate size bin 001', &
+          units='kg kg-1', &
+          dims=MAPL_DimsHorzVert, &
+          vlocation=MAPL_VlocationCenter, &
+          restart=MAPL_RestartOptional, __RC__)
+
+       call MAPL_AddImportSpec(gc,&
+          short_name='climNO3an2', &
+          long_name='Nitrate size bin 002', &
+          units='kg kg-1', &
+          dims=MAPL_DimsHorzVert, &
+          vlocation=MAPL_VlocationCenter, &
+          restart=MAPL_RestartOptional, __RC__)
+
+       call MAPL_AddImportSpec(gc,&
+          short_name='climNO3an3', &
+          long_name='Nitrate size bin 003', &
+          units='kg kg-1', &
+          dims=MAPL_DimsHorzVert, &
+          vlocation=MAPL_VlocationCenter, &
+          restart=MAPL_RestartOptional, __RC__)
+    end if ! (data_driven)
 
 
 !   Import, Export, Internal states for computational instance 
@@ -251,10 +293,10 @@ if(mapl_am_i_root()) print*,trim(comp_name),' SetServices END'
     type (NI2G_GridComp), pointer        :: self
 
     integer, allocatable                 :: mieTable_pointer(:)
-    integer                              :: i, j, nbins, nCols, dims(3), km
+    integer                              :: i, dims(3), km
     integer                              :: instance
     type (ESMF_Field)                    :: field, fld
-    character (len=ESMF_MAXSTR)          :: field_name, prefix, ind
+    character (len=ESMF_MAXSTR)          :: prefix
     real                                 :: CDT         ! chemistry timestep (secs)
     integer                              :: HDT         ! model     timestep (secs)
 
@@ -272,8 +314,6 @@ if(mapl_am_i_root()) print*,trim(comp_name),' SetServices END'
     real, dimension(4)   :: Vect_Hcts
 !    real, allocatable, dimension(:) :: rmedDU, rmedSS, fnumDU, fnumSS
     integer :: itemCount
-
-real, pointer :: ssptr(:,:,:,:)
 
     __Iam__('Initialize')
 
@@ -304,9 +344,6 @@ if(mapl_am_i_root()) print*,trim(comp_name),' Init BEGIN'
     self%km = km
 
     allocate(self%xhno3(dims(1),dims(2),dims(3)), __STAT__)
-if(mapl_am_i_root())print*,'NI2G dims(1) = ',dims(1)
-if(mapl_am_i_root())print*,'NI2G dims(2) = ',dims(2)
-if(mapl_am_i_root())print*,'NI2G dims(3) = ',dims(3)
 
 !   Get DTs
 !   -------
@@ -334,26 +371,28 @@ if(mapl_am_i_root())print*,'NI2G dims(3) = ',dims(3)
 !   -----------------------------------
     call MAPL_Get ( mapl, INTERNAL_ESMF_STATE = internal, __RC__)
 
-!   Get DU and SS attribute information for use in heterogenous chemistry
-    call ESMF_StateGet(import, 'DU', field, __RC__)
-    call ESMF_AttributeGet(field, name='radius', itemCount=itemCount, __RC__)
-    allocate(self%rmedDU(itemCount), __STAT__)
-    allocate(self%fnumDU(itemCount), __STAT__)
-    call ESMF_AttributeGet(field, name='radius', valueList=self%rmedDU, __RC__)
-    call ESMF_AttributeGet(field, name='fnum', valueList=self%fnumDU, __RC__)
-
-    call ESMF_StateGet(import, 'SS', field, __RC__)
-    call ESMF_AttributeGet(field, name='radius', itemCount=itemCount, __RC__)
-    allocate(self%rmedSS(itemCount), __STAT__)
-    allocate(self%fnumSS(itemCount), __STAT__)
-    call ESMF_AttributeGet(field, name='radius', valueList=self%rmedSS, __RC__)
-    call ESMF_AttributeGet(field, name='fnum', valueList=self%fnumSS, __RC__)
-
 !   Is NI data driven?
 !   ------------------
     call determine_data_driven (COMP_NAME, data_driven, __RC__)
 
-!   Set HNO3 recycle alarm
+!   Get DU and SS attribute information for use in heterogenous chemistry
+    if (.not. data_driven) then
+       call ESMF_StateGet(import, 'DU', field, __RC__)
+       call ESMF_AttributeGet(field, name='radius', itemCount=itemCount, __RC__)
+       allocate(self%rmedDU(itemCount), __STAT__)
+       allocate(self%fnumDU(itemCount), __STAT__)
+       call ESMF_AttributeGet(field, name='radius', valueList=self%rmedDU, __RC__)
+       call ESMF_AttributeGet(field, name='fnum', valueList=self%fnumDU, __RC__)
+
+       call ESMF_StateGet(import, 'SS', field, __RC__)
+       call ESMF_AttributeGet(field, name='radius', itemCount=itemCount, __RC__)
+       allocate(self%rmedSS(itemCount), __STAT__)
+       allocate(self%fnumSS(itemCount), __STAT__)
+       call ESMF_AttributeGet(field, name='radius', valueList=self%rmedSS, __RC__)
+       call ESMF_AttributeGet(field, name='fnum', valueList=self%fnumSS, __RC__)
+    end if
+
+!   Se HNO3 recycle alarm
     if (.not. data_driven) then
         call ESMF_ClockGet(clock, calendar=calendar, currTime=currentTime, __RC__)
         call ESMF_TimeGet(currentTime, YY=year, MM=month, DD=day, H=hh, M=mm, S=ss, __RC__)
@@ -385,13 +424,15 @@ if(mapl_am_i_root())print*,'NI2G dims(3) = ',dims(3)
        prefix = ''
     end if
 
-    call ESMF_StateGet (internal, 'NH3', field, __RC__)
-    call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(1), __RC__)
-    call get_HenrysLawCts('NH3',Vect_Hcts(1),Vect_Hcts(2),Vect_Hcts(3),Vect_Hcts(4),__RC__)
-    call ESMF_AttributeSet(field, 'SetofHenryLawCts', Vect_Hcts, __RC__)
+    if (.not. data_driven) then
+       call ESMF_StateGet (internal, 'NH3', field, __RC__)
+       call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(1), __RC__)
+       call get_HenrysLawCts('NH3',Vect_Hcts(1),Vect_Hcts(2),Vect_Hcts(3),Vect_Hcts(4),__RC__)
+       call ESMF_AttributeSet(field, 'SetofHenryLawCts', Vect_Hcts, __RC__)
 
-    call ESMF_StateGet (internal, 'NH4a', field, __RC__)
-    call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(2), __RC__)
+       call ESMF_StateGet (internal, 'NH4a', field, __RC__)
+       call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(2), __RC__)
+    end if
 
 !   Fill AERO State with N03an(1,2,3) fields
 !   ----------------------------------------
@@ -444,7 +485,6 @@ if(mapl_am_i_root())print*,'NI2G dims(3) = ',dims(3)
     self%rad_MieTable(instance)%mie_aerosol = Chem_MieTableCreate (self%rad_MieTable(instance)%optics_file, rc)
     call Chem_MieTableRead (self%rad_MieTable(instance)%mie_aerosol, NUM_BANDS, self%rad_MieTable(instance)%channels, rc)
 
-!#if 0
 !   Create Diagnostics Mie Table
 !   -----------------------------
 !   Get file names for the optical tables
@@ -490,11 +530,6 @@ if(mapl_am_i_root())print*,'NI2G dims(3) = ',dims(3)
 
     call ESMF_MethodAdd(AERO, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
 
-!#endif
-if(mapl_am_i_root()) print*,trim(comp_name),' Init END'
-
-
-
     RETURN_(ESMF_SUCCESS)
 
   end subroutine Initialize
@@ -536,8 +571,6 @@ if(mapl_am_i_root()) print*,trim(comp_name),' Init END'
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) //'::'// Iam
 
-!if(mapl_am_i_root()) print*,'NI2G Run BEGIN'
-
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
     call MAPL_GetObjectFromGC (GC, MAPL, __RC__)
@@ -552,13 +585,11 @@ if(mapl_am_i_root()) print*,trim(comp_name),' Init END'
 
 !   Update INTERNAL state variables with ExtData
 !   ---------------------------------------------
-!    if (data_driven) then
-!       call Run_data (GC, import, export, internal, __RC__)
-!    else
+    if (data_driven) then
+       call Run_data (GC, import, export, internal, __RC__)
+    else
        call Run1 (GC, import, export, clock, __RC__)
-!    end if
-
-!if(mapl_am_i_root()) print*,'NI2G Run END'
+    end if
 
     RETURN_(ESMF_SUCCESS)
 
@@ -623,7 +654,7 @@ if(mapl_am_i_root()) print*,'NI2G Run1 BEGIN sum(NH4a) = ',sum(NH4a)
     VERIFY_(STATUS)
     self => wrap%ptr
 
-if(mapl_am_i_root()) print*,'NI2G Run1 BEGIN sum(self%xhno3) = ',sum(self%xhno3)
+!if(mapl_am_i_root()) print*,'NI2G Run1 BEGIN sum(self%xhno3) = ',sum(self%xhno3)
 
 !   NH3 Emissions
 !   -------------
@@ -656,9 +687,9 @@ if(mapl_am_i_root()) print*,'NI2G Run1 BEGIN sum(self%xhno3) = ',sum(self%xhno3)
 
 !if(mapl_am_i_root()) print*,'NI2G sum(DU)',sum(DU)
 
-if(mapl_am_i_root()) print*,'NI2G Run1 END sum(NH3) = ',sum(NH3)
-if(mapl_am_i_root()) print*,'NI2G Run1 END sum(NH4a) = ',sum(NH4a)
-if(mapl_am_i_root()) print*,'NI2G Run1 END sum(self%xhno3) = ',sum(self%xhno3)
+!if(mapl_am_i_root()) print*,'NI2G Run1 END sum(NH3) = ',sum(NH3)
+!if(mapl_am_i_root()) print*,'NI2G Run1 END sum(NH4a) = ',sum(NH4a)
+!if(mapl_am_i_root()) print*,'NI2G Run1 END sum(self%xhno3) = ',sum(self%xhno3)
 !if(mapl_am_i_root()) print*,trim(comp_name),'2G Run1 END'
 
 
@@ -693,7 +724,6 @@ if(mapl_am_i_root()) print*,'NI2G Run1 END sum(self%xhno3) = ',sum(self%xhno3)
     type (wrap_)                      :: wrap
     type (NI2G_GridComp), pointer     :: self
 
-    integer                           :: n
     real, allocatable, dimension(:,:) :: drydepositionfrequency, dqa
     real                              :: fwet
     logical                           :: KIN
@@ -793,13 +823,6 @@ if(mapl_am_i_root()) print*,'NI2G after thermo sum(xhno3) = ',sum(self%xhno3)
 !if(mapl_am_i_root()) print*,'NI2G sum(NIPNO3AQ) = ',sum(NIPNO3AQ)
 !if(mapl_am_i_root()) print*,'NI2G sum(NIPNH4AQ) = ',sum(NIPNH4AQ)
 !if(mapl_am_i_root()) print*,'NI2G sum(NIPNH3AQ) = ',sum(NIPNH3AQ)
-
-
-!FOR TESTING ONLY
-!rmedDU=(/0.73, 1.4, 2.4, 4.5, 8.0/)
-!fnumDU=(/2.45e14, 3.28e13, 6.52e12, 9.89e11, 1.76e11/)
-!rmedSS=(/0.079, 0.316, 1.119, 2.818, 7.772/)
-!fnumSS=(/3.017e17, 1.085e16, 1.207e14, 9.391e12, 2.922e11/)
 
 !    call NIheterogenousChem (NIHT, self%xhno3, MAPL_AVOGAD, MAPL_AIRMW, MAPL_PI, MAPL_RUNIV, &
     call NIheterogenousChem (NIHT, self%xhno3, MAPL_AVOGAD, MAPL_AIRMW, MAPL_PI, MAPL_RUNIV/1000., &
@@ -1037,7 +1060,7 @@ if(mapl_am_i_root()) print*,'NI2G sum(NH4) = ',sum(NH4a)
 !if(mapl_am_i_root()) print*,'NI2G sum(NIMASS) = ',sum(NIMASS)
 !if(mapl_am_i_root()) print*,'NI2G sum(NIFLUXU) = ',sum(NIFLUXU)
 
-
+if(mapl_am_i_root()) print*,'NI2G Run2 END sum(NIANGSTR) = ',sum(NIANGSTR)
 if(mapl_am_i_root()) print*,'NI2G Run2 END sum(NH3) = ',sum(NH3)
 if(mapl_am_i_root()) print*,'NI2G Run2 END sum(NH4a) = ',sum(NH4a)
 if(mapl_am_i_root()) print*,'NI2G Run2 END sum(self%xhno3) = ',sum(self%xhno3)
@@ -1056,6 +1079,66 @@ if(mapl_am_i_root()) print*,trim(comp_name),'2G Run2 END'
   end subroutine Run2
 
 
+!============================================================================
+!BOP
+! !IROUTINE: Run_data -- ExtData Sea Salt Grid Component
+
+! !INTERFACE:
+
+  subroutine Run_data (GC, IMPORT, EXPORT, INTERNAL, RC)
+
+    ! !ARGUMENTS:
+
+    type (ESMF_GridComp), intent(inout) :: GC       ! Gridded component 
+    type (ESMF_State),    intent(inout) :: IMPORT   ! Import state
+    type (ESMF_State),    intent(inout) :: EXPORT   ! Export state
+    type (ESMF_State),    intent(inout) :: INTERNAL ! Interal state
+    integer, optional,    intent(  out) :: RC       ! Error code:
+
+! !DESCRIPTION: Updates pointers in Internal state with fields from ExtData. 
+
+!EOP
+!============================================================================
+! Locals
+    character (len=ESMF_MAXSTR)        :: COMP_NAME
+    type (wrap_)                       :: wrap
+    type (NI2G_GridComp), pointer      :: self
+
+    real, pointer, dimension(:,:,:)  :: ptr3d_int, ptr3d_imp
+
+    __Iam__('Run_data')
+
+!*****************************************************************************
+! Begin... 
+
+!   Get my name and set-up traceback handle
+!   ---------------------------------------
+    call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
+    Iam = trim(COMP_NAME) //'::'//Iam
+
+!   Get my private internal state
+!   ------------------------------
+    call ESMF_UserCompGetInternalState(GC, 'NI2G_GridComp', wrap, STATUS)
+    VERIFY_(STATUS)
+    self => wrap%ptr
+
+!   Update interal data pointers with ExtData
+!   -----------------------------------------
+    call MAPL_GetPointer (internal, name='NO3an1', ptr=ptr3d_int, __RC__)
+    call MAPL_GetPointer (import, name='climNO3an1', ptr=ptr3d_imp, __RC__)
+    ptr3d_int = ptr3d_imp
+    call MAPL_GetPointer (internal, name='NO3an2', ptr=ptr3d_int, __RC__)
+    call MAPL_GetPointer (import, name='climNO3an2', ptr=ptr3d_imp, __RC__)
+    ptr3d_int = ptr3d_imp
+    call MAPL_GetPointer (internal, name='NO3an3', ptr=ptr3d_int, __RC__)
+    call MAPL_GetPointer (import, name='climNO3an3', ptr=ptr3d_imp, __RC__)
+    ptr3d_int = ptr3d_imp
+
+if(mapl_am_i_root())print*,'NI2G Run_data END'
+
+    RETURN_(ESMF_SUCCESS)
+
+  end subroutine Run_data
 
 !-------------------------------------------------------------------------------------
 
@@ -1084,7 +1167,7 @@ if(mapl_am_i_root()) print*,trim(comp_name),'2G Run2 END'
     real(kind=DP), dimension(:,:,:), allocatable     :: ext_s, ssa_s, asy_s  ! (lon:,lat:,lev:)
     real                                             :: x
     integer                                          :: instance
-    integer                                          :: n, nbins, dims(4)
+    integer                                          :: n, nbins
     integer                                          :: i1, j1, i2, j2, km
     integer                                          :: band, offset
     integer, parameter                               :: n_bands = 1

@@ -2172,8 +2172,10 @@ RUN_ALARM: if (gcBC%run_alarm) then
 !if(mapl_am_i_root()) print*,'BC BCEXTTAU = ',sum(BCEXTTAU%data2d)
 !if(mapl_am_i_root()) print*,'BC BCSCATAU = ',sum(BCSCATAU%data2d)
 
-!if(mapl_am_i_root()) print*,'CA Run2 E sum(BCphobic) = ',sum(w_c%qa(n1)%data3d)
-!if(mapl_am_i_root()) print*,'CA Run2 E sum(BCphilic) = ',sum(w_c%qa(n2)%data3d)
+if(mapl_am_i_root()) print*,'CA Run2 E sum(BCphobic) = ',sum(w_c%qa(n1)%data3d)
+if(mapl_am_i_root()) print*,'CA Run2 E sum(BCphilic) = ',sum(w_c%qa(n2)%data3d)
+!if(mapl_am_i_root()) print*,'CA Run2 E array BCphobic = ',w_c%qa(n1)%data3d
+!if(mapl_am_i_root()) print*,'CA Run2 E array BCphilic = ',w_c%qa(n2)%data3d
 
    return
 

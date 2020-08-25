@@ -1827,6 +1827,7 @@ if(mapl_am_i_root()) print*,'NI sum(NIMASS) = ',sum(NI_MASS%data2d)
 if(mapl_am_i_root()) print*,'NI sum(NIFLUXU) = ',sum(NI_FLUXU%data2d)
 #endif
 
+if(mapl_am_i_root()) print*,'NI sum(NIANGSTR) = ',sum(NI_angstrom%data2d)
 if(mapl_am_i_root()) print*,'NI Run2 END sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
 if(mapl_am_i_root()) print*,'NI Run2 END sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
 if(mapl_am_i_root()) print*,'NI Run2 END sum(self%xhno3) = ',sum(gcNI%xhno3)

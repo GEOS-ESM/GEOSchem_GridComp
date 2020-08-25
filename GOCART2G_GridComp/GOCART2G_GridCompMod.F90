@@ -105,7 +105,6 @@ contains
     type (ESMF_Config)                            :: myCF
     type (GOCART_State), pointer                  :: self
     type (wrap_)                                  :: wrap
-    integer                                       :: i,nq
 
     __Iam__('SetServices')
 
@@ -200,7 +199,6 @@ contains
 !   Add connectivities for Nitrate component
 !   Nitrate currently only supports one  Nitrate component. Nitrate only 
 !   uses the first active dust and sea salt instance.
-!#if 0
     if ((self%DU%instances(1)%is_active)) then
        call MAPL_AddConnectivity (GC, SHORT_NAME = ["DU"], &
                                   DST_ID=self%NI%instances(1)%id, &
@@ -218,7 +216,6 @@ contains
                                   DST_ID=self%NI%instances(1)%id, &
                                   SRC_ID=self%SU%instances(1)%id, __RC__)
     end if
-!#endif
 
 !   Set generic services
 !   ----------------------------------
@@ -264,7 +261,6 @@ contains
     type (MAPL_MetaComp),       pointer      :: MAPL
     type (ESMF_GridComp),       pointer      :: gcs(:)
     type (ESMF_State),          pointer      :: gex(:)
-    type (ESMF_State)                        :: internal
     type (ESMF_Grid)                         :: grid
 
     type (ESMF_State)                        :: aero, aero_aci
@@ -272,10 +268,6 @@ contains
 
     type (GOCART_State),      pointer        :: self
     type (wrap_)                             :: wrap
-
-    character (len=ESMF_MAXSTR), allocatable :: aeroList(:)
-
-    integer                                  :: i, j, k
 
     __Iam__('Initialize')
 

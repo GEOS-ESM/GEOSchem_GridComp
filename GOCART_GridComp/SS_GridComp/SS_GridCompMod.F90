@@ -1486,6 +1486,8 @@ if(mapl_am_i_root()) print*,'SS SSSMASS = ',sum(SSSMASS%data2d)
 if(mapl_am_i_root()) print*,'SS SSMASS = ',sum(SSMASS%data3d)
 if(mapl_am_i_root()) print*,'SS SSEXTTAU = ',sum(SSEXTTAU%data2d)
 if(mapl_am_i_root()) print*,'SS SSSCATAU = ',sum(SSSCATAU%data2d)
+if(mapl_am_i_root()) print*,'SS SSANGSTR = ',sum(SSANGSTR%data2d)
+
 
 do n = 1, 5
   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 E SS sum(ss00n) = ',sum(w_c%qa(n1+n-1)%data3d)

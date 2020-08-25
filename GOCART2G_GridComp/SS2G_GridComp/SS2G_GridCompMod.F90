@@ -15,7 +15,7 @@ module SS2G_GridCompMod
    use Chem_AeroGeneric
    use iso_c_binding, only: c_loc, c_f_pointer, c_ptr
 
-   use Chem_UtilMod
+!   use Chem_UtilMod
    use GOCART2G_Process       ! GOCART2G process library
    use GA_GridCompMod
 
@@ -90,17 +90,11 @@ contains
     type (ESMF_Config)                          :: cfg
     type (wrap_)                                :: wrap
     type (SS2G_GridComp), pointer               :: self
-    type (Chem_Mie)                             :: this
 
     character (len=ESMF_MAXSTR)                 :: field_name
-    character (len=ESMF_MAXSTR), allocatable    :: aerosol_names(:)
-
-    integer                                     :: n, i, nCols, nbins
+    integer                                     :: i
     real                                        :: DEFVAL
     logical                                     :: data_driven=.true.
-
-    !development testing variables - to be deleted
-    real, dimension(:,:), pointer       :: ptr_test
 
     __Iam__('SetServices')
 
@@ -327,10 +321,10 @@ contains
     type (SS2G_GridComp), pointer        :: self
 
     integer, allocatable                 :: mieTable_pointer(:)
-    integer                              :: i, j, nbins, nCols, dims(3), km
+    integer                              :: i, dims(3), km
     integer                              :: instance
     type (ESMF_Field)                    :: field, fld
-    character (len=ESMF_MAXSTR)          :: field_name, prefix, bin_index
+    character (len=ESMF_MAXSTR)          :: prefix, bin_index
     real, pointer, dimension(:,:)        :: lats 
     real, pointer, dimension(:,:)        :: lons
     real                                 :: CDT         ! chemistry timestep (secs)
@@ -338,8 +332,6 @@ contains
 
     logical                              :: data_driven
     integer                              :: NUM_BANDS
-
-real, pointer :: ssptr(:,:,:,:)
 
     __Iam__('Initialize')
 
@@ -633,15 +625,12 @@ if(mapl_am_i_root()) print*,'SS2G self%diag_MieTable%nq = ',self%diag_MieTable%n
 
     real, allocatable, dimension(:,:) :: fgridefficiency
     real, allocatable, dimension(:,:) :: fsstemis
-    real, allocatable, dimension(:,:) :: tskin_c
-    real, allocatable, dimension(:,:) :: fhoppel, vsettle
+    real, allocatable, dimension(:,:) :: fhoppel
     real, allocatable, dimension(:,:) :: memissions, nemissions, dqa
-
-    real    :: radius_wet, rhop_wet, diff_coef
 
     real(kind=DP), allocatable, dimension(:,:) :: gweibull
 
-    integer :: n, i, j 
+    integer :: n 
 
 #include "SS2G_DeclarePointer___.h"
 
@@ -793,10 +782,6 @@ if(mapl_am_i_root()) print*,'SS2G self%diag_MieTable%nq = ',self%diag_MieTable%n
 
 #include "SS2G_GetPointer___.h"
 
-!do n=1,5
-!   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 B SS2G sum(ss00n) = ',sum(SS(:,:,:,n))
-!end do
-
 !   Get my private internal state
 !   ------------------------------
     call ESMF_UserCompGetInternalState(GC, 'SS2G_GridComp', wrap, STATUS)
@@ -806,8 +791,6 @@ if(mapl_am_i_root()) print*,'SS2G self%diag_MieTable%nq = ',self%diag_MieTable%n
     allocate(dqa, mold=lwi, __STAT__)
     allocate(drydepositionfrequency, mold=lwi, __STAT__)
 
-!if(mapl_am_i_root()) print*, 'Run2 B SS2G sum(SS) = ',sum(SS)
-
 !   Sea Salt Settling
 !   -----------------
     do n = 1, self%nbins
@@ -816,17 +799,11 @@ if(mapl_am_i_root()) print*,'SS2G self%diag_MieTable%nq = ',self%diag_MieTable%n
                                  rh2, zle, SSSD, __RC__)
     end do
 
-!do n=1,5
-!   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 before dep SS2G sum(ss00n) = ',sum(SS(:,:,:,n))
-!end do
-
 !   Sea Salt Deposition
 !   -------------------
     drydepositionfrequency = 0.
     call DryDeposition(self%km, t, airdens, zle, lwi, ustar, zpbl, sh,&
                        MAPL_KARMAN, cpd, chemGRAV, z0h, drydepositionfrequency, __RC__ )
-
-!if(mapl_am_i_root()) print*,'SS2G sum(drydep) = ',sum(drydepositionfrequency)
 
     ! increase deposition velocity over land
     where (abs(lwi - LAND) < 0.5)
@@ -866,15 +843,13 @@ if(mapl_am_i_root()) print*,'SS2G SSSMASS = ',sum(SSSMASS)
 if(mapl_am_i_root()) print*,'SS2G SSMASS = ',sum(SSMASS)
 if(mapl_am_i_root()) print*,'SS2G SSEXTTAU = ',sum(SSEXTTAU)
 if(mapl_am_i_root()) print*,'SS2G SSSCATAU = ',sum(SSSCATAU)
+if(mapl_am_i_root()) print*,'SS2G SSANGSTR = ',sum(SSANGSTR)
 
 
 do n=1,5
    if(mapl_am_i_root()) print*,'n = ', n,' : Run2 E SS2G sum(ss00n) = ',sum(SS(:,:,:,n))
 end do
 
-!if(mapl_am_i_root()) print*, 'Run2 E SS2G sum(SS) = ',sum(SS)
-
-!if(mapl_am_i_root()) print*, 'SS2G Run2 END'
 
     RETURN_(ESMF_SUCCESS)
 
@@ -902,7 +877,6 @@ end do
 !============================================================================
 ! Locals
     character (len=ESMF_MAXSTR)        :: COMP_NAME
-    type (MAPL_MetaComp), pointer      :: MAPL
     type (wrap_)                       :: wrap
     type (SS2G_GridComp), pointer      :: self
 
@@ -922,16 +896,11 @@ end do
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) //'::'//Iam
 
-if (mapl_am_I_root()) print*,trim(comp_name),' Run_data BEGIN'
-
 !   Get my private internal state
 !   ------------------------------
     call ESMF_UserCompGetInternalState(GC, 'SS2G_GridComp', wrap, STATUS)
     VERIFY_(STATUS)
     self => wrap%ptr
-
-!    call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO', aero, __RC__)
-!    call ESMF_AttributeGet (aero, name='aerosol_names', itemCount=n, __RC__)
 
 !   Update interal data pointers with ExtData
 !   -----------------------------------------
@@ -971,17 +940,15 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
 
     character (len=ESMF_MAXSTR)                      :: fld_name, int_fld_name
     type(ESMF_Field)                                 :: fld
-    character (len=ESMF_MAXSTR)                      :: COMP_NAME
 
     real(kind=DP), dimension(:,:,:), allocatable     :: ext_s, ssa_s, asy_s  ! (lon:,lat:,lev:)
     real, dimension(:,:,:), allocatable              :: x
     integer                                          :: instance
-    integer                                          :: n, nbins, dims(4)
+    integer                                          :: n, nbins
     integer                                          :: i1, j1, i2, j2, km
     integer                                          :: band, offset
     integer, parameter                               :: n_bands = 1
-
-    integer :: i, j, k
+    integer ::  k
 
     __Iam__('SS2G::aerosol_optics')
 
@@ -1109,8 +1076,6 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
     end subroutine mie_
 
   end subroutine aerosol_optics
-
-
 
 end module SS2G_GridCompMod
 
