@@ -14,8 +14,6 @@ module GA_GridCompMod
    type :: GA_GridComp
        type(Chem_Mie), dimension(2)    :: rad_MieTable, diag_MieTable
        real, allocatable      :: radius(:)      ! particle effective radius [um]
-       real, allocatable      :: rlow(:)        ! particle effective radius lower bound [um]
-       real, allocatable      :: rup(:)         ! particle effective radius upper bound [um]
        real, allocatable      :: rhop(:)        ! soil class density [kg m-3]
        real, allocatable      :: fscav(:)       ! scavenging efficiency
 !      logical                :: scav_byColdCloud ! new flag example
@@ -26,6 +24,8 @@ module GA_GridCompMod
        integer                :: km             ! vertical grid dimension
        real                   :: CDT            ! chemistry timestep (secs)
        integer                :: instance       ! data or computational instance
+       real                   :: plid           ! pressure lid [hPa]
+       integer                :: klid           ! vertical index of pressure lid
     contains
        procedure :: load_from_config
     end type GA_GridComp
@@ -49,18 +49,17 @@ module GA_GridCompMod
        
        !   Parse config file into private internal state
        !   ----------------------------------------------
-       allocate(self%radius(nbins), self%rlow(nbins), self%rup(nbins), self%rhop(nbins), &
-                self%fscav(nbins), self%molwght(nbins), self%fnum(nbins), &
+       allocate(self%radius(nbins), self%rhop(nbins), self%fscav(nbins), &
+                self%molwght(nbins), self%fnum(nbins), &
                 __STAT__)
        
        call ESMF_ConfigGetAttribute (cfg, self%radius,     label='particle_radius_microns:', __RC__)
-       call ESMF_ConfigGetAttribute (cfg, self%rlow,       label='radius_lower:', __RC__)
-       call ESMF_ConfigGetAttribute (cfg, self%rup,        label='radius_upper:', __RC__)
-       call ESMF_ConfigGetAttribute (cfg, self%rhop,       label='soil_density:', __RC__)
+       call ESMF_ConfigGetAttribute (cfg, self%rhop,       label='particle_density:', __RC__)
        call ESMF_ConfigGetAttribute (cfg, self%fscav,      label='fscav:', __RC__)
        call ESMF_ConfigGetAttribute (cfg, self%molwght,    label='molecular_weight:', __RC__)
        call ESMF_ConfigGetAttribute (cfg, self%fnum,       label='fnum:', __RC__)
        call ESMF_ConfigGetAttribute (cfg, self%rhFlag,     label='rhFlag:', __RC__)
+       call ESMF_ConfigGetAttribute (cfg, self%plid,       label='pressure_lid_in_hPa:', __RC__)
        
     end subroutine load_from_config
     

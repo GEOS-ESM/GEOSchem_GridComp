@@ -15,7 +15,6 @@ module NI2G_GridCompMod
    use Chem_AeroGeneric
    use iso_c_binding, only: c_loc, c_f_pointer, c_ptr
 
-!   use Chem_UtilMod
    use GOCART2G_Process       ! GOCART2G process library
    use GA_GridCompMod
 
@@ -142,6 +141,27 @@ if(mapl_am_i_root()) print*,trim(comp_name),' SetServices BEGIN'
 !   Import and Internal states if data instance 
 !   -------------------------------------------
     if (data_driven) then
+
+!      Pressure at layer edges
+!      -----------------------
+       call MAPL_AddImportSpec(GC,                            &
+          SHORT_NAME = 'PLE',                                 &
+          LONG_NAME  = 'air_pressure',                        &
+          UNITS      = 'Pa',                                  &
+          DIMS       = MAPL_DimsHorzVert,                     &
+          VLOCATION  = MAPL_VLocationEdge,                    &
+          RESTART    = MAPL_RestartSkip,     __RC__)
+
+!      RH: is between 0 and 1
+!      ----------------------
+       call MAPL_AddImportSpec(GC,                            &
+          SHORT_NAME = 'RH2',                                 &
+          LONG_NAME  = 'Rel_Hum_after_moist',                 &
+          UNITS      = '1',                                   &
+          DIMS       = MAPL_DimsHorzVert,                     &
+          VLOCATION  = MAPL_VLocationCenter,                  &
+          RESTART    = MAPL_RestartSkip,     __RC__)
+
        call MAPL_AddInternalSpec(gc,&
           & short_name='NO3an1', &
           & long_name='Nitrate size bin 001', &
@@ -299,10 +319,12 @@ if(mapl_am_i_root()) print*,trim(comp_name),' SetServices END'
     character (len=ESMF_MAXSTR)          :: prefix
     real                                 :: CDT         ! chemistry timestep (secs)
     integer                              :: HDT         ! model     timestep (secs)
-
+    real, pointer, dimension(:,:,:)      :: int_ptr
     logical                              :: data_driven
     integer                              :: NUM_BANDS
     character (len=ESMF_MAXSTR), allocatable    :: aerosol_names(:)
+    real, pointer, dimension(:,:,:)      :: ple
+    real, pointer, dimension(:,:)        :: area
 
     type(ESMF_Calendar)     :: calendar
     type(ESMF_Time)         :: currentTime
@@ -411,8 +433,6 @@ if(mapl_am_i_root()) print*,trim(comp_name),' Init BEGIN'
                                       Sticky       = .false.  , __RC__)
     end if
 
-
-
 !   If this is a data component, the data is provided in the import
 !   state via ExtData instead of the actual GOCART children
 !   ----------------------------------------------------------------
@@ -432,6 +452,11 @@ if(mapl_am_i_root()) print*,trim(comp_name),' Init BEGIN'
 
        call ESMF_StateGet (internal, 'NH4a', field, __RC__)
        call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(2), __RC__)
+!    end if
+
+!      Set klid
+       call MAPL_GetPointer(import, ple, 'PLE', __RC__)
+       call findKlid (self%klid, self%plid, ple, __RC__)
     end if
 
 !   Fill AERO State with N03an(1,2,3) fields
@@ -443,16 +468,33 @@ if(mapl_am_i_root()) print*,trim(comp_name),' Init BEGIN'
     fld = MAPL_FieldCreate (field, 'NO3an1', __RC__)
     call MAPL_StateAdd (aero, fld, __RC__)
 
+    if (.not. data_driven) then
+!      Set internal NO3an1 values to 0 where above klid
+       call MAPL_GetPointer (internal, int_ptr, 'NO3an1', __RC__)
+       call setZeroKlid(self%km, self%klid, int_ptr)
+    end if
+
     call ESMF_StateGet (internal, 'NO3an2', field, __RC__)
     call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(4), __RC__)
     fld = MAPL_FieldCreate (field, 'NO3an2', __RC__)
     call MAPL_StateAdd (aero, fld, __RC__)
+
+    if (.not. data_driven) then
+!      Set internal NO3an2 values to 0 where above klid
+       call MAPL_GetPointer (internal, int_ptr, 'NO3an2', __RC__)
+       call setZeroKlid(self%km, self%klid, int_ptr)
+    end if
 
     call ESMF_StateGet (internal, 'NO3an3', field, __RC__)
     call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(5), __RC__)
     fld = MAPL_FieldCreate (field, 'NO3an3', __RC__)
     call MAPL_StateAdd (aero, fld, __RC__)
 
+    if (.not. data_driven) then
+!      Set internal NO3an3 values to 0 where above klid
+       call MAPL_GetPointer (internal, int_ptr, 'NO3an3', __RC__)
+       call setZeroKlid(self%km, self%klid, int_ptr)
+    end if
 
     if (data_driven) then
        instance = instanceData
@@ -813,7 +855,7 @@ if(mapl_am_i_root()) print*,'NI2G before thermo sum(NH3) = ',sum(NH3)
 if(mapl_am_i_root()) print*,'NI2G before thermo sum(NH4a) = ',sum(NH4a)
 if(mapl_am_i_root()) print*,'NI2G before sum(SO4) = ',sum(SO4)
 
-    call NIthermo (self%km, self%cdt, chemgrav, delp, airdens, t, rh2, fMassHNO3, fMassAir, &
+    call NIthermo (self%km, self%klid, self%cdt, chemgrav, delp, airdens, t, rh2, fMassHNO3, fMassAir, &
                    SO4, NH3, NO3an1, NH4a, self%xhno3, NIPNO3AQ, NIPNH4AQ, NIPNH3AQ, rc)
 
 if(mapl_am_i_root()) print*,'NI2G after thermo sum(NH3) = ',sum(NH3)
@@ -827,7 +869,7 @@ if(mapl_am_i_root()) print*,'NI2G after thermo sum(xhno3) = ',sum(self%xhno3)
 !    call NIheterogenousChem (NIHT, self%xhno3, MAPL_AVOGAD, MAPL_AIRMW, MAPL_PI, MAPL_RUNIV, &
     call NIheterogenousChem (NIHT, self%xhno3, MAPL_AVOGAD, MAPL_AIRMW, MAPL_PI, MAPL_RUNIV/1000., &
                              airdens, t, rh2, delp, DU, SS, self%rmedDU*1.e-6, self%rmedSS*1.e-6, &
-                             self%fnumDU, self%fnumSS, 5, 5, self%km, self%cdt, chemgrav, fMassHNO3, &
+                             self%fnumDU, self%fnumSS, 5, 5, self%km, self%klid, self%cdt, chemgrav, fMassHNO3, &
                              fMassNO3, fmassair, NO3an1, NO3an2, NO3an3, HNO3CONC, HNO3SMASS, &
                              HNO3CMASS, rc)
 
@@ -854,12 +896,9 @@ if(mapl_am_i_root()) print*,'NI2G after hetchem sum(xhno3) = ',sum(self%xhno3)
 
 !   Ammonium - settles like ammonium sulfate (rhflag = 3)
     rhflag = 3
-    call Chem_SettlingSimpleOrig (self%km, rhflag, chemgrav, self%cdt, 1.e-6*self%radius(nNH4a), self%rhop(nNH4a), &
+    call Chem_SettlingSimpleOrig (self%km, self%klid, rhflag, chemgrav, self%cdt, &
+                                  1.e-6*self%radius(nNH4a), self%rhop(nNH4a), &
                                   NH4a, t, airdens, rh2, delp, zle, NH4SD, rc)
-
-!    call Chem_SettlingSimple (self%km, rhflag, NH4a, chemgrav, delp, &
-!                              1.e-6*self%radius(nNH4a), self%rhop(nNH4a), self%cdt, t, airdens, &
-!                              rh2, zle, NH4SD, rc)
 
 if(mapl_am_i_root()) print*,'NI2G sum(NH4SD) = ',sum(NH4SD)
 if(mapl_am_i_root()) print*,'NI2G sum(NH4a) = ',sum(NH4a)
@@ -871,7 +910,8 @@ if(mapl_am_i_root()) print*,'NI2G sum(NH4a) = ',sum(NH4a)
 !  Nitrate bin 1 - settles like ammonium sulfate (rhflag = 3)
     rhflag = 3
     fluxout = 0.
-    call Chem_SettlingSimpleOrig (self%km, rhFlag, chemgrav, self%cdt, 1.e-6*self%radius(nNO3an1), self%rhop(nNO3an1), &
+    call Chem_SettlingSimpleOrig (self%km, self%klid, rhFlag, chemgrav, self%cdt, &
+                                  1.e-6*self%radius(nNO3an1), self%rhop(nNO3an1), &
                                   NO3an1, t, airdens, rh2, delp, zle, fluxout, rc)
     if (associated(NISD)) NISD(:,:,1) = fluxout
 !if(mapl_am_i_root()) print*,'NI2G sum(NISD(:,:,1)) = ',sum(NISD(:,:,1))
@@ -880,7 +920,8 @@ if(mapl_am_i_root()) print*,'NI2G sum(NH4a) = ',sum(NH4a)
 !  Nitrate bin 2 - settles like sea salt (rhflag = 2)
     rhflag = 2
     fluxout = 0.
-    call Chem_SettlingSimpleOrig (self%km, rhFlag, chemgrav, self%cdt, 1.e-6*self%radius(nNO3an2), self%rhop(nNO3an2), &
+    call Chem_SettlingSimpleOrig (self%km, self%klid, rhFlag, chemgrav, self%cdt, &
+                                  1.e-6*self%radius(nNO3an2), self%rhop(nNO3an2), &
                                   NO3an2, t, airdens, rh2, delp, zle, fluxout, rc)
     if (associated(NISD)) NISD(:,:,2) = fluxout
 !if(mapl_am_i_root()) print*,'NI2G sum(NISD(:,:,2)) = ',sum(NISD(:,:,2))
@@ -889,7 +930,8 @@ if(mapl_am_i_root()) print*,'NI2G sum(NH4a) = ',sum(NH4a)
 !  Nitrate bin 1 - settles like dust (rhflag = 0)
     rhflag = 0
     fluxout = 0.
-    call Chem_SettlingSimpleOrig (self%km, rhFlag, chemgrav, self%cdt, 1.e-6*self%radius(nNO3an3), self%rhop(nNO3an3), &
+    call Chem_SettlingSimpleOrig (self%km, self%klid, rhFlag, chemgrav, self%cdt, &
+                                  1.e-6*self%radius(nNO3an3), self%rhop(nNO3an3), &
                                   NO3an3, t, airdens, rh2, delp, zle, fluxout, rc)
     if (associated(NISD)) NISD(:,:,3) = fluxout
 !if(mapl_am_i_root()) print*,'NI2G sum(NISD(:,:,3)) = ',sum(NISD(:,:,3))
@@ -971,9 +1013,9 @@ if(mapl_am_i_root()) print*,'NI2G sum(NH4DP) = ',sum(NH4DP)
 !  NH3
    KIN = .false.
    fwet = 1.
-   call WetRemovalGOCART2G(self%km, self%nbins, self%nbins, 1, self%cdt, 'NH3', &
-                           KIN, chemGRAV, fwet, NH3, ple, t, airdens, &
-                           pfl_lsan, pfi_lsan, cn_prcp, ncn_prcp, fluxoutWT, rc)
+   call WetRemovalGOCART2G (self%km, self%klid, self%nbins, self%nbins, 1, self%cdt, 'NH3', &
+                            KIN, chemGRAV, fwet, NH3, ple, t, airdens, &
+                            pfl_lsan, pfi_lsan, cn_prcp, ncn_prcp, fluxoutWT, rc)
    if (associated(NH3WT)) NH3WT = fluxoutWT(:,:,1)
 if(mapl_am_i_root()) print*,'NI2G sum(NH3WT) = ',sum(NH3WT)
 if(mapl_am_i_root()) print*,'NI2G sum(NH3) = ',sum(NH3)
@@ -982,7 +1024,7 @@ if(mapl_am_i_root()) print*,'NI2G sum(NH3) = ',sum(NH3)
    fluxoutWT = 0.
    KIN = .true.
    fwet = 1.
-   call WetRemovalGOCART2G(self%km, self%nbins, self%nbins, 1, self%cdt, 'NH4a', &
+   call WetRemovalGOCART2G(self%km, self%klid, self%nbins, self%nbins, 1, self%cdt, 'NH4a', &
                            KIN, chemGRAV, fwet, NH4a, ple, t, airdens, &
                            pfl_lsan, pfi_lsan, cn_prcp, ncn_prcp, fluxoutWT, rc)
    if (associated(NH4WT)) NH4WT = fluxoutWT(:,:,1)
@@ -991,20 +1033,20 @@ if(mapl_am_i_root()) print*,'NI2G sum(NH4) = ',sum(NH4a)
 
    KIN = .true.
    fwet = 1.
-   call WetRemovalGOCART2G(self%km, self%nbins, self%nbins, 1, self%cdt, 'nitrate', &
+   call WetRemovalGOCART2G(self%km, self%klid, self%nbins, self%nbins, 1, self%cdt, 'nitrate', &
                            KIN, chemGRAV, fwet, NO3an1, ple, t, airdens, &
                            pfl_lsan, pfi_lsan, cn_prcp, ncn_prcp, NIWT, rc)
 !if(mapl_am_i_root()) print*,'NI2G sum(NIWT(:,:,1)) = ',sum(NIWT(:,:,1))
    KIN = .true.
    fwet = 1.
-   call WetRemovalGOCART2G(self%km, self%nbins, self%nbins, 2, self%cdt, 'nitrate', &
+   call WetRemovalGOCART2G(self%km, self%klid, self%nbins, self%nbins, 2, self%cdt, 'nitrate', &
                            KIN, chemGRAV, fwet, NO3an2, ple, t, airdens, &
                            pfl_lsan, pfi_lsan, cn_prcp, ncn_prcp, NIWT, rc)
 !if(mapl_am_i_root()) print*,'NI2G sum(NIWT(:,:,2)) = ',sum(NIWT(:,:,2))
 
    KIN = .true.
    fwet = 1.
-   call WetRemovalGOCART2G(self%km, self%nbins, self%nbins, 3, self%cdt, 'nitrate', &
+   call WetRemovalGOCART2G(self%km, self%klid, self%nbins, self%nbins, 3, self%cdt, 'nitrate', &
                            KIN, chemGRAV, fwet, NO3an3, ple, t, airdens, &
                            pfl_lsan, pfi_lsan, cn_prcp, ncn_prcp, NIWT, rc)
 !if(mapl_am_i_root()) print*,'NI2G sum(NIWT(:,:,3)) = ',sum(NIWT(:,:,3))
@@ -1014,7 +1056,7 @@ if(mapl_am_i_root()) print*,'NI2G sum(NH4) = ',sum(NH4a)
    allocate(aerosol(ubound(NH4a,1), ubound(NH4a,2), ubound(NH4a,3), 3), __STAT__)
    aerosol(:,:,:,:) = 0.0
    aerosol(:,:,:,1) = NH4a
-   call Aero_Compute_Diags (mie_table=self%diag_MieTable(self%instance), km=self%km, nbegin=1, &
+   call Aero_Compute_Diags (mie_table=self%diag_MieTable(self%instance), km=self%km, klid=self%klid, nbegin=1, &
                             nbins=1, channels=self%diag_MieTable(self%instance)%channels, &
                             aerosol=aerosol, grav=chemgrav, tmpu=t, rhoa=airdens, rh=rh2, u=u, v=v, &
                             delp=delp, sfcmass=NH4SMASS, colmass=NH4CMASS, mass=NH4MASS, conc=NH4CONC, __RC__)
@@ -1024,7 +1066,7 @@ if(mapl_am_i_root()) print*,'NI2G sum(NH4) = ',sum(NH4a)
 !if(mapl_am_i_root()) print*,'NI2G sum(NH4CONC) = ',sum(NH4CONC)
 
    aerosol(:,:,:,1) = NH3
-   call Aero_Compute_Diags (mie_table=self%diag_MieTable(self%instance), km=self%km, nbegin=1, &
+   call Aero_Compute_Diags (mie_table=self%diag_MieTable(self%instance), km=self%km, klid=self%klid, nbegin=1, &
                             nbins=1, channels=self%diag_MieTable(self%instance)%channels, &
                             aerosol=aerosol, grav=chemgrav, tmpu=t, rhoa=airdens, rh=rh2, u=u, v=v, &
                             delp=delp, sfcmass=NH3SMASS, colmass=NH3CMASS, mass=NH3MASS, conc=NH3CONC, __RC__)
@@ -1034,7 +1076,7 @@ if(mapl_am_i_root()) print*,'NI2G sum(NH4) = ',sum(NH4a)
 !if(mapl_am_i_root()) print*,'NI2G sum(NH3CONC) = ',sum(NH3CONC)
 
    aerosol(:,:,:,1) = NO3an1
-   call Aero_Compute_Diags (mie_table=self%diag_MieTable(self%instance), km=self%km, nbegin=1, &
+   call Aero_Compute_Diags (mie_table=self%diag_MieTable(self%instance), km=self%km, klid=self%klid, nbegin=1, &
                             nbins=1, channels=self%diag_MieTable(self%instance)%channels, &
                             aerosol=aerosol, grav=chemgrav, tmpu=t, rhoa=airdens, rh=rh2, u=u, v=v, &
                             delp=delp, sfcmass=NISMASS25, colmass=NICMASS25, mass=NIMASS25, conc=NICONC25, __RC__)
@@ -1047,7 +1089,7 @@ if(mapl_am_i_root()) print*,'NI2G sum(NH4) = ',sum(NH4a)
    aerosol(:,:,:,1) = NO3an1
    aerosol(:,:,:,2) = NO3an2
    aerosol(:,:,:,3) = NO3an3
-   call Aero_Compute_Diags (mie_table=self%diag_MieTable(self%instance), km=self%km, nbegin=1, &
+   call Aero_Compute_Diags (mie_table=self%diag_MieTable(self%instance), km=self%km, klid=self%klid, nbegin=1, &
                             nbins=3, channels=self%diag_MieTable(self%instance)%channels, &
                             aerosol=aerosol, grav=chemgrav, tmpu=t, rhoa=airdens, rh=rh2, u=u, v=v, &
                             delp=delp, sfcmass=NISMASS, colmass=NICMASS, mass=NIMASS, conc=NICONC, &

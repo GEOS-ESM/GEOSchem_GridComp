@@ -15,7 +15,6 @@ module SS2G_GridCompMod
    use Chem_AeroGeneric
    use iso_c_binding, only: c_loc, c_f_pointer, c_ptr
 
-!   use Chem_UtilMod
    use GOCART2G_Process       ! GOCART2G process library
    use GA_GridCompMod
 
@@ -44,6 +43,8 @@ real, parameter ::  cpd    = 1004.16
 
 !  !Sea Salt state
    type, extends(GA_GridComp) :: SS2G_GridComp
+       real, allocatable      :: rlow(:)        ! particle effective radius lower bound [um]
+       real, allocatable      :: rup(:)         ! particle effective radius upper bound [um]
        integer                :: sstEmisFlag    ! Choice of SST correction to emissions: 
 !                                                 0 - none; 1 - Jaegle et al. 2011; 2 - GEOS5
        logical                :: hoppelFlag     ! Apply the Hoppel correction to emissions (Fan and Toon, 2011)
@@ -83,7 +84,6 @@ contains
 
 !EOP
 !============================================================================
-!
 
 !   !Locals
     character (len=ESMF_MAXSTR)                 :: COMP_NAME
@@ -123,6 +123,8 @@ contains
     ! process generic config items
     call self%GA_GridComp%load_from_config( cfg, __RC__)
 
+    allocate(self%rlow(self%nbins), self%rup(self%nbins), __STAT__)
+
     ! process SS-specific items
 !    call ESMF_ConfigGetAttribute (cfg, self%fscav,      label='fscav:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%sstEmisFlag, label='sstEmisFlag:', __RC__)
@@ -130,7 +132,8 @@ contains
     call ESMF_ConfigGetAttribute (cfg, self%hoppelFlag, label='hoppelFlag:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%emission_scheme, label='emission_scheme:', __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%emission_scale_res, label='emission_scale:', __RC__)
-
+    call ESMF_ConfigGetAttribute (cfg, self%rlow,  label='radius_lower:', __RC__)
+    call ESMF_ConfigGetAttribute (cfg, self%rup,  label='radius_upper:', __RC__)
 
 !   Is SS data driven?
 !   ------------------
@@ -145,7 +148,6 @@ contains
     end if
 
     DEFVAL = 0.0
-
 
 !   Import and Internal states if data instance 
 !   -------------------------------------------
@@ -329,9 +331,11 @@ contains
     real, pointer, dimension(:,:)        :: lons
     real                                 :: CDT         ! chemistry timestep (secs)
     integer                              :: HDT         ! model     timestep (secs)
-
+    real, pointer, dimension(:,:,:,:)    :: int_ptr
     logical                              :: data_driven
     integer                              :: NUM_BANDS
+    real, pointer, dimension(:,:,:)      :: ple
+    real, pointer, dimension(:,:)        :: area
 
     __Iam__('Initialize')
 
@@ -417,11 +421,20 @@ contains
     call ESMF_StateGet (export, trim(COMP_NAME)//'_AERO_DP' , Bundle_DP, __RC__)
 
     call ESMF_StateGet (internal, 'SS', field, __RC__)
+    call ESMF_AttributeSet(field, NAME='klid', value=self%klid, __RC__)
     fld = MAPL_FieldCreate (field, 'SS', __RC__)
     call MAPL_StateAdd (aero, fld, __RC__)
     call MAPL_StateAdd (aero_aci, fld, __RC__)
 
-    ! ADD OTHER ATTRIBUTE, HENTRY COEFFICIENTS?
+    if (.not. data_driven) then
+!      Set klid
+       call MAPL_GetPointer(import, ple, 'PLE', __RC__)
+       call findKlid (self%klid, self%plid, ple, __RC__)
+!      Set SS values to 0 where above klid
+       call MAPL_GetPointer (internal, int_ptr, 'SS', __RC__)
+       call setZeroKlid4d (self%km, self%klid, int_ptr)
+    end if
+
     call ESMF_AttributeSet(field, NAME='ScavengingFractionPerKm', value=self%fscav(1), __RC__)
 
     if (data_driven) then
@@ -490,7 +503,8 @@ contains
     call ESMF_ConfigGetAttribute (cfg, self%diag_MieTable(instance)%nch, label="n_channels:", __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%diag_MieTable(instance)%nmom, label="n_moments:", default=0,  __RC__)
     allocate (self%diag_MieTable(instance)%channels(self%diag_MieTable(instance)%nch), __STAT__ )
-    call ESMF_ConfigGetAttribute (cfg, self%diag_MieTable(instance)%channels, label= "r_channels:", __RC__)
+    call ESMF_ConfigGetAttribute (cfg, self%diag_MieTable(instance)%channels, &
+                                  label= "aerosol_monochromatic_optics_wavelength:", __RC__)
 
     allocate (self%diag_MieTable(instance)%mie_aerosol, __STAT__)
     self%diag_MieTable(instance)%mie_aerosol = Chem_MieTableCreate (self%diag_MieTable(instance)%optics_file, __RC__ )
@@ -499,12 +513,6 @@ contains
 
     ! Mie Table instance/index
     call ESMF_AttributeSet(aero, name='mie_table_instance', value=instance, __RC__)
-
-!if(mapl_am_i_root()) print*,'SS2G self%diag_MieTable%vname = ',self%diag_MieTable%vname
-!if(mapl_am_i_root()) print*,'SS2G self%diag_MieTable%vindex = ',self%diag_MieTable%vindex
-if(mapl_am_i_root()) print*,'SS2G self%diag_MieTable%nq = ',self%diag_MieTable%nq
-!if(mapl_am_i_root()) print*,'SS2G self%diag_MieTable%mie_aerosol = ',self%diag_MieTable%mie_aerosol%mietablename
-
 
     ! Add variables to SS instance's aero state. This is used in aerosol optics calculations
     call add_aero (aero, label='air_pressure_for_aerosol_optics',             label2='PLE', grid=grid, typekind=MAPL_R4, __RC__)
@@ -713,14 +721,8 @@ if(mapl_am_i_root()) print*,'SS2G self%diag_MieTable%nq = ',self%diag_MieTable%n
        end if
     end do !n = 1
 
-!do n=1,5
-!   if(mapl_am_i_root()) print*,'n = ', n,' : Run1 E SS2G sum(ss00n) = ',sum(SS(:,:,:,n))
-!end do
-
     deallocate(fhoppel, memissions, nemissions, dqa, gweibull, &
                fsstemis, fgridefficiency, __STAT__)
-
-!if(mapl_am_i_root()) print*,'SS2G Run1 END'
 
     RETURN_(ESMF_SUCCESS)
 
@@ -770,8 +772,6 @@ if(mapl_am_i_root()) print*,'SS2G self%diag_MieTable%nq = ',self%diag_MieTable%n
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) // '::' // Iam
 
-!if(mapl_am_i_root()) print*, 'SS2G Run2 BEGIN'
-
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
     call MAPL_GetObjectFromGC (GC, MAPL, __RC__)
@@ -794,13 +794,13 @@ if(mapl_am_i_root()) print*,'SS2G self%diag_MieTable%nq = ',self%diag_MieTable%n
 !   Sea Salt Settling
 !   -----------------
     do n = 1, self%nbins
-       call Chem_Settling2Gorig (self%km, self%rhFlag, n, SS(:,:,:,n), CHEMgrav, delp, &
+       call Chem_Settling2Gorig (self%km, self%klid, self%rhFlag, n, SS(:,:,:,n), CHEMgrav, delp, &
                                  self%radius(n)*1.e-6, self%rhop(n), self%cdt, t, airdens, &
                                  rh2, zle, SSSD, __RC__)
     end do
 
-!   Sea Salt Deposition
-!   -------------------
+!   Deposition
+!   -----------
     drydepositionfrequency = 0.
     call DryDeposition(self%km, t, airdens, zle, lwi, ustar, zpbl, sh,&
                        MAPL_KARMAN, cpd, chemGRAV, z0h, drydepositionfrequency, __RC__ )
@@ -819,37 +819,28 @@ if(mapl_am_i_root()) print*,'SS2G self%diag_MieTable%nq = ',self%diag_MieTable%n
        end if
     end do
 
-!   Sea Salt Large-scale Wet Removal
-!   -------------------------------
+!   Large-scale Wet Removal
+!   ------------------------
     KIN = .TRUE.
     do n = 1, self%nbins
        fwet = 1.
-
-       call WetRemovalGOCART2G(self%km, self%nbins, self%nbins, n, self%cdt, 'sea_salt', &
+       call WetRemovalGOCART2G(self%km, self%klid, self%nbins, self%nbins, n, self%cdt, 'sea_salt', &
                                KIN, chemGRAV, fwet, SS(:,:,:,n), ple, t, airdens, &
                                pfl_lsan, pfi_lsan, cn_prcp, ncn_prcp, SSWT, rc)
     end do
 
 !   Compute diagnostics
 !   -------------------
-    call Aero_Compute_Diags (self%diag_MieTable(self%instance), self%km, 1, self%nbins, self%rlow, self%rup, &
-                           self%diag_MieTable(self%instance)%channels, SS, chemGRAV, t, airdens, &
-                           rh2, u, v, delp, SSSMASS, SSCMASS, SSMASS, SSEXTTAU, SSSCATAU,     &
-                           SSSMASS25, SSCMASS25, SSMASS25, SSEXTT25, SSSCAT25, &
-                           SSFLUXU, SSFLUXV, SSCONC, SSEXTCOEF, SSSCACOEF,    &
-                           SSEXTTFM, SSSCATFM ,SSANGSTR, SSAERIDX, __RC__)
-
-if(mapl_am_i_root()) print*,'SS2G SSSMASS = ',sum(SSSMASS)
-if(mapl_am_i_root()) print*,'SS2G SSMASS = ',sum(SSMASS)
-if(mapl_am_i_root()) print*,'SS2G SSEXTTAU = ',sum(SSEXTTAU)
-if(mapl_am_i_root()) print*,'SS2G SSSCATAU = ',sum(SSSCATAU)
-if(mapl_am_i_root()) print*,'SS2G SSANGSTR = ',sum(SSANGSTR)
-
-
+    call Aero_Compute_Diags (self%diag_MieTable(self%instance), self%km, self%klid, 1, self%nbins, self%rlow,&
+                             self%rup, self%diag_MieTable(self%instance)%channels, SS, chemGRAV, t, airdens, &
+                             rh2, u, v, delp, SSSMASS, SSCMASS, SSMASS, SSEXTTAU, SSSCATAU,     &
+                             SSSMASS25, SSCMASS25, SSMASS25, SSEXTT25, SSSCAT25, &
+                             SSFLUXU, SSFLUXV, SSCONC, SSEXTCOEF, SSSCACOEF,    &
+                             SSEXTTFM, SSSCATFM ,SSANGSTR, SSAERIDX, __RC__)
+ 
 do n=1,5
    if(mapl_am_i_root()) print*,'n = ', n,' : Run2 E SS2G sum(ss00n) = ',sum(SS(:,:,:,n))
 end do
-
 
     RETURN_(ESMF_SUCCESS)
 
@@ -912,8 +903,6 @@ end do
 
         ptr4d_int(:,:,:,i) = ptr3d_imp
     end do
-
-if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
 
     RETURN_(ESMF_SUCCESS)
 
@@ -1035,7 +1024,6 @@ if (mapl_am_I_root()) print*,trim(comp_name),' Run_data END'
 
   contains
 
-!    subroutine mie_(mie_table, aerosol_names, nb, offset, q, rh, bext_s, bssa_s, basym_s, rc)
     subroutine mie_(mie_table, nbins, nb, offset, q, rh, bext_s, bssa_s, basym_s, rc)
 
     implicit none

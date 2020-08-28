@@ -15,9 +15,9 @@ module CA2G_GridCompMod
    use Chem_AeroGeneric
    use iso_c_binding, only: c_loc, c_f_pointer, c_ptr
 
-   use Chem_UtilMod, only: Chem_UtilPointEmissions
    use GOCART2G_Process       ! GOCART2G process library
    use GA_GridCompMod
+   use m_StrTemplate          ! string templates
 
    implicit none
    private
@@ -51,12 +51,12 @@ real, parameter ::  undefval  = 1.e15   ! missing value
        logical                :: doing_point_emissions = .false.
        character(len=255)     :: point_emissions_srcfilen   ! filename for pointwise emissions
        integer                         :: nPts = -1
-       integer, pointer, dimension(:)  :: pstart => null(), pend => null()
-       real, pointer, dimension(:)     :: pLat  => null(), &
-                                          pLon  => null(), &
-                                          pBase => null(), &
-                                          pTop  => null(), &
-                                          pEmis => null()
+       integer, allocatable, dimension(:)  :: pstart, pend
+       real, allocatable, dimension(:)     :: pLat, &
+                                              pLon, &
+                                              pBase, &
+                                              pTop, &
+                                              pEmis
 
    end type CA2G_GridComp 
 
@@ -90,7 +90,6 @@ contains
 !EOP
 !============================================================================
 
-!
 !   !Locals
     character (len=ESMF_MAXSTR)              :: COMP_NAME
     type (ESMF_Config)                       :: cfg
@@ -367,10 +366,11 @@ contains
     type (ESMF_Field)                    :: field, fld
     character (len=ESMF_MAXSTR)          :: prefix, GCsuffix, diurnal_bb, bin_index
     character (len=ESMF_MAXSTR),allocatable :: aerosol_names(:)
-
+    real, pointer, dimension(:,:,:)      :: int_ptr
     real                                 :: CDT         ! chemistry timestep (secs)
     integer                              :: HDT         ! model     timestep (secs)
-
+    real, pointer, dimension(:,:,:)      :: ple
+    real, pointer, dimension(:,:)        :: area
     logical                              :: data_driven
     integer                              :: NUM_BANDS
 
@@ -430,9 +430,8 @@ contains
     cfg = ESMF_ConfigCreate (__RC__)
     call ESMF_ConfigLoadFile (cfg, 'CA2G_GridComp_'//trim(COMP_NAME)//'.rc', rc=status)
     if (status /= 0) then
-        if (mapl_am_i_root()) print*,'CA2G_GridComp_'//trim(COMP_NAME)//'.rc does not exist! &
-                                      Loading CA2G_GridComp_CA.rc instead'
-        call ESMF_ConfigLoadFile (cfg, 'CA2G_GridComp_CA.rc', __RC__)
+        if (mapl_am_i_root()) print*,'ERROR: CA2G_GridComp_'//trim(COMP_NAME)//'.rc does not exist!' 
+        return
     end if
 
 !   Call Generic Initialize 
@@ -470,11 +469,25 @@ contains
     call MAPL_StateAdd (aero, fld, __RC__)
     call MAPL_StateAdd (aero_aci, fld, __RC__)
 
+    self%klid = 1 ! temporary value
+!   Set internal CAphobic values to 0 where above klid
+    call MAPL_GetPointer (internal, int_ptr, 'CAphobic', __RC__)
+    call setZeroKlid(self%km, self%klid, int_ptr)
+
     call ESMF_StateGet (internal, 'CAphilic', field, __RC__)
     call ESMF_AttributeSet (field, NAME='ScavengingFractionPerKm', VALUE=self%fscav(2), __RC__)
     fld = MAPL_FieldCreate (field, 'CAphilic', __RC__)
     call MAPL_StateAdd (aero, fld, __RC__)
     call MAPL_StateAdd (aero_aci, fld, __RC__)
+
+    if (.not. data_driven) then
+!      Set klid
+       call MAPL_GetPointer(import, ple, 'PLE', __RC__)
+       call findKlid (self%klid, self%plid, ple, __RC__)
+!      Set internal CAphilic values to 0 where above klid
+       call MAPL_GetPointer (internal, int_ptr, 'CAphilic', __RC__)
+       call setZeroKlid(self%km, self%klid, int_ptr)
+    end if
 
     if (data_driven) then
        instance = instanceData
@@ -542,7 +555,8 @@ contains
     call ESMF_ConfigGetAttribute (cfg, self%diag_MieTable(instance)%nch, label="n_channels:", __RC__)
     call ESMF_ConfigGetAttribute (cfg, self%diag_MieTable(instance)%nmom, label="n_moments:", default=0,  __RC__)
     allocate (self%diag_MieTable(instance)%channels(self%diag_MieTable(instance)%nch), __STAT__ )
-    call ESMF_ConfigGetAttribute (cfg, self%diag_MieTable(instance)%channels, label= "r_channels:", __RC__)
+    call ESMF_ConfigGetAttribute (cfg, self%diag_MieTable(instance)%channels, &
+                                  label= "aerosol_monochromatic_optics_wavelength:", __RC__)
 
     allocate (self%diag_MieTable(instance)%mie_aerosol, __STAT__)
     self%diag_MieTable(instance)%mie_aerosol = Chem_MieTableCreate (self%diag_MieTable(instance)%optics_file, __RC__ )
@@ -681,7 +695,7 @@ contains
           aviation_crs_src, biomass_src_
     real, dimension(:,:,:), allocatable :: emissions_point
     integer, pointer, dimension(:)    :: iPoint, jPoint
-
+    character (len=ESMF_MAXSTR)  :: fname ! file name for point source emissions
     character(len=2)  :: GCsuffix
 
 #include "CA2G_DeclarePointer___.h"
@@ -737,8 +751,6 @@ contains
     idow = Chem_UtilIdow(nymd)
     if ( (nhms==0) .and. (idow == self%myDOW) ) then
        cdow = Chem_UtilCdow(nymd)
-!       OCphobic = tiny(1.) ! avoid division by zero
-!       OCphilic = tiny(1.) ! avoid division by zero
        CAphobic = tiny(1.) ! avoid division by zero
        CAphilic = tiny(1.) ! avoid division by zero
        if ( MAPL_AM_I_ROOT() ) then
@@ -815,14 +827,11 @@ contains
 !   Read any pointwise emissions, if requested
 !   ------------------------------------------
     if(self%doing_point_emissions) then
-       call Chem_UtilPointEmissions( nymd, self%point_emissions_srcfilen, &
-                                    self%nPts, self%pLat, self%pLon, &
-                                    self%pBase, self%pTop, self%pEmis, &
-                                    self%pStart, self%pEnd )
-
-!   In case vStart or vEnd were not specified in the file set to defaults
-       where(self%pStart < 0) self%pStart = 000000
-       where(self%pEnd < 0)   self%pEnd   = 240000
+       call StrTemplate (fname, self%point_emissions_srcfilen, xid='unknown', &
+                         nymd=nymd, nhms=120000 )
+       call ReadPointEmissions (nymd, fname, self%nPts, self%pLat, self%pLon, &
+                                 self%pBase, self%pTop, self%pEmis, self%pStart, &
+                                 self%pEnd, label='source')
     endif
 
 !   Get indices for point emissions
@@ -902,8 +911,6 @@ contains
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
     Iam = trim(COMP_NAME) // '::' // Iam
 
-if(mapl_am_i_root()) print*,trim(comp_name),' Run2 BEGIN'
-
 !   Get my internal MAPL_Generic state
 !   -----------------------------------
     call MAPL_GetObjectFromGC (GC, MAPL, __RC__)
@@ -922,19 +929,6 @@ if(mapl_am_i_root()) print*,trim(comp_name),' Run2 BEGIN'
     else if (comp_name(1:5) == 'CA.br') then
        GCsuffix = 'BR'
     end if
-
-#if 0
-if (trim(comp_name) == 'CA.oc') then
-  if(mapl_am_i_root()) print*,'CA2G Run2 B sum(OCphobic) = ',sum(CAphobic)
-  if(mapl_am_i_root()) print*,'CA2G Run2 B sum(OCphilic) = ',sum(CAphilic)
-else if (trim(comp_name) == 'CA.bc') then
-  if(mapl_am_i_root()) print*,'CA2G Run2 B sum(BCphobic) = ',sum(CAphobic)
-  if(mapl_am_i_root()) print*,'CA2G Run2 B sum(BCphilic) = ',sum(CAphilic)
-else if (trim(comp_name) == 'CA.br') then
-  if(mapl_am_i_root()) print*,'CA2G Run2 B sum(BRphobic) = ',sum(CAphobic)
-  if(mapl_am_i_root()) print*,'CA2G Run2 B sum(BRphilic) = ',sum(CAphilic)
-end if
-#endif
 
 !   Get my private internal state
 !   ------------------------------
@@ -974,7 +968,7 @@ end if
        call MAPL_VarSpecGet(InternalSpec(n), SHORT_NAME=short_name, __RC__)
        call MAPL_GetPointer(internal, NAME=short_name, ptr=int_ptr, __RC__)
 
-       call Chem_Settling2Gorig (self%km, self%rhFlag, n, int_ptr, CHEMgrav, delp, &
+       call Chem_Settling2Gorig (self%km, self%klid, self%rhFlag, n, int_ptr, CHEMgrav, delp, &
                                  self%radius(n)*1.e-6, self%rhop(n), self%cdt, t, airdens, &
                                  rh2, zle, CASD, __RC__)
     end do
@@ -1006,9 +1000,9 @@ end if
     KIN = .true.
 !   Hydrophilic mode (second tracer) is removed
     fwet = 1.
-    call WetRemovalGOCART2G(self%km, self%nbins, self%nbins, 2, self%cdt, GCsuffix, &
-                               KIN, chemGRAV, fwet, CAphilic, ple, t, airdens, &
-                               pfl_lsan, pfi_lsan, cn_prcp, ncn_prcp, CAWT, rc)
+    call WetRemovalGOCART2G (self%km, self%klid, self%nbins, self%nbins, 2, self%cdt, GCsuffix, &
+                             KIN, chemGRAV, fwet, CAphilic, ple, t, airdens, &
+                             pfl_lsan, pfi_lsan, cn_prcp, ncn_prcp, CAWT, rc)
 
 !   Compute diagnostics
 !   -------------------
@@ -1016,41 +1010,12 @@ end if
     int_arr(:,:,:,1) = CAphobic
     int_arr(:,:,:,2) = CAphilic
 
-    call Aero_Compute_Diags (mie_table=self%diag_MieTable(self%instance), km=self%km, nbegin=1, nbins=2, &
+    call Aero_Compute_Diags (mie_table=self%diag_MieTable(self%instance), km=self%km, klid=self%klid, nbegin=1, nbins=2, &
                              channels=self%diag_MieTable(self%instance)%channels, aerosol=int_arr, grav=chemgrav, &
                              tmpu=t, rhoa=airdens, rh=rh2, u=u, v=v, delp=delp, sfcmass=CASMASS, colmass=CACMASS, &
                              mass=CAMASS, exttau=CAEXTTAU, scatau=CASCATAU, fluxu=CAFLUXU, fluxv=CAFLUXV, &
                              conc=CACONC, extcoef=CAEXTCOEF, scacoef=CASCACOEF, angstrom=CAANGSTR, aerindx=CAAERIDX,&
                              __RC__)
-
-if (trim(comp_name) == 'CA.oc') then
-  if(mapl_am_i_root()) print*,'CA2G Run2 E sum(OCphobic) = ',sum(CAphobic)
-  if(mapl_am_i_root()) print*,'CA2G Run2 E sum(OCphilic) = ',sum(CAphilic)
-!  if(mapl_am_i_root()) print*,'CA2G Run2 E array OCphobic = ',CAphobic
-!  if(mapl_am_i_root()) print*,'CA2G Run2 E array OCphilic = ',CAphilic
-!if(mapl_am_i_root()) print*,'CA2G OC CASMASS = ',sum(CASMASS)
-!if(mapl_am_i_root()) print*,'CA2G OC CAMASS = ',sum(CAMASS)
-!if(mapl_am_i_root()) print*,'CA2G OC CAEXTTAU = ',sum(CAEXTTAU)
-!if(mapl_am_i_root()) print*,'CA2G OC CASCATAU = ',sum(CASCATAU)
-else if (trim(comp_name) == 'CA.bc') then
-  if(mapl_am_i_root()) print*,'CA2G Run2 E sum(BCphobic) = ',sum(CAphobic)
-  if(mapl_am_i_root()) print*,'CA2G Run2 E sum(BCphilic) = ',sum(CAphilic)
-!  if(mapl_am_i_root()) print*,'CA2G Run2 E array BCphobic = ',CAphobic
-!  if(mapl_am_i_root()) print*,'CA2G Run2 E array BCphilic = ',CAphilic
-!if(mapl_am_i_root()) print*,'CA2G BC CASMASS = ',sum(CASMASS)
-!if(mapl_am_i_root()) print*,'CA2G BC CAMASS = ',sum(CAMASS)
-!if(mapl_am_i_root()) print*,'CA2G BC CAEXTTAU = ',sum(CAEXTTAU)
-!if(mapl_am_i_root()) print*,'CA2G BC CASCATAU = ',sum(CASCATAU)
-else if (trim(comp_name) == 'CA.br') then
-  if(mapl_am_i_root()) print*,'CA2G Run2 E sum(BRphobic) = ',sum(CAphobic)
-  if(mapl_am_i_root()) print*,'CA2G Run2 E sum(BRphilic) = ',sum(CAphilic)
-if(mapl_am_i_root()) print*,'CA2G BR CASMASS = ',sum(CASMASS)
-if(mapl_am_i_root()) print*,'CA2G BR CAMASS = ',sum(CAMASS)
-if(mapl_am_i_root()) print*,'CA2G BR CAEXTTAU = ',sum(CAEXTTAU)
-if(mapl_am_i_root()) print*,'CA2G BR CASCATAU = ',sum(CASCATAU)
-end if
-
-if(mapl_am_i_root()) print*,trim(comp_name),' Run2 END'
 
     RETURN_(ESMF_SUCCESS)
 
@@ -1249,7 +1214,6 @@ if(mapl_am_i_root()) print*,trim(comp_name),' Run2 END'
 
   contains
 
-!    subroutine mie_(mie_table, aerosol_names, nb, offset, q, rh, bext_s, bssa_s, basym_s, rc)
     subroutine mie_(mie_table, nbins, nb, offset, q, rh, bext_s, bssa_s, basym_s, rc)
 
     implicit none

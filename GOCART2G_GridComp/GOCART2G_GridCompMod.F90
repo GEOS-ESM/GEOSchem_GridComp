@@ -36,7 +36,6 @@ module GOCART2G_GridCompMod
      character(:), allocatable :: name
   end type Instance
 
-  
   type Constituent
      type(Instance), allocatable :: instances(:)
      integer :: n_active
@@ -68,8 +67,7 @@ module GOCART2G_GridCompMod
 !  14Oct2019  E.Sherman, A.Darmenov, A. da Silva, T. Clune  First attempt at refactoring. 
 !
 !EOP
-!-------------------------------------------------------------------------
-
+!============================================================================
 
 contains
 
@@ -97,10 +95,9 @@ contains
 
 
 !EOP
-
-!****************************************************************************
+!============================================================================
 !
-! Locals
+!   Locals
     character (len=ESMF_MAXSTR)                   :: COMP_NAME 
     type (ESMF_Config)                            :: myCF
     type (GOCART_State), pointer                  :: self
@@ -109,15 +106,12 @@ contains
     __Iam__('SetServices')
 
 !****************************************************************************
-
 ! Begin...
 
 !   Get my name and set-up traceback handle
 !   ---------------------------------------
     call ESMF_GridCompGet (GC, NAME=COMP_NAME, __RC__)
-
     Iam = trim(COMP_NAME)//'::'//'SetServices'
-
 
 !   Wrap internal state for storing in GC
 !   -------------------------------------
@@ -150,9 +144,6 @@ contains
     if (self%NI%n_active > 1) then
        if(mapl_am_i_root()) print*,'WARNING: GOCART can only support one active nitrate instance. Check the RC/GOCART2G_GridComp.rc'
     end if
-
-!if (mapl_am_I_root()) print*,'GOCART2G self%NI%instances%name = ',self%NI%instances(1)%name
-!if (mapl_am_I_root()) print*,'GOCART2G self%NI%n_active = ',self%NI%n_active
 
     call ESMF_ConfigDestroy(myCF, __RC__)
 
@@ -197,24 +188,26 @@ contains
        datatype   = MAPL_BundleItem, __RC__)
 
 !   Add connectivities for Nitrate component
-!   Nitrate currently only supports one  Nitrate component. Nitrate only 
+!   Nitrate currently only supports one Nitrate component. Nitrate only 
 !   uses the first active dust and sea salt instance.
-    if ((self%DU%instances(1)%is_active)) then
-       call MAPL_AddConnectivity (GC, SHORT_NAME = ["DU"], &
-                                  DST_ID=self%NI%instances(1)%id, &
-                                  SRC_ID=self%DU%instances(1)%id, __RC__)
-    end if
+    if (size(self%NI%instances) > 0) then
+       if ((self%DU%instances(1)%is_active)) then
+          call MAPL_AddConnectivity (GC, SHORT_NAME = ["DU"], &
+                                     DST_ID=self%NI%instances(1)%id, &
+                                     SRC_ID=self%DU%instances(1)%id, __RC__)
+       end if
 
-    if ((self%SS%instances(1)%is_active)) then
-       call MAPL_AddConnectivity (GC, SHORT_NAME = ["SS"] , &
-                                  DST_ID=self%NI%instances(1)%id, &
-                                  SRC_ID=self%SS%instances(1)%id, __RC__)
-    end if
+       if ((self%SS%instances(1)%is_active)) then
+          call MAPL_AddConnectivity (GC, SHORT_NAME = ["SS"] , &
+                                     DST_ID=self%NI%instances(1)%id, &
+                                     SRC_ID=self%SS%instances(1)%id, __RC__)
+       end if
 
-    if ((self%SU%instances(1)%is_active)) then
-       call MAPL_AddConnectivity (GC, SHORT_NAME = ["SO4"] , &
-                                  DST_ID=self%NI%instances(1)%id, &
-                                  SRC_ID=self%SU%instances(1)%id, __RC__)
+       if ((self%SU%instances(1)%is_active)) then
+          call MAPL_AddConnectivity (GC, SHORT_NAME = ["SO4"] , &
+                                     DST_ID=self%NI%instances(1)%id, &
+                                     SRC_ID=self%SU%instances(1)%id, __RC__)
+       end if
     end if
 
 !   Set generic services
@@ -227,7 +220,7 @@ contains
   end subroutine SetServices
 
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!============================================================================
 !BOP
 
 ! !IROUTINE: Initialize -- Initialize method for the composite Gridded Component
@@ -250,14 +243,12 @@ contains
 ! !REVISION HISTORY: 
 ! 14oct2019   E.Sherman  First attempt at refactoring
 
-
 !EOP
+!============================================================================
 
-!****************************************************************************
-! ErrLog Variables
-    character (len=ESMF_MAXSTR)              :: COMP_NAME 
+!   Locals 
+    character (len=ESMF_MAXSTR)              :: COMP_NAME
 
-! Local derived type aliases
     type (MAPL_MetaComp),       pointer      :: MAPL
     type (ESMF_GridComp),       pointer      :: gcs(:)
     type (ESMF_State),          pointer      :: gex(:)
@@ -272,7 +263,6 @@ contains
     __Iam__('Initialize')
 
 !****************************************************************************
-
 ! Begin... 
 
 !   Get the target components name and set-up traceback handle.
@@ -400,12 +390,10 @@ if(mapl_am_I_root()) print*,'GOCART2G add_aero_states_ instance name = ',trim(in
 ! !DESCRIPTION: Run method 
 
 !EOP
+!============================================================================
 
-!****************************************************************************
-! ErrLog Variables
+!   Locals
     character(len=ESMF_MAXSTR)          :: COMP_NAME
-
-! Local derived type aliases
     type (MAPL_MetaComp),      pointer  :: MAPL
     type (ESMF_GridComp),      pointer  :: gcs(:)
     type (ESMF_State),         pointer  :: gim(:)
@@ -444,8 +432,7 @@ if(mapl_am_I_root()) print*,'GOCART2G add_aero_states_ instance name = ',trim(in
 
   end subroutine Run1
 
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!============================================================================
 !BOP
 ! !IROUTINE: RUN2 -- Run2 method for GOCART2G component
 
@@ -464,12 +451,10 @@ if(mapl_am_I_root()) print*,'GOCART2G add_aero_states_ instance name = ',trim(in
 !                the Initialize and Finalize services, as well as allocating
 
 !EOP
+!============================================================================
 
-!****************************************************************************
-! ErrLog Variables
+!   Locals
     character(len=ESMF_MAXSTR)          :: COMP_NAME
-
-! Local derived type aliases
     type (MAPL_MetaComp),      pointer  :: MAPL
     type (ESMF_GridComp),      pointer  :: gcs(:)
     type (ESMF_State),         pointer  :: gim(:)
@@ -551,7 +536,6 @@ if(mapl_am_I_root()) print*,'GOCART2G add_aero_states_ instance name = ',trim(in
        call ESMF_ConfigGetAttribute (myCF, inst_name, __RC__)
        species%instances(i)%name = inst_name
        species%instances(i)%is_active = .true.
-if(mapl_am_i_root()) print*,'GOCART2G active species%instances(i)%name = ', species%instances(i)%name
     end do
     species%n_active = n_active
 
@@ -561,7 +545,6 @@ if(mapl_am_i_root()) print*,'GOCART2G active species%instances(i)%name = ', spec
        call ESMF_ConfigGetAttribute (myCF, inst_name, __RC__)
        species%instances(i)%name = inst_name
        species%instances(i)%is_active = .false.
-if(mapl_am_i_root()) print*,'GOCART2G passive species%instances(i)%name = ', species%instances(i)%name
     end do
 
 
@@ -620,7 +603,6 @@ if(mapl_am_i_root()) print*,'GOCART2G passive species%instances(i)%name = ', spe
 
           do i = 1, n
              species%instances(i)%id = MAPL_AddChild(gc, name=species%instances(i)%name, SS=SetServices, __RC__)
-if(mapl_am_i_root()) print*,'GOCART2G addChildren__ = ',species%instances(i)%name
           end do
 
         RETURN_(ESMF_SUCCESS)
@@ -713,12 +695,9 @@ if(mapl_am_i_root()) print*,'GOCART2G addChildren__ = ',species%instances(i)%nam
         end if
     end do
 
-!if(mapl_am_i_root()) print*,'GOCART2G aeroList = ',aeroList
     ext = 0.0d0
     ssa = 0.0d0
     asy = 0.0d0
-
-!if(mapl_am_I_root())print*,'GOCART2G aeroList = ',aeroList
 
 !  ! Get aerosol optic properties from children
    do i = 1, size(aeroList)
@@ -798,8 +777,6 @@ if(mapl_am_i_root()) print*,'GOCART2G addChildren__ = ',species%instances(i)%nam
    RETURN_(ESMF_SUCCESS)
 
   end subroutine run_aerosol_optics
-
-
 
 
 end module GOCART2G_GridCompMod
