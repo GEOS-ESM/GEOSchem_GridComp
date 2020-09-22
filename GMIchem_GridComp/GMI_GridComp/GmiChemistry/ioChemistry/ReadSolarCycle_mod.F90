@@ -37,16 +37,16 @@
 ! !USES:
 !
       use GmiASCIIoperations_mod,   only : AsciiOpenRead
-      use GmiFastJX_ParametersMod,  only : NW
 !
       implicit none
 !
-#     include "GmiParameters.h"
+#include "GmiParameters.h"
+#include "parm_MIE_fastJX65.h"
 !
 ! !INPUT PARAMETERS:
       real, intent(inOut), dimension(2628)    :: s_cycle_dates        ! 2628 months : 1882 - 2100
       character (len=MAX_LENGTH_FILE_NAME), intent(in) :: sc_infile_name
-      real, intent(inOut), dimension(NW,2628) :: s_cycle              ! 2628 months : 1882 - 2100
+      real, intent(inOut), dimension(W_,2628) :: s_cycle              ! 2628 months : 1882 - 2100
 
 ! !DESCRIPTION:
 ! This routine sets/reads the solar cycle scaling values.
@@ -54,7 +54,7 @@
 ! !LOCAL VARIABLES:
       integer :: ic, im
       integer :: lun
-      integer :: fjx_bin = NW
+      integer :: fjx_bin = W_
 !
 !-----------------------------------------------------------------------------
 !BOC
