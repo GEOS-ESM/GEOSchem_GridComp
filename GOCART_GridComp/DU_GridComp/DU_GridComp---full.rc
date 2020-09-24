@@ -16,13 +16,13 @@ soil_density: 2500. 2650. 2650. 2650. 2650.
 
 # Emission scheme
 # ---------------
-#emission_scheme: 1 # Ginoux
-#source_fraction: 0.05 0.108 0.218 0.475 0.144
-#Ch_DU: 0.2 0.2 0.08 0.08 0.08 0.067  # resolution dependent tuning constant for emissions (a,b,c,d,e,f)
+emission_scheme: 1 # Ginoux
+source_fraction: 0.0435465   0.106903   0.220117   0.484606   0.144828
+Ch_DU: 0.2 0.2 0.08 0.15 0.08 0.067  # resolution dependent tuning constant for emissions (a,b,c,d,e,f)
 #----------------
-emission_scheme: 2 # K14
-source_fraction:  0.043 0.106 0.219 0.485 0.144
-Ch_DU: 0.02 0.02 0.02 0.0161 0.015 0.015
+#emission_scheme: 2 # K14
+#source_fraction:  0.043 0.106 0.219 0.485 0.144
+#Ch_DU: 0.02 0.02 0.02 0.0161 0.015 0.015
 
 # Scavenging efficiency per bin [km-1]
 fscav: 0.2  0.2  0.2  0.2  0.2   #
