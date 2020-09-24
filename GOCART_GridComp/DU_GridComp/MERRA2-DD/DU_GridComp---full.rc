@@ -33,3 +33,17 @@ rhFlag: 0
 
 # Maring settling velocity correction
 maringFlag: 1
+
+# Threshold friction velocity parameter 'gamma'
+uts_gamma: 1.65e-4
+
+# Formulation of the clay and silt factor in K14 that modulates the strength of the dust emissions
+clayFlag: 1     # 0 - original K14, 1 - I&K2017, 2 - I&K2017
+
+# soil mosture scaling factor
+soil_moisture_factor: 0.8
+
+# clay fraction scaling factor
+soil_clay_factor: 1.0
+
+
