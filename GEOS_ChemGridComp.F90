@@ -609,6 +609,9 @@ contains
                    DST_NAME  = (/ 'SO4SAREA      ', 'SO4SAREAvolc  ' /), &
             DST_ID = STRATCHEM, SRC_ID = CARMA, __RC__)
 
+   CALL MAPL_AddConnectivity ( GC, &
+                   SHORT_NAME  = (/ 'HNO3' /), &
+            DST_ID = CARMA, SRC_ID = STRATCHEM, __RC__)
   END IF
 
 ! CARMA <=> ACHEM (SOA)
