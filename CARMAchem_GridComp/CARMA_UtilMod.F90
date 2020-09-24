@@ -96,12 +96,30 @@
 !  injection based on Guo et al. 2004 Table 5 (6/15/91 10:53-18:07 effective
 !  radius = 0.2 - 0.21 microns, so this is dMass mapped to 22 size bin sulfate
 !  assuming rmed = 0.12 um and sigma = 1.59
-   real, parameter :: dMpin(22) = &   
-    (/ 0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000, 0.00000, &
-       0.00000,  0.00000,  0.00000,  0.00008,  0.00258,  0.03307,  0.17177, 0.36158, &
-       0.30846,  0.10664,  0.01494,  0.00085,  0.00002,  0.00000 /)
+!   real, parameter :: dMpin(22) = &   
+!    (/ 0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000, 0.00000, &
+!       0.00000,  0.00000,  0.00000,  0.00008,  0.00258,  0.03307,  0.17177, 0.36158, &
+!       0.30846,  0.10664,  0.01494,  0.00085,  0.00002,  0.00000 /)
 
-
+! 24-bin specific values
+! Same lognormal parameters as the 22 bin case above. This distribution was
+! created assuming the 24 bins, rmrat=3.7515201, rmin=2.6686863e-10 m, and
+! rhop=1923 kg m-3
+!   real, parameter :: dMpin(24) = &
+!    (/ 0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000, 
+!       0.00000,  0.00000,  0.00045,  0.00942,  0.07945,  0.27143,  0.37581,  0.21087, 
+!       0.04795,  0.00442,  0.00017,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000 /)
+! This size distribution is based on effective radius 0.15 (6/15/91 .8 hours
+! after eruption. rmed = 0.087 um and sigma = 1.59
+   real, parameter :: dMpin(24) = &
+    (/ 0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000, &
+       0.00000,  0.00018,  0.00488,  0.05132,  0.21858,  0.37728,  0.26391,  0.07481, &
+       0.00860,  0.00040,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000 /)
+! This size distribution is putting all of the particles in the smallest bin
+!   real, parameter :: dMpin(24) = &
+!    (/ 1.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000, &
+!       0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000, &
+!       0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000 /)
 
 
 !  Export stuff
@@ -173,7 +191,8 @@ CONTAINS
    real, allocatable         ::  fgridefficiency(:,:), fsstemis(:,:), tskin_c(:,:)
 
    REAL, POINTER, DIMENSION(:,:,:) :: p, ple, rhoa, tmpu, zc, zl, q, zle, rh
-   REAL, POINTER, DIMENSION(:,:,:) :: pso4, psoa_anthro, psoa_biomass
+   REAL, POINTER, DIMENSION(:,:,:) :: pso4, psoa_anthro, psoa_biomass, hno3, &
+                                      so4tendc, so4tendw, so4tendf, so4tendv
    REAL, POINTER, DIMENSION(:,:)   :: gwettop, frlake, oro, u10m, v10m, &
                                       ustar, pblh, z0h, shflux, precc, precl, &
                                       frocean, frseaice, frland, tskin, area
@@ -247,6 +266,11 @@ CONTAINS
    call MAPL_GetPointer ( impChem, oro, 'LWI', __RC__)
 !   call MAPL_GetPointer ( impChem, tskin, 'TS', __RC__)
    call MAPL_GetPointer ( impChem, pso4, 'PSO4TOT', __RC__)
+   call MAPL_GetPointer ( impChem, so4tendc, 'TEND_CHEM_SO4', notFoundOK=.TRUE., __RC__)
+   call MAPL_GetPointer ( impChem, so4tendw, 'TEND_WETD_SO4', notFoundOK=.TRUE., __RC__)
+   call MAPL_GetPointer ( impChem, so4tendf, 'TEND_FLUX_SO4', notFoundOK=.TRUE., __RC__)
+   call MAPL_GetPointer ( impChem, so4tendv, 'TEND_CONV_SO4', notFoundOK=.TRUE., __RC__)
+   call MAPL_GetPointer ( impChem, hno3, 'HNO3', notFoundOK=.TRUE., __RC__)
 
 
 !  Define 10-m wind speed
@@ -645,6 +669,7 @@ CONTAINS
         n = n1 + (ielem-1)*reg%NBIN + ibin - 1
         qa(n)%data3d(i,j,:) =  qa(n)%data3d(i,j,:) &
                              + dMpin(ibin)*dtime*grav_mks/delp*point_column_emissions/area(i,j)
+        call pmaxmin('sulfate   :', qa(n)%data3d, qmin, qmax, ijl, km, 1. )
        end do
       enddo
       deallocate(iPoint, jPoint, stat=ios)
@@ -655,14 +680,35 @@ CONTAINS
 
    enddo   ! NELEM
 
-!  Do the gases (for now set up only for H2SO4 from GOCART)
+!  Do the gases
+!  H2SO4 production from GOCART
+!  PAC: For now CARMA just takes Stratchem value for HNO3
+!  PAC: pso4 is production of sulfate (h2so4 in CARMA) from
+!       GOCART, so4tendc is the sulfate (h2so4 in CARMA)
+!       tendency from GEOS-Chem
 !  --------------------------------------------------------
    if(reg%NGAS > 0) then
      do igas = 1, reg%NGAS
       n = n1 + reg%NELEM*reg%NBIN - 1 + igas
       if( trim(reg%gasname(igas)) == 'h2so4' .or. &
-          trim(reg%gasname(igas)) == 'H2SO4') &
-         qa(n)%data3d = qa(n)%data3d + pso4 * dtime
+          trim(reg%gasname(igas)) == 'H2SO4') then
+         !qa(n)%data3d = qa(n)%data3d + pso4 * dtime
+         !qa(n)%data3d = qa(n)%data3d + so4tendc * dtime
+         if(associated(so4tendc)) then
+             !where(so4tendc .lt. 0._f) so4tendc = 0._f
+             qa(n)%data3d = qa(n)%data3d + so4tendc * dtime
+             call pmaxmin('so4tendc    : ', so4tendc, qmin, qmax, ijl, km, 1. )
+         endif
+         !where(qa(n)%data3d .lt. 0._f) qa(n)%data3d = 1.e-20_f
+         call pmaxmin('so4mmr      : ', qa(n)%data3d, qmin, qmax, ijl, km, 1. )
+      endif
+      if( trim(reg%gasname(igas)) == 'hno3' .or. &
+          trim(reg%gasname(igas)) == 'HNO3') then
+         if (associated(hno3)) then
+             qa(n)%data3d = hno3
+         endif
+         call pmaxmin('hno3mmr      : ', qa(n)%data3d, qmin, qmax, ijl, km, 1. )
+      endif
      end do
    endif
 

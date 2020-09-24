@@ -850,6 +850,7 @@ contains
     carma%f_igash2o   = 0
     carma%f_igash2so4 = 0
     carma%f_igasso2   = 0
+    carma%f_igashno3  = 0
 
     do igas = 1, carma%f_NGAS
       if (carma%f_gas(igas)%f_icomposition == I_GCOMP_H2O) then
@@ -858,6 +859,8 @@ contains
         carma%f_igash2so4 = igas
       else if (carma%f_gas(igas)%f_icomposition == I_GCOMP_SO2) then
         carma%f_igasso2 = igas
+      else if (carma%f_gas(igas)%f_icomposition == I_GCOMP_HNO3) then
+        carma%f_igashno3 = igas
       end if
     end do
     

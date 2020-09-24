@@ -29,8 +29,10 @@ subroutine setupvf(carma, cstate, rc)
 
   ! Local declarations  
   integer                 :: igroup, i, j, k, k1, k2, ibin, iz, nzm1
+  integer                 :: iepart
   real(kind=f)            :: r_tmp(NBIN,NGROUP)
   real(kind=f)            :: h2o_mass
+  real(kind=f)            :: h2o_vmr, hno3_vmr, h2so4m
 
   !  Define formats
   2 format(/,'Fall velocities and Reynolds number (prior to interpolation)')
@@ -42,19 +44,31 @@ subroutine setupvf(carma, cstate, rc)
   do igroup = 1, NGROUP
 
     ! Special handling for vf_const < 0 (if, then abs(vf_const) = dry particle radius [cm])
+    ! PAC: do I need to add logic for STS here?
     if( ifall == 0 .and. vf_const < 0._f) then
       r_tmp = abs(vf_const)
       do iz = 1, NZ
        do ibin = 1, NBIN
-        if (irhswell(igroup) == I_WTPCT_H2SO4) then
+         if (irhswell(igroup) == I_WTPCT_H2SO4 .OR. &
+             (irhswell(igroup) == I_WTPCT_STS .AND. t(iz) > 200.)) then
           h2o_mass = gc(iz, igash2o) / (xmet(iz) * ymet(iz) * zmet(iz))
-          call getwetr(carma, igroup, relhum(iz), r_tmp(ibin,igroup), r_wet(iz,ibin,igroup), &
+          call getwetr(carma, igroup, relhum(iz), r(ibin,igroup), r_wet(iz,ibin,igroup), &
                        rhop(iz,ibin,igroup), rhop_wet(iz,ibin,igroup), rc, h2o_mass=h2o_mass, &
                        h2o_vp=pvapl(iz, igash2o), temp=t(iz))
-        else
-          call getwetr(carma, igroup, relhum(iz), r_tmp(ibin,igroup), r_wet(iz,ibin,igroup), &
+         else if (irhswell(igroup) == I_WTPCT_STS) then
+          iepart = ienconc(igroup)     ! element of particle number concentration 
+          h2o_vmr     = gc(iz, igash2o) / gwtmol(igash2o) * WTMOL_AIR
+          hno3_vmr    = gc(iz, igashno3) / gwtmol(igashno3) * WTMOL_AIR 
+          h2so4m       = sum(rmass(:, igroup) * pc(iz, :, iepart)) + &
+                             gc(iz, igash2so4) / (xmet(iz) * ymet(iz) * zmet(iz))
+          call getwetr(carma, igroup, relhum(iz), r(ibin,igroup), r_wet(iz,ibin,igroup), &
+            rhop(iz,ibin,igroup), rhop_wet(iz,ibin,igroup), rc, h2o_vmr=h2o_vmr, &
+            h2o_vp=pvapl(iz, igash2o), temp=t(iz), press=cstate%f_p(iz), h2so4m = h2so4m, &
+            hno3_vmr = hno3_vmr)
+         else
+          call getwetr(carma, igroup, relhum(iz), r(ibin,igroup), r_wet(iz,ibin,igroup), &
                        rhop(iz,ibin,igroup), rhop_wet(iz,ibin,igroup), rc)
-        endif
+         endif
         if (rc < 0) return
        enddo
       enddo
@@ -90,11 +104,22 @@ subroutine setupvf(carma, cstate, rc)
       ! Special handling for vf_const < 0 (if, then abs(vf_const) = dry particle radius [cm])
       do iz = 1, NZ
        do ibin = 1, NBIN
-         if (irhswell(igroup) == I_WTPCT_H2SO4) then
+         if (irhswell(igroup) == I_WTPCT_H2SO4 .OR. &
+             (irhswell(igroup) == I_WTPCT_STS .AND. t(iz) > 200.)) then
           h2o_mass = gc(iz, igash2o) / (xmet(iz) * ymet(iz) * zmet(iz))
           call getwetr(carma, igroup, relhum(iz), r(ibin,igroup), r_wet(iz,ibin,igroup), &
                        rhop(iz,ibin,igroup), rhop_wet(iz,ibin,igroup), rc, h2o_mass=h2o_mass, &
                        h2o_vp=pvapl(iz, igash2o), temp=t(iz))
+         else if (irhswell(igroup) == I_WTPCT_STS) then
+          iepart = ienconc(igroup)     ! element of particle number concentration 
+          h2o_vmr     = gc(iz, igash2o) / gwtmol(igash2o) * WTMOL_AIR
+          hno3_vmr    = gc(iz, igashno3) / gwtmol(igashno3) * WTMOL_AIR 
+          h2so4m       = sum(rmass(:, igroup) * pc(iz, :, iepart)) + &
+                             gc(iz, igash2so4) / (xmet(iz) * ymet(iz) * zmet(iz))
+          call getwetr(carma, igroup, relhum(iz), r(ibin,igroup), r_wet(iz,ibin,igroup), &
+            rhop(iz,ibin,igroup), rhop_wet(iz,ibin,igroup), rc, h2o_vmr=h2o_vmr, &
+            h2o_vp=pvapl(iz, igash2o), temp=t(iz), press=cstate%f_p(iz), h2so4m = h2so4m, &
+            hno3_vmr = hno3_vmr)
          else
           call getwetr(carma, igroup, relhum(iz), r(ibin,igroup), r_wet(iz,ibin,igroup), &
                        rhop(iz,ibin,igroup), rhop_wet(iz,ibin,igroup), rc)
