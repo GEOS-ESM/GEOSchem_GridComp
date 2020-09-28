@@ -11,7 +11,9 @@ set (src_directories
    ${CMAKE_CURRENT_SOURCE_DIR}/HEMCO/src/Shared/GeosUtil
    ${CMAKE_CURRENT_SOURCE_DIR}/HEMCO/src/Core
    ${CMAKE_CURRENT_SOURCE_DIR}/HEMCO/src/Extensions
-   ${CMAKE_CURRENT_SOURCE_DIR}/HEMCO/src/Interfaces
+   ${CMAKE_CURRENT_SOURCE_DIR}/HEMCO/src/Interfaces/Shared
+   ${CMAKE_CURRENT_SOURCE_DIR}/HEMCO/src/Interfaces/Standalone
+   ${CMAKE_CURRENT_SOURCE_DIR}/HEMCO/src/Interfaces/MAPL_ESMF
    )
 
 set (srcs)
@@ -39,6 +41,5 @@ esma_add_library (${this}
 
 target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 
-target_compile_definitions (${this} PRIVATE ESMF_ DEVEL NO_BPCH UCX
-   EXTERNAL_GRID EXTERNAL_FORCING GEOS_FP USE_REAL8 USE_TEND NC_DIAG DISCOVER MODEL_GEOS)
+target_compile_definitions (${this} PRIVATE ESMF_ USE_REAL8 MODEL_GEOS)
 set_target_properties (${this} PROPERTIES Fortran_MODULE_DIRECTORY ${include_${this}})

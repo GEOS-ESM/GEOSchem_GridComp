@@ -10,7 +10,7 @@ set (src_directories
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosUtil
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/NcdfUtil
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/ISORROPIA
-   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/KPP/Standard
+   ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/KPP/fullchem
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/GeosCore
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/Interfaces/GCHP
    ${CMAKE_CURRENT_SOURCE_DIR}/gc_column/ObsPack
@@ -70,8 +70,8 @@ esma_add_library (${this}
 
 target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 
-target_compile_definitions(${this} PRIVATE ESMF_ DEVEL NO_BPCH UCX 
-   EXTERNAL_GRID EXTERNAL_FORCING GEOS_FP USE_REAL8 USE_TEND NC_DIAG DISCOVER MODEL_GEOS)
+target_compile_definitions(${this} PRIVATE
+   ESMF_ UCX EXTERNAL_GRID EXTERNAL_FORCING USE_REAL8 MODEL_GEOS)
 
 if (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
    target_compile_definitions(${this} PRIVATE LINUX_IFORT)
