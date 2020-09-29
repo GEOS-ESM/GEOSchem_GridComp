@@ -756,6 +756,7 @@ real, allocatable, dimension(:,:)     :: dqa
 
 !   Update aerosol state
 !   --------------------
+#if 0
     call UpdateAerosolState (emissions, emissions_surface, emissions_point, &
                              self%sfrac, self%nPts, self%km, self%CDT, chemGRAV, &
                              self%nbins, delp, DU, rc)
@@ -763,6 +764,16 @@ real, allocatable, dimension(:,:)     :: dqa
     if (associated(DUEM)) then
        DUEM = sum(emissions, dim=3)
     end if
+#endif
+do n = 1, 5
+  dqa = 0.0
+  dqa = self%Ch_DU * self%sfrac(n) * du_src * emissions_surface(:,:,n) * self%cdt * chemgrav / delp(:,:,self%km)
+  DU(:,:,self%km,n) = DU(:,:,self%km,n) + dqa
+ 
+  if(associated(DUEM)) then
+    DUEM(:,:,n) = self%Ch_DU * self%sfrac(n) * du_src * emissions_surface(:,:,n)
+  end if
+end do
 
 !do n=1,5
 !   if(mapl_am_i_root()) print*,'n = ', n,' : Run1 E DU2G sum(du00n) = ',sum(DU(:,:,:,n))
