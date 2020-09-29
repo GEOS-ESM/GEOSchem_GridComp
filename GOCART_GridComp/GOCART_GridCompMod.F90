@@ -1417,12 +1417,6 @@ end if ! doing GOCART
   
   real(ESMF_KIND_R4),  dimension(4) :: Vect_Hcts
 
-    !development testing variables - to be deleted
-    real, dimension(:,:,:), pointer       :: ptr_test
-    real, dimension(:,:), pointer       :: ptr_test2d
-
-    type (ESMF_Field)                   :: field_test
-
 !  Get my name and set-up traceback handle
 !  ---------------------------------------
    call ESMF_GridCompGet( GC, NAME=COMP_NAME, CONFIG=CF, __RC__ )
@@ -2256,13 +2250,6 @@ CONTAINS
    integer                         :: in, jn
 
    type(GOCART_state), pointer     :: myState
-
-    !development testing variables
-    real, dimension(:,:), pointer     :: ptr_test2d
-    type (ESMF_Field)                   :: field
-    type (ESMF_State)                   :: AEROng
-    type (ESMF_FieldBundle)             :: AEROngbundle
-    integer                             :: NQ
 
 
 !                               ---
@@ -3604,7 +3591,6 @@ subroutine aerosol_activation_properties(state, rc)
       
        call ESMF_FieldBundleGet(aerosols, 'SO4', field=fld, __RC__)
        call ESMF_FieldGet(fld, farrayPtr=q_, __RC__)  ! only use the mass of sulfate to make the conversion
-     
       end if 
 
   else if (index(mode_, 'bcphilic') > 0) then
@@ -3808,6 +3794,11 @@ contains
          sigma    = SIGI(1)
          diameter = DPGI(1)
          num      = TPI(1) * q / fmassaux
+if(mapl_am_i_root()) then
+  print*,'GOCART SS TIP(1) = ',TPI(1)
+  print*,'GOCART SS sum(q) = ',sum(q)
+  print*,'GOCART SS fmassaux = ',fmassaux
+end if
 
      case ('ss002')
          sigma    = SIGI(2)

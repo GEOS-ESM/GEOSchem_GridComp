@@ -217,6 +217,8 @@ if(mapl_am_i_root()) print*,'SU sum(drydepositionfrequency) = ',sum(drydepositio
      enddo
    endif
 
+if(mapl_am_i_root()) print*,'SU sum(pSO2_DMS) = ',sum(pSO2_DMS)
+
    if( associated(pMSA%data3d) ) &
      pMSA%data3d(i1:i2,j1:j2,1:km) = pMSA_DMS(i1:i2,j1:j2,1:km)
    if( associated(su_pMSA%data2d)) then
@@ -226,6 +228,31 @@ if(mapl_am_i_root()) print*,'SU sum(drydepositionfrequency) = ',sum(drydepositio
           + pMSA_DMS(i1:i2,j1:j2,k)*delp(i1:i2,j1:j2,k)/grav
      enddo
    endif
+
+if(mapl_am_i_root()) then
+   print*,''
+   print*,'  SU_ChemDrv_SO2 CHECK'
+   print*,'=========================='
+   print*,'xoh = ',sum(xoh)
+   print*,'xh2o2 = ',sum(xh2o2)
+   print*,'so2 = ',sum(so2)
+   print*,'pSO4g_SO2 = ',sum(pSO4g_SO2)
+   print*,'pSO4aq_SO2 = ',sum(pSO4aq_SO2)
+   print *,'i1 = ', i1
+   print *,'i2 = ', i2
+   print *,'j1 = ',j1
+   print *,'j2 = ',j2
+   print *,'km = ',km
+   print *,'cdt = ',cdt
+   print *,'rhoa = ',sum(rhoa)
+   print *,'delp = ',sum(delp)
+   print *,'tmpu = ',sum(tmpu)
+   print *,'cloud = ',sum(cloud)
+   print *,'oro = ',sum(oro)
+   print*,'======== END ============='
+   print*,''
+end if
+
 
 !  SO2 source and oxidation to SO4
    call SU_ChemDrv_SO2( i1, i2, j1, j2, km, cdt, xoh, xh2o2, rhoa, &
@@ -241,6 +268,8 @@ if(mapl_am_i_root()) print*,'SU sum(drydepositionfrequency) = ',sum(drydepositio
      enddo
    endif
 
+!if(mapl_am_i_root()) print*,'SU pSO4g_SO2 = ',sum(pSO4g_SO2)
+
    if( associated(pSO4aq%data3d) ) &
      pSO4aq%data3d(i1:i2,j1:j2,1:km) = pSO4aq_SO2(i1:i2,j1:j2,1:km)
    if( associated(su_pSO4aq%data2d)) then
@@ -250,6 +279,8 @@ if(mapl_am_i_root()) print*,'SU sum(drydepositionfrequency) = ',sum(drydepositio
           + pSO4aq_SO2(i1:i2,j1:j2,k)*delp(i1:i2,j1:j2,k)/grav
      enddo
    endif
+
+if(mapl_am_i_root()) print*,'SU pSO4aq_SO2 = ',sum(pSO4aq_SO2)
 
    if( associated(pSO4%data3d) ) &
      pSO4%data3d(i1:i2,j1:j2,1:km) = pSO4g_SO2(i1:i2,j1:j2,1:km) + pSO4aq_SO2(i1:i2,j1:j2,1:km)
@@ -955,7 +986,6 @@ if(mapl_am_i_root()) print*,'SU sum(drydepositionfrequency) = ',sum(drydepositio
     if (nymd_last == nymd_current .and. (.not. using_GMI_H2O2)) then
      xh2o2 = h2o2_clim
      nymd_last = nymd_current
-if(mapl_am_i_root()) print*,'SU nymd_oxidants == nymd_current'
     end if 
 
 
@@ -1226,9 +1256,6 @@ if(mapl_am_i_root()) print*,'SU nymd_oxidants == nymd_current'
 
 ! Update emissions/production if necessary (daily)
 !  -----------------------------------------------
-if(mapl_am_i_root()) print*,'SU nymd_last = ', nymd_last
-if(mapl_am_i_root()) print*,'SU nymd_current = ', nymd_current
-
    UpdateEmiss: if(nymd_last .ne. nymd_current) then
     nymd_last = nymd_current
 

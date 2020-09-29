@@ -1002,9 +1002,9 @@ CONTAINS
    end do
 #endif
 
-if(mapl_am_i_root()) print*,'NI Run1 BEGIN sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
-if(mapl_am_i_root()) print*,'NI Run1 BEGIN sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
-if(mapl_am_i_root()) print*,'NI Run1 BEGIN sum(self%xhno3) = ',sum(gcNI%xhno3)
+!if(mapl_am_i_root()) print*,'NI Run1 BEGIN sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+!if(mapl_am_i_root()) print*,'NI Run1 BEGIN sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+!if(mapl_am_i_root()) print*,'NI Run1 BEGIN sum(self%xhno3) = ',sum(gcNI%xhno3)
 
 
 !  Emissions
@@ -1053,9 +1053,9 @@ if(mapl_am_i_root()) print*,'NI Run1 BEGIN sum(self%xhno3) = ',sum(gcNI%xhno3)
     w_c%qa(nNH3)%data3d(:,:,km) = w_c%qa(nNH3)%data3d(:,:,km) &
                                 + cdt * grav / w_c%delp(:,:,km) * emi_nh3_oc
 
-if(mapl_am_i_root()) print*,'NI Run1 END sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
-if(mapl_am_i_root()) print*,'NI Run1 END sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
-if(mapl_am_i_root()) print*,'NI Run1 END sum(self%xhno3) = ',sum(gcNI%xhno3)
+!if(mapl_am_i_root()) print*,'NI Run1 END sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+!if(mapl_am_i_root()) print*,'NI Run1 END sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+!if(mapl_am_i_root()) print*,'NI Run1 END sum(self%xhno3) = ',sum(gcNI%xhno3)
 
    return
 
@@ -1330,14 +1330,14 @@ if(mapl_am_i_root()) print*,'NI Run1 END sum(self%xhno3) = ',sum(gcNI%xhno3)
    if (gcNI%recycle_HNO3) then
        gcNI%xhno3 = hno3
        gcNI%recycle_HNO3 = .false.
-if(mapl_am_i_root()) print*,'NI recycle alarm TRUE'
-if(mapl_am_i_root()) print*,'NI recycle alarm sum(self%xhno3)',sum(gcNI%xhno3)
+!if(mapl_am_i_root()) print*,'NI recycle alarm TRUE'
+!if(mapl_am_i_root()) print*,'NI recycle alarm sum(self%xhno3)',sum(gcNI%xhno3)
    end if
 
-if(mapl_am_i_root()) print*,'NI Run2 BEGIN sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
-if(mapl_am_i_root()) print*,'NI Run2 BEGIN sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
-if(mapl_am_i_root()) print*,'NI Run2 BEGIN sum(hno3) = ',sum(hno3)
-if(mapl_am_i_root()) print*,'NI Run2 BEGIN before thermo sum(self%xhno3) = ',sum(gcNI%xhno3)
+!if(mapl_am_i_root()) print*,'NI Run2 BEGIN sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+!if(mapl_am_i_root()) print*,'NI Run2 BEGIN sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+!if(mapl_am_i_root()) print*,'NI Run2 BEGIN sum(hno3) = ',sum(hno3)
+!if(mapl_am_i_root()) print*,'NI Run2 BEGIN before thermo sum(self%xhno3) = ',sum(gcNI%xhno3)
 
 
 RUN_ALARM: if (gcNI%run_alarm) then
@@ -1360,9 +1360,9 @@ RUN_ALARM: if (gcNI%run_alarm) then
    if(associated(NI_pnh3aq%data2d)) NI_pnh3aq%data2d(:,:) = 0.
 
 
-if(mapl_am_i_root()) print*,'NI before thermo sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+!if(mapl_am_i_root()) print*,'NI before thermo sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
 !if(mapl_am_i_root()) print*,'NI before thermo sum(NO3an1) = ',sum(w_c%qa(nNO3an1)%data3d)
-if(mapl_am_i_root()) print*,'NI before thermo sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+!if(mapl_am_i_root()) print*,'NI before thermo sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
 
 !  RPMARES - thermodynamic module
 !  ------------------------------
@@ -1377,7 +1377,7 @@ if(mapl_am_i_root()) print*,'NI before thermo sum(NH4a) = ',sum(w_c%qa(nNH4a)%da
     enddo
    endif
 
-if(mapl_am_i_root()) print*,'NI before sum(SO4) = ',sum(w_c%qa(nSO4)%data3d)
+!if(mapl_am_i_root()) print*,'NI before sum(SO4) = ',sum(w_c%qa(nSO4)%data3d)
 
    do k = 1, km
     do j = j1, j2
@@ -1432,10 +1432,12 @@ if(mapl_am_i_root()) print*,'NI before sum(SO4) = ',sum(w_c%qa(nSO4)%data3d)
     enddo
    enddo
 
-if(mapl_am_i_root()) print*,'NI after thermo sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
-if(mapl_am_i_root()) print*,'NI after thermo sum(NO3an1) = ',sum(w_c%qa(nNO3an1)%data3d)
-if(mapl_am_i_root()) print*,'NI after thermo sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
-if(mapl_am_i_root()) print*,'NI after thermo sum(self%xhno3) = ',sum(gcNI%xhno3)
+!if(mapl_am_i_root()) print*,'NI after thermo sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+!if(mapl_am_i_root()) print*,'NI after thermo sum(NO3an1) = ',sum(w_c%qa(nNO3an1)%data3d)
+!if(mapl_am_i_root()) print*,'NI after thermo sum(NO3an2) = ',sum(w_c%qa(nNO3an2)%data3d)
+!if(mapl_am_i_root()) print*,'NI after thermo sum(NO3an3) = ',sum(w_c%qa(nNO3an3)%data3d)
+!if(mapl_am_i_root()) print*,'NI after thermo sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+!if(mapl_am_i_root()) print*,'NI after thermo sum(self%xhno3) = ',sum(gcNI%xhno3)
 !if(mapl_am_i_root()) print*,'NI sum(NIPNO3AQ) = ',sum(NI_pno3aq%data2d)
 !if(mapl_am_i_root()) print*,'NI sum(NIPNH4AQ) = ',sum(NI_pnh4aq%data2d)
 !if(mapl_am_i_root()) print*,'NI sum(NIPNH3AQ) = ',sum(NI_pnh3aq%data2d)
@@ -1455,6 +1457,17 @@ if(mapl_am_i_root()) print*,'NI after thermo sum(self%xhno3) = ',sum(gcNI%xhno3)
         ssname(n) = ESMF_UtilStringUpperCase(trim(w_c%reg%vname(n)))
       end do
    end if
+
+
+
+!do n = w_c%reg%i_DU, w_c%reg%j_DU
+!   if(mapl_am_i_root()) print*,'NI self%fnumDU = ',w_c%reg%fnum(n)
+!   if(mapl_am_i_root()) print*,'NI self%rmedDU = ',w_c%reg%rmed(n)
+!end do
+!do n = w_c%reg%i_SS, w_c%reg%j_SS
+!   if(mapl_am_i_root()) print*,'NI self%fnumSS = ',w_c%reg%fnum(n)
+!   if(mapl_am_i_root()) print*,'NI self%rmedSS = ',w_c%reg%rmed(n)
+!end do
 
 !  Heterogeneous chemistry
 !  -----------------------
@@ -1520,6 +1533,13 @@ if(mapl_am_i_root()) print*,'NI after thermo sum(self%xhno3) = ',sum(gcNI%xhno3)
        enddo
       endif
 
+!if(mapl_am_i_root()) then
+!  print*,'i = ',i, ' j = ',j, ' k = ',k
+!  print*,'NI kan1 = ',kan1
+!  print*,'NI kan2 = ',kan2
+!  print*,'NI kan3 = ',kan3
+!end if
+
 !     Compute the nitric acid loss (but don't actually update)
       if( (kan1+kan2+kan3) > 0.) then
        deltahno3 = gcNI%xhno3(i,j,k) * fMassHNO3 / fMassAir * (1.-exp(-(kan1+kan2+kan3)*cdt))
@@ -1576,6 +1596,9 @@ if(mapl_am_i_root()) print*,'NI after thermo sum(self%xhno3) = ',sum(gcNI%xhno3)
 
 if(mapl_am_i_root()) print*,'NI after hetchem sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
 if(mapl_am_i_root()) print*,'NI after hetchem sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+if(mapl_am_i_root()) print*,'NI after hetchem sum(NO3an1) = ',sum(w_c%qa(nNO3an1)%data3d)
+if(mapl_am_i_root()) print*,'NI after hetchem sum(NO3an2) = ',sum(w_c%qa(nNO3an2)%data3d)
+if(mapl_am_i_root()) print*,'NI after hetchem sum(NO3an3) = ',sum(w_c%qa(nNO3an3)%data3d)
 if(mapl_am_i_root()) print*,'NI after hetchem sum(self%xhno3) = ',sum(gcNI%xhno3)
 
 !if(mapl_am_i_root()) print*,'NI NH4a array = ',w_c%qa(nNH4a)%data3d
@@ -1593,8 +1616,8 @@ if(mapl_am_i_root()) print*,'NI after hetchem sum(self%xhno3) = ',sum(gcNI%xhno3
                         NI_radius, NI_rhop, cdt, w_c, tmpu, rhoa, hsurf,    &
                         hghte, fluxout, rc )
    if(associated(NH4_set%data2d)) NH4_set%data2d = fluxout%data2d
-if(mapl_am_i_root()) print*,'NI sum(NH4SD) = ',sum(NH4_set%data2d)
-if(mapl_am_i_root()) print*,'NI sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+!if(mapl_am_i_root()) print*,'NI sum(NH4SD) = ',sum(NH4_set%data2d)
+!if(mapl_am_i_root()) print*,'NI sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
 !if(mapl_am_i_root()) print*,'NI NH4SD array = ',NH4_set%data2d
 
 !if(mapl_am_i_root()) print*,'NI NH4a array = ',w_c%qa(nNH4a)%data3d
@@ -1635,7 +1658,7 @@ if(mapl_am_i_root()) print*,'NI sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
                         hghte, fluxout, rc )
    if(associated(NI_set(3)%data2d)) NI_set(3)%data2d = fluxout%data2d
 !if(mapl_am_i_root()) print*,'NI sum(NISD(:,:,3)) = ',sum(NI_set(3)%data2d)
-!if(mapl_am_i_root()) print*,'NI sum(NO3an3) = ',sum(w_c%qa(nNO3an3)%data3d)
+!if(mapl_am_i_root()) print*,'NI ChemSet sum(NO3an3) = ',sum(w_c%qa(nNO3an3)%data3d)
 
 !if(mapl_am_i_root()) print*,'NI after chemset sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
 !if(mapl_am_i_root()) print*,'NI after chemset sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
@@ -1660,8 +1683,8 @@ if(mapl_am_i_root()) print*,'NI sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
    end where
    w_c%qa(n1+n-1)%data3d(:,:,km) = w_c%qa(n1+n-1)%data3d(:,:,km) - dqa
    if( associated(NH3_dep%data2d) ) NH3_dep%data2d = dqa*w_c%delp(:,:,km)/grav/cdt
-if(mapl_am_i_root()) print*,'NI sum(NH3) = ',sum(w_c%qa(n1+n-1)%data3d)
-if(mapl_am_i_root()) print*,'NI sum(NH3DP) = ',sum(NH3_dep%data2d)
+!if(mapl_am_i_root()) print*,'NI sum(NH3) = ',sum(w_c%qa(n1+n-1)%data3d)
+!if(mapl_am_i_root()) print*,'NI sum(NH3DP) = ',sum(NH3_dep%data2d)
 !if(mapl_am_i_root()) print*,'NI dqa array = ',dqa
 !if(mapl_am_i_root()) print"(g25.17)",'NI NH3 array = ',w_c%qa(nNH3)%data3d
 
@@ -1670,8 +1693,8 @@ if(mapl_am_i_root()) print*,'NI sum(NH3DP) = ',sum(NH3_dep%data2d)
    dqa = max(0.0, w_c%qa(n1+n-1)%data3d(:,:,km)*(1.-exp(-drydepositionfrequency*cdt)))
    w_c%qa(n1+n-1)%data3d(:,:,km) = w_c%qa(n1+n-1)%data3d(:,:,km) - dqa
    if( associated(NH4_dep%data2d) ) NH4_dep%data2d = dqa*w_c%delp(:,:,km)/grav/cdt
-if(mapl_am_i_root()) print*,'NI sum(NH4a) = ',sum(w_c%qa(n1+n-1)%data3d)
-if(mapl_am_i_root()) print*,'NI sum(NH4DP) = ',sum(NH4_dep%data2d)
+!if(mapl_am_i_root()) print*,'NI sum(NH4a) = ',sum(w_c%qa(n1+n-1)%data3d)
+!if(mapl_am_i_root()) print*,'NI sum(NH4DP) = ',sum(NH4_dep%data2d)
 
    do n = globalnNO3an1, globalnNO3an3
     dqa = 0.
@@ -1681,6 +1704,7 @@ if(mapl_am_i_root()) print*,'NI sum(NH4DP) = ',sum(NH4_dep%data2d)
 !if(mapl_am_i_root()) print*,'NI sum(NH3an',n,') = ',sum(w_c%qa(n1+n-1)%data3d)
 !if(mapl_am_i_root()) print*,'NI sum(NIDP',n,') = ',sum(NI_dep(n-2)%data2d)
    end do
+!if(mapl_am_i_root()) print*,'NI DryDep sum(NO3an3) = ',sum(w_c%qa(nNO3an3)%data3d)
 
 #ifdef DEBUG
    do n = n1, n2
@@ -1697,8 +1721,8 @@ if(mapl_am_i_root()) print*,'NI sum(NH4DP) = ',sum(NH4_dep%data2d)
                          w_c%qa, ple, tmpu, rhoa, pfllsan, pfilsan, &
                          precc, precl, fluxout, rc )
    if(associated(NH3_wet%data2d)) NH3_wet%data2d = fluxout%data2d
-if(mapl_am_i_root()) print*,'NI sum(NH3WT) = ',sum(NH3_wet%data2d)
-if(mapl_am_i_root()) print*,'NI sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+!if(mapl_am_i_root()) print*,'NI sum(NH3WT) = ',sum(NH3_wet%data2d)
+!if(mapl_am_i_root()) print*,'NI sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
 
    w_c%qa(nNH4a)%fwet = 1.
    KIN = .TRUE.
@@ -1706,8 +1730,8 @@ if(mapl_am_i_root()) print*,'NI sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
                          w_c%qa, ple, tmpu, rhoa, pfllsan, pfilsan, &
                          precc, precl, fluxout, rc )
    if(associated(NH4_wet%data2d)) NH4_wet%data2d = fluxout%data2d
-if(mapl_am_i_root()) print*,'NI sum(NH4WT) = ',sum(fluxout%data2d)
-if(mapl_am_i_root()) print*,'NI sum(NH4) = ',sum(w_c%qa(nNH4a)%data3d)
+!if(mapl_am_i_root()) print*,'NI sum(NH4WT) = ',sum(fluxout%data2d)
+!if(mapl_am_i_root()) print*,'NI sum(NH4) = ',sum(w_c%qa(nNH4a)%data3d)
 
    do n = nNO3an1, nNO3an3
     w_c%qa(n)%fwet = 1.
@@ -1720,6 +1744,8 @@ if(mapl_am_i_root()) print*,'NI sum(NH4) = ',sum(w_c%qa(nNH4a)%data3d)
     if(associated(NI_wet(na)%data2d)) NI_wet(na)%data2d = fluxout%data2d
 !if(mapl_am_i_root()) print*,'NI sum(NIWT(:,:,',n,')) = ',sum(NI_wet(na)%data2d)
    end do
+!if(mapl_am_i_root()) print*,'NI WetRemoval sum(NO3an3) = ',sum(w_c%qa(nNO3an3)%data3d)
+
 
 #ifdef DEBUG
    do n = n1, n2
@@ -1827,15 +1853,15 @@ if(mapl_am_i_root()) print*,'NI sum(NIMASS) = ',sum(NI_MASS%data2d)
 if(mapl_am_i_root()) print*,'NI sum(NIFLUXU) = ',sum(NI_FLUXU%data2d)
 #endif
 
-if(mapl_am_i_root()) print*,'NI sum(NIANGSTR) = ',sum(NI_angstrom%data2d)
-if(mapl_am_i_root()) print*,'NI Run2 END sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
-if(mapl_am_i_root()) print*,'NI Run2 END sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
-if(mapl_am_i_root()) print*,'NI Run2 END sum(self%xhno3) = ',sum(gcNI%xhno3)
+!if(mapl_am_i_root()) print*,'NI sum(NIANGSTR) = ',sum(NI_angstrom%data2d)
+!if(mapl_am_i_root()) print*,'NI Run2 END sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+!if(mapl_am_i_root()) print*,'NI Run2 END sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+!if(mapl_am_i_root()) print*,'NI Run2 END sum(self%xhno3) = ',sum(gcNI%xhno3)
 !if(mapl_am_i_root()) print*,'NI Run2 END array NH3 = ',w_c%qa(nNH3)%data3d
 !if(mapl_am_i_root()) print*,'NI Run2 END array NH4a = ',w_c%qa(nNH4a)%data3d
-if(mapl_am_i_root()) print*,'NI Run2 END sum(NO3an1) = ',sum(w_c%qa(nNO3an1)%data3d)
-if(mapl_am_i_root()) print*,'NI Run2 END sum(NO3an2) = ',sum(w_c%qa(nNO3an2)%data3d)
-if(mapl_am_i_root()) print*,'NI Run2 END sum(NO3an3) = ',sum(w_c%qa(nNO3an3)%data3d)
+!if(mapl_am_i_root()) print*,'NI Run2 END sum(NO3an1) = ',sum(w_c%qa(nNO3an1)%data3d)
+!if(mapl_am_i_root()) print*,'NI Run2 END sum(NO3an2) = ',sum(w_c%qa(nNO3an2)%data3d)
+!if(mapl_am_i_root()) print*,'NI Run2 END sum(NO3an3) = ',sum(w_c%qa(nNO3an3)%data3d)
 
 
    return

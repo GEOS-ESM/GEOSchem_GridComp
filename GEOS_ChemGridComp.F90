@@ -335,11 +335,14 @@ contains
 ! -----------------------------------------------------------
       
 
-! Provide GOCART2G's AERO state
-! -----------------------------
+! Provide GOCART2G's AERO states
+! ------------------------------
   call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO2G_RAD',    &
                                 CHILD_ID = GOCART2G, __RC__  )
-
+  call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO2G_ACI',    &
+                                CHILD_ID = GOCART2G, __RC__  )
+  call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO2G_DP',    &
+                                CHILD_ID = GOCART2G, __RC__  )
 
   call ESMF_ConfigGetAttribute(CF, providerName, Default='GOCART.data', &
                                Label="AERO_PROVIDER:", __RC__ )
