@@ -27,7 +27,7 @@ endforeach()
 list (REMOVE_ITEM srcs
    # this one is moved to HEMCO
    #${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosUtil/regrid_a2a_mod.F90
-   #${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/NcdfUtil/charpak_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/NcdfUtil/charpak_mod.F90
    #${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/Headers/charpak_mod.F90
    #${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/NcdfUtil/julday_mod.F90
    #${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosUtil/julday_mod.F90
