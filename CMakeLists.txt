@@ -3,10 +3,13 @@ esma_set_this ()
 set (HEMCO_EXTERNAL_CONFIG TRUE)
 set (MAPL_ESMF TRUE)
 set (BUILD_GEOS_INTERFACE TRUE)
+set (MODEL_GCHPCTM TRUE)
 
 add_subdirectory(Shared)
 
 set (alldirs
+  @HEMCO_GridComp
+  @GEOSCHEMchem_GridComp 
   GEOSpchem_GridComp
   GOCART_GridComp
   StratChem_GridComp
@@ -19,8 +22,6 @@ set (alldirs
   TR_GridComp 
   GEOSachem_GridComp
   DNA_GridComp
-  @GEOSCHEMchem_GridComp 
-  @HEMCO_GridComp
   )
 
 set (srcs
