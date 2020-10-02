@@ -12,7 +12,6 @@ set (alldirs
   StratChem_GridComp
   GMIchem_GridComp
   CARMAchem_GridComp
-  GEOSCHEMchem_GridComp 
   MATRIXchem_GridComp
   MAMchem_GridComp 
   GAAS_GridComp
@@ -20,6 +19,7 @@ set (alldirs
   TR_GridComp 
   GEOSachem_GridComp
   DNA_GridComp
+  @GEOSCHEMchem_GridComp 
   @HEMCO_GridComp
   )
 
