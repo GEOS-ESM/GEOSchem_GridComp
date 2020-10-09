@@ -112,12 +112,12 @@ module GEOS_PChemGridCompMod
   use ESMF
   use MAPL
   use Chem_Mod
+  use netcdf
 
   
   implicit none
   private
 #include "mpif.h"
-  include "netcdf.inc"
 
 ! !PUBLIC MEMBER FUNCTIONS:
 
@@ -826,18 +826,18 @@ contains
     VERIFY_(STATUS)
 
 #ifdef NETCDF_NEED_NF_MPIIO
-    STATUS = NF_OPEN_PAR(trim(PCHEMFILE),IOR(NF_NOWRITE,NF_MPIIO),comm,info,UNIT)
+    STATUS = NF90_OPEN_PAR(trim(PCHEMFILE),IOR(NF90_NOWRITE,NF90_MPIIO),comm,info,UNIT)
 #else
-    STATUS = NF_OPEN_PAR(trim(PCHEMFILE),NF_NOWRITE,comm,info,UNIT)
+    STATUS = NF90_OPEN_PAR(trim(PCHEMFILE),NF90_NOWRITE,comm,info,UNIT)
 #endif
 
 #else
     if ( MAPL_am_I_root() ) then
-       STATUS = NF_OPEN(trim(PCHEMFILE),NF_NOWRITE,UNIT)
+       STATUS = NF90_OPEN(trim(PCHEMFILE),NF90_NOWRITE,UNIT)
 #endif
-    if(status /= nf_noerr) then
+    if(status /= NF90_NOERR) then
        print*,'Error opening file ',trim(PCHEMFILE), status
-       print*, NF_STRERROR(status)
+       print*, NF90_STRERROR(status)
        stop
     endif
 
@@ -845,34 +845,34 @@ contains
 ! number of levels, and the number of species in the PCHEMFILE.
 !--------------------------------------------------------------
 
-    STATUS = NF_INQ_DIMID(UNIT, 'lat', dimid)
-    if(status /= nf_noerr) then
+    STATUS = NF90_INQ_DIMID(UNIT, 'lat', dimid)
+    if(status /= NF90_NOERR) then
        print*,'Error getting dimid for lat', status
-       print*, NF_STRERROR(status)
+       print*, NF90_STRERROR(status)
        stop
     endif
-    STATUS = NF_INQ_DIMLEN(UNIT, dimid, PCHEM_STATE%NLATS)
-    if(status /= nf_noerr) then
+    STATUS = NF90_INQUIRE_DIMENSION(UNIT, dimid, len=PCHEM_STATE%NLATS)
+    if(status /= NF90_NOERR) then
        print*,'Error getting dimlen for lat', status
-       print*, NF_STRERROR(status)
+       print*, NF90_STRERROR(status)
        stop
     endif
-    STATUS = NF_INQ_DIMID(UNIT, 'lev', dimid)
-    if(status /= nf_noerr) then
+    STATUS = NF90_INQ_DIMID(UNIT, 'lev', dimid)
+    if(status /= NF90_NOERR) then
        print*,'Error getting dimid for lev', status
-       print*, NF_STRERROR(status)
+       print*, NF90_STRERROR(status)
        stop
     endif
-    STATUS = NF_INQ_DIMLEN(UNIT, dimid, PCHEM_STATE%NLEVS)
-    if(status /= nf_noerr) then
+    STATUS = NF90_INQUIRE_DIMENSION(UNIT, dimid, len=PCHEM_STATE%NLEVS)
+    if(status /= NF90_NOERR) then
        print*,'Error getting dimlen for lev', status
-       print*, NF_STRERROR(status)
+       print*, NF90_STRERROR(status)
        stop
     endif
-    STATUS = NF_GET_ATT_INT(UNIT, NF_GLOBAL, 'NSPECIES', NSPECIES)
-    if(status /= nf_noerr) then
+    STATUS = NF90_GET_ATT(UNIT, NF90_GLOBAL, 'NSPECIES', NSPECIES)
+    if(status /= NF90_NOERR) then
        print*,'Error getting NSPECIES', status
-       print*, NF_STRERROR(status)
+       print*, NF90_STRERROR(status)
        stop
     endif
     _ASSERT(PCHEM_STATE%NSPECIES==NSPECIES,'needs informative message')
@@ -884,22 +884,22 @@ contains
        PCHEM_STATE%begClimYear = 1
        PCHEM_STATE%endClimYear = 1
     ELSE
-       STATUS = NF_GET_ATT_INT(UNIT, NF_GLOBAL, 'begClimYear', PCHEM_STATE%begClimYear)
-       if(status /= nf_noerr) then
+       STATUS = NF90_GET_ATT(UNIT, NF90_GLOBAL, 'begClimYear', PCHEM_STATE%begClimYear)
+       if(status /= NF90_NOERR) then
           print*,'Error getting begClimYear', status
-          print*, NF_STRERROR(status)
+          print*, NF90_STRERROR(status)
           stop
        endif
-       STATUS = NF_GET_ATT_INT(UNIT, NF_GLOBAL, 'endClimYear', PCHEM_STATE%endClimYear)
-       if(status /= nf_noerr) then
+       STATUS = NF90_GET_ATT(UNIT, NF90_GLOBAL, 'endClimYear', PCHEM_STATE%endClimYear)
+       if(status /= NF90_NOERR) then
           print*,'Error getting endClimYear', status
-          print*, NF_STRERROR(status)
+          print*, NF90_STRERROR(status)
           stop
        endif
-       STATUS = NF_GET_ATT_INT(UNIT, NF_GLOBAL, 'climYears'  , climYears)
-       if(status /= nf_noerr) then
+       STATUS = NF90_GET_ATT(UNIT, NF90_GLOBAL, 'climYears'  , climYears)
+       if(status /= NF90_NOERR) then
           print*,'Error getting climYears', status
-          print*, NF_STRERROR(status)
+          print*, NF90_STRERROR(status)
           stop
        endif
 
@@ -937,28 +937,28 @@ contains
     if ( MAPL_am_I_root() ) then
 #endif
 
-    STATUS = NF_INQ_VARID(UNIT, 'lat', varid)
-    if(status /= nf_noerr) then
+    STATUS = NF90_INQ_VARID(UNIT, 'lat', varid)
+    if(status /= NF90_NOERR) then
        print*,'Error getting varid for lat', status
-       print*, NF_STRERROR(status)
+       print*, NF90_STRERROR(status)
        stop
     endif
-    STATUS = NF_GET_VAR_REAL(UNIT, varid, PCHEM_STATE%LATS)
-    if(status /= nf_noerr) then
+    STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%LATS)
+    if(status /= NF90_NOERR) then
        print*,'Error getting values for lat', status
-       print*, NF_STRERROR(status)
+       print*, NF90_STRERROR(status)
        stop
     endif
-    STATUS = NF_INQ_VARID(UNIT, 'lev', varid)
-    if(status /= nf_noerr) then
+    STATUS = NF90_INQ_VARID(UNIT, 'lev', varid)
+    if(status /= NF90_NOERR) then
        print*,'Error getting varid for lev', status
-       print*, NF_STRERROR(status)
+       print*, NF90_STRERROR(status)
        stop
     endif
-    STATUS = NF_GET_VAR_REAL(UNIT, varid, PCHEM_STATE%LEVS)
-    if(status /= nf_noerr) then
+    STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%LEVS)
+    if(status /= NF90_NOERR) then
        print*,'Error getting values for lev', status
-       print*, NF_STRERROR(status)
+       print*, NF90_STRERROR(status)
        stop
     endif
 #ifdef H5_HAVE_PARALLEL
@@ -973,7 +973,7 @@ contains
     VERIFY_(STATUS)
 
 #endif
-    STATUS = NF_CLOSE(UNIT)
+    STATUS = NF90_CLOSE(UNIT)
     call MAPL_TimerOff (MAPL,"-Read Header"  )
 
 ! Allocate concentration and production rates and loss frequencies.
@@ -1318,18 +1318,18 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
           VERIFY_(STATUS)
 
 #ifdef NETCDF_NEED_NF_MPIIO
-          STATUS = NF_OPEN_PAR(trim(PCHEMFILE),IOR(NF_NOWRITE,NF_MPIIO),comm,info,UNIT)
+          STATUS = NF90_OPEN_PAR(trim(PCHEMFILE),IOR(NF90_NOWRITE,NF90_MPIIO),comm,info,UNIT)
 #else
-          STATUS = NF_OPEN_PAR(trim(PCHEMFILE),NF_NOWRITE,comm,info,UNIT)
+          STATUS = NF90_OPEN_PAR(trim(PCHEMFILE),NF90_NOWRITE,comm,info,UNIT)
 #endif
 
 #else
           if ( MAPL_am_I_root() ) then
-             STATUS = NF_OPEN(trim(PCHEMFILE),NF_NOWRITE,UNIT)
+             STATUS = NF90_OPEN(trim(PCHEMFILE),NF90_NOWRITE,UNIT)
 #endif
-          if(status /= nf_noerr) then
+          if(status /= NF90_NOERR) then
              print*,'Error opening file ',trim(PCHEMFILE), status
-             print*, NF_STRERROR(status)
+             print*, NF90_STRERROR(status)
              stop
           endif
 
@@ -1341,26 +1341,26 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 
           DO K = 1,PCHEM_STATE%NSPECIES
              FieldName = PCHEM_STATE%ITEMNAMES(K)
-             STATUS = NF_INQ_VARID(UNIT, trim(FieldName), varid)
-             if(status /= nf_noerr) then
+             STATUS = NF90_INQ_VARID(UNIT, trim(FieldName), varid)
+             if(status /= NF90_NOERR) then
                 print*,'Error getting varid for variable ',trim(FieldName), status
-                print*, NF_STRERROR(status)
+                print*, NF90_STRERROR(status)
                 stop
              endif
 ! Need two separate reads because INDX2 isn't always sequentially after INDX1, otherwise
 ! we could combine the reads into one
              start(3) = INDX1
-             STATUS = NF_GET_VARA_REAL(UNIT, varid, start, cnt, PCHEM_STATE%MNCV(:,:,K,1))
-             if(status /= nf_noerr) then
+             STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNCV(:,:,K,1), start, cnt)
+             if(status /= NF90_NOERR) then
                 print*,'Error reading lower bracket month ',status
-                print*, NF_STRERROR(status)
+                print*, NF90_STRERROR(status)
                 stop
              endif
              start(3) = INDX2
-             STATUS = NF_GET_VARA_REAL(UNIT, varid, start, cnt, PCHEM_STATE%MNCV(:,:,K,2))
-             if(status /= nf_noerr) then
+             STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNCV(:,:,K,2), start, cnt)
+             if(status /= NF90_NOERR) then
                 print*,'Error reading upper bracket month ',status
-                print*, NF_STRERROR(status)
+                print*, NF90_STRERROR(status)
                 stop
              endif
 
@@ -1375,55 +1375,55 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 ! ---------------------------------------------------------------------------------
              IF(PCHEM_STATE%climYears == 1) THEN
 
-                STATUS = NF_INQ_VARID(UNIT, trim(FieldName)//'_PROD', varid)
-                if(status /= nf_noerr) then
+                STATUS = NF90_INQ_VARID(UNIT, trim(FieldName)//'_PROD', varid)
+                if(status /= NF90_NOERR) then
                    print*,'Error getting varid for variable ',trim(FieldName)//'_PROD', status
-                   print*, NF_STRERROR(status)
+                   print*, NF90_STRERROR(status)
                    stop
                 endif
                 start(3) = INDX1
-                STATUS = NF_GET_VARA_REAL(UNIT, varid, start, cnt, PCHEM_STATE%MNPL(:,:,K,1,1))
-                if(status /= nf_noerr) then
+                STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNPL(:,:,K,1,1), start, cnt)
+                if(status /= NF90_NOERR) then
                    print*,'Error reading lower bracket month for production ',status
-                   print*, NF_STRERROR(status)
+                   print*, NF90_STRERROR(status)
                    stop
                 endif
                 start(3) = INDX2
-                STATUS = NF_GET_VARA_REAL(UNIT, varid, start, cnt, PCHEM_STATE%MNPL(:,:,K,1,2))
-                if(status /= nf_noerr) then
+                STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNPL(:,:,K,1,2), start, cnt)
+                if(status /= NF90_NOERR) then
                    print*,'Error reading upper bracket month for production ',status
-                   print*, NF_STRERROR(status)
+                   print*, NF90_STRERROR(status)
                    stop
                 endif
                 IF(K == PCHEM_STATE%H2O) PCHEM_STATE%MNPL(:,:,K,1,1) = PCHEM_STATE%MNPL(:,:,K,1,1)*(MAPL_H2OMW/MAPL_AIRMW)
                 IF(K == PCHEM_STATE%H2O) PCHEM_STATE%MNPL(:,:,K,1,2) = PCHEM_STATE%MNPL(:,:,K,1,2)*(MAPL_H2OMW/MAPL_AIRMW)
 ! Loss
 ! ----
-                STATUS = NF_INQ_VARID(UNIT, trim(FieldName)//'_LOSS', varid)
-                if(status /= nf_noerr) then
+                STATUS = NF90_INQ_VARID(UNIT, trim(FieldName)//'_LOSS', varid)
+                if(status /= NF90_NOERR) then
                    print*,'Error getting varid for variable ',trim(FieldName)//'_LOSS', status
-                   print*, NF_STRERROR(status)
+                   print*, NF90_STRERROR(status)
                    stop
                 endif
                 start(3) = INDX1
-                STATUS = NF_GET_VARA_REAL(UNIT, varid, start, cnt, PCHEM_STATE%MNPL(:,:,K,2,1))
-                if(status /= nf_noerr) then
+                STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNPL(:,:,K,2,1), start, cnt)
+                if(status /= NF90_NOERR) then
                    print*,'Error reading lower bracket month for loss ',status
-                   print*, NF_STRERROR(status)
+                   print*, NF90_STRERROR(status)
                    stop
                 endif
                 start(3) = INDX2
-                STATUS = NF_GET_VARA_REAL(UNIT, varid, start, cnt, PCHEM_STATE%MNPL(:,:,K,2,2))
-                if(status /= nf_noerr) then
+                STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNPL(:,:,K,2,2), start, cnt)
+                if(status /= NF90_NOERR) then
                    print*,'Error reading upper bracket month for loss ',status
-                   print*, NF_STRERROR(status)
+                   print*, NF90_STRERROR(status)
                    stop
                 endif
              ENDIF
 
           ENDDO
 
-          STATUS = NF_CLOSE(UNIT)
+          STATUS = NF90_CLOSE(UNIT)
           VERIFY_(STATUS)
 
 #ifdef H5_HAVE_PARALLEL
