@@ -425,7 +425,7 @@ contains
 
   IF(myState%enable_GOCART2G) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'DELP', 'AIRDENS', 'NCN_PRCP' /), &
+          SHORT_NAME  = (/'DELP    ', 'AIRDENS ', 'NCN_PRCP' /), &
           DST_ID = GOCART2G, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
