@@ -13,7 +13,7 @@ set (alldirs
   MAMchem_GridComp 
   GAAS_GridComp
   H2O_GridComp
-  TR_GridComp 
+  @TR_GridComp 
   GEOSachem_GridComp
   DNA_GridComp
   HEMCO_GridComp
