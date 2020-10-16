@@ -1659,7 +1659,7 @@ CONTAINS
 !     --------------------------------------------
       if(nhms < gcSU%pStart(ii) .or. nhms >= gcSU%pEnd(ii)) cycle
 
-      call distribute_point_emissions(w_c%delp(i,j,:), rhoa(i,j,:), &
+      call Chem_UtilDistributePointEmissions(hghte(i,j,:), &
                                       gcSU%pBase(ii), gcSU%pTop(ii), gcSU%pEmis(ii), &
                                       point_column_emissions, km)
       w_c%qa(n1+gcSU%nSO4-1)%data3d(i,j,:) = w_c%qa(n1+gcSU%nSO4-1)%data3d(i,j,:) & 

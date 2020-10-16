@@ -54,6 +54,8 @@
    PUBLIC  Chem_UtilPointEmissions  ! From a provided list returns a table of
                                     ! pointwise emissions (e.g., for volcanoes
                                     ! or wildfires)
+   PUBLIC  Chem_UtilDistributePointEmissions  ! Per model column distribute
+                                              ! in vertical input point emissions
 
    PUBLIC tick      ! GEOS-4 stub
    PUBLIC mcalday   ! GEOS-4 stub
@@ -1550,6 +1552,83 @@ END SUBROUTINE Chem_UtilExtractIntegers
   deallocate(vData, stat=ios)
 
   end subroutine Chem_UtilPointEmissions
+
+
+
+! From prior read of Chem_UtilPointEmissions distribute in model vertical column
+  subroutine Chem_UtilDistributePointEmissions(hghte, z_bot, z_top, emissions_point, &
+                                               emissions, km)
+
+    implicit none
+
+    integer, intent(in) :: km
+
+    real, dimension(:), intent(in) :: hghte
+    real,               intent(in) :: emissions_point
+    real, intent(in)                   :: z_bot
+    real, intent(in)                   :: z_top
+    real, dimension(:), intent(out):: emissions
+    
+!   local
+    integer :: k
+    integer :: k_bot, k_top
+    real, dimension(km) :: z, dz, w_
+    
+!   find level height
+    z(1:km) = hghte(0:km-1)
+
+    do k = km, 1, -1
+       dz(k) = hghte(k-1)-hghte(k)
+    end do
+
+!   find the bottom level
+    do k = km, 1, -1
+       if (z(k) >= z_bot) then
+           k_bot = k
+           exit
+       end if
+    end do
+            
+!   find the top level
+    do k = k_bot, 1, -1
+       if (z(k) >= z_top) then
+           k_top = k
+           exit
+       end if
+    end do
+
+!   find the weights
+    w_ = 0
+
+!   if (k_top > k_bot) then
+!       need to bail - something went wrong here
+!   end if
+
+    if (k_bot .eq. k_top) then
+        w_(k_bot) = z_top - z_bot
+    else
+     do k = k_bot, k_top, -1
+        if ((k < k_bot) .and. (k > k_top)) then
+             w_(k) = dz(k)
+        else
+             if (k == k_bot) then
+                 w_(k) = (z(k) - z_bot)
+             end if
+
+             if (k == k_top) then
+                 w_(k) = z_top - (z(k)-dz(k))
+             end if
+        end if
+     end do
+    end if
+           
+!   distribute emissions in the vertical 
+    emissions(:) = (w_ / sum(w_)) * emissions_point
+
+    end subroutine Chem_UtilDistributePointEmissions
+
+
+
 
  end module Chem_UtilMod
 

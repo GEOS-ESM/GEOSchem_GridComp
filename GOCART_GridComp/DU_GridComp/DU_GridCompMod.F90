@@ -1173,6 +1173,7 @@ CONTAINS
    real, pointer, dimension(:,:)   :: gvf
 
    real, pointer, dimension(:,:,:) :: rhoa     ! air density, kg m-3
+   real, pointer, dimension(:,:,:) :: hghte    ! edge layer height, m
 
    real, pointer, dimension(:,:)   :: du_src     => null()
 
@@ -1305,7 +1306,8 @@ CONTAINS
 
 !  Get 3D Imports
 !  --------------
-   call MAPL_GetPointer ( impChem, rhoa,       'AIRDENS',    __RC__ )
+   call MAPL_GetPointer ( impChem, rhoa,     'AIRDENS',  __RC__ )
+   call MAPL_GetPointer ( impChem, hghte,    'ZLE',      __RC__ )
 
 #ifdef DEBUG
 
@@ -1484,9 +1486,10 @@ CONTAINS
 !     --------------------------------------------
       if(nhms < gcDU%pStart(ii) .or. nhms >= gcDU%pEnd(ii)) cycle
 
-      call distribute_point_emissions(w_c%delp(i,j,:), rhoa(i,j,:), &
-                                      gcDU%pBase(ii), gcDU%pTop(ii), gcDU%pEmis(ii), &
-                                      point_column_emissions, km)
+      call Chem_UtilDistributePointEmissions(hghte(i,j,:), &
+                                             gcDU%pBase(ii), gcDU%pTop(ii), &
+                                             gcDU%pEmis(ii), & 
+                                             point_column_emissions, km)
       do n = 1, nbins
 
        w_c%qa(n1+n-1)%data3d(i,j,:) = w_c%qa(n1+n-1)%data3d(i,j,:) & 
@@ -1513,85 +1516,6 @@ CONTAINS
 !  All done
 !  --------
    return
-
-CONTAINS
-
-!  Abstracted from distribute_aviation_emissions, but called per column
-   subroutine distribute_point_emissions(delp, rhoa, z_bot, z_top, emissions_point, &
-                                         emissions, km)
-
-    implicit none
-
-    integer, intent(in) :: km
-
-    real, dimension(:), intent(in) :: delp
-    real, dimension(:), intent(in) :: rhoa
-    real,               intent(in) :: emissions_point
-    real, intent(in)                   :: z_bot
-    real, intent(in)                   :: z_top
-    real, dimension(:), intent(out):: emissions
-    
-!   local
-    integer :: k
-    integer :: k_bot, k_top
-    real    :: z_
-    real, dimension(km) :: z, dz, w_
-    
-!   find level height
-    z = 0.0
-    z_= 0.0 
-
-    do k = km, 1, -1
-       dz(k) = delp(k)/rhoa(k)/grav
-       z_    = z_ + dz(k)
-       z(k)  = z_
-    end do
-
-!   find the bottom level
-    do k = km, 1, -1
-       if (z(k) >= z_bot) then
-           k_bot = k
-           exit
-       end if
-    end do
-            
-!   find the top level
-    do k = k_bot, 1, -1
-       if (z(k) >= z_top) then
-           k_top = k
-           exit
-       end if
-    end do
-
-!   find the weights
-    w_ = 0
-
-!   if (k_top > k_bot) then
-!       need to bail - something went wrong here
-!   end if
-
-    if (k_bot .eq. k_top) then
-        w_(k_bot) = z_top - z_bot
-    else
-     do k = k_bot, k_top, -1
-        if ((k < k_bot) .and. (k > k_top)) then
-             w_(k) = dz(k)
-        else
-             if (k == k_bot) then
-                 w_(k) = (z(k) - z_bot)
-             end if
-
-             if (k == k_top) then
-                 w_(k) = z_top - (z(k)-dz(k))
-             end if
-        end if
-     end do
-    end if
-           
-!   distribute emissions in the vertical 
-    emissions(:) = (w_ / sum(w_)) * emissions_point
-
-   end subroutine distribute_point_emissions
 
  end subroutine DU_GridCompRun1_
 

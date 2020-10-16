@@ -669,7 +669,7 @@ CONTAINS
         n = n1 + (ielem-1)*reg%NBIN + ibin - 1
         qa(n)%data3d(i,j,:) =  qa(n)%data3d(i,j,:) &
                              + dMpin(ibin)*dtime*grav_mks/delp*point_column_emissions/area(i,j)
-        call pmaxmin('sulfate   :', qa(n)%data3d, qmin, qmax, ijl, km, 1. )
+!        call pmaxmin('sulfate   :', qa(n)%data3d, qmin, qmax, ijl, km, 1. )
        end do
       enddo
       deallocate(iPoint, jPoint, stat=ios)

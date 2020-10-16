@@ -1170,7 +1170,7 @@ CONTAINS
 !  Input fields from fvGCM
 !  -----------------------
    real, pointer, dimension(:,:)   :: pblh
-   real, pointer, dimension(:,:,:) :: tmpu, rhoa, ple
+   real, pointer, dimension(:,:,:) :: tmpu, rhoa, ple, hghte
 
 !  Workspace for NEI emissions
 !  ---------------------------
@@ -1369,6 +1369,7 @@ CONTAINS
    call MAPL_GetPointer ( impChem, tmpu,     'T',        __RC__ )
    call MAPL_GetPointer ( impChem, rhoa,     'AIRDENS',  __RC__ )
    call MAPL_GetPointer ( impChem, ple,      'PLE',      __RC__ )
+   call MAPL_GetPointer ( impChem, hghte,    'ZLE',      __RC__ )
 
   
 
@@ -1378,13 +1379,14 @@ CONTAINS
 
    call pmaxmin('BRC: tmpu       ', tmpu    , qmin, qmax, ijkl,1, 1. )
    call pmaxmin('BRC: rhoa       ', rhoa    , qmin, qmax, ijkl,1, 1. )
+   call pmaxmin('BRC: hghte      ', hghte   , qmin, qmax, ijkl,1, 1. )
 
 #endif
 
 !  BRC Source
 !  -----------
    call BRC_Emission ( i1, i2, j1, j2, km, nbins, cdt, gcBRC, w_c, &
-                      pblh, tmpu, rhoa, BRC_emis, &
+                      pblh, tmpu, rhoa, hghte, BRC_emis, &
                       BRC_emisAN, BRC_emisBB, BRC_emisBF, BRC_emisBG, rc )
 #ifdef DEBUG
    do n = n1, n2
@@ -1422,7 +1424,7 @@ CONTAINS
 !
 
    subroutine BRC_Emission ( i1, i2, j1, j2, km, nbins, cdt, gcBRC, w_c, &
-                             pblh, tmpu, rhoa, BRC_emis, &
+                             pblh, tmpu, rhoa, hghte, BRC_emis, &
                              BRC_emisAN, BRC_emisBB, BRC_emisBF, BRC_emisBG, rc )
 
 ! !USES:
@@ -1437,6 +1439,7 @@ CONTAINS
    real, pointer, dimension(:,:)    :: pblh
    real, pointer, dimension(:,:,:)  :: tmpu
    real, pointer, dimension(:,:,:)  :: rhoa
+   real, pointer, dimension(:,:,:)  :: hghte
 
 ! !OUTPUT PARAMETERS:
 
@@ -1848,9 +1851,9 @@ K_LOOP: do k = km, 1, -1
 !     --------------------------------------------
       if(nhms < gcBRC%vStart(ii) .or. nhms >= gcBRC%vEnd(ii)) cycle
 
-      call distribute_point_emissions(w_c%delp(i,j,:), rhoa(i,j,:), &
-                                      gcBRC%vBase(ii), gcBRC%vTop(ii), gcBRC%vEmis(ii), &
-                                      point_column_emissions, km)
+      call Chem_UtilDistributePointEmissions(hghte(i,j,:), &
+                                             gcBRC%vBase(ii), gcBRC%vTop(ii), gcBRC%vEmis(ii), &
+                                             point_column_emissions, km)
       w_c%qa(n1)%data3d(i,j,:) = w_c%qa(n1)%data3d(i,j,:) & 
          + gcBRC%fHydrophobic * cdt * grav / w_c%delp(i,j,:) &
                              * point_column_emissions / w_c%grid%cell_area(i,j)
@@ -1945,85 +1948,6 @@ K_LOOP: do k = km, 1, -1
     end do
 
     end subroutine distribute_aviation_emissions
-
-
-!  Abstracted from distribute_aviation_emissions above, but called per column
-   subroutine distribute_point_emissions(delp, rhoa, z_bot, z_top, emissions_point, &
-                                         emissions, km)
-
-    implicit none
-
-    integer, intent(in) :: km
-
-    real, dimension(:), intent(in) :: delp
-    real, dimension(:), intent(in) :: rhoa
-    real,               intent(in) :: emissions_point
-    real, intent(in)                   :: z_bot
-    real, intent(in)                   :: z_top
-    real, dimension(:), intent(out):: emissions
-    
-!   local
-    integer :: k
-    integer :: k_bot, k_top
-    real    :: z_
-    real, dimension(km) :: z, dz, w_
-    
-!   find level height
-    z = 0.0
-    z_= 0.0 
-
-    do k = km, 1, -1
-       dz(k) = delp(k)/rhoa(k)/grav
-       z_    = z_ + dz(k)
-       z(k)  = z_
-    end do
-
-!   find the bottom level
-    do k = km, 1, -1
-       if (z(k) >= z_bot) then
-           k_bot = k
-           exit
-       end if
-    end do
-            
-!   find the top level
-    do k = k_bot, 1, -1
-       if (z(k) >= z_top) then
-           k_top = k
-           exit
-       end if
-    end do
-
-!   find the weights
-    w_ = 0
-
-!   if (k_top > k_bot) then
-!       need to bail - something went wrong here
-!   end if
-
-    if (k_bot .eq. k_top) then
-        w_(k_bot) = z_top - z_bot
-    else
-     do k = k_bot, k_top, -1
-        if ((k < k_bot) .and. (k > k_top)) then
-             w_(k) = dz(k)
-        else
-             if (k == k_bot) then
-                 w_(k) = (z(k) - z_bot)
-             end if
-
-             if (k == k_top) then
-                 w_(k) = z_top - (z(k)-dz(k))
-             end if
-        end if
-     end do
-    end if
-           
-!   distribute emissions in the vertical 
-    emissions(:) = (w_ / sum(w_)) * emissions_point
-
-    end subroutine distribute_point_emissions
-
 
  end subroutine BRC_GridCompRun1_
 
