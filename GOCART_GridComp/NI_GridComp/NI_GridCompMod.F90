@@ -1330,8 +1330,8 @@ CONTAINS
    if (gcNI%recycle_HNO3) then
        gcNI%xhno3 = hno3
        gcNI%recycle_HNO3 = .false.
-!if(mapl_am_i_root()) print*,'NI recycle alarm TRUE'
-!if(mapl_am_i_root()) print*,'NI recycle alarm sum(self%xhno3)',sum(gcNI%xhno3)
+if(mapl_am_i_root()) print*,'NI recycle alarm TRUE'
+if(mapl_am_i_root()) print*,'NI recycle alarm sum(self%xhno3)',sum(gcNI%xhno3)
    end if
 
 !if(mapl_am_i_root()) print*,'NI Run2 BEGIN sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
@@ -1594,12 +1594,12 @@ RUN_ALARM: if (gcNI%run_alarm) then
 !if(mapl_am_i_root()) print*,'NI sum(HNO3SMASS) = ',sum(HNO3_sfcmass%data2d)
 !if(mapl_am_i_root()) print*,'NI sum(HNO3CMASS) = ',sum(HNO3_colmass%data2d)
 
-if(mapl_am_i_root()) print*,'NI after hetchem sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
-if(mapl_am_i_root()) print*,'NI after hetchem sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
-if(mapl_am_i_root()) print*,'NI after hetchem sum(NO3an1) = ',sum(w_c%qa(nNO3an1)%data3d)
-if(mapl_am_i_root()) print*,'NI after hetchem sum(NO3an2) = ',sum(w_c%qa(nNO3an2)%data3d)
-if(mapl_am_i_root()) print*,'NI after hetchem sum(NO3an3) = ',sum(w_c%qa(nNO3an3)%data3d)
-if(mapl_am_i_root()) print*,'NI after hetchem sum(self%xhno3) = ',sum(gcNI%xhno3)
+!if(mapl_am_i_root()) print*,'NI after hetchem sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+!if(mapl_am_i_root()) print*,'NI after hetchem sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+!if(mapl_am_i_root()) print*,'NI after hetchem sum(NO3an1) = ',sum(w_c%qa(nNO3an1)%data3d)
+!if(mapl_am_i_root()) print*,'NI after hetchem sum(NO3an2) = ',sum(w_c%qa(nNO3an2)%data3d)
+!if(mapl_am_i_root()) print*,'NI after hetchem sum(NO3an3) = ',sum(w_c%qa(nNO3an3)%data3d)
+!if(mapl_am_i_root()) print*,'NI after hetchem sum(self%xhno3) = ',sum(gcNI%xhno3)
 
 !if(mapl_am_i_root()) print*,'NI NH4a array = ',w_c%qa(nNH4a)%data3d
 !  NI Settling
@@ -1854,14 +1854,14 @@ if(mapl_am_i_root()) print*,'NI sum(NIFLUXU) = ',sum(NI_FLUXU%data2d)
 #endif
 
 !if(mapl_am_i_root()) print*,'NI sum(NIANGSTR) = ',sum(NI_angstrom%data2d)
-!if(mapl_am_i_root()) print*,'NI Run2 END sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
-!if(mapl_am_i_root()) print*,'NI Run2 END sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
+if(mapl_am_i_root()) print*,'NI Run2 END sum(NH3) = ',sum(w_c%qa(nNH3)%data3d)
+if(mapl_am_i_root()) print*,'NI Run2 END sum(NH4a) = ',sum(w_c%qa(nNH4a)%data3d)
 !if(mapl_am_i_root()) print*,'NI Run2 END sum(self%xhno3) = ',sum(gcNI%xhno3)
 !if(mapl_am_i_root()) print*,'NI Run2 END array NH3 = ',w_c%qa(nNH3)%data3d
 !if(mapl_am_i_root()) print*,'NI Run2 END array NH4a = ',w_c%qa(nNH4a)%data3d
-!if(mapl_am_i_root()) print*,'NI Run2 END sum(NO3an1) = ',sum(w_c%qa(nNO3an1)%data3d)
-!if(mapl_am_i_root()) print*,'NI Run2 END sum(NO3an2) = ',sum(w_c%qa(nNO3an2)%data3d)
-!if(mapl_am_i_root()) print*,'NI Run2 END sum(NO3an3) = ',sum(w_c%qa(nNO3an3)%data3d)
+if(mapl_am_i_root()) print*,'NI Run2 END sum(NO3an1) = ',sum(w_c%qa(nNO3an1)%data3d)
+if(mapl_am_i_root()) print*,'NI Run2 END sum(NO3an2) = ',sum(w_c%qa(nNO3an2)%data3d)
+if(mapl_am_i_root()) print*,'NI Run2 END sum(NO3an3) = ',sum(w_c%qa(nNO3an3)%data3d)
 
 
    return

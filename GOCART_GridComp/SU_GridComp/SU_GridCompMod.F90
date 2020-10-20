@@ -1885,8 +1885,8 @@ CONTAINS
    xno3  = 0.0
    xh2o2 = gcSU%h2o2_int
 
-if(mapl_am_i_root()) print*,'SU Run2 sum(xh202) =',sum(xh2o2)
-if(mapl_am_i_root()) print*,'SU Run2 sum(gcSU%h2o2_int) =',sum(gcSU%h2o2_int)
+!if(mapl_am_i_root()) print*,'SU Run2 sum(xh202) =',sum(xh2o2)
+!if(mapl_am_i_root()) print*,'SU Run2 sum(gcSU%h2o2_int) =',sum(gcSU%h2o2_int)
 !if(mapl_am_i_root()) print*,'SU Run2 sum(xoh) =',sum(xoh)
 
 !if(mapl_am_i_root()) print*,'SU Run2 B sum(SO2) =',sum(w_c%qa(n1+gcSU%nSO2-1)%data3d)
@@ -1995,8 +1995,8 @@ if(mapl_am_i_root()) print*,'SU Run2 sum(gcSU%h2o2_int) =',sum(gcSU%h2o2_int)
 !if(mapl_am_i_root()) print*,'SU sum(h2o2) = ',sum(gcSU%h2o2_mr)
 !if(mapl_am_i_root()) print*,'SU sum(xoh) = ',sum(xoh)
 !if(mapl_am_i_root()) print*,'SU sum(xno3) = ',sum(xno3)
-if(mapl_am_i_root()) print*,'SU Run2 UpdateOxidants sum(xh2o2) = ',sum(xh2o2)
-if(mapl_am_i_root()) print*,'SU Run2 UpdateOxidants sum(h2o2_int) = ',sum(gcSU%h2o2_int)
+!if(mapl_am_i_root()) print*,'SU Run2 UpdateOxidants sum(xh2o2) = ',sum(xh2o2)
+!if(mapl_am_i_root()) print*,'SU Run2 UpdateOxidants sum(h2o2_int) = ',sum(gcSU%h2o2_int)
 !if(mapl_am_i_root()) print*,'SU Run2 UpdateOxidants sum(xoh) =',sum(xoh)
 
 #ifdef DEBUG
@@ -2043,15 +2043,15 @@ RUN_ALARM: if (gcSU%run_alarm) then
                      xoh, xno3, xh2o2, &                                       ! oxidants
                      rc)
 
-if(mapl_am_i_root()) print*,'SU Run2 ChemDriver sum(xh202) =',sum(xh2o2)
-if(mapl_am_i_root()) print*,'SU Run2 ChemDriver sum(gcSU%h2o2_int) =',sum(gcSU%h2o2_int)
+!if(mapl_am_i_root()) print*,'SU Run2 ChemDriver sum(xh202) =',sum(xh2o2)
+!if(mapl_am_i_root()) print*,'SU Run2 ChemDriver sum(gcSU%h2o2_int) =',sum(gcSU%h2o2_int)
 !if(mapl_am_i_root()) print*,'SU Run2 ChemDriver sum(xoh) =',sum(xoh)
 
 !if(mapl_am_i_root()) print*,'SU sum(SU_PSO2) = ',sum(SU_PSO2%data2d)
 !if(mapl_am_i_root()) print*,'SU sum(pmsa) = ',sum(pmsa%data2d)
 !if(mapl_am_i_root()) print*,'SU sum(SUPSO4) = ',sum(SU_pSO4%data2d)
-if(mapl_am_i_root()) print*,'SU Run2 sum(SUPSO4g) = ',sum(SU_pSO4g%data2d)
-if(mapl_am_i_root()) print*,'SU Run2 sum(SUPSO4aq) = ',sum(SU_pSO4aq%data2d)
+!if(mapl_am_i_root()) print*,'SU Run2 sum(SUPSO4g) = ',sum(SU_pSO4g%data2d)
+!if(mapl_am_i_root()) print*,'SU Run2 sum(SUPSO4aq) = ',sum(SU_pSO4aq%data2d)
 !if(mapl_am_i_root()) print*,'SU sum(SO4) =',sum(w_c%qa(n1+gcSU%nSO4-1)%data3d)
 !if(mapl_am_i_root()) print*,'SU sum(MSA) =',sum(w_c%qa(n1+gcSU%nMSA-1)%data3d)
 
@@ -2067,8 +2067,8 @@ if(mapl_am_i_root()) print*,'SU Run2 sum(SUPSO4aq) = ',sum(SU_pSO4aq%data2d)
                          ple, rhoa, gcSU, w_c, &
                          precc, precl, pfllsan, pfilsan, &
                          tmpu, SU_wet, SU_pso4, SU_pso4wet, pso4, pso4wet, rc )
-if(mapl_am_i_root()) print*,'SU Run2 WetRemoval sum(xh202) =',sum(xh2o2)
-if(mapl_am_i_root()) print*,'SU Run2 WetRemoval sum(gcSU%h2o2_int) =',sum(gcSU%h2o2_int)
+!if(mapl_am_i_root()) print*,'SU Run2 WetRemoval sum(xh202) =',sum(xh2o2)
+!if(mapl_am_i_root()) print*,'SU Run2 WetRemoval sum(gcSU%h2o2_int) =',sum(gcSU%h2o2_int)
 
 !if(mapl_am_i_root()) print*,'SU n=1 sum(SUWT) = ',sum(SU_wet(1)%data2d)
 !if(mapl_am_i_root()) print*,'SU n=2 sum(SUWT) = ',sum(SU_wet(2)%data2d)

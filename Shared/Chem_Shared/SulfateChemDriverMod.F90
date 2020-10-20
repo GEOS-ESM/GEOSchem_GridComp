@@ -197,8 +197,6 @@ CONTAINS
                              tmpu, rhoa, hghte, oro, ustar, &
                              pblh, shflux, z0h, drydepositionfrequency, rc )
 
-if(mapl_am_i_root()) print*,'SU sum(drydepositionfrequency) = ',sum(drydepositionfrequency)
-
 !  Now call the chemistry packages...
 !  ----------------------------------
 
@@ -217,8 +215,6 @@ if(mapl_am_i_root()) print*,'SU sum(drydepositionfrequency) = ',sum(drydepositio
      enddo
    endif
 
-if(mapl_am_i_root()) print*,'SU sum(pSO2_DMS) = ',sum(pSO2_DMS)
-
    if( associated(pMSA%data3d) ) &
      pMSA%data3d(i1:i2,j1:j2,1:km) = pMSA_DMS(i1:i2,j1:j2,1:km)
    if( associated(su_pMSA%data2d)) then
@@ -228,30 +224,6 @@ if(mapl_am_i_root()) print*,'SU sum(pSO2_DMS) = ',sum(pSO2_DMS)
           + pMSA_DMS(i1:i2,j1:j2,k)*delp(i1:i2,j1:j2,k)/grav
      enddo
    endif
-
-if(mapl_am_i_root()) then
-   print*,''
-   print*,'  SU_ChemDrv_SO2 CHECK'
-   print*,'=========================='
-   print*,'xoh = ',sum(xoh)
-   print*,'xh2o2 = ',sum(xh2o2)
-   print*,'so2 = ',sum(so2)
-   print*,'pSO4g_SO2 = ',sum(pSO4g_SO2)
-   print*,'pSO4aq_SO2 = ',sum(pSO4aq_SO2)
-   print *,'i1 = ', i1
-   print *,'i2 = ', i2
-   print *,'j1 = ',j1
-   print *,'j2 = ',j2
-   print *,'km = ',km
-   print *,'cdt = ',cdt
-   print *,'rhoa = ',sum(rhoa)
-   print *,'delp = ',sum(delp)
-   print *,'tmpu = ',sum(tmpu)
-   print *,'cloud = ',sum(cloud)
-   print *,'oro = ',sum(oro)
-   print*,'======== END ============='
-   print*,''
-end if
 
 
 !  SO2 source and oxidation to SO4
@@ -279,8 +251,6 @@ end if
           + pSO4aq_SO2(i1:i2,j1:j2,k)*delp(i1:i2,j1:j2,k)/grav
      enddo
    endif
-
-if(mapl_am_i_root()) print*,'SU pSO4aq_SO2 = ',sum(pSO4aq_SO2)
 
    if( associated(pSO4%data3d) ) &
      pSO4%data3d(i1:i2,j1:j2,1:km) = pSO4g_SO2(i1:i2,j1:j2,1:km) + pSO4aq_SO2(i1:i2,j1:j2,1:km)
@@ -1431,8 +1401,8 @@ if(mapl_am_i_root()) print*,'SU inside UpdateEmiss'
   if ( diurnal_bb ) then
        call Chem_BiomassDiurnal ( so2biomass_src, so2biomass_src_,   &
                                   lonRad*radToDeg, latRad*radToDeg, nhms_current, cdt )      
-if(mapl_am_i_root()) print*,'SU inside sum(so2biomass_src) = ',sum(so2biomass_src)
-if(mapl_am_i_root()) print*,'SU inside sum(so2biomass_src_) = ',sum(so2biomass_src_)
+!if(mapl_am_i_root()) print*,'SU inside sum(so2biomass_src) = ',sum(so2biomass_src)
+!if(mapl_am_i_root()) print*,'SU inside sum(so2biomass_src_) = ',sum(so2biomass_src_)
   end if
 
 !  Apply NEI emissions over North America if so desired
@@ -1967,7 +1937,7 @@ deltaSO2v_sum = deltaSO2v_sum + deltaSO2v
    endif
    if(associated(SU_SO2emvn%data2d)) then
       SU_SO2emvn%data2d = srcSO2volc
-if(mapl_am_i_root()) print*,'SU inside sum(SO2EMVN) = ',sum(SU_SO2emvn%data2d)
+!if(mapl_am_i_root()) print*,'SU inside sum(SO2EMVN) = ',sum(SU_SO2emvn%data2d)
    endif
    if( associated(SU_emis(nSO2)%data2d) ) &
                   SU_emis(nSO2)%data2d =  SU_emis(nSO2)%data2d + srcSO2volc + srcSO2volce
