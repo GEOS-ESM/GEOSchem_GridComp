@@ -971,7 +971,7 @@ contains
     if (myState%AERO_PROVIDER < 0) then
         ! Radiation will not call the aerosol optics method 
         ! unless this attribute is explicitly set to true.
-        call ESMF_StateGet(EXPORT, 'AERO', AERO, __RC__)
+        call ESMF_StateGet(EXPORT, 'AERO_RAD', AERO, __RC__)
         call ESMF_AttributeSet(AERO, name='implements_aerosol_optics_method', value=.false., __RC__)
 
         ! Moist will not call the aerosol activation method 
