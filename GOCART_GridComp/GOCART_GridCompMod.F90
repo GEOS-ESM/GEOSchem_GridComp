@@ -1111,8 +1111,6 @@ if ( r%doing_GOCART ) then
           DIMS       = MAPL_DimsHorzVert,          &
           VLOCATION  = MAPL_VLocationCenter, __RC__)
 
-   if (mapl_am_i_root()) print*,'GOCART internal SHORT_NAME = ',trim(COMP_NAME)//'::'//trim(r%vname(n))
-
     end do
 
 !   This state is needed by radiation - It will contain 
@@ -1531,7 +1529,6 @@ end if ! doing GOCART
 
       N = chemReg%i_GOCART + L - 1
       call MAPL_GetPointer(internal, NAME=short_name, ptr=w_c%qa(N)%data3d, __RC__)
-if(mapl_am_i_root()) print*,'GOCART short_name n = ',n, ' : short_name = ',trim(short_name)
    end do
 
 #ifdef PRINT_STATES

@@ -822,10 +822,6 @@ CONTAINS
      end do
    end do
 
-do n = 1, 5
-  if(mapl_am_i_root()) print*,'n = ', n,' : INIT SS sum(ss00n) = ',sum(w_c%qa(n1+n-1)%data3d)
-end do
-
 
 !  All done
 !  --------
