@@ -16,6 +16,7 @@ set (alldirs
   BRC_GridComp
   )
 
+
 set (srcs
   GOCART_GridCompMod.F90
   Aero_GridCompMod.F90
@@ -30,10 +31,9 @@ install( FILES ${resource_files}
    DESTINATION etc
    )
 
-set (dependencies Chem_Base Chem_Shared MAPL GMAO_mpeu)
+set (dependencies Chem_Base Chem_Shared MAPL GMAO_mpeu GEOS_Shared)
 esma_add_library (${this}
   SRCS ${srcs}
   SUBCOMPONENTS ${alldirs}
   DEPENDENCIES ${dependencies}
-  INCLUDES ${INC_ESMF})
-
+  INCLUDES ${INC_ESMF} )
