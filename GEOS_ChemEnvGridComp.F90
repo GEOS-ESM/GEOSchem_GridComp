@@ -508,7 +508,7 @@ contains
 
 !!!! >>>>>>>>>>>>>>>>  OVP
 
-    IF ( ovp_setup_done == .FALSE. ) THEN
+    IF ( ovp_setup_done .eqv. .FALSE. ) THEN
 
 !     Set up Overpass Masks
 !     --------------------
