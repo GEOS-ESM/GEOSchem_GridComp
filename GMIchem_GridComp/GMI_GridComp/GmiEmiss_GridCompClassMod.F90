@@ -1775,6 +1775,18 @@ CONTAINS
  !! AIRMASS
     CALL MAPL_GetPointer(expChem, EM_pointer, "AIRMASS", __RC__)
     IF(ASSOCIATED(EM_pointer))   EM_pointer(i1:i2, j1:j2, 1:km) = AIRDENS(i1:i2, j1:j2, 1:km) * gridBoxThickness(i1:i2, j1:j2, km:1:-1)
+
+!!!! >>>>>>>>>>>>>>>>  OVP
+    IF(ASSOCIATED(EM_pointer)) THEN
+       DATA_FOR_OVP_3D => EM_pointer
+
+       CALL MAPL_GetPointer(expChem, OVP10_OUTPUT_3D, 'OVP10_AIRMASS', __RC__)
+       CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_AIRMASS', __RC__)
+
+       CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP10_OUTPUT_3D, MASK_10AM, OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+       CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+    END IF
+!!!! <<<<<<<<<<<<<<<<  OVP
 !!!!!
 
 
