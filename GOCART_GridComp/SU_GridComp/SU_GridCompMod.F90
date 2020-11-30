@@ -901,12 +901,12 @@ CONTAINS
    gcSU%nMSA = 4
 
 
-if(mapl_am_i_root()) print*,'SU INIT sum(SO2)',sum(w_c%qa(n1+gcSU%nSO2-1)%data3d)
-if(mapl_am_i_root()) print*,'SU INIT sum(SO4)',sum(w_c%qa(n1+gcSU%nSO4-1)%data3d)
-if(mapl_am_i_root()) print*,'SU INIT sum(DMS)',sum(w_c%qa(n1+gcSU%nDMS-1)%data3d)
-if(mapl_am_i_root()) print*,'SU INIT sum(MSA)',sum(w_c%qa(n1+gcSU%nMSA-1)%data3d)
+!if(mapl_am_i_root()) print*,'SU INIT sum(SO2)',sum(w_c%qa(n1+gcSU%nSO2-1)%data3d)
+!if(mapl_am_i_root()) print*,'SU INIT sum(SO4)',sum(w_c%qa(n1+gcSU%nSO4-1)%data3d)
+!if(mapl_am_i_root()) print*,'SU INIT sum(DMS)',sum(w_c%qa(n1+gcSU%nDMS-1)%data3d)
+!if(mapl_am_i_root()) print*,'SU INIT sum(MSA)',sum(w_c%qa(n1+gcSU%nMSA-1)%data3d)
 
-if(mapl_am_i_root()) print*,'SU chemreg n = ',n1+gcSU%nSO2-1
+!if(mapl_am_i_root()) print*,'SU chemreg n = ',n1+gcSU%nSO2-1
 
 
 !                       -------------------
@@ -1582,8 +1582,6 @@ CONTAINS
                                      aviation_cds_src=gcSU%aviation_cds_src, &
                                      aviation_crs_src=gcSU%aviation_crs_src)
 
-if(mapl_am_i_root()) print*,'SU nVolc2 = ',gcSU%nvolc
-if(mapl_am_i_root()) print*,'SU sum(vSO2) = ',sum(gcSU%vSO2)
 
 !if(mapl_am_i_root()) print*,'SU after volc emiss sum(SO2)',sum(w_c%qa(n1+gcSU%nSO2-1)%data3d)
 
@@ -1887,6 +1885,10 @@ CONTAINS
    xno3  = 0.0
    xh2o2 = gcSU%h2o2_int
 
+!if(mapl_am_i_root()) print*,'SU Run2 sum(xh202) =',sum(xh2o2)
+!if(mapl_am_i_root()) print*,'SU Run2 sum(gcSU%h2o2_int) =',sum(gcSU%h2o2_int)
+!if(mapl_am_i_root()) print*,'SU Run2 sum(xoh) =',sum(xoh)
+
 !if(mapl_am_i_root()) print*,'SU Run2 B sum(SO2) =',sum(w_c%qa(n1+gcSU%nSO2-1)%data3d)
 !if(mapl_am_i_root()) print*,'SU Run2 B sum(SO4) =',sum(w_c%qa(n1+gcSU%nSO4-1)%data3d)
 
@@ -1993,8 +1995,9 @@ CONTAINS
 !if(mapl_am_i_root()) print*,'SU sum(h2o2) = ',sum(gcSU%h2o2_mr)
 !if(mapl_am_i_root()) print*,'SU sum(xoh) = ',sum(xoh)
 !if(mapl_am_i_root()) print*,'SU sum(xno3) = ',sum(xno3)
-!if(mapl_am_i_root()) print*,'SU after sum(xh2o2) = ',sum(xh2o2)
-!if(mapl_am_i_root()) print*,'SU after sum(h2o2_int) = ',sum(gcSU%h2o2_int)
+!if(mapl_am_i_root()) print*,'SU Run2 UpdateOxidants sum(xh2o2) = ',sum(xh2o2)
+!if(mapl_am_i_root()) print*,'SU Run2 UpdateOxidants sum(h2o2_int) = ',sum(gcSU%h2o2_int)
+!if(mapl_am_i_root()) print*,'SU Run2 UpdateOxidants sum(xoh) =',sum(xoh)
 
 #ifdef DEBUG
    CALL pmaxmin('SU: OH_conc', gcSU%oh_conc, qmin, qmax, ijl,km, 1. )
@@ -2024,7 +2027,6 @@ RUN_ALARM: if (gcSU%run_alarm) then
 !if(mapl_am_i_root()) print*,'n = 4', ' : SU sum(SUSD) = ',sum(SU_set(4)%data2d)
 
 
-
 !  If doing the ACHEM provided pSO2 from OCS then add to SO2 here
 !  --------------------------------------------------------------
    IF(gcSU%using_ACHEM_pSO2_OCS .and. associated(ACHEM_PSO2_OCS) ) THEN
@@ -2041,11 +2043,15 @@ RUN_ALARM: if (gcSU%run_alarm) then
                      xoh, xno3, xh2o2, &                                       ! oxidants
                      rc)
 
+!if(mapl_am_i_root()) print*,'SU Run2 ChemDriver sum(xh202) =',sum(xh2o2)
+!if(mapl_am_i_root()) print*,'SU Run2 ChemDriver sum(gcSU%h2o2_int) =',sum(gcSU%h2o2_int)
+!if(mapl_am_i_root()) print*,'SU Run2 ChemDriver sum(xoh) =',sum(xoh)
+
 !if(mapl_am_i_root()) print*,'SU sum(SU_PSO2) = ',sum(SU_PSO2%data2d)
 !if(mapl_am_i_root()) print*,'SU sum(pmsa) = ',sum(pmsa%data2d)
 !if(mapl_am_i_root()) print*,'SU sum(SUPSO4) = ',sum(SU_pSO4%data2d)
-!if(mapl_am_i_root()) print*,'SU sum(SUPSO4g) = ',sum(SU_pSO4g%data2d)
-!if(mapl_am_i_root()) print*,'SU sum(SUPSO4aq) = ',sum(SU_pSO4aq%data2d)
+!if(mapl_am_i_root()) print*,'SU Run2 sum(SUPSO4g) = ',sum(SU_pSO4g%data2d)
+!if(mapl_am_i_root()) print*,'SU Run2 sum(SUPSO4aq) = ',sum(SU_pSO4aq%data2d)
 !if(mapl_am_i_root()) print*,'SU sum(SO4) =',sum(w_c%qa(n1+gcSU%nSO4-1)%data3d)
 !if(mapl_am_i_root()) print*,'SU sum(MSA) =',sum(w_c%qa(n1+gcSU%nMSA-1)%data3d)
 
@@ -2061,6 +2067,9 @@ RUN_ALARM: if (gcSU%run_alarm) then
                          ple, rhoa, gcSU, w_c, &
                          precc, precl, pfllsan, pfilsan, &
                          tmpu, SU_wet, SU_pso4, SU_pso4wet, pso4, pso4wet, rc )
+!if(mapl_am_i_root()) print*,'SU Run2 WetRemoval sum(xh202) =',sum(xh2o2)
+!if(mapl_am_i_root()) print*,'SU Run2 WetRemoval sum(gcSU%h2o2_int) =',sum(gcSU%h2o2_int)
+
 !if(mapl_am_i_root()) print*,'SU n=1 sum(SUWT) = ',sum(SU_wet(1)%data2d)
 !if(mapl_am_i_root()) print*,'SU n=2 sum(SUWT) = ',sum(SU_wet(2)%data2d)
 !if(mapl_am_i_root()) print*,'SU n=3 sum(SUWT) = ',sum(SU_wet(3)%data2d)
@@ -2172,13 +2181,13 @@ RUN_ALARM: if (gcSU%run_alarm) then
 !if(mapl_am_i_root()) print*,'SU sum(SO2CMASS)',sum(SU_SO2colmass%data2d)
 !if(mapl_am_i_root()) print*,'SU sum(SO4CMASS)',sum(SU_SO4colmass%data2d)
 !if(mapl_am_i_root()) print*,'SU sum(SO4SMASS)',sum(SU_SO4sfcmass%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SUEXTTAU)',sum(SU_exttau%data2d)
-if(mapl_am_i_root()) print*,'SU sum(SUSCATAU)',sum(SU_scatau%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SUEXTTAU)',sum(SU_exttau%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SUSCATAU)',sum(SU_scatau%data2d)
 !if(mapl_am_i_root()) print*,'SU sum(SO4MASS)',sum(SU_SO4mass%data3d)
 !if(mapl_am_i_root()) print*,'SU sum(SUCONC)',sum(SU_conc%data3d)
 !if(mapl_am_i_root()) print*,'SU sum(SUEXTCOEF)',sum(SU_extcoef%data3d)
 !if(mapl_am_i_root()) print*,'SU sum(SUSCACOEF)',sum(SU_scacoef%data3d)
-if(mapl_am_i_root()) print*,'SU sum(SUANGSTR)',sum(SU_angstrom%data2d)
+!if(mapl_am_i_root()) print*,'SU sum(SUANGSTR)',sum(SU_angstrom%data2d)
 !if(mapl_am_i_root()) print*,'SU sum(SUFLUXU)',sum(SU_fluxu%data2d)
 !if(mapl_am_i_root()) print*,'SU sum(SUFLUXV)',sum(SU_fluxv%data2d)
 !if(mapl_am_i_root()) print*,'SU sum(SO4SAREA)',sum(SU_sarea%data3d)
@@ -2318,6 +2327,9 @@ CONTAINS
                                   SU_PSO4, SU_PSO4g, SU_PSO4aq, &     ! 2d diagnostics
                                   pso2, pmsa, pso4, pso4g, pso4aq,  & ! 3d diagnostics
                                   rc)
+
+!if(mapl_am_i_root()) print*,'SU Run2 sum(SUPSO4aq) = ',sum(su_pso4aq%data2d)
+!if(mapl_am_i_root()) print*,'SU Run2 sum(SUPSO4g) = ',sum(su_pso4g%data2d)
 
 
 !  Save the h2o2 value after chemistry

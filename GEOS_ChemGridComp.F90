@@ -335,11 +335,14 @@ contains
 ! -----------------------------------------------------------
       
 
-! Provide GOCART2G's AERO state
-! -----------------------------
-  call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO2G_RAD',    &
-                                CHILD_ID = GOCART2G, __RC__  )
-
+! Provide GOCART2G's AERO states
+! ------------------------------
+!  call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO2G_RAD',    &
+!                                CHILD_ID = GOCART2G, __RC__  )
+!  call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO2G_ACI',    &
+!                                CHILD_ID = GOCART2G, __RC__  )
+!  call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO2G_DP',    &
+!                                CHILD_ID = GOCART2G, __RC__  )
 
   call ESMF_ConfigGetAttribute(CF, providerName, Default='GOCART.data', &
                                Label="AERO_PROVIDER:", __RC__ )
@@ -351,7 +354,7 @@ contains
       AERO_PROVIDER = -1
 
       call MAPL_AddExportSpec(GC,                                        &
-                              SHORT_NAME = 'AERO',                       &
+                              SHORT_NAME = 'AERO_RAD',                   &
                               LONG_NAME  = 'aerosol_mass_mixing_ratios', &
                               UNITS      = 'kg kg-1',                    &
                               DIMS       = MAPL_DimsHorzVert,            &
@@ -377,7 +380,7 @@ contains
 
 !     Add export specs for aerosols and aerosol deposition
 !     ----------------------------------------------------
-      call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO',    &
+      call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO_RAD',&
                                 CHILD_ID = AERO_PROVIDER, __RC__  )
 
       call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO_ACI',&
@@ -422,7 +425,7 @@ contains
 
   IF(myState%enable_GOCART2G) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'DELP', 'AIRDENS', 'NCN_PRCP' /), &
+          SHORT_NAME  = (/'DELP    ', 'AIRDENS ', 'NCN_PRCP' /), &
           DST_ID = GOCART2G, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
@@ -968,7 +971,7 @@ contains
     if (myState%AERO_PROVIDER < 0) then
         ! Radiation will not call the aerosol optics method 
         ! unless this attribute is explicitly set to true.
-        call ESMF_StateGet(EXPORT, 'AERO', AERO, __RC__)
+        call ESMF_StateGet(EXPORT, 'AERO_RAD', AERO, __RC__)
         call ESMF_AttributeSet(AERO, name='implements_aerosol_optics_method', value=.false., __RC__)
 
         ! Moist will not call the aerosol activation method 

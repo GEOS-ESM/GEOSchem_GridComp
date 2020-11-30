@@ -766,12 +766,6 @@ if(mapl_am_i_root()) print *,'gcOC%gcs(i)%rcfilen = ', gcOC%gcs(i)%rcfilen
    call init_()
    if ( rc /= 0 ) return
 
-
-
-if(mapl_am_i_root()) print*,'CA Init B sum(OCphobic) = ',sum(w_c%qa(n1)%data3d)
-if(mapl_am_i_root()) print*,'CA Init B sum(OCphilic) = ',sum(w_c%qa(n2)%data3d)
-
-
 !                       -------------------
 !                       Parse resource file
 !                       -------------------

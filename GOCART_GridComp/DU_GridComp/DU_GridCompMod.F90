@@ -1114,10 +1114,9 @@ CONTAINS
    endif POINTWISE_SOURCES
 
 
-!    do n = 1, nbins
-!       print*,'DU n = ',n,' sum(w_c%qa%data3d) = ',sum( w_c%qa(n1+n-1)%data3d(i,j,:))
-!    end do
-
+!do n = 1, nbins
+!   if(mapl_am_i_root()) print*,'n = ', n,' : Run1 E DU sum(du00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+!end do
 
 !  Clean up
 !  --------
@@ -1428,6 +1427,10 @@ RUN_ALARM: if (gcDU%run_alarm) then
                         DU_radius, DU_rhop, cdt, w_c, tmpu, rhoa, hsurf,    &
                         hghte, DU_set, rc, correctionMaring=gcDU%maringFlag )
 
+!do n = 1, nbins
+!   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 ChemSet DU sum(du00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+!end do
+
 #ifdef DEBUG
    do n = n1, n2
       call pmaxmin('DU: q_set', w_c%qa(n)%data3d(i1:i2,j1:j2,1:km), qmin, qmax, &
@@ -1452,6 +1455,10 @@ RUN_ALARM: if (gcDU%run_alarm) then
      DU_dep(n)%data2d = dqa*w_c%delp(:,:,km)/grav/cdt
    end do
 
+!do n = 1, nbins
+!   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 DryDep DU sum(du00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+!end do
+
 #ifdef DEBUG
    do n = n1, n2
       call pmaxmin('DU: q_dry', w_c%qa(n)%data3d(i1:i2,j1:j2,1:km), qmin, qmax, &
@@ -1470,6 +1477,10 @@ RUN_ALARM: if (gcDU%run_alarm) then
                           precc, precl, fluxout, rc )
     if(associated(DU_wet(n)%data2d)) DU_wet(n)%data2d = fluxout%data2d
    end do
+
+!do n = 1, nbins
+!   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 WetRemoval DU sum(du00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+!end do
 
 #ifdef DEBUG
    do n = n1, n2
@@ -1544,6 +1555,11 @@ RUN_ALARM: if (gcDU%run_alarm) then
                 dqa, drydepositionfrequency, stat=STATUS )
 
    end if RUN_ALARM
+
+do n = 1, nbins
+   if(mapl_am_i_root()) print*,'n = ', n,' : Run2 E DU sum(du00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+end do
+
 
 !  Compute the desired output diagnostics here
 !  Ideally this will go where chemout is called in fvgcm.F since that

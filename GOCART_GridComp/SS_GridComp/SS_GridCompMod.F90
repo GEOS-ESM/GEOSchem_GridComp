@@ -823,7 +823,6 @@ CONTAINS
    end do
 
 
-
 !  All done
 !  --------
    call i90_release()
@@ -961,6 +960,10 @@ CONTAINS
    allocate(w10m(i1:i2,j1:j2), dqa(i1:i2,j1:j2), __STAT__)
    allocate(memissions(i1:i2,j1:j2), nemissions(i1:i2,j1:j2), __STAT__)
 
+
+!do n = 1, 5
+!  if(mapl_am_i_root()) print*,'n = ', n,' : Run1 B SS sum(ss00n) = ',sum(w_c%qa(n1+n-1)%data3d)
+!end do
 
 !  Get 2D Imports
 !  --------------
@@ -1482,11 +1485,11 @@ RUN_ALARM: if (gcSS%run_alarm) then
                          SS_conc, SS_extcoef, SS_scacoef, SS_exttaufm, SS_scataufm, &
                          SS_angstrom, SS_fluxu, SS_fluxv, rc)
 
-if(mapl_am_i_root()) print*,'SS SSSMASS = ',sum(SSSMASS%data2d)
-if(mapl_am_i_root()) print*,'SS SSMASS = ',sum(SSMASS%data3d)
-if(mapl_am_i_root()) print*,'SS SSEXTTAU = ',sum(SSEXTTAU%data2d)
-if(mapl_am_i_root()) print*,'SS SSSCATAU = ',sum(SSSCATAU%data2d)
-if(mapl_am_i_root()) print*,'SS SSANGSTR = ',sum(SSANGSTR%data2d)
+!if(mapl_am_i_root()) print*,'SS SSSMASS = ',sum(SSSMASS%data2d)
+!if(mapl_am_i_root()) print*,'SS SSMASS = ',sum(SSMASS%data3d)
+!if(mapl_am_i_root()) print*,'SS SSEXTTAU = ',sum(SSEXTTAU%data2d)
+!if(mapl_am_i_root()) print*,'SS SSSCATAU = ',sum(SSSCATAU%data2d)
+!if(mapl_am_i_root()) print*,'SS SSANGSTR = ',sum(SSANGSTR%data2d)
 
 
 do n = 1, 5
