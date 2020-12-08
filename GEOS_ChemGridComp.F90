@@ -333,16 +333,6 @@ contains
 ! Aerosol for radiation.  If an AERO_PROVIDER is not specified
 ! in the AGCM.tmpl, then the provider defaults to GOCART.data.
 ! -----------------------------------------------------------
-      
-
-! Provide GOCART2G's AERO states
-! ------------------------------
-!  call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO2G_RAD',    &
-!                                CHILD_ID = GOCART2G, __RC__  )
-!  call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO2G_ACI',    &
-!                                CHILD_ID = GOCART2G, __RC__  )
-!  call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO2G_DP',    &
-!                                CHILD_ID = GOCART2G, __RC__  )
 
   call ESMF_ConfigGetAttribute(CF, providerName, Default='GOCART.data', &
                                Label="AERO_PROVIDER:", __RC__ )
@@ -429,7 +419,7 @@ contains
           DST_ID = GOCART2G, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
-
+#if 0
   IF(myState%enable_GAAS) then
      CALL MAPL_AddConnectivity ( GC, &
           SHORT_NAME  = (/ 'AIRDENS ', 'DELP    ' /), &
@@ -455,6 +445,38 @@ contains
               __raise__(MAPL_RC_ERROR,"Cannot have GAAS enabled without GOCART")
           ENDIF
   ENDIF
+#endif
+
+  IF(myState%enable_GAAS) then
+     CALL MAPL_AddConnectivity ( GC, &
+          SHORT_NAME  = (/ 'AIRDENS ', 'DELP    ' /), &
+          DST_ID = GAAS, SRC_ID = CHEMENV, __RC__  )
+          IF(myState%enable_GOCART2G) then
+              CALL MAPL_AddConnectivity ( GC, &
+                   SRC_NAME  = (/ 'DU', &
+                                  'SS', &
+                                  'NO3an1', 'NO3an2', 'NO3an3', &
+                                  'SO4' /), &
+                   DST_NAME  = (/ 'DU', &
+                                  'SS', &
+                                  'NO3an1', 'NO3an2', 'NO3an3', &
+                                  'SO4' /), &
+                   DST_ID = GAAS, SRC_ID = GOCART2G, __RC__  )
+
+              CALL MAPL_AddConnectivity ( GC, &
+                   SRC_NAME  = (/ 'CAphobicCA.oc','CAphilicCA.oc' /), &
+                   DST_NAME  = (/ 'OCphobic','OCphilic' /), &
+                   DST_ID = GAAS, SRC_ID = GOCART2G, __RC__  )
+
+              CALL MAPL_AddConnectivity ( GC, &
+                   SRC_NAME  = (/ 'CAphobicCA.bc','CAphilicCA.bc' /), &
+                   DST_NAME  = (/ 'BCphobic','BCphilic' /), &
+                   DST_ID = GAAS, SRC_ID = GOCART2G, __RC__  )
+          ELSE
+              __raise__(MAPL_RC_ERROR,"Cannot have GAAS enabled without GOCART")
+          ENDIF
+  ENDIF
+
 
   IF(myState%enable_CARMA) then
       CALL MAPL_AddConnectivity ( GC, &
