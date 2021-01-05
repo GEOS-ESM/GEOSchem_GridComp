@@ -30,7 +30,7 @@
                                     SO2_Emissions,  &
                                     DMS_Emissions,  &
                                     SOAG_Emissions, &
-				    VOC_Emissions
+                                    VOC_Emissions
 
 
    use GACL_ReactionRatesMod, only: henry,                &
@@ -71,23 +71,22 @@
 
      logical             :: verbose                   ! turn on/off more verbose messages
 
+     logical             :: mam_chem                  ! aerosol chemistry for MAM and alike
      logical             :: gas_phase_chem            ! enable/disable gas phase chemistry
      logical             :: aqu_phase_chem            ! enable/disable aqueous phase chemistry
 
      logical             :: ocs_chem                  ! enable/disable OCS chemistry mechanism
      real                :: ocs_surface_vmr = 0.0     ! OCS surface volume mixing ratio
 
-     logical 	         :: voc_chem  !voc chemistry    ! turn on/off VOCs
+     logical             :: voc_chem                  ! voc chemistry    ! turn on/off VOCs
      real                :: voc_BiomassBurnFactor = 0.0 ! conversion factor CO->VOC (BB)
-     real                :: voc_AnthroFactor = 0.0      ! conversion factor CO->VOC (anthro)
-     real                :: voc_MW=0.0                  ! molecular weight of VOC
-     real                :: soa_MW=0.0                  ! molecular weight of SOA
+     real                :: voc_AnthroFactor = 0.0    ! conversion factor CO->VOC (anthro)
+     real                :: voc_MW = 0.0              ! molecular weight of VOC
+     real                :: soa_MW = 0.0              ! molecular weight of SOA
 
      real                :: aqu_solver_max_dt         ! maximum time step used for integration in the aqueous-phase mechanism
 
      logical             :: apply_diurnal_cycle       ! flag that indicates if offline oxidant have to be temporally downscaled
-
-     logical             :: oxidants_quirk            ! flag that indicates if offline oxidant fields need to be flipped 
 
      real, dimension(4)  :: aviation_layers           ! heights of the LTO, CDS and CRS layers
 
@@ -172,25 +171,24 @@ contains
     self%CF = ESMF_ConfigCreate(__RC__)
     call ESMF_ConfigLoadFile(self%CF, 'GEOS_AChemGridComp.rc', __RC__)
 
-    call ESMF_ConfigGetAttribute(self%CF, self%verbose, Label='verbose:', default=.false., __RC__)
+    call ESMF_ConfigGetAttribute(self%CF, self%verbose, label='verbose:', default=.false., __RC__)
 
     ! gas phase options
-    call ESMF_ConfigGetAttribute(self%CF, self%gas_phase_chem,      Label='gas_chemistry:',        default=.true., __RC__)
+    call ESMF_ConfigGetAttribute(self%CF, self%gas_phase_chem, label='gas_chemistry:', default=.true., __RC__)
     
     ! aqueous phase options
-    call ESMF_ConfigGetAttribute(self%CF, self%aqu_phase_chem,      Label='aqu_chemistry:',        default=.true., __RC__)
-    call ESMF_ConfigGetAttribute(self%CF, self%aqu_solver_max_dt,   Label='aqu_chemistry_max_dt:', default=60.0,   __RC__)
+    call ESMF_ConfigGetAttribute(self%CF, self%aqu_phase_chem, label='aqueous_chemistry:', default=.true., __RC__)
+    call ESMF_ConfigGetAttribute(self%CF, self%aqu_solver_max_dt, label='aqueous_chemistry_solver_max_dt:', default=60.0, __RC__)
 #if (0)
     ! combo(gas- and aqueous-phase) options
-    call ESMF_ConfigGetAttribute(self%CF, self%combo_chem,          Label='combo_chemistry:',        default=.true., __RC__)
-    call ESMF_ConfigGetAttribute(self%CF, self%combo_solver_max_dt, Label='combo_chemistry_max_dt:', default=10.0,   __RC__)
-#endif   
+    call ESMF_ConfigGetAttribute(self%CF, self%combo_chem, label='combo_chemistry:', default=.true., __RC__)
+    call ESMF_ConfigGetAttribute(self%CF, self%combo_solver_max_dt, label='combo_chemistry_max_dt:', default=10.0, __RC__)
+#endif 
     ! other options
-    call ESMF_ConfigGetAttribute(self%CF, self%apply_diurnal_cycle, Label='apply_diurnal_cycle:',  default=.true.,  __RC__)
-    call ESMF_ConfigGetAttribute(self%CF, self%oxidants_quirk,      Label='flip_oxidant_fields:',  default=.false., __RC__)
+    call ESMF_ConfigGetAttribute(self%CF, self%apply_diurnal_cycle, label='apply_diurnal_cycle:', default=.true., __RC__)
 
     ! volcanic emissions
-    call ESMF_ConfigGetAttribute(self%CF, self%volcanic_emiss_file, Label='volcanoes:', default='/dev/null',  __RC__)
+    call ESMF_ConfigGetAttribute(self%CF, self%volcanic_emiss_file, Label='volcanoes:', default='/dev/null', __RC__)
     
     ! heights of aviation layers
     self%aviation_layers = 0.0
@@ -212,12 +210,28 @@ contains
     call ESMF_ConfigGetAttribute(self%CF, self%voc_chem, Label='voc_chemistry:', default=.false., __RC__)
 
     if (self%voc_chem) then
-        if(MAPL_AM_I_ROOT()) print *, ' ACHEM::doing VOC chemistry'
-        call ESMF_ConfigGetAttribute(self%CF, self%voc_BiomassBurnFactor,  Label='voc_BiomassBurnFactor:', __RC__)
-        call ESMF_ConfigGetAttribute(self%CF, self%voc_AnthroFactor,  Label='voc_AnthroFactor:', __RC__)
-        call ESMF_ConfigGetAttribute(self%CF, self%voc_MW,  Label='voc_MW:', __RC__)
-        call ESMF_ConfigGetAttribute(self%CF, self%soa_MW,  Label='soa_MW:', __RC__)
+        call ESMF_ConfigGetAttribute(self%CF, self%voc_BiomassBurnFactor, Label='voc_BiomassBurnFactor:', __RC__)
+        call ESMF_ConfigGetAttribute(self%CF, self%voc_AnthroFactor, Label='voc_AnthroFactor:', __RC__)
+        call ESMF_ConfigGetAttribute(self%CF, self%voc_MW, Label='voc_MW:', __RC__)
+        call ESMF_ConfigGetAttribute(self%CF, self%soa_MW, Label='soa_MW:', __RC__)
     end if
+
+    ! Minimalistic atmospheric mechanism for MAM and alike
+    if (self%gas_phase_chem .or. self%aqu_phase_chem) then
+        self%mam_chem = .true.
+    else
+        self%mam_chem = .false.
+    end if    
+
+    if (MAPL_AM_I_ROOT()) then
+        print *, trim(Iam)//': Configuration'
+        print *, trim(Iam)//':     gas chemistry = ', self%gas_phase_chem
+        print *, trim(Iam)//': aqueous chemistry = ', self%aqu_phase_chem
+        print *, trim(Iam)//':     VOC chemistry = ', self%voc_chem
+        print *, trim(Iam)//':     OCS chemistry = ', self%ocs_chem
+        print *, ''
+    end if
+
 
 !                       ------------------------
 !                       ESMF Functional Services
@@ -242,9 +256,319 @@ contains
 !
 ! !IMPORT STATE:
 
-#include "GEOS_AChem_ImportSpec___.h"
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'AIRDENS',  &
+                            LONG_NAME  = 'Air density',  &
+                            UNITS      = 'kg m-3', &
+                            DIMS       = MAPL_DimsHorzVert,    &
+                            VLOCATION  = MAPL_VLocationCenter,    &
+                            __RC__)
+    
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'DELP',  &
+                            LONG_NAME  = 'Pressure Thickness',  &
+                            UNITS      = 'Pa', &
+                            DIMS       = MAPL_DimsHorzVert,    &
+                            VLOCATION  = MAPL_VLocationCenter,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'PLE',  &
+                            LONG_NAME  = 'Edge pressure',  &
+                            UNITS      = 'Pa', &
+                            DIMS       = MAPL_DimsHorzVert,    &
+                            VLOCATION  = MAPL_VLocationEdge,    &
+                            __RC__)
+                    
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'T',  &
+                            LONG_NAME  = 'Air Temperature (from Dynamics)',  &
+                            UNITS      = 'K', &
+                            DIMS       = MAPL_DimsHorzVert,    &
+                            VLOCATION  = MAPL_VLocationCenter,    &
+                            __RC__)
+
+
+
+    OPTIONAL_CHEM_IMPORT: if (self%mam_chem) then
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'AREA',  &
+                            LONG_NAME  = 'Cell area',  &
+                            UNITS      = 'm2', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'ZLE',  &
+                            LONG_NAME  = 'Edge heights',  &
+                            UNITS      = 'm', &
+                            DIMS       = MAPL_DimsHorzVert,    &
+                            VLOCATION  = MAPL_VLocationEdge,    &
+                            __RC__)
+                    
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'QLTOT',  &
+                            LONG_NAME  = 'Mass fraction of cloud liquid water',  &
+                            UNITS      = 'kg kg-1', &
+                            DIMS       = MAPL_DimsHorzVert,    &
+                            VLOCATION  = MAPL_VLocationCenter,    &
+                            __RC__)
+    
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'FCLD',  &
+                            LONG_NAME  = 'Cloud fraction for radiation',  &
+                            UNITS      = '1', &
+                            DIMS       = MAPL_DimsHorzVert,    &
+                            VLOCATION  = MAPL_VLocationCenter,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'U10N',  &
+                            LONG_NAME  = 'Equivalent neutral 10 meter eastward wind',  &
+                            UNITS      = 'm s-1', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'V10N',  &
+                            LONG_NAME  = 'Equivalent neutral 10 meter northward wind',  &
+                            UNITS      = 'm s-1', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'FROCEAN',  &
+                            LONG_NAME  = 'Fraction of ocean',  &
+                            UNITS      = '1', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'LWI',  &
+                            LONG_NAME  = 'Land-water-ice flags',  &
+                            UNITS      = '1', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'USTAR',  &
+                            LONG_NAME  = 'Surface (friction) velocity scale',  &
+                            UNITS      = 'm s-1', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+                    
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'SH',  &
+                            LONG_NAME  = 'Sensible heat flux',  &
+                            UNITS      = 'W/m2', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'Z0H',  &
+                            LONG_NAME  = 'Surface roughness for heat',  &
+                            UNITS      = 'm', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'ZPBL',  &
+                            LONG_NAME  = 'Height of PBL',  &
+                            UNITS      = 'm', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+                                                   
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'TS',  &
+                            LONG_NAME  = 'Surface skin temperature',  &
+                            UNITS      = 'K', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'H2O2',  &
+                            LONG_NAME  = 'Hydrogen peroxide (H2O2)',  &
+                            UNITS      = 'mol mol-1', &
+                            DIMS       = MAPL_DimsHorzVert,    &
+                            VLOCATION  = MAPL_VLocationCenter,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'OH',  &
+                            LONG_NAME  = 'Hydroxyl radical (OH)',  &
+                            UNITS      = 'mol mol-1', &
+                            DIMS       = MAPL_DimsHorzVert,    &
+                            VLOCATION  = MAPL_VLocationCenter,    &
+                            __RC__)
+     
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'NO3',  &
+                            LONG_NAME  = 'Nitrogen trixide (NO3)',  &
+                            UNITS      = 'mol mol-1', &
+                            DIMS       = MAPL_DimsHorzVert,    &
+                            VLOCATION  = MAPL_VLocationCenter,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'O3',  &
+                            LONG_NAME  = 'Ozone (mass mixing ratio)',  &
+                            UNITS      = 'kg kg-1', &
+                            DIMS       = MAPL_DimsHorzVert,    &
+                            VLOCATION  = MAPL_VLocationCenter,    &
+                            __RC__)
+     
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'DMS_CONC_OCEAN',  &
+                            LONG_NAME  = 'Surface seawater concentration of DMS',  &
+                            UNITS      = 'nmol L-1-1', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'SO2_EMIS_FIRES',  &
+                            LONG_NAME  = 'SO2 emissions from biomass burning',  &
+                            UNITS      = 'kg m-2 s-1', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'SO2_EMIS_NONENERGY',  &
+                            LONG_NAME  = 'SO2 emissions from non-energy sectors',  &
+                            UNITS      = 'kg m-2 s-1', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'SO2_EMIS_ENERGY',  &
+                            LONG_NAME  = 'SO2 emissions from energy sector',  &
+                            UNITS      = 'kg m-2 s-1', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'SO2_EMIS_SHIPPING',  &
+                            LONG_NAME  = 'SO2 emissions from shipping sector',  &
+                            UNITS      = 'kg m-2 s-1', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'SO2_EMIS_AIRCRAFT_LTO',  &
+                            LONG_NAME  = 'SO2 emissions from aviation (LTO layer)',  &
+                            UNITS      = 'kg m-2 s-1', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'SO2_EMIS_AIRCRAFT_CDS',  &
+                            LONG_NAME  = 'SO2 emissions from aviation (CDS layer)',  &
+                            UNITS      = 'kg m-2 s-1', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'SO2_EMIS_AIRCRAFT_CRS',  &
+                            LONG_NAME  = 'SO2 emissions from aviation (CRS layer)',  &
+                            UNITS      = 'kg m-2 s-1', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'NH3_EMIS',  &
+                            LONG_NAME  = 'NH3 emissions - all sectors excluding biomass burning',  &
+                            UNITS      = 'kg m-2 s-1', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'NH3_EMIS_FIRE',  &
+                            LONG_NAME  = 'NH3 emissions - biomass burning',  &
+                            UNITS      = 'kg m-2 s-1', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+
+    call MAPL_AddImportSpec(GC, &
+                            SHORT_NAME = 'SOAG_EMIS',  &
+                            LONG_NAME  = 'SOA(gas) surface emissions',  &
+                            UNITS      = 'm-2 s-1', &
+                            DIMS       = MAPL_DimsHorzOnly,    &
+                            VLOCATION  = MAPL_VLocationNone,    &
+                            __RC__)
+     
+    end if OPTIONAL_CHEM_IMPORT
+
+
+
+    OPTIONAL_VOC_IMPORTS: if (self%voc_chem) then
+
+     if (.not. self%mam_chem) then
+        call MAPL_AddImportSpec(GC, &
+                                SHORT_NAME = 'OH',  &
+                                LONG_NAME  = 'Hydroxyl radical (OH)',  &
+                                UNITS      = 'mol mol-1', &
+                                DIMS       = MAPL_DimsHorzVert,    &
+                                VLOCATION  = MAPL_VLocationCenter,    &
+                                __RC__)
+     end if
+
+        call MAPL_AddImportSpec(GC, &
+                                SHORT_NAME = 'CO_BIOMASS_VOC',  &
+                                LONG_NAME  = 'CO Biomass Burning Emissions',  &
+                                UNITS      = 'kg m-2 s-1', &
+                                DIMS       = MAPL_DimsHorzOnly,    &
+                                VLOCATION  = MAPL_VLocationNone,   &
+                                __RC__)
+
+         call MAPL_AddImportSpec(GC, &
+                                SHORT_NAME = 'CO_BF_VOC',  &
+                                LONG_NAME  = 'CO Biofuel Emissions',  &
+                                UNITS      = 'kg m-2 s-1', &
+                                DIMS       = MAPL_DimsHorzOnly,    &
+                                VLOCATION  = MAPL_VLocationNone,    &
+                                __RC__)
+    
+         call MAPL_AddImportSpec(GC, &
+                                SHORT_NAME = 'CO_FS_VOC',  &
+                                LONG_NAME  = 'CO Fossil Fuel Emissions',  &
+                                UNITS      = 'kg m-2 s-1', &
+                                DIMS       = MAPL_DimsHorzOnly,    &
+                                VLOCATION  = MAPL_VLocationNone,    &
+                                __RC__)
+
+    end if OPTIONAL_VOC_IMPORTS
+
 
     OPTIONAL_OCS_IMPORTS: if (self%ocs_chem) then
+        call MAPL_AddImportSpec(GC, &
+                                SHORT_NAME = 'TROPP',  &
+                                LONG_NAME  = 'Tropopause pressure based on blended estimate',  &
+                                UNITS      = 'Pa', &
+                                DIMS       = MAPL_DimsHorzOnly,    &
+                                VLOCATION  = MAPL_VLocationNone,    &
+                                __RC__)
+
         call MAPL_AddImportSpec(GC,                                &
                                 SHORT_NAME = 'OHSTRAT',            &
                                 LONG_NAME  = 'Hydroxyl radical',   &
@@ -258,7 +582,7 @@ contains
                                 LONG_NAME  = 'O triplet P',        &
                                 UNITS      = 'mol mol-1',          &
                                 DIMS       = MAPL_DimsHorzVert,    &
-                                VLOCATION  = MAPL_VLocationCenter,  &
+                                VLOCATION  = MAPL_VLocationCenter, &
                                 __RC__)
 
         call MAPL_AddImportSpec(GC,                                  &
@@ -274,65 +598,69 @@ contains
 
 ! !INTERNAL STATE:
 
-    call MAPL_AddInternalSpec(GC,                                                  &
-                              SHORT_NAME = trim(comp_name)//'::'//'DMS',           &
-                              LONG_NAME  = 'Dimethyl sulfide (DMS)',               &
-                              UNITS      = 'mol mol-1',                            &
-                              DIMS       = MAPL_DimsHorzVert,                      &
-                              VLOCATION  = MAPL_VLocationCenter,                   &
-                              FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST',            &
-                              ADD2EXPORT = .true.,                                 &
-                              __RC__)
+    OPTIONAL_CHEM_INTERNAL: if (self%mam_chem) then
 
-    call MAPL_AddInternalSpec(GC,                                                  &
-                              SHORT_NAME = trim(comp_name)//'::'//'MSA',           &
-                              LONG_NAME  = 'Methanesulfonic acid (MSA)',           &
-                              UNITS      = 'mol mol-1',                            &
-                              DIMS       = MAPL_DimsHorzVert,                      &
-                              VLOCATION  = MAPL_VLocationCenter,                   &
-                              FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST',            &
-                              ADD2EXPORT = .true.,                                 &
-                              __RC__)
+        call MAPL_AddInternalSpec(GC,                                                  &
+                                  SHORT_NAME = trim(comp_name)//'::'//'DMS',           &
+                                  LONG_NAME  = 'Dimethyl sulfide (DMS)',               &
+                                  UNITS      = 'mol mol-1',                            &
+                                  DIMS       = MAPL_DimsHorzVert,                      &
+                                  VLOCATION  = MAPL_VLocationCenter,                   &
+                                  FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST',            &
+                                  ADD2EXPORT = .true.,                                 &
+                                  __RC__)
+    
+        call MAPL_AddInternalSpec(GC,                                                  &
+                                  SHORT_NAME = trim(comp_name)//'::'//'MSA',           &
+                                  LONG_NAME  = 'Methanesulfonic acid (MSA)',           &
+                                  UNITS      = 'mol mol-1',                            &
+                                  DIMS       = MAPL_DimsHorzVert,                      &
+                                  VLOCATION  = MAPL_VLocationCenter,                   &
+                                  FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST',            &
+                                  ADD2EXPORT = .true.,                                 &
+                                  __RC__)
+    
+        call MAPL_AddInternalSpec(GC,                                                  &
+                                  SHORT_NAME = trim(comp_name)//'::'//'SO2',           &
+                                  LONG_NAME  = 'Sulfur dioxide (SO2)',                 &
+                                  UNITS      = 'mol mol-1',                            &
+                                  DIMS       = MAPL_DimsHorzVert,                      &
+                                  VLOCATION  = MAPL_VLocationCenter,                   &
+                                  FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST:MAM',        &
+                                  ADD2EXPORT = .true.,                                 &
+                                  __RC__)
+    
+        call MAPL_AddInternalSpec(GC,                                                  &
+                                  SHORT_NAME = trim(comp_name)//'::'//'H2SO4',         &
+                                  LONG_NAME  = 'Sulfuric acid (H2SO4 gas)',            &
+                                  UNITS      = 'mol mol-1',                            &
+                                  DIMS       = MAPL_DimsHorzVert,                      &
+                                  VLOCATION  = MAPL_VLocationCenter,                   &
+                                  FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST:MAM',        &
+                                  ADD2EXPORT = .true.,                                 &
+                                  __RC__)
+    
+        call MAPL_AddInternalSpec(GC,                                                  &
+                                  SHORT_NAME = trim(comp_name)//'::'//'NH3',           &
+                                  LONG_NAME  = 'Ammonia (NH3)',                        &
+                                  UNITS      = 'mol mol-1',                            &
+                                  DIMS       = MAPL_DimsHorzVert,                      &
+                                  VLOCATION  = MAPL_VLocationCenter,                   &
+                                  FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST:MAM',        &
+                                  ADD2EXPORT = .true.,                                 &
+                                  __RC__)
+    
+        call MAPL_AddInternalSpec(GC,                                                  &
+                                  SHORT_NAME = trim(comp_name)//'::'//'SOAG',          &
+                                  LONG_NAME  = 'Secondary Organic Aerosols (SOA gas)', &
+                                  UNITS      = 'mol mol-1',                            &
+                                  DIMS       = MAPL_DimsHorzVert,                      &
+                                  VLOCATION  = MAPL_VLocationCenter,                   &
+                                  FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST:MAM',        &
+                                  ADD2EXPORT = .true.,                                 &
+                                  __RC__)
+    end if OPTIONAL_CHEM_INTERNAL 
 
-    call MAPL_AddInternalSpec(GC,                                                  &
-                              SHORT_NAME = trim(comp_name)//'::'//'SO2',           &
-                              LONG_NAME  = 'Sulfur dioxide (SO2)',                 &
-                              UNITS      = 'mol mol-1',                            &
-                              DIMS       = MAPL_DimsHorzVert,                      &
-                              VLOCATION  = MAPL_VLocationCenter,                   &
-                              FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST:MAM',        &
-                              ADD2EXPORT = .true.,                                 &
-                              __RC__)
-
-    call MAPL_AddInternalSpec(GC,                                                  &
-                              SHORT_NAME = trim(comp_name)//'::'//'H2SO4',         &
-                              LONG_NAME  = 'Sulfuric acid (H2SO4 gas)',            &
-                              UNITS      = 'mol mol-1',                            &
-                              DIMS       = MAPL_DimsHorzVert,                      &
-                              VLOCATION  = MAPL_VLocationCenter,                   &
-                              FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST:MAM',        &
-                              ADD2EXPORT = .true.,                                 &
-                              __RC__)
-
-    call MAPL_AddInternalSpec(GC,                                                  &
-                              SHORT_NAME = trim(comp_name)//'::'//'NH3',           &
-                              LONG_NAME  = 'Ammonia (NH3)',                        &
-                              UNITS      = 'mol mol-1',                            &
-                              DIMS       = MAPL_DimsHorzVert,                      &
-                              VLOCATION  = MAPL_VLocationCenter,                   &
-                              FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST:MAM',        &
-                              ADD2EXPORT = .true.,                                 &
-                              __RC__)
-
-    call MAPL_AddInternalSpec(GC,                                                  &
-                              SHORT_NAME = trim(comp_name)//'::'//'SOAG',          &
-                              LONG_NAME  = 'Secondary Organic Aerosols (SOA gas)', &
-                              UNITS      = 'mol mol-1',                            &
-                              DIMS       = MAPL_DimsHorzVert,                      &
-                              VLOCATION  = MAPL_VLocationCenter,                   &
-                              FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST:MAM',        &
-                              ADD2EXPORT = .true.,                                 &
-                              __RC__)
 
     OPTIONAL_OCS_INTERNAL: if (self%ocs_chem) then
 
@@ -348,6 +676,7 @@ contains
 
     end if OPTIONAL_OCS_INTERNAL
 
+
     OPTIONAL_VOC_INTERNAL: if (self%voc_chem) then
 
         call MAPL_AddInternalSpec(GC,                                                  &
@@ -359,6 +688,7 @@ contains
                                   FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST',            &
                                   ADD2EXPORT = .true.,                                 &
                                   __RC__)
+
         call MAPL_AddInternalSpec(GC,                                                  &
                                   SHORT_NAME = trim(comp_name)//'::'//'VOCbiob',       &
                                   LONG_NAME  = 'Volatile Organic Compound (VOC) -- biomass burning sources',&
@@ -368,11 +698,162 @@ contains
                                   FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST',            &
                                   ADD2EXPORT = .true.,                                 &
                                   __RC__)
+
     end if OPTIONAL_VOC_INTERNAL
 
 ! !EXTERNAL STATE:
-
+    OPTIONAL_CHEM_EXPORT: if (self%mam_chem) then
 #include "GEOS_AChem_ExportSpec___.h"
+    end if OPTIONAL_CHEM_EXPORT
+
+
+    OPTIONAL_VOC_EXPORT: if (self%voc_chem) then
+
+     if (.not. self%mam_chem) then
+     call MAPL_AddExportSpec(GC,  &
+        SHORT_NAME         = 'OH',  &
+        LONG_NAME          = 'OH with imposed diurnal cycle',  &
+        UNITS              = 'mol mol-1', &
+        DIMS               = MAPL_DimsHorzVert,    &
+        VLOCATION          = MAPL_VLocationCenter,    &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+     end if         
+
+
+     call MAPL_AddExportSpec(GC,  &
+        SHORT_NAME         = 'pSOA_ANTHRO_VOC',  &
+        LONG_NAME          = 'Production of SOA from Anthropogenic + Biofuel Burning VOC',  &
+        UNITS              = 'kg m-3 s-1', &
+        DIMS               = MAPL_DimsHorzVert,    &
+        VLOCATION          = MAPL_VLocationCenter,    &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+     call MAPL_AddExportSpec(GC,  &
+        SHORT_NAME         = 'pSOA_ANTHRO_VOC_MMRday',  &
+        LONG_NAME          = 'Production of SOA from Anthropogenic + Biofuel Burning VOC',  &
+        UNITS              = 'kg m-3 d-1', &
+        DIMS               = MAPL_DimsHorzVert,    &
+        VLOCATION          = MAPL_VLocationCenter,    &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+
+     call MAPL_AddExportSpec(GC,  &
+        SHORT_NAME         = 'pSOA_BIOB_VOC',  &
+        LONG_NAME          = 'Production of SOA from Biomass Burning VOC',  &
+        UNITS              = 'kg m-3 s-1', &
+        DIMS               = MAPL_DimsHorzVert,    &
+        VLOCATION          = MAPL_VLocationCenter,    &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+
+     call MAPL_AddExportSpec(GC,  &
+        SHORT_NAME         = 'pSOA_BIOB_VOC_MMRday',  &
+        LONG_NAME          = 'Production of SOA from Biomass Burning VOC',  &
+        UNITS              = 'kg m-3 d-1', &
+        DIMS               = MAPL_DimsHorzVert,    &
+        VLOCATION          = MAPL_VLocationCenter,    &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+
+    end if OPTIONAL_VOC_EXPORT
+
+
+    OPTIONAL_OCS_EXPORT: if (self%ocs_chem) then
+     call MAPL_AddExportSpec(GC,  &
+        SHORT_NAME         = 'pSO2_OCS',  &
+        LONG_NAME          = 'Production of SO2 from OCS',  &
+        UNITS              = 'kg kg-1 s-1', &
+        DIMS               = MAPL_DimsHorzVert,    &
+        VLOCATION          = MAPL_VLocationCenter,    &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+
+     call MAPL_AddExportSpec(GC,  &
+        SHORT_NAME         = 'pSO2_OCS_OH',  &
+        LONG_NAME          = 'Production of SO2 from OCS+OH',  &
+        UNITS              = 'kg kg-1 s-1', &
+        DIMS               = MAPL_DimsHorzVert,    &
+        VLOCATION          = MAPL_VLocationCenter,    &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+
+     call MAPL_AddExportSpec(GC,  &
+        SHORT_NAME         = 'pSO2_OCS_O3p',  &
+        LONG_NAME          = 'Production of SO2 from OCS+O3p',  &
+        UNITS              = 'kg kg-1 s-1', &
+        DIMS               = MAPL_DimsHorzVert,    &
+        VLOCATION          = MAPL_VLocationCenter,    &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+
+     call MAPL_AddExportSpec(GC,  &
+        SHORT_NAME         = 'pSO2_OCS_jOCS',  &
+        LONG_NAME          = 'Production of SO2 from OCS photolysis',  &
+        UNITS              = 'kg kg-1 s-1', &
+        DIMS               = MAPL_DimsHorzVert,    &
+        VLOCATION          = MAPL_VLocationCenter,    &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+
+     call MAPL_AddExportSpec(GC,  &
+        SHORT_NAME         = 'lOCS',  &
+        LONG_NAME          = 'Loss rate of OCS (molec cm-3 s-1)',  &
+        UNITS              = 'cm-3 s-1', &
+        DIMS               = MAPL_DimsHorzVert,    &
+        VLOCATION          = MAPL_VLocationCenter,    &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+
+     call MAPL_AddExportSpec(GC,  &
+        SHORT_NAME         = 'lOCS_OH',  &
+        LONG_NAME          = 'Loss rate of OCS from OCS+OH(molec cm-3 s-1)',  &
+        UNITS              = 'cm-3 s-1', &
+        DIMS               = MAPL_DimsHorzVert,    &
+        VLOCATION          = MAPL_VLocationCenter,    &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+
+     call MAPL_AddExportSpec(GC,  &
+        SHORT_NAME         = 'lOCS_O3p',  &
+        LONG_NAME          = 'Loss rate of OCS from OCS+O3p(molec cm-3 s-1)',  &
+        UNITS              = 'cm-3 s-1', &
+        DIMS               = MAPL_DimsHorzVert,    &
+        VLOCATION          = MAPL_VLocationCenter,    &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+
+     call MAPL_AddExportSpec(GC,  &
+        SHORT_NAME         = 'lOCS_jOCS',  &
+        LONG_NAME          = 'Loss rate of OCS from photolysis (molec cm-3 s-1)',  &
+        UNITS              = 'cm-3 s-1', &
+        DIMS               = MAPL_DimsHorzVert,    &
+        VLOCATION          = MAPL_VLocationCenter,    &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+
+     call MAPL_AddExportSpec(GC,  &
+        SHORT_NAME         = 'pScl_OCS',  &
+        LONG_NAME          = 'Production of SO2 from OCS (column integrated)',  &
+        UNITS              = 'kg m-2', &
+        DIMS               = MAPL_DimsHorzOnly,    &
+        VLOCATION          = MAPL_VLocationNone,    &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+    end if OPTIONAL_OCS_EXPORT
 
 !EOS
 
@@ -384,6 +865,7 @@ contains
     call MAPL_TimerAdd(GC, name = '-CHEMISTRY',           __RC__)
     call MAPL_TimerAdd(GC, name = '--CHEMISTRY_GAS',      __RC__)
     call MAPL_TimerAdd(GC, name = '--CHEMISTRY_AQUEOUS',  __RC__)
+    call MAPL_TimerAdd(GC, name = '--CHEMISTRY_VOC',      __RC__)
     call MAPL_TimerAdd(GC, name = '--CHEMISTRY_OCS',      __RC__)
     call MAPL_TimerAdd(GC, name = 'INITIALIZE',           __RC__)
 
@@ -517,6 +999,7 @@ contains
    nullify(self%volc_i)
    nullify(self%volc_j)
 
+   INIT_H2O2: if (self%aqu_phase_chem) then
 !  Initialize the internal copy of H2O2
 !  ------------------------------------
    allocate(self%h2o2(i1:i2,j1:j2,km), __STAT__)
@@ -527,7 +1010,7 @@ contains
        call MAPL_GetPointer(import, q_H2O2, 'H2O2', __RC__)
        self%h2o2 = q_H2O2
    end if
-
+   end if INIT_H2O2
 
 !  All done
 !  --------
@@ -620,7 +1103,6 @@ contains
    real, pointer, dimension(:,:)   :: tskin
 
    real, pointer, dimension(:,:)   :: fr_ocean
-   real, pointer, dimension(:,:)   :: fr_land
 
    real, pointer, dimension(:,:)   :: oro
    real, pointer, dimension(:,:)   :: ustar
@@ -671,20 +1153,21 @@ contains
    real, pointer, dimension(:,:,:) :: q_SOAG
    real, pointer, dimension(:,:,:) :: q_OCS
    real, pointer, dimension(:,:,:) :: q_VOCanth
-   real, pointer, dimension(:,:,:) :: q_OAanth
-   real, pointer, dimension(:,:,:) :: q_OAanthmmrd
    real, pointer, dimension(:,:,:) :: q_VOCbiob
-   real, pointer, dimension(:,:,:) :: q_OAbiob
-   real, pointer, dimension(:,:,:) :: q_OAbiobmmrd
 
-   real, pointer, dimension(:,:,:) :: pSO2_OCS               ! production of S from OCS in the stratosphere
-   real, pointer, dimension(:,:,:) :: pSO2_OCS_OH            ! production of S from OCS+OH
-   real, pointer, dimension(:,:,:) :: pSO2_OCS_O3p           ! production of S from OCS+O3p
-   real, pointer, dimension(:,:,:) :: pSO2_OCS_jOCS          ! production of S from OCS photolysis
-   real, pointer, dimension(:,:,:) :: lOCS                   ! loss OCS, 'molecules cm-3 s-1'
-   real, pointer, dimension(:,:,:) :: lOCS_OH                ! loss rate of OCS from OCS+OH, 'molec cm-3 s-1'
-   real, pointer, dimension(:,:,:) :: lOCS_O3p               ! loss rate of OCS from OCS+O3p, 'molec cm-3 s-1'
-   real, pointer, dimension(:,:,:) :: lOCS_jOCS              ! loss rate of OCS from photolysis, 'molec cm-3 s-1'
+   real, allocatable, dimension(:,:,:) :: q_OAanth
+   real, allocatable, dimension(:,:,:) :: q_OAanthmmrd
+   real, allocatable, dimension(:,:,:) :: q_OAbiob
+   real, allocatable, dimension(:,:,:) :: q_OAbiobmmrd
+
+   real, allocatable, dimension(:,:,:) :: pSO2_OCS               ! production of S from OCS in the stratosphere
+   real, allocatable, dimension(:,:,:) :: pSO2_OCS_OH            ! production of S from OCS+OH
+   real, allocatable, dimension(:,:,:) :: pSO2_OCS_O3p           ! production of S from OCS+O3p
+   real, allocatable, dimension(:,:,:) :: pSO2_OCS_jOCS          ! production of S from OCS photolysis
+   real, allocatable, dimension(:,:,:) :: lOCS                   ! loss OCS, 'molecules cm-3 s-1'
+   real, allocatable, dimension(:,:,:) :: lOCS_OH                ! loss rate of OCS from OCS+OH, 'molec cm-3 s-1'
+   real, allocatable, dimension(:,:,:) :: lOCS_O3p               ! loss rate of OCS from OCS+O3p, 'molec cm-3 s-1'
+   real, allocatable, dimension(:,:,:) :: lOCS_jOCS              ! loss rate of OCS from photolysis, 'molec cm-3 s-1'
 
    real, pointer, dimension(:,:)   :: dry_dep_DMS            ! dry deposition fluxes
    real, pointer, dimension(:,:)   :: dry_dep_MSA
@@ -804,7 +1287,7 @@ contains
 !  Declare pointers to IMPORT/EXPORT/INTERNAL states 
 !  -------------------------------------------------
 #if(0)
-   #include "GEOS_AChem_DeclarePointer___.h"
+#include "GEOS_AChem_DeclarePointer___.h"
 #endif  
 
 !  Get my name and set-up traceback handle
@@ -850,126 +1333,121 @@ contains
 
 !  Get Imports
 !  --------------
-   call MAPL_GetPointer(import, cell_area,   'AREA',    __RC__)
-
    call MAPL_GetPointer(import, density_air, 'AIRDENS', __RC__)
-   call MAPL_GetPointer(import, temperature, 'T',       __RC__)
-   call MAPL_GetPointer(import, lwc,         'QLTOT',   __RC__)
-   call MAPL_GetPointer(import, fcld,        'FCLD',    __RC__)
-   call MAPL_GetPointer(import, ple,         'PLE',     __RC__)
    call MAPL_GetPointer(import, delp,        'DELP',    __RC__)
-   call MAPL_GetPointer(import, zle,         'ZLE',     __RC__)
+   call MAPL_GetPointer(import, ple,         'PLE',     __RC__)
+   call MAPL_GetPointer(import, temperature, 'T',       __RC__)
 
-   call MAPL_GetPointer(import, u10n,        'U10N',    __RC__)
-   call MAPL_GetPointer(import, v10n,        'V10N',    __RC__)
 
-   call MAPL_GetPointer(import, tskin,       'TS',      __RC__)
+   if (self%mam_chem) then
+       call MAPL_GetPointer(import, cell_area,   'AREA',    __RC__)
+       call MAPL_GetPointer(import, zle,         'ZLE',     __RC__)
+       call MAPL_GetPointer(import, lwc,         'QLTOT',   __RC__)
+       call MAPL_GetPointer(import, fcld,        'FCLD',    __RC__)
+    
+       call MAPL_GetPointer(import, u10n,        'U10N',    __RC__)
+       call MAPL_GetPointer(import, v10n,        'V10N',    __RC__)
+    
+       call MAPL_GetPointer(import, tskin,       'TS',      __RC__)
+    
+       call MAPL_GetPointer(import, fr_ocean,    'FROCEAN', __RC__)
+    
+       call MAPL_GetPointer(import, oro,         'LWI',     __RC__)
+       call MAPL_GetPointer(import, shflux,      'SH',      __RC__)
+       call MAPL_GetPointer(import, ustar,       'USTAR',   __RC__)
+       call MAPL_GetPointer(import, z0h,         'Z0H',     __RC__)
+       call MAPL_GetPointer(import, pblh,        'ZPBL',    __RC__)
 
-   call MAPL_GetPointer(import, fr_ocean,    'FROCEAN', __RC__)
-
-   call MAPL_GetPointer(import, oro,         'LWI',     __RC__)
-   call MAPL_GetPointer(import, shflux,      'SH',      __RC__)
-   call MAPL_GetPointer(import, ustar,       'USTAR',   __RC__)
-   call MAPL_GetPointer(import, z0h,         'Z0H',     __RC__)
-   call MAPL_GetPointer(import, pblh,        'ZPBL',    __RC__)
-
-   call MAPL_GetPointer(import, q_OH,        'OH',      __RC__)
-   call MAPL_GetPointer(import, q_NO3,       'NO3',     __RC__)
-   call MAPL_GetPointer(import, q_H2O2,      'H2O2',    __RC__)
-   call MAPL_GetPointer(import, q_O3,        'O3',      __RC__)
-
-   call MAPL_GetPointer(import, DMS_ocean, 'DMS_CONC_OCEAN', __RC__)
-
-   call MAPL_GetPointer(import, SO2_emiss_bb,           'SO2_EMIS_FIRES',        __RC__)
-   call MAPL_GetPointer(import, SO2_emiss_nonenergy,    'SO2_EMIS_NONENERGY',    __RC__)
-   call MAPL_GetPointer(import, SO2_emiss_energy,       'SO2_EMIS_ENERGY',       __RC__)
-   call MAPL_GetPointer(import, SO2_emiss_shipping,     'SO2_EMIS_SHIPPING',     __RC__)
-   call MAPL_GetPointer(import, SO2_emiss_aviation_lto, 'SO2_EMIS_AIRCRAFT_LTO', __RC__)
-   call MAPL_GetPointer(import, SO2_emiss_aviation_cds, 'SO2_EMIS_AIRCRAFT_CDS', __RC__)
-   call MAPL_GetPointer(import, SO2_emiss_aviation_crs, 'SO2_EMIS_AIRCRAFT_CRS', __RC__)
-
-   call MAPL_GetPointer(import, NH3_emiss,    'NH3_EMIS',      __RC__)
-   call MAPL_GetPointer(import, NH3_emiss_bb, 'NH3_EMIS_FIRE', __RC__)
-
-   call MAPL_GetPointer(import, SOAG_emiss,   'SOAG_EMIS',     __RC__) 
+       call MAPL_GetPointer(import, q_OH,        'OH',      __RC__)
+       call MAPL_GetPointer(import, q_NO3,       'NO3',     __RC__)
+       call MAPL_GetPointer(import, q_H2O2,      'H2O2',    __RC__)
+       call MAPL_GetPointer(import, q_O3,        'O3',      __RC__)
+    
+       call MAPL_GetPointer(import, DMS_ocean, 'DMS_CONC_OCEAN', __RC__)
+    
+       call MAPL_GetPointer(import, SO2_emiss_bb,           'SO2_EMIS_FIRES',        __RC__)
+       call MAPL_GetPointer(import, SO2_emiss_nonenergy,    'SO2_EMIS_NONENERGY',    __RC__)
+       call MAPL_GetPointer(import, SO2_emiss_energy,       'SO2_EMIS_ENERGY',       __RC__)
+       call MAPL_GetPointer(import, SO2_emiss_shipping,     'SO2_EMIS_SHIPPING',     __RC__)
+       call MAPL_GetPointer(import, SO2_emiss_aviation_lto, 'SO2_EMIS_AIRCRAFT_LTO', __RC__)
+       call MAPL_GetPointer(import, SO2_emiss_aviation_cds, 'SO2_EMIS_AIRCRAFT_CDS', __RC__)
+       call MAPL_GetPointer(import, SO2_emiss_aviation_crs, 'SO2_EMIS_AIRCRAFT_CRS', __RC__)
+    
+       call MAPL_GetPointer(import, NH3_emiss,    'NH3_EMIS',      __RC__)
+       call MAPL_GetPointer(import, NH3_emiss_bb, 'NH3_EMIS_FIRE', __RC__)
+    
+       call MAPL_GetPointer(import, SOAG_emiss,   'SOAG_EMIS',     __RC__)
+   end if
 
    if (self%ocs_chem) then
-       call MAPL_GetPointer(import, tropp,           'TROPP',    __RC__)
-       call MAPL_GetPointer(import, q_O3p_STRATCHEM, 'O3P',      __RC__)
-       call MAPL_GetPointer(import, q_OH_STRATCHEM,  'OHSTRAT',  __RC__)
-       call MAPL_GetPointer(import, j_ocs,           'OCS_JRATE',__RC__)
+       call MAPL_GetPointer(import, tropp,           'TROPP',      __RC__)
+       call MAPL_GetPointer(import, q_O3p_STRATCHEM, 'O3P',        __RC__)
+       call MAPL_GetPointer(import, q_OH_STRATCHEM,  'OHSTRAT',    __RC__)
+       call MAPL_GetPointer(import, j_ocs,           'OCS_JRATE',  __RC__)
    end if
 
    if (self%voc_chem) then
-       call MAPL_GetPointer(import, co_biomass_voc, 'CO_BIOMASS', __RC__)
-       call MAPL_GetPointer(import, co_bf_voc,      'CO_BF',      __RC__)
-       call MAPL_GetPointer(import, co_fs_voc,      'CO_FS',      __RC__)
+       if (.not. associated(q_OH)) then
+           call MAPL_GetPointer(import, q_OH,       'OH',         __RC__)
+       end if
+
+       call MAPL_GetPointer(import, co_biomass_voc, 'CO_BIOMASS_VOC', __RC__)
+       call MAPL_GetPointer(import, co_bf_voc,      'CO_BF_VOC',      __RC__)
+       call MAPL_GetPointer(import, co_fs_voc,      'CO_FS_VOC',      __RC__)
    end if
 
 !  Get Exports
 !  -------------
-   call MAPL_GetPointer(export, dry_dep_DMS,   'DRY_DEP_DMS',   __RC__)
-   call MAPL_GetPointer(export, dry_dep_MSA,   'DRY_DEP_MSA',   __RC__)
-   call MAPL_GetPointer(export, dry_dep_SO2,   'DRY_DEP_SO2',   __RC__)
-   call MAPL_GetPointer(export, dry_dep_H2SO4, 'DRY_DEP_H2SO4', __RC__)
-   call MAPL_GetPointer(export, dry_dep_NH3,   'DRY_DEP_NH3',   __RC__)
-   call MAPL_GetPointer(export, dry_dep_SOAG,  'DRY_DEP_SOAG',  __RC__)
-
-   call MAPL_GetPointer(export, ddt_DMS_gas,   'DDT_DMS_gas',   __RC__)
-   call MAPL_GetPointer(export, ddt_MSA_gas,   'DDT_MSA_gas',   __RC__)
-   call MAPL_GetPointer(export, ddt_SO2_gas,   'DDT_SO2_gas',   __RC__)
-   call MAPL_GetPointer(export, ddt_H2SO4_gas, 'DDT_H2SO4_gas', __RC__)
-   call MAPL_GetPointer(export, ddt_NH3_gas,   'DDT_NH3_gas',   __RC__)
-   call MAPL_GetPointer(export, ddt_SOAG_gas,  'DDT_SOAG_gas',  __RC__)
-
-   call MAPL_GetPointer(export, ddt_DMS_aq,   'DDT_DMS_aq',     __RC__)
-   call MAPL_GetPointer(export, ddt_MSA_aq,   'DDT_MSA_aq',     __RC__)
-   call MAPL_GetPointer(export, ddt_SO2_aq,   'DDT_SO2_aq',     __RC__)
-   call MAPL_GetPointer(export, ddt_H2SO4_aq, 'DDT_H2SO4_aq',   __RC__)
-   call MAPL_GetPointer(export, ddt_NH3_aq,   'DDT_NH3_aq',     __RC__)
-   call MAPL_GetPointer(export, ddt_SOAG_aq,  'DDT_SOAG_aq',    __RC__)
-
-   call MAPL_GetPointer(export, DMS_g_,   '_DMS_gas',   __RC__)
-   call MAPL_GetPointer(export, MSA_g_,   '_MSA_gas',   __RC__)
-   call MAPL_GetPointer(export, SO2_g_,   '_SO2_gas',   __RC__)
-   call MAPL_GetPointer(export, H2SO4_g_, '_H2SO4_gas', __RC__)
-   call MAPL_GetPointer(export, NH3_g_,   '_NH3_gas',   __RC__)
-   call MAPL_GetPointer(export, SOAG_g_,  '_SOAG_gas',  __RC__)
-
-   call MAPL_GetPointer(export, DMS_a_,   '_DMS_aq',     __RC__)
-   call MAPL_GetPointer(export, MSA_a_,   '_MSA_aq',     __RC__)
-   call MAPL_GetPointer(export, SO2_a_,   '_SO2_aq',     __RC__)
-   call MAPL_GetPointer(export, H2SO4_a_, '_H2SO4_aq',   __RC__)
-   call MAPL_GetPointer(export, NH3_a_,   '_NH3_aq',     __RC__)
-   call MAPL_GetPointer(export, SOAG_a_,  '_SOAG_aq',    __RC__)
-
-   if (self%ocs_chem) then
-       call MAPL_GetPointer(export, pSO2_OCS,      'pSO2_OCS',      __RC__)
-       call MAPL_GetPointer(export, pSO2_OCS_OH,   'pSO2_OCS_OH',   __RC__)
-       call MAPL_GetPointer(export, pSO2_OCS_O3p,  'pSO2_OCS_O3p',  __RC__)
-       call MAPL_GetPointer(export, pSO2_OCS_jOCS, 'pSO2_OCS_jOCS', __RC__)
-       call MAPL_GetPointer(export, lOCS,          'lOCS',          __RC__)
-       call MAPL_GetPointer(export, lOCS_OH,       'lOCS_OH',       __RC__)
-       call MAPL_GetPointer(export, lOCS_O3p,      'lOCS_O3p',      __RC__)
-       call MAPL_GetPointer(export, lOCS_jOCS,     'lOCS_jOCS',     __RC__)
+   if (self%mam_chem) then
+       call MAPL_GetPointer(export, dry_dep_DMS,   'DRY_DEP_DMS',   __RC__)
+       call MAPL_GetPointer(export, dry_dep_MSA,   'DRY_DEP_MSA',   __RC__)
+       call MAPL_GetPointer(export, dry_dep_SO2,   'DRY_DEP_SO2',   __RC__)
+       call MAPL_GetPointer(export, dry_dep_H2SO4, 'DRY_DEP_H2SO4', __RC__)
+       call MAPL_GetPointer(export, dry_dep_NH3,   'DRY_DEP_NH3',   __RC__)
+       call MAPL_GetPointer(export, dry_dep_SOAG,  'DRY_DEP_SOAG',  __RC__)
+    
+       call MAPL_GetPointer(export, ddt_DMS_gas,   'DDT_DMS_gas',   __RC__)
+       call MAPL_GetPointer(export, ddt_MSA_gas,   'DDT_MSA_gas',   __RC__)
+       call MAPL_GetPointer(export, ddt_SO2_gas,   'DDT_SO2_gas',   __RC__)
+       call MAPL_GetPointer(export, ddt_H2SO4_gas, 'DDT_H2SO4_gas', __RC__)
+       call MAPL_GetPointer(export, ddt_NH3_gas,   'DDT_NH3_gas',   __RC__)
+       call MAPL_GetPointer(export, ddt_SOAG_gas,  'DDT_SOAG_gas',  __RC__)
+    
+       call MAPL_GetPointer(export, ddt_DMS_aq,    'DDT_DMS_aq',    __RC__)
+       call MAPL_GetPointer(export, ddt_MSA_aq,    'DDT_MSA_aq',    __RC__)
+       call MAPL_GetPointer(export, ddt_SO2_aq,    'DDT_SO2_aq',    __RC__)
+       call MAPL_GetPointer(export, ddt_H2SO4_aq,  'DDT_H2SO4_aq',  __RC__)
+       call MAPL_GetPointer(export, ddt_NH3_aq,    'DDT_NH3_aq',    __RC__)
+       call MAPL_GetPointer(export, ddt_SOAG_aq,   'DDT_SOAG_aq',   __RC__)
+    
+       call MAPL_GetPointer(export, DMS_g_,        '_DMS_gas',      __RC__)
+       call MAPL_GetPointer(export, MSA_g_,        '_MSA_gas',      __RC__)
+       call MAPL_GetPointer(export, SO2_g_,        '_SO2_gas',      __RC__)
+       call MAPL_GetPointer(export, H2SO4_g_,      '_H2SO4_gas',    __RC__)
+       call MAPL_GetPointer(export, NH3_g_,        '_NH3_gas',      __RC__)
+       call MAPL_GetPointer(export, SOAG_g_,       '_SOAG_gas',     __RC__)
+    
+       call MAPL_GetPointer(export, DMS_a_,        '_DMS_aq',       __RC__)
+       call MAPL_GetPointer(export, MSA_a_,        '_MSA_aq',       __RC__)
+       call MAPL_GetPointer(export, SO2_a_,        '_SO2_aq',       __RC__)
+       call MAPL_GetPointer(export, H2SO4_a_,      '_H2SO4_aq',     __RC__)
+       call MAPL_GetPointer(export, NH3_a_,        '_NH3_aq',       __RC__)
+       call MAPL_GetPointer(export, SOAG_a_,       '_SOAG_aq',      __RC__)
    end if
-
-   call MAPL_GetPointer(export, q_OAanth,          'pSOA_ANTHRO_VOC',         __RC__)
-   call MAPL_GetPointer(export, q_OAanthmmrd,      'pSOA_ANTHRO_VOC_MMRday',  __RC__)
-   call MAPL_GetPointer(export, q_OAbiob,          'pSOA_BIOB_VOC',         __RC__)
-   call MAPL_GetPointer(export, q_OAbiobmmrd,      'pSOA_BIOB_VOC_MMRday',  __RC__)
 
 !  Get Internals
 !  -------------
    call MAPL_GetObjectFromGC(GC, mgState, __RC__)
    call MAPL_Get(mgState, INTERNAL_ESMF_STATE=internal, __RC__)
-   
-   call MAPL_GetPointer(internal, q_DMS,    trim(comp_name)//'::'//'DMS',     __RC__) 
-   call MAPL_GetPointer(internal, q_MSA,    trim(comp_name)//'::'//'MSA',     __RC__)
-   call MAPL_GetPointer(internal, q_SO2,    trim(comp_name)//'::'//'SO2',     __RC__)
-   call MAPL_GetPointer(internal, q_H2SO4,  trim(comp_name)//'::'//'H2SO4',   __RC__)
-   call MAPL_GetPointer(internal, q_NH3,    trim(comp_name)//'::'//'NH3',     __RC__)
-   call MAPL_GetPointer(internal, q_SOAG,   trim(comp_name)//'::'//'SOAG',    __RC__)
+  
+   if (self%mam_chem) then
+       call MAPL_GetPointer(internal, q_DMS,    trim(comp_name)//'::'//'DMS',     __RC__) 
+       call MAPL_GetPointer(internal, q_MSA,    trim(comp_name)//'::'//'MSA',     __RC__)
+       call MAPL_GetPointer(internal, q_SO2,    trim(comp_name)//'::'//'SO2',     __RC__)
+       call MAPL_GetPointer(internal, q_H2SO4,  trim(comp_name)//'::'//'H2SO4',   __RC__)
+       call MAPL_GetPointer(internal, q_NH3,    trim(comp_name)//'::'//'NH3',     __RC__)
+       call MAPL_GetPointer(internal, q_SOAG,   trim(comp_name)//'::'//'SOAG',    __RC__)
+   end if
 
    if (self%ocs_chem) then
        call MAPL_GetPointer(internal, q_OCS, trim(comp_name)//'::'//'OCS', __RC__)
@@ -983,6 +1461,7 @@ contains
 
    call MAPL_TimerOn(mgState, '-EMISSIONS', __RC__)
 
+   UPDATE_VOLCANIC_EMISSIONS: if (self%mam_chem) then 
 !  Update volcanic emissions if necessary (daily)
 !  ----------------------------------------------
    if(self%nymd_volcanic_emiss .ne. nymd) then
@@ -1016,22 +1495,22 @@ contains
                                     __RC__)
        end if
    end if
+   end if UPDATE_VOLCANIC_EMISSIONS
 
 
 !  Impose diurnal cycle to the offline OH and NO3 monthly mean fields
 !  ------------------------------------------------------------------
-   allocate(q_OH_(i1:i2,j1:j2,km),  __STAT__)
-   allocate(q_NO3_(i1:i2,j1:j2,km), __STAT__)
-
-   if (.not. self%oxidants_quirk) then
+   if (self%gas_phase_chem .or. self%voc_chem) then
+       allocate(q_OH_(i1:i2,j1:j2,km),  __STAT__)
        q_OH_  = q_OH
-       q_NO3_ = q_NO3
-   else
-       q_OH_(:,:,1:km)  = q_OH(:,:,km:1:-1)
-       q_NO3_(:,:,1:km) = q_NO3(:,:,km:1:-1)
    end if
 
-   if (self%apply_diurnal_cycle) then
+   if (self%gas_phase_chem) then
+       allocate(q_NO3_(i1:i2,j1:j2,km), __STAT__)
+       q_NO3_ = q_NO3
+   end if    
+
+   if (self%apply_diurnal_cycle .and. (self%mam_chem .or. self%voc_chem)) then
        ! find cos(SZA)
        doy = day_of_year(nymd)
        f_hour = ( real(nhms / 10000) * 3600 +         &
@@ -1040,11 +1519,11 @@ contains
 
 
        ! want to find the sum of the cos(sza) for use in scaling OH diurnal variation
-       allocate(sza(i1:i2,j1:j2),         __STAT__)
-       allocate(cos_sza(i1:i2,j1:j2),     __STAT__)
-       allocate(sum_cos_sza(i1:i2,j1:j2), __STAT__)
-       allocate(day_time(i1:i2,j1:j2),    __STAT__)
-       allocate(night_time(i1:i2,j1:j2),  __STAT__)
+       allocate(sza(i1:i2,j1:j2),          __STAT__)
+       allocate(cos_sza(i1:i2,j1:j2),      __STAT__)
+       allocate(sum_cos_sza(i1:i2,j1:j2),  __STAT__)
+       allocate(day_time(i1:i2,j1:j2),     __STAT__)
+       allocate(night_time(i1:i2,j1:j2),   __STAT__)
        allocate(f_day_time(i1:i2,j1:j2),   __STAT__)
        allocate(f_night_time(i1:i2,j1:j2), __STAT__)
 
@@ -1080,9 +1559,9 @@ contains
 
        ! scale OH
        do k = 1, km
-           q_OH_  (:,:,k) = q_OH_  (:,:,k) * f_day_time(:,:)
+           q_OH_(:,:,k) = q_OH_(:,:,k) * f_day_time(:,:)
        end do
-
+    
        where(q_OH_ < 0.0) q_OH_ = 0.0
 
 
@@ -1094,12 +1573,13 @@ contains
            f_night_time = 86400.0 / night_time
        end where
 
-       do k = 1, km
-            q_NO3_(:,:,k) = q_NO3_(:,:,k) * f_night_time(:,:)
-       end do
-
-       where(q_NO3_ < 0.0) q_NO3_ = 0.0
-
+       if (self%gas_phase_chem) then
+           do k = 1, km
+                q_NO3_(:,:,k) = q_NO3_(:,:,k) * f_night_time(:,:)
+           end do
+    
+           where(q_NO3_ < 0.0) q_NO3_ = 0.0
+       end if
 
        deallocate(sza,         __STAT__)
        deallocate(cos_sza,     __STAT__)
@@ -1110,26 +1590,31 @@ contains
        deallocate(f_night_time, __STAT__)
    end if ! diurnal cycle of oxidants 
 
+   if (self%mam_chem .or. self%voc_chem) then
    call MAPL_GetPointer(export, ptr3d, 'OH', __RC__)
    if (associated(ptr3d)) then
        ptr3d = q_OH_
    end if
+   end if
 
+   if (self%mam_chem) then
    call MAPL_GetPointer(export, ptr3d, 'NO3', __RC__)
    if (associated(ptr3d)) then
        ptr3d = q_NO3_
    end if
-
+   end if
+   
 
 !  If the H2O2 is from climatology, replenish it every 3 hours
 !  -----------------------------------------------------------
-   if (.not. using_GMI_H2O2) then
+   if (.not. using_GMI_H2O2 .and. self%aqu_phase_chem) then
        if (mod(nhms/10000, 3) == 0 .and. (nhms/10000*100 == nhms/100)) then 
            self%h2o2 = q_H2O2
        end if
    end if
 
 
+   UPDATE_CHEM_EMISSIONS: if (self%mam_chem) then
 !
 !  Ammonia emissions
 !  -----------------
@@ -1255,23 +1740,32 @@ contains
                        cdt,        &
                        rc)
 
-   if (self%voc_chem) then
-      call VOC_Emissions(delp,          &
-                         self%voc_BiomassBurnFactor,  &
-                         self%voc_AnthroFactor,  &
-                         co_biomass_voc, &
-                         co_bf_voc, &
-                         co_fs_voc, &
-                         self%voc_MW, &
-                         q_VOCanth, q_VOCbiob, &
-                         cdt,           &
+   end if UPDATE_CHEM_EMISSIONS
+
+
+   UPDATE_VOC_EMISSIONS: if (self%voc_chem) then
+
+      call VOC_Emissions(delp,                       &
+                         self%voc_BiomassBurnFactor, &
+                         self%voc_AnthroFactor,      &
+                         co_biomass_voc,             &
+                         co_bf_voc,                  &
+                         co_fs_voc,                  &
+                         self%voc_MW,                &
+                         q_VOCanth, q_VOCbiob,       &
+                         cdt,                        &
                          rc)
-   end if
+
+   end if UPDATE_VOC_EMISSIONS
+
 
    call MAPL_TimerOff(mgState, '-EMISSIONS', __RC__)
 
+
 !  Dry deposition
 !  --------------
+   UPDATE_CHEM_DRY_DEP: if (self%mam_chem) then 
+
    allocate(dry_dep_frequency(i1:i2,j1:j2), __STAT__)
    allocate(dq(i1:i2,j1:j2),   __STAT__)
 
@@ -1334,15 +1828,23 @@ contains
    deallocate(dry_dep_frequency, __STAT__)
    deallocate(dq, __STAT__)
 
+   end if UPDATE_CHEM_DRY_DEP
+
+
 !  Ensure positive values only
 !  ---------------------------
-   where (q_NH3   < tiny(0.0))    q_NH3   = tiny(0.0)
-   where (q_DMS   < tiny(0.0))    q_DMS   = tiny(0.0)
-   where (q_MSA   < tiny(0.0))    q_MSA   = tiny(0.0)
-   where (q_SO2   < tiny(0.0))    q_SO2   = tiny(0.0)
-   where (q_H2SO4 < tiny(0.0))    q_H2SO4 = tiny(0.0)
-   where (q_OH_   < tiny(0.0))    q_OH_   = tiny(0.0)
-   where (q_NO3_  < tiny(0.0))    q_NO3_  = tiny(0.0)
+   if (self%mam_chem) then
+       where (q_NH3   < tiny(0.0))    q_NH3   = tiny(0.0)
+       where (q_DMS   < tiny(0.0))    q_DMS   = tiny(0.0)
+       where (q_MSA   < tiny(0.0))    q_MSA   = tiny(0.0)
+       where (q_SO2   < tiny(0.0))    q_SO2   = tiny(0.0)
+       where (q_H2SO4 < tiny(0.0))    q_H2SO4 = tiny(0.0)
+       where (q_NO3_  < tiny(0.0))    q_NO3_  = tiny(0.0)
+   end if
+
+   if (self%mam_chem .or. self%voc_chem) then
+       where (q_OH_   < tiny(0.0))    q_OH_   = tiny(0.0)
+   end if 
 
 
    call MAPL_TimerOn(mgState, '-CHEMISTRY', __RC__)
@@ -1350,6 +1852,8 @@ contains
 !  Gas-phase chemistry
 !  -------------------
    call MAPL_TimerOn(mgState, '--CHEMISTRY_GAS', __RC__)
+
+   UPDATE_CHEM_GAS_PHASE: if (self%mam_chem) then
 
    if (associated(DMS_g_))   DMS_g_   = q_DMS
    if (associated(MSA_g_))   MSA_g_   = q_MSA
@@ -1379,58 +1883,7 @@ contains
        if (associated(ddt_NH3_gas))   ddt_NH3_gas   = q_NH3
        if (associated(ddt_SOAG_gas))  ddt_SOAG_gas  = q_SOAG
 
-       ! If doing VOC chemistry by OH to create OA
-       ! -----------------------------------------
-       ! Note that we do not update the OH concentration
-       ! Could (should?) integrate this with gas_chemistry below
-       ! Right now the VOC calculation is optional, specified in
-       ! in GEOS_AchemGridComp.rc, but the export is coupled to
-       ! GOCART if both GOCART and ACHEM are running, so fill
-       ! in with zero in case it is requested.
-       q_OAanth = 0.
-       q_OAanthmmrd = 0.
-       q_OAbiob = 0.
-       q_OAbiobmmrd = 0.
-       OPTIONAL_VOC_CHEMISTRY: if (self%voc_chem) then
-         allocate(dVOC(i1:i2,j1:j2,1:km), &
-                  dOAanth(i1:i2,j1:j2,1:km), &
-                  dOAbiob(i1:i2,j1:j2,1:km), &
-                  fanth(i1:i2,j1:j2,1:km), &
-                  rk_OA_OH(i1:i2,j1:j2,1:km),__STAT__)
-
-         where (q_VOCanth<tiny(0.0)) q_VOCanth = tiny(0.0)
-         where (q_VOCbiob<tiny(0.0)) q_VOCbiob = tiny(0.0)
-
-         ! rate coefficient from Kim et al 2015
-         rk_OA_OH  = 1.25d-11*N_avog*q_OH_*density_air/mw_air*(1.0e-6)*cdt
-         dVOC      = (q_VOCanth + q_VOCbiob)*(1.0-exp(-rk_OA_OH))  ! Loss of VOC (mol/mol air)
-         dOAanth = 0.
-         dOAbiob = 0.
-         where(dVOC>1.e-32)
-          fanth     = q_VOCanth / (q_VOCanth + q_VOCbiob)          ! Anthropogenic fraction of total VOC
-          dOAanth   = dVOC *fanth                                  ! Production of OA (mol/mol air)
-          q_VOCanth = q_VOCanth- dVOC * fanth                      ! Update VOC (mol/mol air)
-          dOAbiob   = dVOC * (1.-fanth)                            ! Production of OA (mol/mol air)
-          q_VOCbiob = q_VOCbiob- dVOC * (1.-fanth)                 ! Update VOC (mol/mol air)
-         endwhere
-
-         where (q_VOCanth<tiny(0.0)) q_VOCanth = tiny(0.0)
-         where (q_VOCbiob<tiny(0.0)) q_VOCbiob = tiny(0.0)
-
-         dOAanth  = dOAanth*self%soa_MW/mw_air/cdt  ! kg kg-1 s-1
-         dOAbiob  = dOAbiob*self%soa_MW/mw_air/cdt  ! kg kg-1 s-1
-
-         if (associated(q_OAanthmmrd))q_OAanthmmrd = dOAanth*86400.0      ! kg kg-1 day-1
-         if (associated(q_OAbiobmmrd))q_OAbiobmmrd = dOAbiob*86400.0      ! kg kg-1 day-1
-
-         if (associated(q_OAanth))    q_OAanth     = dOAanth*density_air  ! kg m-3 s-1
-         if (associated(q_OAbiob))    q_OAbiob     = dOAbiob*density_air  ! kg m-3 s-1
-
-        deallocate(dVOC, dOAanth, dOAbiob, fanth, rk_OA_OH, __STAT__)
-
-       end if  OPTIONAL_VOC_CHEMISTRY
-
-        call gas_chemistry(ple,          &
+       call gas_chemistry(ple,           &
                           temperature,   &
                           density_air,   &
                           q_NH3,         &
@@ -1438,14 +1891,14 @@ contains
                           q_MSA,         &
                           q_SO2,         &
                           q_H2SO4,       &
-                          q_OH_,          &
-                          q_NO3_,         &
+                          q_OH_,         &
+                          q_NO3_,        &
                           cpl_NH3,       &
                           cpl_DMS,       &
                           cpl_MSA,       &
                           cpl_SO2,       &
                           cpl_H2SO4,     &
-                          cdt,            &
+                          cdt,           &
                           rc)
 
        ! tendencies due to gas phase chemistry
@@ -1464,10 +1917,6 @@ contains
        if (associated(ddt_NH3_gas))   ddt_NH3_gas   = 0.0
        if (associated(ddt_SOAG_gas))  ddt_SOAG_gas  = 0.0
    end if
-
-   deallocate(q_OH_, __STAT__)
-   deallocate(q_NO3_, __STAT__)
-
 
    ! column integrated P+L tendencies due to gas phase chemistry
    call MAPL_GetPointer(export, ptr2d, 'CPL_DMS_gas', __RC__)
@@ -1539,12 +1988,16 @@ contains
    deallocate(cpl_SO2,   __STAT__)
    deallocate(cpl_H2SO4, __STAT__)
 
+   end if UPDATE_CHEM_GAS_PHASE
+
    call MAPL_TimerOff(mgState, '--CHEMISTRY_GAS', __RC__)
 
    
 !  Aqueous-phase chemistry
 !  -----------------------
    call MAPL_TimerOn(mgState, '--CHEMISTRY_AQUEOUS', __RC__)
+
+   UPDATE_CHEM_AQU_PHASE: if (self%mam_chem) then
 
    allocate(pSO4_aq(i1:i2,j1:j2,km),       __STAT__)
    allocate(pNH4_aq(i1:i2,j1:j2,km),       __STAT__)
@@ -1634,7 +2087,6 @@ contains
    deallocate(pNH4_aq_NH3,   __STAT__)
 
 
-
 !!     call aqu_chemistry(ple,                   &
 !!                       temperature,            &
 !!                       density_air,            &
@@ -1651,41 +2103,157 @@ contains
 !!                       0.5e-7,                 &
 !!                       rc)
 
+   end if UPDATE_CHEM_AQU_PHASE
+
    call MAPL_TimerOff(mgState, '--CHEMISTRY_AQUEOUS', __RC__)
+
+
+   call MAPL_TimerOn(mgState, '--CHEMISTRY_VOC', __RC__)
+
+   ! If doing VOC chemistry by OH to create OA
+   ! -----------------------------------------
+   ! Note that we do not update the OH concentration
+   ! Could (should?) integrate this with gas_chemistry below
+   ! Right now the VOC calculation is optional, specified in
+   ! in GEOS_AchemGridComp.rc, but the export is coupled to
+   ! GOCART if both GOCART and ACHEM are running, so fill
+   ! in with zero in case it is requested.
+
+   OPTIONAL_VOC_CHEMISTRY: if (self%voc_chem) then
+
+       allocate(q_OAanth(i1:i2,j1:j2,1:km), &
+                q_OAbiob(i1:i2,j1:j2,1:km), &
+                q_OAanthmmrd(i1:i2,j1:j2,1:km), &
+                q_OAbiobmmrd(i1:i2,j1:j2,1:km), __STAT__)
+
+       allocate(dVOC(i1:i2,j1:j2,1:km), &
+                dOAanth(i1:i2,j1:j2,1:km), &
+                dOAbiob(i1:i2,j1:j2,1:km), &
+                fanth(i1:i2,j1:j2,1:km), &
+                rk_OA_OH(i1:i2,j1:j2,1:km),__STAT__)
+
+       q_OAanth     = 0.0
+       q_OAanthmmrd = 0.0
+       q_OAbiob     = 0.0
+       q_OAbiobmmrd = 0.0
+
+       where (q_VOCanth < tiny(0.0)) q_VOCanth = tiny(0.0)
+       where (q_VOCbiob < tiny(0.0)) q_VOCbiob = tiny(0.0)
+
+       ! rate coefficient from Kim et al 2015
+       rk_OA_OH = 1.25d-11*N_avog*q_OH_*density_air/mw_air*(1.0e-6)*cdt
+       dVOC     = (q_VOCanth + q_VOCbiob)*(1.0-exp(-rk_OA_OH))     ! Loss of VOC (mol/mol air)
+       dOAanth  = 0.0
+       dOAbiob  = 0.0
+
+       where (dVOC > 1.e-32)
+          fanth     = q_VOCanth / (q_VOCanth + q_VOCbiob)          ! Anthropogenic fraction of total VOC
+          dOAanth   = dVOC *fanth                                  ! Production of OA (mol/mol air)
+          q_VOCanth = q_VOCanth - dVOC * fanth                     ! Update VOC (mol/mol air)
+          dOAbiob   = dVOC * (1.0 -fanth)                          ! Production of OA (mol/mol air)
+          q_VOCbiob = q_VOCbiob- dVOC * (1.0 -fanth)               ! Update VOC (mol/mol air)
+       endwhere
+
+       where (q_VOCanth<tiny(0.0)) q_VOCanth = tiny(0.0)
+       where (q_VOCbiob<tiny(0.0)) q_VOCbiob = tiny(0.0)
+
+       dOAanth = dOAanth*self%soa_MW/mw_air/cdt  ! kg kg-1 s-1
+       dOAbiob = dOAbiob*self%soa_MW/mw_air/cdt  ! kg kg-1 s-1
+
+       q_OAanthmmrd = dOAanth*86400.0            ! kg kg-1 day-1
+       q_OAbiobmmrd = dOAbiob*86400.0            ! kg kg-1 day-1
+
+       q_OAanth = dOAanth*density_air            ! kg m-3 s-1
+       q_OAbiob = dOAbiob*density_air            ! kg m-3 s-1
+
+       call MAPL_GetPointer(export, ptr3d, 'pSOA_ANTHRO_VOC', __RC__)
+       if (associated(ptr3d)) ptr3d = q_OAanth
+
+       call MAPL_GetPointer(export, ptr3d,  'pSOA_BIOB_VOC', __RC__)
+       if (associated(ptr3d)) ptr3d = q_OAbiob
+
+       call MAPL_GetPointer(export, ptr3d, 'pSOA_ANTHRO_VOC_MMRday', __RC__)
+       if (associated(ptr3d)) ptr3d = q_OAanthmmrd
+
+       call MAPL_GetPointer(export, ptr3d, 'pSOA_BIOB_VOC_MMRday', __RC__)
+       if (associated(ptr3d)) ptr3d = q_OAbiobmmrd
+
+       deallocate(q_OAanth, q_OAbiob, q_OAanthmmrd, q_OAbiobmmrd, __STAT__)
+       deallocate(dVOC, dOAanth, dOAbiob, fanth, rk_OA_OH, __STAT__)
+   end if OPTIONAL_VOC_CHEMISTRY
+
+   call MAPL_TimerOff(mgState, '--CHEMISTRY_VOC', __RC__)    
 
 
    call MAPL_TimerOn(mgState, '--CHEMISTRY_OCS', __RC__)
 
    OCS_CHEMISTRY_STRATOSPHERE: if (self%ocs_chem) then
 
-       call ocs_chemistry(ple,           &
-                          temperature,   &
-                          density_air,   &
+       allocate(pSO2_OCS(i1:i2,j1:j2,km),      &
+                pSO2_OCS_OH(i1:i2,j1:j2,km),   &
+                pSO2_OCS_O3P(i1:i2,j1:j2,km),  &
+                pSO2_OCS_jOCS(i1:i2,j1:j2,km), &
+                lOCS(i1:i2,j1:j2,km),          &
+                lOCS_OH(i1:i2,j1:j2,km),       &
+                lOCS_O3p(i1:i2,j1:j2,km),      &
+                lOCS_jOCS(i1:i2,j1:j2,km),     &
+                __STAT__)
+
+       call ocs_chemistry(ple,             &
+                          temperature,     &
+                          density_air,     &
                           self%ocs_surface_vmr, &
-                          tropp,         &
-                          q_OCS,         &
-                          q_OH_STRATCHEM,&
-                          q_O3p_STRATCHEM,         &
-                          j_ocs,            & !photolysis rates
-                          pSO2_OCS,      &
-                          pSO2_OCS_OH,       &
-                          pSO2_OCS_O3p,      &
-                          pSO2_OCS_jOCS,     &
-                          lOCS,          &
-                          lOCS_OH,       &
-                          lOCS_O3p,      &
-                          lOCS_jOCS,     &
-                          cdt,           &
+                          tropp,           &
+                          q_OCS,           &
+                          q_OH_STRATCHEM,  &
+                          q_O3p_STRATCHEM, &
+                          j_ocs,           & !photolysis rates
+                          pSO2_OCS,        &
+                          pSO2_OCS_OH,     &
+                          pSO2_OCS_O3p,    &
+                          pSO2_OCS_jOCS,   &
+                          lOCS,            &
+                          lOCS_OH,         &
+                          lOCS_O3p,        &
+                          lOCS_jOCS,       &
+                          cdt,             &
                           rc)
+
+      call MAPL_GetPointer(export, ptr3d, 'pSO2_OCS', __RC__)
+       if (associated(ptr3d)) ptr3d = pSO2_OCS
+      call MAPL_GetPointer(export, ptr3d, 'pSO2_OCS_OH', __RC__)
+       if (associated(ptr3d)) ptr3d = pSO2_OCS_OH
+      call MAPL_GetPointer(export, ptr3d, 'pSO2_OCS_O3p', __RC__)
+       if (associated(ptr3d)) ptr3d = pSO2_OCS_O3p
+      call MAPL_GetPointer(export, ptr3d, 'pSO2_OCS_jOCS', __RC__)
+       if (associated(ptr3d)) ptr3d = pSO2_OCS_jOCS
+      call MAPL_GetPointer(export, ptr3d, 'lOCS', __RC__)
+       if (associated(ptr3d)) ptr3d = lOCS
+      call MAPL_GetPointer(export, ptr3d, 'lOCS_OH', __RC__)
+       if (associated(ptr3d)) ptr3d = lOCS_OH
+      call MAPL_GetPointer(export, ptr3d, 'lOCS_O3p', __RC__)
+       if (associated(ptr3d)) ptr3d = lOCS_O3p
+      call MAPL_GetPointer(export, ptr3d, 'lOCS_jOCS', __RC__)
+       if (associated(ptr3d)) ptr3d = lOCS_jOCS
+
+      deallocate(pSO2_OCS, pSO2_OCS_OH, pSO2_OCS_O3p, pSO2_OCS_jOCS, &
+                 lOCS, lOCS_OH, lOCS_O3p, lOCS_jOCS, __STAT__)
 
    end if OCS_CHEMISTRY_STRATOSPHERE
 
    call MAPL_TimerOff(mgState, '--CHEMISTRY_OCS', __RC__)
 
+
+   ! could be used by the full and/or VOC chemistry mechanisms
+   if (allocated(q_OH_ )) deallocate(q_OH_ , __STAT__)
+   if (allocated(q_NO3_)) deallocate(q_NO3_, __STAT__)
+
    call MAPL_TimerOff(mgState, '-CHEMISTRY', __RC__)
+
 
 !  Diagnostics
 !  -----------
+   UPDATE_CHEM_DIAGNOSTICS: if (self%mam_chem) then
 
 !  3D concentrations in units '# molecules-constituent m-3'
 !  -----------------------------------------------
@@ -1842,6 +2410,7 @@ contains
    call MAPL_GetPointer(export, ptr2d, 'CMD_SOAG', __RC__)
    if (associated(ptr2d)) ptr2d = ((mw_SOAg/mw_air) / g_earth) * sum(q_SOAG*delp, dim=3)
 
+   end if UPDATE_CHEM_DIAGNOSTICS
 
 !  All done
 !  --------
@@ -2935,27 +3504,28 @@ contains
    real, dimension(:,:,:), intent(in) :: temperature
    real, dimension(:,:,:), intent(in) :: density_air
    real                  , intent(in) :: ocs_surface_vmr
+
+   real, intent(in)                   :: dt
+
+   integer, intent(out)               :: rc
+
    real, dimension(:,:)  , intent(in) :: tropp
 
    real, dimension(:,:,:), intent(in) :: q_OH
    real, dimension(:,:,:), intent(in) :: q_O3p
    real, dimension(:,:,:), intent(in) :: j_ocs
 
-   real, intent(in)                   :: dt
-
-   integer, intent(out)               :: rc
-
 ! !OUTPUT PARAMETERS:
-   real, dimension(:,:,:), intent(inout)          :: q_OCS
+   real, dimension(:,:,:), intent(inout) :: q_OCS
 
-   real, pointer, dimension(:,:,:), intent(inout) :: pSO2_OCS      ! production of S from OCS in the stratosphere
-   real, pointer, dimension(:,:,:), intent(inout) :: pSO2_OCS_OH   ! production of S from OCS+OH
-   real, pointer, dimension(:,:,:), intent(inout) :: pSO2_OCS_O3p  ! production of S from OCS+O3p
-   real, pointer, dimension(:,:,:), intent(inout) :: pSO2_OCS_jOCS ! production of S from OCS photolysis
-   real, pointer, dimension(:,:,:), intent(inout) :: lOCS          ! loss ocs, 'molecules cm-3 s-1'
-   real, pointer, dimension(:,:,:), intent(inout) :: lOCS_OH       ! loss rate of OCS from OCS+OH, 'molec cm-3 s-1'
-   real, pointer, dimension(:,:,:), intent(inout) :: lOCS_O3p      ! loss rate of OCS from OCS+O3p, 'molec cm-3 s-1'
-   real, pointer, dimension(:,:,:), intent(inout) :: lOCS_jOCS     ! loss rate of OCS from photolysis, 'molec cm-3 s-1'
+   real, dimension(:,:,:), intent(inout) :: pSO2_OCS      ! production of S from OCS in the stratosphere
+   real, dimension(:,:,:), intent(inout) :: pSO2_OCS_OH   ! production of S from OCS+OH
+   real, dimension(:,:,:), intent(inout) :: pSO2_OCS_O3p  ! production of S from OCS+O3p
+   real, dimension(:,:,:), intent(inout) :: pSO2_OCS_jOCS ! production of S from OCS photolysis
+   real, dimension(:,:,:), intent(inout) :: lOCS          ! loss ocs, 'molecules cm-3 s-1'
+   real, dimension(:,:,:), intent(inout) :: lOCS_OH       ! loss rate of OCS from OCS+OH, 'molec cm-3 s-1'
+   real, dimension(:,:,:), intent(inout) :: lOCS_O3p      ! loss rate of OCS from OCS+O3p, 'molec cm-3 s-1'
+   real, dimension(:,:,:), intent(inout) :: lOCS_jOCS     ! loss rate of OCS from photolysis, 'molec cm-3 s-1'
 
 
 ! !DESCRIPTION: Calculate the OCS chemistry
@@ -3077,15 +3647,15 @@ contains
         enddo
      enddo
 
-     if (associated(pSO2_OCS))        pSO2_OCS      = prod_SO2
-     if (associated(pSO2_OCS_OH))     pSO2_OCS_OH   = prod_SO2_OH
-     if (associated(pSO2_OCS_O3p))    pSO2_OCS_O3p  = prod_SO2_O3p
-     if (associated(pSO2_OCS_jOCS))   pSO2_OCS_jOCS = prod_SO2_jOCS
+     pSO2_OCS      = prod_SO2
+     pSO2_OCS_OH   = prod_SO2_OH
+     pSO2_OCS_O3p  = prod_SO2_O3p
+     pSO2_OCS_jOCS = prod_SO2_jOCS
 
-     if (associated(lOCS))            lOCS          = loss_ocs
-     if (associated(lOCS_OH))         lOCS_OH       = loss_ocs_OH
-     if (associated(lOCS_O3p))        lOCS_O3p      = loss_ocs_O3p
-     if (associated(lOCS_jOCS))       lOCS_jOCS     = loss_ocs_jOCS
+     lOCS          = loss_ocs
+     lOCS_OH       = loss_ocs_OH
+     lOCS_O3p      = loss_ocs_O3p
+     lOCS_jOCS     = loss_ocs_jOCS
 
 
      deallocate(prod_SO2,      __STAT__)

@@ -838,6 +838,12 @@ contains
     SRC_ID=HEMCO, DST_ID=GOCART, __RC__)
   END IF
 
+  IF( myState%enable_HEMCO .AND. myState%enable_GOCART2G ) THEN
+   CALL MAPL_AddConnectivity ( GC, &
+    SHORT_NAME  = (/ 'OC_ISOPRENE', 'OC_MTPA    ', 'OC_MTPO    ', 'OC_LIMO    '/), &
+    SRC_ID=HEMCO, DST_ID=GOCART2G, __RC__)
+  END IF
+
 ! HEMCO -> GMI 
 ! ------------
   IF( myState%enable_HEMCO .AND. myState%enable_GMICHEM ) THEN

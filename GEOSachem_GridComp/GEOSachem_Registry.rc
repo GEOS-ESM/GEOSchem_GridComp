@@ -73,9 +73,9 @@ COMP_NAME: GEOS_AChem
 # ----------------------|------------|-----|---|----|---|---|-----|------|--------------------------
   SOAG_EMIS             | m-2 s-1    | xy  |   |    |   |   |     |      | SOA(gas) surface emissions
 # ----------------------|------------|-----|---|----|---|---|-----|------|--------------------------
-  CO_BIOMASS            | kg m-2 s-1 | xy  |   |    |   |   |     |      | CO Biomass Burning Emissions
-  CO_BF                 | kg m-2 s-1 | xy  |   |    |   |   |     |      | CO Biofuel Emissions
-  CO_FS                 | kg m-2 s-1 | xy  |   |    |   |   |     |      | CO Fossil Fuel Emissions
+# CO_BIOMASS            | kg m-2 s-1 | xy  |   |    |   |   |     |      | CO Biomass Burning Emissions
+# CO_BF                 | kg m-2 s-1 | xy  |   |    |   |   |     |      | CO Biofuel Emissions
+# CO_FS                 | kg m-2 s-1 | xy  |   |    |   |   |     |      | CO Fossil Fuel Emissions
 # ----------------------|------------|-----|---|----|---|---|-----|------|--------------------------
 </ImportSpec>
 
@@ -183,20 +183,22 @@ COMP_NAME: GEOS_AChem
   pSO4_aq_H2SO4         | kg kg-1 s-1   | xyz | C |    |   |   |     | production rate of sulfate from irreversible uptake of sulfuric acid vapor (H2SO4) in aqueous phase
   pNH4_aq_NH3           | kg kg-1 s-1   | xyz | C |    |   |   |     | production rate of ammonium from dissociation of ammonia (NH3) in aqueous phase
 # ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
-  pSOA_ANTHRO_VOC       | kg m-3 s-1    | xyz | C |    |   |   |     | Production of SOA from Anthropogenic + Biofuel Burning VOC
-  pSOA_ANTHRO_VOC_MMRday| kg m-3 d-1    | xyz | C |    |   |   |     | Production of SOA from Anthropogenic + Biofuel Burning VOC
-  pSOA_BIOB_VOC         | kg m-3 s-1    | xyz | C |    |   |   |     | Production of SOA from Biomass Burning VOC
-  pSOA_BIOB_VOC_MMRday  | kg m-3 d-1    | xyz | C |    |   |   |     | Production of SOA from Biomass Burning VOC
+# VOC exports are defined in the code
+# pSOA_ANTHRO_VOC       | kg m-3 s-1    | xyz | C |    |   |   |     | Production of SOA from Anthropogenic + Biofuel Burning VOC
+# pSOA_ANTHRO_VOC_MMRday| kg m-3 d-1    | xyz | C |    |   |   |     | Production of SOA from Anthropogenic + Biofuel Burning VOC
+# pSOA_BIOB_VOC         | kg m-3 s-1    | xyz | C |    |   |   |     | Production of SOA from Biomass Burning VOC
+# pSOA_BIOB_VOC_MMRday  | kg m-3 d-1    | xyz | C |    |   |   |     | Production of SOA from Biomass Burning VOC
 # ----------------------|---------------|-----|---|----|---|---|-----|------------------------------
-  pSO2_OCS              | kg kg-1 s-1   | xyz | C |    |   |   |     | Production of SO2 from OCS
-  pSO2_OCS_OH           | kg kg-1 s-1   | xyz | C |    |   |   |     | Production of SO2 from OCS+OH
-  pSO2_OCS_O3p          | kg kg-1 s-1   | xyz | C |    |   |   |     | Production of SO2 from OCS+O3p
-  pSO2_OCS_jOCS         | kg kg-1 s-1   | xyz | C |    |   |   |     | Production of SO2 from OCS photolysis
-  lOCS                  | cm-3 s-1      | xyz | C |    |   |   |     | Loss rate of OCS (molec cm-3 s-1)
-  lOCS_OH               | cm-3 s-1      | xyz | C |    |   |   |     | Loss rate of OCS from OCS+OH(molec cm-3 s-1)
-  lOCS_O3p              | cm-3 s-1      | xyz | C |    |   |   |     | Loss rate of OCS from OCS+O3p(molec cm-3 s-1)
-  lOCS_jOCS             | cm-3 s-1      | xyz | C |    |   |   |     | Loss rate of OCS from photolysis (molec cm-3 s-1)
-  pScl_OCS              | kg m-2        | xy  |   |    |   |   |     | Production of SO2 from OCS (column integrated)
+# OCS exports are defined in the code
+# pSO2_OCS              | kg kg-1 s-1   | xyz | C |    |   |   |     | Production of SO2 from OCS
+# pSO2_OCS_OH           | kg kg-1 s-1   | xyz | C |    |   |   |     | Production of SO2 from OCS+OH
+# pSO2_OCS_O3p          | kg kg-1 s-1   | xyz | C |    |   |   |     | Production of SO2 from OCS+O3p
+# pSO2_OCS_jOCS         | kg kg-1 s-1   | xyz | C |    |   |   |     | Production of SO2 from OCS photolysis
+# lOCS                  | cm-3 s-1      | xyz | C |    |   |   |     | Loss rate of OCS (molec cm-3 s-1)
+# lOCS_OH               | cm-3 s-1      | xyz | C |    |   |   |     | Loss rate of OCS from OCS+OH(molec cm-3 s-1)
+# lOCS_O3p              | cm-3 s-1      | xyz | C |    |   |   |     | Loss rate of OCS from OCS+O3p(molec cm-3 s-1)
+# lOCS_jOCS             | cm-3 s-1      | xyz | C |    |   |   |     | Loss rate of OCS from photolysis (molec cm-3 s-1)
+# pScl_OCS              | kg m-2        | xy  |   |    |   |   |     | Production of SO2 from OCS (column integrated)
 </ExportSpec>
 
 #                               --------------
