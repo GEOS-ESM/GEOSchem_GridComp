@@ -134,6 +134,10 @@ module GEOS_PChemGridCompMod
      real, pointer, dimension(:)         :: LEVS => null()
      real, pointer, dimension(:,:,:,:,:) :: MNPL => null() ! Production rates and loss frequencies
      real, pointer, dimension(:,:,:,:)   :: MNCV => null() ! Concentration (mole fraction)
+!fli2
+     real, pointer, dimension(:,:,:)   :: H2OprRate => null() ! H2O production rate
+     real, pointer, dimension(:,:,:)   :: H2OlsRate => null() ! H2O loss rate 
+!fli2
      integer                             :: OX       = 1
      integer                             :: N2O      = 2
      integer                             :: CFC11    = 3
@@ -741,6 +745,10 @@ contains
     integer                                 :: IM, JM, LM
     integer                                 :: dimid, varid, climYears, comm, info
     logical                                 :: Doing_RATs
+!fli2
+    integer                                 :: H2O_ProdLoss
+    logical                                 :: USE_H2O_ProdLoss
+!fli2
 
 !=============================================================================
 
@@ -815,6 +823,13 @@ contains
 
     call MAPL_GetResource(MAPL, PCHEM_STATE%climYears, 'pchem_clim_years:' ,DEFAULT=1, RC=STATUS )
     VERIFY_(STATUS)
+
+!fli2
+    call MAPL_GetResource(MAPL, H2O_ProdLoss, 'H2O_ProdLoss:' ,DEFAULT=0, RC=STATUS )
+    VERIFY_(STATUS)
+
+    USE_H2O_ProdLoss = H2O_ProdLoss /= 0
+!fli2
 
     call MAPL_TimerOn (MAPL,"-Read Header"  )
 
@@ -990,6 +1005,18 @@ contains
        PCHEM_STATE%MNPL = Z'7FA00000'
     ENDIF
 
+!fli2
+    IF(USE_H2O_ProdLoss) THEN
+       ALLOCATE(PCHEM_STATE%H2OprRate(PCHEM_STATE%NLATS, PCHEM_STATE%NLEVS, 2), stat=STATUS )
+       VERIFY_(STATUS)
+       PCHEM_STATE%H2OprRate = Z'7FA00000'
+
+       ALLOCATE(PCHEM_STATE%H2OlsRate(PCHEM_STATE%NLATS, PCHEM_STATE%NLEVS, 2), stat=STATUS )
+       VERIFY_(STATUS)
+       PCHEM_STATE%H2OlsRate = Z'7FA00000'
+    ENDIF
+!fli2
+
 ! Setting the alarm to ringing will reinitialize all data during first run
 !-------------------------------------------------------------------------
 
@@ -1134,6 +1161,9 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
   real, allocatable :: PL      (:,:,:)
   real, allocatable :: PROD_INT(:,:,:)
   real, allocatable :: LOSS_INT(:,:,:)
+!fli2
+  real, allocatable :: LOSS_SWV(:,:,:)
+!fli2
   real, allocatable :: PROD    (:,:  )
   real, allocatable :: LOSS    (:,:  )
   real, allocatable :: PROD1   (:,:  )
@@ -1159,6 +1189,10 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
   character(len=ESMF_MAXSTR) :: providerName
   logical                    :: Doing_RATs
   real(ESMF_KIND_R8)         :: dt_r8
+!fli2
+  logical                    :: USE_H2O_ProdLoss
+  integer                    :: H2O_ProdLoss
+!fli2
 
 !=============================================================================
 
@@ -1225,6 +1259,13 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
     CALL ESMF_ClockGet(CLOCK, currTime=CurrTime, RC=STATUS)
     VERIFY_(STATUS)
 
+!fli2
+    call MAPL_GetResource(MAPL, H2O_ProdLoss, 'H2O_ProdLoss:' ,DEFAULT=0, RC=STATUS )
+    VERIFY_(STATUS)
+
+    USE_H2O_ProdLoss = H2O_ProdLoss /= 0
+!fli2
+
 ! Is PCHEM the RATs provider?
 ! ---------------------------
     CALL MAPL_GetResource(MAPL, providerName, LABEL="RATS_PROVIDER:", DEFAULT="PCHEM", RC=STATUS )
@@ -1247,6 +1288,12 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
     VERIFY_(STATUS)
     allocate(LOSS_INT(IM,JM,LM),stat=STATUS)
     VERIFY_(STATUS)
+!fli2
+    IF (USE_H2O_ProdLoss) THEN
+       allocate(LOSS_SWV(IM,JM,LM),stat=STATUS)
+       VERIFY_(STATUS)
+    ENDIF
+!fli2
     allocate(      PL(IM,JM,LM),stat=STATUS)
     VERIFY_(STATUS)
     allocate(    PROD(IM,NLEVS),stat=STATUS)
@@ -1423,6 +1470,54 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 
           ENDDO
 
+!fli2 Read H2O production and loss rate if use_h2o_prodloss
+          IF (USE_H2O_ProdLoss) THEN
+
+             STATUS = NF_INQ_VARID(UNIT, 'H2OprRate', varid)
+             if(status /= nf_noerr) then
+                print*,'Error getting varid for variable H2OprRate', status
+                print*, NF_STRERROR(status)
+                stop
+             endif
+             start(3) = INDX1
+             STATUS = NF_GET_VARA_REAL(UNIT, varid, start, cnt, PCHEM_STATE%H2OprRate(:,:,1))
+             if(status /= nf_noerr) then
+                print*,'Error reading lower bracket month ',status
+                print*, NF_STRERROR(status)
+                stop
+             endif
+             start(3) = INDX2
+             STATUS = NF_GET_VARA_REAL(UNIT, varid, start, cnt, PCHEM_STATE%H2OprRate(:,:,2))
+             if(status /= nf_noerr) then
+                print*,'Error reading upper bracket month ',status
+                print*, NF_STRERROR(status)
+                stop
+             endif
+
+             STATUS = NF_INQ_VARID(UNIT, 'H2OlsRate', varid)
+             if(status /= nf_noerr) then
+                print*,'Error getting varid for variable H2OlsRate', status
+                print*, NF_STRERROR(status)
+                stop
+             endif
+             start(3) = INDX1
+             STATUS = NF_GET_VARA_REAL(UNIT, varid, start, cnt, PCHEM_STATE%H2OlsRate(:,:,1))
+             if(status /= nf_noerr) then
+                print*,'Error reading lower bracket month ',status
+                print*, NF_STRERROR(status)
+                stop
+             endif
+             start(3) = INDX2
+             STATUS = NF_GET_VARA_REAL(UNIT, varid, start, cnt, PCHEM_STATE%H2OlsRate(:,:,2))
+             if(status /= nf_noerr) then
+                print*,'Error reading upper bracket month ',status
+                print*, NF_STRERROR(status)
+                stop
+             endif
+
+          ENDIF
+!fli2
+
           STATUS = NF90_CLOSE(UNIT)
           VERIFY_(STATUS)
 
@@ -1501,7 +1596,13 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 !------
 
     if(MAPL_VerifyFriendly(IMPORT,'Q','CHEMISTRY')) then
-       call UPDATE(PCHEM_STATE%H2O,  'H2O'  ,H2O  )
+!fli2
+     IF (USE_H2O_ProdLoss) THEN
+       call UPDATE_H2O_PL('H2O'  ,H2O  )
+     ELSE
+       call UPDATE(PCHEM_STATE%H2O,     'H2O',     H2O    )
+     ENDIF
+!fli2
     endif
 
 ! Ozone
@@ -1598,6 +1699,11 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
     IF(Doing_RATs) THEN
      deallocate(PROD_INT)
      deallocate(LOSS_INT)
+!fli2
+     IF (USE_H2O_ProdLoss) THEN
+        deallocate(LOSS_SWV)
+     ENDIF
+!fli2
      deallocate(      PL)
      deallocate(    PROD)
      deallocate(    LOSS)
@@ -1753,6 +1859,84 @@ contains
 
     return
   end subroutine UPDATE
+
+!fli2
+  subroutine UPDATE_H2O_PL(NAME,XX)
+
+    character(len=*), intent(IN) :: NAME
+    real, pointer                :: XX(:,:,:)
+
+
+    real, pointer, dimension(:,:,:)   :: XX_PROD
+    real, pointer, dimension(:,:,:)   :: XX_LOSS
+    real, pointer, dimension(:,:,:)   :: OX_TEND
+    real, pointer, dimension(:,:,:)   :: H2O_TEND
+    real                              :: TAU
+    real                              :: VALUE
+    real                              :: PCRIT
+    real                              :: DELP
+    integer                           :: I,J,L
+
+    call MAPL_GetPointer ( IMPORT,   XX,  'Q', RC=STATUS )
+    VERIFY_(STATUS)
+    ASSERT_(associated(XX))
+
+    call MAPL_GetResource(MAPL,   TAU,LABEL=trim(NAME)//"_RELAXTIME:", DEFAULT=0.0 ,RC=STATUS)
+    VERIFY_(STATUS)
+
+    call MAPL_GetPointer ( EXPORT, XX_PROD, trim(NAME)//'_PROD', RC=STATUS )
+    VERIFY_(STATUS)
+    call MAPL_GetPointer ( EXPORT, XX_LOSS, trim(NAME)//'_LOSS', RC=STATUS )
+    VERIFY_(STATUS)
+
+    PROD1 = PCHEM_STATE%H2OprRate(:,:,1)*FAC + PCHEM_STATE%H2OprRate(:,:,2)*(1.-FAC)
+    LOSS1 = PCHEM_STATE%H2OlsRate(:,:,1)*FAC + PCHEM_STATE%H2OlsRate(:,:,2)*(1.-FAC)
+
+    do j=1,jm
+       do l=1,nlevs
+          call MAPL_INTERP( PROD(:,L), LATS(:,J), Prod1(:,L), PCHEM_STATE%LATS)
+          call MAPL_INTERP( LOSS(:,L), LATS(:,J), Loss1(:,L), PCHEM_STATE%LATS)
+       enddo
+       do i=1,im
+          call MAPL_INTERP( PROD_INT(i,j,:), PL(i,j,:), PROD(i,:), PCHEM_STATE%LEVS)
+          call MAPL_INTERP( LOSS_INT(i,j,:), PL(i,j,:), LOSS(i,:), PCHEM_STATE%LEVS)
+       enddo
+    end do
+
+    call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=1.e-16 ,RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=20000. ,RC=STATUS)
+    VERIFY_(STATUS)
+    allocate(WRK(IM,JM),stat=STATUS)
+    VERIFY_(STATUS)
+    where (TROPP==MAPL_UNDEF)
+       WRK = PCRIT
+    elsewhere
+       WRK = TROPP
+    end where
+    WRK = min(WRK, PCRIT)
+!!! loss_swv is 1 for stratosphere and 0 for troposhere
+    do L=1,LM
+       LOSS_SWV(:,:,L) = max( min( (WRK-PL(:,:,L))/DELP, 1.0), 0.0)
+    end do
+
+    PROD_INT = LOSS_SWV*PROD_INT
+    LOSS_INT = LOSS_SWV*LOSS_INT
+    XX = (XX + DT*PROD_INT) / (1.0 + LOSS_INT*DT)
+    deallocate(WRK)
+
+    if(associated(XX_PROD)) XX_PROD =  PROD_INT
+    if(associated(XX_LOSS)) XX_LOSS = -LOSS_INT*XX
+
+    if(trim(NAME)=='H2O') then
+       call MAPL_GetPointer ( EXPORT, H2O_TEND, 'H2O_TEND', RC=STATUS )
+       VERIFY_(STATUS)
+       if(associated(H2O_TEND)) H2O_TEND = (PROD_INT - LOSS_INT*XX)
+    end if
+
+    return
+  end subroutine UPDATE_H2O_PL
+!fli2
 
 end subroutine RUN
 
