@@ -1473,45 +1473,45 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 !fli2 Read H2O production and loss rate if use_h2o_prodloss
           IF (USE_H2O_ProdLoss) THEN
 
-             STATUS = NF_INQ_VARID(UNIT, 'H2OprRate', varid)
-             if(status /= nf_noerr) then
+             STATUS = NF90_INQ_VARID(UNIT, 'H2OprRate', varid)
+             if(status /= nf90_noerr) then
                 print*,'Error getting varid for variable H2OprRate', status
-                print*, NF_STRERROR(status)
+                print*, NF90_STRERROR(status)
                 stop
              endif
              start(3) = INDX1
-             STATUS = NF_GET_VARA_REAL(UNIT, varid, start, cnt, PCHEM_STATE%H2OprRate(:,:,1))
-             if(status /= nf_noerr) then
+             STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%H2OprRate(:,:,1), start, cnt)
+             if(status /= nf90_noerr) then
                 print*,'Error reading lower bracket month ',status
-                print*, NF_STRERROR(status)
+                print*, NF90_STRERROR(status)
                 stop
              endif
              start(3) = INDX2
-             STATUS = NF_GET_VARA_REAL(UNIT, varid, start, cnt, PCHEM_STATE%H2OprRate(:,:,2))
-             if(status /= nf_noerr) then
+             STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%H2OprRate(:,:,2), start, cnt)
+             if(status /= nf90_noerr) then
                 print*,'Error reading upper bracket month ',status
-                print*, NF_STRERROR(status)
+                print*, NF90_STRERROR(status)
                 stop
              endif
 
-             STATUS = NF_INQ_VARID(UNIT, 'H2OlsRate', varid)
-             if(status /= nf_noerr) then
+             STATUS = NF90_INQ_VARID(UNIT, 'H2OlsRate', varid)
+             if(status /= nf90_noerr) then
                 print*,'Error getting varid for variable H2OlsRate', status
-                print*, NF_STRERROR(status)
+                print*, NF90_STRERROR(status)
                 stop
              endif
              start(3) = INDX1
-             STATUS = NF_GET_VARA_REAL(UNIT, varid, start, cnt, PCHEM_STATE%H2OlsRate(:,:,1))
-             if(status /= nf_noerr) then
+             STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%H2OlsRate(:,:,1), start, cnt)
+             if(status /= nf90_noerr) then
                 print*,'Error reading lower bracket month ',status
-                print*, NF_STRERROR(status)
+                print*, NF90_STRERROR(status)
                 stop
              endif
              start(3) = INDX2
-             STATUS = NF_GET_VARA_REAL(UNIT, varid, start, cnt, PCHEM_STATE%H2OlsRate(:,:,2))
-             if(status /= nf_noerr) then
+             STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%H2OlsRate(:,:,2), start, cnt)
+             if(status /= nf90_noerr) then
                 print*,'Error reading upper bracket month ',status
-                print*, NF_STRERROR(status)
+                print*, NF90_STRERROR(status)
                 stop
              endif
 
