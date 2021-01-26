@@ -13,6 +13,7 @@ module GEOS_ChemEnvGridCompMod
 
   use ESMF
   use MAPL
+  use MAPL_StringTemplate
 
   implicit none
   private
@@ -359,13 +360,26 @@ contains
     character(len=ESMF_MAXSTR)         :: PRECIP_FILE
     integer                            :: year, month, day, hr, mn, se
   
-    real, pointer, dimension(:,:)      :: pr_total
-    real, pointer, dimension(:,:)      :: pr_conv
-    real, pointer, dimension(:,:)      :: pr_snow
+    real, pointer, dimension(:,:)      :: pr_total_ll
+    real, pointer, dimension(:,:)      :: pr_conv_ll
+    real, pointer, dimension(:,:)      :: pr_snow_ll
+
+    real, pointer      :: pr_total(:,:)
+    real, pointer      :: pr_conv(:,:)
+    real, pointer      :: pr_snow(:,:)
+
 
     logical                            :: observed_precip
 
     integer                            :: k, k0
+
+    type(ESMF_Grid) :: ll_grid
+    integer :: nx,ny,counts(3),imll,jmll
+    class (AbstractRegridder), pointer :: esmf_regridder
+    type(fileMetaData) :: metadata
+    type (NetCDF4_FileFormatter) :: formatter
+    character(len=ESMF_MAXPATHLEN) :: fname
+    !class (AbstractGridFactory), allocatable :: factory
 
 
 ! Begin... 
@@ -419,21 +433,56 @@ contains
 
 
     if (observed_precip) then
-       bundle = ESMF_FieldBundleCreate (NAME='PRECIP', __RC__)
-       call ESMF_FieldBundleSet(bundle, GRID=GRID, __RC__)
 
        call ESMF_ClockGet(CLOCK, currTime=CurrentTime, __RC__)
 
        call ESMF_TimeGet (CurrentTime, yy=year, mm=month, dd=day, h=hr, m=mn, s=se, __RC__)
        call ESMF_TimeSet (CurrentTime, yy=year, mm=month, dd=day, h=hr, m=30, s=0,  __RC__)
+       call fill_grads_template(fname,precip_file,time=currenttime)
+       call formatter%open(trim(fname),pFIO_Read,rc=status)
+       VERIFY_(status)
+       metadata= formatter%read(rc=status)
+       VERIFY_(status)
+       imll = metadata%get_dimension('lon')
+       jmll = metadata%get_dimension('lat')
+       call formatter%close(rc=status)
+       VERIFY_(status)
+      
+       !allocate(factory,source=grid_manager%make_factory(trim(precip_file)))
+       !ll_grid=grid_manager%make_grid(factory) 
 
-       call MAPL_CFIORead ( PRECIP_FILE, CurrentTime, Bundle, NOREAD=.true., __RC__ )
+       call MAPL_MakeDecomposition(nx,ny,rc=status)
+       VERIFY_(status)
+       ll_grid = grid_manager%make_grid(LatLonGridFactory(im_world=imll, jm_world=jmll, lm=72, &
+                 nx=nx,ny=ny,pole='PC',dateline='DC',rc=status))
+       bundle = ESMF_FieldBundleCreate (NAME='DISCHARGE_ADJUST', RC=STATUS)
+       VERIFY_(STATUS)
+       call ESMF_FieldBundleSet(bundle, GRID=ll_grid, RC=STATUS)
+       VERIFY_(STATUS)
+
+       !call ESMF_ClockGet(CLOCK, currTime=CurrentTime, __RC__)
+
+       !call ESMF_TimeGet (CurrentTime, yy=year, mm=month, dd=day, h=hr, m=mn, s=se, __RC__)
+       !call ESMF_TimeSet (CurrentTime, yy=year, mm=month, dd=day, h=hr, m=30, s=0,  __RC__)
+
        call MAPL_CFIORead ( PRECIP_FILE, CurrentTime, Bundle, __RC__ )
 
-       call ESMFL_BundleGetPointerToData ( Bundle, 'PRECTOT', pr_total, __RC__ )
-       call ESMFL_BundleGetPointerToData ( Bundle, 'PRECCON', pr_conv,  __RC__ )
-       call ESMFL_BundleGetPointerToData ( Bundle, 'PRECSNO', pr_snow,  __RC__ )
+       call ESMFL_BundleGetPointerToData ( Bundle, 'PRECTOT', pr_total_ll, __RC__ )
+       call ESMFL_BundleGetPointerToData ( Bundle, 'PRECCON', pr_conv_ll,  __RC__ )
+       call ESMFL_BundleGetPointerToData ( Bundle, 'PRECSNO', pr_snow_ll,  __RC__ )
+
+       call MAPL_GridGet(grid,localcellcountperdim=counts,rc=status)
+       VERIFY_(status)
+       allocate(pr_total(counts(1),counts(2)),pr_conv(counts(1),counts(2)),pr_snow(counts(1),counts(2)))
+       esmf_regridder=>new_regridder_manager%make_regridder(ll_grid,grid,REGRID_METHOD_BILINEAR,rc=status)
+       VERIFY_(status)
+       call esmf_regridder%regrid(pr_total_ll,pr_total,__RC__)
+       call esmf_regridder%regrid(pr_conv_ll,pr_conv,__RC__)
+       call esmf_regridder%regrid(pr_snow_ll,pr_snow,__RC__)
+       if (mapl_am_i_root()) write(*,*)'bmaa chem: ',maxval(pr_total),maxval(pr_conv),maxval(pr_snow)
+
     else
+
        call MAPL_GetPointer ( IMPORT, pr_total, 'TPREC',   __RC__ )
        call MAPL_GetPointer ( IMPORT, pr_conv,  'CN_PRCP', __RC__ )
     end if
@@ -445,11 +494,24 @@ contains
 
 
     if (observed_precip) then
-       call ESMF_FieldBundleDestroy(bundle, __RC__) 
-
        if (associated(pr_total)) deallocate(pr_total)
        if (associated(pr_conv))  deallocate(pr_conv)
        if (associated(pr_snow))  deallocate(pr_snow)
+       deallocate(pr_total_ll,pr_conv_ll,pr_snow_ll)
+       block
+          integer :: nitems,iii
+          type(ESMF_Field) :: field1
+          call ESMF_FieldBundleGet(bundle,fieldCount=nitems)
+          do iii=1,nitems
+             call ESMF_FieldBundleGet(bundle,iii,field1)
+             call ESMF_FieldDestroy(field1,noGarbage=.true.,rc=status)
+             VERIFY_(status)
+          enddo
+       end block
+
+       call ESMF_FieldBundleDestroy(bundle, noGarbage=.true., rc=STATUS)
+       VERIFY_(STATUS)
+
     end if
 
 
