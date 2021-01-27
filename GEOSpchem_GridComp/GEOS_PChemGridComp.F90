@@ -134,10 +134,10 @@ module GEOS_PChemGridCompMod
      real, pointer, dimension(:)         :: LEVS => null()
      real, pointer, dimension(:,:,:,:,:) :: MNPL => null() ! Production rates and loss frequencies
      real, pointer, dimension(:,:,:,:)   :: MNCV => null() ! Concentration (mole fraction)
-!fli2
+
      real, pointer, dimension(:,:,:)   :: H2OprRate => null() ! H2O production rate
      real, pointer, dimension(:,:,:)   :: H2OlsRate => null() ! H2O loss rate 
-!fli2
+
      integer                             :: OX       = 1
      integer                             :: N2O      = 2
      integer                             :: CFC11    = 3
@@ -745,10 +745,10 @@ contains
     integer                                 :: IM, JM, LM
     integer                                 :: dimid, varid, climYears, comm, info
     logical                                 :: Doing_RATs
-!fli2
+
     integer                                 :: H2O_ProdLoss
     logical                                 :: USE_H2O_ProdLoss
-!fli2
+
 
 !=============================================================================
 
@@ -824,12 +824,10 @@ contains
     call MAPL_GetResource(MAPL, PCHEM_STATE%climYears, 'pchem_clim_years:' ,DEFAULT=1, RC=STATUS )
     VERIFY_(STATUS)
 
-!fli2
     call MAPL_GetResource(MAPL, H2O_ProdLoss, 'H2O_ProdLoss:' ,DEFAULT=0, RC=STATUS )
     VERIFY_(STATUS)
 
     USE_H2O_ProdLoss = H2O_ProdLoss /= 0
-!fli2
 
     call MAPL_TimerOn (MAPL,"-Read Header"  )
 
@@ -1005,7 +1003,6 @@ contains
        PCHEM_STATE%MNPL = Z'7FA00000'
     ENDIF
 
-!fli2
     IF(USE_H2O_ProdLoss) THEN
        ALLOCATE(PCHEM_STATE%H2OprRate(PCHEM_STATE%NLATS, PCHEM_STATE%NLEVS, 2), stat=STATUS )
        VERIFY_(STATUS)
@@ -1015,7 +1012,6 @@ contains
        VERIFY_(STATUS)
        PCHEM_STATE%H2OlsRate = Z'7FA00000'
     ENDIF
-!fli2
 
 ! Setting the alarm to ringing will reinitialize all data during first run
 !-------------------------------------------------------------------------
@@ -1161,9 +1157,9 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
   real, allocatable :: PL      (:,:,:)
   real, allocatable :: PROD_INT(:,:,:)
   real, allocatable :: LOSS_INT(:,:,:)
-!fli2
+
   real, allocatable :: LOSS_SWV(:,:,:)
-!fli2
+
   real, allocatable :: PROD    (:,:  )
   real, allocatable :: LOSS    (:,:  )
   real, allocatable :: PROD1   (:,:  )
@@ -1189,10 +1185,9 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
   character(len=ESMF_MAXSTR) :: providerName
   logical                    :: Doing_RATs
   real(ESMF_KIND_R8)         :: dt_r8
-!fli2
+
   logical                    :: USE_H2O_ProdLoss
   integer                    :: H2O_ProdLoss
-!fli2
 
 !=============================================================================
 
@@ -1259,12 +1254,10 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
     CALL ESMF_ClockGet(CLOCK, currTime=CurrTime, RC=STATUS)
     VERIFY_(STATUS)
 
-!fli2
     call MAPL_GetResource(MAPL, H2O_ProdLoss, 'H2O_ProdLoss:' ,DEFAULT=0, RC=STATUS )
     VERIFY_(STATUS)
 
     USE_H2O_ProdLoss = H2O_ProdLoss /= 0
-!fli2
 
 ! Is PCHEM the RATs provider?
 ! ---------------------------
@@ -1288,12 +1281,12 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
     VERIFY_(STATUS)
     allocate(LOSS_INT(IM,JM,LM),stat=STATUS)
     VERIFY_(STATUS)
-!fli2
+
     IF (USE_H2O_ProdLoss) THEN
        allocate(LOSS_SWV(IM,JM,LM),stat=STATUS)
        VERIFY_(STATUS)
     ENDIF
-!fli2
+
     allocate(      PL(IM,JM,LM),stat=STATUS)
     VERIFY_(STATUS)
     allocate(    PROD(IM,NLEVS),stat=STATUS)
@@ -1516,7 +1509,6 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
              endif
 
           ENDIF
-!fli2
 
           STATUS = NF90_CLOSE(UNIT)
           VERIFY_(STATUS)
@@ -1596,13 +1588,13 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 !------
 
     if(MAPL_VerifyFriendly(IMPORT,'Q','CHEMISTRY')) then
-!fli2
+
      IF (USE_H2O_ProdLoss) THEN
        call UPDATE_H2O_PL('H2O'  ,H2O  )
      ELSE
        call UPDATE(PCHEM_STATE%H2O,     'H2O',     H2O    )
      ENDIF
-!fli2
+
     endif
 
 ! Ozone
@@ -1699,11 +1691,11 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
     IF(Doing_RATs) THEN
      deallocate(PROD_INT)
      deallocate(LOSS_INT)
-!fli2
+
      IF (USE_H2O_ProdLoss) THEN
         deallocate(LOSS_SWV)
      ENDIF
-!fli2
+
      deallocate(      PL)
      deallocate(    PROD)
      deallocate(    LOSS)
@@ -1860,7 +1852,6 @@ contains
     return
   end subroutine UPDATE
 
-!fli2
   subroutine UPDATE_H2O_PL(NAME,XX)
 
     character(len=*), intent(IN) :: NAME
@@ -1936,7 +1927,6 @@ contains
 
     return
   end subroutine UPDATE_H2O_PL
-!fli2
 
 end subroutine RUN
 
