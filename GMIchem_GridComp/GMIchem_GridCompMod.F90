@@ -907,6 +907,27 @@ CONTAINS
                                                        RC=STATUS  )
     VERIFY_(STATUS)
 
+! Overpass fields for AIRMASS  (set in GmiEmiss_GridCompClassMod.F90)
+! ----------------------------
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+        SHORT_NAME         = 'OVP10_AIRMASS',                           &
+        LONG_NAME          = 'mass_of_air_in_layer_10am_local',         &
+        UNITS              = 'kg m-2',                                  &
+        DIMS               = MAPL_DimsHorzVert,                         &
+        VLOCATION          = MAPL_VLocationCenter,                      &
+                                                       RC=STATUS  )
+    VERIFY_(STATUS)
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+        SHORT_NAME         = 'OVP14_AIRMASS',                           &
+        LONG_NAME          = 'mass_of_air_in_layer_2pm_local',          &
+        UNITS              = 'kg m-2',                                  &
+        DIMS               = MAPL_DimsHorzVert,                         &
+        VLOCATION          = MAPL_VLocationCenter,                      &
+                                                       RC=STATUS  )
+    VERIFY_(STATUS)
+
 #include "GMICHEM_ExportSpec___.h"
 #include "Deposition_ExportSpec___.h"
 #include "Reactions_ExportSpec___.h"
@@ -1670,6 +1691,8 @@ CONTAINS
    CALL extract_(GC, clock, chemReg, gcGMI, w_c, nymd, nhms, gmiDt, runDt, STATUS)
    VERIFY_(STATUS)
 
+  dtInverse = 1.00/runDt
+
 !  Layer interface pressures
 !  -------------------------
    CALL MAPL_GetPointer(impChem, PLE, 'PLE', __RC__)
@@ -2259,7 +2282,6 @@ CONTAINS
     k = 1
     m = ChemReg%i_GMI
     n = ChemReg%j_GMI
-    dtInverse = 1.00/runDt
 
     DO i = m,n
 
