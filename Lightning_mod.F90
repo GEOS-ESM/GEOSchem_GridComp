@@ -913,8 +913,8 @@ end subroutine getLightning
       ALLOCATE(ltop2d (1:IM, 1:JM),   STAT=RC)
 
       ! edge layer fields
-      pleHemco(:,:,1:KM) = ple(:,:,KM:1:-1)
-      cnvMfcHemco(:,:,1:KM) = cnvMfc(:,:,KM:1:-1)
+      pleHemco(:,:,1:KM) = ple(:,:,LM:0:-1)
+      cnvMfcHemco(:,:,1:KM) = cnvMfc(:,:,LM:0:-1)
 
       ! fields at grid box center
       airTempHemco(:,:,1:LM) = airTemp(:,:,LM:1:-1)
@@ -925,7 +925,7 @@ end subroutine getLightning
 
 
       do levCount=1,LM
-         gridBoxHeightHemco(:,:,levCount) = geoPotHeight(:,:,levCount) - geoPotHeight(:,:,levCount+1)
+         gridBoxHeightHemco(:,:,levCount) = geoPotHeight(:,:,levCount-1) - geoPotHeight(:,:,levCount)
       enddo
       gridBoxHeightHemco2(:,:,1:LM) = gridBoxHeightHemco(:,:,LM:1:-1)
 
