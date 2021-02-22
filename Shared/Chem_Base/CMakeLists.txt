@@ -41,7 +41,7 @@ foreach (exe Chem_Aod.x Chem_Aod3d.x ctl_crst.x Chem_BundleToG5rs.x reff_calcula
 endforeach ()
 
 # Copy RC files to build tree
-file (GLOB_RECURSE rc_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.rc)
+file (GLOB_RECURSE rc_files CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.rc)
 foreach ( file ${rc_files} )
    get_filename_component( dir ${file} DIRECTORY )
    install( FILES ${file} DESTINATION etc/${dir} )
