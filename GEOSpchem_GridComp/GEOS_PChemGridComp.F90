@@ -1749,18 +1749,6 @@ contains
        end if
     endif
 
-!   if ( ANY(XX < 0.0) ) then
-!     do l=1,lm
-!     do j=1,jm
-!     do i=1,im
-!       if ( XX(i,j,l) < 0.0 ) then
-!         print*,'NEG '//trim(NAME)//' AT LEV=', l, XX(i,j,l)
-!       end if
-!     enddo
-!     enddo
-!     enddo
-!   endif
- 
     call MAPL_GetResource(MAPL,   TAU,LABEL=trim(NAME)//"_RELAXTIME:", DEFAULT=0.0 ,RC=STATUS)
     VERIFY_(STATUS)
 
@@ -1839,29 +1827,6 @@ contains
           LOSS_INT = (1./TAU) * max( min( (PCRIT   -PL)/DELP, 1.0), 0.0)
        endif
 
-!      if ( ANY(PROD_INT < 0.0) ) then
-!        do l=1,lm
-!        do j=1,jm
-!        do i=1,im
-!          if ( PROD_INT(i,j,l) < 0.0 ) then
-!            print*,'NEG PROD_INT '//trim(NAME)//' at lev=', l, PROD_INT(i,j,l)
-!          end if
-!        enddo
-!        enddo
-!        enddo
-!      endif
-!      if ( ANY(LOSS_INT < 0.0) ) then
-!        do l=1,lm
-!        do j=1,jm
-!        do i=1,im
-!          if ( LOSS_INT(i,j,l) < 0.0 ) then
-!            print*,'NEG LOSS_INT '//trim(NAME)//' at lev=', l, LOSS_INT(i,j,l)
-!          end if
-!        enddo
-!        enddo
-!        enddo
-!      endif
-
        PROD_INT = LOSS_INT*PROD_INT
 
        XX = (XX + DT*PROD_INT) / (1.0 + DT*LOSS_INT)
@@ -1883,18 +1848,6 @@ contains
        VERIFY_(STATUS)
        if(associated(H2O_TEND)) H2O_TEND = (PROD_INT - LOSS_INT*XX)
     end if
-
-!   if ( ANY(XX < 0.0) ) then
-!     do l=1,lm
-!     do j=1,jm
-!     do i=1,im
-!       if ( XX(i,j,l) < 0.0 ) then
-!         print*,'NEG '//trim(NAME)//' at lev=', l, XX(i,j,l)
-!       end if
-!     enddo
-!     enddo
-!     enddo
-!   endif
 
     return
   end subroutine UPDATE
