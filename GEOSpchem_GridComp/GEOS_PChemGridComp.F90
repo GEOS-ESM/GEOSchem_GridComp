@@ -1748,6 +1748,18 @@ contains
           return
        end if
     endif
+
+!   if ( ANY(XX < 0.0) ) then
+!     do l=1,lm
+!     do j=1,jm
+!     do i=1,im
+!       if ( XX(i,j,l) < 0.0 ) then
+!         print*,'NEG '//trim(NAME)//' AT LEV=', l, XX(i,j,l)
+!       end if
+!     enddo
+!     enddo
+!     enddo
+!   endif
  
     call MAPL_GetResource(MAPL,   TAU,LABEL=trim(NAME)//"_RELAXTIME:", DEFAULT=0.0 ,RC=STATUS)
     VERIFY_(STATUS)
@@ -1777,12 +1789,12 @@ contains
 
        do j=1,jm
           do l=1,nlevs
-             call MAPL_INTERP( PROD(:,L), LATS(:,J), Prod1(:,L), PCHEM_STATE%LATS)
-             call MAPL_INTERP( LOSS(:,L), LATS(:,J), Loss1(:,L), PCHEM_STATE%LATS)
+             call INTERP_NO_EXTRAP( PROD(:,L), LATS(:,J), Prod1(:,L), PCHEM_STATE%LATS)
+             call INTERP_NO_EXTRAP( LOSS(:,L), LATS(:,J), Loss1(:,L), PCHEM_STATE%LATS)
           enddo
           do i=1,im
-             call MAPL_INTERP( PROD_INT(i,j,:), PL(i,j,:), PROD(i,:), PCHEM_STATE%LEVS)
-             call MAPL_INTERP( LOSS_INT(i,j,:), PL(i,j,:), LOSS(i,:), PCHEM_STATE%LEVS)
+             call INTERP_NO_EXTRAP( PROD_INT(i,j,:), PL(i,j,:), PROD(i,:), PCHEM_STATE%LEVS)
+             call INTERP_NO_EXTRAP( LOSS_INT(i,j,:), PL(i,j,:), LOSS(i,:), PCHEM_STATE%LEVS)
           enddo
        end do
 
@@ -1794,10 +1806,10 @@ contains
 
        do j=1,jm
           do l=1,nlevs
-             call MAPL_INTERP( PROD(:,L), LATS(:,J), Prod1(:,L), PCHEM_STATE%LATS)
+             call INTERP_NO_EXTRAP( PROD(:,L), LATS(:,J), Prod1(:,L), PCHEM_STATE%LATS)
           enddo
           do i=1,im
-             call MAPL_INTERP( PROD_INT(i,j,:), PL(i,j,:), PROD(i,:), PCHEM_STATE%LEVS)
+             call INTERP_NO_EXTRAP( PROD_INT(i,j,:), PL(i,j,:), PROD(i,:), PCHEM_STATE%LEVS)
           enddo
        end do
 
@@ -1827,6 +1839,29 @@ contains
           LOSS_INT = (1./TAU) * max( min( (PCRIT   -PL)/DELP, 1.0), 0.0)
        endif
 
+!      if ( ANY(PROD_INT < 0.0) ) then
+!        do l=1,lm
+!        do j=1,jm
+!        do i=1,im
+!          if ( PROD_INT(i,j,l) < 0.0 ) then
+!            print*,'NEG PROD_INT '//trim(NAME)//' at lev=', l, PROD_INT(i,j,l)
+!          end if
+!        enddo
+!        enddo
+!        enddo
+!      endif
+!      if ( ANY(LOSS_INT < 0.0) ) then
+!        do l=1,lm
+!        do j=1,jm
+!        do i=1,im
+!          if ( LOSS_INT(i,j,l) < 0.0 ) then
+!            print*,'NEG LOSS_INT '//trim(NAME)//' at lev=', l, LOSS_INT(i,j,l)
+!          end if
+!        enddo
+!        enddo
+!        enddo
+!      endif
+
        PROD_INT = LOSS_INT*PROD_INT
 
        XX = (XX + DT*PROD_INT) / (1.0 + DT*LOSS_INT)
@@ -1848,6 +1883,18 @@ contains
        VERIFY_(STATUS)
        if(associated(H2O_TEND)) H2O_TEND = (PROD_INT - LOSS_INT*XX)
     end if
+
+!   if ( ANY(XX < 0.0) ) then
+!     do l=1,lm
+!     do j=1,jm
+!     do i=1,im
+!       if ( XX(i,j,l) < 0.0 ) then
+!         print*,'NEG '//trim(NAME)//' at lev=', l, XX(i,j,l)
+!       end if
+!     enddo
+!     enddo
+!     enddo
+!   endif
 
     return
   end subroutine UPDATE
@@ -1885,12 +1932,12 @@ contains
 
     do j=1,jm
        do l=1,nlevs
-          call MAPL_INTERP( PROD(:,L), LATS(:,J), Prod1(:,L), PCHEM_STATE%LATS)
-          call MAPL_INTERP( LOSS(:,L), LATS(:,J), Loss1(:,L), PCHEM_STATE%LATS)
+          call INTERP_NO_EXTRAP( PROD(:,L), LATS(:,J), Prod1(:,L), PCHEM_STATE%LATS)
+          call INTERP_NO_EXTRAP( LOSS(:,L), LATS(:,J), Loss1(:,L), PCHEM_STATE%LATS)
        enddo
        do i=1,im
-          call MAPL_INTERP( PROD_INT(i,j,:), PL(i,j,:), PROD(i,:), PCHEM_STATE%LEVS)
-          call MAPL_INTERP( LOSS_INT(i,j,:), PL(i,j,:), LOSS(i,:), PCHEM_STATE%LEVS)
+          call INTERP_NO_EXTRAP( PROD_INT(i,j,:), PL(i,j,:), PROD(i,:), PCHEM_STATE%LEVS)
+          call INTERP_NO_EXTRAP( LOSS_INT(i,j,:), PL(i,j,:), LOSS(i,:), PCHEM_STATE%LEVS)
        enddo
     end do
 
@@ -2077,5 +2124,32 @@ end subroutine RUN
 
   end subroutine AINC_UPDATE
 
+  subroutine INTERP_NO_EXTRAP( OY, OX, IY, IX )
+
+!   A variation of INTERP_LIN_1111_1 from MAPL_InterpMod.F90
+!   in which the interpolation is not allowed to extrapolate.
+!   ASSUMPTION: Values in IX are INCREASING (MAPL assumes this too)
+
+    real,     intent(OUT) :: OY(:)
+    real,     intent(IN ) :: OX(:)
+    real,     intent(IN ) :: IY(:)
+    real,     intent(IN ) :: IX(:)
+
+    integer max_index
+
+    max_index = size(IX)
+
+    call MAPL_INTERP( OY, OX, IY, IX )
+
+    where ( OX < IX(1) )
+      OY = IY(1)
+    end where
+
+    where ( OX > IX(max_index) )
+      OY = IY(max_index)
+    end where
+
+    return
+  end subroutine INTERP_NO_EXTRAP
 
 end module GEOS_PChemGridCompMod
