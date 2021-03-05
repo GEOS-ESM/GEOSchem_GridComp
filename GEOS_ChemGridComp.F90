@@ -235,7 +235,7 @@ contains
 ! Sanity checks:
 ! --------------
     if (myState%enable_GAAS) then
-       _ASSERT(myState%enable_GOCART,'needs informative message')
+       _ASSERT(myState%enable_GOCART2G,'needs informative message')
     end if
 
 ! Create children's gridded components and invoke their SetServices
@@ -475,6 +475,11 @@ contains
           ELSE
               __raise__(MAPL_RC_ERROR,"Cannot have GAAS enabled without GOCART")
           ENDIF
+
+     call MAPL_AddConnectivity ( GC,                              &
+          SHORT_NAME  = (/'AERO_RAD'/),                           &
+          DST_ID      =  GAAS,                                    &
+          SRC_ID      =  GOCART2G, __RC__ )
   ENDIF
 
 

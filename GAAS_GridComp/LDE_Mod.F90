@@ -597,7 +597,7 @@ merid:        do j = 1, JM_World
 
      allocate(x_d(im,jm,self%ks:km),  __STAT__)
 
-!    Determine convenience indices
+!    Determine convenience indices    ! REMOVE ifAOD, idAOD, now 2d
 !    -----------------------------
      ifAOD = MAPL_SimpleBundleGetIndex(bY_f,'AOD',3,__RC__)
      idAOD = MAPL_SimpleBundleGetIndex(bY_d,'AOD',3,__RC__)
@@ -730,7 +730,7 @@ merid:        do j = 1, JM_World
      end if
 
      do s = 1, bQ_f%n3d
-        if ( .not. isAerosol_(trim(bQ_f%r3(s)%name)) ) cycle
+        if ( .not. isAerosol_(trim(bQ_f%r3(s)%name)) ) cycle ! REMOVE, dont need this. It's only aerosols to begin with.
 
         if ( MAPL_AM_I_Root() .and. verbose_ ) &
            print *, ' [ ] Working on <'//trim(bQ_f%r3(s)%name)//'>'
@@ -1473,6 +1473,10 @@ merid:     do j = 1, JM_World
    end subroutine LDE_Projector1c_Cubed_
 
 !.........................................................................
+
+
+! WE CAN REMOVE THIS FUNCTION. We only have aerosols in our simple bundles. Nothing gets passed to LDE that
+! is not an aerosol.
 
    logical function isAerosol_ ( name )
 
