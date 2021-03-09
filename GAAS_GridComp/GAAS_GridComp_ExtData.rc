@@ -1,0 +1,10 @@
+PrimaryExports%%
+# -------------|-------|-------|--------|----------------------|--------|--------|-------------|----------|
+#  Import      |       |       | Regrid |        Refresh       | OffSet | Scale  | Variable On |   File   |
+#  Name        | Units | Clim  | Method |     Time Template    | Factor | Factor |     File    | Template |
+# -------------|-------|-------|--------|----------------------|--------|--------|-------------|----------|
+
+  aod_a           '1'     N        N               F0            none     none       AOD    /discover/nobackup/projects/gmao/merra2/data/chem/d5124_m2_jan10/Y%y4/M%m2/d5124_m2_jan10.aod_a.sfc.%y4%m2%d2_%h2%n2.nc4  
+  aod_f           '1'     N        N               F0            none     none       AOD    /discover/nobackup/projects/gmao/merra2/data/chem/d5124_m2_jan10/Y%y4/M%m2/d5124_m2_jan10.aod_f.sfc.%y4%m2%d2_%h2%n2.nc4
+  aod_k           '1'     N        N               F0            none     none       AOD    /discover/nobackup/projects/gmao/merra2/data/chem/d5124_m2_jan10/Y%y4/M%m2/d5124_m2_jan10.aod_k.sfc.%y4%m2%d2_%h2%n2.nc4
+%%

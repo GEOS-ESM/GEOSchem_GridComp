@@ -235,7 +235,7 @@ contains
 ! Sanity checks:
 ! --------------
     if (myState%enable_GAAS) then
-       _ASSERT(myState%enable_GOCART,'needs informative message')
+       _ASSERT(myState%enable_GOCART2G,'needs informative message')
     end if
 
 ! Create children's gridded components and invoke their SetServices
@@ -452,26 +452,10 @@ contains
           SHORT_NAME  = (/ 'AIRDENS ', 'DELP    ' /), &
           DST_ID = GAAS, SRC_ID = CHEMENV, __RC__  )
           IF(myState%enable_GOCART2G) then
-              CALL MAPL_AddConnectivity ( GC, &
-                   SRC_NAME  = (/ 'DU', &
-                                  'SS', &
-                                  'NO3an1', 'NO3an2', 'NO3an3', &
-                                  'SO4' /), &
-                   DST_NAME  = (/ 'DU', &
-                                  'SS', &
-                                  'NO3an1', 'NO3an2', 'NO3an3', &
-                                  'SO4' /), &
-                   DST_ID = GAAS, SRC_ID = GOCART2G, __RC__  )
-
-              CALL MAPL_AddConnectivity ( GC, &
-                   SRC_NAME  = (/ 'CAphobicCA.oc','CAphilicCA.oc' /), &
-                   DST_NAME  = (/ 'OCphobic','OCphilic' /), &
-                   DST_ID = GAAS, SRC_ID = GOCART2G, __RC__  )
-
-              CALL MAPL_AddConnectivity ( GC, &
-                   SRC_NAME  = (/ 'CAphobicCA.bc','CAphilicCA.bc' /), &
-                   DST_NAME  = (/ 'BCphobic','BCphilic' /), &
-                   DST_ID = GAAS, SRC_ID = GOCART2G, __RC__  )
+             call MAPL_AddConnectivity ( GC,        &
+                SHORT_NAME  = (/'AERO_RAD'/),       &
+                DST_ID      =  GAAS,                &
+                SRC_ID      =  GOCART2G, __RC__ )
           ELSE
               __raise__(MAPL_RC_ERROR,"Cannot have GAAS enabled without GOCART")
           ENDIF

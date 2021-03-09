@@ -179,6 +179,15 @@ CONTAINS
 
 # include "GAAS_ImportSpec___.h"
 
+    call MAPL_AddImportSpec(GC,                                   &
+       LONG_NAME  = 'aerosols',                                   &
+       UNITS      = 'kg kg-1',                                    &
+       SHORT_NAME = 'AERO_RAD',                                   &
+       DIMS       = MAPL_DimsHorzVert,                            &
+       VLOCATION  = MAPL_VLocationCenter,                         &
+       DATATYPE   = MAPL_StateItem,                               &
+       RESTART    = MAPL_RestartSkip, __RC__)
+
 ! !INTERNAL STATE: (none for now)
 
 ! !EXTERNAL STATE:
@@ -229,8 +238,8 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !
-!  30Nov2010 da Silva  Initial version.
-!
+!  30Nov2010 da Silva   Initial version.
+!  12Feb2021 E. Sherman Refactored for GOCART2G. Removed GEOS-4 legacy constructs.
 !EOP
 !-------------------------------------------------------------------------
 
@@ -238,6 +247,9 @@ CONTAINS
     type(ESMF_Grid)               :: Grid     ! Grid
     type(ESMF_Config)             :: CF       ! Universal Config 
     type(ESMF_Time)               :: Time     ! Current time
+
+    type(ESMF_State)              :: aero_rad ! Aersol state
+    type(ESMF_FieldBundle)        :: aeroBundle ! serialized aerosol bundle
 
     integer                       :: nymd, nhms  ! date, time
 
@@ -248,9 +260,8 @@ CONTAINS
 
     character(len=ESMF_MAXSTR)    :: comp_name
 
-                              __Iam__('Initialize_')
+    __Iam__('Initialize_')
 
-  
 !  Get my name and set-up traceback handle
 !  ---------------------------------------
    call ESMF_GridCompGet( GC, name=COMP_NAME, __RC__ )
@@ -273,12 +284,12 @@ CONTAINS
 
 !  Registries
 !  ----------
-   self%aerReg = Chem_RegistryCreate ( rcfile='GAAS_AerRegistry.rc', __RC__ )
-   self%aodReg = Chem_RegistryCreate ( rcfile='GAAS_AodRegistry.rc', __RC__ )
+   self%aerReg = Chem_RegistryCreate ( rcfile='GAAS_AerRegistry.rc', __RC__ )  ! REMOVE
+   self%aodReg = Chem_RegistryCreate ( rcfile='GAAS_AodRegistry.rc', __RC__ )  ! REMOVE
 
 !  Mie tables, etc
 !  ---------------
-   self%Mie = Chem_MieCreate(self%CF, chemReg=self%aerReg, __RC__)
+   self%Mie = Chem_MieCreate(self%CF, chemReg=self%aerReg, __RC__)   !REMOVE
 
 !  Grid size, etc
 !  --------------
@@ -313,22 +324,76 @@ CONTAINS
    end if
    call ESMF_GridValidate(self%aodGrid,__RC__)
 
+!  Prepare aerosol SimpleBundle
+!  -----------------------------
+!  Execute AERO_RAD's serialize_bundle method
+   call ESMF_StateGet(IMPORT, 'AERO_RAD', aero_rad, __RC__)
+   call ESMF_MethodExecute(aero_rad, label="serialize_bundle", __RC__)
+   call ESMF_StateGet(aero_rad, 'serialized_aerosolBundle', aeroBundle, __RC__) ! change aeroBundle to aeroSerialBundle
+
+!  Create SimpleBundle from aeroBundle
+!  Associate SimpleBundle with concentration analysis/background
+   self%q_f = MAPL_SimpleBundleCreate(aeroBundle, name='q_f', __RC__)
+   self%q_a = MAPL_SimpleBundleCreate(aeroBundle, name='q_q', __RC__)
+!call MAPL_SimpleBundlePrint (self%q_f)
+!call MAPL_SimpleBundlePrint (self%q_a)
+
 !  Create AOD Simple Bundles
 !  -------------------------
-   self%y_f = Chem_SimpleBundleCreate ('aod_bkg', self%aodReg, self%aodGrid, &
-                                        Levs=1.e9*self%Mie%channels,         &
-                                        LevUnits="nm", delp=null(), __RC__) 
-   self%y_a = Chem_SimpleBundleCreate ('aod_ana', self%aodReg, self%aodGrid, &
-                                        Levs=1.e9*self%Mie%channels,         &
-                                        LevUnits="nm", delp=null(), __RC__) 
-   self%y_d = Chem_SimpleBundleCreate ('aod_inc', self%aodReg, self%aodGrid, &
-                                        Levs=1.e9*self%Mie%channels,         &
-                                        LevUnits="nm", delp=null(), __RC__) 
+   self%y_f = MAPL_SimpleBundleCreate (self%aodGrid, rc=status, name='y_f')
+   self%y_f%n2d = 1
+   allocate(self%y_f%r2(1), __STAT__)
+   self%y_f%r2(1)%name='aod_bkg'
+
+   self%y_a = MAPL_SimpleBundleCreate (self%aodGrid, rc=status, name='y_a')
+   self%y_a%n2d = 1
+   allocate(self%y_a%r2(1), __STAT__)
+   self%y_a%r2(1)%name='aod_ana'
+
+   self%y_d = MAPL_SimpleBundleCreate (self%aodGrid, rc=status, name='y_d')
+   self%y_d%n2d = 1
+   allocate(self%y_d%r2(1), __STAT__)
+   self%y_d%r2(1)%name='aod_inc'
+
+!  Create AOD Simple Bundles from off-line analysis
+!  ------------------------------------------------
+   self%z_f = MAPL_SimpleBundleCreate (self%aodGrid, rc=status, name='z_f')
+   self%z_f%n2d = 1
+   allocate(self%z_f%r2(1), __STAT__)
+!   self%z_f%r2(1)%name='aod_bkg'
+
+   self%z_a = MAPL_SimpleBundleCreate (self%aodGrid, rc=status, name='z_a')
+   self%z_a%n2d = 1
+   allocate(self%z_a%r2(1), __STAT__)
+
+   self%z_k = MAPL_SimpleBundleCreate (self%aodGrid, rc=status, name='z_k')
+   self%z_k%n2d = 1
+   allocate(self%z_k%r2(1), __STAT__)
+
+!if(mapl_am_i_root()) then
+!  print*,'GAAS self%y_f: '
+!  call MAPL_SimpleBundlePrint (self%y_f)
+!  print*,'GAAS self%y_a: '
+!  call MAPL_SimpleBundlePrint (self%y_a)
+!  print*,'GAAS self%y_d: '
+!  call MAPL_SimpleBundlePrint (self%y_d)
+!end if
+
+
+!   self%y_f = Chem_SimpleBundleCreate ('aod_bkg', self%aodReg, self%aodGrid, & !Use GOCART2G::run_aerosol_optics to compute AODs
+!                                        Levs=1.e9*self%Mie%channels,         &
+!                                        LevUnits="nm", delp=null(), __RC__) 
+!   self%y_a = Chem_SimpleBundleCreate ('aod_ana', self%aodReg, self%aodGrid, &
+!                                        Levs=1.e9*self%Mie%channels,         &
+!                                        LevUnits="nm", delp=null(), __RC__) 
+!   self%y_d = Chem_SimpleBundleCreate ('aod_inc', self%aodReg, self%aodGrid, &
+!                                        Levs=1.e9*self%Mie%channels,         &
+!                                        LevUnits="nm", delp=null(), __RC__) 
 
 !  Associate Import state with concentration analysis/background
 !  -------------------------------------------------------------
-   self%q_f = MAPL_SimpleBundleCreate(IMPORT,__RC__)
-   self%q_a = MAPL_SimpleBundleCreate(IMPORT,__RC__) ! Check for Friendlies!!!
+!   self%q_f = MAPL_SimpleBundleCreate(IMPORT,__RC__)
+!   self%q_a = MAPL_SimpleBundleCreate(IMPORT,__RC__) ! Check for Friendlies!!!
 
 !  Create LDE object
 !  -----------------
@@ -411,6 +476,12 @@ CONTAINS
     !(stassi,14feb2012)--character(len=ESMF_MAXSTR)    :: TEMPLATE, filename, expid
     character(len=256)            :: TEMPLATE, filename, expid
 
+    type(ESMF_State)              :: aero_rad ! Aersol state
+    character(len=ESMF_MAXSTR)    :: fieldName
+    real, pointer, dimension(:,:) :: ptr2d
+    real, pointer, dimension(:,:,:) :: ptr3d
+    real, dimension(:,:), allocatable, target :: aodInt
+
 #   include "GAAS_DeclarePointer___.h"
 
                                 __Iam__('Run_')
@@ -443,8 +514,8 @@ CONTAINS
    analysis_time = ESMF_AlarmIsRinging(Alarm,__RC__)
 #endif
 
-   call ESMF_ClockGetAlarm(Clock,'PredictorActive',Predictor_Alarm,__RC__)
-   PREDICTOR_STEP = ESMF_AlarmIsRinging( Predictor_Alarm,__RC__)
+   call ESMF_ClockGetAlarm(Clock,'PredictorActive',Predictor_Alarm,__RC__) ! Figure out what these alarms are doing!!!
+   PREDICTOR_STEP = ESMF_AlarmIsRinging( Predictor_Alarm,__RC__)           ! probably should use EMSF_Alarms rather than analysis_time
 
    call ESMF_ClockGetAlarm(Clock,'ReplayShutOff',ReplayShutOff_Alarm,__RC__)
    ReplayShutOff  = ESMF_AlarmIsRinging( ReplayShutOff_Alarm,__RC__)
@@ -469,20 +540,20 @@ CONTAINS
 
 !  If desired, just bail out if analysis file is not there
 !  -------------------------------------------------------
-   if ( self%no_fuss ) then
-        call ESMF_ConfigGetAttribute(self%CF, expid, Label='EXPID:', default='unknown', __RC__)
-        call ESMF_ConfigGetAttribute(self%CF, template, Label='aod_ana_filename:', __RC__)
-        call StrTemplate ( filename, template, xid=expid, nymd=nymd, nhms=nhms )        
-        inquire ( file=trim(filename), exist=fexists )
-        if ( .not. fexists ) then
-           if (MAPL_AM_I_ROOT()) then
-              PRINT *, TRIM(Iam)//': Ignoring Aerosol Assimilation at ', nymd, nhms
-              PRINT *, TRIM(Iam)//': Cannot find AOD analysis file ', trim(filename)
-              PRINT *,' '
-           end if
-           RETURN_(ESMF_SUCCESS)
-        end if
-     end if
+!   if ( self%no_fuss ) then
+!        call ESMF_ConfigGetAttribute(self%CF, expid, Label='EXPID:', default='unknown', __RC__)
+!        call ESMF_ConfigGetAttribute(self%CF, template, Label='aod_ana_filename:', __RC__)
+!        call StrTemplate ( filename, template, xid=expid, nymd=nymd, nhms=nhms )        
+!        inquire ( file=trim(filename), exist=fexists )
+!        if ( .not. fexists ) then
+!           if (MAPL_AM_I_ROOT()) then
+!              PRINT *, TRIM(Iam)//': Ignoring Aerosol Assimilation at ', nymd, nhms
+!              PRINT *, TRIM(Iam)//': Cannot find AOD analysis file ', trim(filename)
+!              PRINT *,' '
+!           end if
+!           RETURN_(ESMF_SUCCESS)
+!        end if
+!     end if
 
 !  OK, let's assimilate the AOD analysis
 !  -------------------------------------
@@ -490,6 +561,7 @@ CONTAINS
       PRINT *, TRIM(Iam)//': Starting Aerosol Assimilation at ', nymd, nhms
       PRINT *,' '
    end if
+
 
 !  Run MAPL Generic
 !  ----------------
@@ -499,23 +571,70 @@ CONTAINS
 !  ---------------------------------------------
 #  include "GAAS_GetPointer___.h"
 
+!  Retrieve AOD from AERO_RAD state and fill SimpleBundle
+!  ------------------------------------------------------
+   call ESMF_StateGet(import, 'AERO_RAD', aero_rad, __RC__)
+
+!  Set RH for aerosol optics
+   call ESMF_AttributeGet(aero_rad, name='relative_humidity_for_aerosol_optics', value=fieldName, __RC__)
+   if (fieldName /= '') then
+      call MAPL_GetPointer(aero_rad, ptr3d, trim(fieldName), __RC__)
+      ptr3d = rh2
+   end if
+
+   call ESMF_AttributeGet(aero_rad, name='air_pressure_for_aerosol_optics', value=fieldName, __RC__)
+   if (fieldName /= '') then
+      call MAPL_GetPointer(aero_rad, ptr3d, trim(fieldName), __RC__)
+      ptr3d = ple
+   end if
+
+   ! Set wavelength at 550nm (550 should be a parameter called "monochromatic_wavelength_nm" defined in GAAS)
+   call ESMF_AttributeSet(aero_rad, name='wavelength_for_aerosol_optics', value=self%channel*1.0e-9, __RC__)
+
+   ! execute the aero provider's optics method
+   call ESMF_MethodExecute(aero_rad, label="get_monochromatic_aop", __RC__)
+
+   ! Retrieve AOD from AERO_RAD
+   allocate(aodInt(ubound(rh2,1), ubound(rh2,2)), __STAT__)
+   aodInt = 0.0
+   call ESMF_AttributeGet(aero_rad, name='monochromatic_extinction_in_air_due_to_ambient_aerosol', value=fieldName, __RC__)
+   if (fieldName /= '') then
+      call MAPL_GetPointer(aero_rad, ptr2d, trim(fieldName), __RC__)
+      aodInt = ptr2d
+   end if
+
+!  Set AOD value in y_f
+!   self%y_f%r2(1)%name='aod'
+   self%y_f%r2(1)%qr4 => aodInt
+   self%y_f%r2(1)%q => self%y_f%r2(1)%qr4
+
+if(mapl_am_i_root()) then
+  print*,'GAAS aod              = ',sum(aodInt)
+  print*,'GAAS sum(y_f%r2(1)%q) = ',sum(self%y_f%r2(1)%q)
+end if
+
 !  Calculate on-line AOD
 !  ---------------------
-   call Chem_AodCalculator (self%y_f, self%q_f, self%Mie, self%verbose, __RC__)
+!   call Chem_AodCalculator (self%y_f, self%q_f, self%Mie, self%verbose, __RC__)  !Replace with AERO_RAD callback to compute AOD's
 
    if ( self%verbose ) then
        call MAPL_SimpleBundlePrint(self%y_f)
        call MAPL_SimpleBundlePrint(self%q_f)
    end if
 
+!~~~~~~~ These bundles are created in Initialize now ~~~~~~~~~~~~~~
 !  Read off-line AOD analysis, background and averaging kernel
 !  ----------------------------------------------------------- 
-   self%z_f = Chem_SimpleBundleRead (self%CF, 'aod_bkg_filename', self%aodGrid, & 
-                                     time=Time, only_vars='AOD', __RC__ )
-   self%z_a = Chem_SimpleBundleRead (self%CF, 'aod_ana_filename', self%aodGrid, &
-                                     time=Time, only_vars='AOD',  __RC__ )
-   self%z_k = Chem_SimpleBundleRead (self%CF, 'aod_avk_filename', self%aodGrid, &
-                                     time=Time, only_vars='AOD', __RC__ )
+!   self%z_f = Chem_SimpleBundleRead (self%CF, 'aod_bkg_filename', self%aodGrid, &    !Make an ExtData for GAAS, where these files are rea with a frequency of 3 hours.
+!                                     time=Time, only_vars='AOD', __RC__ )
+!   self%z_a = Chem_SimpleBundleRead (self%CF, 'aod_ana_filename', self%aodGrid, &
+!                                     time=Time, only_vars='AOD',  __RC__ )
+!   self%z_k = Chem_SimpleBundleRead (self%CF, 'aod_avk_filename', self%aodGrid, &
+!                                     time=Time, only_vars='AOD', __RC__ )
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+!call MAPL_GetPointer(IMPORT, ptr2d, 'aod_a', __RC__)
+!if(mapl_am_i_root()) print*,'GAAS ptr2d = ',sum(ptr2d)
 
 !  Print summary of input
 !  ----------------------
@@ -528,8 +647,8 @@ CONTAINS
 !  Because the off-line analysis may have other fields in the Bundle,
 !  we explicitly look for the AOD index to be safe
 !  -----------------------------------------------------------------
-   izAOD = MAPL_SimpleBundleGetIndex(self%z_f,'AOD',3,__RC__)
-   iyAOD = MAPL_SimpleBundleGetIndex(self%y_f,'AOD',3,__RC__)
+   izAOD = MAPL_SimpleBundleGetIndex(self%z_f,'AOD',3,__RC__)           !REMOVE, this should just be 1
+   iyAOD = MAPL_SimpleBundleGetIndex(self%y_f,'AOD',3,__RC__)           !REMOVE, this should just be 1
    _ASSERT(iyAOD==1,'needs informative message') ! what we have created must have only AOD
 
 !  Convert AOD to Log(AOD+eps) for A.K. Adjustment
@@ -554,6 +673,13 @@ CONTAINS
    if ( self%verbose ) then
        call MAPL_SimpleBundlePrint(self%y_d)
    end if
+
+#if 0
+
+!  ADD BROWN CARBON!!!!
+! Make a new callback
+! get_mixR(aerosol_state, 'dust') this returns sum of all dust bins
+!    same for all other aerosols
 
 !  Handle 3D exports (save bkg for increments)
 !  -------------------------------------------
@@ -591,6 +717,7 @@ CONTAINS
    if ( associated(bcinc) ) bcinc = bcphobic + bcphilic - bcinc
    if ( associated(ocinc) ) ocinc = ocphobic + ocphilic - ocinc
    if ( associated(suinc) ) suinc = so4 - suinc
+#endif
 
 #ifdef PRINT_STATES
 
@@ -603,6 +730,7 @@ CONTAINS
 
 #endif
 
+
 ! Clean-up
 ! --------
     call MAPL_SimpleBundleDestroy(self%z_f, __RC__)
@@ -612,6 +740,8 @@ CONTAINS
 !  Stop timers
 !  ------------
    call MAPL_TimerOff( MAPL, "TOTAL")
+
+if (mapl_am_i_root()) print*,'GAAS finished!'
 
 !  All done
 !  --------
