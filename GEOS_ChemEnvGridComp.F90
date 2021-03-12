@@ -514,7 +514,7 @@ contains
 !     --------------------
       CALL OVP_init ( GC, "CHEM_DT:", LONS, OVP_RUN_DT, OVP_GC_DT, __RC__ ) !  Get LONS, timesteps
 
-     PRINT*,'in CHEMENV the RUN_DT and CHEM_DT values are: ', OVP_RUN_DT, OVP_GC_DT
+!!   PRINT*,'in CHEMENV the RUN_DT and CHEM_DT values are: ', OVP_RUN_DT, OVP_GC_DT
 
       ! In this case we update the Exports only after each CHEMENV timestep:
       OVP_MASK_DT = OVP_GC_DT
