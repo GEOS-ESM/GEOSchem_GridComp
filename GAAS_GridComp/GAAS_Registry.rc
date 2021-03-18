@@ -26,9 +26,9 @@ COMP_NAME: GAAS
    DELP    |    Pa      | xyz | C |    |   |   |     |      | Pressure Thickness
     RH2    |     1      | xyz | C |    |   |   |     |      | Relative Humidity 
     PLE    |    Pa      | xyz | E |    |   |   |     |      | Air Pressure
-#   aod_a   |     1      | xy  | C |    |   |   |     |      | AOD
-#   aod_f   |     1      | xy  | C |    |   |   |     |      | AOD
-#   aod_k   |     1      | xy  | C |    |   |   |     |      | AOD
+   aod_a   |     1      | xy  | C |    |   |   |     |      | AOD
+   aod_f   |     1      | xy  | C |    |   |   |     |      | AOD
+   aod_k   |     1      | xy  | C |    |   |   |     |      | AOD
 #
 #   du001   |  kg/kg     | xyz | C |    |   |   |     |      | Dust Mixing Ratio Bin 1
 #   du002   |  kg/kg     | xyz | C |    |   |   |     |      | Dust Mixing Ratio Bin 2
@@ -73,6 +73,7 @@ COMP_NAME: GAAS
   SUANA    |  kg/kg     | xyz | C |    |   |   |     | Sulfate Mixing Ratio Analysis
   BCANA    |  kg/kg     | xyz | C |    |   |   |     | Black Carbon Mixing Ratio Analysis
   OCANA    |  kg/kg     | xyz | C |    |   |   |     | Organic Carbon Mixing Ratio Analysis
+  BRANA    |  kg/kg     | xyz | C |    |   |   |     | Brown Carbon Mixing Ratio Analysis
 #
   DUINC    |  kg/kg     | xyz | C |    |   |   |     | Dust Mixing Ratio Analysis Increments
   SSINC    |  kg/kg     | xyz | C |    |   |   |     | Sea-salt Mixing Ratio Analysis Increments
@@ -80,6 +81,7 @@ COMP_NAME: GAAS
   SUINC    |  kg/kg     | xyz | C |    |   |   |     | Sulfate Mixing Ratio Analysis Increments
   BCINC    |  kg/kg     | xyz | C |    |   |   |     | Black Carbon Mixing Ratio Analysis Increments
   OCINC    |  kg/kg     | xyz | C |    |   |   |     | Organic Carbon Mixing Ratio Analysis Increments
+  BRINC    |  kg/kg     | xyz | C |    |   |   |     | Brown Carbon Mixing Ratio Analysis Increments
 # ---------|------------|-----|---|----|---|---|-----|---------------------------------
 </ExportSpec>
 

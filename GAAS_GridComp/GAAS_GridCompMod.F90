@@ -334,9 +334,9 @@ CONTAINS
 !  Create SimpleBundle from aeroBundle
 !  Associate SimpleBundle with concentration analysis/background
    self%q_f = MAPL_SimpleBundleCreate(aeroBundle, name='q_f', __RC__)
-   self%q_a = MAPL_SimpleBundleCreate(aeroBundle, name='q_q', __RC__)
-!call MAPL_SimpleBundlePrint (self%q_f)
-!call MAPL_SimpleBundlePrint (self%q_a)
+   self%q_a = MAPL_SimpleBundleCreate(aeroBundle, name='q_a', __RC__)
+call MAPL_SimpleBundlePrint (self%q_f)
+call MAPL_SimpleBundlePrint (self%q_a)
 
 !  Create AOD Simple Bundles
 !  -------------------------
@@ -354,21 +354,24 @@ CONTAINS
    self%y_d%n2d = 1
    allocate(self%y_d%r2(1), __STAT__)
    self%y_d%r2(1)%name='aod_inc'
+!if(mapl_am_i_root()) print*,'GAAS y_d%coords%levs = ',self%y_d%coords%levs   ! this is equal to 1
 
 !  Create AOD Simple Bundles from off-line analysis
 !  ------------------------------------------------
    self%z_f = MAPL_SimpleBundleCreate (self%aodGrid, rc=status, name='z_f')
    self%z_f%n2d = 1
    allocate(self%z_f%r2(1), __STAT__)
-!   self%z_f%r2(1)%name='aod_bkg'
+   self%z_f%r2(1)%name='z_f'
 
    self%z_a = MAPL_SimpleBundleCreate (self%aodGrid, rc=status, name='z_a')
    self%z_a%n2d = 1
    allocate(self%z_a%r2(1), __STAT__)
+   self%z_a%r2(1)%name='z_a'
 
    self%z_k = MAPL_SimpleBundleCreate (self%aodGrid, rc=status, name='z_k')
    self%z_k%n2d = 1
    allocate(self%z_k%r2(1), __STAT__)
+   self%z_k%r2(1)%name='z_k'
 
 !if(mapl_am_i_root()) then
 !  print*,'GAAS self%y_f: '
@@ -480,7 +483,11 @@ CONTAINS
     character(len=ESMF_MAXSTR)    :: fieldName
     real, pointer, dimension(:,:) :: ptr2d
     real, pointer, dimension(:,:,:) :: ptr3d
-    real, dimension(:,:), allocatable, target :: aodInt
+    real, dimension(:,:), allocatable, target :: aodInt, aod_a_, aod_k_, aod_f_, &
+                                                 y_a_, y_d_
+    real, pointer, dimension(:,:,:)  :: DUsum, SSsum, SUsum, NIsum, CAOCsum, CABCsum, CABRsum
+
+real :: beforeVar1, afterVar1, beforeVar2, afterVar2
 
 #   include "GAAS_DeclarePointer___.h"
 
@@ -605,7 +612,7 @@ CONTAINS
 
 !  Set AOD value in y_f
 !   self%y_f%r2(1)%name='aod'
-   self%y_f%r2(1)%qr4 => aodInt
+   self%y_f%r2(1)%qr4 => aodInt  ! vertically integrated AOD
    self%y_f%r2(1)%q => self%y_f%r2(1)%qr4
 
 if(mapl_am_i_root()) then
@@ -633,6 +640,31 @@ end if
 !                                     time=Time, only_vars='AOD', __RC__ )
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+if(mapl_am_i_root()) print*,'GAAS sum(aod_a) = ',sum(aod_a)
+if(mapl_am_i_root()) print*,'GAAS sum(aod_f) = ',sum(aod_f)
+if(mapl_am_i_root()) print*,'GAAS sum(aod_k) = ',sum(aod_k)
+
+call MAPL_MaxMin('aod_a maxmin: ', aod_a)
+call MAPL_MaxMin('aod_f maxmin: ', aod_f)
+call MAPL_MaxMin('aod_k maxmin: ', aod_k)
+
+!  Read off-line AOD analysis, background and averaging kernel
+!  -----------------------------------------------------------    
+!   allocate(aod_a_(ubound(rh2,1), ubound(rh2,2)), __STAT__)
+!   aod_a_ = aod_a ! don't over write the import
+!   self%z_a%r2(1)%q => aod_a_    !probably don't need to allocate mem for aod_a_, just point to aod_a. check to make sure.
+   self%z_a%r2(1)%q => aod_a    !probably don't need to allocate mem for aod_a_, just point to aod_a. check to make sure.
+
+!   allocate(aod_f_(ubound(rh2,1), ubound(rh2,2)), __STAT__)
+!   aod_f_ = aod_f ! don't over write the import
+!   self%z_f%r2(1)%q => aod_f_
+   self%z_f%r2(1)%q => aod_f
+
+!   allocate(aod_k_(ubound(rh2,1), ubound(rh2,2)), __STAT__)
+!   aod_k_ = aod_k ! don't over write the import
+!   self%z_k%r2(1)%q => aod_k_
+   self%z_k%r2(1)%q => aod_k
+
 !call MAPL_GetPointer(IMPORT, ptr2d, 'aod_a', __RC__)
 !if(mapl_am_i_root()) print*,'GAAS ptr2d = ',sum(ptr2d)
 
@@ -647,48 +679,104 @@ end if
 !  Because the off-line analysis may have other fields in the Bundle,
 !  we explicitly look for the AOD index to be safe
 !  -----------------------------------------------------------------
-   izAOD = MAPL_SimpleBundleGetIndex(self%z_f,'AOD',3,__RC__)           !REMOVE, this should just be 1
-   iyAOD = MAPL_SimpleBundleGetIndex(self%y_f,'AOD',3,__RC__)           !REMOVE, this should just be 1
-   _ASSERT(iyAOD==1,'needs informative message') ! what we have created must have only AOD
+!   izAOD = MAPL_SimpleBundleGetIndex(self%z_f,'AOD',3,__RC__)           !REMOVE, this should just be 1
+!   iyAOD = MAPL_SimpleBundleGetIndex(self%y_f,'AOD',3,__RC__)           !REMOVE, this should just be 1
+!   _ASSERT(iyAOD==1,'needs informative message') ! what we have created must have only AOD
 
 !  Convert AOD to Log(AOD+eps) for A.K. Adjustment
 !  -----------------------------------------------
-   self%z_a%r3(izAOD)%q = Log(self%z_a%r3(izAOD)%q + self%eps)
-   self%z_f%r3(izAOD)%q = Log(self%z_f%r3(izAOD)%q + self%eps)
-   self%y_f%r3(iyAOD)%q = Log(self%y_f%r3(iyAOD)%q + self%eps)
+!   self%z_a%r3(izAOD)%q = Log(self%z_a%r3(izAOD)%q + self%eps)  ! These three lines should be deleted and use the lines below.
+!   self%z_f%r3(izAOD)%q = Log(self%z_f%r3(izAOD)%q + self%eps)
+!   self%y_f%r3(iyAOD)%q = Log(self%y_f%r3(iyAOD)%q + self%eps)
+   self%z_a%r2(1)%q = Log(self%z_a%r2(1)%q + self%eps)
+   self%z_f%r2(1)%q = Log(self%z_f%r2(1)%q + self%eps)
+   self%y_f%r2(1)%q = Log(self%y_f%r2(1)%q + self%eps)
 
 !  Background adjustment using averaging kernel
 !   This must be done in the Log(AOD+eps) variable
 !  -----------------------------------------------
-   self%y_a%r3(iyAOD)%q = self%z_a%r3(izAOD)%q &
-                        + (1.-self%z_k%r3(izAOD)%q) &
-                        * ( self%y_f%r3(iyAOD)%q - self%z_f%r3(izAOD)%q )
+!   self%y_a%r3(iyAOD)%q = self%z_a%r3(izAOD)%q &
+!                        + (1.-self%z_k%r3(izAOD)%q) &
+!                        * ( self%y_f%r3(iyAOD)%q - self%z_f%r3(izAOD)%q )
+   allocate(y_a_(ubound(rh2,1), ubound(rh2,2)), __STAT__)
+   y_a_ = self%z_a%r2(1)%q &
+        + (1.-self%z_k%r2(1)%q) &
+        * ( self%y_f%r2(1)%q - self%z_f%r2(1)%q )
+
+   self%y_a%r2(1)%q => y_a_
 
 !  Convert from Log(AOD+eps) back to AOD
 !  -------------------------------------
-   self%y_a%r3(iyAOD)%q = Exp(self%y_a%r3(iyAOD)%q) - self%eps
-   self%y_f%r3(iyAOD)%q = Exp(self%y_f%r3(iyAOD)%q) - self%eps
-   self%y_d%r3(iyAOD)%q = self%y_a%r3(iyAOD)%q - self%y_f%r3(iyAOD)%q 
+!   self%y_a%r3(iyAOD)%q = Exp(self%y_a%r3(iyAOD)%q) - self%eps
+!   self%y_f%r3(iyAOD)%q = Exp(self%y_f%r3(iyAOD)%q) - self%eps
+!   self%y_d%r3(iyAOD)%q = self%y_a%r3(iyAOD)%q - self%y_f%r3(iyAOD)%q 
+   self%y_a%r2(1)%q = Exp(self%y_a%r2(1)%q) - self%eps
+   self%y_f%r2(1)%q = Exp(self%y_f%r2(1)%q) - self%eps
+!   self%y_d%r2(1)%q = self%y_a%r2(1)%q - self%y_f%r2(1)%q
+   allocate(y_d_(ubound(rh2,1), ubound(rh2,2)), __STAT__)
+   y_d_ = self%y_a%r2(1)%q - self%y_f%r2(1)%q
+   self%y_d%r2(1)%q => y_d_
+
+if(mapl_am_i_root()) print*,'GAAS sum(y_d) = ',sum(self%y_d%r2(1)%q)
+if(mapl_am_i_root()) print*,'GAAS sum(y_f) = ',sum(self%y_f%r2(1)%q)
 
    if ( self%verbose ) then
        call MAPL_SimpleBundlePrint(self%y_d)
    end if
 
-#if 0
 
-!  ADD BROWN CARBON!!!!
+
+   call get_aerosolSum (aero_rad, 'dust', DUsum, __RC__)
+   call get_aerosolSum (aero_rad, 'seasalt', SSsum, __RC__)
+   call get_aerosolSum (aero_rad, 'sulfate', SUsum, __RC__)
+   call get_aerosolSum (aero_rad, 'nitrate', NIsum, __RC__)
+   call get_aerosolSum (aero_rad, 'organicCarbon', CAOCsum, __RC__)
+   call get_aerosolSum (aero_rad, 'blackCarbon', CABCsum, __RC__)
+   call get_aerosolSum (aero_rad, 'brownCarbon', CABRsum, __RC__)
+
+   ! Set aerosol to retrieve sum for
+!   call ESMF_AttributeSet(aero_rad, name='aerosolName', value='dust', __RC__)
+
+   ! execute the aero provider's optics method
+!   call ESMF_MethodExecute(aero_rad, label="get_mixR", __RC__)
+
+!   call ESMF_AttributeGet(aero_rad, name='sum_of_internalState_aerosol', value=fieldName, __RC__)
+!   if (fieldName /= '') then
+!      call MAPL_GetPointer(aero_rad, DUsum, trim(fieldName), __RC__)
+!   end if
+
+if(mapl_am_i_root()) print*,'GAAS DUsum = ',sum(DUsum)
+if(mapl_am_i_root()) print*,'GAAS SSsum = ',sum(SSsum)
+if(mapl_am_i_root()) print*,'GAAS SUsum = ',sum(SUsum)
+if(mapl_am_i_root()) print*,'GAAS NIsum = ',sum(NIsum)
+if(mapl_am_i_root()) print*,'GAAS CAOCsum = ',sum(CAOCsum)
+if(mapl_am_i_root()) print*,'GAAS CABCsum = ',sum(CABCsum)
+beforeVar1 = sum(DUsum)
+
+
 ! Make a new callback
 ! get_mixR(aerosol_state, 'dust') this returns sum of all dust bins
 !    same for all other aerosols
 
 !  Handle 3D exports (save bkg for increments)
 !  -------------------------------------------
-   if ( associated(duinc) ) duinc = du001+du002+du003+du004+du005
-   if ( associated(ssinc) ) ssinc = ss001+ss002+ss003+ss004+ss005
-   if ( associated(niinc) ) niinc = no3an1+no3an2+no3an3
-   if ( associated(bcinc) ) bcinc = bcphobic + bcphilic
-   if ( associated(ocinc) ) ocinc = ocphobic + ocphilic
-   if ( associated(suinc) ) suinc = so4
+!   if ( associated(duinc) ) duinc = du001+du002+du003+du004+du005
+!   if ( associated(ssinc) ) ssinc = ss001+ss002+ss003+ss004+ss005
+!   if ( associated(niinc) ) niinc = no3an1+no3an2+no3an3
+!   if ( associated(bcinc) ) bcinc = bcphobic + bcphilic
+!   if ( associated(ocinc) ) ocinc = ocphobic + ocphilic
+!   if ( associated(suinc) ) suinc = so4
+   if ( associated(duinc) ) duinc = DUsum
+   if ( associated(ssinc) ) ssinc = SSsum
+   if ( associated(niinc) ) niinc = NIsum
+   if ( associated(bcinc) ) bcinc = CABCsum
+   if ( associated(ocinc) ) ocinc = CAOCsum
+   if ( associated(brinc) ) brinc = CABRsum
+   if ( associated(suinc) ) suinc = SUsum
+
+if(mapl_am_i_root()) print*,'GAAS q_a%r3(7)%name = ', self%q_a%r3(7)%name
+if(mapl_am_i_root()) print*,'GAAS before sum(q_a%r3(7)%q) = ', sum(self%q_a%r3(7)%q)
+beforeVar2 = sum(self%q_a%r3(7)%q)
 
 !  Create concetration analysis from AOD increments
 !   Here we pass in the y_f and y_d in terms of AOD,
@@ -696,28 +784,60 @@ end if
 !  ------------------------------------------------
    call LDE_Projector1c ( self%E, self%q_a, self%q_f, self%y_f, self%y_d, self%verbose, __RC__ )
 
+if(mapl_am_i_root()) print*,'GAAS after sum(q_a%r3(7)%q) = ', sum(self%q_a%r3(7)%q)
+
+if(mapl_am_i_root()) print*,'GAAS after LDE_projector DUsum = ',sum(DUsum)
+if(mapl_am_i_root()) print*,'GAAS after LDE_projector SSsum = ',sum(SSsum)
+if(mapl_am_i_root()) print*,'GAAS after LDE_projector SUsum = ',sum(SUsum)
+if(mapl_am_i_root()) print*,'GAAS after LDE_projector NIsum = ',sum(NIsum)
+if(mapl_am_i_root()) print*,'GAAS after LDE_projector CAOCsum = ',sum(CAOCsum)
+if(mapl_am_i_root()) print*,'GAAS after LDE_projector CABCsum = ',sum(CABCsum)
+
+
+afterVar1 = sum(DUsum)
+afterVar2 = sum(self%q_a%r3(7)%q)
+
+if(mapl_am_i_root()) print*,'GAAS DUsum test = ',beforeVar1-afterVar1
+if(mapl_am_i_root()) print*,'GAAS DU001 test = ',beforeVar2-afterVar2
+
+
 !  Handle 2D exports
 !  -----------------
-   i550nm = getChannel_(self%y_a%coords%levs,__RC__)
-   if ( associated(aodana) ) aodana(:,:) = self%y_a%r3(iyAOD)%q(:,:,i550nm)
-   if ( associated(aodinc) ) aodinc(:,:) = self%y_d%r3(iyAOD)%q(:,:,i550nm)
+!   i550nm = getChannel_(self%y_a%coords%levs,__RC__)
+!   if ( associated(aodana) ) aodana(:,:) = self%y_a%r3(iyAOD)%q(:,:,i550nm)
+!   if ( associated(aodinc) ) aodinc(:,:) = self%y_d%r3(iyAOD)%q(:,:,i550nm)
+   if ( associated(aodana) ) aodana(:,:) = self%y_a%r2(1)%q(:,:)
+   if ( associated(aodinc) ) aodinc(:,:) = self%y_d%r2(1)%q(:,:)
 
 !  Handle 3D exports
 !  -----------------
-   if ( associated(duana) ) duana = du001+du002+du003+du004+du005
-   if ( associated(ssana) ) ssana = ss001+ss002+ss003+ss004+ss005
-   if ( associated(niana) ) niana = no3an1+no3an2+no3an3
-   if ( associated(bcana) ) bcana = bcphobic + bcphilic
-   if ( associated(ocana) ) ocana = ocphobic + ocphilic
-   if ( associated(suana) ) suana = so4
+!   if ( associated(duana) ) duana = du001+du002+du003+du004+du005
+!   if ( associated(ssana) ) ssana = ss001+ss002+ss003+ss004+ss005
+!   if ( associated(niana) ) niana = no3an1+no3an2+no3an3
+!   if ( associated(bcana) ) bcana = bcphobic + bcphilic
+!   if ( associated(ocana) ) ocana = ocphobic + ocphilic
+!   if ( associated(suana) ) suana = so4
+   if ( associated(duana) ) duana = DUsum
+   if ( associated(ssana) ) ssana = SSsum
+   if ( associated(niana) ) niana = NIsum
+   if ( associated(bcana) ) bcana = CABCsum
+   if ( associated(ocana) ) ocana = CAOCsum
+   if ( associated(brana) ) brana = CABRsum
+   if ( associated(suana) ) suana = SUsum
 
-   if ( associated(duinc) ) duinc = du001+du002+du003+du004+du005 - duinc
-   if ( associated(ssinc) ) ssinc = ss001+ss002+ss003+ss004+ss005 - ssinc
-   if ( associated(niinc) ) niinc = no3an1+no3an2+no3an3 - niinc
-   if ( associated(bcinc) ) bcinc = bcphobic + bcphilic - bcinc
-   if ( associated(ocinc) ) ocinc = ocphobic + ocphilic - ocinc
-   if ( associated(suinc) ) suinc = so4 - suinc
-#endif
+!   if ( associated(duinc) ) duinc = du001+du002+du003+du004+du005 - duinc
+!   if ( associated(ssinc) ) ssinc = ss001+ss002+ss003+ss004+ss005 - ssinc
+!   if ( associated(niinc) ) niinc = no3an1+no3an2+no3an3 - niinc
+!   if ( associated(bcinc) ) bcinc = bcphobic + bcphilic - bcinc
+!   if ( associated(ocinc) ) ocinc = ocphobic + ocphilic - ocinc
+!   if ( associated(suinc) ) suinc = so4 - suinc
+   if ( associated(duinc) ) duinc = DUsum - duinc
+   if ( associated(ssinc) ) ssinc = SSsum - ssinc
+   if ( associated(niinc) ) niinc = NIsum - niinc
+   if ( associated(bcinc) ) bcinc = CABCsum - bcinc
+   if ( associated(ocinc) ) ocinc = CAOCsum - ocinc
+   if ( associated(brinc) ) brinc = CABRsum - brinc
+   if ( associated(suinc) ) suinc = SUsum - suinc
 
 #ifdef PRINT_STATES
 
@@ -733,9 +853,9 @@ end if
 
 ! Clean-up
 ! --------
-    call MAPL_SimpleBundleDestroy(self%z_f, __RC__)
-    call MAPL_SimpleBundleDestroy(self%z_a, __RC__)
-    call MAPL_SimpleBundleDestroy(self%z_k, __RC__)
+!    call MAPL_SimpleBundleDestroy(self%z_f, __RC__)
+!    call MAPL_SimpleBundleDestroy(self%z_a, __RC__)
+!    call MAPL_SimpleBundleDestroy(self%z_k, __RC__)
 
 !  Stop timers
 !  ------------
@@ -764,6 +884,55 @@ Contains
      return
         
    end function getChannel_
+
+!--------------------------------
+
+   subroutine get_aerosolSum (state, aeroName, aeroSum, rc)
+
+     implicit none
+   
+     !ARGUMENTS:
+     type (ESMF_State),               intent(inout)    :: state
+     character (len=*),               intent(in)       :: aeroName
+     real, dimension(:,:,:), pointer, intent(out)      :: aeroSum
+     integer, optional,               intent(out)      :: rc
+
+     !LOCALS:
+     integer                                          :: status
+     character (len=ESMF_MAXSTR)                      :: fld_name
+     character (len=ESMF_MAXSTR)                      :: aeroToken
+
+     !Begin...
+
+     select case (aeroName)
+        case ('dust')
+           aeroToken = 'DU'
+        case ('seasalt')
+           aeroToken = 'SS'
+        case ('sulfate')
+           aeroToken = 'SU'
+        case ('nitrate')
+           aeroToken = 'NI'
+        case ('organicCarbon')
+           aeroToken = 'CA.oc'
+        case ('blackCarbon')
+           aeroToken = 'CA.bc'
+        case ('brownCarbon')
+           aeroToken = 'CA.br'
+     end select
+
+     ! Set aerosol to retrieve sum for
+     call ESMF_AttributeSet(state, name='aerosolName', value=trim(aeroName), __RC__)
+
+     ! execute the aero provider's optics method
+     call ESMF_MethodExecute(state, label="get_mixR", __RC__)
+
+     call ESMF_AttributeGet(state, name='sum_of_internalState_aerosol_'//trim(aeroToken), value=fieldName, __RC__)
+     if (fieldName /= '') then
+        call MAPL_GetPointer(state, aeroSum, trim(fieldName), __RC__)
+     end if
+
+   end subroutine get_aerosolSum
 
    END SUBROUTINE Run_
 

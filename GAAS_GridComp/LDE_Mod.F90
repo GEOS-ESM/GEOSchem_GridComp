@@ -730,7 +730,7 @@ merid:        do j = 1, JM_World
      end if
 
      do s = 1, bQ_f%n3d
-        if ( .not. isAerosol_(trim(bQ_f%r3(s)%name)) ) cycle
+!        if ( .not. isAerosol_(trim(bQ_f%r3(s)%name)) ) cycle
 
         if ( MAPL_AM_I_Root() .and. verbose_ ) &
            print *, ' [ ] Working on <'//trim(bQ_f%r3(s)%name)//'>'
@@ -1311,6 +1311,8 @@ merid:     do j = 1, JM_World
 
     nH = self%Nx/2
 
+if(mapl_am_i_root()) print*,'GAAS im: ',im, ' jm: ',jm, ' km: ',km
+
 !   Allocate workspace
 !   ------------------
     allocate ( y_f(im,jm),   &
@@ -1327,24 +1329,36 @@ merid:     do j = 1, JM_World
 
 !    Determine convenience indices
 !    -----------------------------
-     ifAOD = MAPL_SimpleBundleGetIndex(bY_f,'AOD',3,__RC__)
-     idAOD = MAPL_SimpleBundleGetIndex(bY_d,'AOD',3,__RC__)
+!     ifAOD = MAPL_SimpleBundleGetIndex(bY_f,'AOD',3,__RC__)
+!     idAOD = MAPL_SimpleBundleGetIndex(bY_d,'AOD',3,__RC__)
 
 !    Use single channel
 !    ------------------
      _ASSERT(size(bY_f%coords%levs) == size(bY_d%coords%levs),'needs informative message')
      missing_f = .TRUE.
      missing_d = .TRUE.
-     do k = 1, size(bY_f%coords%levs)
-        if ( abs(bY_f%coords%levs(k)-self%channel) < 0.01 ) then
-             y_f = bY_f%r3(ifAOD)%q(:,:,k)
-             missing_f = .FALSE.
-        end if
-        if ( abs(bY_d%coords%levs(k)-self%channel) < 0.01 ) then
-             y_d = bY_d%r3(idAOD)%q(:,:,k)
-             missing_d = .FALSE.
-        end if
-     end do
+
+! We remove the 'k' do loop because k is 1. It was always 1! -EMS
+!     do k = 1, size(bY_f%coords%levs)
+!        if ( abs(bY_f%coords%levs(k)-self%channel) < 0.01 ) then
+!             y_f = bY_f%r3(ifAOD)%q(:,:,k)
+!             missing_f = .FALSE.
+!        end if
+!        if ( abs(bY_d%coords%levs(k)-self%channel) < 0.01 ) then
+!             y_d = bY_d%r3(idAOD)%q(:,:,k)
+!             missing_d = .FALSE.
+!        end if
+!     end do
+
+!     if ( abs(bY_f%coords%levs(1)-self%channel) < 0.01 ) then !bY_f%coords%levs should always be 1. Is this condition needed anymore?
+        y_f = bY_f%r2(1)%q(:,:)
+        missing_f = .FALSE.
+!     end if
+!     if ( abs(bY_d%coords%levs(1)-self%channel) < 0.01 ) then !bY_d%coords%levs should always be 1. Is this condition needed anymore?
+        y_d = bY_d%r2(1)%q(:,:)
+        missing_d = .FALSE.
+!     end if
+
      if ( missing_f ) then
         __raise__(MAPL_RC_ERROR,"could not find matching channel for <y_f>")
      end if
@@ -1426,7 +1440,7 @@ merid:     do j = 1, JM_World
      end if
 
      do s = 1, bQ_f%n3d
-        if ( .not. isAerosol_(trim(bQ_f%r3(s)%name)) ) cycle
+!        if ( .not. isAerosol_(trim(bQ_f%r3(s)%name)) ) cycle !isAerosol_ is not needed. Only aerosols exist in SimpleBundles now. -EMS
 
         if ( MAPL_AM_I_Root() .and. verbose_ ) &
            print *, ' [ ] Working on <'//trim(bQ_f%r3(s)%name)//'>'
@@ -1438,6 +1452,8 @@ merid:     do j = 1, JM_World
 !       Each process does the analysis on its assigned level
 !       ----------------------------------------------------
         do k = self%ks, km
+!if(mapl_am_i_root()) print*,'GAAS LDE before sum(bQ_a%r3(s)%q(:,:,k)) = ',sum(bQ_a%r3(s)%q(:,:,k))
+!if(mapl_am_i_root()) print*,'GAAS LDE before sum(bQ_f%r3(s)%q(:,:,k)) = ',sum(bQ_f%r3(s)%q(:,:,k))
            q_f => bQ_f%r3(s)%q(:,:,k)
            x_2d => x_d(:,:,k)
            call LDE_Qinc_Distrib_Cubed_(x_2d, q_f, V, self%indx, im, jm, em, IM_World, EM_World, nh, self, __RC__ ) 
@@ -1445,8 +1461,12 @@ merid:     do j = 1, JM_World
 
 !       Add analysis increments to q
 !       ----------------------------
+! Why not move this to the loop above? -EMS
         do k = self%ks, km
            bQ_a%r3(s)%q(:,:,k) = bQ_f%r3(s)%q(:,:,k) + x_d(:,:,k)
+!if(mapl_am_i_root()) print*,'GAAS LDE after sum(bQ_a%r3(s)%q(:,:,k)) = ',sum(bQ_a%r3(s)%q(:,:,k))
+!if(mapl_am_i_root()) print*,'GAAS LDE after sum(bQ_f%r3(s)%q(:,:,k)) = ',sum(bQ_f%r3(s)%q(:,:,k))
+!if(mapl_am_i_root()) print*,'GAAS LDE sum(x_d(:,:,k)) = ',sum(x_d(:,:,k))
         end do
 
 !       Zero increments above top analysis level
