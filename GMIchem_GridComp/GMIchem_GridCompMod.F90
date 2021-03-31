@@ -20,7 +20,6 @@
    USE Chem_UtilMod, ONLY : Chem_UtilNegFiller  ! Eliminates negative vmr
    USE Chem_GroupMod                            ! For Family Transport
    USE OVP,     ONLY:  OVP_init, OVP_end_of_timestep_hms, OVP_mask, OVP_apply_mask
-   USE GmiESMFrcFileReading_mod, only : rcEsmfReadLogical
 
    IMPLICIT NONE
    PRIVATE
@@ -299,8 +298,8 @@ CONTAINS
 
 !   This duplicates the call in the Emissions code; really should only be done once!
 !   call rcEsmfReadLogical(gmiConfig, do_ShipEmission, "do_ShipEmission:", default=.false., __RC__)
-    CALL ESMF_ConfigGetAttribute(gmiConfig, do_ShipEmission, Default=.false., &
-                                  Label="do_ShipEmission:", __RC__)
+    CALL ESMF_ConfigGetAttribute(gmiConfig, value= do_ShipEmission, Default=.false., &
+                                            Label="do_ShipEmission:", __RC__)
 
     IF ( do_ShipEmission ) THEN
        call MAPL_AddImportSpec(GC,                         & 
@@ -323,11 +322,19 @@ CONTAINS
         DIMS       = MAPL_DimsHorzVert,                    &
         VLOCATION  = MAPL_VLocationCenter,   __RC__) 
 
+     call MAPL_AddImportSpec(GC,                           & 
+        SHORT_NAME = 'CNV_FRC',                            &
+        LONG_NAME  = 'convective_fraction',                &
+        UNITS      = '',                                   &
+        DIMS       = MAPL_DimsHorzOnly,                    &
+        VLOCATION  = MAPL_VLocationNone,     __RC__) 
+
      ! add MEGAN emission imports -sas 
      ! note: might change this later to use GMICHEM_ImportSpec___.h
      gmi_config = ESMF_ConfigCreate(__RC__ )
      call ESMF_ConfigLoadFile(gmi_config, TRIM(gmi_rcfilen), __RC__ )
-     call rcEsmfReadLogical(gmi_config, doMEGANviaHEMCO, "doMEGANviaHEMCO:", default=.false., __RC__ )
+     call ESMF_ConfigGetAttribute(gmi_config, value= doMEGANviaHEMCO, &
+                                              label="doMEGANviaHEMCO:", default=.false., __RC__ )
 
      IF ( doMEGANviaHEMCO ) THEN
         call MAPL_AddImportSpec(GC, &
@@ -895,6 +902,27 @@ CONTAINS
         SHORT_NAME         = 'OVP14_EM_LGTNO',                          &
         LONG_NAME          = 'NO_emissions_from_lightning_2pm_local',   &
         UNITS              = 'mol mol-1 s-1',                           &
+        DIMS               = MAPL_DimsHorzVert,                         &
+        VLOCATION          = MAPL_VLocationCenter,                      &
+                                                       RC=STATUS  )
+    VERIFY_(STATUS)
+
+! Overpass fields for AIRMASS  (set in GmiEmiss_GridCompClassMod.F90)
+! ----------------------------
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+        SHORT_NAME         = 'OVP10_AIRMASS',                           &
+        LONG_NAME          = 'mass_of_air_in_layer_10am_local',         &
+        UNITS              = 'kg m-2',                                  &
+        DIMS               = MAPL_DimsHorzVert,                         &
+        VLOCATION          = MAPL_VLocationCenter,                      &
+                                                       RC=STATUS  )
+    VERIFY_(STATUS)
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+        SHORT_NAME         = 'OVP14_AIRMASS',                           &
+        LONG_NAME          = 'mass_of_air_in_layer_2pm_local',          &
+        UNITS              = 'kg m-2',                                  &
         DIMS               = MAPL_DimsHorzVert,                         &
         VLOCATION          = MAPL_VLocationCenter,                      &
                                                        RC=STATUS  )
@@ -1663,6 +1691,8 @@ CONTAINS
    CALL extract_(GC, clock, chemReg, gcGMI, w_c, nymd, nhms, gmiDt, runDt, STATUS)
    VERIFY_(STATUS)
 
+  dtInverse = 1.00/runDt
+
 !  Layer interface pressures
 !  -------------------------
    CALL MAPL_GetPointer(impChem, PLE, 'PLE', __RC__)
@@ -2252,7 +2282,6 @@ CONTAINS
     k = 1
     m = ChemReg%i_GMI
     n = ChemReg%j_GMI
-    dtInverse = 1.00/runDt
 
     DO i = m,n
 

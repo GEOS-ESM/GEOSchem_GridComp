@@ -88,9 +88,12 @@
                              ! current year/month/day (YYYYMMDD)
       integer, intent(in) :: nymd
       integer, intent(in) :: phot_opt
-                             ! mapping of reaction rate adjustment number to 
+
+                             ! mapping of reaction rate adjustment number to
                              ! reaction rate number
-      integer, intent(in) :: rxnr_adjust_map(num_rxnr_adjust)
+!     integer, intent(in) :: rxnr_adjust_map(num_rxnr_adjust)
+      INTEGER, POINTER, intent(in)    :: rxnr_adjust_map(:)
+
       integer, intent(in) :: conPBLFlag(i1:i2,   ju1:j2,   k1:k2)
                              ! atmospheric pressure at the center of each grid 
                              ! box (mb)

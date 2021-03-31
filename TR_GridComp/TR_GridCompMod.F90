@@ -68,6 +68,10 @@
 !   7jul2015  Manyin       Added run_order to replace spaghetti.
 !  27may2016  Manyin       ExtData is now used for 2D and 3D source files, veg/lai files, and masks.
 !  26nov2018  Oman         Renumbered QQK values for GMI, to match the new mechanism.
+!  18may2020  Manyin       Diagnostics for GMI wet and dry removal now assume VMR wrt moist air
+!                          Diagnostics for PR and DK, when units=VMR, now assume wrt moist air
+!                          Diagnostic for 3D emissions is now kg/m2/s instead of kg/m2
+!                          Fixed memory leak (VMR_to_MMR and MMR_to_VMR)
 !
 !EOP
 !-------------------------------------------------------------------------
@@ -1534,7 +1538,7 @@ CONTAINS
 
     CALL OVP_init ( GC, "TR_DT:", LONS, OVP_RUN_DT, OVP_GC_DT, __RC__ ) !  Get LONS, timesteps
 
-    IF(MAPL_AM_I_ROOT()) PRINT*,'TR OVP_RUN_DT  OVP_GC_DT  :  ',OVP_RUN_DT, OVP_GC_DT
+!   IF(MAPL_AM_I_ROOT()) PRINT*,'TR OVP_RUN_DT  OVP_GC_DT  :  ',OVP_RUN_DT, OVP_GC_DT
 
     ! ESMF_AlarmIsRinging -- is it affected by TR_DT ?   Yes.
 
@@ -1544,7 +1548,7 @@ CONTAINS
 !   OVP_MASK_DT = OVP_RUN_DT
 
     OVP_FIRST_HMS = OVP_end_of_timestep_hms( CLOCK, OVP_MASK_DT )
-    IF(MAPL_AM_I_ROOT()) PRINT*,'TR FIRST_HMS =',OVP_FIRST_HMS
+!   IF(MAPL_AM_I_ROOT()) PRINT*,'TR FIRST_HMS =',OVP_FIRST_HMS
 
     CALL OVP_mask ( LONS=LONS, DELTA_TIME=OVP_MASK_DT, OVERPASS_HOUR=10, MASK=MASK_10AM )
     CALL OVP_mask ( LONS=LONS, DELTA_TIME=OVP_MASK_DT, OVERPASS_HOUR=14, MASK=MASK_2PM  )
@@ -3342,8 +3346,10 @@ CONTAINS
    LOGICAL, ALLOCATABLE :: src_mask3d(:,:,:), snk_mask3d(:,:,:)
    INTEGER, ALLOCATABLE :: mask(:,:)
 
-   REAL*8,  ALLOCATABLE :: MMR_to_VMR(:,:,:)
-   REAL*8,  ALLOCATABLE :: VMR_to_MMR(:,:,:)
+   REAL*8,  ALLOCATABLE :: MMR_to_VMR(:,:,:)  ! both wrt MOIST
+   REAL*8,  ALLOCATABLE :: VMR_to_MMR(:,:,:)  ! both wrt MOIST
+   REAL*8,  ALLOCATABLE :: MMR_to_VVV(:,:,:)  ! mass mixing ratio wrt moist -> volume mixing ratio wrt dry
+   REAL*8,  ALLOCATABLE :: VVV_to_MMR(:,:,:)  ! volume mixing ratio wrt dry -> mass mixing ratio wrt moist
    REAL*8,  PARAMETER   :: one = 1.0d0
 
    ! CORBE 07/18/16   
@@ -3426,8 +3432,8 @@ CONTAINS
    REAL*8,         ALLOCATABLE ::            sum_term(:,:,:)
    REAL*8,         ALLOCATABLE ::            dep_term(:,:)
 
-!  For DKtend_ diagnostic
-   REAL                        :: mwt             ! molecular weight
+!  For units conversion
+   REAL                        :: spec_mwt             ! molecular weight
 
 !  For tendency computation
    REAL,           ALLOCATABLE ::        tend_scratch(:,:,:)
@@ -3499,7 +3505,6 @@ CONTAINS
 
    IF(debug_verbose) PRINT *,myname, pet, "DEBUG done setup"
 
-
 !  Get regions mask if needed
    IF ( spec%regions_ExtData_entry == NULL_REGION_MASK ) THEN
      spec%regions_array    => NULL()
@@ -3507,12 +3512,33 @@ CONTAINS
      call MAPL_GetPointer( impChem, spec%regions_array, TRIM(spec%regions_ExtData_entry), __RC__ ) 
    END IF
 
+   ! We do not require mw for tracers like e90
+   ! Check for default value (-1)
+   spec_mwt = spec%mw
+   IF ( spec_mwt < 0.0 ) spec_mwt = MAPL_AIRMW
+
 !! For conversion between mass mixing ratio and volume mixing ratio
    call MAPL_GetPointer( impChem,      Q,            'Q', __RC__ )
    ALLOCATE( MMR_to_VMR( i1:i2, j1:j2, 1:km),         &
              VMR_to_MMR( i1:i2, j1:j2, 1:km), __STAT__)
-   MMR_to_VMR = (one/spec%mw) / ( (one/MAPL_AIRMW)*(one-Q) + (one/MAPL_H2OMW)*Q )
-   VMR_to_MMR = (    spec%mw) * ( (one/MAPL_AIRMW)*(one-Q) + (one/MAPL_H2OMW)*Q )
+   MMR_to_VMR = (one/spec_mwt) / ( (one/MAPL_AIRMW)*(one-Q) + (one/MAPL_H2OMW)*Q )
+   VMR_to_MMR = (    spec_mwt) * ( (one/MAPL_AIRMW)*(one-Q) + (one/MAPL_H2OMW)*Q )
+
+   ! VVV = VMR wrt dry air
+   ALLOCATE( MMR_to_VVV( i1:i2, j1:j2, 1:km),         &
+             VVV_to_MMR( i1:i2, j1:j2, 1:km), __STAT__)
+   MMR_to_VVV = (MAPL_AIRMW/spec_mwt) / (one-Q)
+   VVV_to_MMR = (spec_mwt/MAPL_AIRMW) * (one-Q)
+
+
+! ! initialize test cases to 1 ppm
+! IF ( TRIM(spec%name) == 'test_vmr' ) THEN
+!   DATA3d(:,:,:) = 1.0e-6 * VVV_to_MMR * MMR_to_VMR
+! ENDIF
+! IF ( TRIM(spec%name) == 'test_mmr' ) THEN
+!   DATA3d(:,:,:) = 1.0e-6 * VVV_to_MMR
+! ENDIF
+
 
 !! These may be needed; should we only get pointers under certain conditions (like GOCART wet dep)?
    call MAPL_GetPointer( impChem, rhoWet, 'AIRDENS',      __RC__ )
@@ -3811,21 +3837,14 @@ CONTAINS
 
            IF ( associated(pr_export_3d) ) THEN        !  convert to kg_species / m2 / s
 
+             ! delp/MAPL_GRAV  [kg/m2]
+
              IF ( spec%unit_type == VMR_UNITS ) THEN
-               ! Same units conversion as EM_ when file3d
-
-               ! We do not require mw for tracers like e90
-               ! Check for default value (-1)
-               mwt = spec%mw
-               IF ( mwt < 0.0 ) mwt = MAPL_AIRMW
-
-               pr_export_3d = ((DATA3d - tend_scratch) * (1-Q)*delp/MAPL_GRAV  * mwt / MAPL_AIRMW) / cdt
-
+               pr_export_3d = (DATA3d - tend_scratch) * VMR_to_MMR * delp/(MAPL_GRAV*cdt)
              END IF
 
              IF ( spec%unit_type == MMR_UNITS ) THEN
-
-               pr_export_3d = ((DATA3d - tend_scratch) *       delp/MAPL_GRAV                    ) / cdt
+               pr_export_3d = (DATA3d - tend_scratch) *              delp/(MAPL_GRAV*cdt)
              END IF
 
              DEALLOCATE(tend_scratch, __STAT__)
@@ -3890,6 +3909,8 @@ CONTAINS
          SRC_file2d: &
          IF ( TRIM(spec%src_mode) == "file2d" ) THEN
            IF(debug_verbose) PRINT *,myname, pet, "DEBUG src file2d start"
+
+           ! SRC_2d_  [kg m-2 s-1]
 
            call MAPL_GetPointer( impChem, src_ext_2d, 'SRC_2D_'//TRIM(spec%name), __RC__ ) 
 
@@ -3956,6 +3977,7 @@ CONTAINS
          IF ( TRIM(spec%src_mode) == "file3d" ) THEN
            IF(debug_verbose) PRINT *,myname, pet, "DEBUG src file3d start"
 
+           ! SRC_3D_  [mol/mol/s]
            call MAPL_GetPointer( impChem, src_ext_3d, 'SRC_3D_'//TRIM(spec%name), __RC__ ) 
 
            spec%TRvolFlux = src_ext_3d
@@ -3979,7 +4001,8 @@ CONTAINS
 
 !            WHERE( src_mask3d ) em_export_3d = cdt * spec%TRvolFlux * (1-Q)*airdens*dZ     * spec%mw / MAPL_AIRMW
 
-             WHERE( src_mask3d ) em_export_3d = cdt * spec%TRvolFlux * (1-Q)*delp/MAPL_GRAV * spec%mw / MAPL_AIRMW
+             ! 5.14.20 MEM - corrected the units from kg/m2 to  kg/m2/s
+             WHERE( src_mask3d ) em_export_3d = spec%TRvolFlux * VVV_to_MMR * delp/MAPL_GRAV
 
            ENDIF
 
@@ -4000,8 +4023,11 @@ CONTAINS
              !      rhoWet [kg_moist_air/m3]
              !   TRvolFlux [mol_tracer/mol_dry_air/s -> kg_tracer/kg_moist_air/s]
 
+            !spec%TRvolFlux = &
+            !spec%TRvolFlux * ndDry * spec%mw / (MAPL_AVOGAD*rhoWet)
+
              spec%TRvolFlux = &
-             spec%TRvolFlux * ndDry * spec%mw / (MAPL_AVOGAD*rhoWet)
+             spec%TRvolFlux * VVV_to_MMR
 
            END IF
 
@@ -4009,8 +4035,11 @@ CONTAINS
 
              !! We convert to mol/mol/s (wrt moist)  (note from 4/3/19)
              !   TRvolFlux [mol_tracer/mol_dry_air/s -> mol_tracer/mol_moist_air/s]
+            !spec%TRvolFlux = &
+            !spec%TRvolFlux * (one-Q) / ( (one-Q) + (MAPL_AIRMW/MAPL_H2OMW)*Q )
+
              spec%TRvolFlux = &
-             spec%TRvolFlux * (one-Q) / ( (one-Q) + (MAPL_AIRMW/MAPL_H2OMW)*Q )
+             spec%TRvolFlux * VVV_to_MMR * MMR_to_VMR
 
            END IF
 
@@ -4175,20 +4204,11 @@ CONTAINS
              call MAPL_GetPointer ( impChem,    delp,    'DELP', __RC__ )
 
              IF ( spec%unit_type == VMR_UNITS ) THEN
-               ! Same units conversion as EM_ when file3d
-
-               ! We do not require mw for tracers like e90
-               ! Check for default value (-1)
-               mwt = spec%mw
-               IF ( mwt < 0.0 ) mwt = MAPL_AIRMW
-
-               WHERE( snk_mask3d ) dk_export_3d = ((DATA3d * (decadence - 1.0)) * &
-                                   (1-Q)*delp/MAPL_GRAV  * mwt / MAPL_AIRMW) / cdt
+               WHERE( snk_mask3d ) dk_export_3d = (DATA3d * (decadence - 1.0)) * VMR_to_MMR * delp / (MAPL_GRAV*cdt)
              END IF
 
              IF ( spec%unit_type == MMR_UNITS ) THEN
-               WHERE( snk_mask3d ) dk_export_3d = ((DATA3d * (decadence - 1.0)) * &
-                                   delp/MAPL_GRAV ) / cdt
+               WHERE( snk_mask3d ) dk_export_3d = (DATA3d * (decadence - 1.0)) *              delp / (MAPL_GRAV*cdt)
              END IF
 
            ENDIF
@@ -4284,21 +4304,24 @@ CONTAINS
 
          IF ( (spec%unit_type == MMR_UNITS) .AND.  &
               (spec%GMI_dry_deposition .OR. spec%GMI_wet_removal) ) THEN
+           ! Convert to VMR for the GMI calls
            DATA3d = DATA3d * MMR_to_VMR
          END IF
 
-         IF ( spec%GMI_dry_deposition )    CALL  TR_GMI_settle_and_depos( DATA3d, st_export_3d, st_export_2d, dd_export_2d, impChem, nymd, nhms, kit, cdt, spec)
+         IF ( spec%GMI_dry_deposition )    CALL  TR_GMI_settle_and_depos( DATA3d, st_export_3d, st_export_2d, dd_export_2d, impChem, nymd, nhms, kit, cdt, spec, VMR_to_MMR)
 
-         IF ( spec%GMI_wet_removal    )    CALL  TR_GMI_wet_removal(      DATA3d, wr_export_3d, wr_export_2d,               impChem,             kit, cdt, spec)
+         IF ( spec%GMI_wet_removal    )    CALL  TR_GMI_wet_removal(      DATA3d, wr_export_3d, wr_export_2d,               impChem,             kit, cdt, spec, VMR_to_MMR)
 
          IF ( (spec%unit_type == MMR_UNITS) .AND.  &
               (spec%GMI_dry_deposition .OR. spec%GMI_wet_removal) ) THEN
+           ! Convert back to MMR
            DATA3d = DATA3d * VMR_to_MMR
          END IF
 
 
          IF ( (spec%unit_type == VMR_UNITS) .AND.  &
               (spec%GOCART_settling .OR. spec%GOCART_dry_deposition .OR. spec%GOCART_wet_removal .OR. spec%GOCART_convection) ) THEN
+           ! Convert to MMR for the GOCART calls
            DATA3d = DATA3d * VMR_to_MMR
          END IF
 
@@ -4312,6 +4335,7 @@ CONTAINS
 
          IF ( (spec%unit_type == VMR_UNITS) .AND.  &
               (spec%GOCART_settling .OR. spec%GOCART_dry_deposition .OR. spec%GOCART_wet_removal .OR. spec%GOCART_convection) ) THEN
+           ! Convert back to VMR
            DATA3d = DATA3d * MMR_to_VMR
          END IF
 
@@ -4340,6 +4364,8 @@ CONTAINS
 
      DEALLOCATE(src_mask3d, snk_mask3d, __STAT__)
      DEALLOCATE(    ndDry, __STAT__)
+     DEALLOCATE(MMR_to_VMR, VMR_to_MMR, __STAT__)
+     DEALLOCATE(MMR_to_VVV, VVV_to_MMR, __STAT__)
 !    DEALLOCATE(  massTOT, __STAT__)
      DEALLOCATE( snapshot, __STAT__)
 
@@ -4459,10 +4485,10 @@ CONTAINS
   END SUBROUTINE impose_surface_constraints
 
 
-  SUBROUTINE TR_GMI_settle_and_depos(data3d, settle_tend_3d, settle_tend_2d, drydep_tend_2d, impChem, nymd, nhms, kit, cdt, spec)
+  SUBROUTINE TR_GMI_settle_and_depos(data3d, settle_tend_3d, settle_tend_2d, drydep_tend_2d, impChem, nymd, nhms, kit, cdt, spec, VMR_to_MMR)
     IMPLICIT NONE
 
-    REAL*4,  POINTER, DIMENSION(:,:,:), INTENT(INOUT)    :: data3d
+    REAL*4,  POINTER, DIMENSION(:,:,:), INTENT(INOUT)    :: data3d         ! MEM- presumed mol/mol_of_moist_air
     REAL*4,  POINTER, DIMENSION(:,:,:), INTENT(INOUT)    :: settle_tend_3d ! kg/m2/s
     REAL*4,  POINTER, DIMENSION(:,:),   INTENT(INOUT)    :: settle_tend_2d ! kg/m2/s   column total
     REAL*4,  POINTER, DIMENSION(:,:),   INTENT(INOUT)    :: drydep_tend_2d ! kg/m2/s
@@ -4471,6 +4497,7 @@ CONTAINS
     TYPE(TR_TracerKit),     POINTER,    INTENT(IN)       :: kit            ! A set of values common to all passive tracers
     REAL,                               INTENT(IN)       :: cdt            ! chemical timestep (secs)
     TYPE(TR_TracerSpec),                INTENT(IN)       :: spec           ! Specification for a Passive Tracer
+    REAL*8,           DIMENSION(:,:,:), INTENT(IN)       :: VMR_to_MMR     ! both wrt moist air
 
     integer                      :: STATUS
     CHARACTER(LEN=*), PARAMETER  :: Iam = 'TR_GMI_settle_and_depos'
@@ -4566,19 +4593,17 @@ CONTAINS
 
     IF ( associated(settle_tend_3d) ) then
       DO lev=1,kit%km
-        ! convert units the same way as done in TR_GMI_DryDeposition
-        settle_tend_3d(:,:,lev) = (data3d(:,:,lev) - snapshot_3d(:,:,lev)) * &
-                                  (mass(:,:,lev) / area) * spec%mw / (MAPL_AIRMW*cdt)
+        settle_tend_3d(:,:,lev) = (data3d(:,:,lev) - snapshot_3d(:,:,lev)) * VMR_to_MMR(:,:,lev) * &
+                                     mass(:,:,lev) / (area*cdt)
       END DO
     END IF
 
     IF ( associated(settle_tend_2d) ) then
       settle_tend_2d(:,:) = 0.0
       DO lev=1,kit%km
-        ! convert units the same way as done in TR_GMI_DryDeposition
         settle_tend_2d(:,:) =                                            &
-        settle_tend_2d(:,:) + (data3d(:,:,lev) - snapshot_3d(:,:,lev)) * &
-                              (mass(:,:,lev) / area) * spec%mw / (MAPL_AIRMW*cdt)
+        settle_tend_2d(:,:) +     (data3d(:,:,lev) - snapshot_3d(:,:,lev)) * VMR_to_MMR(:,:,lev) * &
+                                     mass(:,:,lev) / (area*cdt)
       END DO
     END IF
 
@@ -4638,9 +4663,10 @@ CONTAINS
              spec%mw, one_species = data3d(:,:,kit%km) )
 
    IF ( associated(drydep_tend_2d) ) then
-     ! convert units the same way as done in TR_GMI_DryDeposition
-     drydep_tend_2d = (data3d(:,:,kit%km) - snapshot_2d) *              &
-                      (mass(:,:,kit%km) / area) * spec%mw / (MAPL_AIRMW*cdt)
+     ! Previously we converted units the same way as done in TR_GMI_DryDeposition
+     ! Now we use the conversion array provided by the caller
+     drydep_tend_2d = (data3d(:,:,kit%km) - snapshot_2d) * VMR_to_MMR(:,:,kit%km) * &
+                         mass(:,:,kit%km) / (area*cdt)
      deallocate( snapshot_2d, __STAT__)
    END IF
 
@@ -4803,16 +4829,17 @@ CONTAINS
   END SUBROUTINE set_bool_mask
 
 
-  SUBROUTINE TR_GMI_wet_removal(data3d, wr_tend_3d, wr_tend_2d, impChem, kit, cdt, spec)
+  SUBROUTINE TR_GMI_wet_removal(data3d, wr_tend_3d, wr_tend_2d, impChem, kit, cdt, spec, VMR_to_MMR)
     IMPLICIT NONE
 
-    REAL*4,  POINTER, DIMENSION(:,:,:), INTENT(INOUT)    :: data3d
+    REAL*4,  POINTER, DIMENSION(:,:,:), INTENT(INOUT)    :: data3d     ! MEM- presumed mol/mol_of_moist_air
     REAL*4,  POINTER, DIMENSION(:,:,:), INTENT(INOUT)    :: wr_tend_3d ! tendency kg/m2/s
     REAL*4,  POINTER, DIMENSION(:,:),   INTENT(INOUT)    :: wr_tend_2d ! column-sum of tendency kg/m2/s
     TYPE(ESMF_State),                   INTENT(INOUT)    :: impChem    ! Import State
     TYPE(TR_TracerKit),     POINTER,    INTENT(IN)       :: kit        ! A set of values common to all passive tracers
     REAL,                               INTENT(IN)       :: cdt        ! chemical timestep (secs)
     TYPE(TR_TracerSpec),                INTENT(IN)       :: spec       ! Specification for a Passive Tracer
+    REAL*8,           DIMENSION(:,:,:), INTENT(IN)       :: VMR_to_MMR ! both wrt moist air
 
     integer                      :: STATUS
     CHARACTER(LEN=*), PARAMETER  :: Iam = 'TR_GMI_wet_removal'
@@ -4857,6 +4884,11 @@ CONTAINS
     ! odds and ends
     INTEGER  :: lev
 
+!   INTEGER         ::  iXj
+!   REAL            ::  qmin, qmax
+!
+!   iXj   = ( kit%i2 - kit%i1 + 1 ) * ( kit%j2 - kit%j1 + 1 )
+
     ! some var names as found in GmiDepos_GridCompClassMod.F90
 
     CALL MAPL_GetPointer( impChem,   airdens,   'AIRDENS', __RC__ )
@@ -4867,6 +4899,19 @@ CONTAINS
     CALL MAPL_GetPointer( impChem,      dqdt,      'DQDT', __RC__ )
     CALL MAPL_GetPointer( impChem,  pfl_lsan,  'PFL_LSAN', __RC__ )
     CALL MAPL_GetPointer( impChem,    pfl_cn,    'PFL_CN', __RC__ )
+
+!   CALL pmaxmin ( 'TR minmax area:', area, qmin, qmax, iXj,1, 1. )
+!
+!   CALL pmaxmin ( 'TR minmax AIRDENS:', AIRDENS, qmin, qmax, iXj, kit%km, 1. )
+!   CALL pmaxmin ( 'TR minmax zle:', zle, qmin, qmax, iXj, kit%km+1, 1. )
+!   CALL pmaxmin ( 'TR minmax T:', T, qmin, qmax, iXj, kit%km, 1. )
+!   CALL pmaxmin ( 'TR minmax ple:', ple, qmin, qmax, iXj, kit%km+1, 1. )
+!   CALL pmaxmin ( 'TR minmax dqdt:', dqdt, qmin, qmax, iXj, kit%km, 1. )
+!   CALL pmaxmin ( 'TR minmax pfl_lsan:', pfl_lsan, qmin, qmax, iXj, kit%km, 1. )
+!   CALL pmaxmin ( 'TR minmax pfl_cn:', pfl_cn, qmin, qmax, iXj, kit%km, 1. )
+!
+!   CALL pmaxmin ( 'TR minmax data3d:', data3d, qmin, qmax, iXj, kit%km, 1. )
+
 
       geoht(:,:,1:kit%km) =  zle(:,:, 0:kit%km-1 ) - zle(:,:,  1:kit%km  )
     press3c(:,:,1:kit%km) = (ple(:,:, 0:kit%km-1 ) + ple(:,:,  1:kit%km  ))/2.0   ! convert units below
@@ -4886,6 +4931,16 @@ CONTAINS
 !   Layer edges                                                   GEOS-5 Units       GMI Units
 !   -----------                                                   ------------       -------------
     press3e = ple*Pa2hPa                                          ! Pa               hPa
+
+
+!   CALL pmaxmin ( 'TR minmax mass:', mass, qmin, qmax, iXj, kit%km, 1. )
+!   CALL pmaxmin ( 'TR minmax geoht:', geoht, qmin, qmax, iXj, kit%km, 1. )
+!   CALL pmaxmin ( 'TR minmax press3c:', press3c, qmin, qmax, iXj, kit%km, 1. )
+!   CALL pmaxmin ( 'TR minmax moistq:', moistq, qmin, qmax, iXj, kit%km, 1. )
+!   CALL pmaxmin ( 'TR minmax rain3Dls:', rain3Dls, qmin, qmax, iXj, kit%km, 1. )
+!   CALL pmaxmin ( 'TR minmax rain3Dcn:', rain3Dcn, qmin, qmax, iXj, kit%km, 1. )
+!
+!   CALL pmaxmin ( 'TR minmax press3e:', press3e, qmin, qmax, iXj, kit%km+1, 1. )
 
 
 !     ------------------------------------------------------------------------
@@ -4912,19 +4967,17 @@ CONTAINS
     IF ( associated(wr_tend_3d) .OR. associated(wr_tend_2d) ) then
       IF ( associated(wr_tend_3d) ) then
         DO lev=1,kit%km
-          ! convert units the same way as done in TR_GMI_DryDeposition
-          wr_tend_3d(:,:,lev) = (data3d(:,:,lev) - snapshot_3d(:,:,lev)) * &
-                                (mass(:,:,lev) / area) * spec%mw / (MAPL_AIRMW*cdt)
+          wr_tend_3d(:,:,lev) = (data3d(:,:,lev) - snapshot_3d(:,:,lev)) * VMR_to_MMR(:,:,lev) * &
+                                   mass(:,:,lev) / (area*cdt)
         END DO
+!       CALL pmaxmin ( 'TR minmax wr_tend_3d:', wr_tend_3d, qmin, qmax, iXj, kit%km, 1. )
       END IF
       IF ( associated(wr_tend_2d) ) then
-        lev=1
-          wr_tend_2d(:,:)     = (data3d(:,:,lev) - snapshot_3d(:,:,lev)) * &
-                                (mass(:,:,lev) / area) * spec%mw / (MAPL_AIRMW*cdt)
-        DO lev=2,kit%km
+          wr_tend_2d(:,:)     = 0.0
+        DO lev=1,kit%km
           wr_tend_2d(:,:)     = &
-          wr_tend_2d(:,:)     + (data3d(:,:,lev) - snapshot_3d(:,:,lev)) * &
-                                (mass(:,:,lev) / area) * spec%mw / (MAPL_AIRMW*cdt)
+          wr_tend_2d(:,:)     + (data3d(:,:,lev) - snapshot_3d(:,:,lev)) * VMR_to_MMR(:,:,lev) * &
+                                   mass(:,:,lev) / (area*cdt)
         END DO
       END IF
       deallocate( snapshot_3d, __STAT__)
@@ -5025,11 +5078,11 @@ CONTAINS
       call MAPL_GetPointer ( impChem, delp,     'DELP',     __RC__ )
 
       if ( associated(tendency3d) ) then
-        tendency3d = (data3d-snapshot) * delp/MAPL_GRAV/cdt
+        tendency3d =     (data3d-snapshot) * delp / (MAPL_GRAV*cdt)
       end if 
 
       if ( associated(tendency2d) ) then
-        tendency2d = SUM((data3d-snapshot) * delp/MAPL_GRAV/cdt, 3)
+        tendency2d = SUM((data3d-snapshot) * delp / (MAPL_GRAV*cdt), 3)
       end if 
 
       deallocate( snapshot, __STAT__)
@@ -5173,7 +5226,7 @@ CONTAINS
     data3d(:,:,km:1:-1) = tc_(:,:,1:km,1)
 
     if ( associated(tendency3d) ) then
-      tendency3d = (data3d-snapshot) * delp/MAPL_GRAV/cdt
+      tendency3d = (data3d-snapshot) * delp / (MAPL_GRAV*cdt)
       deallocate( snapshot, __STAT__)
     end if
 
@@ -5277,11 +5330,11 @@ CONTAINS
     if ( associated(tendency3d) .OR.  associated(tendency2d) ) then
 
       if ( associated(tendency3d) ) then
-        tendency3d = (data3d-snapshot) * w_c%delp/MAPL_GRAV/cdt
+        tendency3d =     (data3d-snapshot) * w_c%delp / (MAPL_GRAV*cdt)
       end if
 
       if ( associated(tendency2d) ) then
-        tendency2d = SUM((data3d-snapshot) * w_c%delp/MAPL_GRAV/cdt, 3)
+        tendency2d = SUM((data3d-snapshot) * w_c%delp / (MAPL_GRAV*cdt), 3)
       end if
 
       deallocate( snapshot, __STAT__)
@@ -5361,7 +5414,7 @@ CONTAINS
     data3d(:,:,km) - dqa
 
     IF ( ASSOCIATED(tendency2d) ) &
-     tendency2d = -1.0 * dqa*delp(:,:,km)/MAPL_GRAV/cdt
+     tendency2d = -1.0 * dqa*delp(:,:,km) / (MAPL_GRAV*cdt)
 
     deallocate( dqa, drydepositionfrequency, __STAT__)
 

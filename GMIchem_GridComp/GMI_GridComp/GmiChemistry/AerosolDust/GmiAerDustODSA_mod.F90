@@ -29,30 +29,30 @@
 #     include "setkin_par.h"
 #     include "gmi_AerDust_const.h"
 !
-! !INPUT PARAMETERS:
-  integer                , intent(in) :: i1, i2, ju1, j2, k1, k2
-  integer                , intent(in) :: ilo, ihi, julo, jhi
-  integer                , intent(in) :: num_species
-  integer                , intent(in) :: num_AerDust
-  integer                , intent(in) :: AerDust_Effect_opt
-  logical                , intent(in) :: do_synoz
-  integer                , intent(in) :: isynoz_num
-  real*8                 , intent(in) :: synoz_threshold
-  real*8                 , intent(in) :: gridBoxHeight   (i1:i2,   ju1:j2,  k1:k2)
-  real*8                 , intent(in) :: relativeHumidity(i1:i2, ju1:j2, k1:k2)
-  REAL*8                 , intent(in) :: raa_b(4, NP_b)
-  REAL*8                 , intent(in) :: qaa_b(4, NP_b)
+!... INPUT PARAMETERS:
+  integer, intent(in) :: i1, i2, ju1, j2, k1, k2
+  integer, intent(in) :: ilo, ihi, julo, jhi
+  integer, intent(in) :: num_species
+  integer, intent(in) :: num_AerDust
+  integer, intent(in) :: AerDust_Effect_opt
+  logical, intent(in) :: do_synoz
+  integer, intent(in) :: isynoz_num
+  real*8 , intent(in) :: synoz_threshold
+  real*8 , intent(in) :: gridBoxHeight   (i1:i2,   ju1:j2,  k1:k2)
+  real*8 , intent(in) :: relativeHumidity(i1:i2, ju1:j2, k1:k2)
+  REAL*8 , intent(in) :: raa_b(4, NP_b)
+  REAL*8 , intent(in) :: qaa_b(4, NP_b)
   type (t_GmiArrayBundle), intent(in) :: concentration(num_species)
 
   REAL*8, INTENT(IN) :: tropp(i1:i2, ju1:j2)         !Tropopause pressure (hPa)
   REAL*8, INTENT(IN) :: pres3c(i1:i2, ju1:j2, k1:k2) !Layer mean pressure (hPa)
-
-  REAL*8 :: optDepth(i1:i2, ju1:j2, k1:k2, num_AerDust)
-  REAL*8 :: eRadius (i1:i2, ju1:j2, k1:k2, NSADdust+NSADaer)
-  REAL*8 :: tArea   (i1:i2, ju1:j2, k1:k2, NSADdust+NSADaer)
-  REAL*8 :: odAer   (i1:i2, ju1:j2, k1:k2, NSADaer*NRH_b)
-  REAL*8 :: dAersl  (i1:i2, ju1:j2, k1:k2, 2)
-  REAL*8 :: wAersl  (i1:i2, ju1:j2, k1:k2, NSADaer )
+  REAL*8, intent(in) :: dAersl  (i1:i2, ju1:j2, k1:k2, 2)
+  REAL*8, intent(in) :: wAersl  (i1:i2, ju1:j2, k1:k2, NSADaer )
+!... OUTPUT PARAMETERS:
+  REAL*8, intent(InOut) :: optDepth(i1:i2, ju1:j2, k1:k2, num_AerDust)
+  REAL*8, intent(out) :: eRadius (i1:i2, ju1:j2, k1:k2, NSADdust+NSADaer)
+  REAL*8, intent(out) :: tArea   (i1:i2, ju1:j2, k1:k2, NSADdust+NSADaer)
+  REAL*8, intent(out) :: odAer   (i1:i2, ju1:j2, k1:k2, NSADaer*NRH_b)
 
 !
 ! !DESCRIPTION:
@@ -84,7 +84,7 @@
 !!    SCALEVOL: Change in Vol vs RH
 !!    RH:       Relative Humidity bins
 
-      REAL*8,  SAVE  :: RH(NRH_b)   = (/0d0,0.5d0,0.7d0,0.8d0,0.9d0/)
+      REAL*8,  SAVE  :: RH(NRH_b)   = (/0d0,0.5d0,0.7d0,0.8d0,0.9d0,0.95d0,0.99d0/)
       REAL*8         :: FWET, REFF, FRAC, SCALEQ, SCALER
       REAL*8         :: RW(NRH_b)
       REAL*8         :: QW(NRH_b)
@@ -175,8 +175,12 @@
                      IRH = 3
                   ELSE IF ( relativeHumidity(I,J,L) <= RH(5) ) THEN
                      IRH = 4
-                  ELSE
+                  ELSE IF ( relativeHumidity(I,J,L) <= RH(6) ) THEN
                      IRH = 5
+                  ELSE IF ( relativeHumidity(I,J,L) <= RH(7) ) THEN
+                     IRH = 6
+                  ELSE
+                     IRH = 7
                   ENDIF
 
                   ! For the NRHth bin, we don't have to interpolate
@@ -369,6 +373,36 @@
 
       ENDDO
 
+      !=================================================================
+      ! Choose if the radiative effects or/and heterogeneous chemistry
+      ! on different aerosols/dust are turned on/off.
+      !  AerDust_Effect_opt =
+      !     0: radiative effects on  and heterogeneous chemistry on
+      !     1: radiative effects off and heterogeneous chemistry on
+      !     2: radiative effects on  and heterogeneous chemistry off
+      !     3: radiative effects off and heterogeneous chemistry off
+      !=================================================================
+
+      ! Turn off the radiative effects of different aerososl
+      IF ((AerDust_Effect_opt == 1) .or. (AerDust_Effect_opt == 3)) THEN
+         DO R = 1,NRH_b
+            odAer(:,:,:,R)         = 0.d0  !sulfate
+            odAer(:,:,:,R+NRH_b)   = 0.d0  !BC
+            odAer(:,:,:,R+2*NRH_b) = 0.d0  !OC
+            odAer(:,:,:,R+3*NRH_b) = 0.d0  !SS(accum)
+            odAer(:,:,:,R+4*NRH_b) = 0.d0  !SS(coarse)
+         ENDDO
+      END IF
+
+      ! To turn off heterogeneous chemistry on different aerosols
+      IF ((AerDust_Effect_opt == 2) .or. (AerDust_Effect_opt == 3)) THEN
+         tArea(:,:,:,NSADdust+1) = 0.d0  !Sulfate
+         tArea(:,:,:,NSADdust+2) = 0.d0  !BC
+         tArea(:,:,:,NSADdust+3) = 0.d0  !OC
+         tArea(:,:,:,NSADdust+4) = 0.d0  !SS (accum)
+         tArea(:,:,:,NSADdust+5) = 0.d0  !SS (coarse)
+      END IF
+
       !==============================================================
       ! optDepth Diagnostic: Aerosol OD's, Growth Rates, Surface Areas
       !
@@ -410,81 +444,61 @@
 
       ! Loop over aerosol types
       DO N = 1, NSADaer
-
-         !------------------------------------
-         ! Optical Depths
-         ! Scale of optical depths w/ RH
-         !------------------------------------
+!
+!         !------------------------------------
+!         ! Optical Depths
+!         ! Scale of optical depths w/ RH
+!         !------------------------------------
+!         DO R = 1, NRH_b
+!            ! Index for type of aerosol and RH value
+!            IRHN = ( (N-1) * NRH_b ) + R
+!
+!            ! Optical Depths
+!	   IF(do_synoz) THEN
+!            WHERE (concentration(isynoz_num)%pArray3D(:,:,:) < synoz_threshold)
+!               optDepth(:,:,:,3+3*N) = optDepth(:,:,:,3+3*N) +  &
+!     &                                    odAer(:,:,:,IRHN ) *  &
+!     &                                  qaa_b(2,IND(N)) /qaa_b(4,IND(N))
+!            END WHERE
+!	   ELSE
+!            DO L = k1, k2
+!             WHERE(pres3c(:,:,L) >= topp(:,:))
+!              optDepth(:,:,L,3+3*N) = optDepth(:,:,L,3+3*N) +  &
+!     &                                    odAer(:,:,L,IRHN ) *  &
+!     &                                  qaa_b(2,IND(N)) /qaa_b(4,IND(N))
+!             END WHERE
+!            END DO
+!	   END IF
+!         ENDDO
+!
+!         !------------------------------------
+!         ! Surface areas
+!         !------------------------------------
+!	 IF(do_synoz) THEN
+!          WHERE (concentration(isynoz_num)%pArray3D(:,:,:) < synoz_threshold)
+!             optDepth(:,:,:,5+3*N) = optDepth(:,:,:,5+3*N) +  &
+!     &                               tArea(:,:,:,N+NSADdust)
+!          END WHERE
+!         ELSE
+!          DO L = k1, k2
+!           WHERE(pres3c(:,:,L) >= tropp(:,:))
+!             optDepth(:,:,L,5+3*N) = optDepth(:,:,L,5+3*N) +  &
+!     &                               tArea(:,:,L,N+NSADdust)
+!           END WHERE
+!          END DO
+!         END IF
+!
          DO R = 1, NRH_b
             ! Index for type of aerosol and RH value
             IRHN = ( (N-1) * NRH_b ) + R
-
-            ! Optical Depths
-	   IF(do_synoz) THEN
-            WHERE (concentration(isynoz_num)%pArray3D(:,:,:) < synoz_threshold)
-               optDepth(:,:,:,3+3*N) = optDepth(:,:,:,3+3*N) +  &
+            optDepth(:,:,:,3+3*N) = optDepth(:,:,:,3+3*N) +  &
      &                                    odAer(:,:,:,IRHN ) *  &
      &                                  qaa_b(2,IND(N)) /qaa_b(4,IND(N))
-            END WHERE
-	   ELSE
-            DO L = k1, k2
-             WHERE(pres3c(:,:,L) >= tropp(:,:))
-              optDepth(:,:,L,3+3*N) = optDepth(:,:,L,3+3*N) +  &
-     &                                    odAer(:,:,L,IRHN ) *  &
-     &                                  qaa_b(2,IND(N)) /qaa_b(4,IND(N))
-             END WHERE
-            END DO
-	   END IF
-         ENDDO
-
-         !------------------------------------
-         ! Surface areas
-         !------------------------------------
-	 IF(do_synoz) THEN
-          WHERE (concentration(isynoz_num)%pArray3D(:,:,:) < synoz_threshold)
-             optDepth(:,:,:,5+3*N) = optDepth(:,:,:,5+3*N) +  &
+         enddo
+         optDepth(:,:,:,5+3*N) = optDepth(:,:,:,5+3*N) +  &
      &                               tArea(:,:,:,N+NSADdust)
-          END WHERE
-         ELSE
-          DO L = k1, k2
-           WHERE(pres3c(:,:,L) >= tropp(:,:))
-             optDepth(:,:,L,5+3*N) = optDepth(:,:,L,5+3*N) +  &
-     &                               tArea(:,:,L,N+NSADdust)
-           END WHERE
-          END DO
-         END IF
 
       ENDDO
-
-      !=================================================================
-      ! Choose if the radiative effects or/and heterogeneous chemistry
-      ! on different aerosols/dust are turned on/off.
-      !  AerDust_Effect_opt =
-      !     0: radiative effects on  and heterogeneous chemistry on
-      !     1: radiative effects off and heterogeneous chemistry on
-      !     2: radiative effects on  and heterogeneous chemistry off
-      !     3: radiative effects off and heterogeneous chemistry off
-      !=================================================================
-
-      ! Turn off the radiative effects of different aerososl
-      IF ((AerDust_Effect_opt == 1) .or. (AerDust_Effect_opt == 3)) THEN
-         DO R = 1,NRH_b
-            odAer(:,:,:,R)         = 0.d0  !sulfate
-            odAer(:,:,:,R+NRH_b)   = 0.d0  !BC
-            odAer(:,:,:,R+2*NRH_b) = 0.d0  !OC
-            odAer(:,:,:,R+3*NRH_b) = 0.d0  !SS(accum)
-            odAer(:,:,:,R+4*NRH_b) = 0.d0  !SS(coarse)
-         ENDDO
-      END IF
-
-      ! To turn off heterogeneous chemistry on different aerosols
-      IF ((AerDust_Effect_opt == 2) .or. (AerDust_Effect_opt == 3)) THEN
-         tArea(:,:,:,NSADdust+1) = 0.d0  !Sulfate
-         tArea(:,:,:,NSADdust+2) = 0.d0  !BC
-         tArea(:,:,:,NSADdust+3) = 0.d0  !OC
-         tArea(:,:,:,NSADdust+4) = 0.d0  !SS (accum)
-         tArea(:,:,:,NSADdust+5) = 0.d0  !SS (coarse)
-      END IF
 
       return
 
@@ -525,13 +539,13 @@
   REAL*8, INTENT(IN) :: tropp(i1:i2, ju1:j2)         !Tropopause pressure (hPa)
   REAL*8, INTENT(IN) :: pres3c(i1:i2, ju1:j2, k1:k2) !Layer mean pressure (hPa)
 
-  REAL*8 , intent(inOut) :: optDepth(i1:i2, ju1:j2, k1:k2, num_AerDust)
-  REAL*8 , intent(inOut) :: eradius (i1:i2, ju1:j2, k1:k2, NSADdust+NSADaer)
-  REAL*8 , intent(inOut) :: tArea   (i1:i2, ju1:j2, k1:k2, NSADdust+NSADaer)
-  REAL*8 , intent(inOut) :: ODmdust (i1:i2, ju1:j2, k1:k2, NSADdust)
-  REAL*8 :: Dust    (i1:i2, ju1:j2, k1:k2, NSADdust)
-  REAL*8 :: raa_b   (4, NP_b)
-  REAL*8 :: qaa_b   (4, NP_b)
+  REAL*8, intent(InOut) :: optDepth(i1:i2, ju1:j2, k1:k2, num_AerDust)
+  REAL*8, intent(Out) :: eradius (i1:i2, ju1:j2, k1:k2, NSADdust+NSADaer)
+  REAL*8, intent(Out) :: tArea   (i1:i2, ju1:j2, k1:k2, NSADdust+NSADaer)
+  REAL*8, intent(Out) :: ODmdust (i1:i2, ju1:j2, k1:k2, NSADdust)
+  REAL*8, intent(in) :: Dust    (i1:i2, ju1:j2, k1:k2, NSADdust)
+  REAL*8, intent(in) :: raa_b   (4, NP_b)
+  REAL*8, intent(in) :: qaa_b   (4, NP_b)
 !
 ! !DESCRIPTION: Use the mineral dust concentrations to calculate
 !   the dust optical depth at each level.
@@ -622,45 +636,9 @@
                ENDDO
             ENDDO
          ENDDO
-      ENDDO
-      !==============================================================
-      ! optDepth Diagnostic:
-      !
-      ! Tracer #1: Cloud optical depths    (from Aero_OptDep_SurfArea)
-      ! Tracer #2: Max Overlap Cld Frac    (from Aero_OptDep_SurfArea)
-      ! Tracer #3: Random Overlap Cld Frac (from Aero_OptDep_SurfArea)
-      ! Tracer #4: Dust optical depths at 400 nm (from all size bins)
-      ! Tracer #5: Dust surface areas (from all size bins)
-      !==============================================================
-
-      DO N = 1, NSADdust
-        IF(do_synoz) THEN
-         WHERE (concentration(isynoz_num)%pArray3D(:,:,:) < synoz_threshold)
-             !--------------------------------------
-             ! optDepth tracer #4: Dust optical depths
-             !--------------------------------------
-             optDepth(:,:,:,4) = optDepth(:,:,:,4) +  &
-     &             (odmDust(:,:,:,N) * qaa_b(2,14+N) / qaa_b(4,14+N))
-             !--------------------------------------
-             ! optDepth tracer #5: Dust surface areas
-             !--------------------------------------
-             optDepth(:,:,:,5) = optDepth(:,:,:,5) + tArea(:,:,:,N)
-         END WHERE
-	ELSE
-         DO L = k1, k2
-	   WHERE(pres3c(:,:,L) >= tropp(:,:))
-             !--------------------------------------
-             ! optDepth tracer #4: Dust optical depths
-             !--------------------------------------
-             optDepth(:,:,L,4) = optDepth(:,:,L,4) +  &
-     &             (odmDust(:,:,L,N) * qaa_b(2,14+N) / qaa_b(4,14+N))
-             !--------------------------------------
-             ! optDepth tracer #5: Dust surface areas
-             !--------------------------------------
-             optDepth(:,:,L,5) = optDepth(:,:,L,5) + tArea(:,:,L,N)
-	   END WHERE
-         END DO
-	END IF
+!
+!         print '(''sdsFJ: '',4e12.4)', MSDENS(N), raa_b(4,14+N)*1.0D-4, maxval(DUST(:,:,:,N)), maxval(TAREA(:,:,:,N))
+!
       ENDDO
 
       !=================================================================
@@ -686,6 +664,30 @@
            tArea(:,:,:,R) = 0.d0  !dust
          ENDDO
       END IF
+      !==============================================================
+      ! optDepth Diagnostic:
+      !
+      ! Tracer #1: Cloud optical depths    (from Aero_OptDep_SurfArea)
+      ! Tracer #2: Max Overlap Cld Frac    (from Aero_OptDep_SurfArea)
+      ! Tracer #3: Random Overlap Cld Frac (from Aero_OptDep_SurfArea)
+      ! Tracer #4: Dust optical depths at 400 nm (from all size bins)
+      ! Tracer #5: Dust surface areas (from all size bins)
+      !==============================================================
+
+! Previously this was computed for troposphere only,
+! but now we do all levels  (Jan 2020)
+
+      DO N = 1, NSADdust
+!--------------------------------------
+! optDepth tracer #4: Dust optical depths
+!--------------------------------------
+             optDepth(:,:,:,4) = optDepth(:,:,:,4) +  &
+     &             (odmDust(:,:,:,N) * qaa_b(2,14+N) / qaa_b(4,14+N))
+!--------------------------------------
+! optDepth tracer #5: Dust surface areas
+!--------------------------------------
+             optDepth(:,:,:,5) = optDepth(:,:,:,5) + tArea(:,:,:,N)
+      ENDDO
 !
       RETURN
 

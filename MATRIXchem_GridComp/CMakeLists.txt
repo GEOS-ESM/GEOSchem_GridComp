@@ -22,8 +22,8 @@ set (srcs
   MATRIXchem_GridCompMod.F90
   )
 
-esma_add_library (${this} SRCS ${srcs} DEPENDENCIES Chem_Shared)
-target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF} ${esma_include}/MAPL_Base)
+esma_add_library (${this} SRCS ${srcs} DEPENDENCIES Chem_Shared MAPL)
+target_include_directories (${this} PUBLIC ${INC_ESMF}) # ${esma_include}/MAPL_Base)
 if (EXTENDED_SOURCE)
   set_target_properties (${this} PROPERTIES COMPILE_FLAGS ${EXTENDED_SOURCE})
 endif ()
@@ -31,7 +31,7 @@ target_compile_definitions (${this} PRIVATE TRACERS_AMP TRACERS_AMP_M1 GEOS5_POR
 
 esma_generate_gocart_code (${this} -F)
 
-file (GLOB resource_files "*.rc")
+file (GLOB resource_files CONFIGURE_DEPENDS "*.rc")
 
 install(
    FILES ${resource_files}

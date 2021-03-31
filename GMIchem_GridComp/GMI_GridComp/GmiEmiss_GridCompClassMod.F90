@@ -27,7 +27,6 @@
    USE GmiSpcConcentrationMethod_mod, ONLY : t_SpeciesConcentration
    USE GmiGrid_mod,                   ONLY : t_gmiGrid
    USE GmiTimeControl_mod,            ONLY : t_GmiClock
-   USE GmiESMFrcFileReading_mod,      ONLY : rcEsmfReadLogical
    USE GmiESMFrcFileReading_mod,      ONLY : rcEsmfReadTable
    USE GmiArrayBundlePointer_mod,     ONLY : t_GmiArrayBundle, CleanArrayPointer
    USE GmiFieldBundleESMF_mod,        ONLY : updateTracerToBundle
@@ -337,24 +336,24 @@ CONTAINS
       ! Deposition related variables
       !------------------------------
       
-      call rcEsmfReadLogical(gmiConfigFile, self%do_drydep, &
-     &           "do_drydep:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_drydep, &
+     &           label="do_drydep:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_wetdep, &
-     &           "do_wetdep:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_wetdep, &
+     &           label="do_wetdep:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       !------------------------------
       ! Emission related variables
       !------------------------------
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_emission, &
-     &           "do_emission:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_emission, &
+     &           label="do_emission:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_synoz, &
-     &           "do_synoz:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_synoz, &
+     &           label="do_synoz:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%num_diurnal_emiss, &
@@ -365,28 +364,28 @@ CONTAINS
       ! Diagnostics related variables
       !------------------------------
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_diag, &
-     &           "pr_diag:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_diag, &
+     &           label="pr_diag:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%verbose, &
-     &           "verbose:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%verbose, &
+     &           label="verbose:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_surf_emiss, &
-     &           "pr_surf_emiss:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_surf_emiss, &
+     &           label="pr_surf_emiss:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_emiss_3d, &
-     &           "pr_emiss_3d:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_emiss_3d, &
+     &           label="pr_emiss_3d:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%pr_const, &
-     &               "pr_const:", default=.false., rc=STATUS )
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_const, &
+     &               label="pr_const:", default=.false., rc=STATUS )
       VERIFY_(STATUS)
 
-      call rcEsmfReadLogical(gmiConfigFile, self%do_aerocom, &
-     &               "do_aerocom:", default=.false., rc=STATUS )
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_aerocom, &
+     &               label="do_aerocom:", default=.false., rc=STATUS )
       VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%metdata_name_org, &
@@ -421,8 +420,8 @@ CONTAINS
       ! Useful for mission support and replays.
       !--------------------------------------------
       
-      call rcEsmfReadLogical(gmiConfigFile, self%BCRealTime, &
-     &           "BCRealTime:", default=.false., rc=STATUS)
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%BCRealTime, &
+     &           label="BCRealTime:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
       
 ! Does the GMICHEM import restart file exist?  If not,
@@ -831,7 +830,7 @@ CONTAINS
 !  Local
 !  -----
    INTEGER :: cymd, dymd, hms
-   INTEGER :: i, i1, i2, ic, idehyd_num, im, iXj
+   INTEGER :: i, i1, i2, ic, im, iXj
    INTEGER :: j, j1, j2, jm
    INTEGER :: k, km, kReverse
    INTEGER :: lightning_opt, loc_proc
@@ -850,7 +849,6 @@ CONTAINS
    REAL, PARAMETER :: secPerDay = 86400.00
    REAL, PARAMETER :: err = 1.00E-04
 
-   REAL(KIND=DBL) :: dehydmin = 0.00
    REAL(KIND=DBL) :: chemDt, dayOfYear
 
    CHARACTER(LEN=ESMF_MAXSTR) :: speciesName
@@ -1777,6 +1775,18 @@ CONTAINS
  !! AIRMASS
     CALL MAPL_GetPointer(expChem, EM_pointer, "AIRMASS", __RC__)
     IF(ASSOCIATED(EM_pointer))   EM_pointer(i1:i2, j1:j2, 1:km) = AIRDENS(i1:i2, j1:j2, 1:km) * gridBoxThickness(i1:i2, j1:j2, km:1:-1)
+
+!!!! >>>>>>>>>>>>>>>>  OVP
+    IF(ASSOCIATED(EM_pointer)) THEN
+       DATA_FOR_OVP_3D => EM_pointer
+
+       CALL MAPL_GetPointer(expChem, OVP10_OUTPUT_3D, 'OVP10_AIRMASS', __RC__)
+       CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_AIRMASS', __RC__)
+
+       CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP10_OUTPUT_3D, MASK_10AM, OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+       CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+    END IF
+!!!! <<<<<<<<<<<<<<<<  OVP
 !!!!!
 
 

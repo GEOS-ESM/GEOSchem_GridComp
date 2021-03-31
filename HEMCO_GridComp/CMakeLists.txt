@@ -15,9 +15,16 @@ target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 set (acg_headers
   HEMCO_InternalSpec___.h HEMCO_DeclarePointer___.h HEMCO_GetPointer___.h
   )
+
+
+find_file (generator
+  NAME mapl_acg.pl
+  PATHS ${esma_include}/MAPL_Base ${esma_etc}/MAPL)
+
+
 add_custom_command (
   OUTPUT ${acg_headers}
-  COMMAND ${esma_include}/MAPL_Base/mapl_acg.pl ${acg_flags} -v -F ${CMAKE_CURRENT_SOURCE_DIR}/HEMCO_Registry.rc
+  COMMAND ${generator} ${acg_flags} -v -F ${CMAKE_CURRENT_SOURCE_DIR}/HEMCO_Registry.rc
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   MAIN_DEPENDENCY HEMCO_Registry.rc 
 #  DEPENDS ${include_MAPL_Base}/mapl_acg.pl
@@ -26,7 +33,7 @@ add_custom_command (
 add_custom_target (phony_HEMCO DEPENDS ${acg_headers})
 add_dependencies (${this} phony_HEMCO)
 
-file (GLOB resource_files "*.rc")
+file (GLOB resource_files CONFIGURE_DEPENDS "*.rc")
 
 install(
    FILES ${resource_files}

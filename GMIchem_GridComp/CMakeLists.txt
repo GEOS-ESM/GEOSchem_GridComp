@@ -6,6 +6,7 @@ set (src_directories
   GMI_GridComp/GmiChemistry
   GMI_GridComp/GmiChemistry/AerosolDust
   GMI_GridComp/GmiChemistry/ioChemistry
+  GMI_GridComp/GmiChemistry/photolysis/CloudJ
   GMI_GridComp/GmiChemistry/photolysis/fastJX53c_ref
   GMI_GridComp/GmiChemistry/photolysis/fast_JX
   GMI_GridComp/GmiChemistry/photolysis/fast_JX65
@@ -37,7 +38,7 @@ set (src_directories
 
 set (srcs)
 foreach (dir ${src_directories})
-  file (GLOB tmpsrcs ${dir}/*.[fF] ${dir}/*.[fF]90 ${dir}/*.c)
+  file (GLOB tmpsrcs CONFIGURE_DEPENDS ${dir}/*.[fF] ${dir}/*.[fF]90 ${dir}/*.c)
   list (APPEND srcs ${tmpsrcs})
 endforeach()
 
@@ -68,20 +69,21 @@ esma_add_library (${this} SRCS ${srcs} DEPENDENCIES Chem_Shared GEOS_Shared)
 
 target_include_directories (${this}
   PUBLIC
-  GMI_GridComp
-  GMI_GridComp/GmiChemistry/include
-  GMI_GridComp/GmiChemistry/photolysis/include
-  GMI_GridComp/GmiChemistry/stratTropMech
-  GMI_GridComp/GmiShared/GmiInclude
-  GMI_GridComp/GmiChemistry/photolysis/fast_JX
-  GMI_GridComp/GmiChemistry/photolysis/fast_JX65
-  GMI_GridComp/GmiChemistry/photolysis/fast_JX53b
-  GMI_GridComp/GmiChemistry/photolysis/fastJX53c_ref
-  GMI_GridComp/GmiChemistry/photolysis/fastj 
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry/photolysis/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry/stratTropMech>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiShared/GmiInclude>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry/photolysis/CloudJ>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry/photolysis/fast_JX>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry/photolysis/fast_JX65>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry/photolysis/fast_JX53b>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry/photolysis/fastJX53c_ref>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry/photolysis/fastj>
   )
 
-target_include_directories (${this} PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/GMI_GridComp)
-target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
+target_include_directories (${this} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/GMI_GridComp>)
+target_include_directories (${this} PUBLIC ${INC_ESMF})
 
 
 
@@ -91,8 +93,12 @@ set (mechanism ${gmi_gc}/GmiChemistry/stratTropMech/setkin_lchem.h)
 set (deposParam ${gmi_gc}/GmiChemistry/stratTropMech/setkin_depos.h)
 set (mechParam ${gmi_gc}/GmiChemistry/stratTropMech/setkin_par.h)
 set (mechRC ${gmi_gc}/GmiChemistry/stratTropMech/setkin_chem_mech.txt)
-set (first_stage_files Deposition_Registry___.rc Reactions_Registry___.rc GMI_Tendency_Registry___.rc setkin_chem_mech.txt___.rc)
-set (generator ${esma_include}/MAPL_Base/mapl_acg.pl)
+set (first_stage_files Deposition_Registry___.rc Reactions_Registry___.rc GMI_Tendency_Registry___.rc setkin_chem_mech.txt___.rc GMICHEM_History___.rc)
+
+find_file (generator
+  NAME mapl_acg.pl
+  PATHS ${esma_include}/MAPL_Base ${esma_etc}/MAPL)
+
 set (name GMICHEM)
 
 add_custom_command (
@@ -121,6 +127,7 @@ add_custom_command (
 
   COMMAND ${generator} ${acg_flags} -N ${name} ${gmi_gc}/GMI_Registry.rc
   COMMAND ${CMAKE_COMMAND} -E copy ${name}_DeclarePointer___.h GMI_GridComp/Tendency_DeclarePointer___.h
+  COMMAND ${CMAKE_COMMAND} -E copy ${name}_History___.rc GMI_GridComp/${name}_History___.rc
 
   MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/gmi_acg.pl
   DEPENDS ${registry} ${mechanism} ${deposParam} ${mechParam} ${mechRC}
