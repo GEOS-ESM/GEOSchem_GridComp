@@ -149,7 +149,6 @@ CONTAINS
     self%CF = ESMF_ConfigCreate(__RC__)
     call ESMF_ConfigLoadFile ( self%CF,'GAAS_GridComp.rc',__RC__)
     call ESMF_ConfigGetAttribute(self%CF, self%verbose, Label='verbose:',  __RC__ )
-    call ESMF_ConfigGetAttribute(self%CF, self%no_fuss, Label='no_fuss_if_ana_missing:',__RC__ )
     call ESMF_ConfigGetAttribute(self%CF, self%eps, Label='eps_for_log_transform_aod:', &
                                           default=0.01, __RC__)
     call ESMF_ConfigGetAttribute(self%CF, self%channel, Label='single_channel:',  &
@@ -515,24 +514,6 @@ CONTAINS
    if ( PREDICTOR_STEP .or. ReplayShutOff .or. (.not. analysis_time) ) then
       RETURN_(ESMF_SUCCESS)
    end if
-
-!  If desired, just bail out if analysis file is not there
-!  -------------------------------------------------------
-!  Probably don't need this block of code anymore. AOD files are read through ExtData now. -ES
-!   if ( self%no_fuss ) then
-!        call ESMF_ConfigGetAttribute(self%CF, expid, Label='EXPID:', default='unknown', __RC__)
-!        call ESMF_ConfigGetAttribute(self%CF, template, Label='aod_ana_filename:', __RC__)
-!        call StrTemplate ( filename, template, xid=expid, nymd=nymd, nhms=nhms )        
-!        inquire ( file=trim(filename), exist=fexists )
-!        if ( .not. fexists ) then
-!           if (MAPL_AM_I_ROOT()) then
-!              PRINT *, TRIM(Iam)//': Ignoring Aerosol Assimilation at ', nymd, nhms
-!              PRINT *, TRIM(Iam)//': Cannot find AOD analysis file ', trim(filename)
-!              PRINT *,' '
-!           end if
-!           RETURN_(ESMF_SUCCESS)
-!        end if
-!     end if
 
 !  OK, let's assimilate the AOD analysis
 !  -------------------------------------
