@@ -17,5 +17,6 @@ pSOA_BIOB_VOC    NA Y Y %y4-%m2-%d2t12:00:00 none none biofuel /dev/null
 
 # SULFATE PRODUCTION
 PSO4TOT NA Y Y %y4-%m2-%d2t12:00:00 none none pso4tot /dev/null
+HNO3    NA Y Y %y4-%m2-%d2t12:00:00 none none hno3    /dev/null
 
 %%

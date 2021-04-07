@@ -1243,7 +1243,7 @@ contains
       end if
 
       if (cstate%f_carma%f_do_grow) then
-        if (present(nucleationRate)) nucleationRate(:) = cstate%f_pc_nucl(:, ibin, ielem) / (cstate%f_xmet(:)*cstate%f_ymet(:)*cstate%f_zmet(:)) / cstate%f_dtime * 1.e6_f
+        if (present(nucleationRate)) nucleationRate(:) = cstate%f_pc_nucl(:, ibin, ielem) / (cstate%f_xmet(:)*cstate%f_ymet(:)*cstate%f_zmet(:)) / cstate%f_dtime !* 1.e6_f
       else
         if (present(nucleationRate)) nucleationRate(:) = CAM_FILL
       end if

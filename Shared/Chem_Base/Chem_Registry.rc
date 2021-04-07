@@ -54,7 +54,7 @@ doing_SU:  yes  # &YesNo Include sulfates?
 doing_CFC: yes  # &YesNo Include CFCs?
 doing_BC:  yes  # &YesNo Include black carbon?
 doing_OC:  yes  # &YesNo Include organic carbon?
-doing_BRC: no   # &YesNo Include brown carbon?
+doing_BRC: yes  # &YesNo Include brown carbon?
 doing_NI:  yes  # &YesNo Include nitrate?
 doing_Rn:  no   # &YesNo include Radon?
 doing_CH4: no   # &YesNo include Methane?

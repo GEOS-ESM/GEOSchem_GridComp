@@ -99,6 +99,19 @@ subroutine setupgrow(carma, cstate, rc)
       rlhe(k,igash2so4) = rlhe(k, igash2o)
       rlhm(k,igash2so4) = rlhe(k, igash2o)
     end if
+
+    ! Properties for HNO3
+    ! PAC: Making these the same as H2SO4 for now.
+    if (igashno3 /= 0) then
+      ! Diffusivity
+      rhoa_cgs = rhoa(k) / (xmet(k) * ymet(k) * zmet(k))
+      aden     = rhoa_cgs * AVG / WTMOL_AIR
+      diffus(k,igashno3) = 1.76575e+17_f * sqrt(t(k)) / aden
+  
+      ! HACK: make H2SO4 latent heats same as water
+      rlhe(k,igashno3) = rlhe(k, igash2o)
+      rlhm(k,igashno3) = rlhe(k, igash2o)
+    end if
     
   enddo
 

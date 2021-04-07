@@ -171,6 +171,7 @@
      integer :: ielm_mxash    = -1      !! mixed group ash core element
      integer :: igas_h2o      = -1      !! water vapor
      integer :: igas_h2so4    = -1      !! sulfuric acid gas
+     integer :: igas_hno3     = -1      !! nitric acid gas
      integer :: ifallrtn      =  1      !! default fall velocity routine for particles
 
 !    Dust
@@ -410,6 +411,10 @@ CONTAINS
       gwtmol = WTMOL_H2O
      case (2)
       gwtmol = WTMOL_H2SO4
+     case (3)
+      gwtmol = WTMOL_SO2
+     case (4)
+      gwtmol = WTMOL_HNO3
      case default
       print *, 'Unknown gas IGCOMP from CARMAchem_Registry.rc for gas ',i
       call final_(-100)
@@ -471,6 +476,7 @@ CONTAINS
     gasname = ESMF_UtilStringUpperCase(trim(reg%gasname(i)))
     if(gasname == 'H2SO4') reg%igas_h2so4 = i
     if(gasname == 'H2O'  ) reg%igas_h2o   = i
+    if(gasname == 'HNO3'  ) reg%igas_hno3 = i
    end do
 
 !  NEED:
@@ -826,7 +832,8 @@ CONTAINS
                                       du_sarea, du_numd, du_reff, &
                                       ss_sarea, ss_numd, ss_reff, &
                                       sm_sarea, sm_numd, sm_reff, &
-                                      mx_sarea, mx_numd, mx_reff
+                                      mx_sarea, mx_numd, mx_reff, &
+                                      hno3, h2so4, su_mass, so4tendc
    REAL, POINTER, DIMENSION(:,:)   :: gwettop, fraclake, oro, u10m, v10m, &
                                       ustar, pblh, z0h, shflux, precc, precl, &
                                       substeps, retries
@@ -962,6 +969,7 @@ CONTAINS
    call MAPL_GetPointer ( impChem, oro, 'LWI', __RC__)
    call MAPL_GetPointer ( impChem, u, 'U', __RC__)
    call MAPL_GetPointer ( impChem, v, 'V', __RC__)
+   call MAPL_GetPointer ( impChem, hno3, 'HNO3', __RC__)
 
 !  Get Exports
 !  -----------
@@ -979,6 +987,7 @@ CONTAINS
    call MAPL_GetPointer(expChem, su_sed,    'CARMA_SUSD',   __RC__)
    call MAPL_GetPointer(expChem, su_nuc,    'CARMA_SUNUC',  __RC__)
    call MAPL_GetPointer(expChem, su_sarea,  'CARMA_SUSAREA',  __RC__)
+   call MAPL_GetPointer(expChem, su_mass,   'CARMA_SUMASS',  __RC__)
    call MAPL_GetPointer(expChem, su_numd,   'CARMA_SUNUMD',   __RC__)
    call MAPL_GetPointer(expChem, su_reff,   'CARMA_SUREFF',   __RC__)
    call MAPL_GetPointer(expChem, mxsu_sed,  'CARMA_MXSUSD',   __RC__)
@@ -1003,7 +1012,7 @@ CONTAINS
    call MAPL_GetPointer(expChem, retries,   'CARMA_RETRIES',    __RC__)
    call MAPL_GetPointer(expChem, zsubsteps, 'CARMA_ZSUBSTEPS',  __RC__)
    call MAPL_GetPointer(expChem, sath2so4,  'CARMA_SATH2SO4',   __RC__)
-   call MAPL_GetPointer(expChem, su_sarea,  'CARMA_SUSAREAv',  __RC__)
+   call MAPL_GetPointer(expChem, su_sareav,  'CARMA_SUSAREAv',  __RC__)
 
 
 !  Allocate space for fall velocity diagnostic and see if requested
@@ -1116,7 +1125,8 @@ endif
    if( associated(retries))   retries(:,:)     = 0.
    if( associated(zsubsteps)) zsubsteps(:,:,:) = 0.
    if( associated(sath2so4))  sath2so4(:,:,:)  = 0.
-   if( associated(SU_sareav)) SU_sareav(:,:,:) = 0.
+   if( associated(su_sareav)) su_sareav(:,:,:) = 0.
+   if( associated(su_mass))   su_mass(:,:,:)  = 0.
    last_sub = 0
    last_ret = 0
 
@@ -1323,6 +1333,7 @@ endif
         if(associated(MX_numd)  .and. igroup .eq. reg%igrp_mixed)   MX_numd(i,j,:)  = MX_numd(i,j,:)  + numd_
         if(associated(SU_sarea) .and. igroup .eq. reg%igrp_sulfate) SU_sarea(i,j,:) = SU_sarea(i,j,:) + sarea_
         if(associated(SU_numd)  .and. igroup .eq. reg%igrp_sulfate) SU_numd(i,j,:)  = SU_numd(i,j,:)  + numd_
+        if(associated(SU_mass)  .and. igroup .eq. reg%igrp_sulfate) SU_mass(i,j,:)  = SU_mass(i,j,:)  + q_
         if(associated(DU_sarea) .and. igroup .eq. reg%igrp_dust)    DU_sarea(i,j,:) = DU_sarea(i,j,:) + sarea_
         if(associated(DU_numd)  .and. igroup .eq. reg%igrp_dust)    DU_numd(i,j,:)  = DU_numd(i,j,:)  + numd_
         if(associated(SM_sarea) .and. igroup .eq. reg%igrp_smoke)   SM_sarea(i,j,:) = SM_sarea(i,j,:) + sarea_

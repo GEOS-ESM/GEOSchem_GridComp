@@ -10,6 +10,7 @@
 #  29Mar2007  Nielsen    Name validation, inclusion for GEOS-5
 #  18Nov2009  Colarco    First Crack
 #  23Nov2009  Colarco    Add Control elements to registry
+#  16May2019  Case       Addition of STS/HNO3 options
 #
 # -----------------------------------------------------------------
 
@@ -32,7 +33,8 @@ NWAVE:     0
 #             if CYLINDER, << 1 for disks, >> 1 for needles
 # FSCAV     = convective scavenging efficiency (fraction km-1) -- deprecated
 # IRHSWELL  = humidifcation type for fall/optics: 0 (I_NO_SWELLING), 1 (I_FITZGERALD), 
-#                                                 2 (I_GERBER), 3 (I_WTPCT_H2SO4)
+#                                                 2 (I_GERBER), 3 (I_WTPCT_H2SO4),
+#                                                 4 (I_WTPCT_STS)
 # IRHSWCOMP = composition swelling flag
 GROUPNAME: sulfate         dust       seasalt    smoke
 RMRAT:     3.7515201       2.2587828  2.2587828  2.2587828
@@ -60,12 +62,13 @@ ICOMPOSITION: 0       1       2      3
 # -----
 # Define the gas properties (must be at least NGAS entries)
 # GASNAME  = name
-# IGCOMP   = gas composition: 1 (I_GCOMP_H2O), 2 (I_GCOMP_H2SO4), 3 (I_GCOMP_SO2)
+# IGCOMP   = gas composition: 1 (I_GCOMP_H2O), 2 (I_GCOMP_H2SO4), 3 (I_GCOMP_SO2),
+#                             4 (I_GCOMP_HNO3)
 # IGVAPREQ = vapor pressure equation: 1 (I_VAPRTN_H2O_BUCK1981), 2 (I_VAPRTN_H2O_MURPHY2005)
 #                                     3 (I_VAPRTN_H2O_GOFF1946), 4 (I_VAPRTN_H2SO4_AYERS1980)
-GASNAME:      H2O     H2SO4
-IGCOMP:       1       2
-IGVAPREQ:     2       4
+GASNAME:      H2O     H2SO4   HNO3
+IGCOMP:       1       2       4
+IGVAPREQ:     2       4       -1
 
 
 # Microphysical process control
@@ -113,7 +116,7 @@ point_emissions_srcfilen_sulfate: /dev/null
   SS_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SS.v3_3.nbin=22.nc
   BC_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SU.v1.nbin=22.nc
   SM_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SM.v1.nbin=22.nc
-  SU_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SU.v6.nbin=22.nc
+  SU_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SU.v1.nbin=22.nc
 
 # The following code is the initial registry
   COMP_NAME: CARMA
@@ -171,6 +174,7 @@ point_emissions_srcfilen_sulfate: /dev/null
   pSOA_ANTHRO_VOC    | kg m-3 s-1  | xyz | C |    |   |   |     |      | SOA production anthropogenic VOC
   pSOA_BIOB_VOC      | kg m-3 s-1  | xyz | C |    |   |   |     |      | SOA production biomass burning VOC
   PSO4TOT            | kg m-2 s-1  | xyz | C |    |   |   |     |      | so4- production from chemistry
+  HNO3               | mol mol-1   | xyz | C |    |   |   |     |      | nitric_acid
 # -------------------|-------------|-----|---|----|---|---|-----|------|--------------------------
 </ImportSpec>
 

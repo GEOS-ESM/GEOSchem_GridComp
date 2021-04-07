@@ -240,6 +240,10 @@ end subroutine zflip
      end where
   end if
 
+! reduce scavenging efficiency for dust to 20% of the predicted value
+  if(trim(aero_type) .eq. 'dust') f(:,:,:,n1:n2) = 0.2 * f(:,:,:,n1:n2)
+
+
   if (trim(aero_type) .eq. 'OC'       .or. &
       trim(aero_type) .eq. 'sea_salt' .or. &
       trim(aero_type) .eq. 'sulfur'   .or. &

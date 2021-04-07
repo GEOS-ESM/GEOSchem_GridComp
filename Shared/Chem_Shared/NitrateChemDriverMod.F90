@@ -1719,96 +1719,120 @@ CONTAINS
 !=======================================================================
 
 
-      FUNCTION sktrs_hno3 ( tk, frh, sad, ad, radA, gammaInp )
+      FUNCTION sktrs_hno3 ( tk, rh, sad, ad, radA )
 !     Simple functional call to calculate heterogeneous reaction rate of
 !     nitric acid on aerosols.  Inputs are:
 !      tk    - temperature [K]
-!      frh   - fractional relative humidity [0 - 1]
+!      rh    - fractional relative humidity [0 - 1]
 !      sad   - aerosol surface area density [cm2 cm-3]
 !      ad    - air number concentration [# cm-3]
 !      radA  - aerosol radius [cm]
 !      gammaInp - optional uptake coefficient (e.g., 0.2 for SS, else calculated)
 
-      real*8  tk
-      real*8  frh
-      real*8  sad
-      real*8  ad
-      real*8  radA
-      real*8  sktrs_hno3
-      real*8, optional :: gammaInp
+      implicit none
+
+      real :: sktrs_hno3
+
+      real, intent(in) ::  tk
+      real, intent(in) ::  rh
+      real, intent(in) ::  sad
+      real, intent(in) ::  ad
+      real, intent(in) ::  radA
+
 !... local variables
-      REAL*8,  PARAMETER   :: GAMMA_SSLT = 0.2d0
-!      REAL*8,  PARAMETER   :: GAMMA_HNO3 = 0.1d0 
-      REAL*8,  PARAMETER   :: GAMMA_HNO3 = 1.0d-3 
-!      REAL*8,  PARAMETER   :: GAMMA_HNO3 = 5.0d-4 
-      real*8  dfkg
-      real*8  avgvel
-      real*8  gamma
+!     REAL,  PARAMETER :: GAMMA_HNO3 = 0.1 
+      REAL,  PARAMETER :: GAMMA_HNO3 = 1.0e-3 
+!     REAL,  PARAMETER :: GAMMA_HNO3 = 5.0e-4 
 
-!     Initialize
-      sktrs_hno3 = 0.d0
-      gamma      = 3.d-5
+      real :: dfkg
+      real :: avgvel
+      real :: gamma
+      real :: f_rh
+      real :: sqrt_tk
 
-      if( present(gammaInp)) then
-       gamma = gammaInp
-      else
-!      Following uptake coefficients of Liu et al.(2007)
-       if (frh >= 0.1d0 .and. frh < 0.3d0 )  gamma = gamma_hno3 * (0.03d0 + 0.08d0  * (frh - 0.1d0))
-       if (frh >= 0.3d0 .and. frh < 0.5d0 )  gamma = gamma_hno3 * (0.19d0 + 0.255d0 * (frh - 0.3d0))
-       if (frh >= 0.5d0 .and. frh < 0.6d0 )  gamma = gamma_hno3 * (0.7d0  + 0.3d0   * (frh - 0.5d0))
-       if (frh >= 0.6d0 .and. frh < 0.7d0 )  gamma = gamma_hno3 * (1.0d0  + 0.3d0   * (frh - 0.6d0))
-       if (frh >= 0.7d0 .and. frh < 0.8d0 )  gamma = gamma_hno3 * (1.3d0  + 0.7d0   * (frh - 0.7d0))
-       if (frh >= 0.8d0 )                    gamma = gamma_hno3 * 2.0d0
-      endif
+      real, parameter :: p_dfkg   = sqrt(3.472e-2 + 1.0/fmassHNO3)
+      real, parameter :: p_avgvel = sqrt(8.0 * rgas * 1000.0 / (pi * fmassHNO3))
+
+
+      ! RH factor - Figure 1 in Duncan et al. (2010)
+      f_rh = 0.03
+
+      if (rh >= 0.1 .and. rh < 0.3)       then
+         f_rh = 0.03 + 0.8  * (rh - 0.1)
+      else if (rh >= 0.3 .and. rh < 0.5 ) then
+         f_rh = 0.19 + 2.55 * (rh - 0.3)
+      else if (rh >= 0.5 .and. rh < 0.6)  then
+         f_rh = 0.7  + 3.0  * (rh - 0.5)
+      else if (rh >= 0.6 .and. rh < 0.7)  then
+         f_rh = 1.0  + 3.0  * (rh - 0.6)
+      else if (rh >= 0.7 .and. rh < 0.8)  then
+         f_rh = 1.3  + 7.0  * (rh - 0.7)
+      else if (rh >= 0.8 )                then
+         f_rh = 2.0
+      end if
+
+!     Following uptake coefficients of Liu et al.(2007)
+      gamma = gamma_hno3 * f_rh
+
+      sqrt_tk = sqrt(tk)
 
 !     calculate gas phase diffusion coefficient (cm2/s)
-      dfkg = 9.45D17 / ad * ( tk * (3.472D-2 + 1.D0/fmassHNO3) )**0.5d0
+      dfkg = 9.45e17 / ad * sqrt_tk * p_dfkg
 
 !     calculate mean molecular speed (cm/s)
-      avgvel = 100.0d0 * (8.0d0 * rgas * tk * 1000.0d0 / (pi * fmassHNO3))**0.5d0
+      avgvel = 100.0 * sqrt_tk * p_avgvel
 
 !     calculate rate coefficient
-      sktrs_hno3 = sad * ( 4.0d0 / ( gamma * avgvel )+ radA / dfkg )**(-1.0d0)
+      sktrs_hno3 = sad / ( 4.0 / (gamma * avgvel) + radA / dfkg )
 
       END FUNCTION sktrs_hno3
 
 
-      FUNCTION sktrs_sslt ( tk, frh, sad, ad, radA, gammaInp )
+
+      FUNCTION sktrs_sslt ( tk, rh, sad, ad, radA )
 !     Simple functional call to calculate heterogeneous reaction rate of
 !     nitric acid on aerosols.  Inputs are:
 !      tk    - temperature [K]
-!      frh   - fractional relative humidity [0 - 1]
+!      rh    - fractional relative humidity [0 - 1]
 !      sad   - aerosol surface area density [cm2 cm-3]
 !      ad    - air number concentration [# cm-3]
 !      radA  - aerosol radius [cm]
 !      gammaInp - optional uptake coefficient (e.g., 0.2 for SS, else calculated)
 
-      real*8  tk
-      real*8  frh
-      real*8  sad
-      real*8  ad
-      real*8  radA
-      real*8  sktrs_sslt
-      real*8, optional :: gammaInp
-!... local variables
-      REAL*8,  PARAMETER   :: GAMMA_SSLT = 0.1d0 
-      real*8  dfkg
-      real*8  avgvel
+      implicit none
 
-      _UNUSED_DUMMY(frh)
-      _UNUSED_DUMMY(gammaInp)
+      real ::  sktrs_sslt
+
+      real, intent(in) :: tk
+      real, intent(in) :: rh
+      real, intent(in) :: sad
+      real, intent(in) :: ad
+      real, intent(in) :: radA
+
+
+!... local variables
+      REAL,  PARAMETER :: GAMMA_SSLT = 0.1e0
+
+      real :: dfkg
+      real :: avgvel
+      real :: sqrt_tk
+
+      real, parameter :: p_dfkg   = sqrt(3.472e-2 + 1.0/fmassHNO3)
+      real, parameter :: p_avgvel = sqrt(8.0 * rgas * 1000.0 / (pi * fmassHNO3))
+
+      _UNUSED_DUMMY(rh)
 
 !     Initialize
-      sktrs_sslt = 0.d0
+      sqrt_tk = sqrt(tk)
 
 !     calculate gas phase diffusion coefficient (cm2/s)
-      dfkg = 9.45D17 / ad * ( tk * (3.472D-2 + 1.D0/fmassHNO3) )**0.5d0
+      dfkg = 9.45e17 / ad * sqrt_tk * p_dfkg
 
 !     calculate mean molecular speed (cm/s)
-      avgvel = 100.0d0 * (8.0d0 * rgas * tk * 1000.0d0 / (pi * fmassHNO3))**0.5d0
+      avgvel = 100.0 * sqrt_tk * p_avgvel
 
 !     calculate rate coefficient
-      sktrs_sslt = sad * ( 4.0d0 / ( gamma_sslt * avgvel )+ radA / dfkg )**(-1.0d0)
+      sktrs_sslt = sad / ( 4.0 / (gamma_sslt * avgvel) + radA / dfkg )
 
       END FUNCTION sktrs_sslt
 
@@ -1861,15 +1885,15 @@ CONTAINS
 !tdf Following uptake coefficients of Liu et al.(2007)
       gamma(:) = 0.0d0
       where (frh(:) >= 0.1d0 .and. frh(:) < 0.3d0 ) &
-        gamma(:) = gamma_hno3 * (0.03d0 + 0.08d0  * (frh(:) - 0.1d0))
+        gamma(:) = gamma_hno3 * (0.03d0 + 0.8d0  * (frh(:) - 0.1d0))
       where (frh(:) >= 0.3d0 .and. frh(:) < 0.5d0 ) &
-        gamma(:) = gamma_hno3 * (0.19d0 + 0.255d0 * (frh(:) - 0.3d0))
+        gamma(:) = gamma_hno3 * (0.19d0 + 2.55d0 * (frh(:) - 0.3d0))
       where (frh(:) >= 0.5d0 .and. frh(:) < 0.6d0 ) &
-        gamma(:) = gamma_hno3 * (0.7d0  + 0.3d0   * (frh(:) - 0.5d0))
+        gamma(:) = gamma_hno3 * (0.7d0  + 3.0d0  * (frh(:) - 0.5d0))
       where (frh(:) >= 0.6d0 .and. frh(:) < 0.7d0 ) &
-        gamma(:) = gamma_hno3 * (1.0d0  + 0.3d0   * (frh(:) - 0.6d0))
+        gamma(:) = gamma_hno3 * (1.0d0  + 3.0d0  * (frh(:) - 0.6d0))
       where (frh(:) >= 0.7d0 .and. frh(:) < 0.8d0 ) &
-        gamma(:) = gamma_hno3 * (1.3d0  + 0.7d0   * (frh(:) - 0.7d0))
+        gamma(:) = gamma_hno3 * (1.3d0  + 7.0d0  * (frh(:) - 0.7d0))
       where (frh(:) >= 0.8d0 )                 &
         gamma(:) = gamma_hno3 * 2.0d0
 !
@@ -1976,15 +2000,15 @@ CONTAINS
 !tdf Following uptake coefficients of Liu et al.(2007)
       gamma(:) = 0.0d0
       where (frh(:) >= 0.1d0 .and. frh(:) < 0.3d0 ) &
-        gamma(:) = gamma_hno3 * (0.03d0 + 0.08d0  * (frh(:) - 0.1d0))
+        gamma(:) = gamma_hno3 * (0.03d0 + 0.8d0  * (frh(:) - 0.1d0))
       where (frh(:) >= 0.3d0 .and. frh(:) < 0.5d0 ) &
-        gamma(:) = gamma_hno3 * (0.19d0 + 0.255d0 * (frh(:) - 0.3d0))
+        gamma(:) = gamma_hno3 * (0.19d0 + 2.55d0 * (frh(:) - 0.3d0))
       where (frh(:) >= 0.5d0 .and. frh(:) < 0.6d0 ) &
-        gamma(:) = gamma_hno3 * (0.7d0  + 0.3d0   * (frh(:) - 0.5d0))
+        gamma(:) = gamma_hno3 * (0.7d0  + 3.0d0  * (frh(:) - 0.5d0))
       where (frh(:) >= 0.6d0 .and. frh(:) < 0.7d0 ) &
-        gamma(:) = gamma_hno3 * (1.0d0  + 0.3d0   * (frh(:) - 0.6d0))
+        gamma(:) = gamma_hno3 * (1.0d0  + 3.0d0  * (frh(:) - 0.6d0))
       where (frh(:) >= 0.7d0 .and. frh(:) < 0.8d0 ) &
-        gamma(:) = gamma_hno3 * (1.3d0  + 0.7d0   * (frh(:) - 0.7d0))
+        gamma(:) = gamma_hno3 * (1.3d0  + 7.0d0  * (frh(:) - 0.7d0))
       where (frh(:) >= 0.8d0 )                 &
         gamma(:) = gamma_hno3 * 2.0d0
 !

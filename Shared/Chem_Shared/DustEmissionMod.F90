@@ -16,9 +16,10 @@
    use Chem_Mod
    use Chem_ConstMod, only: grav        ! Constants !
    use Chem_UtilMod
-   use MAPL_ConstantsMod, only : MAPL_PI
 
    use m_mpout
+
+   use MAPL_ConstantsMod, only: MAPL_PI, MAPL_KARMAN, MAPL_GRAV
 
    implicit none
 
@@ -35,10 +36,13 @@
    PUBLIC  DustEmissionSimple
    PUBLIC  MAM_DustEmissionGOCART
    PUBLIC  MAM_DustEmission
+
+   PUBLIC  DustEmissionK14
+    
    PUBLIC  KokSizeDistribution    
 
 
-  real, parameter :: OCEAN=0.0, LAND = 1.0, SEA_ICE = 2.0
+   real, parameter :: OCEAN=0.0, LAND = 1.0, SEA_ICE = 2.0
 
 !
 ! !DESCRIPTION:
@@ -587,6 +591,556 @@ CONTAINS
        end  function lognormal_integral
 
    end subroutine MAM_DustEmission
+
+
+
+
+   subroutine DustEmissionK14( i1, i2, j1, j2, km,        &
+                               t_soil, w_top, rho_air,    &
+                               z0, z, u_z, v_z, ustar,    &
+                               f_land, f_snow,            &
+                               f_src,                     &
+                               f_sand, f_silt, f_clay,    &
+                               texture, vegetation, gvf,  &
+                               f_w, f_c, uts_gamma,       &
+                               opt_clay,                  &
+                               emissions,                 &
+                               u, u_t, u_ts,              &
+                               R, H_w, f_erod,            &
+                               rc )
+
+! !USES:
+
+   implicit none
+
+! !INPUT PARAMETERS:
+
+   integer, intent(in)                      :: i1, i2, j1, j2, km
+   real, dimension(i1:i2,j1:j2), intent(in) :: rho_air    ! air density
+   real, dimension(i1:i2,j1:j2), intent(in) :: w_top      ! volumetric soil moisture in the top surface layer
+   real, dimension(i1:i2,j1:j2), intent(in) :: t_soil     ! soil temperature
+   real, dimension(i1:i2,j1:j2), intent(in) :: z0         ! aeolian aerodynamic roughness length
+   real, dimension(i1:i2,j1:j2), intent(in) :: z, u_z, v_z! hight and wind at this height
+   real, dimension(i1:i2,j1:j2), intent(in) :: ustar      ! friction velocity
+   real, dimension(i1:i2,j1:j2), intent(in) :: f_land     ! land fraction
+   real, dimension(i1:i2,j1:j2), intent(in) :: f_snow     ! snow fraction 
+   real, dimension(i1:i2,j1:j2), intent(in) :: f_src      ! dust source potential -- OBSOLETE  
+   real, dimension(i1:i2,j1:j2), intent(in) :: f_sand     ! sand fraction
+   real, dimension(i1:i2,j1:j2), intent(in) :: f_silt     ! silt fraction
+   real, dimension(i1:i2,j1:j2), intent(in) :: f_clay     ! clay fraction
+   real, dimension(i1:i2,j1:j2), intent(in) :: texture    ! soil texture
+   real, dimension(i1:i2,j1:j2), intent(in) :: vegetation ! vegetation categories (IGBP)
+   real, dimension(i1:i2,j1:j2), intent(in) :: gvf        ! vegetation fraction
+
+   integer, intent(in)                      :: opt_clay   ! controls which clay&silt emissions term to use
+   real,    intent(in)                      :: f_w        ! factor to scale down soil moisture in the top 5cm to soil moisture in the top 1cm
+   real,    intent(in)                      :: f_c        ! scale down the wet sieving clay fraction to get it more in line with dry sieving measurements
+   real,    intent(in)                      :: uts_gamma  ! threshold friction velocity parameter 'gamma' 
+
+! !OUTPUT PARAMETERS:
+
+   real, dimension(i1:i2,j1,j2), intent(out) :: emissions ! mass flux of emitted dust particles
+
+   real, dimension(i1:i2,j1:j2), intent(out) :: u         ! aeolian friction velocity
+   real, dimension(i1:i2,j1:j2), intent(out) :: u_t       ! threshold friction velocity
+   real, dimension(i1:i2,j1:j2), intent(out) :: u_ts      ! threshold friction velocity over smooth surface
+
+   real, dimension(i1:i2,j1:j2), intent(out) :: H_w       ! soil mosture correction
+   real, dimension(i1:i2,j1:j2), intent(out) :: R         ! drag partition correction
+
+   real, dimension(i1:i2,j1:j2), intent(out) :: f_erod    ! erodibility
+
+
+   integer, intent(out) :: rc    ! Error return code:
+                                 !  0 - all is well
+                                 !  1 - 
+
+   character(len=*), parameter :: myname = 'DustEmissionK14'
+
+! !DESCRIPTION: Computes the dust emissions for one time step
+!
+! !REVISION HISTORY:
+!
+!  15Aug2016, Darmenov - Initial implementation
+!
+!EOP
+!-------------------------------------------------------------------------
+
+!  !Local Variables
+
+   real, dimension(i1:i2,j1:j2) :: w_g        ! gravimetric soil moisture
+   real, dimension(i1:i2,j1:j2) :: w_gt       ! threshold gravimetric soil moisture
+
+   real, dimension(i1:i2,j1:j2) :: f_veg      ! vegetation mask
+   real, dimension(i1:i2,j1:j2) :: clay       ! 'corrected' clay fraction in '%'
+   real, dimension(i1:i2,j1:j2) :: silt       ! 'corrected' silt fraction in '%'
+   real, dimension(i1:i2,j1:j2) :: k_gamma    ! silt and clay term (gamma in K14 and I&K, 2017)
+   real, dimension(i1:i2,j1:j2) :: z0s        ! smooth roughness length
+
+   real, dimension(i1:i2,j1:j2) :: Dp         ! typical size of soil particles for optimal saltation
+   real :: rho_p                              ! typical density of soil particles
+
+   integer :: i, j
+
+   real, parameter :: z0_valid = 0.08e-2      ! valid range of ARLEMS z0 is 0--0.08cm, z0 > 0.08cm is retreived but the data quality is low
+   real, parameter :: z0_max = 6.25 * z0_valid! maximum roughness over arid surfaces
+   real, parameter :: z0_    = 2.0e-4         ! representative aeolian aerodynamic roughness length z0 = 0.02cm
+
+   real, parameter :: rho_water     = 1000.0  ! water density, 'kg m-3'
+   real, parameter :: rho_soil_bulk = 1700.0  ! soil bulk density, 'kg m-3'
+   real, parameter :: rho_soil      = 2500.0  ! soil particle density, 'kg m-3'
+
+!  real, parameter :: f_w = 0.5               ! factor to scale down soil moisture in the top 5cm to soil moisture in the top 1cm
+!  real, parameter :: f_c = 0.7               ! scale down the wet sieving clay fraction to get it more in line with dry sieving measurements
+
+   ! Shao et al.
+   real, parameter :: a_n = 0.0123
+   real, parameter :: G   = 1.65e-4
+
+   ! size of coarsest mode in the STATSGO/FAO soil type
+   real, parameter :: Dc_soil(12) = (/ 710e-6, 710e-6, 125e-6, &
+                                       125e-6, 125e-6, 160e-6, &
+                                       710e-6, 125e-6, 125e-6, &
+                                       160e-6, 125e-6,   2e-6 /)
+
+
+   ! typical size of soil particles for optimal saltation is about 75e-6m 
+   Dp = 75e-6
+
+   ! typical density of soil particles, e.g. quartz grains
+   rho_p = 2.65e3
+
+   ! threshold friction velocity over smooth surface
+   u_ts = MAPL_UNDEF
+   where ((f_land > 0.0) .and. (z0 < z0_max) .and. (z0 > 0.0))
+       u_ts = sqrt(a_n * ( ((rho_p/rho_air) * MAPL_GRAV * Dp) + uts_gamma / (rho_air * Dp)))
+   end where
+
+#if (0)
+   where ((f_land > 0.0) .and. (z0 < z0_max) .and. (z0 > 0.0) .and. abs(texture -  1) < 0.5) u_ts = u_ts * 1.176
+   where ((f_land > 0.0) .and. (z0 < z0_max) .and. (z0 > 0.0) .and. abs(texture -  2) < 0.5) u_ts = u_ts * 1.206
+   where ((f_land > 0.0) .and. (z0 < z0_max) .and. (z0 > 0.0) .and. abs(texture -  3) < 0.5) u_ts = u_ts * 1.234
+   where ((f_land > 0.0) .and. (z0 < z0_max) .and. (z0 > 0.0) .and. abs(texture -  4) < 0.5) u_ts = u_ts * 1.261
+   where ((f_land > 0.0) .and. (z0 < z0_max) .and. (z0 > 0.0) .and. abs(texture -  5) < 0.5) u_ts = u_ts * 1.272
+   where ((f_land > 0.0) .and. (z0 < z0_max) .and. (z0 > 0.0) .and. abs(texture -  6) < 0.5) u_ts = u_ts * 1.216
+   where ((f_land > 0.0) .and. (z0 < z0_max) .and. (z0 > 0.0) .and. abs(texture -  7) < 0.5) u_ts = u_ts * 1.211
+   where ((f_land > 0.0) .and. (z0 < z0_max) .and. (z0 > 0.0) .and. abs(texture -  8) < 0.5) u_ts = u_ts * 1.266
+   where ((f_land > 0.0) .and. (z0 < z0_max) .and. (z0 > 0.0) .and. abs(texture -  9) < 0.5) u_ts = u_ts * 1.222
+   where ((f_land > 0.0) .and. (z0 < z0_max) .and. (z0 > 0.0) .and. abs(texture - 10) < 0.5) u_ts = u_ts * 1.146
+   where ((f_land > 0.0) .and. (z0 < z0_max) .and. (z0 > 0.0) .and. abs(texture - 11) < 0.5) u_ts = u_ts * 1.271
+   where ((f_land > 0.0) .and. (z0 < z0_max) .and. (z0 > 0.0) .and. abs(texture - 12) < 0.5) u_ts = u_ts * 1.216
+#endif
+
+   ! gravimetric soil moisture : scaled down to represent the values in the top 1cm and converted to '%'
+   w_g = MAPL_UNDEF
+   where (f_land > 0.0)
+#if (1)
+       ! following Zender
+       ! Q_s_ = 0.489 - 0.126*f_sand
+       ! rho_soil_bulk = rho_soil*(1 - Q_s_)
+       ! w_g = 100 * f_w * (rho_water / rho_soil_bulk) * w_top
+       ! ...the equivalent one-liner
+       w_g = 100 * f_w * rho_water / rho_soil / (1.0 - (0.489 - 0.126*f_sand)) * w_top
+#else
+       w_g = 100 * f_w * (rho_water / rho_soil_bulk) * w_top
+#endif
+   end where
+
+   ! soil moisture correction following Fecan
+   clay = MAPL_UNDEF
+   silt = MAPL_UNDEF
+   w_gt = MAPL_UNDEF
+   where ((f_land > 0.0) .and. (f_clay <= 1.0) .and. (f_clay >= 0.0))
+       clay = f_c * f_clay
+       silt = f_silt + (1.0-f_c)*f_clay   ! move the excess clay to the silt fraction
+
+       w_gt = 14.0*clay*clay + 17.0*clay  ! w_gt in '%'
+   end where
+
+   H_w  = 1.0
+#if (1)
+   ! Fecan, 1999
+   where ((f_land > 0.0) .and. (w_g > w_gt))
+       H_w = sqrt(1.0 + 1.21*(w_g - w_gt)**0.68)
+   end where
+#else
+   ! Shao, 1996
+   where ((f_land > 0.0) .and. (w_top <= 1.0) .and. (w_top >= 0.0))
+       H_w = exp(22.7*f_w *w_top)
+   end where
+#endif
+
+
+   select case (opt_clay)
+   case (1)
+       ! following Ito and Kok, 2017
+       k_gamma = 0.05
+
+       where ((f_land > 0.0) .and. (clay < 0.2) .and. (clay >= 0.05))
+           k_gamma = clay
+       end where
+
+       where ((f_land > 0.0) .and. (clay >= 0.2) .and. (clay <= 1.0))
+           k_gamma = 0.2
+       end where
+   case (2)
+       ! following Ito and Kok, 2017
+       k_gamma = 1.0/1.4
+
+       where ((f_land > 0.0) .and. (clay < 0.2) .and. (clay >= 0.0))
+           k_gamma = 1.0 / (1.4 - clay - silt)
+       end where
+
+       where ((f_land > 0.0) .and. (clay >= 0.2) .and. (clay <= 1.0))
+           k_gamma = 1.0 / (1.0 + clay - silt)
+       end where
+   case default
+       ! following Kok et al, 2014
+       k_gamma = 0.0
+
+       where ((f_land > 0.0) .and. (clay <= 1.0) .and. (clay >= 0.0))
+           k_gamma = clay
+       end where
+   end select
+
+
+   ! roughness over smooth surface   
+   z0s = 125e-6
+   do j = j1, j2
+       do i = i1, i2
+           if (texture(i,j) > 0 .and. texture(i,j) < 13) then
+               z0s(i,j) = Dc_soil(nint(texture(i,j)))
+           end if
+       end do
+   end do
+
+   z0s = z0s / 30.0    ! z0s = MMD/x, where typically x is in the range 24--30; x=10 was recommended 
+                       ! as a more appropriate value for this parameter in a recent article
+
+   ! drag partition correction
+   R = 1.0
+   where ((f_land > 0.0) .and. (z0 < z0_max) .and. (z0 > z0s))
+#if (1)
+       ! MacKinnon et al, 2004
+       R = 1.0 - log(z0/z0s)/log(0.7 * (122.55/z0s)**0.8)
+#else
+       ! King et al, 2005, Darmenova et al, 2009, and K14-S1 use the corrected MB expression
+       R = 1.0 - log(z0/z0s)/log(0.7 * (0.1/z0s)**0.8)
+#endif
+   end where
+
+
+   ! *soil* friction velocity, see Equations 5, S.10, S11 in Kok et al, 2014 and the supplement paper
+   u = MAPL_UNDEF
+   where ((f_land > 0.0) .and. (z0 < z0_max) .and. (z0 > 0.0))
+#if (1)
+       u = ustar
+#else
+       u = MAPL_KARMAN / log(z/z0) * sqrt(u_z*u_z + v_z*v_z)
+#endif
+       u = R * u           ! correction for roughness elements
+   end where
+
+
+   ! *soil* threshold friction velocity, Section 2.2 in Kok et al, 2014
+   u_t = MAPL_UNDEF
+   where ((f_land > 0.0) .and. (z0 < z0_max) .and. (z0 > 0.0))
+       u_t = u_ts * H_w    ! apply moisture correction
+   end where
+
+
+   ! erodibility
+   f_erod = MAPL_UNDEF
+   where (f_land > 0.0)
+       f_erod = 1.0
+   end where
+
+   ! erodibility parameterization - Laurent et al., 2008
+   where ((f_land > 0.0) .and. (z0 > 3.0e-5) .and. (z0 < z0_max))
+       f_erod = 0.7304 - 0.0804*log10(100*z0)
+   end where
+
+   ! bedrock
+   where (abs(texture - 15) < 0.5) f_erod = 0.0
+   
+
+   ! vegetation mask
+   f_veg = 0.0
+   where ((f_land > 0.0) .and. abs(vegetation -  7) < 0.1) f_veg = 1.0  ! open shrublands
+!  where ((f_land > 0.0) .and. abs(vegetation -  9) < 0.1) f_veg = 1.0  ! savannas
+!  where ((f_land > 0.0) .and. abs(vegetation - 10) < 0.1) f_veg = 1.0  ! grasslands
+!  where ((f_land > 0.0) .and. abs(vegetation - 12) < 0.1) f_veg = 1.0  ! croplands
+   where ((f_land > 0.0) .and. abs(vegetation - 16) < 0.1) f_veg = 1.0  ! barren or sparsely vegetated
+
+   ! vegetation mask: modulate with vegetation fraction
+   where (f_land > 0.0 .and. gvf >= 0.0 .and. gvf < 0.8) f_veg = f_veg * (1 - gvf)
+
+
+   ! final erodibility
+   f_erod = f_erod * f_veg * f_land * (1.0 - f_snow)
+
+   ! ...kludge to deal with high emissions in Australia
+   where (f_src >= 0.0) f_erod = f_src * f_erod
+
+
+   call VerticalDustFluxK14( i1, i2, j1, j2, km, &
+                             u, u_t, rho_air,    &
+                             f_erod, k_gamma,    &
+                             emissions, rc )
+
+   end subroutine DustEmissionK14
+
+
+   subroutine VerticalDustFluxK14( i1, i2, j1, j2, km, &
+                                   u, u_t, rho_air,    &
+                                   f_erod, k_gamma,    &
+                                   emissions, rc )
+
+! !USES:
+
+   implicit none
+
+! !INPUT PARAMETERS:
+
+   integer, intent(in) :: i1, i2, j1, j2, km
+
+   real, dimension(i1:i2,j1:j2), intent(in) :: u           ! friction velocity, 'm s-1'
+   real, dimension(i1:i2,j1:j2), intent(in) :: u_t         ! threshold friction velocity, 'm s-1'
+   real, dimension(i1:i2,j1:j2), intent(in) :: rho_air     ! air density, 'kg m-3'
+   real, dimension(i1:i2,j1:j2), intent(in) :: f_erod      ! erodibility 
+   real, dimension(i1:i2,j1:j2), intent(in) :: k_gamma     ! clay and silt dependent term that modulates the emissions
+
+! !OUTPUT PARAMETERS:
+
+   real, intent(out)    :: emissions(i1:i2,j1:j2)          ! total vertical dust mass flux, 'kg m-2 s-1'
+
+   integer, intent(out) :: rc    ! Error return code:
+                                 !  0 - all is well
+                                 !  1 - 
+
+   character(len=*), parameter :: myname = 'VerticalDustFluxK14'
+
+! !DESCRIPTION: Computes the dust emissions for one time step
+!
+! !REVISION HISTORY:
+!
+!  11Oct2011, Darmenov - For now use the GOCART emission scheme to 
+!                        calculate the total emission
+!
+!EOP
+!-------------------------------------------------------------------------
+
+! !Local Variables
+  integer :: i, j 
+  real    :: u_st                     ! standardized threshold friction velocity
+  real    :: C_d                      ! dust emission coefficient
+  real    :: f_ust                    ! numerical term
+
+  ! parameters from Kok et al. (2012, 2014)
+  real, parameter :: rho_a0 = 1.225   ! standard atmospheric density at sea level, 'kg m-3'
+  real, parameter :: u_st0  = 0.16    ! the minimal value of u* for an optimally erodible soil, 'm s-1'
+  real, parameter :: C_d0   = 4.4e-5  ! C_d0 = (4.4 +/- 0.5)*1e-5
+  real, parameter :: C_e    = 2.0     ! C_e  = 2.0 +/- 0.3
+  real, parameter :: C_a    = 2.7     ! C_a  = 2.7 +/- 1.0
+
+
+  rc = 0
+  emissions = 0.0 ! total emission
+
+
+  !  Vertical dust flux
+  !  ------------------
+  do j = j1, j2
+      do i = i1, i2
+
+          if ((f_erod(i,j) > 0.0) .and. (u(i,j) > u_t(i,j))) then
+              u_st  = u_t(i,j) * sqrt(rho_air(i,j) / rho_a0)
+              u_st  = max(u_st, u_st0)
+
+              f_ust = (u_st - u_st0)/u_st0
+              C_d = C_d0 * exp(-C_e * f_ust)
+
+              emissions(i,j) = C_d * f_erod(i,j) * k_gamma(i,j) * rho_air(i,j)  &
+                                   * ((u(i,j)*u(i,j) - u_t(i,j)*u_t(i,j)) / u_st) &
+                                   * (u(i,j) / u_t(i,j))**(C_a * f_ust)
+          end if
+
+      end do
+  end do
+
+  ! all done
+  rc = 0
+
+  end subroutine VerticalDustFluxK14
+
+
+  subroutine SubgridVerticalDustFluxK14( i1, i2, j1, j2, km, &
+                                         ur, u_t,            &
+                                         uu_r, uu_g,         &
+                                         rho_air, &
+                                         f_erod, k_gamma,    &
+                                         emissions, rc )
+
+! !USES:
+
+   implicit none
+
+! !INPUT PARAMETERS:
+
+   integer, intent(in) :: i1, i2, j1, j2, km
+
+   real, dimension(i1:i2,j1:j2), intent(in) :: ur          ! resolved friction velocity, 'm s-1'
+   real, dimension(i1:i2,j1:j2), intent(in) :: u_t         ! threshold friction velocity, 'm s-1'
+   real, dimension(i1:i2,j1:j2), intent(in) :: uu_r, uu_g  ! 10m resolved wind and subgrid variability,  '(m s-1)**2'
+   real, dimension(i1:i2,j1:j2), intent(in) :: rho_air     ! air density, 'kg m-3'
+   real, dimension(i1:i2,j1:j2), intent(in) :: f_erod      ! erodibility 
+   real, dimension(i1:i2,j1:j2), intent(in) :: k_gamma     ! clay and silt dependent term that modulates the emissions
+
+! !OUTPUT PARAMETERS:
+
+   real, intent(out)    :: emissions(i1:i2,j1:j2)          ! total vertical dust mass flux, 'kg m-2 s-1'
+
+   integer, intent(out) :: rc    ! Error return code:
+                                 !  0 - all is well
+                                 !  1 - 
+
+   character(len=*), parameter :: myname = 'VerticalDustFluxK14'
+
+! !DESCRIPTION: Computes the dust emissions for one time step
+!
+! !REVISION HISTORY:
+!
+!  11Oct2011, Darmenov - For now use the GOCART emission scheme to 
+!                        calculate the total emission
+!
+!EOP
+!-------------------------------------------------------------------------
+
+! !Local Variables
+  integer :: i, j, n 
+  real    :: u_st                     ! standardized threshold friction velocity
+  real    :: C_d                      ! dust emission coefficient
+  real    :: f_ust                    ! numerical term
+
+  real    :: k                        ! Weibull PDF: shape parameter
+  real    :: A                        ! Weibull PDF: scale parameter
+  double precision :: pdf             ! wind PDF
+  real    :: u                        ! total mean friction velocity, 'm s-1'
+  real    :: u_, du                   ! friction velocity
+  real    :: u_min, u_max             ! integration limits
+  double precision :: emiss_integral  ! integral of the convolved emissions and wind PDF
+
+  ! parameters from Kok et al. (2012, 2014)
+  real, parameter :: rho_a0 = 1.225   ! standard atmospheric density at sea level, 'kg m-3'
+  real, parameter :: u_st0  = 0.16    ! the minimal value of u* for an optimally erodible soil, 'm s-1'
+  real, parameter :: C_d0   = 4.4e-5  ! C_d0 = (4.4 +/- 0.5)*1e-5
+  real, parameter :: C_e    = 2.0     ! C_e  = 2.0 +/- 0.3
+  real, parameter :: C_a    = 2.7     ! C_a  = 2.7 +/- 1.0
+
+  integer, parameter :: N_bins = 100     ! integration bins
+  
+
+  intrinsic gamma
+
+  rc = 0
+  emissions = 0.0 ! total emission
+
+  !  Vertical dust flux
+  !  ------------------
+  do j = j1, j2
+      do i = i1, i2
+
+          if ((f_erod(i,j) > 0.0) .and. (ur(i,j) < 1.0e3)) then
+#if (0)
+              u = ur(i,j) * (1 + (uu_g(i,j)*uu_g(i,j))/(uu_r(i,j)*uu_r(i,j)))**0.5
+#else
+              u = ur(i,j)
+#endif
+
+              ! 1. determine the parameters describing the Weibull distribution
+#if (1)
+              ! following Foroutan and Pleim, 2016, JAMS, Eq. 1--7
+              k = (1.0 + uu_r(i,j)/max(0.01, uu_g(i,j)))**(0.5*1.086)
+              k = min(k, 7.0)
+
+              !print *, 'DEBUG K14:: k, u_r, u_g', k, uu_r(i,j)**0.5, uu_g(i,j)**0.5
+#else
+              k = 3.0  !!! supposedly k is 2.5--3 but as the wind increases k can be close to 7
+                       !!! based on this limited information I could use u* to find k: k = 2.5*(1 + u*), thus
+                       !!  for low u*  k ~ 3 whereas for high u*  k ~ 5
+#endif
+              A = u / gamma(1.0 + 1.0/k) !!! gamma(1.0 + 1.0/k) ~ 0.9 for k = 3
+
+              ! 2. determine upper and lower limits for integration
+              call weibull_quantile(u_min, 0.01, k, A)
+              call weibull_quantile(u_max, 0.99, k, A)
+
+              u_min = max(u_min, u_t(i,j))
+              du = (u_max - u_min)/N_bins
+
+              if (u_max < u_min) cycle
+
+              ! integrate emissions over the wind distribution
+              u_st  = u_t(i,j) * sqrt(rho_air(i,j) / rho_a0)
+              u_st  = max(u_st, u_st0)
+
+              f_ust = (u_st - u_st0)/u_st0
+              C_d = C_d0 * exp(-C_e * f_ust)
+
+              emiss_integral = 0.0
+
+              WIND_PDF: do n = 1, N_bins
+                  u_ = u_min + (n - 0.5)*du
+                  call weibull(pdf, u_, k, A)
+                 
+                  emiss_integral = emiss_integral + ((u_*u_ - u_t(i,j)*u_t(i,j)) / u_st) &
+                                                   * (u_ / u_t(i,j))**(C_a * f_ust) * pdf
+              end do WIND_PDF
+
+              emissions(i,j) = C_d * f_erod(i,j) * k_gamma(i,j) * rho_air(i,j) * emiss_integral * du
+          end if
+
+      end do
+  end do
+
+  ! all done
+  rc = 0
+
+  
+  contains
+  
+    subroutine weibull(pdf, x, k, a)
+    implicit none
+
+    real, intent(in)  :: x
+    real, intent(in)  :: k
+    real, intent(in)  :: a
+    double precision, intent(out) :: pdf
+
+    ! local
+    double precision :: y, yk, pdf_
+
+    y  = x / a
+    yk = y**(k-1)
+
+    pdf_ = (k / a) * yk * exp(-y*yk)
+    pdf  = pdf_
+    end subroutine weibull
+
+
+    subroutine weibull_quantile(x, cdf, k, a)
+    implicit none
+
+    real, intent(in)  :: cdf  ! CDF (0, 1)
+    real, intent(in)  :: k
+    real, intent(in)  :: a
+    real, intent(out) :: x
+
+    x = a * (-log(1.0 - cdf))**(1.0/k)
+    end subroutine weibull_quantile
+
+  end subroutine SubgridVerticalDustFluxK14
+  
 
 
 
