@@ -14,8 +14,18 @@ module GEOS_ChemEnvGridCompMod
   use ESMF
   use MAPL
 
+  use OVP,          only:  OVP_init, OVP_end_of_timestep_hms, OVP_mask, OVP_apply_mask
+
   implicit none
   private
+
+  INTEGER, SAVE, ALLOCATABLE :: MASK_10AM(:,:)
+  INTEGER, SAVE, ALLOCATABLE :: MASK_2PM(:,:)
+  INTEGER, SAVE              :: OVP_FIRST_HMS
+  INTEGER, SAVE              :: OVP_RUN_DT
+  INTEGER, SAVE              :: OVP_GC_DT
+  INTEGER, SAVE              :: OVP_MASK_DT
+  LOGICAL                    :: OVP_setup_done
 
 ! !PUBLIC MEMBER FUNCTIONS:
 
@@ -69,6 +79,8 @@ contains
     call ESMF_GridCompGet( GC, NAME=COMP_NAME, CONFIG=CF, RC=STATUS )
     VERIFY_(STATUS)
     Iam = trim(COMP_NAME) // 'SetServices'
+
+    OVP_setup_done = .FALSE.
 
 ! Register services for this component
 ! ------------------------------------
@@ -234,6 +246,27 @@ contains
         DIMS               = MAPL_DimsHorzOnly,              &
         VLOCATION          = MAPL_VLocationNone,    RC=STATUS)
      VERIFY_(STATUS)
+
+!    10am overpass AIRDENS
+!    ---------------------
+     call MAPL_AddExportSpec(GC,                             &
+        SHORT_NAME         = 'OVP10_AIRDENS',                &
+        LONG_NAME          = 'moist_air_density_10am_local', &
+        UNITS              = 'kg m-3',                       &
+        DIMS               = MAPL_DimsHorzVert,              &
+        VLOCATION          = MAPL_VLocationCenter,  RC=STATUS)
+     VERIFY_(STATUS)
+
+!    2pm  overpass AIRDENS
+!    ---------------------
+     call MAPL_AddExportSpec(GC,                             &
+        SHORT_NAME         = 'OVP14_AIRDENS',                &
+        LONG_NAME          = 'moist_air_density_2pm_local',  &
+        UNITS              = 'kg m-3',                       &
+        DIMS               = MAPL_DimsHorzVert,              &
+        VLOCATION          = MAPL_VLocationCenter,  RC=STATUS)
+     VERIFY_(STATUS)
+
 !EOS
 
 
@@ -367,6 +400,14 @@ contains
 
     integer                            :: k, k0
 
+    REAL, POINTER, DIMENSION(:,:,:)    :: DATA_FOR_OVP_3D => NULL()
+    REAL, POINTER, DIMENSION(:,:,:)    :: OVP10_OUTPUT_3D => NULL()
+    REAL, POINTER, DIMENSION(:,:,:)    :: OVP14_OUTPUT_3D => NULL()
+
+    INTEGER                            :: CURRENT_HMS  !  for the end of the timestep
+
+    real(ESMF_KIND_R4), pointer, dimension(:,:) :: LONS
+
 
 ! Begin... 
 
@@ -451,6 +492,43 @@ contains
        if (associated(pr_conv))  deallocate(pr_conv)
        if (associated(pr_snow))  deallocate(pr_snow)
     end if
+
+    IF ( OVP_setup_done .eqv. .FALSE. ) THEN
+
+!     Set up Overpass Masks
+!     --------------------
+      CALL OVP_init ( GC, "CHEM_DT:", LONS, OVP_RUN_DT, OVP_GC_DT, __RC__ ) !  Get LONS, timesteps
+
+!     IF(MAPL_AM_I_ROOT()) PRINT*,'in CHEMENV the RUN_DT and CHEM_DT values are: ', OVP_RUN_DT, OVP_GC_DT
+
+      ! In this case we update the Exports only after each CHEMENV timestep:
+      OVP_MASK_DT = OVP_GC_DT
+
+      OVP_FIRST_HMS = OVP_end_of_timestep_hms( CLOCK, OVP_MASK_DT )
+!     IF(MAPL_AM_I_ROOT()) PRINT*,'CHEMENV FIRST_HMS =',OVP_FIRST_HMS
+
+      CALL OVP_mask ( LONS=LONS, DELTA_TIME=OVP_MASK_DT, OVERPASS_HOUR=10, MASK=MASK_10AM )
+      CALL OVP_mask ( LONS=LONS, DELTA_TIME=OVP_MASK_DT, OVERPASS_HOUR=14, MASK=MASK_2PM  )
+
+      OVP_setup_done = .TRUE.
+
+    END IF
+
+
+!  Record the Overpass values
+!  -------------------------------------------------------------------
+
+   CURRENT_HMS = OVP_end_of_timestep_hms( CLOCK, OVP_RUN_DT )
+!  IF(MAPL_AM_I_ROOT()) PRINT*,'AGCM CURRENT_HMS =',CURRENT_HMS
+
+! AIRDENS overpass
+
+   CALL MAPL_GetPointer(EXPORT,  DATA_FOR_OVP_3D,         'AIRDENS', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP10_OUTPUT_3D,   'OVP10_AIRDENS', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP14_OUTPUT_3D,   'OVP14_AIRDENS', __RC__)
+
+   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP10_OUTPUT_3D, MASK_10AM, OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 
 !   All Done

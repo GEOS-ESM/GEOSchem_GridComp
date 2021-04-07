@@ -20,7 +20,7 @@ include_directories (${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/Headers)
 
 set (srcs)
 foreach (dir ${src_directories})
-  file (GLOB tmpsrcs ${dir}/*.[fF] ${dir}/*.[fF]90 ${dir}/*.c)
+  file (GLOB tmpsrcs CONFIGURE_DEPENDS ${dir}/*.[fF] ${dir}/*.[fF]90 ${dir}/*.c)
   list (APPEND srcs ${tmpsrcs})
 endforeach()
 
@@ -96,7 +96,7 @@ new_esma_generate_automatic_code (
    "-v;-F"
    )
 
-file (GLOB resource_files "*.rc")
+file (GLOB resource_files CONFIGURE_DEPENDS "*.rc")
 
 install(
    FILES ${resource_files}
