@@ -745,7 +745,7 @@ Contains
      call ESMF_AttributeSet(state, name='aerosolName', value=trim(aeroName), __RC__)
 
      ! execute the aero provider's optics method
-     call ESMF_MethodExecute(state, label="get_mixR", __RC__)
+     call ESMF_MethodExecute(state, label="get_mixRatioSum", __RC__)
 
      call ESMF_AttributeGet(state, name='sum_of_internalState_aerosol_'//trim(aeroToken), value=fieldName, __RC__)
      if (fieldName /= '') then
