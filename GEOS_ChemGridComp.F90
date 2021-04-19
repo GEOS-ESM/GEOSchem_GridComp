@@ -806,20 +806,10 @@ contains
 
 ! HEMCO -> GOCART
 ! ---------------
-  IF( myState%enable_HEMCO .AND. myState%enable_GOCART .and. GOCART_instance_of_HEMCO ) THEN
+  IF( myState%enable_HEMCO .AND. myState%enable_GOCART2G ) THEN
    CALL MAPL_AddConnectivity ( GC, &
-    SHORT_NAME  = (/ 'SU_ANTHROL1' , 'SU_ANTHROL2',    &
-                     'SU_SHIPSO2 ' , 'SU_SHIPSO4 ',    &
-                     'OC_ANTEOC1 ' , 'OC_ANTEOC2 ',    &
-                     'OC_BIOFUEL ' , 'OC_SHIP    ',    &
-                     'OC_TERPENE ' ,                   &
-                     'BC_ANTEBC1 ' , 'BC_ANTEBC2 ',    &
-                     'BC_BIOFUEL ' , 'BC_SHIP    ',    &
-                     'EMI_NH3_AG ' , 'EMI_NH3_EN ',    &
-                     'EMI_NH3_IN ' , 'EMI_NH3_RE ',    &
-                     'EMI_NH3_TR ' ,                   &
-                     'CO_FS      ' , 'CO_BF      ' /), &
-    SRC_ID=HEMCO, DST_ID=GOCART, __RC__)
+    SHORT_NAME  = (/ 'OC_ISOPRENE', 'OC_MTPA    ', 'OC_MTPO    ', 'OC_LIMO    '/), &
+    SRC_ID=HEMCO, DST_ID=GOCART2G, __RC__)
   END IF
 
 ! HEMCO -> GMI 
