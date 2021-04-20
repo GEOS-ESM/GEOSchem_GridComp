@@ -28,8 +28,6 @@
 
    use m_mpout
 
-!   use pflogger
-
    implicit none
 
 ! !PUBLIC TYPES:
@@ -239,8 +237,6 @@ CONTAINS
           + pSO4g_SO2(i1:i2,j1:j2,k)*delp(i1:i2,j1:j2,k)/grav
      enddo
    endif
-
-!if(mapl_am_i_root()) print*,'SU pSO4g_SO2 = ',sum(pSO4g_SO2)
 
    if( associated(pSO4aq%data3d) ) &
      pSO4aq%data3d(i1:i2,j1:j2,1:km) = pSO4aq_SO2(i1:i2,j1:j2,1:km)
@@ -1229,8 +1225,6 @@ CONTAINS
    UpdateEmiss: if(nymd_last .ne. nymd_current) then
     nymd_last = nymd_current
 
-if(mapl_am_i_root()) print*,'SU inside UpdateEmiss'
-
 !   Biomass Burning -- select on known inventories
 !   ----------------------------------------------
     call MAPL_GetPointer(impChem,ptr2d,"SU_BIOMASS"//trim(iName),rc=status)
@@ -1401,8 +1395,6 @@ if(mapl_am_i_root()) print*,'SU inside UpdateEmiss'
   if ( diurnal_bb ) then
        call Chem_BiomassDiurnal ( so2biomass_src, so2biomass_src_,   &
                                   lonRad*radToDeg, latRad*radToDeg, nhms_current, cdt )      
-!if(mapl_am_i_root()) print*,'SU inside sum(so2biomass_src) = ',sum(so2biomass_src)
-!if(mapl_am_i_root()) print*,'SU inside sum(so2biomass_src_) = ',sum(so2biomass_src_)
   end if
 
 !  Apply NEI emissions over North America if so desired
@@ -1573,7 +1565,6 @@ if(mapl_am_i_root()) print*,'SU inside UpdateEmiss'
    real :: deltaSO2v, so2volcano
    integer :: ijl, ijkl
 
-real :: deltaSO2v_sum
 
 !  Handle masking of volcanic sources
     logical :: doingMasking
@@ -1833,8 +1824,6 @@ real :: deltaSO2v_sum
 !     Loop over all volcanoes in the database
       do it = 1, nvolc
 
-deltaSO2v_sum = 0.
-
          i = iVolc(it)
          j = jVolc(it)
          
@@ -1919,17 +1908,13 @@ deltaSO2v_sum = 0.
             z0(i,j) = z1
             so2(i,j,k) = so2(i,j,k) + deltaSO2v*cdt*grav/delp(i,j,k)
 
-deltaSO2v_sum = deltaSO2v_sum + deltaSO2v
-
       end do ! k
-!call lgr%debug('legacy emissions at %g0 %g0 : %g25.17', vLat(it), vLon(it), deltaSO2v_sum)
 
    enddo     ! it
 
    endif
 
 
-!if(mapl_am_i_root()) print*,'SU deltaSO2v_sum = ',deltaSO2v_sum
 
 !  Diagnostics -- this is really the point defined volcanos
    if(associated(SU_SO2emve%data2d)) then
@@ -1937,7 +1922,6 @@ deltaSO2v_sum = deltaSO2v_sum + deltaSO2v
    endif
    if(associated(SU_SO2emvn%data2d)) then
       SU_SO2emvn%data2d = srcSO2volc
-!if(mapl_am_i_root()) print*,'SU inside sum(SO2EMVN) = ',sum(SU_SO2emvn%data2d)
    endif
    if( associated(SU_emis(nSO2)%data2d) ) &
                   SU_emis(nSO2)%data2d =  SU_emis(nSO2)%data2d + srcSO2volc + srcSO2volce
