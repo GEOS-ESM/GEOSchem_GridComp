@@ -793,7 +793,7 @@ contains
                                      DEFAULT="HEMCOsa_Config.rc", __RC__)
 
        IF ( TRIM(ConfigFile) ==    'HEMCOgmi_Config.rc' )    GMI_instance_of_HEMCO = .TRUE.
-       IF ( TRIM(ConfigFile) == 'HEMCOgocart_Config.rc' ) GOCART_instance_of_HEMCO = .TRUE.
+       IF ( TRIM(ConfigFile) == 'HEMCOgeosfp_Config.rc' ) GOCART_instance_of_HEMCO = .TRUE.
 
        ! Verbose
        IF ( MAPL_Am_I_Root() ) WRITE(*,'(a19,i3.3,a2,a)') '--> HEMCO instance ', N, ': ', TRIM(ConfigFile)

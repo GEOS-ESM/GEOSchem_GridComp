@@ -6,26 +6,26 @@
 
 verbose: .True.
 
-gas_chemistry:      .True.
-aqueous_chemistry:  .True.
+
+# MAM chemistry 
+# -------------------------------------
+gas_chemistry:      .false.
+aqueous_chemistry:  .false.
 
 
 # OCS chemistry and boundary conditions
 # -------------------------------------
-ocs_chemistry:   .False.
-ocs_surface_vmr: 510.0e-12   # 'mol/mol'
+ocs_chemistry:   .false.
+ocs_surface_vmr: 490.0e-12   # 'mol/mol'
 
-# VOC chemistry and boundary conditions
+
+# VOC chemistry and parameters
 # -------------------------------------
-voc_chemistry:          .FALSE. 
+voc_chemistry:          .true. 
 voc_BiomassBurnFactor:  0.013   # 'g/g CO'
 voc_AnthroFactor:       0.069   # 'g/g CO'
-voc_MW:                 0.150 # 'kg/mol'
-soa_MW:                 0.161 # 'kg/mol'
-
-# Fix for reading offline oxidant files quirk
-# -------------------------------------------
-flip_oxidant_fields: .False.
+voc_MW:                 0.150   # 'kg/mol'
+soa_MW:                 0.161   # 'kg/mol'
 
 
 # Maximum allowed time step for integrating aqueous phase chemistry kinematics
