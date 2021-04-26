@@ -331,10 +331,10 @@ contains
                             CHILD_ID = RATsProviderNumber(1), __RC__ )
 
 ! Aerosol for radiation.  If an AERO_PROVIDER is not specified
-! in the AGCM.tmpl, then the provider defaults to GOCART.data.
+! in the AGCM.tmpl, then the provider defaults to GOCART2G.
 ! -----------------------------------------------------------
 
-  call ESMF_ConfigGetAttribute(CF, providerName, Default='GOCART.data', &
+  call ESMF_ConfigGetAttribute(CF, providerName, Default='GOCART2G', &
                                Label="AERO_PROVIDER:", __RC__ )
 
   str = trim(providerName)
@@ -344,16 +344,8 @@ contains
       AERO_PROVIDER = -1
 
       call MAPL_AddExportSpec(GC,                                        &
-                              SHORT_NAME = 'AERO_RAD',                   &
+                              SHORT_NAME = 'AERO',                       &
                               LONG_NAME  = 'aerosol_mass_mixing_ratios', &
-                              UNITS      = 'kg kg-1',                    &
-                              DIMS       = MAPL_DimsHorzVert,            &
-                              VLOCATION  = MAPL_VLocationCenter,         &
-                              DATATYPE   = MAPL_StateItem, __RC__ )
-
-      call MAPL_AddExportSpec(GC,                                &
-                              SHORT_NAME = 'AERO_ACI',                   &
-                              LONG_NAME  = 'aerosol_cloud_interaction',  &
                               UNITS      = 'kg kg-1',                    &
                               DIMS       = MAPL_DimsHorzVert,            &
                               VLOCATION  = MAPL_VLocationCenter,         &
@@ -366,14 +358,11 @@ contains
                               DIMS       = MAPL_DimsHorzOnly,    &
                               DATATYPE   = MAPL_BundleItem, __RC__) 
   else
-      call GetProvider_(CF, Label='AERO_PROVIDER:', ID=AERO_PROVIDER, Name=providerName, Default='GOCART.data', __RC__)
+      call GetProvider_(CF, Label='AERO_PROVIDER:', ID=AERO_PROVIDER, Name=providerName, Default='GOCART2G', __RC__)
 
 !     Add export specs for aerosols and aerosol deposition
 !     ----------------------------------------------------
-      call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO_RAD',&
-                                CHILD_ID = AERO_PROVIDER, __RC__  )
-
-      call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO_ACI',&
+      call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO',&
                                 CHILD_ID = AERO_PROVIDER, __RC__  )
 
       call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO_DP', &
@@ -453,7 +442,7 @@ contains
           DST_ID = GAAS, SRC_ID = CHEMENV, __RC__  )
           IF(myState%enable_GOCART2G) then
              call MAPL_AddConnectivity ( GC,        &
-                SHORT_NAME  = (/'AERO_RAD'/),       &
+                SHORT_NAME  = (/'AERO'/),       &
                 DST_ID      =  GAAS,                &
                 SRC_ID      =  GOCART2G, __RC__ )
           ELSE
@@ -901,8 +890,7 @@ contains
    type (ESMF_State)                   :: INTERNAL
    type (ESMF_State),          pointer :: GEX(:)
    type (ESMF_FieldBundle)             :: fBUNDLE
-   type (ESMF_State)                   :: AERO, AERO2G_RAD
-   type (ESMF_State)                   :: AERO_ACI
+   type (ESMF_State)                   :: AERO
    type (ESMF_Config)                  :: CF, myCF
 
 !   Private state
@@ -967,13 +955,11 @@ contains
     if (myState%AERO_PROVIDER < 0) then
         ! Radiation will not call the aerosol optics method 
         ! unless this attribute is explicitly set to true.
-        call ESMF_StateGet(EXPORT, 'AERO_RAD', AERO, __RC__)
+        call ESMF_StateGet(EXPORT, 'AERO', AERO, __RC__)
         call ESMF_AttributeSet(AERO, name='implements_aerosol_optics_method', value=.false., __RC__)
-
         ! Moist will not call the aerosol activation method 
         ! unless this attribute is explicitly set to true.
-        call ESMF_StateGet(EXPORT, 'AERO_ACI', AERO_ACI, __RC__)
-        call ESMF_AttributeSet(AERO_ACI, name='implements_aerosol_activation_properties_method', value=.false., __RC__)
+        call ESMF_AttributeSet(AERO, name='implements_aerosol_activation_properties_method', value=.false., __RC__)
     end if
 
 
@@ -998,15 +984,6 @@ contains
                                          if (myState%AERO_PROVIDER > 0) then
                                              call ESMF_StateGet   ( GEX(myState%AERO_PROVIDER), 'AERO', AERO, __RC__ )
                                              call ESMF_StatePrint ( AERO, nestedFlag=.false., __RC__ )
-                                         end if
-
-       print *,  trim(Iam)//": AERO_ACI State (EXPORT)"
-                                             call ESMF_StateGet   ( EXPORT, 'AERO_ACI', AERO_ACI, __RC__ ) 
-                                             call ESMF_StatePrint ( AERO_ACI, nestedFlag=.false., __RC__ )
-       print *,  trim(Iam)//": AERO State (PROVIDER)",  myState%AERO_PROVIDER
-                                         if (myState%AERO_PROVIDER > 0) then
-                                             call ESMF_StateGet   ( GEX(myState%AERO_PROVIDER), 'AERO_ACI', AERO_ACI, __RC__ )
-                                             call ESMF_StatePrint ( AERO_ACI, nestedFlag=.false., __RC__ )
                                          end if
 
        print *,  trim(Iam)//": Friendly Tracers (INTERNAL)"
