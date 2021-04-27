@@ -21,13 +21,15 @@ include_directories (${esma_include}/${this})
 
 if (USE_F2PY)
    find_package(F2PY2)
-   add_f2py2_module(MieObs_ SOURCES MieObs_py.F90
-      DESTINATION lib/Python2
-      LIBRARIES Chem_Base MAPL GMAO_mpeu ${NETCDF_LIBRARIES} ${ESMF_LIBRARY}
-      INCLUDEDIRS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR}/lib ${BASEDIR}/lib ${include_${this}} ${INC_NETCDF}
-      USE_MPI
-      )
-   add_dependencies(MieObs_ ${this})
+   if (F2PY2_FOUND)
+      add_f2py2_module(MieObs_ SOURCES MieObs_py.F90
+         DESTINATION lib/Python2
+         LIBRARIES Chem_Base MAPL GMAO_mpeu ${NETCDF_LIBRARIES} ${ESMF_LIBRARY}
+         INCLUDEDIRS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR}/lib ${BASEDIR}/lib ${include_${this}} ${INC_NETCDF}
+         USE_MPI
+         )
+      add_dependencies(MieObs_ ${this})
+   endif ()
 endif ()
 
 
