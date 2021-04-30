@@ -23,4 +23,4 @@
   ENABLE_ACHEM:       .TRUE.
   ENABLE_TR:          .TRUE.
   ENABLE_DNA:         .FALSE.
-  ENABLE_HEMCO:       .TRUEE.
+  ENABLE_HEMCO:       .TRUE.
