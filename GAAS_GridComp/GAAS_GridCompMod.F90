@@ -111,7 +111,7 @@ CONTAINS
 ! !REVISION HISTORY:
 !
 !  30Nov2010 da Silva  Initial version.
-!  26Mar20201 E.Sherman Added AERO_RAD state to IMPORT
+!  26Mar20201 E.Sherman Added AERO state to IMPORT
 !EOP
 !-------------------------------------------------------------------------
 
@@ -182,7 +182,7 @@ CONTAINS
     call MAPL_AddImportSpec(GC,                                   &
        LONG_NAME  = 'aerosols',                                   &
        UNITS      = 'kg kg-1',                                    &
-       SHORT_NAME = 'AERO_RAD',                                   &
+       SHORT_NAME = 'AERO',                                       &
        DIMS       = MAPL_DimsHorzVert,                            &
        VLOCATION  = MAPL_VLocationCenter,                         &
        DATATYPE   = MAPL_StateItem,                               &
@@ -248,7 +248,7 @@ CONTAINS
     type(ESMF_Config)             :: CF       ! Universal Config 
     type(ESMF_Time)               :: Time     ! Current time
 
-    type(ESMF_State)              :: aero_rad ! Aersol state
+    type(ESMF_State)              :: aero ! Aersol state
     type(ESMF_FieldBundle)        :: aeroSerialBundle ! serialized aerosol bundle
 
     integer                       :: nymd, nhms  ! date, time
@@ -324,10 +324,10 @@ CONTAINS
 
 !  Prepare aerosol SimpleBundle
 !  -----------------------------
-!  Execute AERO_RAD's serialize_bundle method
-   call ESMF_StateGet(IMPORT, 'AERO_RAD', aero_rad, __RC__)
-   call ESMF_MethodExecute(aero_rad, label="serialize_bundle", __RC__)
-   call ESMF_StateGet(aero_rad, 'serialized_aerosolBundle', aeroSerialBundle, __RC__)
+!  Execute AERO's serialize_bundle method
+   call ESMF_StateGet(IMPORT, 'AERO', aero, __RC__)
+   call ESMF_MethodExecute(aero, label="serialize_bundle", __RC__)
+   call ESMF_StateGet(aero, 'serialized_aerosolBundle', aeroSerialBundle, __RC__)
 
 !  Create SimpleBundle from aeroBundle
 !  Associate SimpleBundle with concentration analysis/background
@@ -450,7 +450,7 @@ CONTAINS
     !(stassi,14feb2012)--character(len=ESMF_MAXSTR)    :: TEMPLATE, filename, expid
     character(len=256)            :: TEMPLATE, filename, expid
 
-    type(ESMF_State)              :: aero_rad ! Aersol state
+    type(ESMF_State)              :: aero ! Aersol state
     character(len=ESMF_MAXSTR)    :: fieldName
     real, pointer, dimension(:,:) :: ptr2d
     real, pointer, dimension(:,:,:) :: ptr3d
@@ -530,35 +530,35 @@ CONTAINS
 !  ---------------------------------------------
 #  include "GAAS_GetPointer___.h"
 
-!  Retrieve AOD from AERO_RAD state and fill SimpleBundle
+!  Retrieve AOD from AERO state and fill SimpleBundle
 !  ------------------------------------------------------
-   call ESMF_StateGet(import, 'AERO_RAD', aero_rad, __RC__)
+   call ESMF_StateGet(import, 'AERO', aero, __RC__)
 
 !  Set RH for aerosol optics
-   call ESMF_AttributeGet(aero_rad, name='relative_humidity_for_aerosol_optics', value=fieldName, __RC__)
+   call ESMF_AttributeGet(aero, name='relative_humidity_for_aerosol_optics', value=fieldName, __RC__)
    if (fieldName /= '') then
-      call MAPL_GetPointer(aero_rad, ptr3d, trim(fieldName), __RC__)
+      call MAPL_GetPointer(aero, ptr3d, trim(fieldName), __RC__)
       ptr3d = rh2
    end if
 
-   call ESMF_AttributeGet(aero_rad, name='air_pressure_for_aerosol_optics', value=fieldName, __RC__)
+   call ESMF_AttributeGet(aero, name='air_pressure_for_aerosol_optics', value=fieldName, __RC__)
    if (fieldName /= '') then
-      call MAPL_GetPointer(aero_rad, ptr3d, trim(fieldName), __RC__)
+      call MAPL_GetPointer(aero, ptr3d, trim(fieldName), __RC__)
       ptr3d = ple
    end if
 
    ! Set wavelength at 550nm (550 should be a parameter called "monochromatic_wavelength_nm" defined in GAAS)
-   call ESMF_AttributeSet(aero_rad, name='wavelength_for_aerosol_optics', value=self%channel*1.0e-9, __RC__)
+   call ESMF_AttributeSet(aero, name='wavelength_for_aerosol_optics', value=self%channel*1.0e-9, __RC__)
 
    ! execute the aero provider's optics method
-   call ESMF_MethodExecute(aero_rad, label="get_monochromatic_aop", __RC__)
+   call ESMF_MethodExecute(aero, label="get_monochromatic_aop", __RC__)
 
-   ! Retrieve vertically summed AOD from AERO_RAD
+   ! Retrieve vertically summed AOD from AERO
    allocate(aodInt(ubound(rh2,1), ubound(rh2,2)), __STAT__)
    aodInt = 0.0
-   call ESMF_AttributeGet(aero_rad, name='monochromatic_extinction_in_air_due_to_ambient_aerosol', value=fieldName, __RC__)
+   call ESMF_AttributeGet(aero, name='monochromatic_extinction_in_air_due_to_ambient_aerosol', value=fieldName, __RC__)
    if (fieldName /= '') then
-      call MAPL_GetPointer(aero_rad, ptr2d, trim(fieldName), __RC__)
+      call MAPL_GetPointer(aero, ptr2d, trim(fieldName), __RC__)
       aodInt = ptr2d
    end if
 
@@ -628,13 +628,13 @@ CONTAINS
 
 
 !  Get sum of aerosol mixing ratios
-   call get_aerosolSum (aero_rad, 'dust', DUsum, __RC__)
-   call get_aerosolSum (aero_rad, 'seasalt', SSsum, __RC__)
-   call get_aerosolSum (aero_rad, 'sulfate', SUsum, __RC__)
-   call get_aerosolSum (aero_rad, 'nitrate', NIsum, __RC__)
-   call get_aerosolSum (aero_rad, 'organicCarbon', CAOCsum, __RC__)
-   call get_aerosolSum (aero_rad, 'blackCarbon', CABCsum, __RC__)
-   call get_aerosolSum (aero_rad, 'brownCarbon', CABRsum, __RC__)
+   call get_aerosolSum (aero, 'dust', DUsum, __RC__)
+   call get_aerosolSum (aero, 'seasalt', SSsum, __RC__)
+   call get_aerosolSum (aero, 'sulfate', SUsum, __RC__)
+   call get_aerosolSum (aero, 'nitrate', NIsum, __RC__)
+   call get_aerosolSum (aero, 'organicCarbon', CAOCsum, __RC__)
+   call get_aerosolSum (aero, 'blackCarbon', CABCsum, __RC__)
+   call get_aerosolSum (aero, 'brownCarbon', CABRsum, __RC__)
 
 !  Handle 3D exports (save bkg for increments)
 !  -------------------------------------------
@@ -653,13 +653,13 @@ CONTAINS
    call LDE_Projector1c ( self%E, self%q_a, self%q_f, self%y_f, self%y_d, self%verbose, __RC__ )
 
 !  Get updated sum of aerosol mixing ratios
-   call get_aerosolSum (aero_rad, 'dust', DUsum, __RC__)
-   call get_aerosolSum (aero_rad, 'seasalt', SSsum, __RC__)
-   call get_aerosolSum (aero_rad, 'sulfate', SUsum, __RC__)
-   call get_aerosolSum (aero_rad, 'nitrate', NIsum, __RC__)
-   call get_aerosolSum (aero_rad, 'organicCarbon', CAOCsum, __RC__)
-   call get_aerosolSum (aero_rad, 'blackCarbon', CABCsum, __RC__)
-   call get_aerosolSum (aero_rad, 'brownCarbon', CABRsum, __RC__)
+   call get_aerosolSum (aero, 'dust', DUsum, __RC__)
+   call get_aerosolSum (aero, 'seasalt', SSsum, __RC__)
+   call get_aerosolSum (aero, 'sulfate', SUsum, __RC__)
+   call get_aerosolSum (aero, 'nitrate', NIsum, __RC__)
+   call get_aerosolSum (aero, 'organicCarbon', CAOCsum, __RC__)
+   call get_aerosolSum (aero, 'blackCarbon', CABCsum, __RC__)
+   call get_aerosolSum (aero, 'brownCarbon', CABRsum, __RC__)
 
 !  Handle 2D exports
 !  -----------------
