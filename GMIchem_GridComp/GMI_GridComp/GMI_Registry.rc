@@ -38,8 +38,6 @@
   TAUCLI 	     |  1              | xyz | C |    |   |   |     |      |    | optical_thickness_for_ice_clouds
   QL    	     |	kg kg-1	       | xyz | C |    |   |   |     |      |    | cloud_liquid_for_radiation
   QI    	     |	kg kg-1	       | xyz | C |    |   |   |     |      |    | cloud_ice_for_radiation
-  RI    	     |	m      	       | xyz | C |    |   |   |     |      |    | ice_phase_cloud_particle_effective_radius
-  RL    	     |	m      	       | xyz | C |    |   |   |     |      |    | liquid_cloud_particle_effective_radius
   CNV_MFC	     |	kg m-2 s-1     | xyz | E |    |   |   |     |      |    | cumulative_mass_flux
   CNV_MFD	     |	kg m-2 s-1     | xyz | C |    |   |   |     |      |    | detraining_mass_flux
   RH2   	     |	1              | xyz | C |    |   |   |     |      |    | relative_humidity_after_moist
