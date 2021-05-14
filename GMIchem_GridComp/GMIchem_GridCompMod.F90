@@ -136,6 +136,7 @@ CONTAINS
     CHARACTER(LEN=ESMF_MAXSTR) :: name
 
     LOGICAL :: do_ShipEmission
+    INTEGER :: fastj_opt
     TYPE(ESMF_Config)  :: gmiConfig
 
     ! HEMCO isoprene related -sas
@@ -291,6 +292,7 @@ CONTAINS
     END SELECT
 
 ! Import NO from Ships, only if using the parameterization
+! Import RI and RL, only if using Cloud-J
 
     gmiConfig = ESMF_ConfigCreate(__RC__)
 
@@ -308,6 +310,27 @@ CONTAINS
           UNITS      = 'kg NO m^(-2) s^(-1)',              &
           DIMS       = MAPL_DimsHorzOnly,                  &
           VLOCATION  = MAPL_VLocationNone,   __RC__) 
+    END IF
+
+    CALL ESMF_ConfigGetAttribute(gmiConfig, value= fastj_opt, Default=4, &
+                                            Label="fastj_opt:", __RC__)
+
+    ! We need RI and RL for Cloud-J
+    ! The fields may not be available in CTM, so we import them conditionally
+    IF ( fastj_opt == 5 ) THEN
+       call MAPL_AddImportSpec(GC,                                           &
+          SHORT_NAME         = 'RI',                                         &
+          LONG_NAME          = 'ice_phase_cloud_particle_effective_radius',  &
+          UNITS              = 'm',                                          &
+          DIMS               = MAPL_DimsHorzVert,                            &
+          VLOCATION          = MAPL_VLocationCenter,    __RC__)
+
+       call MAPL_AddImportSpec(GC,                                           &
+          SHORT_NAME         = 'RL',                                         &
+          LONG_NAME          = 'liquid_cloud_particle_effective_radius',     &
+          UNITS              = 'm',                                          &
+          DIMS               = MAPL_DimsHorzVert,                            &
+          VLOCATION          = MAPL_VLocationCenter,    __RC__)
     END IF
 
     call ESMF_ConfigDestroy(gmiConfig, __RC__)
