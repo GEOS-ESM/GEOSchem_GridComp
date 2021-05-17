@@ -1208,7 +1208,8 @@ CONTAINS
    REAL, POINTER, DIMENSION(:,:,:) :: airdens, ple, Q, T, zle
    REAL, POINTER, DIMENSION(:,:,:) :: fcld, taucli, tauclw, ql, cnv_mfc
    REAL, POINTER, DIMENSION(:,:,:) :: qi
-   REAL, POINTER, DIMENSION(:,:,:) :: ri, rl
+   REAL, POINTER, DIMENSION(:,:,:) :: ri => NULL()
+   REAL, POINTER, DIMENSION(:,:,:) :: rl => NULL()
    REAL, POINTER, DIMENSION(:,:,:) :: rh2,dqdt
 
 !  Dust and aerosols.  May serve as imports from GOCART
@@ -2455,10 +2456,12 @@ CONTAINS
    VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,        qi,      'QI', RC=STATUS)
    VERIFY_(STATUS)
-   CALL MAPL_GetPointer(impChem,        ri,      'RI', RC=STATUS)
-   VERIFY_(STATUS)
-   CALL MAPL_GetPointer(impChem,        rl,      'RL', RC=STATUS)
-   VERIFY_(STATUS)
+   IF ( self%fastj_opt == 5 ) THEN
+     CALL MAPL_GetPointer(impChem,        ri,      'RI', RC=STATUS)
+     VERIFY_(STATUS)
+     CALL MAPL_GetPointer(impChem,        rl,      'RL', RC=STATUS)
+     VERIFY_(STATUS)
+   END IF
 !  CALL MAPL_GetPointer(impChem,   cnv_frc, 'CNV_FRC', RC=STATUS)
 !  VERIFY_(STATUS)
 !  CALL MAPL_GetPointer(impChem,    frland,  'FRLAND', RC=STATUS)
@@ -2524,8 +2527,10 @@ CONTAINS
     CALL pmaxmin('RH2:', rh2, qmin, qmax, iXj, km, 1. )
     CALL pmaxmin('DQ/DT:', dqdt, qmin, qmax, iXj, km, 1. )
     CALL pmaxmin('QI:', qi, qmin, qmax, iXj, km, 1. )
+   IF ( self%fastj_opt == 5 ) THEN
     CALL pmaxmin('RI:', ri, qmin, qmax, iXj, km, 1. )
     CALL pmaxmin('RL:', rl, qmin, qmax, iXj, km, 1. )
+   ENDIF
 
     i = w_c%reg%j_XX
     CALL pmaxmin('TROPP:', w_c%qa(i)%data3d(:,:,km), qmin, qmax, iXj, 1, 0.01 )
@@ -2632,8 +2637,13 @@ CONTAINS
 !...parameters for CloudJ
        qi_(i1:i2,j1:j2,kReverse) =      qi(i1:i2,j1:j2,k)
        ql_(i1:i2,j1:j2,kReverse) =      ql(i1:i2,j1:j2,k)
+   IF ( self%fastj_opt == 5 ) THEN
        ri_(i1:i2,j1:j2,kReverse) =      ri(i1:i2,j1:j2,k)
        rl_(i1:i2,j1:j2,kReverse) =      rl(i1:i2,j1:j2,k)
+   ELSE
+       ri_ = 0.0
+       rl_ = 0.0
+   ENDIF
   END DO
 !...parameter for CloudJ
 ! cnv_frc_(i1:i2,j1:j2)          = cnv_frc(i1:i2,j1:j2)

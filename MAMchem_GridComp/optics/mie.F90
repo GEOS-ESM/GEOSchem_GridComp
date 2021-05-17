@@ -22,7 +22,8 @@ module mie
 
 contains
 
-    subroutine scattering_lognormal(psd, Dg, sigma, refractive_index, wavelength, ext, sca, g, size_min, size_max, intervals, specific, method)
+    subroutine scattering_lognormal(psd, Dg, sigma, refractive_index, wavelength, ext, sca, g, &
+          size_min, size_max, intervals, specific, method)
         
         !
         ! Returns (optionally specific) extinction and scattering, and asimmetry parameter of 
@@ -62,13 +63,16 @@ contains
 
         select case (method)
             case (integration_method_simpson)
-                call integrate_simpson_(psd, Dg, sigma, refractive_index, wavelength, ext, sca, g, size_min, size_max, intervals, specific)
+                call integrate_simpson_(psd, Dg, sigma, refractive_index, wavelength, ext, sca, g, &
+                   size_min, size_max, intervals, specific)
             case default
-                call integrate_midpoint_(psd, Dg, sigma, refractive_index, wavelength, ext, sca, g, size_min, size_max, intervals, specific)
+                call integrate_midpoint_(psd, Dg, sigma, refractive_index, wavelength, ext, sca, g, &
+                   size_min, size_max, intervals, specific)
         end select
 
     contains 
-        subroutine integrate_midpoint_(psd, Dg, sigma, refractive_index, wavelength, ext, sca, g, size_min, size_max, intervals, specific)
+        subroutine integrate_midpoint_(psd, Dg, sigma, refractive_index, wavelength, ext, sca, g, &
+              size_min, size_max, intervals, specific)
 
             !
             ! Use midpoint rule to do integration of optical properties
@@ -124,7 +128,9 @@ contains
             gq_sca_ = 0.0
 
             NUMBER_DISTRIBUTION: if (psd == psd_number) then
-                !$omp parallel default( none ) shared ( intervals, size_min, delta, refractive_index, wavelength, Dg, sigma, ext, sca, g, m ) private ( i, d, q_ext, q_sca, gq_sca, spike, dN, s ) 
+                !$omp parallel default( none ) &
+                !$omp shared ( intervals, size_min, delta, refractive_index, wavelength, Dg, sigma, ext, sca, g, m ) &
+                !$omp private ( i, d, q_ext, q_sca, gq_sca, spike, dN, s ) 
                 !$omp do reduction ( + : ext, sca, g, m ) &
                 !$omp& schedule(guided)
                 do i = 0, intervals - 1
@@ -155,7 +161,9 @@ contains
             end if NUMBER_DISTRIBUTION
 
             SURFACE_DISTRIBUTION: if (psd == psd_surface) then
-                !$omp parallel default( none ) shared ( intervals, size_min, delta, refractive_index, wavelength, Dg, sigma, ext, sca, g, m) private ( i, d, q_ext, q_sca, gq_sca, spike, dS ) 
+                !$omp parallel default( none ) &
+                !$omp shared ( intervals, size_min, delta, refractive_index, wavelength, Dg, sigma, ext, sca, g, m) &
+                !$omp private ( i, d, q_ext, q_sca, gq_sca, spike, dS ) 
                 !$omp do reduction ( + : ext, sca, g, m ) &
                 !$omp& schedule(guided)
                 do i = 0, intervals - 1
@@ -201,7 +209,8 @@ contains
         end subroutine integrate_midpoint_
 
 
-        subroutine integrate_simpson_(psd, Dg, sigma, refractive_index, wavelength, ext, sca, g, size_min, size_max, intervals, specific)
+        subroutine integrate_simpson_(psd, Dg, sigma, refractive_index, wavelength, ext, sca, g, &
+              size_min, size_max, intervals, specific)
 
             !
             ! Use midpoint rule to do integration of optical properties
