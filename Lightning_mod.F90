@@ -877,6 +877,7 @@ end subroutine getLightning
 
       integer :: shape3d (3)
       integer :: IM, JM, LM, KM
+      integer :: LB, UB 
       integer :: levCount, kR
 
       real, parameter :: MIN_TO_SEC = 1.0/60.0
@@ -913,8 +914,10 @@ end subroutine getLightning
       ALLOCATE(ltop2d (1:IM, 1:JM),   STAT=RC)
 
       ! edge layer fields
-      pleHemco(:,:,1:KM) = ple(:,:,LM:0:-1)
-      cnvMfcHemco(:,:,1:KM) = cnvMfc(:,:,LM:0:-1)
+      LB = LBOUND(ple,3)
+      UB = UBOUND(ple,3)
+      pleHemco(:,:,1:KM) = ple(:,:,UB:LB:-1)
+      cnvMfcHemco(:,:,1:KM) = cnvMfc(:,:,UB:LB:-1)
 
       ! fields at grid box center
       airTempHemco(:,:,1:LM) = airTemp(:,:,LM:1:-1)
@@ -923,9 +926,9 @@ end subroutine getLightning
       ! turned on in CalcFlashRate below - but it's hardcoded to false.
       buoyancyHemco(:,:,1:LM) = real(-1) !buoyancy(:,:,LM:1:-1)
 
-
+      LB = LBOUND(geoPotHeight,3)
       do levCount=1,LM
-         gridBoxHeightHemco(:,:,levCount) = geoPotHeight(:,:,levCount-1) - geoPotHeight(:,:,levCount)
+         gridBoxHeightHemco(:,:,levCount) = geoPotHeight(:,:,levCount+LB-1) - geoPotHeight(:,:,levCount+LB)
       enddo
       gridBoxHeightHemco2(:,:,1:LM) = gridBoxHeightHemco(:,:,LM:1:-1)
 
