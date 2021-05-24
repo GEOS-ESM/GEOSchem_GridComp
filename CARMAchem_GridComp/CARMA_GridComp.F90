@@ -1128,7 +1128,9 @@ endif
    if( associated(su_sareav)) su_sareav(:,:,:) = 0.
    if( associated(su_mass))   su_mass(:,:,:)  = 0.
    last_sub = 0
-   last_ret = 0
+   last_ret = 0.
+   retry_real = 0.
+   substep_int = 0
 
 !  Possibly create a CARMA reference state column for 1,1 column in tile
    if(reg%do_fixedinit) then
@@ -1350,15 +1352,16 @@ endif
       if(associated(SS_reff) .and. igroup .eq. reg%igrp_seasalt)    where(reff_den > 0) SS_reff(i,j,:) = reff_num / reff_den
      enddo
 
-
 !    Get the number of substeps, retries from CARMA state
-     call CARMASTATE_Get(cstate, rc, nsubstep=substep_int, &
-                         nretry=retry_real, zsubsteps=zsubsteps_)
-     if(associated(substeps))  substeps(i,j)    = REAL(substep_int-last_sub, kind=f)
-     if(associated(retries))   retries(i,j)     = retry_real-last_ret
-     if(associated(zsubsteps)) zsubsteps(i,j,:) = zsubsteps_
-     last_sub = substep_int
-     last_ret = retry_real
+     if(reg%do_substep) then
+      call CARMASTATE_Get(cstate, rc, nsubstep=substep_int, &
+                          nretry=retry_real, zsubsteps=zsubsteps_)
+      if(associated(substeps))  substeps(i,j)    = REAL(substep_int-last_sub, kind=f)
+      if(associated(retries))   retries(i,j)     = retry_real-last_ret
+      if(associated(zsubsteps)) zsubsteps(i,j,:) = zsubsteps_
+      last_sub = substep_int
+      last_ret = retry_real
+     endif
 
 !  Hack -- for now don't change temperature
 !   ! Get the updated temperature.

@@ -228,7 +228,7 @@ CONTAINS
                           // trim(r%elemname(j))// '::'            &
                           // trim(binstr),                         &
                UNITS       = 'kg/kg',                              &     ! placeholder
-               FRIENDLYTO  = 'DYNAMICS:TURBULENCE',          &
+               FRIENDLYTO  = 'DYNAMICS:TURBULENCE:MOIST',          &
                DIMS        = MAPL_DimsHorzVert,                    &
                VLOCATION   = MAPL_VLocationCenter,     RC=STATUS  )
           VERIFY_(STATUS)
@@ -859,9 +859,10 @@ CONTAINS
                             cdt, STATUS )
    VERIFY_(STATUS)
 
-   call CARMA_Convection  ( gcCARMA, qa, import, export, nymd, nhms, &
-                            cdt, STATUS )
-   VERIFY_(STATUS)
+!  Make friendly to moist and so don't use this...
+!   call CARMA_Convection  ( gcCARMA, qa, import, export, nymd, nhms, &
+!                            cdt, STATUS )
+!   VERIFY_(STATUS)
 
    call CARMA_ComputeDiags  ( gcCARMA, qa, import, export, nymd, nhms, &
                               cdt, STATUS )

@@ -692,7 +692,9 @@ CONTAINS
       n = n1 + reg%NELEM*reg%NBIN - 1 + igas
       if( trim(reg%gasname(igas)) == 'h2so4' .or. &
           trim(reg%gasname(igas)) == 'H2SO4') then
-         !qa(n)%data3d = qa(n)%data3d + pso4 * dtime
+! PRC: old way
+         qa(n)%data3d = qa(n)%data3d + pso4 * dtime
+         call pmaxmin('pso4        : ', pso4, qmin, qmax, ijl, km, 1. )
          !qa(n)%data3d = qa(n)%data3d + so4tendc * dtime
          if(associated(so4tendc)) then
              !where(so4tendc .lt. 0._f) so4tendc = 0._f
