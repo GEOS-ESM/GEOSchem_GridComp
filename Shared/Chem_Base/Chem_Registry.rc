@@ -56,6 +56,7 @@ doing_BC:  no   # &YesNo Include black carbon?
 doing_OC:  no   # &YesNo Include organic carbon?
 doing_BRC: no   # &YesNo Include brown carbon?
 doing_NI:  no   # &YesNo Include nitrate?
+doing_OH:  no   # &YesNo Include hydroxyl radical?
 doing_Rn:  no   # &YesNo include Radon?
 doing_CH4: no   # &YesNo include Methane?
 doing_SC:  no   # &YesNo Include stratospheric chemistry?
@@ -81,6 +82,7 @@ nbins_BC:       2   # black carbon
 nbins_OC:       2   # organic carbon
 nbins_BRC:      2   # brown carbon
 nbins_NI:       5   # nitrate
+nbins_OH:       1   # hydroxyl radical
 nbins_Rn:       1   # radon
 nbins_CH4:     15   # methane
 nbins_SC_f:    52   # stratospheric chemistry (full)
@@ -89,7 +91,7 @@ nbins_SC_r:    33   # stratospheric chemistry (reduced)
 nbins_XX_SC_r: 37   # stratchem (reduced) non-transported species
 nbins_PC:       1   # parameterized chemistry (GEOS-5)
 nbins_GMI:     72   # GMI chemistry (GEOS-5)
-nbins_XX_GMI:  48   # generic tracer
+nbins_XX_GMI:  48   # GMI non-transported species
 nbins_OCS:      1   # ACHEM chemistry (OCS)
 nbins_TR:       4   # passive tracers
 
@@ -107,6 +109,7 @@ units_BC:  'kg kg-1'     # black carbon
 units_OC:  'kg kg-1'     # organic carbon
 units_BRC: 'kg kg-1'     # brown carbon
 units_NI:  'kg kg-1'     # nitrate
+units_OH:  'molec cm-3'  # parameterized hydroxyl radical
 units_Rn:  'mol mol-1'   # radon
 units_CH4: 'mol mol-1'   # methane
 units_SC:  'mol mol-1'   # stratospheric chemistry
@@ -237,6 +240,13 @@ NH4a       'kg kg-1'    Ammonium ion (NH4+, aerosol phase)
 NO3an1     'kg kg-1'    Nitrate size bin 001
 NO3an2     'kg kg-1'    Nitrate size bin 002
 NO3an3     'kg kg-1'    Nitrate size bin 003
+::
+
+variable_table_OH::
+
+# Name     Units        Long Name
+# -----    ------       --------------------------------
+OH         molec/cm3    Hydroxyl radical
 ::
 
 variable_table_SC_f::
@@ -603,6 +613,7 @@ advect_BC:  yes  # black carbon
 advect_OC:  yes  # organic carbon
 advect_BRC: yes  # brown carbon
 advect_NI:  yes  # nitrate
+advect_OH:  no   # parameterized hydroxyl radical
 advect_Rn:  yes  # radon
 advect_CH4: yes  # methane
 advect_SC:  yes  # stratospheric chemistry
@@ -627,6 +638,7 @@ diffuse_BC:  yes  # black carbon
 diffuse_OC:  yes  # organic carbon
 diffuse_BRC: yes  # brown carbon
 diffuse_NI:  yes  # nitrate
+diffuse_OH:  no   # parameterized hydroxyl radical
 diffuse_Rn:  yes  # radon
 diffuse_CH4: yes  # methane
 diffuse_SC:  yes  # stratospheric chemistry

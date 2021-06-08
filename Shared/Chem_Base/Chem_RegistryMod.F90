@@ -51,6 +51,7 @@
 !                      - Added PC and GMI families
 !                      - removed concept of fixed tracers
 !  29Jun2016 Nielsen   Nullified creation of pc001 in vname list
+!  25May2021 Manyin    Added OH
 !
 !EOP
 !-------------------------------------------------------------------------
@@ -93,6 +94,7 @@
      logical :: doing_GMI   ! GMI Chemistry (GEOS-5)
      logical :: doing_OCS   ! ACHEM chemistry (OCS)
      logical :: doing_NI    ! Nitrate
+     logical :: doing_OH    ! parameterized hydroxyl radical
      logical :: doing_TR    ! passive tracers
 
 !    Number of bins and tracer index ranges for each constituent:
@@ -117,6 +119,7 @@
      integer :: n_GMI, i_GMI, j_GMI  ! GMI chemistry (GEOS-5)
      integer :: n_OCS, i_OCS, j_OCS  ! OCS chemistry (ACHEM)
      integer :: n_NI, i_NI, j_NI     ! Nitrate
+     integer :: n_OH, i_OH, j_OH     ! hydroxyl radical
      integer :: n_TR, i_TR, j_TR     ! passive tracers
 
 !    GEOS-5 Short-hands: all combined tracers from CO to OC
@@ -143,6 +146,7 @@
      character(len=nch) :: units_GMI   ! GMI chemistry (GEOS-5)
      character(len=nch) :: units_OCS   ! OCS chemistry (ACHEM)
      character(len=nch) :: units_NI    ! Nitrate
+     character(len=nch) :: units_OH    ! hydroxyl radical
      character(len=nch) :: units_TR    ! passive tracers
 
 !    CF Style metadata
@@ -252,6 +256,7 @@ CONTAINS
    call parserc_ ( 'Rn', this%doing_Rn, this%n_Rn, this%units_Rn )
    call parserc_ ( 'CH4', this%doing_CH4, this%n_CH4, this%units_CH4 )
    call parserc_ ( 'NI', this%doing_NI, this%n_NI, this%units_NI )
+   call parserc_ ( 'OH', this%doing_OH, this%n_OH, this%units_OH )
    call parserc_ ( 'SC', this%doing_SC, this%n_SC, this%units_SC )
    call parserc_ ( 'GMI', this%doing_GMI, this%n_GMI, this%units_GMI )
    call parserc_ ( 'XX', this%doing_XX, this%n_XX, this%units_XX )
@@ -275,6 +280,7 @@ CONTAINS
    call setidx_ ( this%doing_Rn, this%n_Rn, this%i_Rn, this%j_Rn )
    call setidx_ ( this%doing_CH4, this%n_CH4, this%i_CH4, this%j_CH4 )
    call setidx_ ( this%doing_NI, this%n_NI, this%i_NI, this%j_NI )
+   call setidx_ ( this%doing_OH, this%n_OH, this%i_OH, this%j_OH )
    call setidx_ ( this%doing_SC, this%n_SC, this%i_SC, this%j_SC )
    call setidx_ ( this%doing_GMI, this%n_GMI, this%i_GMI, this%j_GMI )
    call setidx_ ( this%doing_XX, this%n_XX, this%i_XX, this%j_XX )
@@ -334,6 +340,8 @@ CONTAINS
                    this%units_CH4,  this%i_CH4, this%j_CH4 )
    call setmeta_ ( this%doing_NI,  'ni', 'Nitrate', &
                    this%units_NI,  this%i_NI, this%j_NI )
+   call setmeta_ ( this%doing_OH,  'OH', 'Hydroxyl Radical', &
+                   this%units_OH,  this%i_OH, this%j_OH )
    call setmeta_ ( this%doing_SC,  'sc', 'Stratosperic Chemistry Species', &
                    this%units_SC,  this%i_SC, this%j_SC )
    call setmeta_ ( this%doing_GMI,  'GMI', 'GMI Chemistry', &
@@ -607,6 +615,7 @@ RealNames: IF( ier .EQ. 0 ) THEN
    this%doing_PC = .false.    ! parameterized chemistry (GEOS-5)
    this%doing_OCS = .false.   ! ACHEM chemistry (OCS)
    this%doing_NI = .false.    ! Nitrate
+   this%doing_OH = .false.    ! Hydroxyl radical
    this%doing_GMI = .false.   ! GMI chemistry (GEOS-5)
    this%doing_TR = .false.    ! passive tracers
    deallocate ( this%vname, this%vtitle, this%vunits, this%fscav, &
@@ -677,6 +686,7 @@ end subroutine Chem_RegistryDestroy
    IF ( reg%doing_Rn ) ActiveList = TRIM(ActiveList)//'  Rn'
    IF ( reg%doing_CH4 ) ActiveList = TRIM(ActiveList)//'  CH4'
    IF ( reg%doing_NI ) ActiveList = TRIM(ActiveList)//'  NI'
+   IF ( reg%doing_OH ) ActiveList = TRIM(ActiveList)//'  OH'
    IF ( reg%doing_SC ) ActiveList = TRIM(ActiveList)//'  SC'
    IF ( reg%doing_GMI ) ActiveList = TRIM(ActiveList)//'  GMI'
    IF ( reg%doing_XX ) ActiveList = TRIM(ActiveList)//'  XX'
@@ -701,6 +711,7 @@ end subroutine Chem_RegistryDestroy
    IF ( reg%doing_Rn ) CALL reg_prt_( 'Rn', reg%n_Rn, reg%i_Rn, reg%j_Rn )
    IF ( reg%doing_CH4 ) CALL reg_prt_( 'CH4', reg%n_CH4, reg%i_CH4, reg%j_CH4 )
    IF ( reg%doing_NI ) CALL reg_prt_( 'NI', reg%n_NI, reg%i_NI, reg%j_NI )
+   IF ( reg%doing_OH ) CALL reg_prt_( 'OH', reg%n_OH, reg%i_OH, reg%j_OH )
    IF ( reg%doing_SC ) CALL reg_prt_( 'SC', reg%n_SC, reg%i_SC, reg%j_SC )
    IF ( reg%doing_GMI ) CALL reg_prt_( 'GMI', reg%n_GMI, reg%i_GMI, reg%j_GMI )
    IF ( reg%doing_XX ) CALL reg_prt_( 'XX', reg%n_XX, reg%i_XX, reg%j_XX )
@@ -767,6 +778,7 @@ END SUBROUTINE Chem_RegistryPrint
      if ( chemReg%doing_Rn )  isGOCART(chemReg%i_Rn :chemReg%j_Rn)  = .true.
      if ( chemReg%doing_CH4 ) isGOCART(chemReg%i_CH4:chemReg%j_CH4) = .true.
      if ( chemReg%doing_NI )  isGOCART(chemReg%i_NI :chemReg%j_NI)  = .true.
+     if ( chemReg%doing_OH )  isGOCART(chemReg%i_OH :chemReg%j_OH)  = .true.
    end subroutine Chem_RegistrySetIsGOCART
 
  end module Chem_RegistryMod
