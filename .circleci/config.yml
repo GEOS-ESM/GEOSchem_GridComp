@@ -3,7 +3,7 @@ version: 2.1
 executors:
   gcc-build-env:
     docker:
-      - image: gmao/ubuntu20-geos-env-mkl:v6.1.0-openmpi_4.0.5-gcc_10.2.0
+      - image: gmao/ubuntu20-geos-env-mkl:v6.2.4-openmpi_4.0.5-gcc_10.3.0
         auth:
           username: $DOCKERHUB_USER
           password: $DOCKERHUB_AUTH_TOKEN
@@ -39,7 +39,7 @@ jobs:
             cd GEOSgcm
             mepo init
             mepo clone
-            mepo develop GEOSgcm_GridComp GEOSgcm_App GEOSchem_GridComp
+            mepo develop GEOSgcm_GridComp GEOSgcm_App GMAO_Shared GEOSchem_GridComp
             if [ "${CIRCLE_BRANCH}" != "develop" ] && [ "${CIRCLE_BRANCH}" != "master" ] && [ "${CIRCLE_BRANCH}" != "main" ]
             then
                mepo checkout-if-exists ${CIRCLE_BRANCH}
