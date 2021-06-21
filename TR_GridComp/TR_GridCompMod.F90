@@ -1071,8 +1071,25 @@ CONTAINS
                                                           __RC__ )
      END IF
 
-!CL  IF ( TRIM(snk_mode) == "chemical_loss" ) THEN
-!CL
+!    IF ( TRIM(snk_mode) == "chemical_loss" ) THEN
+
+       call MAPL_AddExportSpec(GC,                                                                                 &
+          SHORT_NAME         = 'CLtend_'//TRIM(r%vname(n)),                                                        &
+          LONG_NAME          = 'Tendency of '//TRIM(r%vtitle(n))//' due to Chemical Loss',                         &
+          UNITS              = 'kg m-2 s-1',                                                                       &
+          DIMS               = MAPL_DimsHorzVert,                                                                  &
+          VLOCATION          = MAPL_VLocationCenter,                                                               &
+                                                          __RC__ )
+
+       call MAPL_AddExportSpec(GC,                                                                                 &
+          SHORT_NAME         = 'CLtendVsum_'//TRIM(r%vname(n)),                                                    &
+          LONG_NAME          = 'Tendency of '//TRIM(r%vtitle(n))//' due to Chemical Loss, column total',           &
+          UNITS              = 'kg m-2 s-1',                                                                       &
+          DIMS               = MAPL_DimsHorzOnly,                                                                  &
+          VLOCATION          = MAPL_VLocationNone,                                                                 &
+                                                          __RC__ )
+
+!CL  Mol/mol loss diagnostic?
 !CL    call MAPL_AddExportSpec(GC,                                                     &
 !CL       SHORT_NAME         = 'CL_'//TRIM(r%vname(n)),                                &
 !CL       LONG_NAME          = 'Chemical Loss applied to '//TRIM(r%vtitle(n)),         &
@@ -1080,7 +1097,8 @@ CONTAINS
 !CL       DIMS               = MAPL_DimsHorzVert,                                      &
 !CL       VLOCATION          = MAPL_VLocationCenter,                                   &
 !CL                                                       __RC__ )
-!CL  END IF
+
+!    END IF
 
      call ESMF_ConfigGetAttribute ( myState%CF, label='GOCART_convection:',  value=gocart_conv, default=.FALSE., __RC__ )
 
@@ -3370,6 +3388,7 @@ CONTAINS
    LOGICAL :: need_to_free_groupA                  ! Deallocate these when finished: p, nd, dZ, tropPa
 
    REAL(KIND=DBL),  ALLOCATABLE ::   data_double(:,:,:)   ! For computing chemical loss
+   REAL(KIND=DBL),  ALLOCATABLE :: temp3d_double(:,:,:)   ! For computing diagnostics
 
    real, pointer, dimension(:,:,:) ::  airdens
    real, pointer, dimension(:,:,:) ::  airdens_dry
@@ -3391,6 +3410,8 @@ CONTAINS
    real, pointer, dimension(:,:,:) ::  st_export_3d   ! For settling diagnostic
    real, pointer, dimension(:,:)   ::  st_export_2d   ! For settling diagnostic (col total)
    real, pointer, dimension(:,:)   ::  dd_export_2d   ! For dry dep diagnostic
+   real, pointer, dimension(:,:)   ::  cl_export_2d   ! For chemical loss diagnostic (2D)
+   real, pointer, dimension(:,:,:) ::  cl_export_3d   ! For chemical loss diagnostic (3D)
    real, pointer, dimension(:,:)   ::  wr_export_2d   ! For wet removal diagnostic (2D)
    real, pointer, dimension(:,:,:) ::  wr_export_3d   ! For wet removal diagnostic (3D)
    real, pointer, dimension(:,:,:) ::  cv_export_3d   ! For convection diagnostic
@@ -3958,7 +3979,10 @@ CONTAINS
 
              ! Units conversion:  kg/m2/s to mol/mol
              ! NOTES from 4/7/14 and 8/28/14    emiss * cdt / dZ / molwt * Na*1000  /nd
-             spec%TRsfcFlux = ((cdt * Na) / (spec%mw)) * spec%TRsfcFlux / ( dZ(:,:,km) * nd(:,:,km) )
+!            spec%TRsfcFlux = ((cdt * Na) / (spec%mw)) * spec%TRsfcFlux / ( dZ(:,:,km) * nd(:,:,km) )
+
+             ! Simpler formulation (11/25/20)
+             spec%TRsfcFlux = cdt * ((spec%TRsfcFlux / dZ(:,:,km)) / rhoWet(:,:,km)) * MMR_to_VMR(:,:,km)
 
              IF ( spec%src_add ) THEN
                WHERE(spec%src_mask_horiz) DATA3d(:,:,km) =  DATA3d(:,:,km) +  spec%TRsfcFlux
@@ -4226,10 +4250,11 @@ CONTAINS
 
            IF(debug_verbose) PRINT *,myname, pet, "DEBUG snk chemloss start"
 
-           ALLOCATE( data_double(i1:i2,j1:j2,1:km),  &
-                       loss_term(i1:i2,j1:j2,1:km),  &
-                        dep_term(i1:i2,j1:j2),       &
-                        sum_term(i1:i2,j1:j2,1:km),  __STAT__)
+           ALLOCATE(   data_double(i1:i2,j1:j2,1:km),  &
+                     temp3d_double(i1:i2,j1:j2,1:km),  &
+                         loss_term(i1:i2,j1:j2,1:km),  &
+                          dep_term(i1:i2,j1:j2),       &
+                          sum_term(i1:i2,j1:j2,1:km),  __STAT__)
 
 !CL        CALL MAPL_GetPointer( expChem, cl_export_3d, 'CL_'//TRIM(spec%name), __RC__ )
 
@@ -4254,19 +4279,68 @@ CONTAINS
 !            This is in terms of kg/m2/s
              call MAPL_GetPointer( impChem,  imp_2d_A, 'DD_OX' , __RC__ )
 !            This is in terms of kg/m3
+             call MAPL_GetPointer ( impChem, airdens,     'AIRDENS',      __RC__ )
              call MAPL_GetPointer ( impChem, airdens_dry, 'AIRDENS_DRYP', __RC__ )
 
 !            For debugging
 !             call MAPL_GetPointer( expChem,  exp_3d_A, 'TR_DIAG_A', __RC__ )
 !             call MAPL_GetPointer( expChem,  exp_3d_B, 'TR_DIAG_B', __RC__ )
   
-!            Convert kg m-2 s-1 to mole/mole/s
-             dep_term = ((imp_2d_A/MAPL_O3MW)/ dZ(:,:,km))/(airdens_dry(:,:,km)/MAPL_AIRMW)     
+!            Convert kg m-2 s-1 to mole/mole/s  where denominator is moles of moist air
+             dep_term = ((imp_2d_A/MAPL_O3MW)/ dZ(:,:,km)) / (             &
+                            (one - Q(:,:,km))*airdens(:,:,km)/MAPL_AIRMW + &
+                                   Q(:,:,km) *airdens(:,:,km)/MAPL_H2OMW   &
+                                                             )
+!            Compute dry-dep tendency if needed
+             call MAPL_GetPointer( expChem, dd_export_2d, 'DDtend_'//TRIM(spec%name), __RC__ )
+             if ( associated(dd_export_2d) ) then
+!              Copy the approach used later, but only include dep term
+               sum_term = 0.0
+               sum_term(:,:,km) = dep_term
+               loss_term = 0.0
+               WHERE( sum_term > 1.E-20 ) loss_term = data_double / sum_term
+               WHERE( snk_mask3d .AND. (loss_term > 1.E-20) )
+                 temp3d_double = data_double * exp(-cdt/loss_term)
+               ELSEWHERE
+                 temp3d_double = data_double
+               ENDWHERE
+!              Convert tendency from  mole/mole  to  kg m-2 s-1
+               dd_export_2d = (temp3d_double(:,:,km) - data_double(:,:,km)) * VMR_to_MMR(:,:,km) * airdens(:,:,km) * dZ(:,:,km) / cdt
+             end if
 
 !            force computation to be done in double-precision
-!            and guard against division by zero and convert from mole/m3/s to mole/mole/s
+!            and guard against division by zero and convert from mole/m3/s to mole/mole/s  where denominator is moles of moist air
              sum_term = ( DBLE(imp_3d_A) + DBLE(imp_3d_B) + DBLE(imp_3d_C) + DBLE(imp_3d_D) + DBLE(imp_3d_E) &
-                          + DBLE(imp_3d_F) + DBLE(imp_3d_G) + DBLE(imp_3d_H) + DBLE(imp_3d_I) ) / (airdens_dry*(1.0D3/MAPL_AIRMW))
+                        + DBLE(imp_3d_F) + DBLE(imp_3d_G) + DBLE(imp_3d_H) + DBLE(imp_3d_I) ) / ( &
+                              1.0D3 * ( (one-Q)*airdens/MAPL_AIRMW +                              &
+                                             Q *airdens/MAPL_H2OMW   )                          )
+
+!            Compute chemical loss tendency if needed
+             call MAPL_GetPointer( expChem, cl_export_3d,     'CLtend_'//TRIM(spec%name), __RC__ )
+             call MAPL_GetPointer( expChem, cl_export_2d, 'CLtendVsum_'//TRIM(spec%name), __RC__ )
+             if ( associated(cl_export_2d) .OR. associated(cl_export_3d) ) then
+               ! NOTE: Prather only wants tendency in troposphere, but that is exactly where
+               !       the loss is specified to occur, so the snk_mask3d handles it
+
+               ! sum_term is already defined
+               loss_term = 0.0
+               WHERE( sum_term > 1.E-30 ) loss_term = data_double / sum_term
+!              Compute the new values of the tracer
+               WHERE( snk_mask3d .AND. (loss_term > 1.E-30) )
+                 temp3d_double = data_double * exp(-cdt/loss_term)
+               ELSEWHERE
+                 temp3d_double = data_double
+               END WHERE
+!              Convert tendency from  mole/mole  to  kg m-2 s-1
+               temp3d_double = (temp3d_double - data_double) * VMR_to_MMR * airdens * dZ / cdt
+               if ( associated(cl_export_3d) ) then
+                 cl_export_3d = temp3d_double
+               end if
+               if ( associated(cl_export_2d) ) then
+                 cl_export_2d = SUM(temp3d_double,3)
+               end if
+             end if
+
              sum_term(:,:,km) = sum_term (:,:,km) + dep_term
 
              loss_term = 0.0
@@ -4287,7 +4361,7 @@ CONTAINS
 
            ENDIF
 
-           DEALLOCATE( data_double, loss_term, dep_term, sum_term, __STAT__)
+           DEALLOCATE( data_double, temp3d_double, loss_term, dep_term, sum_term, __STAT__)
 
           
            IF(debug_verbose) PRINT *,myname, pet, "DEBUG snk chemloss finish"
