@@ -1040,20 +1040,20 @@ CONTAINS
 !MEM
 !    IF ( wet_removal )  THEN
 
-       call MAPL_AddExportSpec(GC,                                                                     &
-          SHORT_NAME         = 'WRtend_'//TRIM(r%vname(n)),                                            &
-          LONG_NAME          = 'Tendency of '//TRIM(r%vtitle(n))//' due to Wet Removal',               &
-          UNITS              = 'kg m-2 s-1',                                                           &
-          DIMS               = MAPL_DimsHorzVert,                                                      &
-          VLOCATION          = MAPL_VLocationCenter,                                                   &
+       call MAPL_AddExportSpec(GC,                                                                                 &
+          SHORT_NAME         = 'WRtend_'//TRIM(r%vname(n)),                                                        &
+          LONG_NAME          = 'Tendency of '//TRIM(r%vtitle(n))//' due to Large-Scale Wet Removal',               &
+          UNITS              = 'kg m-2 s-1',                                                                       &
+          DIMS               = MAPL_DimsHorzVert,                                                                  &
+          VLOCATION          = MAPL_VLocationCenter,                                                               &
                                                           __RC__ )
 
-       call MAPL_AddExportSpec(GC,                                                                     &
-          SHORT_NAME         = 'WRtendVsum_'//TRIM(r%vname(n)),                                        &
-          LONG_NAME          = 'Tendency of '//TRIM(r%vtitle(n))//' due to Wet Removal, column total', &
-          UNITS              = 'kg m-2 s-1',                                                           &
-          DIMS               = MAPL_DimsHorzOnly,                                                      &
-          VLOCATION          = MAPL_VLocationNone,                                                     &
+       call MAPL_AddExportSpec(GC,                                                                                 &
+          SHORT_NAME         = 'WRtendVsum_'//TRIM(r%vname(n)),                                                    &
+          LONG_NAME          = 'Tendency of '//TRIM(r%vtitle(n))//' due to Large-Scale Wet Removal, column total', &
+          UNITS              = 'kg m-2 s-1',                                                                       &
+          DIMS               = MAPL_DimsHorzOnly,                                                                  &
+          VLOCATION          = MAPL_VLocationNone,                                                                 &
                                                           __RC__ )
 !    END IF
 
