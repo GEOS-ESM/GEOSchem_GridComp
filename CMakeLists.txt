@@ -16,6 +16,7 @@ set (alldirs
   GEOSachem_GridComp
   DNA_GridComp
   HEMCO_GridComp
+  Carbon_GridComp
   )
 
 set (srcs

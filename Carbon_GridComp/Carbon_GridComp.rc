@@ -1,0 +1,22 @@
+#
+# !RESOURCE: Carbon_GridComp.rc --- Carbon resource file
+#
+#  DESCRIPTION:
+#  The Carbon resource file is used to control basic
+#  properties of the Carbon Grid Components. Instances are
+#  defined here.
+#
+# !REVISION HISTORY:
+#
+#  15June2021  E.Sherman   Carbon resource file has been created
+#--------------------------------------------------------------------
+
+
+                        # &Label Active Constituents
+
+# Include the constituent in the simulation?
+# ----------------------------------------------------
+CO_INSTANCES:  CO
+
+CO2_INSTANCES:   CO2
+
