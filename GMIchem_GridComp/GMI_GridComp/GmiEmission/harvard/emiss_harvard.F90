@@ -1,7 +1,7 @@
 
 !=============================================================================
 !
-! $Id$
+! $Id: emiss_harvard.F90,v 1.2.24.2.6.1.72.1.4.1.4.2.32.1.202.1.2.1 2020/12/04 18:54:21 mmanyin Exp $
 !
 ! CODE DEVELOPER
 !   John Tannahill, LLNL
@@ -49,7 +49,7 @@
 !   ino_num       : index of NO       in const
 !   nhms          : hour/minute/sec  (HHMMSS)
 !   nymd          : year/month/day   (YYYYMMDD)
-!   lwi_flags     : array of flags that indicate land, water, or ice
+!   lwi_flags     : array of flags:  0=water; 1=land; 2=ice
 !   tdt           : model time step  (s)
 !   mw            : array of species' molecular weights (g/mol)
 !   latdeg        : latitude         (deg)
@@ -82,6 +82,7 @@
          aefIsop, aefMbo, aefMonot, isoLaiPrev, isoLaiCurr, isoLaiNext, pardif,   &
          pardir, T_15_AVG, exp_fac)
 
+      USE MAPL_ConstantsMod
       USE GmiGrid_mod, ONLY : t_gmiGrid
       USE ReadInputMegan_mod, ONLY : setMEGANisoLAI
       USE GmiEmissionMEGAN_mod, ONLY : calcBiogenicMEGANemission
@@ -116,7 +117,7 @@
      integer :: iisoprene_num, ino_num
      real*8  :: latdeg     (i1:i2, ju1:j2), cosSolarZenithAngle (i1:i2, ju1:j2)
      real*8, intent(in) :: exp_fac(NPULSE)    ! pulsing decay per time step (day^-1)
-     integer :: lwi_flags  (i1:i2, ju1:j2)
+     integer :: lwi_flags  (i1:i2, ju1:j2)    ! 0=water; 1=land; 2=ice
      real*8  :: tdt
      real*8  :: mw         (num_species)  , mcor       (i1:i2, ju1:j2)
      real*8  :: tempk      (i1:i2, ju1:j2), radswg     (i1:i2, ju1:j2)
@@ -188,11 +189,11 @@
                   &                        mw(iisoprene_num) * mcor
           else
              emiss_isop = emiss_isop * tdtinv / ATOMSC_PER_MOLECISOP *  &
-             &                        (mw(iisoprene_num) / AVOGAD) * KGPG
+             &                        (mw(iisoprene_num) / (MAPL_AVOGAD*0.001)) * KGPG
           end if
 
           emiss_monot = emiss_monot * tdtinv / ATOMSC_PER_MOLECMONOT *  &
-     &                          (MWTMONOT / AVOGAD) * KGPG
+     &                          (MWTMONOT / (MAPL_AVOGAD*0.001)) * KGPG
 
        else
 !         ======================
@@ -254,6 +255,8 @@
      &   tempk, fracCloudCover, coeff_isop, convert_isop, convert_monot,  &
      &   xlai, base_isop, base_monot, emiss_isop, emiss_monot, firstBiogenicBase, &
      &   pr_diag, loc_proc, rootProc, i1, i2, ju1, j2, num_species)
+
+      USE MAPL_ConstantsMod
 
       implicit none
 
@@ -355,7 +358,7 @@
 
           emiss_isop(il,ij) =  &
      &      biemiss * tdtinv / ATOMSC_PER_MOLECISOP *  &
-     &      (mw(iisoprene_num) / AVOGAD) * KGPG
+     &      (mw(iisoprene_num) / (MAPL_AVOGAD*0.001)) * KGPG
 
 
           bmemiss =  &
@@ -367,7 +370,7 @@
 
           emiss_monot(il,ij) =  &
      &      bmemiss * tdtinv / ATOMSC_PER_MOLECMONOT *  &
-     &      (MWTMONOT / AVOGAD) * KGPG
+     &      (MWTMONOT / (MAPL_AVOGAD*0.001)) * KGPG
 
         end do
       end do
@@ -421,6 +424,7 @@
      &   soil_fert, soil_precip, soil_pulse, xlai, emiss_nox, idaySoilType,   &
      &   pr_diag, loc_proc, i1, i2, ju1, j2, ju1_gl, j2_gl, num_species, exp_fac)
 
+      USE MAPL_ConstantsMod
       use GmiGrid_mod, only : t_gmiGrid
       use GmiSoilEmission_mod
 
@@ -439,7 +443,7 @@
       integer, intent(in) :: loc_proc, i1, i2, ju1, j2, ju1_gl, j2_gl, num_species
       integer :: ino_num
       integer :: nymd
-      integer :: lwi_flags  (i1:i2, ju1:j2)
+      integer :: lwi_flags  (i1:i2, ju1:j2)    !  0=water; 1=land; 2=ice
       integer :: ireg       (i1:i2, ju1:j2)
       integer :: iland      (i1:i2, ju1:j2, NTYPE)
       integer :: iuse       (i1:i2, ju1:j2, NTYPE)
@@ -553,7 +557,7 @@
       do ij = ju1, j2
         do il = i1, i2
 
-          rfac = (mw(ino_num) * KGPG) * (mcor(il,ij) * cmpm2) / AVOGAD
+          rfac = (mw(ino_num) * KGPG) * (mcor(il,ij) * cmpm2) / (MAPL_AVOGAD*0.001)
 
           emiss_nox(il,ij) = xsoil_nox(il,ij) * rfac
 
