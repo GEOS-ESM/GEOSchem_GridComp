@@ -1,5 +1,4 @@
-
-!  $Id: Lightning_mod.F90,v 0.1 2019/10/07 15:52:00 mrdamon Exp $
+!  $Id: Lightning_mod.F90,v 1.1.4.1.2.1.2.1 2021/08/06 16:16:34 mmanyin Exp $
 
 module Lightning_mod
 
@@ -14,8 +13,16 @@ module Lightning_mod
 
 ! !USES:
 
-use MAPL_Mod
+use ESMF
+use MAPL
+use GEOS_UtilsMod
 use Lightning_Toolbox_Mod, only : CalcFlashRate 
+use m_set_eta, only: set_eta
+use Chem_UtilMod, only: Chem_UtilResVal
+
+use, intrinsic :: iso_fortran_env, only: REAL64
+
+
 
    implicit none
    private
@@ -25,36 +32,63 @@ use Lightning_Toolbox_Mod, only : CalcFlashRate
 !
 
    PUBLIC :: getLightning
-   PUBLIC :: computeFlashRate
-   PUBLIC :: flashfit_flipped ! fields passed are vertially flipped from GEOS orientation 
-   PUBLIC :: hemcoFlashrate
-   PUBLIC :: flash_rate_Lopez
-   PUBLIC :: emiss_lightning
-   PUBLIC :: partition
-   PUBLIC :: computeCAPE
-   PUBLIC :: readLightRatioGlobalData
-   PUBLIC :: BUOYANCY
+   PUBLIC :: read_flash_source
+   PUBLIC :: read_lightning_config
+   PUBLIC :: update_lightning_ratio
+   PUBLIC :: HEMCO_FlashRate       ! Had been called from MOIST to provide a secondard version of LFR
+
+   ! Enumerated values, along with matching strings
+   integer, parameter, public    :: FLASH_SOURCE_MOIST      = 1   ! values also serve as indices into flashSourceNames
+   integer, parameter, public    :: FLASH_SOURCE_FIT        = 2
+   integer, parameter, public    :: FLASH_SOURCE_HEMCO      = 3
+   integer, parameter, public    :: FLASH_SOURCE_LOPEZ      = 4
+   integer, parameter, public    :: FLASH_SOURCE_UNDEFINED  = 5
+
+   integer, parameter, public    :: FLASH_SOURCE_count      = FLASH_SOURCE_UNDEFINED-1
+
+   character (len=9),  public    :: flashSourceNames(5) = (/ 'MOIST    ', 'FIT      ', 'HEMCO    ', 'LOPEZ    ', 'UNDEFINED' /)
+
+
+   PRIVATE :: MOIST_FlashRate
+   PRIVATE ::  DALE_FlashRate ! fields passed are vertically flipped from GEOS orientation 
+   PRIVATE :: LOPEZ_FlashRate
+   PRIVATE :: partition
+   PRIVATE :: readLightRatioGlobalData
+   PRIVATE :: BUOYANCY
+   PRIVATE :: identify_flash_source
+   PRIVATE :: emiss_lightning
 
 
 ! !PARAMETERS:
 
-   real*8, parameter :: AVOGAD  = 6.0221367d+23 ! Avogadro number (mole^-1)
-   real*8, parameter :: CONVFAC = 2.33e-23      ! 14g of N per mole of NO/ 6.02e23 molecules of NO/mole of NO.
-   real*8, parameter :: PRODFAC = 1.0e26        ! (joules per flash) * molecules of NO per joule
-   real*8, parameter :: Pa2hPa  = 0.01
-   integer,parameter  :: hp = KIND( REAL( 0.0, 8 ) ) ! HEMCO type
+! #include "gmi_phys_constants.h"    (Had been included in GmiEmissionLightning_mod)
+
+   real,         parameter :: MWT_NO       = 30.0064                  ! molecular weight of NO
+   real(REAL64), parameter :: CONVFAC      = 2.33e-23                 ! 14g of N per mole of NO/ 6.02e23 molecules of NO/mole of NO.
+   real(REAL64), parameter :: PRODFAC      = 1.0e26                   ! (joules per flash) * molecules of NO per joule
+   real(REAL64), parameter :: Pa2hPa       = 0.01
+   real(REAL64), parameter :: REF_PRESS    = 412.5d0                  ! Dale Allen's new FIT routine mb/hPa
+   real(REAL64), parameter :: SEC_PER_MIN  = 60.0
+   real(REAL64), parameter :: MIN_PER_SEC  = (1.0/SEC_PER_MIN)
+   real(REAL64), parameter :: SEC_PER_DAY  = 86400.0   ! Seconds per day
+   real(REAL64), parameter :: DAY_PER_SEC  = (1.0/SEC_PER_DAY)
+
+   integer,      parameter :: hp = KIND( REAL( 0.0, 8 ) ) ! HEMCO type, as in the Lightning Toolbox
+   integer,      parameter :: r8 = 8
+   integer,      parameter :: r4 = 4
+
 
 
 ! !DESCRIPTION:
 
-!  This module contains parametereizations and utilities pertaining to the calculation of
+!  This module contains parameterizations and utilities pertaining to the calculation of
 !  flashrate (or strokerate) and NOx from lightning in the Earth's atmosphere.
 !  The routines for calculation flashrate / stroke rate are:
 ! 
-!    flashfit_flipped - adapted from the offline GMI-CTM model (Dale Allen)
-!    computeFlashRate - adapted from MOIST / CTM cinderalla component
-!    hemcoFlashrate - GEOS-Chem's flashrate calculation 
-!    flash_rate_Lopez (WARNING: this routine is producing invalid results!)
+!     DALE_FlashRate - adapted from the offline GMI-CTM model (Dale Allen)
+!    MOIST_FlashRate - adapted from MOIST / CTM cinderalla component
+!    HEMCO_FlashRate - GEOS-Chem's flashrate calculation 
+!    LOPEZ_FlashRate (WARNING: this routine is producing invalid results!)
 !   
 !  Please review the documentation below for each routine carefully. 
 !
@@ -63,7 +97,7 @@ use Lightning_Toolbox_Mod, only : CalcFlashRate
 ! !REVISION HISTORY:
 !
 ! March 17 2018 - Megan Damon. Integrating code from the GMI-CTM.
-! October 15 2018 - Megan Damon. Integrating code from GEOS-5 for computeFlashRate
+! October 15 2018 - Megan Damon. Integrating code from GEOS-5 for MOIST_FlashRate
 ! November 17 2018 - Megan Damon. Bringing into GEOS from standalone development
 ! Ocotober 7 2019 - Megan Damon. Preparing delivery to Christoph Keller
 !
@@ -80,94 +114,597 @@ contains
 !
 ! !DESCRIPTION:
 !  
-!
-!
 !  ORIGIN AND CONTACT
 !
 ! !REVISION HISTORY:
-! 7 Nov 2019 Damon       First crack
+! 7  Nov 2019 Damon      First crack
+! 18 Dec 2019 Damon      Code review with Tom Clune
+!    Sep 2020 Manyin     Refactored
 !EOP
 !-----------------------------------------------------------------------
 
-subroutine getLightning (flashSource, Q, TH, PLE, CAPE, BYNCY)
+subroutine getLightning (GC, ggState, CLOCK, &
+     flash_source_enum, ratioGlobalLight, &
+     DT, &
+     LONSLOCAL, LATSLOCAL, & 
+     CNV_PRCP, FRLAND, FROCEAN, LWI, PBLH, mcor, cellArea, midLatAdj, ratioLocal, TS, &
+     CNV_MFC, CNV_QC, T, TH, &
+     PFICU, PLE, Q, ZLE, &
+     minDeepCloudTop, lightNOampFactor, numberNOperFlash, &
+     MOIST_flashFactor, FIT_flashFactor, HEMCO_flashFactor, LOPEZ_flashFactor, &
+     CNV_MFD, CAPE, BYNCY, flashRate, light_NO_prod, PHIS,  &
+     RC) 
 
-  character(len=*), intent(in) :: flashSource ! MOIST, FIT, HEMCO, or Lopez
+  type(ESMF_GridComp),           intent(inout)    :: GC     ! Gridded component
 
-  real, dimension(:,:,:),   intent(in)  :: Q     ! specific humidity (kg kg-1)
-  real, dimension(:,:,:),   intent(in)  :: TH    ! potential temperature (K)
-  real, dimension(:,:,:),   intent(in)  :: PLE   ! edge pressures (Pa)
+  type (MAPL_MetaComp), pointer, intent(in)       :: ggState
+  type (ESMF_Clock),             intent(inout)    :: CLOCK 
 
-  real, dimension(:,:),     intent(out)  :: CAPE       ! 
-  real, dimension(:,:,:),   intent(out)  :: BYNCY
+  integer,                       intent(in)       :: flash_source_enum  ! indicating MOIST, FIT, HEMCO, or LOPEZ
+  real,                          intent(in)       :: ratioGlobalLight   ! only needed for FIT
+  real,                          intent(in)       :: MOIST_flashFactor
+  real,                          intent(in)       :: FIT_flashFactor
+  real,                          intent(in)       :: HEMCO_flashFactor
+  real,                          intent(in)       :: LOPEZ_flashFactor
 
-  logical, save :: first = .true.
-  integer, save :: IM, JM, LM, KM
-  
+  real(r8) :: DT ! model heart beat (seconds)      
+
+  real, intent(in) :: LONSLOCAL(:,:), LATSLOCAL(:,:) ! degrees of lat/lon coordinates 
+                                                     ! MRD: these are required for HEMCO flash rate
+                                                     ! tropics, midlats differentiated  
+                                                     ! Eurasian and America flashrates also differentiated
+   
+
+  real, dimension(:,:),     intent(in)  :: CNV_PRCP ! convective precip  (kg m-2 s-1)
+  real, dimension(:,:),     intent(in)  :: FRLAND   ! land fraction (none)
+  real, dimension(:,:),     intent(in)  :: FROCEAN  ! land fraction (none)
+  real, dimension(:,:),     intent(in)  :: LWI      ! land water ice flag  (0=water; 1=land; 2=ice)
+  real, dimension(:,:),     intent(in)  :: PBLH     ! planetary boundary layer height (m)
+
+  ! Only associated when (flash_source_enum == FLASH_SOURCE_FIT)
+  real, pointer, dimension(:,:),     intent(in)  :: mcor       ! cellArea for GMI (m2)
+  real, pointer, dimension(:,:),     intent(in)  :: midLatAdj  ! input field for FIT (1)
+  real, pointer, dimension(:,:),     intent(in)  :: ratioLocal ! input field for FIT (1) 
+
+  real, dimension(:,:),     intent(in)  :: cellArea   ! cellArea for this model (m2)
+  real, dimension(:,:),     intent(in)  :: TS         ! surface temperature (K)
+  real, dimension(:,:),     intent(in)  :: PHIS       ! geopotential height at the surface
+
+  real, dimension(:,:,:),   intent(in)  :: CNV_QC   ! grid mean convective condensate (?)
+
+  ! edge vars  (vertical indices: 1 to LM+1)
+  real, dimension(:,:,:),   intent(in)  :: CNV_MFC  ! cumulative mass flux (kg m-2 s-1)   [top-down]
+  real, dimension(:,:,:),   intent(in)  :: PLE      ! edge pressures (Pa)
+  real, dimension(:,:,:),   intent(in)  :: ZLE      ! geopotential height (m)             [top-down]
+
+  real, dimension(:,:,:),   intent(in)  :: PFICU    ! flux of ice convective precip (kg m-2 s-1)
+  real, dimension(:,:,:),   intent(in)  :: T        ! air temperature (K)                 [top-down]
+  real, dimension(:,:,:),   intent(in)  :: TH       ! potential temperature (K)           [top-down]
+  real, dimension(:,:,:),   intent(in)  :: Q        ! specific humidity (kg kg-1)         [top-down]
+
+  real,                     intent(in)  :: minDeepCloudTop    ! Minimum cloud top [km] for selecting deep convection profiles
+  real,                     intent(in)  :: lightNOampFactor   ! > 0, for targeting the observed nitrogen production rate [3.41 Tg yr^{-1}]
+  real,                     intent(in)  :: numberNOperFlash   ! NO molecules generated by each flash
+  real, dimension(:,:,:),   intent(in)  :: CNV_MFD            ! detraining_mass_flux  (kg m-2 s-1)     [top-down]
+
+  real, dimension(:,:),     intent(out)  :: CAPE           ! can remove these eventually
+  real, dimension(:,:,:),   intent(out)  :: BYNCY          ! can remove these eventually               [top-down]
+  real, dimension(:,:),     intent(out)  :: flashRate      ! (flashes/km2/s)
+
+  ! May be NULL:
+  real*4, pointer, dimension(:,:,:),   intent(inout)  :: light_NO_prod  ! Production of NO from lightning (m-3 s-1) [top-down]
+
+  integer, optional, intent(out) :: RC
+
+! type (ESMF_Grid)  :: esmfGrid
+
+  ! Lopez calculation; TODO these variables can be contained within a contains block
+  real, allocatable :: PLO(:,:,:)     !  pressure at middle of gridbox [hPa]
+  real, allocatable :: PKE(:,:,:)
+  real, allocatable :: PK(:,:,:)      
+  real, allocatable :: QSS(:,:,:)     !  saturation specific humidity
+  real, allocatable :: DQS(:,:,:)     !  derivative of satuation specific humidity wrt temperature
+  real, allocatable :: DZ(:,:,:)
+  real, allocatable :: DM(:,:,:)
+  real, allocatable :: THV(:,:,:)
+  real, allocatable :: ZLO(:,:,:)
+  real, allocatable :: ZLE2(:,:,:)
+  real, allocatable :: CAPE_MERRA2(:,:)
+  real, allocatable :: INHB(:,:)
+
+  integer, allocatable :: LWI_INT(:,:)
+  real*8, allocatable :: LFR_R8(:,:)
+  real*4, allocatable :: gridBoxThickness_bottomup_R4(:,:,:)
+  real*4, allocatable :: DTRN_bottomup_R4(:,:,:)
+
+
+  real, allocatable :: cldmas0(:,:) ! Dale Allen's Fit routine
+
+  logical           :: need_cape
+      
+  real,       pointer,      dimension(:,:)   ::  CNV_TOPP => null()
+
+  real(REAL64),  allocatable   :: flashRateDale  (:,:)
+  real,          allocatable   :: flashRateLopez (:,:)
+
+  real(REAL64),  allocatable   :: AK(:)
+  real(REAL64),  allocatable   :: BK(:)
+  real(REAL64),  allocatable   :: PREF(:)
+
+  logical, save :: first = .TRUE.
+  integer       :: IM, JM, LM, K0, KM, nc
+  integer       :: i, j, l, ls
+  integer       :: modelLevel ! only used for FIT
+  real(REAL64)  :: ptop, pint
+
   integer :: STATUS
-
   integer :: shape3d (3)
 
+  integer :: mon, year, nym
+  type(ESMF_Time) :: curr_date             ! temporary date used in logic
+  character(len=80) :: cYear
+  character(len=80) :: cMonth
+  character(len=80) :: cNym
+  character(len=3)  :: binName
 
-  print*, "I am getLightning, flash source: ", flashSource
+  character(len=*), parameter :: Iam = "getLightning" ! can be moduleName // getLightning TODO
+
+  if (PRESENT(RC)) RC = ESMF_SUCCESS
+
+  shape3d = shape(TH)
+
+  IM = shape3d(1)
+  JM = shape3d(2)
+  LM = shape3d(3)
+
+  K0 = 1           ! = LBOUND of deferred shape EDGE array
+  KM = LM + 1      ! = UBOUND of deferred shape EDGE array
+
+  nc = IM * JM
 
   if (first) then
-
-     print*, flashSource(1:5), " flash rate calculation"
-
-!     shape3d = shape(TH)
-
-!     IM = shape3d(1)
-!     JM = shape3d(2)
-!     LM = shape3d(3)
-!     KM = LM + 1
-
-     first = .False.
+    if( MAPL_AM_I_ROOT() ) then
+      print*, "I am getLightning, flash source: ", TRIM(flashSourceNames(flash_source_enum)) ! TODO every process is problematic (writeParallel); maybe with underscore
+      print*, TRIM(flashSourceNames(flash_source_enum)), " flash rate calculation"
+    endif
+    first = .FALSE.
   endif
+     
+  need_cape = ((flash_source_enum == FLASH_SOURCE_LOPEZ) .OR.  &
+               (flash_source_enum == FLASH_SOURCE_HEMCO) .OR.  &
+               (flash_source_enum == FLASH_SOURCE_MOIST))
 
-  !-----------------------------------------------------------------------
-  ! MOIST-derived flashrate calculation (Dale Allen, old)
-  !-----------------------------------------------------------------------
-  if (flashSource == "MOIST") then
+  need_cape = .TRUE.
 
-     print*, "I will call: computeCAPE, computeFlashRate"
+  IF ( need_cape ) THEN
 
-     !call computeCAPE (TH, Q, PLE, CAPE, BYNCY, IM, JM, LM)
+     ALLOCATE(        INHB(IM, JM),         __STAT__ )
 
-  !-----------------------------------------------------------------------
-  ! Dale Allen flashrate calculation adapted from the GMI-CTM
-  !-----------------------------------------------------------------------
-  else if (flashSource == "FIT") then
+     ! on gridbox centers:
+     ALLOCATE(         PLO(IM, JM, 1:LM),   __STAT__ )
+     ALLOCATE(          PK(IM, JM, 1:LM),   __STAT__ )
+     ALLOCATE(         DQS(IM, JM, 1:LM),   __STAT__ )
+     ALLOCATE(         QSS(IM, JM, 1:LM),   __STAT__ )
+     ALLOCATE(          DZ(IM, JM, 1:LM),   __STAT__ )
+     ALLOCATE(         THV(IM, JM, 1:LM),   __STAT__ )
+     ALLOCATE(         ZLO(IM, JM, 1:LM),   __STAT__ )
 
-     print*, "I will call ExtData?"
-     print*, "I will call flashfit"
+     ! on gridbox edges:
+     ALLOCATE(         PKE(IM, JM, 0:LM),   __STAT__ )
+     ALLOCATE(        ZLE2(IM, JM, 0:LM),   __STAT__ )
 
-  
-  !-----------------------------------------------------------------------
-  ! HEMCO flash rate
-  !-----------------------------------------------------------------------
-  else if (flashSource == "HEMCO") then
 
-     print*, "I will call computeCAPE"
-     print*, "I will call the wrapper routine: hemcoFlashrate"
+     PLO = 0.5*(PLE(:,:,K0:KM-1) +  PLE(:,:,K0+1:KM  ) )*0.01
+     PKE(:,:,0:LM) = (PLE(:,:,K0:KM)*(1.0/MAPL_P00))**(MAPL_RGAS/MAPL_CP)
+
+     PK       = (PLO*(100.0/MAPL_P00))**(MAPL_RGAS/MAPL_CP)
+
+     DQS = GEOS_DQSAT (TH*PK, PLO, qsat=QSS)
+
+     THV(:,:,:) = TH(:,:,:) * (1.+MAPL_VIREPS*Q(:,:,:))
+
+     ZLE2(:,:,LM) = 0.               !   ORIGINAL FORMULATION - does Saulo need this?
+     ZLE2(:,:,LM) = PHIS/MAPL_GRAV   ! Better match for archived ZLE
+     do L=LM,1,-1
+         ZLO(:,:,L  ) = ZLE2(:,:,L) + (MAPL_CP/MAPL_GRAV)*( PKE(:,:,L)-PK (:,:,L  ) ) * THV(:,:,L)
+         DZ (:,:,L  ) =               (MAPL_CP/MAPL_GRAV)*( PKE(:,:,L)-PKE(:,:,L-1) ) * THV(:,:,L)
+        ZLE2(:,:,L-1) = ZLE2(:,:,L) + DZ(:,:,L)
+!       ZLE2(:,:,L-1) = ZLE2(:,:,L) + (MAPL_CP/MAPL_GRAV)*( PKE(:,:,L)-PKE(:,:,L-1) ) * THV(:,:,L)
+     end do
+
+! TODO - decide if we can remove ZLE or ZLE2 since they are nearly duplicates
+!        although the indices are mismatched (ZLE starts at 1, ZLE2 starts at 0)
+!  IF(MAPL_AM_I_ROOT()) THEN
+!    DO i=K0,KM
+!      PRINT *,'ZLE, ZLE2:', i, ZLE(1,1,i), ZLE2(1,1,i-1), ZLE(1,1,i)-ZLE2(1,1,i-1)
+!    ENDDO
+!  ENDIF
+
+!      IF(MAPL_AM_I_ROOT()) THEN
+!        PRINT*,' ZLE vert: ', LBOUND(ZLE, 3), UBOUND(ZLE, 3)
+!        PRINT*,'ZLE2 vert: ', LBOUND(ZLE2,3), UBOUND(ZLE2,3)
+!        PRINT*,' PLE vert: ', LBOUND(PLE, 3), UBOUND(PLE, 3)
+!   
+!   !  ZLE vert:            1          73
+!   ! ZLE2 vert:            0          72
+!   !  PLE vert:            1          73
+!   
+!      ENDIF
+
+     ! ALL SET to call BUOYANCY (T, Q, QSS, DQS, DZ, ZLO, BYNCY, CAPE, INHB)
+
+     ! DEALLOCATE vars at the end
+
+  END IF   ! need_cape
+
 
 
   !-----------------------------------------------------------------------
   ! Lopez (2016?) flash rate from ECMWF
   !-----------------------------------------------------------------------         
-  else if (flashSource == "LOPEZ") then
+  if (flash_source_enum == FLASH_SOURCE_LOPEZ) then
 
-     print*, "I will call BUOYANCY"
-     print*, "I will call flash_rate_Lopez"
+     ! callLopezCalcuations() put above end subroutine getLightning
 
+     call BUOYANCY (T, Q, QSS, DQS, DZ, ZLO, BYNCY, CAPE, INHB)
+
+     ALLOCATE( flashRateLopez(IM, JM),   STAT=STATUS); VERIFY_(STATUS)
+     flashRateLopez = real(0)
+!    flashRateLopez(:,:) = 0.01
+
+      call LOPEZ_FlashRate(IM, JM, LM, FRLAND, PBLH, CAPE, ZLE2, PFICU, &
+           CNV_QC, T, PLO, LOPEZ_flashFactor, flashRateLopez)
+
+!print*, "min/max LFR LOPEZ: ", minval(flashRateLopez), maxval(flashRateLopez)
+           
+     ! flashrates come back as flashes/km2/day
+     ! LFR should be in flashes/km2/s
+     flashRate(:,:) = flashRateLopez(:,:) * DAY_PER_SEC 
+
+! print*,'Lopez - minmax Flash Rate: ', MINVAL(flashrate), MAXVAL(flashrate)
+! print*,'Lopez - minmax BUOY: ', MINVAL(BYNCY), MAXVAL(BYNCY)
+! print*,'Lopez - minmax CAPE: ', MINVAL(CAPE), MAXVAL(CAPE)
+! print*,'Lopez - max ZLE, ZLE2: ', MAXVAL(ZLE), MAXVAL(ZLE2)
+
+     DEALLOCATE(flashRateLopez, __STAT__)
+
+
+  !-----------------------------------------------------------------------
+  ! HEMCO flash rate
+  !-----------------------------------------------------------------------
+  else if (flash_source_enum == FLASH_SOURCE_HEMCO) then
+
+!    The HEMCO flash routine may use BYNCY in the future
+!    call BUOYANCY (T, Q, QSS, DQS, DZ, ZLO, BYNCY, CAPE, INHB)
+
+
+     call HEMCO_FlashRate (cellArea, LWI, LONSLOCAL, LATSLOCAL, T, PLE, &
+          ZLE, CNV_MFC, HEMCO_flashFactor, flashRate, __RC__ )
+
+!print*, "min/max LFR HEMCO: ", minval(flashRate), maxval(flashRate)
+     ! HEMCO flashrates returned as: flashes/km2/s
+
+
+  !-----------------------------------------------------------------------
+  ! MOIST-derived flashrate calculation (Dale Allen, old)
+  !-----------------------------------------------------------------------
+  else if (flash_source_enum == FLASH_SOURCE_MOIST) then
+
+     ALLOCATE(          DM(IM, JM, 1:LM),   __STAT__ )
+     ALLOCATE( CAPE_MERRA2(IM, JM),         __STAT__ )
+     ALLOCATE(    CNV_TOPP(IM, JM),         __STAT__ )
+
+     DM(:,:,1:LM) = ( PLE(:,:,K0+1:KM)-PLE(:,:,K0:KM-1) ) * (1./MAPL_GRAV)  ! DELP / g
+
+     call BUOYANCY (T, Q, QSS, DQS, DZ, ZLO, BYNCY, CAPE, INHB, &
+                    DM=DM, CAPE_MERRA2=CAPE_MERRA2)
+
+     ! Determine the pressure at convective cloud top
+
+     ! WHERE CNV_MFC != 0 ... TODO
+     CNV_TOPP(:,:) = MAPL_UNDEF
+     do j=1, JM
+        do i=1, IM
+           do l=1, LM
+              if (CNV_MFC(i,j,l)/=0.0) then
+                  CNV_TOPP(i,j) = PLE(i,j,l)
+                  EXIT    ! exit the top-down loop
+              endif
+           enddo
+        enddo
+     enddo
+!print*, 'count of TOPP >= 50000:', COUNT(CNV_TOPP >= 50000.)
+
+     call MOIST_FlashRate(ggState, nc, LM, TS, CNV_TOPP, FROCEAN, &
+          CNV_PRCP, CAPE_MERRA2, CNV_MFC, TH, PLE, ZLE, MOIST_flashFactor, &
+          flashRate, __RC__ ) !TODO signify Dale Allen Old
+
+!print*, "min/max LFR MOIST: ", minval(flashRate), maxval(flashRate)
+
+     DEALLOCATE( DM, CAPE_MERRA2, CNV_TOPP, __STAT__ )
+
+
+  !-----------------------------------------------------------------------
+  ! Dale Allen flashrate calculation adapted from the GMI-CTM
+  !-----------------------------------------------------------------------
+  else if (flash_source_enum == FLASH_SOURCE_FIT) then
+
+     ALLOCATE ( AK(1:LM+1), __STAT__ )
+     ALLOCATE ( BK(1:LM+1), __STAT__ )
+     ALLOCATE ( PREF(0:LM), __STAT__ )
+
+!    call ESMF_GridCompGet ( GC, Grid=esmfGrid, __RC__ )
+!    call ESMF_AttributeGet(esmfGrid,name="GridAK",valuelist=AK, __RC__ )
+!    call ESMF_AttributeGet(esmfGrid,name="GridBK",valuelist=BK, __RC__ )
+
+     call set_eta(LM,ls,ptop,pint,AK,BK)
+
+     PREF(0:LM) = AK(1:LM+1) + BK(1:LM+1) * MAPL_P00
+
+
+     ! PREF is in Pa, while pressure is in mb
+     modelLevel  = max(1,count(PREF <= REF_PRESS * 100.0 )) ! TODO no magic number 
+     
+     ALLOCATE ( cldmas0(IM,JM), stat=STATUS)
+
+     ! PREF is on 0-LM; CNV_MFC is on 1-LM
+     cldmas0 (:,:) = CNV_MFC(:,:,modelLevel+1)
+
+
+     ALLOCATE (flashRateDale (IM,JM), stat=STATUS)
+
+
+     call DALE_FlashRate (cldmas0, 0.0d0, ratioLocal, ratioGlobalLight, midLatAdj, &
+          5.0d0, FIT_flashFactor, flashRateDale)
+
+     ! flashRateDale has units  [flashes / gridbox / sec]
+     ! flashrates from Dale's routine are assumed on a particular grid, that is
+     ! non-CS-based. This adjustment scales the flashrates
+     ! from the expected (mcor-GMI) to the actual grid (CS-assumed)
+
+!    flashRate (:,:) = flashRateDale(:,:) / ( mcor(:,:)/cellArea(:,:) )
+!    flashRate (:,:) = flashRate(:,:) / (cellArea(:,:) / 1e6)
+
+     ! MEM - Probably should use callArea instead of mcor here:
+     flashRate (:,:) = 1e6 * flashRateDale(:,:) /  mcor(:,:)
+
+!print*, "min/max LFR FIT: ", minval(flashRateDale), maxval(flashRateDale)
+     BYNCY (:,:,:) = real(0) ! MAPLE_UNDEF
+     CAPE  (:,:)   = real(0) ! MAPLE_UNDEF
+
+     DEALLOCATE (flashRateDale, AK, BK, PREF, cldmas0)
+ 
        
   else 
      print*, ""
      print*, "Flashrate source not supported!"
      print*, ""
-     stop
+     STATUS=88
+     VERIFY_(STATUS)
   endif
 
+  IF ( need_cape ) THEN
+     DEALLOCATE( INHB, PLO, PK, DQS, QSS, DZ, THV, ZLO, PKE, ZLE2,  __STAT__ )
+  END IF
+
+!print*, "min/max Final LFR: ", minval(flashRate), maxval(flashRate)
+
+
+! CALL EMISS
+
+  if ( associated(light_NO_prod) ) then
+
+    ALLOCATE (                     LWI_INT(IM,JM   ), __STAT__)
+    ALLOCATE (                      LFR_R8(IM,JM   ), __STAT__)
+    ALLOCATE (gridBoxThickness_bottomup_R4(IM,JM,LM), __STAT__)
+    ALLOCATE (            DTRN_bottomup_R4(IM,JM,LM), __STAT__)
+
+    LFR_R8 = DBLE(flashRate)
+!   LWI_INT(:,:) = -99
+!   WHERE(LWI > -0.5 .AND. LWI < 0.5 ) LWI_INT = 0  + 1
+!   WHERE(LWI >  0.5 .AND. LWI < 1.5 ) LWI_INT = 1  + 1
+!   WHERE(LWI >  1.5 .AND. LWI < 2.5 ) LWI_INT = 2  + 1
+
+    LWI_INT = FLOOR( LWI+0.1 )
+
+    DO L=1,LM
+      gridBoxThickness_bottomup_R4(:,:,(LM+1-L)) =     zle(:,:,L)-zle(:,:,L+1)
+                  DTRN_bottomup_R4(:,:,(LM+1-L)) = CNV_MFD(:,:,L)
+    END DO
+
+    CALL emiss_lightning (1, IM, 1, JM, 1, LM, &
+                          minDeepCloudTop, lightNOampFactor, numberNOperFlash, &
+                          LWI_INT, LFR_R8, gridBoxThickness_bottomup_R4, DTRN_bottomup_R4, &
+                          light_NO_prod, __RC__)
+
+    ! reverse the vertical, making light_NO_prod  top-down:
+    ! (use DTRN as a temp field)
+    DTRN_bottomup_R4(:,:,1:LM) = light_NO_prod(:,:,LM:1:-1)
+    light_NO_prod = DTRN_bottomup_R4
+
+    DEALLOCATE (LWI_INT, LFR_R8, gridBoxThickness_bottomup_R4, DTRN_bottomup_R4, __STAT__)
+
+  end if
+
 end subroutine getLightning
+
+!-----------------------------------------------------------------------
+!BOP
+! !IROUTINE: read_flash_source
+!
+! !DESCRIPTION: Read lightning flash source from the resource file
+!  
+! !ORIGIN AND CONTACT:  Michael Manyin
+!
+! !REVISION HISTORY:
+! 16 Apr 2021 Manyin     First crack
+!EOP
+!-----------------------------------------------------------------------
+
+subroutine read_flash_source ( rcfilen, flash_source_enum, RC )
+
+  ! IN:
+  character(len=ESMF_MAXSTR),  intent(in)   :: rcfilen
+
+  ! OUT:
+  integer,                     intent(out)  :: flash_source_enum
+  integer, optional,           intent(out)  :: RC
+
+  ! Local vars:
+  character(len=ESMF_MAXSTR)   :: IAm
+  integer                      :: STATUS
+  type (ESMF_Config)           :: esmfConfig
+  character(len=ESMF_MAXSTR)   :: flashSource
+
+  IAm = "read_flash_source"
+
+  esmfConfig = ESMF_ConfigCreate(__RC__)
+
+  call ESMF_ConfigLoadFile(esmfConfig, TRIM(rcfilen), __RC__ )
+
+  ! How to calculate flashrate
+  call ESMF_ConfigGetAttribute( esmfConfig, flashSource,    &
+                                Label    = "flashSource:",  &
+                                Default  = 'MOIST',  __RC__ )
+
+  call identify_flash_source( flashSource, flash_source_enum )
+  IF ( flash_source_enum == FLASH_SOURCE_UNDEFINED ) THEN
+    print*,'Invalid Flash Source: '//TRIM(flashSource)//' from '//TRIM(rcfilen)
+    STATUS = 101
+    VERIFY_(STATUS)
+  END IF
+
+  call ESMF_ConfigDestroy(esmfConfig, __RC__)
+
+end subroutine read_flash_source
+
+!-----------------------------------------------------------------------
+!BOP
+! !IROUTINE: read_lightning_config
+!
+! !DESCRIPTION: Retrieve values from the resource file
+!  
+! !ORIGIN AND CONTACT:  Michael Manyin
+!
+! !REVISION HISTORY:
+! 11 Sep 2020 Manyin     First crack
+! 16 Apr 2021 Manyin     Now use resolution vectors
+!EOP
+!-----------------------------------------------------------------------
+
+subroutine read_lightning_config ( im, jm, rcfilen, flash_source_enum, &
+                                   SimType, &
+                                   ratioGlobalFile, minDeepCloudTop, &
+                                   lightNOampFactor, numberNOperFlash, &
+                                   MOIST_flashFactor, FIT_flashFactor, &
+                                   HEMCO_flashFactor, LOPEZ_flashFactor, &
+                                   RC )
+
+  ! IN:
+  integer,                     intent(in)   :: im,jm
+  character(len=ESMF_MAXSTR),  intent(in)   :: rcfilen
+  integer,                     intent(in)   :: flash_source_enum
+  character(len=*),            intent(in)   :: SimType   ! CTM, FREE or REPLAY
+
+  ! OUT:
+  character(len=ESMF_MAXSTR),  intent(out)  :: ratioGlobalFile
+  real,                        intent(out)  :: minDeepCloudTop
+  real,                        intent(out)  :: lightNOampFactor
+  real,                        intent(out)  :: numberNOperFlash
+  real,                        intent(out)  :: MOIST_flashFactor
+  real,                        intent(out)  :: FIT_flashFactor
+  real,                        intent(out)  :: HEMCO_flashFactor
+  real,                        intent(out)  :: LOPEZ_flashFactor
+  integer, optional,           intent(out)  :: RC
+
+  ! Local vars:
+  integer, parameter           :: NHRES = 6
+  character(len=ESMF_MAXSTR)   :: IAm
+  integer                      :: STATUS
+  type (ESMF_Config)           :: esmfConfig
+  real                         :: resolution_vector(NHRES)
+
+  IAm = "read_lightning_config"
+
+  _ASSERT( TRIM(SimType) == 'CTM'    .OR.  &
+           TRIM(SimType) == 'FREE'   .OR.  &
+           TRIM(SimType) == 'REPLAY' ,     &
+           'read_lightning_config: SimType must be CTM, FREE or REPLAY' )
+
+  ! default values that should never be used:
+  ratioGlobalFile   = "default_filename"
+  MOIST_flashFactor = MAPL_UNDEF
+    FIT_flashFactor = MAPL_UNDEF
+  HEMCO_flashFactor = MAPL_UNDEF
+  LOPEZ_flashFactor = MAPL_UNDEF
+
+  esmfConfig = ESMF_ConfigCreate(__RC__)
+
+  call ESMF_ConfigLoadFile(esmfConfig, TRIM(rcfilen), __RC__ )
+
+  IF ( flash_source_enum == FLASH_SOURCE_MOIST ) THEN
+
+     call ESMF_ConfigGetAttribute( esmfConfig, resolution_vector,                  &
+                                   Label    = "MOIST_flashFactor_resvec_"//TRIM(SimType)//":",  __RC__ )
+
+     MOIST_flashFactor = Chem_UtilResVal(im, jm, resolution_vector, __RC__)
+
+  END IF
+
+  IF ( flash_source_enum == FLASH_SOURCE_FIT ) THEN
+
+     call ESMF_ConfigGetAttribute( esmfConfig, resolution_vector,                &
+                                   Label    = "FIT_flashFactor_resvec_"//TRIM(SimType)//":",  __RC__ )
+
+     FIT_flashFactor = Chem_UtilResVal(im, jm, resolution_vector, __RC__)
+
+     call ESMF_ConfigGetAttribute( esmfConfig, ratioGlobalFile,                             &
+                                   Label    = "ratioGlobalFile:",                           &
+                                   Default  = '/home/mrdamon/Files/RatioGlobal.asc', __RC__ )
+
+  END IF
+
+  IF ( flash_source_enum == FLASH_SOURCE_HEMCO ) THEN
+
+     ! NOTE: HEMCO_flashFactor is an alias for otdLisScale
+     call ESMF_ConfigGetAttribute( esmfConfig, resolution_vector,                  &
+                                   Label    = "HEMCO_flashFactor_resvec_"//TRIM(SimType)//":",  __RC__ )
+
+     HEMCO_flashFactor = Chem_UtilResVal(im, jm, resolution_vector, __RC__)
+
+  END IF
+
+  IF ( flash_source_enum == FLASH_SOURCE_LOPEZ ) THEN
+
+     ! NOTE: LOPEZ_flashFactor was originally called 'alpha'
+     call ESMF_ConfigGetAttribute( esmfConfig, resolution_vector,                  &
+                                   Label    = "LOPEZ_flashFactor_resvec_"//TRIM(SimType)//":",  __RC__ )
+
+     LOPEZ_flashFactor = Chem_UtilResVal(im, jm, resolution_vector, __RC__)
+
+  END IF
+
+
+  ! minDeepCloudTop  = 7.0 --> Minimum cloud top [km] for selecting deep convection profiles
+  ! lightNOampFactor = 1.0 --> NO production amplification/suppression factor, > 0
+  ! numberNOperFlash = 1.50E+26 --> NO molecules generated by each flash
+
+
+  call ESMF_ConfigGetAttribute(esmfConfig, minDeepCloudTop,    &
+                               Label    = "minDeepCloudTop:",  &
+                               Default  =  7.0,         __RC__ )
+
+  call ESMF_ConfigGetAttribute(esmfConfig, lightNOampFactor,   &
+                               Label    = "lightNOampFactor:", &
+                               Default  =  1.0,         __RC__ )
+
+  call ESMF_ConfigGetAttribute(esmfConfig, numberNOperFlash,   &
+                               Label    = "numberNOperFlash:", &
+                               Default  =  1.50E+26,    __RC__ )
+
+  call ESMF_ConfigDestroy(esmfConfig, __RC__)
+
+end subroutine read_lightning_config
 
 !-----------------------------------------------------------------------
 !BOP
@@ -183,99 +720,89 @@ end subroutine getLightning
 !     I’d recommend you stick with the Max’s version (1.135). 
 !     However, to get units for CAPE as Joule/kilogram you need to divide 
 !     “HC” (line 9122) and “HSe” (line 9125) by MAPL_CP.
+!  Manyin - For now we use version 1.137 to match Icarus-3_2_p9  CCM
+!         - Added DM and CAPE_MERRA2 to return CAPE suitable for MOIST flash calc
 !
 ! !REVISION HISTORY:
 ! 1 Nov 2019 Damon       Bringing routine to GEOS_Shared
 !EOP
 !-----------------------------------------------------------------------
-
-
-  subroutine BUOYANCY( T, QLM, QS, DQS, DZ, ZLO,    BUOY, CAPE, INHB )
-
+  subroutine BUOYANCY( T, Q, QS, DQS, DZ, ZLO, BUOY, CAPE, INHB, DM, CAPE_MERRA2)
 
 
     ! !DESCRIPTION: Computes the buoyancy $ g \frac{T_c-T_e}{T_e} $ at each level
-    !  for a parcel raised from the surface. $Hc$ is the MSE of
-    !  the parcel and $HSe$ is the MSE of the environment.
+    !  for a parcel raised from the surface. $T_c$ is the virtual temperature of
+    !  the parcel and $T_e$ is the virtual temperature of the environment.
 
-!    integer,                  intent(in)  :: IM,JM,LM
-    real, dimension(:,:,:),   intent(in)  :: T, QS, DQS, DZ, ZLO
-    real, dimension(:,:  ),   intent(in)  :: QLM
-    real, dimension(:,:,:),   intent(out) :: BUOY
-    real, dimension(:,:),     intent(out) :: CAPE, INHB
+    real, dimension(:,:,:),   intent(in)            :: T        ! air temperature (K)                 [top-down]
+    real, dimension(:,:,:),   intent(in)            :: Q        ! specific humidity (kg kg-1)         [top-down]
+    real, dimension(:,:,:),   intent(in)            :: QS       !  saturation specific humidity
+    real, dimension(:,:,:),   intent(in)            :: DQS      !  derivative of satuation specific humidity wrt temperature
+    real, dimension(:,:,:),   intent(in)            :: DZ       !  gridbox height
+    real, dimension(:,:,:),   intent(in)            :: ZLO      !  geopotential height at center of gridbox
 
-    integer   :: I,J,L, LM
-    real      :: HC, HSe, DelT
-    logical   :: UNSTABLE
+    real, dimension(:,:,:),   intent(out)           :: BUOY         !  [m/s/s]
+    real, dimension(:,:),     intent(out)           :: CAPE         !  [J/kg]
+    real, dimension(:,:),     intent(out)           :: INHB         !  [J/kg]
 
-    print*, "min/max T: ", minval(T), maxval(T)
-    print*, "min/max QLM: ", minval(QLM), maxval(QLM)
-    print*, "min/max QS: ", minval(QS), maxval(QS)
-    print*, "min/max DQS: ", minval(DQS), maxval(DQS)
-    print*, "min/max DZ: ", minval(DZ), maxval(DZ)
-    print*, "min/max ZLO: ", minval(ZLO), maxval(ZLO)
+    real, dimension(:,:,:),   intent(in),  optional :: DM           !  [kg/m^2]  DELP/g
+    real, dimension(:,:),     intent(out), optional :: CAPE_MERRA2  !  [kg/(m*s^2)]  Only use w/ Dale's orig lightning alg
 
+    integer :: L, LM
 
+    LM = size(T,3)
 
-    LM = size(BUOY,3)
+    BUOY(:,:,LM) =  T(:,:,LM) + (MAPL_GRAV/MAPL_CP)*ZLO(:,:,LM) + (MAPL_ALHL/MAPL_CP)*Q(:,:,LM)
 
-    BUOY = MAPL_UNDEF
+    do L=LM-1,1,-1
+       BUOY(:,:,L) = BUOY(:,:,LM) - (T(:,:,L) + (MAPL_GRAV/MAPL_CP)*ZLO(:,:,L) + (MAPL_ALHL/MAPL_CP)*QS(:,:,L))
+       BUOY(:,:,L) = MAPL_GRAV*BUOY(:,:,L) / ( (1.+ (MAPL_ALHL/MAPL_CP)*DQS(:,:,L))*T(:,:,L) )
+    enddo
 
-    do J=1,size(BUOY,2)
-       do I=1,size(BUOY,1)
+    BUOY(:,:,LM) = 0.0
 
-          CAPE(I,J) = 0.0
-          INHB(I,J) = 0.0
+    CAPE(:,:) = 0.
+    INHB(:,:) = 0.
 
-!          print*, "I,J,LM: ", I,J,LM
-!          print*, "CAPE, INHB is zero"
-
-          UNSTABLE  = .false.
-          HC        = MAPL_CP*T(I,J,LM) + MAPL_GRAV*ZLO(I,J,LM) + MAPL_ALHL*QLM(I,J)
-          HC = HC / MAPL_CP
-
-!          print*, "Before loop: ', HC: ", Hc
-          do L=LM-1,1,-1
-             HSe    = MAPL_CP*T(I,J,L ) + MAPL_GRAV*ZLO(I,J,L ) + MAPL_ALHL*QS(I,J,L)
-             HSe = HSe / MAPL_CP
-
-!             print*, "After loop HC, HSe: ", HC, HSe
-
-             if(HC > HSe) then
-!                print*, "HC > HSe"
-                DelT        = (HC - HSe) / (1.+ (MAPL_ALHL/MAPL_CP)*DQS(I,J,L))
-                BUOY(I,J,L) = MAPL_GRAV * (DelT/T(I,J,L))
-                CAPE(I,J)   = CAPE(I,J) + BUOY(I,J,L)*DZ(I,J,L)
-                UNSTABLE    = .true.
-             else
-                if(.not.UNSTABLE) then
-                   if(ZLO(I,J,L)>1000.0) then
-!                      print*, "ZLO > 1000"
-                      exit  ! for economy, since CAPE is non-sense if there is this much inhibition
-                   else
-!                      print*, "Not exiting"
-                      DelT        = (HC - HSe) / (1.+ (MAPL_ALHL/MAPL_CP)*DQS(I,J,L))
-                      BUOY(I,J,L) = MAPL_GRAV * (DelT/T(I,J,L))
-                      INHB(I,J)   = CAPE(I,J) + BUOY(I,J,L)*DZ(I,J,L)
-                   end if
-                else
- !                  print*, "UNSTABLE"
-                   exit ! if UNSTABLE and delt is negative (i.e., Stop at first LNB)
-                end if
-             end if
-          end do
-
-          if(CAPE(I,J) == 0.0) then
-             CAPE(I,J) = MAPL_UNDEF
-             INHB(I,J) = MAPL_UNDEF
-          end if
-
-       end do
+    do L=1,LM-1
+       where(BUOY(:,:,L)>0.)
+          CAPE = CAPE + BUOY(:,:,L)*DZ(:,:,L)
+       end where
+       where(BUOY(:,:,L)<0.)
+          INHB = INHB - BUOY(:,:,L)*DZ(:,:,L)
+       end where
     end do
 
-    print*, "min/max BUOY: ", minval(BUOY), maxval(BUOY)
-    print*, "min/max CAPE: ", minval(CAPE), maxval(CAPE)
-    print*, "min/max INHB: ", minval(INHB), maxval(INHB)
+    where(CAPE <= 0.0)
+       CAPE=MAPL_UNDEF
+       INHB=MAPL_UNDEF
+    end where
+
+    if ( present(CAPE_MERRA2) ) then
+
+      if ( present(DM) ) then
+
+        CAPE_MERRA2(:,:) = 0.
+
+        do L=1,LM-1
+           where(BUOY(:,:,L)>0.)
+              CAPE_MERRA2 = CAPE_MERRA2 + BUOY(:,:,L)*DM(:,:,L)
+           end where
+        end do
+
+        where(CAPE_MERRA2 <= 0.0)
+           CAPE_MERRA2=MAPL_UNDEF
+        end where
+
+      else
+        print*,'BUOYANCY: Cannot compute old CAPE without DM'
+      endif
+
+    endif
+
+!   print*, "min/max BUOY: ", minval(BUOY), maxval(BUOY)
+!   print*, "min/max CAPE: ", minval(CAPE), maxval(CAPE)
+!   print*, "min/max INHB: ", minval(INHB), maxval(INHB)
 
   end subroutine BUOYANCY
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -284,7 +811,7 @@ end subroutine getLightning
 
 !-----------------------------------------------------------------------
 !BOP
-! !IROUTINE: computeFlashRate
+! !IROUTINE: MOIST_FlashRate
 !
 ! !DESCRIPTION:
 !  Generate lightning flash rates [km$^{-2}$ s$^{-1}$] using a six-variable polynomial fit.\\
@@ -314,11 +841,12 @@ end subroutine getLightning
 ! 29 Feb 2012 Nielsen     Accomodate CNV\_TOPP MAPL\_UNDEF for and after Fortuna-2\_5\_p4
 ! 04 Nov 2014 Kouatchou   Adapted the subroutine for GEOSctm
 ! 18 Nov 2018 Damon       Bringing routine to GEOS_Shared
+! 09 Sep 2020 Manyin      renamed computeFlashRate to be MOIST_FlashRate
 !EOP
 !-----------------------------------------------------------------------
 
-  subroutine computeFlashRate (STATE, nc, lm, TS, CCTP, FROCEAN, CN_PRCP, CAPE, &
-       CNV_MFC, TH, PLE, ZLE, strokeRate, RC)
+  subroutine MOIST_FlashRate (STATE, nc, lm, TS, CCTP, FROCEAN, CN_PRCP, CAPE, &
+       CNV_MFC, TH, PLE, ZLE, MOIST_flashFactor, strokeRate, RC)
 
 ! ! USES
     implicit none
@@ -331,16 +859,17 @@ end subroutine getLightning
     real, intent(in), dimension(nc) :: CCTP        ! Convective cloud top pressure [Pa] with MAPL_UNDEFS
     real, intent(in), dimension(nc) :: FROCEAN     ! Areal ocean fraction
     real, intent(in), dimension(nc) :: CN_PRCP     ! Convective precipation [kg m^{-2} s^{-1}]
-    REAL, INTENT(IN), DIMENSION(nc) :: CAPE     ! Convective available potential energy [J m^{-2}]
+    REAL, INTENT(IN), DIMENSION(nc) :: CAPE        ! Convective available potential energy [J m^{-2}]
 
     real, intent(in), dimension(nc,lm) :: TH        ! Potential temperature [K]
     real, intent(in), dimension(nc,0:lm) :: CNV_MFC ! Convective mass flux [kg m^{-2} s^{-1}]
     real, intent(in), dimension(nc,0:lm) :: PLE     ! Layer interface pressures  [Pa]
     real, intent(in), dimension(nc,0:lm) :: ZLE     ! Layer depths [m]
 
+    real, intent(in)           :: MOIST_flashFactor ! Global scaling term
 !
 ! !OUTPUT PARAMETERS:
-    real, intent(out), dimension(nc) :: strokeRate ! Flashes per second
+    real, intent(out), dimension(nc) :: strokeRate ! Flashes per km^2 per second
     integer, optional, intent(out) :: RC 
     
 !
@@ -401,7 +930,7 @@ end subroutine getLightning
 
 
     integer                    :: STATUS, k, i, n
-    CHARACTER(LEN=*), PARAMETER :: Iam = "computeFlashRate"
+    CHARACTER(LEN=*), PARAMETER :: Iam = "MOIST_FlashRate"
 
 
 
@@ -409,99 +938,71 @@ end subroutine getLightning
 
     ! Preliminaries
     ! -------------
-    RC = 0
+    RC = ESMF_SUCCESS
     strokeRate(:) = 0.0
     
 
-    print*, "after strokeRate"
-
     ! Coefficients of the predictors, marine locations
     ! ------------------------------------------------
-    CALL MAPL_GetResource(STATE,a0m,'MARINE_A0:',DEFAULT= 0.0139868,RC=STATUS)
-    VERIFY_(STATUS)
-    CALL MAPL_GetResource(STATE,a1m,'MARINE_A1:',DEFAULT= 0.0358764,RC=STATUS)
-    VERIFY_(STATUS)
-    CALL MAPL_GetResource(STATE,a2m,'MARINE_A2:',DEFAULT=-0.0610214,RC=STATUS)
-    VERIFY_(STATUS)
-    CALL MAPL_GetResource(STATE,a3m,'MARINE_A3:',DEFAULT=-0.0102320,RC=STATUS)
-    VERIFY_(STATUS)
-    CALL MAPL_GetResource(STATE,a4m,'MARINE_A4:',DEFAULT= 0.0031352,RC=STATUS)
-    VERIFY_(STATUS)
-    CALL MAPL_GetResource(STATE,a5m,'MARINE_A5:',DEFAULT= 0.0346241,RC=STATUS)
-    VERIFY_(STATUS)
+    CALL MAPL_GetResource(STATE,a0m,'MARINE_A0:',DEFAULT= 0.0139868, __RC__)
+    CALL MAPL_GetResource(STATE,a1m,'MARINE_A1:',DEFAULT= 0.0358764, __RC__)
+    CALL MAPL_GetResource(STATE,a2m,'MARINE_A2:',DEFAULT=-0.0610214, __RC__)
+    CALL MAPL_GetResource(STATE,a3m,'MARINE_A3:',DEFAULT=-0.0102320, __RC__)
+    CALL MAPL_GetResource(STATE,a4m,'MARINE_A4:',DEFAULT= 0.0031352, __RC__)
+    CALL MAPL_GetResource(STATE,a5m,'MARINE_A5:',DEFAULT= 0.0346241, __RC__)
 
 
     ! Coefficients of the predictors, continental locations
     ! -----------------------------------------------------
-    CALL MAPL_GetResource(STATE,a0c,'CONTINENT_A0:',DEFAULT=-0.0183172,RC=STATUS)
-    VERIFY_(STATUS)
-    CALL MAPL_GetResource(STATE,a1c,'CONTINENT_A1:',DEFAULT=-0.0562338,RC=STATUS)
-    VERIFY_(STATUS)
-    CALL MAPL_GetResource(STATE,a2c,'CONTINENT_A2:',DEFAULT= 0.1862740,RC=STATUS)
-    VERIFY_(STATUS)
-    CALL MAPL_GetResource(STATE,a3c,'CONTINENT_A3:',DEFAULT=-0.0023363,RC=STATUS)
-    VERIFY_(STATUS)
-    CALL MAPL_GetResource(STATE,a4c,'CONTINENT_A4:',DEFAULT=-0.0013838,RC=STATUS)
-    VERIFY_(STATUS)
-    CALL MAPL_GetResource(STATE,a5c,'CONTINENT_A5:',DEFAULT= 0.0114759,RC=STATUS)
-    VERIFY_(STATUS)
+    CALL MAPL_GetResource(STATE,a0c,'CONTINENT_A0:',DEFAULT=-0.0183172, __RC__)
+    CALL MAPL_GetResource(STATE,a1c,'CONTINENT_A1:',DEFAULT=-0.0562338, __RC__)
+    CALL MAPL_GetResource(STATE,a2c,'CONTINENT_A2:',DEFAULT= 0.1862740, __RC__)
+    CALL MAPL_GetResource(STATE,a3c,'CONTINENT_A3:',DEFAULT=-0.0023363, __RC__)
+    CALL MAPL_GetResource(STATE,a4c,'CONTINENT_A4:',DEFAULT=-0.0013838, __RC__)
+    CALL MAPL_GetResource(STATE,a5c,'CONTINENT_A5:',DEFAULT= 0.0114759, __RC__)
 
     ! Divisors for nondimensionalization of the predictors
     ! ----------------------------------------------------
-    CALL MAPL_GetResource(STATE,x1Divisor,'X1_DIVISOR:',DEFAULT=4.36,RC=STATUS)
-    VERIFY_(STATUS)
-    CALL MAPL_GetResource(STATE,x2Divisor,'X2_DIVISOR:',DEFAULT=9.27,RC=STATUS)
-    VERIFY_(STATUS)
-    CALL MAPL_GetResource(STATE,x3Divisor,'X3_DIVISOR:',DEFAULT=34.4,RC=STATUS)
-    VERIFY_(STATUS)
-    CALL MAPL_GetResource(STATE,x4Divisor,'X4_DIVISOR:',DEFAULT=21.4,RC=STATUS)
-    VERIFY_(STATUS)
-    CALL MAPL_GetResource(STATE,x5Divisor,'X5_DIVISOR:',DEFAULT=14600.,RC=STATUS)
-    VERIFY_(STATUS)
+    CALL MAPL_GetResource(STATE,x1Divisor,'X1_DIVISOR:',DEFAULT=4.36, __RC__)
+    CALL MAPL_GetResource(STATE,x2Divisor,'X2_DIVISOR:',DEFAULT=9.27, __RC__)
+    CALL MAPL_GetResource(STATE,x3Divisor,'X3_DIVISOR:',DEFAULT=34.4, __RC__)
+    CALL MAPL_GetResource(STATE,x4Divisor,'X4_DIVISOR:',DEFAULT=21.4, __RC__)
+    CALL MAPL_GetResource(STATE,x5Divisor,'X5_DIVISOR:',DEFAULT=14600., __RC__)
 
 
     ! Exponent for the surface temperature deviation predictor
     ! --------------------------------------------------------
-    CALL MAPL_GetResource(STATE,x5Power,'X5_EXPONENT:',DEFAULT=3.00,RC=STATUS)
-    VERIFY_(STATUS)
+    CALL MAPL_GetResource(STATE,x5Power,'X5_EXPONENT:',DEFAULT=3.00, __RC__)
 
     ! Threshold temperatures
     ! ----------------------
-    CALL MAPL_GetResource(STATE,sfcTLimit,'SFC_T_LIMIT:',DEFAULT=273.0,RC=STATUS)
-    VERIFY_(STATUS)
-    CALL MAPL_GetResource(STATE,airTLimit,'AIR_T_LIMIT:',DEFAULT=263.0,RC=STATUS)
-    VERIFY_(STATUS)
+    CALL MAPL_GetResource(STATE,sfcTLimit,'SFC_T_LIMIT:',DEFAULT=273.0, __RC__)
+    CALL MAPL_GetResource(STATE,airTLimit,'AIR_T_LIMIT:',DEFAULT=263.0, __RC__)
     
     ! Cloud-top pressure limiter
     ! --------------------------
-    CALL MAPL_GetResource(STATE,hPaCldTop,'CLOUD_TOP_LIMIT:',DEFAULT=500.,RC=STATUS)
-    VERIFY_(STATUS)
-
-    print*, "After Resources"
+    CALL MAPL_GetResource(STATE,hPaCldTop,'CLOUD_TOP_LIMIT:',DEFAULT=500., __RC__)
 
     ! Layer depths [m]
     ! ----------------
-    ALLOCATE(dZ(nc,lm),STAT=STATUS)
-    VERIFY_(STATUS)
+    ALLOCATE(dZ(nc,lm), __STAT__)
     dZ = zle(:,0:lm-1)-zle(:,1:lm)
 
 
     ! Pressure at mid-layer [Pa]
     ! --------------------------
-    ALLOCATE(p(nc,lm),STAT=STATUS)
-    VERIFY_(STATUS)
+    ALLOCATE(p(nc,lm), __STAT__)
     p = (ple(:,1:lm)+ple(:,0:lm-1))*0.50
 
 
     ! Temperature at mid-layer [K]
       ! ----------------------------
-    ALLOCATE(T(nc,lm),STAT=STATUS)
-    VERIFY_(STATUS)
-    T = TH*((p*1.00E-05)**(MAPL_RGAS/MAPL_CP))
+    ALLOCATE(T(nc,lm), __STAT__)
+    T = TH*((p*(1.0/MAPL_P00))**(MAPL_RGAS/MAPL_CP))
 
     ! Reset CNV_TOPP's MAPL_UNDEFs to zeroes
     ! --------------------------------------
-    ALLOCATE(cnv_topp(nc),STAT=STATUS)
+    ALLOCATE(cnv_topp(nc), __STAT__)
     WHERE(CCTP == MAPL_UNDEF)
        cnv_topp = 0.00
     ELSEWHERE
@@ -511,26 +1012,21 @@ end subroutine getLightning
 
     ! Set weak/no convection mask
     ! ---------------------------
-    ALLOCATE(weakCnvMask(nc),STAT=STATUS)
-    VERIFY_(STATUS)
+    ALLOCATE(weakCnvMask(nc), __STAT__)
     weakCnvMask = 0
     WHERE(cn_prcp == 0.00 .OR. cnv_topp >= hPaCldTop*100.00 .OR. CAPE >= MAPL_UNDEF) weakCnvMask = 1
 
     ! Convective cloud top mask
     ! -------------------------
-    ALLOCATE(cloudTopMask(nc,lm),STAT=STATUS)
-    VERIFY_(STATUS)
+    ALLOCATE(cloudTopMask(nc,lm), __STAT__)
     cloudTopMask = 0
     DO k = 1,lm
        WHERE(ple(1:nc,k) > cnv_topp(1:nc) .AND. cnv_topp(1:nc) > 0.00) cloudTopMask(1:nc,k) = 1
     END DO
 
-    print*, "Before cloud top distance"
-
     ! Cloud top distance above ground [m]
     ! -----------------------------------
-    ALLOCATE(cloudTopAG(nc),STAT=STATUS)
-    VERIFY_(STATUS)
+    ALLOCATE(cloudTopAG(nc), __STAT__)
     cloudTopAG = 0.00
     DO i = 1,nc
        n = SUM(cloudTopMask(i,1:lm))
@@ -540,10 +1036,8 @@ end subroutine getLightning
 
     ! X1: Cold cloud depth: Vertical extent [km] where T < airTLimit and p > cnv_topp
     ! -------------------------------------------------------------------------------
-    ALLOCATE(x1(nc),STAT=STATUS)
-    VERIFY_(STATUS)
-    ALLOCATE(mask(nc,lm),STAT=STATUS)
-    VERIFY_(STATUS)
+    ALLOCATE(x1(nc), __STAT__)
+    ALLOCATE(mask(nc,lm), __STAT__)
 
     mask = 0
     WHERE(T < airTLimit .AND. cloudTopMask == 1) mask = 1
@@ -557,13 +1051,11 @@ end subroutine getLightning
     WHERE(weakCnvMask == 1) x1 = 0.00
     x1 = x1/x1Divisor
 
+! print*,'MOIST - Count of weakCnvMask==0: ', COUNT(weakCnvMask == 0)
     
-    print*, "Before X4"
-
     ! X4: Integrated convective mass flux
     ! -----------------------------------
-    ALLOCATE(x4(nc),STAT=STATUS)
-    VERIFY_(STATUS)
+    ALLOCATE(x4(nc), __STAT__)
     x4 = 0.00
     DO i = 1,nc
        DO k = 1,lm
@@ -577,8 +1069,7 @@ end subroutine getLightning
     ! X5: Surface temperature deviation from sfcTLimit, positive only.
     ! Note: UNDEF TS test retains the ability to boot-strap moist_import_rst.
     ! -----------------------------------------------------------------------
-    ALLOCATE(x5(nc),STAT=STATUS)
-    VERIFY_(STATUS)
+    ALLOCATE(x5(nc), __STAT__)
     WHERE(TS == MAPL_UNDEF)
        x5 = 0.00
     ELSEWHERE
@@ -591,19 +1082,15 @@ end subroutine getLightning
 
     ! X2: Total cloud depth [km]
     ! --------------------------
-    ALLOCATE(x2(nc),STAT=STATUS)
-    VERIFY_(STATUS)
+    ALLOCATE(x2(nc), __STAT__)
     x2 = cloudTopAG*0.001
     WHERE(weakCnvMask == 1) x2 = 0.00
     x2 = x2/x2Divisor
 
 
-    print*, "Before CAPE"
-
     ! X3: CAPE
     ! --------
-    ALLOCATE(x3(nc),STAT=STATUS)
-    VERIFY_(STATUS)
+    ALLOCATE(x3(nc), __STAT__)
     x3 = CAPE
     WHERE(weakCnvMask == 1) x3 = 0.00
     x3 = x3/x3Divisor
@@ -612,23 +1099,21 @@ end subroutine getLightning
     ! terms including marine and continental discrimination
     ! -----------------------------------------------------
     WHERE(frOcean >= 0.01)
-       strokeRate = (a0m + a1m*x1 + a2m*x2 + a3m*x3 + a4m*x4 + a5m*x5)/86400.00
-       A1X1 = a1m*x1/86400.00
-       A2X2 = a2m*x2/86400.00
-       A3X3 = a3m*x3/86400.00
-       A4X4 = a4m*x4/86400.00
-       A5X5 = a5m*x5/86400.00
+       strokeRate = (a0m + a1m*x1 + a2m*x2 + a3m*x3 + a4m*x4 + a5m*x5)/SEC_PER_DAY
+       A1X1 = a1m*x1/SEC_PER_DAY
+       A2X2 = a2m*x2/SEC_PER_DAY
+       A3X3 = a3m*x3/SEC_PER_DAY
+       A4X4 = a4m*x4/SEC_PER_DAY
+       A5X5 = a5m*x5/SEC_PER_DAY
     ELSEWHERE
-       strokeRate = (a0c + a1c*x1 + a2c*x2 + a3c*x3 + a4c*x4 + a5c*x5)/86400.00
-       A1X1 = a1c*x1/86400.00
-       A2X2 = a2c*x2/86400.00
-       A3X3 = a3c*x3/86400.00
-       A4X4 = a4c*x4/86400.00
-       A5X5 = a5c*x5/86400.00
+       strokeRate = (a0c + a1c*x1 + a2c*x2 + a3c*x3 + a4c*x4 + a5c*x5)/SEC_PER_DAY
+       A1X1 = a1c*x1/SEC_PER_DAY
+       A2X2 = a2c*x2/SEC_PER_DAY
+       A3X3 = a3c*x3/SEC_PER_DAY
+       A4X4 = a4c*x4/SEC_PER_DAY
+       A5X5 = a5c*x5/SEC_PER_DAY
     END WHERE
 
-
-    print*, "Before elim negatives"
 
     ! Eliminate negatives
     ! -------------------
@@ -669,39 +1154,27 @@ end subroutine getLightning
 !     print*, "x3(1): ", x3(1)
 !     print*, "x4(1): ", x4(1)
 !     print*, "x5(1): ", x5(1)
-!    print*, "computeFlashRate: A1X1-5(1): ", A1X1(1), A2X2(1), A3X3(1), A4X4(1), A5X5(1)
+!    print*, "MOIST_FlashRate: A1X1-5(1): ", A1X1(1), A2X2(1), A3X3(1), A4X4(1), A5X5(1)
 
+    strokeRate = strokeRate * MOIST_flashFactor
 
-    DEALLOCATE(x1,STAT=STATUS)
-    VERIFY_(STATUS)
-    DEALLOCATE(x2,STAT=STATUS)
-    VERIFY_(STATUS)
-    DEALLOCATE(x3,STAT=STATUS)
-    VERIFY_(STATUS)
-    DEALLOCATE(x4,STAT=STATUS)
-    VERIFY_(STATUS)
-    DEALLOCATE(x5,STAT=STATUS)
-    VERIFY_(STATUS)
-    DEALLOCATE(cnv_topp,STAT=STATUS)
-    VERIFY_(STATUS)
-    DEALLOCATE(dZ,STAT=STATUS)
-    VERIFY_(STATUS)
-    DEALLOCATE(p,STAT=STATUS)
-    VERIFY_(STATUS)
-    DEALLOCATE(T,STAT=STATUS)
-    VERIFY_(STATUS)
-    DEALLOCATE(cloudTopAG,STAT=STATUS)
-    VERIFY_(STATUS)
-    DEALLOCATE(mask,STAT=STATUS)
-    VERIFY_(STATUS)
-    DEALLOCATE(cloudTopMask,STAT=STATUS)
-    VERIFY_(STATUS)
-    DEALLOCATE(weakCnvMask,STAT=STATUS)
-    VERIFY_(STATUS)
+    DEALLOCATE(x1, __STAT__)
+    DEALLOCATE(x2, __STAT__)
+    DEALLOCATE(x3, __STAT__)
+    DEALLOCATE(x4, __STAT__)
+    DEALLOCATE(x5, __STAT__)
+    DEALLOCATE(cnv_topp, __STAT__)
+    DEALLOCATE(dZ, __STAT__)
+    DEALLOCATE(p, __STAT__)
+    DEALLOCATE(T, __STAT__)
+    DEALLOCATE(cloudTopAG, __STAT__)
+    DEALLOCATE(mask, __STAT__)
+    DEALLOCATE(cloudTopMask, __STAT__)
+    DEALLOCATE(weakCnvMask, __STAT__)
     
     return
 
-  end subroutine computeFlashRate
+  end subroutine MOIST_FlashRate
 
 !-------------------------------------------------------------------------
 !EOP
@@ -710,13 +1183,13 @@ end subroutine getLightning
 !-------------------------------------------------------------------------
 !BOP
 !
-! !ROUTINE: flashfit_flipped
+! !ROUTINE: DALE_FlashRate
 
 !
 ! !INTERFACE:
 !
-    subroutine flashfit_flipped (cldmas, threshold, ratio_local, ratio_global, midlatAdj, &
-         desired_g_N_prod_rate, flashrate)
+    subroutine DALE_FlashRate (cldmas, threshold, ratio_local, ratio_global, midlatAdj, &
+         desired_g_N_prod_rate, FIT_flashFactor, flashrate)
 
 ! !USES
       implicit none
@@ -725,7 +1198,7 @@ end subroutine getLightning
 
       !     Convective mass flux at desired layer (kg m-2 min-1)
       !     Warning: Make sure units are correct and that you've accessed the proper vertical layer. 
-      real*8, intent(in) :: cldmas(:, :)    
+      real, intent(in) :: cldmas(:, :)    
       
       !     Desired mean lightning NO production rate (Tg yr-1) (specified in namelist)       	
       real*8, intent(in) :: desired_g_N_prod_rate
@@ -736,14 +1209,19 @@ end subroutine getLightning
       !     Adjustment factor local flash rates must be multiplied so that monthly average local flash rates (after
       !     "ratio_global" adjustment) match monthly average local v2.2 climatological OTD/LIS flash rates (Read in from file).  
       !     Note: ratio_local varies monthly. 
-      real*8, intent(inout) :: ratio_local(:,:) 
+      !real*8, intent(in) :: ratio_local(:,:) 
+      real, pointer, intent(in) :: ratio_local(:,:) 
 
-      real*8, intent(in) :: midLatAdj(:,:) 
+      !real*8, intent(in) :: midLatAdj(:,:) 
+      real, pointer, intent(in) :: midLatAdj(:,:) 
               
       !     Adjustment factor local flash rates must be multiplied so that globally averaged 
       !     flash rate matches v2.2 OTD/LIS climatological globally averaged flash rate (Read in from file) 
       !     Note: ratio_global varies monthly. 
-      real*8, intent(in) :: ratio_global             
+      real, intent(in) :: ratio_global             
+
+      !     Global scaling term
+      real, intent(in) :: FIT_flashFactor             
             
       
 ! !OUTPUT PARAMETERS:
@@ -776,6 +1254,8 @@ end subroutine getLightning
          flashrate = 0.  
       end where
 
+      flashrate = flashrate * FIT_flashFactor
+
       ! Calculate N production rate (g s-1).
       ! For specified flashrate and PRODFAC, global production rate = 3.41 Tg N yr-1.
       ! Assume IC and CG flash rates produce the same amount of N / flash.
@@ -788,31 +1268,32 @@ end subroutine getLightning
       deallocate(cldmas_local)
       return
 
-    end subroutine flashfit_flipped
+    end subroutine DALE_FlashRate
 !EOP
 
 !==========================================================================
 
 !BOP
 
-! !IROUTINE: hemcoFlashrate
+! !IROUTINE: HEMCO_FlashRate
 
 ! !DESCRIPTION: Wrapper routine for GEOS Chem's flashrate routine.
 !
 ! !INTERFACE:
 !
-    subroutine hemcoFlashrate (cellArea, lwi, lonslocal, latslocal, airTemp, ple, geoPotHeight, &
-         cnvMfc, otdLisScale, flashRate, RC )
+    subroutine HEMCO_FlashRate (cellArea, lwi, lonslocal, latslocal, &
+         airTemp, ple, geoPotHeight, cnvMfc, otdLisScale, flashRate, RC )
 
 ! !USES
       implicit none
 
 ! !ARGUMENTS
 
+    !! IN
       !     Grid box cell area (m2)
       real, intent(in) :: cellArea(:,:)    
       
-      !     Land water ice flag 
+      !     Land water ice flag  (0=water; 1=land; 2=ice)
       !     need to translate to (0=land; 1=water; 2=ice)
       real, intent(in) :: lwi(:,:)
 
@@ -828,43 +1309,45 @@ end subroutine getLightning
       ! Cumulative mass flux (kg/m2/s)
       real, intent(in) :: cnvMfc(:,:,:)
 
-!      ! Buoyancy (not sure about units. coming from computeCAPE)
-!      real, intent(in) :: buoyancy(:,:,:)
+!     ! Buoyancy (m/s/s) - not needed when LCNVFRC == FALSE
+!     real, intent(in) :: buoyancy(:,:,:)
 
       ! otdLisScale = 0.355 for c48; 0.1 for c90
       real, intent(in) :: otdLisScale
-
-      ! Flash rate in flashes km-2 s-1
-      real, intent(out) :: flashRate(:,:) 
 
       ! Longitude and latitude (local values) in degrees
       real, intent(in) :: lonslocal(:,:)
       real, intent(in) :: latslocal(:,:)
 
+    !! OUT
+      ! Flash rate in flashes km-2 s-1
+      real, intent(out) :: flashRate(:,:)
+
       ! return code
-      integer, intent(inout) :: RC
+      integer, optional, intent(out) :: RC
 
 !EOP
 
 ! Locals
 
-
+      integer :: STATUS
+      character(len=*), parameter :: Iam = "HEMCO_FlashRate" ! can be moduleName // getLightning TODO
       
       real(hp) :: otdLisScaleHp
 
-      real(hp), pointer, dimension(:,:)   ::  cellAreaHemco => null()
-      real(hp), pointer, dimension(:,:)   ::  otdLisHemco => null()
-      real(hp), pointer, dimension(:,:)   ::  lonsHemco => null()
-      real(hp), pointer, dimension(:,:)   ::  latsHemco => null()
-      real(hp), pointer, dimension(:,:)   ::  convFracHemco => null()
-      real(hp), pointer, dimension(:,:,:)   ::  airTempHemco => null()
-      real(hp), pointer, dimension(:,:,:)   ::  pleHemco => null()
-      real(hp), pointer, dimension(:,:,:)   ::  gridBoxHeightHemco => null()
+      real(hp), pointer, dimension(:,:)     ::       cellAreaHemco  => null()
+      real(hp), pointer, dimension(:,:)     ::         otdLisHemco  => null()
+      real(hp), pointer, dimension(:,:)     ::           lonsHemco  => null()
+      real(hp), pointer, dimension(:,:)     ::           latsHemco  => null()
+      real(hp), pointer, dimension(:,:)     ::       convFracHemco  => null()
+      real(hp), pointer, dimension(:,:,:)   ::        airTempHemco  => null()
+      real(hp), pointer, dimension(:,:,:)   ::            pleHemco  => null()
+      real(hp), pointer, dimension(:,:,:)   ::  gridBoxHeightHemco  => null()
       real(hp), pointer, dimension(:,:,:)   ::  gridBoxHeightHemco2 => null()
-      real(hp), pointer, dimension(:,:,:)   ::  cnvMfcHemco => null()
-      real(hp), pointer, dimension(:,:,:)   ::  buoyancyHemco => null()
+      real(hp), pointer, dimension(:,:,:)   ::         cnvMfcHemco  => null()
+      real(hp), pointer, dimension(:,:,:)   ::       buoyancyHemco  => null()
 
-      integer,  pointer, dimension(:,:)  ::   lwiHemco => null()
+      integer,  pointer, dimension(:,:)     ::            lwiHemco  => null()
       
       ! outputs
       real(hp), pointer, dimension(:,:) :: lNox2d => null() ! Total lightning NOx molecules per 6 hrs
@@ -874,13 +1357,9 @@ end subroutine getLightning
       real(hp), pointer, dimension(:,:) :: h02d => null()   ! Convective cloud top height (m)
       integer,  pointer, dimension(:,:) :: ltop2d => null() ! Lightning top level
 
-
       integer :: shape3d (3)
       integer :: IM, JM, LM, KM
-      integer :: LB, UB 
       integer :: levCount, kR
-
-      real, parameter :: MIN_TO_SEC = 1.0/60.0
 
 !EOP
 !-------------------------------------------------------------------------
@@ -892,32 +1371,29 @@ end subroutine getLightning
       LM = shape3d(3)
       KM = LM + 1
 
-      ALLOCATE(pleHemco     (1:IM, 1:JM, 1:LM+1),   STAT=RC)
-      ALLOCATE(cnvMfcHemco  (1:IM, 1:JM, 1:LM+1),   STAT=RC)
-      ALLOCATE(airTempHemco (1:IM, 1:JM, 1:LM),   STAT=RC)
-      ALLOCATE(buoyancyHemco(1:IM, 1:JM, 1:LM),   STAT=RC)
-      ALLOCATE(gridBoxHeightHemco (1:IM, 1:JM, 1:LM),   STAT=RC)
-      ALLOCATE(gridBoxHeightHemco2 (1:IM, 1:JM, 1:LM),   STAT=RC)
-      ALLOCATE(cellAreaHemco(1:IM, 1:JM),   STAT=RC)
-      ALLOCATE(convFracHemco(1:IM, 1:JM),   STAT=RC)
-      ALLOCATE(lwiHemco     (1:IM, 1:JM),   STAT=RC)
-      ALLOCATE(otdLisHemco  (1:IM, 1:JM),   STAT=RC)
-      ALLOCATE(lonsHemco    (1:IM, 1:JM),   STAT=RC)
-      ALLOCATE(latsHemco    (1:IM, 1:JM),   STAT=RC)
+      ALLOCATE(          pleHemco (1:IM, 1:JM, 1:LM+1), __STAT__ )
+      ALLOCATE(       cnvMfcHemco (1:IM, 1:JM, 1:LM+1), __STAT__ )
+      ALLOCATE(      airTempHemco (1:IM, 1:JM, 1:LM),   __STAT__ )
+      ALLOCATE(     buoyancyHemco (1:IM, 1:JM, 1:LM),   __STAT__ )
+      ALLOCATE(gridBoxHeightHemco (1:IM, 1:JM, 1:LM),   __STAT__ )
+      ALLOCATE(gridBoxHeightHemco2(1:IM, 1:JM, 1:LM),   __STAT__ )
+      ALLOCATE(     cellAreaHemco (1:IM, 1:JM),         __STAT__ )
+      ALLOCATE(     convFracHemco (1:IM, 1:JM),         __STAT__ )
+      ALLOCATE(          lwiHemco (1:IM, 1:JM),         __STAT__ )
+      ALLOCATE(       otdLisHemco (1:IM, 1:JM),         __STAT__ )
+      ALLOCATE(         lonsHemco (1:IM, 1:JM),         __STAT__ )
+      ALLOCATE(         latsHemco (1:IM, 1:JM),         __STAT__ )
 
-
-      ALLOCATE(lNox2d    (1:IM, 1:JM),   STAT=RC)
-      ALLOCATE(lfr2d     (1:IM, 1:JM),   STAT=RC)
-      ALLOCATE(ic2d   (1:IM, 1:JM),   STAT=RC)
-      ALLOCATE(cg2d   (1:IM, 1:JM),   STAT=RC)
-      ALLOCATE(h02d   (1:IM, 1:JM),   STAT=RC)
-      ALLOCATE(ltop2d (1:IM, 1:JM),   STAT=RC)
+      ALLOCATE(lNox2d (1:IM, 1:JM),   __STAT__ )
+      ALLOCATE( lfr2d (1:IM, 1:JM),   __STAT__ )
+      ALLOCATE(  ic2d (1:IM, 1:JM),   __STAT__ )
+      ALLOCATE(  cg2d (1:IM, 1:JM),   __STAT__ )
+      ALLOCATE(  h02d (1:IM, 1:JM),   __STAT__ )
+      ALLOCATE(ltop2d (1:IM, 1:JM),   __STAT__ )
 
       ! edge layer fields
-      LB = LBOUND(ple,3)
-      UB = UBOUND(ple,3)
-      pleHemco(:,:,1:KM) = ple(:,:,UB:LB:-1)
-      cnvMfcHemco(:,:,1:KM) = cnvMfc(:,:,UB:LB:-1)
+      pleHemco(:,:,1:KM) = ple(:,:,KM:1:-1)
+      cnvMfcHemco(:,:,1:KM) = cnvMfc(:,:,KM:1:-1)
 
       ! fields at grid box center
       airTempHemco(:,:,1:LM) = airTemp(:,:,LM:1:-1)
@@ -926,9 +1402,9 @@ end subroutine getLightning
       ! turned on in CalcFlashRate below - but it's hardcoded to false.
       buoyancyHemco(:,:,1:LM) = real(-1) !buoyancy(:,:,LM:1:-1)
 
-      LB = LBOUND(geoPotHeight,3)
+
       do levCount=1,LM
-         gridBoxHeightHemco(:,:,levCount) = geoPotHeight(:,:,levCount+LB-1) - geoPotHeight(:,:,levCount+LB)
+         gridBoxHeightHemco(:,:,levCount) = geoPotHeight(:,:,levCount) - geoPotHeight(:,:,levCount+1)
       enddo
       gridBoxHeightHemco2(:,:,1:LM) = gridBoxHeightHemco(:,:,LM:1:-1)
 
@@ -946,7 +1422,6 @@ end subroutine getLightning
       h02d(:,:) = real(0)
       ltop2d(:,:) = real(0)
 
-
       where (lwi == real(0)) 
          lwiHemco = 1
       elsewhere (lwi == real(1))
@@ -959,14 +1434,10 @@ end subroutine getLightning
 
       call CalcFlashRate (MAPL_AM_I_ROOT(), IM, JM, LM, cellAreaHemco, lwiHemco, &
            otdLisHemco, lonsHemco, latsHemco, airTempHemco, pleHemco, gridBoxHeightHemco2, cnvMfcHemco, &
-           buoyancyHemco, convFracHemco, .False., otdLisScaleHp, lNox2d, lfr2d, ic2d, cg2d, ltop2d, h02d, RC)
+           buoyancyHemco, convFracHemco, .False., otdLisScaleHp, lNox2d, lfr2d, ic2d, cg2d, ltop2d, h02d, __RC__)
 
       ! Convert to km-2 s-1
-      IF ( RC==0 ) THEN
-         flashRate (:,:) = real(lfr2d(:,:)) * MIN_TO_SEC
-      ELSE
-         flashRate (:,:) = real(0.0)
-      ENDIF
+      flashRate (:,:) = real(lfr2d(:,:)) * MIN_PER_SEC
 
       DEALLOCATE(lwiHemco)
       DEALLOCATE(cellAreaHemco)
@@ -990,12 +1461,12 @@ end subroutine getLightning
 
       return
 
-    end subroutine hemcoFlashrate
+    end subroutine HEMCO_FlashRate
 
 
 !-----------------------------------------------------------------------
 !BOP
-! !IROUTINE: flash_rate_Lopez
+! !IROUTINE: LOPEZ_FlashRate
 !
 ! !DESCRIPTION:
 ! Lightning parameterization based on 
@@ -1010,8 +1481,8 @@ end subroutine getLightning
 !-----------------------------------------------------------------------
 
 
-    subroutine flash_rate_Lopez(IM, JM, LM, FRLAND, ZKBCON, CAPE,  &
-                               ZLE, PFI_CN_GF, CNV_QC, TE, PLO,  &
+    subroutine LOPEZ_FlashRate(IM, JM, LM, FRLAND, ZKBCON, CAPE,  &
+                               ZLE, PFI_CN_GF, CNV_QC, TE, PLO, LOPEZ_flashFactor, &
                                LFR_Lopez)
      implicit none 
      integer ,intent(in)  :: im,jm,lm
@@ -1029,28 +1500,29 @@ end subroutine getLightning
           , cape   &  ! Convective available potential energy [J/kg]
           , zkbcon    ! cloud_base_height_deep_GF [m]
 
-
+     real    ,intent(in)                   :: LOPEZ_flashFactor   ! global scaling term
+                                                                  ! originally called 'alpha'
 
      real    ,intent(out), dimension(im,jm) ::  &
-                              LFR_Lopez           ! lightning flash density rate (units: 1/km2/day)
+                              LFR_Lopez           ! lightning flash density rate (units: flashes/km2/day)
                          
     !-- locals
     real, parameter :: V_graup     = 3.0  ! m/s
     real, parameter :: V_snow      = 0.5  ! m/s
     real, parameter :: beta_land   = 0.70 ! 1
     real, parameter :: beta_ocean  = 0.45 ! 1
-    real, parameter :: alpha       = 37.5 ! 1
     real, parameter :: t_initial   =  0.0 + 273.15 ! K
     real, parameter :: t_final     = -25. + 273.15 ! K
     
     integer :: i,j,k, k_initial, k_final                          
+    real    :: tdif, td2
     real    :: Q_R, z_base,beta,prec_flx_fr,dz
     real,    dimension(1:lm) :: q_graup,q_snow,rho
 
 
 
      print*, ""
-     print*, "Hello from flash_rate_Lopez"
+     print*, "Hello from LOPEZ_FlashRate"
      print*, ""
 
      print*, "im, jm, lm: ", im, jm, lm
@@ -1080,14 +1552,37 @@ end subroutine getLightning
                 q_graup(k) =      beta *prec_flx_fr/V_graup ! - graupel mixing ratio (kg/kg)
                 q_snow (k) =  (1.-beta)*prec_flx_fr/V_snow  ! - snow    mixing ratio (kg/kg)
 
-          enddo
-          k_initial = minloc(abs(te(i,j,:)-t_initial),1)  
-          k_final   = minloc(abs(te(i,j,:)-t_final  ),1)  
+           enddo
+           k_initial = minloc(abs(te(i,j,:)-t_initial),1)  
+           k_final   = minloc(abs(te(i,j,:)-t_final  ),1)  
+
+           k_initial = lm
+           tdif =  ABS(t_initial - te(i,j,lm))
+           do k=lm-1,1,-1
+             td2 = ABS(t_initial - te(i,j,k))
+             if ( td2 < tdif ) then
+               k_initial = k
+               tdif = td2
+             endif
+             if ( te(i,j,k) < t_initial ) exit
+           enddo
+
+           k_final = lm
+           tdif =  ABS(t_final - te(i,j,lm))
+           do k=lm-1,1,-1
+             td2 = ABS(t_final - te(i,j,k))
+             if ( td2 < tdif ) then
+               k_final = k
+               tdif = td2
+             endif
+             if ( te(i,j,k) < t_final ) exit
+           enddo
+ print*,'K final,  initial: ', k_final, k_initial
 
           Q_R = 0.0
           do k = k_final, k_initial
              
-             dz  = - (zle(i,j,k)-zle(i,j,k-1))  
+             dz  = zle(i,j,k-1)-zle(i,j,k)  
 
              Q_R = Q_R + dz*rho(k)*(q_graup(k)*(CNV_QC(i,j,k)+q_snow(k)))
          enddo
@@ -1097,7 +1592,7 @@ end subroutine getLightning
         !--- lightning flash density (units: number of flashes/km2/day) - equation 5
         !--- (to compare with Lopez 2016's results, convert to per year: LFR_Lopez*365)
         !
-        LFR_Lopez(i,j) = alpha * Q_R *sqrt(max(0.,cape(i,j))) * min(z_base,1.8)**2 
+        LFR_Lopez(i,j) = LOPEZ_flashFactor * Q_R *sqrt(max(0.,cape(i,j))) * min(z_base,1.8)**2 
 
      enddo
    enddo
@@ -1109,128 +1604,8 @@ if (maxval(LFR_Lopez)>1000.) then
        print*,"2================================================= LOPEZ"
        call flush(6)
 endif        
-  end subroutine flash_rate_Lopez
+  end subroutine LOPEZ_FlashRate
 !========================================================================================
-
-
-!-------------------------------------------------------------------------
-!BOP
-!
-! !ROUTINE: flashfit
-! NOTE: The flashfit routine was written for GMI-CTM vertical orientation
-! The surface is level 1, to the top of atomsphere
-! This routine will flip GEOS-5 oriented arrays and call the 
-! GMI-CTM routine
-!
-! !INTERFACE:
-
-    subroutine flashfit ()
-
-      print*, "I will call flashfit_flipped after I flip GEOS-5 arrays"
-
-    end subroutine flashfit
-
-!-------------------------------------------------------------------------
-!BOP
-! ! ROUTINE: computeCAPE
-!
-! !INTERFACE: 
-!
-  subroutine computeCAPE (TH, Q, PLE, CAPE, BUOY, IM, JM, LM)
-    
-! !DESCRIPTION: 
-!
-! !USES:
-    use GEOS_UtilsMod    
-    implicit none
-
-
-! !INPUT PARMETERS:
-
-      integer,                     intent(in)  :: IM,JM,LM
-      real, dimension(IM,JM,LM),   intent(in)  :: TH  ! potential temperature
-      real, dimension(IM,JM,LM),   intent(in)  :: Q   ! specific humidity
-      real, dimension(IM,JM,0:LM), intent(in)  :: PLE   ! pressure
-
-! !OUTPUT PARAMETERS:
-      real, dimension(IM,JM),      intent(out) :: CAPE
-      real, dimension(IM,JM,LM),   intent(out) :: BUOY
-
-! !DESCRIPTION:
-
-! !REVISION HISTORY:
-!
-! 17Nov18 - Megan Damon.
-!
-!EOP
-!-------------------------------------------------------------------------
-
-! !Local Variables
-      integer                         :: L
-      real,    dimension(IM,JM,  LM)  :: DQS, QSS, PLO, TEMP, PK, DM, DP
-      real,    dimension(IM,JM,  LM)  :: ZLO
-      real,    dimension(IM,JM,0:LM)  :: ZLE
-      real,    dimension(IM,JM,0:LM)    :: CNV_PLE
-      real,    dimension(IM,JM,0:LM)    :: PKE
-      real,    dimension(IM,JM   )  :: HC
-      logical, dimension(IM,JM   )  :: UNSTABLE
-
-! Initialize local variables
-      CNV_PLE  = PLE*.01
-      PLO      = 0.5*(CNV_PLE(:,:,0:LM-1) +  CNV_PLE(:,:,1:LM  ) )
-      PKE      = (CNV_PLE/1000.)**(MAPL_RGAS/MAPL_CP)
-      DP       = ( PLE(:,:,1:LM)-PLE(:,:,0:LM-1) )
-      PK       = (PLO/1000.)**(MAPL_RGAS/MAPL_CP)
-      DM       = DP*(1./MAPL_GRAV)
-      TEMP     = TH*PK
-      DQS      = GEOS_DQSAT(TEMP, PLO, qsat=QSS)
-
-      ZLE(:,:,LM) = 0.
-      do L=LM,1,-1
-         ZLE(:,:,L-1) = TH (:,:,L) * (1.+MAPL_VIREPS*Q(:,:,L))
-         ZLO(:,:,L  ) = ZLE(:,:,L) + (MAPL_CP/MAPL_GRAV)*( PKE(:,:,L)-PK (:,:,L  ) ) * ZLE(:,:,L-1)
-         ZLE(:,:,L-1) = ZLO(:,:,L) + (MAPL_CP/MAPL_GRAV)*( PK (:,:,L)-PKE(:,:,L-1) ) * ZLE(:,:,L-1)
-      end do
-
-      ! From BUYOANCY
-
-       HC  =  TEMP(:,:,LM) + (MAPL_GRAV/MAPL_CP)*ZLO(:,:,LM) + (MAPL_ALHL/MAPL_CP)*Q(:,:,LM)
-
-       do L=LM-1,1,-1
-          BUOY(:,:,L) = HC - (TEMP(:,:,L) + (MAPL_GRAV/MAPL_CP)*ZLO(:,:,L) + (MAPL_ALHL/MAPL_CP)*QSS(:,:,L))
-          BUOY(:,:,L) = BUOY(:,:,L) / ( (1.+ (MAPL_ALHL/MAPL_CP)*DQS(:,:,L))*TEMP(:,:,L) )
-       enddo
-
-       BUOY(:,:,LM) = 0.0
-
-       UNSTABLE = .false.
-
-       CAPE = 0.
-
-! New formulation
-       do L=1,LM-1
-         where(BUOY(:,:,L)>0.)
-            CAPE = CAPE + BUOY(:,:,L)*DM(:,:,L)
-         end where
-      end do
-! Old formulation
-!       do L=1,LM-1
-!          where(BUOY(:,:,L)>0.) UNSTABLE=.true.
-!          where(UNSTABLE)
-!             CAPE = CAPE + BUOY(:,:,L)*DM(:,:,L)
-!          end where
-!       end do
-
-       UNSTABLE = CAPE > 0.0
-
-       where(.not.UNSTABLE)
-          CAPE=MAPL_UNDEF
-       end where
-
-      return
-
-      end subroutine computeCAPE
-!EOC
 
 !-----------------------------------------------------------------------------
 ! !ROUTINE
@@ -1240,6 +1615,7 @@ endif
 !   
 !  Generate NOx production rates from parameterized lightning and distribute vertically
 !  using profiles from Pickering (2007).
+!
 !  This routine came from GmiEmiss_lightning_mod in the GEOS-CTM
 !
 ! !REVISION HISTORY:
@@ -1251,7 +1627,7 @@ endif
 !                       EM_LGTNO. Purpose is to allow direct comparison with GMI NO_lgt.
 !-----------------------------------------------------------------------------
  SUBROUTINE emiss_lightning (i1, i2, j1, j2, k1, k2, minDeepCloudTop, ampFactor, numberNOperFlash, &
-                            lwi, flashrate, cellDepth, dtrn, pNOx3D, kgNOx3D, rc)
+                            lwi, flashrate, cellDepth, dtrn, pNOx3D, rc, kgNOx3D)
 
   IMPLICIT NONE
 
@@ -1259,23 +1635,36 @@ endif
   REAL,    INTENT(IN)  :: minDeepCloudTop                ! Minimum cloud top [km] for selecting deep convection profiles
   REAL,    INTENT(IN)  :: ampFactor                      ! > 0, for targeting the observed nitrogen production rate [3.41 Tg yr^{-1}]
   REAL,    INTENT(IN)  :: numberNOperFlash               ! NO molecules generated by each flash
-  INTEGER, INTENT(IN)  :: lwi(i1:i2, j1:j2)              ! Flag: 1=water 2=land 3=ice
+
+
+  INTEGER, INTENT(IN)  :: lwi(i1:i2, j1:j2)              ! Flag: 0=water 1=land 2=ice
+
   REAL*8,  INTENT(IN)  :: flashrate(i1:i2, j1:j2)        ! Flash rate [km^{-2} s^{-1}]
-  REAL*8,  INTENT(IN)  :: dtrn(i1:i2, j1:j2, k1:k2)      ! Detrainment [kg m^{-2} s^{-1}]
-  REAL*8,  INTENT(IN)  :: cellDepth(i1:i2, j1:j2, k1:k2) ! Grid cell depth [m]
+  REAL*4,  INTENT(IN)  :: cellDepth(i1:i2, j1:j2, k1:k2) ! Grid cell depth [m]             (bottom-up)
+  REAL*4,  INTENT(IN)  ::      dtrn(i1:i2, j1:j2, k1:k2) ! Detrainment [kg m^{-2} s^{-1}]  (bottom-up)
   
-  REAL*8, INTENT(OUT)  :: pNOx3D(i1:i2, j1:j2, k1:k2)    ! Lightning NO production rate [m^{-3} s^{-1}]
-  REAL*8, INTENT(OUT)  :: kgNOx3D(i1:i2, j1:j2, k1:k2)   ! NO production rate [kg m^{-3} s^{-1}]
+  REAL*4,  INTENT(INOUT), POINTER  :: pNOx3D(:,:,:)      ! Lightning NO production rate [m^{-3} s^{-1}]  (bottom-up)
+                                                         ! Must be ASSOCIATED
+                                                         ! (i1:i2, j1:j2, k1:k2)
+
+  REAL,    INTENT(OUT), OPTIONAL :: kgNOx3D(i1:i2, j1:j2, k1:k2)   ! NO production rate [kg m^{-3} s^{-1}]  (bottom-up)
+  INTEGER, INTENT(OUT)  :: rc                             ! Return code - TODO: make this optional!
 
 ! Local
 ! -----
   INTEGER :: k
-  INTEGER :: status, rc
+  INTEGER :: status
   REAL*8, ALLOCATABLE  :: pNOx2D(:,:)                    ! Lightning NO production [molecules NO m^{-2} s^{-1}]
   CHARACTER(LEN=*), PARAMETER :: Iam = "emiss_lightning"
   rc = 0
   status = 0
 
+  _ASSERT( LBOUND(pNOx3D, 1) == i1, 'bad LBOUND 1 for pNOX3D' )
+  _ASSERT( UBOUND(pNOx3D, 1) == i2, 'bad UBOUND 1 for pNOX3D' )
+  _ASSERT( LBOUND(pNOx3D, 2) == j1, 'bad LBOUND 2 for pNOX3D' )
+  _ASSERT( UBOUND(pNOx3D, 2) == j2, 'bad UBOUND 2 for pNOX3D' )
+  _ASSERT( LBOUND(pNOx3D, 3) == k1, 'bad LBOUND 3 for pNOX3D' )
+  _ASSERT( UBOUND(pNOx3D, 3) == k2, 'bad UBOUND 3 for pNOX3D' )
 
 ! Validate ranges for ampFactor and numberNOperFlash
 ! --------------------------------------------------
@@ -1306,22 +1695,19 @@ endif
      
 ! Partition vertically without changing units
 ! -------------------------------------------
-
-  CALL partition(i1, i2, j1, j2, k1, k2, pNOx2D,dtrn,cellDepth,minDeepCloudTop,lwi,pNOx3D)
+  CALL partition(i1, i2, j1, j2, k1, k2, minDeepCloudTop, lwi, pNOx2D, dtrn, cellDepth, pNOx3D, rc)
 
 ! Place output in useful units
 ! ----------------------------
-  DO k = k1,k2
 
 ! Number density tendency [m^{-3} s^{-1}]
 ! ---------------------------------------
-   pNOx3D(i1:i2,j1:j2,k) = pNOx3D(i1:i2,j1:j2,k)/cellDepth(i1:i2,j1:j2,k)
+  pNOx3D(:,:,:) = pNOx3D(:,:,:)/cellDepth(:,:,:)
 
-! NO density tendency [kg N m^{-3} s^{-1}]
-! ----------------------------------------
-   kgNOx3D(i1:i2,j1:j2,k) = pNOx3D(i1:i2,j1:j2,k)*30.0064/(1000.00*AVOGAD)
-
-  END DO
+! NO density tendency [kg NO m^{-3} s^{-1}]
+! -----------------------------------------
+  IF ( PRESENT(kgNOx3D)) &
+               kgNOx3D(:,:,:) = pNOx3D(:,:,:)*MWT_NO/MAPL_AVOGAD
 
 ! Clean up
 ! --------
@@ -1329,183 +1715,198 @@ endif
   VERIFY_(status)
 
   RETURN
-END SUBROUTINE emiss_lightning
+ END SUBROUTINE emiss_lightning
 
-
-
-
-
-!-------------------------------------------------------------------------
+!-----------------------------------------------------------------------------
 !BOP
 !
-! !ROUTINE: partition
-! This routine was "parition" in GmiEmissionLightning_mod in GEOS-CTM
+! !ROUTINE
+!   partition
 !
-! INTERFACE:
+! !DESCRIPTION
+!  Vertically distribute NOx
+!
+!  This routine came from GmiEmiss_lightning_mod in the GEOS-CTM
+!-----------------------------------------------------------------------------
+ SUBROUTINE partition(i1, i2, j1, j2, k1, k2, minDeepCloudTop, lwi, pNOx2D, dtrn, cellDepth, pNOx3D, rc)
 
- subroutine partition (i1,i2,j1,j2,k1,k2,pNOx2D,dtrn,cellDepth,minDeepCloudTop,lwi,pNOx3D)
+  IMPLICIT NONE
 
-! !INPUT PARAMETERS:
-   integer :: i1, i2, j1, j2, k1, k2
-   real*8, intent(in) :: pNOx2D(:,:) 
-   real*8, intent(in) :: dtrn(:,:,:) ! Detrainment [kg m^{-2}s^{-1}]
-   real*8, intent(in)  :: cellDepth(:,:,:) ! Grid cell depth [m]
-   real, intent(in)  :: minDeepCloudTop  ! Minimum cloud top [km] for selecting deep convection profiles
-   integer, intent(in) :: lwi(:,:)
+  INTEGER, INTENT(IN)  :: i1, i2, j1, j2, k1, k2    ! Index ranges on this processor
+  REAL,    INTENT(IN)  :: minDeepCloudTop           ! Minimum cloud top [km] for selecting deep convection profiles
 
-! !OUTPUT PARAMETERS:   
-   REAL*8, intent(out) :: pNOx3D(i1:i2, j1:j2, k1:k2) ! Scaled production rate (no units conversion here)
 
-! !Local Variables
-   character(len=*), parameter :: Iam = "partition"
+  INTEGER, INTENT(IN)  ::       lwi(i1:i2, j1:j2)        ! Flag: 0=water 1=land 2=ice
+
+  REAL*8,  INTENT(IN)  ::    pNOx2D(i1:i2, j1:j2)        ! Lightning NO production rate [molecules NO m^{-2} s^{-1}]
+  REAL*4,  INTENT(IN)  ::      dtrn(i1:i2, j1:j2, k1:k2) ! Detrainment [kg m^{-2}s^{-1}]    (bottom-up)
+  REAL*4,  INTENT(IN)  :: cellDepth(i1:i2, j1:j2, k1:k2) ! Grid cell depth [m]              (bottom-up)
+
+  REAL*4,  INTENT(INOUT), POINTER :: pNOx3D(:,:,:)       ! Scaled production rate (no units conversion here)    (bottom-up)
+                                                         ! (i1:i2, j1:j2, k1:k2)
+
+! Local variables
+! ---------------
+  CHARACTER(LEN=*), PARAMETER :: Iam = "partition"
+
+  INTEGER :: i,j,k
+  INTEGER :: cl                     ! vertical index
+  INTEGER :: nTop                   ! Top model level at which detrainment is non-zero
+  INTEGER :: profileNumber
+  INTEGER :: rc, status
+  INTEGER, PARAMETER :: numKm = 17  ! Number of elements (kilometers) in each specified profile
+
+  REAL :: zLower, zUpper
+
+  REAL, ALLOCATABLE :: r(:,:)       ! Specified NOx distribution profiles
+
+  REAL ::       w(k1:k2)     ! Weights applied to scaled cloud layers
+  REAL ::       z(k1:k2)     ! Height above ground for top edge of grid-box
+  REAL :: zScaled(k1:k2)     ! Scaled layer edge heights
    
-   integer, parameter :: numKm = 17  ! Number of elements (kilometers) in each specified profile
+  rc = 0
+  status = 0
 
-   real, allocatable :: r(:,:)       ! Specified NOx distribution profiles
-   real, allocatable :: w(:)         ! Weights applied to scaled cloud layers
-   real, allocatable :: z(:)         ! Layer edge heights above ground
-   real, allocatable :: zScaled(:)   ! Scaled layer edge heights
+  _ASSERT( LBOUND(pNOx3D, 1) == i1, 'bad LBOUND 1 for pNOx3D' )
+  _ASSERT( UBOUND(pNOx3D, 1) == i2, 'bad UBOUND 1 for pNOx3D' )
+  _ASSERT( LBOUND(pNOx3D, 2) == j1, 'bad LBOUND 2 for pNOx3D' )
+  _ASSERT( UBOUND(pNOx3D, 2) == j2, 'bad UBOUND 2 for pNOx3D' )
+  _ASSERT( LBOUND(pNOx3D, 3) == k1, 'bad LBOUND 3 for pNOx3D' )
+  _ASSERT( UBOUND(pNOx3D, 3) == k2, 'bad UBOUND 3 for pNOx3D' )
 
-   integer :: status, i, j, k, cl
-   integer :: nTop, profileNumber
-   real :: zLower, zUpper
-   
-   status = 0
+! Specify the percentage NOx distributions in each km for a numKm-depth cloud.
+! Deep convection is arbitrarily assigned when the cloud top is greater than 7 km.
+! --------------------------------------------------------------------------------
+   ALLOCATE(r(numKm,3),STAT=status)
+   VERIFY_(status)
 
-   !print*, "In subroutine ", trim(Iam)
-
-   ! Specify the percentage NOx distributions in each km for a numKm-depth cloud.
-   ! Deep convection is arbitrarily assigned when the cloud top is greater than 7 km.
-   ! --------------------------------------------------------------------------------
-   ALLOCATE(r(numKm,3))
-
-
-   ! Deep convection, continental
-   ! ----------------------------
+! Deep convection, continental
+! ----------------------------
    r(1:numKm,1) = (/ 0.23, 0.47, 0.56, 1.40, 2.70, 4.00, 5.03, 6.24, &
-        8.60,10.28,11.62,12.34,12.70,12.34, 7.63, 3.02, 0.84 /)
-
-   ! Deep convection, marine
-   ! -----------------------
+                     8.60,10.28,11.62,12.34,12.70,12.34, 7.63, 3.02, 0.84 /)
+ 
+! Deep convection, marine
+! -----------------------
    r(1:numKm,2) = (/ 0.60, 1.50, 2.90, 4.30, 5.40, 6.70, 7.70, 8.50, &
-        9.60,10.20,10.50,10.20, 8.20, 6.50, 4.50, 2.20, 0.50 /)
+                     9.60,10.20,10.50,10.20, 8.20, 6.50, 4.50, 2.20, 0.50 /)
 
-   ! Other
-   ! -----
+! Other
+! -----
    r(1:numKm,3) = (/ 2.40, 5.00, 7.40, 9.30,10.60,11.40,11.50,11.00, &
-        9.90, 8.30, 6.30, 4.20, 2.20, 0.50, 0.00, 0.00, 0.00 /)
+                     9.90, 8.30, 6.30, 4.20, 2.20, 0.50, 0.00, 0.00, 0.00 /)
 
-   ALLOCATE(z(k1:k2))
-   ALLOCATE(zScaled(k1:k2))
-
-
-   ! Work in each column
-   ! -------------------
+! Work in each column
+! -------------------
    DO j = j1,j2
-      DO i = i1,i2
-         
-         SeeingLightning : IF(pNOx2D(i,j) > 0.00) THEN
+    DO i = i1,i2
 
-            
-            ! Define cloud top to be highest layer with dtrn > 0, but at least 2.
-            ! -------------------------------------------------------------------
-            DO k = k2,1,-1
-               IF(dtrn(i,j,k) > 0) EXIT
-            END DO
-            nTop = k
-            IF(nTop < 2) nTop = 2
+     SeeingLightning : IF(pNOx2D(i,j) > 0.00) THEN
 
-            ! Sum grid box thicknesses (m) to obtain layer edge heights
-            ! ---------------------------------------------------------
-            DO k = 1,k2
-               z(k) = SUM(cellDepth(i,j,1:k))
-            END DO
-            
-            ! Select NOx distribution profile. LWI flag is: 1=water 2=land 3=ice
-            ! ------------------------------------------------------------------
-            IF(z(nTop) > minDeepCloudTop*1000.00) THEN
-               IF(lwi(i,j) == 2) THEN
-                  profileNumber = 1
-               ELSE
-                  profileNumber = 2
-               END IF
-            ELSE
-               profileNumber = 3
-            ENDIF
-            
-            ! Scale factor, 0 at ground, numKm at cloud top
-            ! ---------------------------------------------
-            zScaled(1:k2) = z(1:k2)*numKm/z(nTop)
-            
-            ! Grab a little work space and intialize
-            ! --------------------------------------
-            ALLOCATE(w(nTop))
-            w(1:nTop) = 0.00
-            cl = 1
-            zLower = 0.00
+! Define cloud top to be highest layer with dtrn > 0, but at least 2.
+! -------------------------------------------------------------------
+      DO k = k2,1,-1
+       IF(dtrn(i,j,k) > 0) EXIT
+      END DO
+      nTop = k
+      IF(nTop < 2) nTop = 2
 
-            !print*, "Seeing lightning: ", i, j, pNOx2D(i,j), nTop
-            !print*, "layer edge heights: ", z(:)
-            !print*, "profileNumber: ", profileNumber
-            !print*, "zscaled: ", zScaled(:)
-            !print*, "cl: ", cl
+! Sum grid box thicknesses (m) to obtain layer edge heights
+! ---------------------------------------------------------
+      DO k = 1,k2
+       z(k) = SUM(cellDepth(i,j,1:k))
+      END DO
 
+! Select NOx distribution profile. LWI flag is: 1=water 2=land 3=ice
+! ------------------------------------------------------------------
+      IF(z(nTop) > minDeepCloudTop*1000.00) THEN
 
-            ! Work through each km in the specified distribution
-            ! --------------------------------------------------
-            Kilometers: DO k = 1,numKm
-               
-               ! ... segment-by-segment
-               ! ----------------------
-               Segment: DO
-                  
-                  ! Push up to the lesser of scaled cloud height or next km
-                  ! -------------------------------------------------------
-                  zUpper = MIN(zScaled(cl),k*1.)
-                  IF(zScaled(cl) > numKm) EXIT
-                  
-                  
-                  ! Add increment to scaled weighting for the current cloud layer
-                  ! -------------------------------------------------------------
-                  w(cl) = w(cl) + (zUpper-zLower) * r(k,profileNumber) * 0.01
-                  
-                  ! Advance to next cloud layer if any of it lies within this km
-                  ! ------------------------------------------------------------
-                  IF(zUpper == zScaled(cl)) cl = cl+1
-                  
-                  ! Shift bounds before working on the next segment
-                  ! -----------------------------------------------
-                  zLower = zUpper
-                  
-                  ! At top of this km. Advance to the next one
-                  ! ------------------------------------------
-                  IF(zUpper == k) EXIT
-                  
-                  
-               END DO Segment
+       IF(lwi(i,j) == 1      ) THEN                 !  LAND
+        profileNumber = 1
+!  PRINT*,'PROFILE_1  MAX WGT ', z(nTop)*13./17.
+       ELSE
+        profileNumber = 2
+!  PRINT*,'PROFILE_2  MAX WGT ', z(nTop)*11./17.
+       END IF
+      ELSE
+       profileNumber = 3
+!  PRINT*,'PROFILE_3  MAX WGT ', z(nTop)* 7./17.
+      ENDIF
 
-            END DO Kilometers
+! Scale factor, 0 at ground, numKm at cloud top
+! The distance from ground through cloud top is artificially
+! scaled to be 0 through 17 km.
+!
+! The z quotient is <  1 below nTop,  1 at nTop, >  1 above nTop
+! Scale factor   is < 17 below nTop, 17 at nTop, > 17 above nTop
+! zScaled(i) is the top of the model level i (km)
+! ---------------------------------------------
+    ! zScaled(1:k2) = numKm*(z(1:k2)/z(nTop))
+      zScaled(1:k2) = z(1:k2)*numKm/z(nTop)
 
+! Intialize
+! ---------
+      w(:) = 0.00    ! weights - will only use indices  1:nTop
+      cl = 1         ! model level index - start at the bottom
+      zLower = 0.00  ! edge of gridbox or kilometer boundary (km)
 
-            ! Finalize vertical distribution and clean up
-            ! -------------------------------------------
-            pNOx3D(i,j,1:nTop) = w(1:nTop)*pNOx2D(i,j)
-            
-            
-            DEALLOCATE(w)
+! Compute the weight (w) to be applied at each level
+! --------------------------------------------------
+      Kilometers: DO k = 1,numKm      ! k = index into profile
+                                      ! k is also the height of top edge (km)
 
-         endif SeeingLightning
-           
-      enddo
-   enddo
+! ... segment-by-segment
+! A segment extends from zLower to zUpper
+! Each of those can be the edge of a gridbox or a kilometer boundary
+! ------------------------------------------------------------------
+       Segment: DO
 
+! Push up to the lesser of scaled cloud height or next km
+! -------------------------------------------------------
+        zUpper = MIN(zScaled(cl),k*1.)
+        IF(zScaled(cl) > numKm) EXIT
 
-   DEALLOCATE(r)
-   DEALLOCATE(z)
-   DEALLOCATE(zScaled)
-   
-   
- end subroutine partition
+! Add increment to scaled weighting for the current cloud layer
+! Accumulate the weight
+! Convert profile value (r) from 0-100 range, to 0-1 range
+! -------------------------------------------------------------
+        w(cl) = w(cl) + (zUpper-zLower) * r(k,profileNumber) * 0.01
+
+! Advance to next cloud layer if any of it lies within this km
+! ------------------------------------------------------------
+        IF(zUpper == zScaled(cl)) cl = cl+1
+
+! Shift bounds before working on the next segment
+! -----------------------------------------------
+        zLower = zUpper
+
+! At top of this km. Advance to the next one
+! ------------------------------------------
+        IF(zUpper == k*1.) EXIT
+
+       END DO Segment
+
+      END DO Kilometers
+
+! Finalize vertical distribution and clean up
+! -------------------------------------------
+      pNOx3D(i,j,1:nTop) = REAL( w(1:nTop)*pNOx2D(i,j) )
+
+! PRINT*,'TOTAL for w is ', SUM(w(1:nTop))  ->  this is 1.0
+
+     END IF SeeingLightning
+
+! Next column
+! -----------
+    END DO
+   END DO
+
+! Clean up
+! --------
+   DEALLOCATE(r,STAT=status)
+   VERIFY_(status)
+
+  RETURN
+ END SUBROUTINE partition
 
 !-------------------------------------------------------------------------
 !BOP
@@ -1803,22 +2204,99 @@ END SUBROUTINE emiss_lightning
         
       end subroutine calculateProductionNox
 
+
+    subroutine identify_flash_source( flash_source_str, flash_source_enum )
+
+      character(len=ESMF_MAXSTR), intent(in)  :: flash_source_str
+      integer,                    intent(out) :: flash_source_enum
+
+      integer :: i
+
+      flash_source_enum = FLASH_SOURCE_UNDEFINED
+      do i= 1, FLASH_SOURCE_count
+        if ( TRIM(flash_source_str) == TRIM(flashSourceNames(i)) ) flash_source_enum = i
+      end do
+
+!     print*, "IN identify_flash_source, flash source: ", TRIM(flashSourceNames(flash_source_enum))
+      return
+
+    end subroutine identify_flash_source
+
+
+    ! Only needed for FIT
+    subroutine update_lightning_ratio( ratioGlobalFile, CLOCK, year, month, ratioGlobalLight, RC )
+      character(len=ESMF_MAXSTR),    intent(in)       :: ratioGlobalFile
+      type (ESMF_Clock),             intent(inout)    :: CLOCK 
+      integer,                       intent(inout)    :: year      ! in: previous year  processed;   out: year  from CLOCK
+      integer,                       intent(inout)    :: month     ! in: previous month processed;   out: month from CLOCK
+      real,                          intent(inout)    :: ratioGlobalLight  ! in: previous answer;  out: may be updated
+      integer, optional,             intent(  out)    :: RC        ! Error code
+
+    ! ErrLog Variables
+      character(len=ESMF_MAXSTR)   :: IAm
+      integer                      :: STATUS
+
+      ! temp vars
+      type(ESMF_Time) :: curr_date
+      integer         :: mm, yy
+
+      IAm = 'update_lightning_ratio'
+
+      call ESMF_ClockGet(CLOCK, currTime=curr_date, __RC__ )
+      call ESMF_TimeGet(curr_date,mm=mm,yy=yy,__RC__ )
+
+      if ( year /= yy .OR. month /= mm ) then
+        call readLightRatioGlobalData( CLOCK, ratioGlobalFile, ratioGlobalLight, MAPL_AM_I_ROOT(), __RC__ )
+        _ASSERT(ratioGlobalLight > 0.0, 'ratioGlobalLight must be positive')
+        year  = yy
+        month = mm
+      end if
+
+    end subroutine update_lightning_ratio
+
       subroutine readLightRatioGlobalData &
-           &  (light_ratioGlobal_infile_name, ratioGlobalLight, nym, pr_diag, rootProc)
+           &  (CLOCK, light_ratioGlobal_infile_name, ratioGlobalLight, rootProc, RC)
 
 
+        type (ESMF_Clock),             intent(inout)    :: CLOCK 
         character (len=*) :: light_ratioGlobal_infile_name
-        real*8, intent(out) :: ratioGlobalLight
-        integer, intent(in) :: nym
-        logical, intent(in) :: pr_diag, rootProc
+        real, intent(out) :: ratioGlobalLight
+        logical, intent(in) :: rootProc
+        integer, optional, intent(out)    :: RC        ! Error code
+
+      ! ErrLog Variables
+        character(len=ESMF_MAXSTR)   :: IAm
+        integer                      :: STATUS
 
         integer :: ii, mm, asc_lun, ierr
-        real*8  :: readRatio
+        real    :: readRatio
+
+        integer :: mon, year, nym
+        type(ESMF_Time) :: curr_date             ! temporary date used in logic
+        character(len=80) :: cYear
+        character(len=80) :: cMonth
+        character(len=80) :: cNym
+        character(len=3)  :: binName
 
 
         character (len=256) :: err_msg
 
         integer :: num_reads = 12 * 37 ! roughly 1 entry for each month in satellite era
+
+        IAm = "readLightRatioGlobalData"
+
+        call ESMF_ClockGet(CLOCK, currTime=curr_date, __RC__ )
+        call ESMF_TimeGet(curr_date,mm=mon,yy=year,__RC__ )
+
+        write(unit=cYear,fmt=*) year
+        write(unit=cMonth,fmt=*) mon
+
+        if (mon >= 10) then
+           cNym = trim(adjustl(cYear))//trim(adjustl(cMonth))
+        else
+           cNym = trim(adjustl(cYear))//'0'//trim(adjustl(cMonth))
+        endif
+        read(unit=cNym,fmt=*), nym
 
         asc_lun = 9
 
@@ -1827,7 +2305,8 @@ END SUBROUTINE emiss_lightning
 
         if (ierr /= 0) then
            err_msg = 'Failed to OPEN '//TRIM(light_ratioGlobal_infile_name)
-           stop
+           STATUS=99
+           VERIFY_(STATUS)
         end if
 
         ratioGlobalLight = 0.0
@@ -1843,12 +2322,13 @@ END SUBROUTINE emiss_lightning
       Close (asc_lun)
 
       IF(rootProc) THEN
-         WRITE(6,*) 'Ratio global for lightning read from', ratioGlobalLight
+         WRITE(6,*) 'Ratio global for lightning ', year, mon, ratioGlobalLight
       END IF
 
       return
 
     end subroutine readLightRatioGlobalData
+
 
 !========================================================================================
 

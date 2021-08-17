@@ -113,7 +113,7 @@ CONTAINS
 !
 ! !INPUT/OUTPUT PARAMETERS:
 !
-    INTEGER,         INTENT(INOUT)  :: RC              ! Return code (0=success, 1=fail)
+    INTEGER, OPTIONAL, INTENT(OUT)  :: RC                    ! Return code (0=success, 1=fail)
 !
 ! !OUTPUT PARAMETERS:
 !
@@ -153,7 +153,7 @@ CONTAINS
     !=================================================================
 
     ! Assume success
-    RC = 0
+    IF ( PRESENT(RC)) RC = 0
 
 !     print*, "Hola from HEMCO lightning: ", IM, JM, LM, am_I_Root
 !     print*, "HEMCO surface area: ", minval(AREA_M2), maxval(AREA_M2)
@@ -745,7 +745,7 @@ CONTAINS
 !$OMP END PARALLEL DO
 
     ! Return with success
-    RC = 0
+    IF ( PRESENT(RC)) RC = 0
 
   END SUBROUTINE CalcFlashRate 
 !EOC
