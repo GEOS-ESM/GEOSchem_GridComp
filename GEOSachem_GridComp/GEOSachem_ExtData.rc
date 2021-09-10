@@ -32,10 +32,10 @@ NH3_EMIS_FIRE          'kg m-2 s-1'         N        Y     %y4-%m2-%d2T12:00:00 
 NH3_EMIS_OCEAN         'kg m-2 s-1'         Y        Y     %y4-%m2-%d2T12:00:00    none none     emiss_ocn    ExtData/PIESA/sfc/GEIA.emis_NH3.ocean.x576_y361.t12.20080715_12z.nc4
 
 # Volume mixing ratio of prescribed oxidant field
-OH                     'mol mol-1'          N        N               0             none none     OH           ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
-NO3                    'mol mol-1'          N        N               0             none none     NO3          ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
-#HO2                   'mol mol-1'          N        N               0             none none     HO2          ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
-H2O2                   'mol mol-1'          N        N               0             none none     H2O2         ExtData/MERRA2/L72/gmi_ctm_hindcast.oxidants.x144_y91_z72_t14.%y4.nc4
+OH                     'mol mol-1'          N        N               0             none none     oh           ExtData/MERRA2GMI/L72/MERRA2_GMI.tavg24_3d_dac_Nv.x576_y361_t12.%y4.nc4
+NO3                    'mol mol-1'          N        N               0             none none     no3          ExtData/MERRA2GMI/L72/MERRA2_GMI.tavg24_3d_dac_Nv.x576_y361_t12.%y4.nc4
+#HO2                   'mol mol-1'          N        N               0             none none     ho2          ExtData/MERRA2GMI/L72/MERRA2_GMI.tavg24_3d_dac_Nv.x576_y361_t12.%y4.nc4
+H2O2                   'mol mol-1'          N        N               0             none none     h2o2         ExtData/MERRA2GMI/L72/MERRA2_GMI.tavg24_3d_dac_Nv.x576_y361_t12.%y4.nc4
 
 
 # SOA(gas) emissions
@@ -43,8 +43,8 @@ SOAG_EMIS              'm-2 s-1'            Y        N               0          
 
 # CO emissions for VOC
 CO_BIOMASS_VOC         'kg m-2 s-1'         N        Y     %y4-%m2-%d2t12:00:00Z   none none     biomass       ExtData/PIESA/sfc/QFED/NRT/v2.5r1_0.1_deg/Y%y4/M%m2/qfed2.emis_co.006.%y4%m2%d2.nc4
-CO_BF_VOC              'kg m-2 s-1'         Y        Y     %y4-%m2-%d2t12:00:00Z   none none     emcobf        ExtData/PIESA/sfc/co_biofuel_v2.x360_y181_t12.2001.nc
-CO_FS_VOC              'kg m-2 s-1'         Y        Y     %y4-%m2-%d2t12:00:00Z   none none     emcofs        ExtData/PIESA/sfc/co_fossilfuel_v2.x360_y181_t12.2001.nc
+CO_BF_VOC              'kg m-2 s-1'         Y        Y     %y4-%m2-%d2t12:00:00Z   none none     emcobf        /dev/null
+CO_FS_VOC              'kg m-2 s-1'         N        Y     %y4-%m2-%d2t12:00:00Z   none none     co            ExtData/CEDS/sfc/CO-em-anthro_CMIP_CEDS_gn.x2304_y1441_t12.%y4.nc4
 
 # Photolysis rates
 #jH2O2                 's-1'                Y        N               0             none none     jH2O2        /home/adarmeno/projects/GMI-jH2O2/Y2008/gmi_jh2o2.x144_y91_z72.2008%m2.nc4
