@@ -31,6 +31,9 @@ esma_add_library (${this}
   DEPENDENCIES MAPL Chem_Shared Chem_Base GOCART_GridComp
   INCLUDES ${INC_ESMF})
 
+# Enable OpenMP
+target_link_libraries(${this} PRIVATE OpenMP::OpenMP_Fortran)
+
 install(
    FILES GEOS_ChemGridComp.rc
    DESTINATION etc
