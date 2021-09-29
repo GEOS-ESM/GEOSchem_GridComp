@@ -136,7 +136,7 @@ MODULE Henrys_law_ConstantsMod
 !     of Potential Importance in 
 !     Environmental Chemistry (Version 3) 
 !     http://www.henrys-law.org 
-!     * indica artigos nao encontrados nesse endere�o eletronico
+!     * indica artigos nao encontrados nesse endereço eletronico
   REAL,PARAMETER,DIMENSION(nspecies_HL) :: hstar=(/&
     1.10E-2              ,   & ! O3 - 001
     8.30E+4              ,   & ! H2O2 - 002
@@ -149,8 +149,10 @@ MODULE Henrys_law_ConstantsMod
     1.20E+4              ,   & ! HNO4 - 009
     1.40E+0              ,   & ! SO2 - 010
     2.10E+5              ,   & ! SULF - 011
-    9.90E-4              ,   & ! CO - 012
-    3.6E-02              ,   & ! CO2 - 013
+!ams    9.90E-4              ,   & ! CO - 012
+!ams    3.6E-02              ,   & ! CO2 - 013
+    0.0E+00              ,   & ! CO - 012   (Revised for GEOS-FP)
+    0.0E+00              ,   & ! CO2 - 013  (Revised for GEOS-FP)
     6.1E-04              ,   & ! N2 - 014
     1.3E-03              ,   & ! O2 - 015
     0.0E+00              ,   & ! H2O - 016
@@ -159,7 +161,8 @@ MODULE Henrys_law_ConstantsMod
     0.00E+0              ,   & ! O1D - 019
     3.00E+1              ,   & ! HO - 020
     5.70E+3              ,   & ! HO2 - 021
-    1.40E-3              ,   & ! CH4 - 022
+!ams 1.40E-3              ,   & ! CH4 - 022
+    0.0E+00              ,   & ! CH4 - 022
     1.90E-3              ,   & ! ETH - 023
     1.00E-3              ,   & ! ALKA - 024
     5.00E-3              ,   & ! ALKE - 025
@@ -187,6 +190,7 @@ MODULE Henrys_law_ConstantsMod
     0.0E+00              ,   & ! XO2 - 047
     5.6E-01              ,   & ! DMS - 048
     5.9E+01              ,   & ! NH3 - 048
+!ams 1.05E+06            ,   & ! NH3 – 048 see https://doi.org/10.5194/acp-17-12911-2017
     -1.                  ,   & ! CFC - 048
     2.4E-02                  & ! N2O - 051
     /)
