@@ -3,51 +3,59 @@ esma_set_this ()
 set (alldirs
   )
 
-set (src_directories
-   ${CMAKE_CURRENT_SOURCE_DIR}
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/Headers
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/History
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosUtil
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/NcdfUtil
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/ISORROPIA
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/KPP/fullchem
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosCore
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/Interfaces/GCHP
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/ObsPack
-  )
+esma_mepo_style(geos-chem geos_chem_path)
+set (geos_chem_dir ${CMAKE_CURRENT_SOURCE_DIR}/${geos_chem_path})
 
-include_directories (${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/Headers)
+
+set (src_directories
+#   ${CMAKE_CURRENT_SOURCE_DIR}
+   ${geos_chem_dir}/Headers
+   ${geos_chem_dir}/History
+   ${geos_chem_dir}/GeosUtil
+   ${geos_chem_dir}/NcdfUtil
+   ${geos_chem_dir}/ISORROPIA
+   ${geos_chem_dir}/KPP/fullchem
+   ${geos_chem_dir}/GeosCore
+   ${geos_chem_dir}/Interfaces/GCHP
+   ${geos_chem_dir}/ObsPack
+  )
+include_directories (${geos_chem_dir}/Headers)
+include_directories (${geos_chem_dir}/Interfaces/GEOS)
 
 set (srcs)
 foreach (dir ${src_directories})
   file (GLOB tmpsrcs CONFIGURE_DEPENDS ${dir}/*.[fF] ${dir}/*.[fF]90 ${dir}/*.c)
   list (APPEND srcs ${tmpsrcs})
 endforeach()
+# Unfortunately, Intel always searches for include files in the directory of the source file, so if we
+# leave the grid comp in place it will find the GCHP include files.  So we copy to the bin dir.
+configure_file(${geos_chem_dir}/Interfaces/GCHP/Chem_GridCompMod.F90 Chem_GridCompMod.F90 COPYONLY)
+list (APPEND srcs ${CMAKE_CURRENT_BINARY_DIR}/Chem_GridCompMod.F90)
 
 list (REMOVE_ITEM srcs
    # this one is moved to HEMCO
-   #${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosUtil/regrid_a2a_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/NcdfUtil/charpak_mod.F90
-   #${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/Headers/charpak_mod.F90
-   #${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/NcdfUtil/julday_mod.F90
-   #${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosUtil/julday_mod.F90
+   #${geos_chem_dir}/GeosUtil/regrid_a2a_mod.F90
+   ${geos_chem_dir}/NcdfUtil/charpak_mod.F90
+   #${geos_chem_dir}/Headers/charpak_mod.F90
+   #${geos_chem_dir}/NcdfUtil/julday_mod.F90
+   #${geos_chem_dir}/GeosUtil/julday_mod.F90
 
    # not sure about the rest
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosCore/main.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosCore/tpcore_fvdas_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosCore/tpcore_geos57_window_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosCore/tpcore_geos5_window_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosCore/transport_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosCore/rrtmg_rad_transfer_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosCore/tomas_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosCore/exchange_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosCore/get_met_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosCore/flexgrid_read_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosCore/aero_drydep.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosCore/exchange_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosCore/YuIMN_Code.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/GeosCore/apm_driv_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/@geos-chem/Interfaces/GCHP/Chem_GridCompMod.F90
+   ${geos_chem_dir}/GeosCore/main.F90
+   ${geos_chem_dir}/GeosCore/tpcore_fvdas_mod.F90
+   ${geos_chem_dir}/GeosCore/tpcore_geos57_window_mod.F90
+   ${geos_chem_dir}/GeosCore/tpcore_geos5_window_mod.F90
+   ${geos_chem_dir}/GeosCore/transport_mod.F90
+   ${geos_chem_dir}/GeosCore/rrtmg_rad_transfer_mod.F90
+   ${geos_chem_dir}/GeosCore/tomas_mod.F90
+   ${geos_chem_dir}/GeosCore/exchange_mod.F90
+   ${geos_chem_dir}/GeosCore/get_met_mod.F90
+   ${geos_chem_dir}/GeosCore/flexgrid_read_mod.F90
+   ${geos_chem_dir}/GeosCore/aero_drydep.F90
+   ${geos_chem_dir}/GeosCore/exchange_mod.F90
+   ${geos_chem_dir}/GeosCore/YuIMN_Code.F90
+   ${geos_chem_dir}/GeosCore/apm_driv_mod.F90
+   ${geos_chem_dir}/Interfaces/GCHP/Chem_GridCompMod.F90
    )
 
 if (CMAKE_Fortran_COMPILER_ID MATCHES Intel)
