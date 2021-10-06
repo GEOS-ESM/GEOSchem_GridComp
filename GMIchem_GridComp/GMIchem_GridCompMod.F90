@@ -1996,7 +1996,12 @@ CONTAINS
 !  -------------------------------------------------------------------
    IF ( phase == 2 .OR. phase == 99 ) THEN
      CALL MAPL_GetPointer(expChem,   WATER, 'GMIH2O', __RC__)
-     IF(ASSOCIATED(WATER)) WATER(:,:,:) = SPECHUM(:,:,:)*MAPL_AIRMW/MAPL_H2OMW
+!    IF(ASSOCIATED(WATER)) WATER(:,:,:) = SPECHUM(:,:,:)*MAPL_AIRMW/MAPL_H2OMW
+!    11.25.20 mem: Convert from kg_vapor/kg_moist_air to mol_vapor/mol_moist_air
+     IF(ASSOCIATED(WATER)) WATER(:,:,:) = &
+          ( SPECHUM(:,:,:)*(1.0/MAPL_H2OMW) )  /     &
+              (  SPECHUM(:,:,:) *(1.0/MAPL_H2OMW) +  &
+            (1.0-SPECHUM(:,:,:))*(1.0/MAPL_AIRMW) )
    END IF
 
 !  Total ozone: In each layer
