@@ -189,8 +189,8 @@ MODULE Henrys_law_ConstantsMod
     0.0E+00              ,   & ! OLN - 046
     0.0E+00              ,   & ! XO2 - 047
     5.6E-01              ,   & ! DMS - 048
-    5.9E+01              ,   & ! NH3 - 048
-!ams 1.05E+06            ,   & ! NH3 – 048 see https://doi.org/10.5194/acp-17-12911-2017
+!prc    5.9E+01              ,   & ! NH3 - 048
+    1.05E+06            ,   & ! NH3 – 048 see https://doi.org/10.5194/acp-17-12911-2017
     -1.                  ,   & ! CFC - 048
     2.4E-02                  & ! N2O - 051
     /)
