@@ -627,9 +627,6 @@ subroutine read_lightning_config ( im, jm, rcfilen, flash_source_enum, &
   IAm = "read_lightning_config"
 
   _ASSERT(  TRIM(SimType) == 'CTM' .OR. TRIM(SimType) == 'FREE' .OR. TRIM(SimType) == 'REPLAY', 'read_lightning_config: SimType must be CTM, FREE or REPLAY' )
-           TRIM(SimType) == 'FREE'   .OR.  &
-           TRIM(SimType) == 'REPLAY' ,     &
-           'read_lightning_config: SimType must be CTM, FREE or REPLAY' )
 
   ! default values that should never be used:
   ratioGlobalFile   = "default_filename"
