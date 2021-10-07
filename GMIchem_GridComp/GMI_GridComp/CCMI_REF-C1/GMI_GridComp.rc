@@ -231,10 +231,13 @@ sc_infile_name: /discover/nobackup/ldoman/fvInput/solar_cycle_NRL_1882_2014_fill
 #
 
 lightning_opt: 1
-#lightNOampFactor: 0.944
-lightNOampFactor: 3.5
-numberNOperFlash: 1.50E+26
-minDeepCloudTop: 7.0
+#
+# NOW in ChemEnv.rc :
+#
+# #lightNOampFactor: 0.944
+# lightNOampFactor: 3.5
+# numberNOperFlash: 1.50E+26
+# minDeepCloudTop: 7.0
 
         ##############################
         # Chemistry related variables

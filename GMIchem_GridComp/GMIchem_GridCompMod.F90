@@ -371,6 +371,15 @@ CONTAINS
         VERIFY_(STATUS)
      END IF
 
+! Can the Registry specify PRECISION?
+     call MAPL_AddImportSpec(GC,                             &
+        SHORT_NAME         = 'LIGHT_NO_PROD',                &
+        LONG_NAME          = 'lightning_NO_prod_rate',       &
+        UNITS              = 'm-3 s-1',                      &
+        DIMS               =  MAPL_DimsHorzVert,             &
+        PRECISION          =  ESMF_KIND_R4,                  &
+        VLOCATION          =  MAPL_VLocationCenter,   __RC__ )
+
 #include "GMICHEM_ImportSpec___.h"
 
 ! ======================== INTERNAL STATE =========================
@@ -1714,7 +1723,7 @@ CONTAINS
    CALL extract_(GC, clock, chemReg, gcGMI, w_c, nymd, nhms, gmiDt, runDt, STATUS)
    VERIFY_(STATUS)
 
-  dtInverse = 1.00/runDt
+   dtInverse = 1.00/runDt
 
 !  Layer interface pressures
 !  -------------------------

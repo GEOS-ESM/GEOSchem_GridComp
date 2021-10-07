@@ -143,7 +143,6 @@ CONTAINS
   SUBROUTINE SourceSeaSalt (mcor, tdt, nymd, i1, i2, ju1, j2, k1, k2)
 !
   use GocartDerivedVariables_mod, only : w10m, airmas
-  use GocartDerivedVariables_mod, only : lwi_flags => lwi_flags_1
   use GmiWaterMethod_mod        , only : water
   use GmiTimeControl_mod        , only : GmiSplitDateTime
 !
@@ -198,7 +197,6 @@ CONTAINS
 ! The factor $10^{-18}$ is to convert in micro-meter $r\_d^3$.
 !
 ! !LOCAL VARIABLES:
-!  INTEGER :: lwi_flags (i1:i2, ju1:j2)     ! land, water, ice indicator
   REAL*8            :: c0(5), b0(2)
   REAL*8, PARAMETER :: c_old(5)=(/1.373, 3.41, 0.057, 1.05, 1.190/)
   REAL*8, PARAMETER :: c_new(5)=(/1.373, 3.41, 0.057, 3.45, 1.607/)
@@ -259,7 +257,6 @@ CONTAINS
         DO i = i1,i2
            DO j = ju1,j2
               IF (water(i,j) > 0.0) THEN
-!              IF (lwi_flags(i,j) == 0) THEN
                  src = dfm*mcor(i,j)*water(i,j)*w10m(i,j)**c0(2)
 !                 src = dfm*mcor(i,j)*w10m(i,j)**c0(2)
 !                 src = ch_ss(n,month_gmi)*dfm*mcor(i,j)*w10m(i,j)**c0(2)
