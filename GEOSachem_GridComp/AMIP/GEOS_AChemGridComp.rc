@@ -40,5 +40,5 @@ aviation_vertical_layers: 0.0 100.0 9.0e3 10.0e3
 
 # Volcanic emissions
 # ------------------
-volcanoes: ExtData/chemistry/CARNS/v202106/sfc/volcanic_CARN_1978-2021_v202106/so2_volcanic_emissions_Carns.%y4%m2%d2.rc
+volcanoes: ExtData/chemistry/CARN/v202106/sfc/so2_volcanic_emissions_Carns.%y4%m2%d2.rc
 
