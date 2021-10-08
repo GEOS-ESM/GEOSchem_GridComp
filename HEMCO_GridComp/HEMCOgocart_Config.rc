@@ -37,18 +37,14 @@ BEGIN SECTION EXTENSION SWITCHES
     --> MEGAN_FIELDS      :       true
     --> HTAP              :       false
     --> KORUS             :       false
-108     MEGAN             : on    ISOP/ACET/PRPE/C2H4/ALD2/EOH/SOAP/SOAS
+108     MEGAN             : on    ISOP/ACET/PRPE/C2H4/ALD2/MOH/EOH/MTPA/MTPO/LIMO/SESQ/SOAP/SOAS
     --> Isoprene scaling  :       1.0
     --> CO2 inhibition    :       true
     --> CO2 conc (ppmv)   :       390.0
     --> Isoprene to SOAP  :       0.015
     --> Isoprene to SOAS  :       0.015
-    --> Normalize LAI     :       true
-#3% mass yield from isoprene to SOA
-109     MEGAN_Mono        : on    CO/MTPA/MTPO/LIMO/SESQ
     --> Monoterp to SOAP  :       0.050
     --> Monoterp to SOAS  :       0.050
-#10% mass yield from monoterpenes to SOA
     --> Othrterp to SOAP  :       0.050
     --> Othrterp to SOAS  :       0.050
 #
@@ -179,29 +175,29 @@ BEGIN SECTION BASE EMISSIONS
 #       with a specified MW of 12g/mol. This is the case for OCPI, ISOP and ACET.
 (((MEGAN_FIELDS
 108  MEGAN_AEF_ISOP               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_ISOPRENE            1985/1/1/0    C xy kgC/m2/s * - 1 1
-109  MEGAN_AEF_MBOX               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_MBO                 1985/1/1/0    C xy kgC/m2/s * - 1 1
-109  MEGAN_AEF_BPIN               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_BETA_PINENE         1985/1/1/0    C xy kgC/m2/s * - 1 1
-109  MEGAN_AEF_CARE               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_CARENE              1985/1/1/0    C xy kgC/m2/s * - 1 1
-109  MEGAN_AEF_LIMO               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_LIMONENE            1985/1/1/0    C xy kgC/m2/s * - 1 1
-109  MEGAN_AEF_OCIM               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_OCIMENE             1985/1/1/0    C xy kgC/m2/s * - 1 1
-109  MEGAN_AEF_SABI               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_SABINENE            1985/1/1/0    C xy kgC/m2/s * - 1 1
-109  CLM4_PFT_BARE                ~/data/CLM4_PFT.geos.1x1.nc    PFT_BARE                2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_NDLF_EVGN_TMPT_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_NDLF_EVGN_TMPT_TREE 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_NDLF_EVGN_BORL_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_NDLF_EVGN_BORL_TREE 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_NDLF_DECD_BORL_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_NDLF_DECD_BORL_TREE 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_BDLF_EVGN_TROP_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_EVGN_TROP_TREE 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_BDLF_EVGN_TMPT_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_EVGN_TMPT_TREE 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_BDLF_DECD_TROP_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_DECD_TROP_TREE 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_BDLF_DECD_TMPT_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_DECD_TMPT_TREE 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_BDLF_DECD_BORL_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_DECD_BORL_TREE 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_BDLF_EVGN_SHRB      ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_EVGN_SHRB      2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_BDLF_DECD_TMPT_SHRB ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_DECD_TMPT_SHRB 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_BDLF_DECD_BORL_SHRB ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_DECD_BORL_SHRB 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_C3_ARCT_GRSS        ~/data/CLM4_PFT.geos.1x1.nc    PFT_C3_ARCT_GRSS        2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_C3_NARC_GRSS        ~/data/CLM4_PFT.geos.1x1.nc    PFT_C3_NARC_GRSS        2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_C4_GRSS             ~/data/CLM4_PFT.geos.1x1.nc    PFT_C4_GRSS             2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_CROP                ~/data/CLM4_PFT.geos.1x1.nc    PFT_CROP                2000/1/1/0    C xy 1        * - 1 1
-109  MEGAN_ORVC                   ~/data/NVOC.geos.1x1.nc        OCPI                    1990/1-12/1/0 C xy kgC/m2/s * - 1 1
+108  MEGAN_AEF_MBOX               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_MBO                 1985/1/1/0    C xy kgC/m2/s * - 1 1
+108  MEGAN_AEF_BPIN               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_BETA_PINENE         1985/1/1/0    C xy kgC/m2/s * - 1 1
+108  MEGAN_AEF_CARE               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_CARENE              1985/1/1/0    C xy kgC/m2/s * - 1 1
+108  MEGAN_AEF_LIMO               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_LIMONENE            1985/1/1/0    C xy kgC/m2/s * - 1 1
+108  MEGAN_AEF_OCIM               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_OCIMENE             1985/1/1/0    C xy kgC/m2/s * - 1 1
+108  MEGAN_AEF_SABI               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_SABINENE            1985/1/1/0    C xy kgC/m2/s * - 1 1
+108  CLM4_PFT_BARE                ~/data/CLM4_PFT.geos.1x1.nc    PFT_BARE                2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_NDLF_EVGN_TMPT_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_NDLF_EVGN_TMPT_TREE 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_NDLF_EVGN_BORL_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_NDLF_EVGN_BORL_TREE 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_NDLF_DECD_BORL_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_NDLF_DECD_BORL_TREE 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_BDLF_EVGN_TROP_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_EVGN_TROP_TREE 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_BDLF_EVGN_TMPT_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_EVGN_TMPT_TREE 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_BDLF_DECD_TROP_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_DECD_TROP_TREE 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_BDLF_DECD_TMPT_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_DECD_TMPT_TREE 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_BDLF_DECD_BORL_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_DECD_BORL_TREE 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_BDLF_EVGN_SHRB      ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_EVGN_SHRB      2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_BDLF_DECD_TMPT_SHRB ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_DECD_TMPT_SHRB 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_BDLF_DECD_BORL_SHRB ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_DECD_BORL_SHRB 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_C3_ARCT_GRSS        ~/data/CLM4_PFT.geos.1x1.nc    PFT_C3_ARCT_GRSS        2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_C3_NARC_GRSS        ~/data/CLM4_PFT.geos.1x1.nc    PFT_C3_NARC_GRSS        2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_C4_GRSS             ~/data/CLM4_PFT.geos.1x1.nc    PFT_C4_GRSS             2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_CROP                ~/data/CLM4_PFT.geos.1x1.nc    PFT_CROP                2000/1/1/0    C xy 1        * - 1 1
+108  MEGAN_ORVC                   ~/data/NVOC.geos.1x1.nc        OCPI                    1990/1-12/1/0 C xy kgC/m2/s * - 1 1
 )))MEGAN_FIELDS
 
 #==============================================================================

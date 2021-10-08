@@ -451,13 +451,14 @@ contains
 
   IF(myState%enable_STRATCHEM) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/ 'AIRDENS     ', 'AIRDENS_DRYP', 'DELP        ', 'TPREC       ', 'CN_PRCP     ', 'NCN_PRCP    ' /), &
+          SHORT_NAME  = (/ 'AIRDENS     ', 'AIRDENS_DRYP', 'DELP        ', 'TPREC       ', &
+                           'CN_PRCP     ', 'NCN_PRCP    ', 'LFR         ' /),              &
           DST_ID = STRATCHEM, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
   IF(myState%enable_GMICHEM) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'AIRDENS', 'DELP   ' /), &
+          SHORT_NAME  = (/'AIRDENS      ', 'DELP         ', 'LFR          ', 'LIGHT_NO_PROD'/), &
           DST_ID = GMICHEM, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
@@ -497,7 +498,7 @@ contains
 
   IF(myState%enable_GEOSCHEM) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'AIRDENS', 'DELP   '/), &
+          SHORT_NAME  = (/'AIRDENS', 'DELP   ', 'LFR    ', 'BYNCY  '/), &
           DST_ID = GEOSCHEM, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
@@ -739,7 +740,7 @@ contains
 
   IF( myState%enable_HEMCO ) THEN
 
-    CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/ 'AIRDENS' /), DST_ID=HEMCO, SRC_ID=CHEMENV, __RC__)
+    CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/ 'AIRDENS', 'BYNCY  ' /), DST_ID=HEMCO, SRC_ID=CHEMENV, __RC__)
 
     !!!!!!!!!!!!!!!!!!
     ! Determine if GOCART or GMI expect data from HEMCO:  

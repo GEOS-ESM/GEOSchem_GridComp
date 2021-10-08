@@ -26,6 +26,8 @@
      &  ABS_ZERO    = -273.15d0,           & ! absolute zero (degC)
      &  AVG_SRFPRS  = 1000.0d0,            & ! average surface pressure (mb)
      &  AVOGAD      =    6.0221367d+23,    & ! Avogadro number (mole^-1)
+!    &  KMOL_PER_MOL = 0.001,              & 
+!    &  AVOGAD       = MAPL_AVOGAD*KMOL_PER_MOL, & ! Avogadro number (molec/mole)
      &  BOLTZMN_E   =    1.380662d-16,     & ! Boltzman constant
 !    &                                     & ! (erg  *degK^-1*mole^-1)
      &  BOLTZMN_J   =    1.380662d-23,     & ! Boltzman constant
