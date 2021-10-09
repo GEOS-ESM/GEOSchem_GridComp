@@ -1042,7 +1042,11 @@ CONTAINS
 
     ! Now run driver routine. This calculates all 'core' emissions, 
     ! i.e. all emissions that are not extensions.
-    CALL HCO_Run( Inst%HcoState, -1, STAT )
+    !CALL HCO_Run( Inst%HcoState, -1, STAT )
+    !_ASSERT(STAT==HCO_SUCCESS,'needs informative message')
+    CALL HCO_Run( Inst%HcoState, 1, STAT )
+    _ASSERT(STAT==HCO_SUCCESS,'needs informative message')
+    CALL HCO_Run( Inst%HcoState, 2, STAT )
     _ASSERT(STAT==HCO_SUCCESS,'needs informative message')
 
     ! ------------------------------------------------------------------
