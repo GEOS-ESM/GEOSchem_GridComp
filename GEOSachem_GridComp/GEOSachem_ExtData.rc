@@ -24,7 +24,7 @@ SO2_EMIS_AIRCRAFT_CDS  'kg m-2 s-1'         Y        Y %y4-%m2-%d2t12:00:00     
 SO2_EMIS_AIRCRAFT_CRS  'kg m-2 s-1'         Y        Y %y4-%m2-%d2t12:00:00        none none     so2_aviation ExtData/chemistry/HTAP/v2.2/sfc/htap-v2.2.emis_so2.aviation_crs.x3600_y1800_t12.2010.nc4
 
 # Surface seawater concentration of DMS
-DMS_CONC_OCEAN         'mol m-3'            Y        Y %y4-%m2-%d2t12:00:00        0.0  1.0e-6   conc         ExtData/chemistry/MERRA2/v0.0.0/sfc/DMSclim_sfcconcentration.x360_y181_t12.Lana2011.nc4
+DMS_CONC_OCEAN         'mol m-3'            Y        Y %y4-%m2-%d2t12:00:00        0.0  1.0e-6   conc         ExtData/chemistry/Lana/v2011/DMSclim_sfcconcentration.x360_y181_t12.Lana2011.nc4
 
 # NH3 emissions
 NH3_EMIS               'kg m-2 s-1'         N        Y               0             none none     emi_nh3      ExtData/chemistry/MERRA2/v0.0.0/sfc/edgar-v42.emis_nh3.anthropogenic.x1152_y721.19700703T12z_20200703T00z.nc4
