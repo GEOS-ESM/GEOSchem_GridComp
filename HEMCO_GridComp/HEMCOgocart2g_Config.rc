@@ -5,9 +5,9 @@
 BEGIN SECTION SETTINGS
 ####################################################################################
 #
-ROOT               : /discover/nobackup/
-Logfile            : HEMCOgocart.log
-DiagnPrefix        : HEMCOgocart_diagnostics
+ROOT               : /dev/null           # not relevant in GEOS, only when running in Harvard CTM
+Logfile            : HEMCOgocart2g.log
+DiagnPrefix        : HEMCOgocart2g_diagnostics
 DiagnFreq          : 00000000 010000
 Negative values    : 2
 Unit tolerance     : 1
@@ -15,11 +15,11 @@ Verbose            : 0
 Warnings           : 0
 DiagnTimeStamp     : Start
 DiagnNoLevDim      : true 
-SpecFile           : HEMCOgeosfp_Spec.rc
-DiagnFile          : HEMCOgeosfp_Diagn.rc
+SpecFile           : HEMCOgesfp_Spec.rc
+DiagnFile          : HEMCOgocart2g_Diagn.rc
 DefaultDiagnOn     : false
-DefaultDiagnSname  : HEMCOgeosfp_
-DefaultDiagnLname  : HEMCOgeosfp_emissions_species
+DefaultDiagnSname  : HEMCOgocart2g_
+DefaultDiagnLname  : HEMCOgocart2g_emissions_species
 DefaultDiagnDim    : 2
 #
 END SECTION SETTINGS 
@@ -33,18 +33,14 @@ BEGIN SECTION EXTENSION SWITCHES
 # ExtNr ExtName           on/off  Species
 0       Base              : on    *
     --> TIMEZONES         :       false
-108     MEGAN             : on    ISOP/ACET/PRPE/C2H4/ALD2/EOH/SOAP/SOAS
+108     MEGAN             : on    ISOP/ACET/PRPE/C2H4/ALD2/MOH/EOH/MTPA/MTPO/LIMO/SESQ/SOAP/SOAS
     --> Isoprene scaling  :       1.0
     --> CO2 inhibition    :       true
     --> CO2 conc (ppmv)   :       390.0
     --> Isoprene to SOAP  :       0.015
     --> Isoprene to SOAS  :       0.015
-    --> Normalize LAI     :       true
-#3% mass yield from isoprene to SOA
-109     MEGAN_Mono        : on    CO/MTPA/MTPO/LIMO/SESQ
     --> Monoterp to SOAP  :       0.050
     --> Monoterp to SOAS  :       0.050
-#10% mass yield from monoterpenes to SOA
     --> Othrterp to SOAP  :       0.050
     --> Othrterp to SOAS  :       0.050
 #
@@ -60,30 +56,30 @@ BEGIN SECTION BASE EMISSIONS
 # NOTE: These are the base emissions, which will be converted to kgC/m2/s by HEMCO. The specified species (OCPI/ISOP/ACET) are required
 #       for proper unit conversion. Since netCDF files are already in mass carbon (ug(C)), the only important thing is to specify a VOC
 #       with a specified MW of 12g/mol. This is the case for OCPI, ISOP and ACET.
-108  MEGAN_AEF_ISOP               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_ISOPRENE            1985/1/1/0    C xy kgC/m2/s * - 1 1
-109  MEGAN_AEF_MBOX               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_MBO                 1985/1/1/0    C xy kgC/m2/s * - 1 1
-109  MEGAN_AEF_BPIN               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_BETA_PINENE         1985/1/1/0    C xy kgC/m2/s * - 1 1
-109  MEGAN_AEF_CARE               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_CARENE              1985/1/1/0    C xy kgC/m2/s * - 1 1
-109  MEGAN_AEF_LIMO               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_LIMONENE            1985/1/1/0    C xy kgC/m2/s * - 1 1
-109  MEGAN_AEF_OCIM               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_OCIMENE             1985/1/1/0    C xy kgC/m2/s * - 1 1
-109  MEGAN_AEF_SABI               ~/data/MEGAN2.1_EF.geos.1x1.nc AEF_SABINENE            1985/1/1/0    C xy kgC/m2/s * - 1 1
-109  CLM4_PFT_BARE                ~/data/CLM4_PFT.geos.1x1.nc    PFT_BARE                2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_NDLF_EVGN_TMPT_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_NDLF_EVGN_TMPT_TREE 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_NDLF_EVGN_BORL_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_NDLF_EVGN_BORL_TREE 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_NDLF_DECD_BORL_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_NDLF_DECD_BORL_TREE 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_BDLF_EVGN_TROP_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_EVGN_TROP_TREE 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_BDLF_EVGN_TMPT_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_EVGN_TMPT_TREE 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_BDLF_DECD_TROP_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_DECD_TROP_TREE 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_BDLF_DECD_TMPT_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_DECD_TMPT_TREE 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_BDLF_DECD_BORL_TREE ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_DECD_BORL_TREE 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_BDLF_EVGN_SHRB      ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_EVGN_SHRB      2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_BDLF_DECD_TMPT_SHRB ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_DECD_TMPT_SHRB 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_BDLF_DECD_BORL_SHRB ~/data/CLM4_PFT.geos.1x1.nc    PFT_BDLF_DECD_BORL_SHRB 2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_C3_ARCT_GRSS        ~/data/CLM4_PFT.geos.1x1.nc    PFT_C3_ARCT_GRSS        2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_C3_NARC_GRSS        ~/data/CLM4_PFT.geos.1x1.nc    PFT_C3_NARC_GRSS        2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_C4_GRSS             ~/data/CLM4_PFT.geos.1x1.nc    PFT_C4_GRSS             2000/1/1/0    C xy 1        * - 1 1
-109  CLM4_PFT_CROP                ~/data/CLM4_PFT.geos.1x1.nc    PFT_CROP                2000/1/1/0    C xy 1        * - 1 1
-109  MEGAN_ORVC                   ~/data/NVOC.geos.1x1.nc        OCPI                    1990/1-12/1/0 C xy kgC/m2/s * - 1 1
+108  MEGAN_AEF_ISOP               /dev/null                      AEF_ISOPRENE            1985/1/1/0    C xy kgC/m2/s * - 1 1
+108  MEGAN_AEF_MBOX               /dev/null                      AEF_MBO                 1985/1/1/0    C xy kgC/m2/s * - 1 1
+108  MEGAN_AEF_BPIN               /dev/null                      AEF_BETA_PINENE         1985/1/1/0    C xy kgC/m2/s * - 1 1
+108  MEGAN_AEF_CARE               /dev/null                      AEF_CARENE              1985/1/1/0    C xy kgC/m2/s * - 1 1
+108  MEGAN_AEF_LIMO               /dev/null                      AEF_LIMONENE            1985/1/1/0    C xy kgC/m2/s * - 1 1
+108  MEGAN_AEF_OCIM               /dev/null                      AEF_OCIMENE             1985/1/1/0    C xy kgC/m2/s * - 1 1
+108  MEGAN_AEF_SABI               /dev/null                      AEF_SABINENE            1985/1/1/0    C xy kgC/m2/s * - 1 1
+108  CLM4_PFT_BARE                /dev/null                      PFT_BARE                2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_NDLF_EVGN_TMPT_TREE /dev/null                      PFT_NDLF_EVGN_TMPT_TREE 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_NDLF_EVGN_BORL_TREE /dev/null                      PFT_NDLF_EVGN_BORL_TREE 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_NDLF_DECD_BORL_TREE /dev/null                      PFT_NDLF_DECD_BORL_TREE 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_BDLF_EVGN_TROP_TREE /dev/null                      PFT_BDLF_EVGN_TROP_TREE 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_BDLF_EVGN_TMPT_TREE /dev/null                      PFT_BDLF_EVGN_TMPT_TREE 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_BDLF_DECD_TROP_TREE /dev/null                      PFT_BDLF_DECD_TROP_TREE 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_BDLF_DECD_TMPT_TREE /dev/null                      PFT_BDLF_DECD_TMPT_TREE 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_BDLF_DECD_BORL_TREE /dev/null                      PFT_BDLF_DECD_BORL_TREE 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_BDLF_EVGN_SHRB      /dev/null                      PFT_BDLF_EVGN_SHRB      2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_BDLF_DECD_TMPT_SHRB /dev/null                      PFT_BDLF_DECD_TMPT_SHRB 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_BDLF_DECD_BORL_SHRB /dev/null                      PFT_BDLF_DECD_BORL_SHRB 2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_C3_ARCT_GRSS        /dev/null                      PFT_C3_ARCT_GRSS        2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_C3_NARC_GRSS        /dev/null                      PFT_C3_NARC_GRSS        2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_C4_GRSS             /dev/null                      PFT_C4_GRSS             2000/1/1/0    C xy 1        * - 1 1
+108  CLM4_PFT_CROP                /dev/null                      PFT_CROP                2000/1/1/0    C xy 1        * - 1 1
+108  MEGAN_ORVC                   /dev/null                      OCPI                    1990/1-12/1/0 C xy kgC/m2/s * - 1 1
 
 #==============================================================================
 # --- time zones (offset to UTC) ---
