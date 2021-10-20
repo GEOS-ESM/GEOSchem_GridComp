@@ -12,8 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   HEMCO_GridComp/HEMCOgocart2g_*.rc as these are not specific of
   GEOS-FP but rather of any system thans runs with GOCART-2G.
 - Pathnames in HEMCO*_Config.rc have been changed to /dev/nulls as files are piped in through ExtData.
-- Update rc files (109-->108) to reflect the fact that MEGAN is now a single
-  extension. 
+- Update rc files (109-->108) to reflect the fact that MEGAN is now a
+  single extension.
+- Revised GAAS for compatibility with GOCART-2G
 
 ### Removed 
 - HEMCO_GridComp/HEMCOgocart_*.rc as they relate to legacy GOCART 
