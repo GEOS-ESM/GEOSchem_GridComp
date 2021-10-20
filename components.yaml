@@ -34,7 +34,6 @@ GMAO_Shared:
   local: ./ESMF/Shared/GMAO_Shared@
   remote: ../GMAO_Shared.git
   tag: v1.4.10
-  sparse: ./config/GMAO_Shared.sparse
   develop: main
 
 MAPL:
