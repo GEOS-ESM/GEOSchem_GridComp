@@ -149,10 +149,10 @@ MODULE Henrys_law_ConstantsMod
     1.20E+4              ,   & ! HNO4 - 009
     1.40E+0              ,   & ! SO2 - 010
     2.10E+5              ,   & ! SULF - 011
-!ams    9.90E-4              ,   & ! CO - 012
-!ams    3.6E-02              ,   & ! CO2 - 013
-    0.0E+00              ,   & ! CO - 012   (Revised for GEOS-FP)
-    0.0E+00              ,   & ! CO2 - 013  (Revised for GEOS-FP)
+!   9.90E-4              ,   & ! CO - 012
+    0.00E+0              ,   & ! CO - 012
+!   3.6E-02              ,   & ! CO2 - 013
+    0.00E+0              ,   & ! CO2 - 013
     6.1E-04              ,   & ! N2 - 014
     1.3E-03              ,   & ! O2 - 015
     0.0E+00              ,   & ! H2O - 016
@@ -161,8 +161,8 @@ MODULE Henrys_law_ConstantsMod
     0.00E+0              ,   & ! O1D - 019
     3.00E+1              ,   & ! HO - 020
     5.70E+3              ,   & ! HO2 - 021
-!ams 1.40E-3              ,   & ! CH4 - 022
-    0.0E+00              ,   & ! CH4 - 022
+!   1.40E-3              ,   & ! CH4 - 022
+    0.00E+0              ,   & ! CH4 - 022
     1.90E-3              ,   & ! ETH - 023
     1.00E-3              ,   & ! ALKA - 024
     5.00E-3              ,   & ! ALKE - 025

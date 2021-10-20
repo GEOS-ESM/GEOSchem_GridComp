@@ -1,0 +1,30 @@
+#
+
+PrimaryExports%%
+# -----------|--------------|-----|---|----------------------|--------|-------|----------------------------------------   
+#  Import    |              |	  |Rgr|_______ Refresh ______|____ Factors ___|___________ External File __________
+#  Name      |     Units    |Clim |Mth|     Time Template    | Offset | Scale |     Variable    |      Template
+# -----------|--------------|-----|---|----------------------|--------|-------|-----------------|----------------------   
+# For lightning:
+RATIO_LOCAL         '1'         N   N   F0                       none    none  ratio_local       /discover/nobackup/mmanyin/Lightning/FlashRatio_x288_y181_t1.%y4%m201.nc
+MIDLAT_ADJ          '1'         Y   N   -                        none    none  midlat            /discover/nobackup/mmanyin/Lightning/FlashRatio_const_x288_y181_2005.nc
+MCOR                'm2'        Y   N   -                        none    none  mcor              /discover/nobackup/mmanyin/Lightning/mcor_x288_y181_2005.nc
+# -----------|--------------|-----|---|----------------------|--------|-------|-----------------|----------------------   
+%%
+
+Masks%%
+# ------------|----------|-------------------------------------------|
+#  Name       |          |       Template File Name                  |
+# ------------|----------|-------------------------------------------|
+#  Import     | Variable | File name                                 |
+#  Name       |          |                                           |
+# ------------|----------|-------------------------------------------|
+%%
+
+DerivedExports%%
+# ---------|---------|--------------------------------------------|
+#  Export  | Primary |_________________ Mask _____________________|
+#  Name    |  Name   |    Name    |           Expression          |    
+# ---------|---------|------------|-------------------------------|
+# ---------|---------|------------|-------------------------------|
+%%

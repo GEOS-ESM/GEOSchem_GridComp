@@ -1,6 +1,6 @@
 !=============================================================================
 !
-! $Id$
+! $Id: emiss_update.F90,v 1.1.1.1.2.2.14.1.8.1.108.1.40.1.188.1.10.1.2.1 2020/12/04 18:48:56 mmanyin Exp $
 !
 ! CODE DEVELOPER
 !   John Tannahill, LLNL
@@ -32,7 +32,7 @@
 !   This routine updates const based on emissions.
 !
 ! ARGUMENTS
-!   lwi_flags     : array of flags that indicate land, water, or ice
+!   lwi_flags     : 0=water; 1=land; 2=ice
 !   latdeg        : latitude  (deg)
 !   mcor          : area of grid box (m^2)
 !   emiss_isop    : isoprene    emissions (kg/s)
@@ -114,7 +114,7 @@
       integer, intent(in   ) :: emiss_map(num_species), emiss_map_dust(num_species)
       integer, intent(in   ) :: emiss_map_aero(num_species)
       logical, intent(in   ) :: do_semiss_inchem, do_gcr, do_drydep, do_aerocom, do_ShipEmission
-      integer, intent(in   ) :: lwi_flags(i1:i2, ju1:j2)
+      integer, intent(in   ) :: lwi_flags(i1:i2, ju1:j2)    ! 0=water; 1=land; 2=ice
       real*8 , intent(in   ) :: cosSolarZenithAngle(i1:i2, ju1:j2)
       real*8 , intent(in   ) :: latdeg   (i1:i2, ju1:j2)
       real*8 , intent(in   ) :: mcor     (i1:i2, ju1:j2)
@@ -350,6 +350,7 @@
      &   ico_num, ino_num, ipropene_num, iisoprene_num, mw, &
      &   pr_diag, loc_proc, i1, i2, ju1, j2, k1, k2, ilo, ihi, julo, jhi, num_species)
 
+      use MAPL_ConstantsMod
       use GmiTimeControl_mod, only : GmiSplitDateTime
       use GmiArrayBundlePointer_mod, only : t_GmiArrayBundle
 
@@ -432,8 +433,8 @@
 !     but leave out the molecular weight term for each species.
 !     --------------------------------------------------------------
 
-      conv_emiss(:,:) =  &
-     &  (AVOGAD * GPKG) / mcor(:,:) / CMPM3 / gridBoxheight(:,:,k1)
+!     NOTE: MAPL_AVOGAD is [molec/kmol]
+      conv_emiss(:,:) =  MAPL_AVOGAD / mcor(:,:) / CMPM3 / gridBoxheight(:,:,k1)
 
       inum = 0
 

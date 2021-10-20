@@ -1,6 +1,70 @@
 AeroChem ChangeLog
 
-2020-02-03 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_20
+NOTE: As of August 2021, this log file reflects changes to the CVS repository.
+      The majority of comments are about code in the CHEMISTRY GridComp, but
+      occasionally there are notes about other sections of the GEOS codebase.
+
+2021-08-06 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_25
+    * Lightning flashFactor now has resolution-dependent values, and
+      distinguishes between CTM, Free-Run or REPLAY mode
+
+2021-07-27 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_24-r1  (zero diff w/ 24)
+    * Took out LFR export from MOIST
+    * Refactored HEMCO flashrate, eliminating extraeous fields
+
+2021-03-29 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_24
+    * Added ECCOH functionality (CO/CH4/OH), and isotopologues of CH4
+    Subsequently pushed the tag:
+    2021-03-30  More information when HCl or HNO3COND is trapped; fixed a memory leak
+    2021-04-01  Added good DEBUG print statement in MAPL, and bugfix in fv_tracer2d.F90
+    2021-04-12  Added FeedBack_QV option (true in CCM, false in CTM)
+    2021-05-07  Fixes to allow Vanessa to compile (bash, hermes)
+
+2021-03-10 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_23
+    * Emissions and boundary conditions as in REF-D1; files are now in GMAO SHAREd space
+    Subsequently pushed the tag:
+    2021-03-19  Fixed compilation at NAS
+    2021-04-01  Added good DEBUG print statement in MAPL, and bugfix in fv_tracer2d.F90
+
+Special tag for REF-D1:
+2020-12-30 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_22x
+    * Allow GOCART_DT /= HEARTBEAT, for experiment REF-D1
+    * Use global mean values for CO2, specified for CCMI REF-D1
+    Subsequently pushed the tag:
+    2021-01-04  Activate HEMCO restart files if using MEGAN via HEMCO
+    2021-01-11  Changed MOIST_flashFactor to 2.0 based on latest tests
+    2021-01-22  Added OVP diagnostics and other bells and whistles
+    2021-02-10  Fine-tuned some dust parameters
+
+2021-04-01 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_22-r1
+    * Added good DEBUG print statement in MAPL, and bugfix in fv_tracer2d.F90
+      (This was done to synchronize with the CTM codebase)
+
+2020-12-29 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_22
+    * DryDep bug fix, and added SNOW to LWI' $FILE
+    Subsequently pushed the tag:
+    2021-01-04  Activate HEMCO restart files if using MEGAN via HEMCO
+    2021-01-11  Changed MOIST_flashFactor to 2.0 based on latest tests
+    2021-02-10  Fine-tuned some dust parameters
+
+2020-12-28 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_21-r1
+    * Fixed bug, changing DUST scavenging efficiency in GOCART convection
+
+2020-12-09 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_21
+    * Modified aerosol treatment according to Hongyu Liu
+
+2020-11-27 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_21-ALPHA-r1
+    * Slight improvement of stOX (and new diagnostics); better units for GMIH2O
+
+2020-11-18 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_21-ALPHA
+    * Better distinction between VMR wrt MOIST (internal fields) and wrt DRY (for emissions) in TR
+
+2020-03-06 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_20-SLES12
+    * Modified g5_modules & other files
+    Subsequently pushed the tag:
+    2020-04-10  Tweaked GlobalSum in GCC code, to use a MAPL Reduce routine.
+
+2020-02-03 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_20  (also re-tagged as Icarus-3_2_p9_MEM_20-SLES11)
     * Added CloudJ photolysis option in GMI (Steve Steenrod)
     * In GMI, changed from 5 RH bins (for aerosols) to 7 bins.
 
@@ -25,6 +89,7 @@ AeroChem ChangeLog
 2019-07-16 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_15
     * Added Elliot's new aoa_bl tracer in TR
 
+# this entry unique to GIT copy:
 2019-06-21 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_15
     * In bundles, chem tracers now have grid comp prefix, to
       eliminate naming collisions
@@ -72,6 +137,11 @@ AeroChem ChangeLog
     * Corrected eqn of numDens in StratChem.
     * Comment out parameterized scavenging of HBr in StratChem, now
       handled in convection and wet-removal routines in ChemShared.
+
+2017-05-03 <michael.manyin@nasa.gov>, Tag: Icarus-1_0_p1
+    [This functionality was merged into Icarus-3_2_p9_MEM_24 in March 2021]
+    * Added OH_Para_GridComp under GOCART, and connectivity between CO/CH4/OH
+    * CH4: Added C13 isotope option, and related exports
 
 2017-01-06 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_3_p3_JEN_GMI-r1
     * Added Mike Manyin's rc files for CCMI_REF-C1 and CCMI_REF-C2 scenarios

@@ -18,7 +18,6 @@ module GocartDerivedVariables_mod
   public  :: airden
   public  :: airmas
   public  :: gwet_1
-  public  :: lwi_flags_1
   public  :: AllocateGocartDerivedVars
   public  :: SetGocartDerivedVars
 
@@ -26,7 +25,6 @@ module GocartDerivedVariables_mod
   REAL*8 , pointer :: gwet_1(:,:)      => null() ! ground wetness (fraction)
   REAL*8 , pointer :: airden(:,:,:)    => null() ! air density (kg/m3)
   REAL*8 , pointer :: airmas(:,:,:)    => null() ! air mass    (kg)
-  INTEGER, pointer :: lwi_flags_1(:,:) => null() ! land, water, ice indicator
 !
 ! !DESCRIPTION:
 !  Provides routines to manipulate the variable "water".
@@ -68,7 +66,6 @@ CONTAINS
 !BOC
   allocate (w10m   (i1:i2, ju1:j2))
   allocate (gwet_1 (i1:i2, ju1:j2))
-  allocate (lwi_flags_1 (i1:i2, ju1:j2))
   allocate (airden (i1:i2, ju1:j2, k1:k2))
   allocate (airmas (i1:i2, ju1:j2, k1:k2))
   return
@@ -82,7 +79,7 @@ CONTAINS
 ! !INTERFACE:
 !
   subroutine SetGocartDerivedVars (u10m, v10m, gwet, press3c, &
-                            kel, mass, mcor, grid_height, lwi_flags, &
+                            kel, mass, mcor, grid_height, &
                             i1, i2, ju1, j2, k1, k2, ilo, ihi, julo, jhi)
 !
   implicit none
@@ -95,7 +92,6 @@ CONTAINS
   real*8 , intent(in) :: u10m       (i1:i2, ju1:j2)
   real*8 , intent(in) :: v10m       (i1:i2, ju1:j2)
   real*8 , intent(in) :: gwet       (i1:i2, ju1:j2)
-  integer, intent(in) :: lwi_flags  (i1:i2, ju1:j2)
   real*8 , intent(in) :: mcor       (i1:i2, ju1:j2) ! area of grid box [m^2]
   real*8 , intent(in) :: mass       (i1:i2, ju1:j2, k1:k2)
   real*8 , intent(in) :: grid_height(i1:i2, ju1:j2, k1:k2)
@@ -120,7 +116,6 @@ CONTAINS
 
   w10m(:,:)        = sqrt(u10m(:,:)**2 + v10m(:,:)**2)
   gwet_1(:,:)      = gwet(:,:)
-  lwi_flags_1(:,:) = lwi_flags(:,:)
   airmas(:,:,:)    = mass(:,:,:)
 !  airmas(:,:,:)    = press3c(i1:i2,ju1:j2,:) * MB2CGS / &
 !                      (kel (i1:i2,ju1:j2,:) * BOLTZMN_E)

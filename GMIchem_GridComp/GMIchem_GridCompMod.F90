@@ -136,6 +136,7 @@ CONTAINS
     CHARACTER(LEN=ESMF_MAXSTR) :: name
 
     LOGICAL :: do_ShipEmission
+    INTEGER :: fastj_opt
     TYPE(ESMF_Config)  :: gmiConfig
 
     ! HEMCO isoprene related -sas
@@ -291,6 +292,7 @@ CONTAINS
     END SELECT
 
 ! Import NO from Ships, only if using the parameterization
+! Import RI and RL, only if using Cloud-J
 
     gmiConfig = ESMF_ConfigCreate(__RC__)
 
@@ -308,6 +310,27 @@ CONTAINS
           UNITS      = 'kg NO m^(-2) s^(-1)',              &
           DIMS       = MAPL_DimsHorzOnly,                  &
           VLOCATION  = MAPL_VLocationNone,   __RC__) 
+    END IF
+
+    CALL ESMF_ConfigGetAttribute(gmiConfig, value= fastj_opt, Default=4, &
+                                            Label="fastj_opt:", __RC__)
+
+    ! We need RI and RL for Cloud-J
+    ! The fields may not be available in CTM, so we import them conditionally
+    IF ( fastj_opt == 5 ) THEN
+       call MAPL_AddImportSpec(GC,                                           &
+          SHORT_NAME         = 'RI',                                         &
+          LONG_NAME          = 'ice_phase_cloud_particle_effective_radius',  &
+          UNITS              = 'm',                                          &
+          DIMS               = MAPL_DimsHorzVert,                            &
+          VLOCATION          = MAPL_VLocationCenter,    __RC__)
+
+       call MAPL_AddImportSpec(GC,                                           &
+          SHORT_NAME         = 'RL',                                         &
+          LONG_NAME          = 'liquid_cloud_particle_effective_radius',     &
+          UNITS              = 'm',                                          &
+          DIMS               = MAPL_DimsHorzVert,                            &
+          VLOCATION          = MAPL_VLocationCenter,    __RC__)
     END IF
 
     call ESMF_ConfigDestroy(gmiConfig, __RC__)
@@ -347,6 +370,15 @@ CONTAINS
              RC         = STATUS)
         VERIFY_(STATUS)
      END IF
+
+! Can the Registry specify PRECISION?
+     call MAPL_AddImportSpec(GC,                             &
+        SHORT_NAME         = 'LIGHT_NO_PROD',                &
+        LONG_NAME          = 'lightning_NO_prod_rate',       &
+        UNITS              = 'm-3 s-1',                      &
+        DIMS               =  MAPL_DimsHorzVert,             &
+        PRECISION          =  ESMF_KIND_R4,                  &
+        VLOCATION          =  MAPL_VLocationCenter,   __RC__ )
 
 #include "GMICHEM_ImportSpec___.h"
 
@@ -1691,7 +1723,7 @@ CONTAINS
    CALL extract_(GC, clock, chemReg, gcGMI, w_c, nymd, nhms, gmiDt, runDt, STATUS)
    VERIFY_(STATUS)
 
-  dtInverse = 1.00/runDt
+   dtInverse = 1.00/runDt
 
 !  Layer interface pressures
 !  -------------------------
@@ -1973,7 +2005,12 @@ CONTAINS
 !  -------------------------------------------------------------------
    IF ( phase == 2 .OR. phase == 99 ) THEN
      CALL MAPL_GetPointer(expChem,   WATER, 'GMIH2O', __RC__)
-     IF(ASSOCIATED(WATER)) WATER(:,:,:) = SPECHUM(:,:,:)*MAPL_AIRMW/MAPL_H2OMW
+!    IF(ASSOCIATED(WATER)) WATER(:,:,:) = SPECHUM(:,:,:)*MAPL_AIRMW/MAPL_H2OMW
+!    11.25.20 mem: Convert from kg_vapor/kg_moist_air to mol_vapor/mol_moist_air
+     IF(ASSOCIATED(WATER)) WATER(:,:,:) = &
+          ( SPECHUM(:,:,:)*(1.0/MAPL_H2OMW) )  /     &
+              (  SPECHUM(:,:,:) *(1.0/MAPL_H2OMW) +  &
+            (1.0-SPECHUM(:,:,:))*(1.0/MAPL_AIRMW) )
    END IF
 
 !  Total ozone: In each layer

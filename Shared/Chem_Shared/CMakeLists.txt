@@ -20,6 +20,8 @@ set (srcs
   Henrys_Law_cts.F90
   Chem_GroupMod.F90
   Bundle_IncrementMod.F90
+  Lightning_mod.F90
+  lightning_toolbox_mod.F90
   )
 
 if (DOING_GEOS5)
@@ -32,7 +34,7 @@ endif ()
 
 esma_add_library(${this} 
    SRCS ${srcs} 
-   DEPENDENCIES GMAO_mpeu MAPL Chem_Base)
+   DEPENDENCIES GMAO_mpeu MAPL Chem_Base GEOS_Shared GMAO_hermes)
 target_include_directories(${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 #add_definitions(-DDEBUG)
 add_definitions(-DSPMD -DFVCHEM)
