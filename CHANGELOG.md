@@ -184,7 +184,7 @@ Diff.
 
 ### Fixed
 
-- GAAS needed an alarm, to work in the context of the latest IAU implementation.  This release must be used  in conjunction with  pull requests  GEOSgcm_App #72 and GEOSgcm_GridComp #168.
+- GAAS needed an alarm, to work in the context of the latest IAU implementation.  This release must be used in conjunction with pull requests GEOSgcm_App#72 and GEOSgcm_GridComp#168.
 
 ## [1.0.5] - 2019-12-10
 
