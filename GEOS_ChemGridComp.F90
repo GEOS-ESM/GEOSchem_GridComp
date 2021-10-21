@@ -235,7 +235,7 @@ contains
 ! Sanity checks:
 ! --------------
     if (myState%enable_GAAS) then
-       _ASSERT(myState%enable_GOCART2G,'needs informative message')
+       _ASSERT(myState%enable_GOCART2G,'when GAAS is enabled GOCART-2G must be enabled as well.')
     end if
 
 ! Create children's gridded components and invoke their SetServices
@@ -351,20 +351,45 @@ contains
                               VLOCATION  = MAPL_VLocationCenter,         &
                               DATATYPE   = MAPL_StateItem, __RC__ )
 
+      call MAPL_AddExportSpec(GC,                                        &
+                              SHORT_NAME = 'AERO_ACI',                   &
+                              LONG_NAME  = 'aerosol_mass_mixing_ratios', &
+                              UNITS      = 'kg kg-1',                    &
+                              DIMS       = MAPL_DimsHorzVert,            &
+                              VLOCATION  = MAPL_VLocationCenter,         &
+                              DATATYPE   = MAPL_StateItem, __RC__ )
+
       call MAPL_AddExportSpec(GC,                                &
                               SHORT_NAME = 'AERO_DP',            &
                               LONG_NAME  = 'aerosol_deposition', &
                               UNITS      = 'kg m-2 s-1',         &
                               DIMS       = MAPL_DimsHorzOnly,    &
                               DATATYPE   = MAPL_BundleItem, __RC__) 
-  else
-      call GetProvider_(CF, Label='AERO_PROVIDER:', ID=AERO_PROVIDER, Name=providerName, Default='GOCART2G', __RC__)
+   else
+
+      ! Determine Id of the aerosol provider
+      ! ------------------------------------
+      call GetProvider_(CF, Label='AERO_PROVIDER:', ID=AERO_PROVIDER,
+                            Name=providerName, Default='GOCART2G', __RC__)
 
 !     Add export specs for aerosols and aerosol deposition
 !     ----------------------------------------------------
       call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO',&
                                 CHILD_ID = AERO_PROVIDER, __RC__  )
 
+      ! GOCART-2G uses a single AERO state for both Radiation and Moist,
+      ! so we special handle it here. This approach should be adopted
+      ! by the other components.
+      ! ----------------------------------------------------------------
+      if ( AERO_PROVIDER == GOCART2G ) then
+         call MAPL_AddExportSpec ( GC,    TO_NAME = 'AERO_ACI', & 
+                                       SHORT_NAME = 'AERO',     &
+                                   CHILD_ID = AERO_PROVIDER, __RC__  )
+      else
+         call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO_ACI',&
+                                   CHILD_ID = AERO_PROVIDER, __RC__  )
+      endif
+      
       call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO_DP', &
                                 CHILD_ID = AERO_PROVIDER, __RC__  )
   end if
@@ -407,34 +432,6 @@ contains
           SHORT_NAME  = (/'DELP    ', 'AIRDENS ', 'NCN_PRCP' /), &
           DST_ID = GOCART2G, SRC_ID = CHEMENV, __RC__  )
   ENDIF
-
-#if 0
-  IF(myState%enable_GAAS) then
-     CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/ 'AIRDENS ', 'DELP    ' /), &
-          DST_ID = GAAS, SRC_ID = CHEMENV, __RC__  )
-          IF(myState%enable_GOCART) then
-              CALL MAPL_AddConnectivity ( GC, &
-                   SRC_NAME  = (/ 'GOCART::du001    ', 'GOCART::du002    ', 'GOCART::du003    ', 'GOCART::du004    ', 'GOCART::du005    ', &
-                                  'GOCART::ss001    ', 'GOCART::ss002    ', 'GOCART::ss003    ', 'GOCART::ss004    ', 'GOCART::ss005    ', &
-                                  'GOCART::NO3an1   ', 'GOCART::NO3an2   ', 'GOCART::NO3an3   ', &
-!                                 'GOCART::BRCphobic', 'GOCART::BRCphilic', &
-                                  'GOCART::OCphobic ', 'GOCART::OCphilic ', &
-                                  'GOCART::BCphobic ', 'GOCART::BCphilic ', &
-                                  'GOCART::SO4      ' /), & 
-                   DST_NAME  = (/ 'du001    ', 'du002    ', 'du003    ', 'du004    ', 'du005    ', &
-                                  'ss001    ', 'ss002    ', 'ss003    ', 'ss004    ', 'ss005    ', &
-                                  'NO3an1   ', 'NO3an2   ', 'NO3an3   ', &
-!                                 'BRCphobic', 'BRCphilic', &
-                                  'OCphobic ', 'OCphilic ', &
-                                  'BCphobic ', 'BCphilic ', &
-                                  'SO4      ' /), &
-                   DST_ID = GAAS, SRC_ID = GOCART, __RC__  )
-          ELSE
-              __raise__(MAPL_RC_ERROR,"Cannot have GAAS enabled without GOCART")
-          ENDIF
-  ENDIF
-#endif
 
   IF(myState%enable_GAAS) then
      CALL MAPL_AddConnectivity ( GC, &
@@ -783,7 +780,7 @@ contains
                                      DEFAULT="HEMCOsa_Config.rc", __RC__)
 
        IF ( TRIM(ConfigFile) ==    'HEMCOgmi_Config.rc' )    GMI_instance_of_HEMCO = .TRUE.
-       IF ( TRIM(ConfigFile) == 'HEMCOgeosfp_Config.rc' ) GOCART_instance_of_HEMCO = .TRUE.
+       IF ( TRIM(ConfigFile) == 'HEMCOgocart2g_Config.rc' )  GOCART_instance_of_HEMCO = .TRUE.
 
        ! Verbose
        IF ( MAPL_Am_I_Root() ) WRITE(*,'(a19,i3.3,a2,a)') '--> HEMCO instance ', N, ': ', TRIM(ConfigFile)
@@ -952,7 +949,10 @@ contains
 
 
 !   AERO State for AERO_PROVIDER set to NONE
-!   ----------------------------------------
+!   NOTE: This is an architecture violation. The parent should NEVER override
+!   the child attributes. Whether these properties are provided or not need
+!   need to be determined inside the child component.
+!   --------------------------------------------------------------------------
     if (myState%AERO_PROVIDER < 0) then
         ! Radiation will not call the aerosol optics method 
         ! unless this attribute is explicitly set to true.
