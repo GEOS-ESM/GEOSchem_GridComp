@@ -190,7 +190,7 @@ Diff.
 
 ### Fixed
 
-- Enforcement of `GOCART_DT == HEARTBEAT_DT  (to avoid problems w/ non-aerosol GOCART species)
+- Enforcement of `GOCART_DT == HEARTBEAT_DT`  (to avoid problems w/ non-aerosol GOCART species)
 
 ### Changed
 
