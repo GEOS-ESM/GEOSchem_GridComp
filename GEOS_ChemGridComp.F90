@@ -369,7 +369,7 @@ contains
 
       ! Determine Id of the aerosol provider
       ! ------------------------------------
-      call GetProvider_(CF, Label='AERO_PROVIDER:', ID=AERO_PROVIDER,
+      call GetProvider_(CF, Label='AERO_PROVIDER:', ID=AERO_PROVIDER,  &
                             Name=providerName, Default='GOCART2G', __RC__)
 
 !     Add export specs for aerosols and aerosol deposition
