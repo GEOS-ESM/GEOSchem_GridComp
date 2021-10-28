@@ -350,7 +350,9 @@ contains
                               DIMS       = MAPL_DimsHorzVert,            &
                               VLOCATION  = MAPL_VLocationCenter,         &
                               DATATYPE   = MAPL_StateItem, __RC__ )
-
+#ifdef ENABLE_AERO_ACI
+      ! IMPORTANT: This feature is currently disabled in Physics above,
+      !            waiting for patches in the ESMF.
       call MAPL_AddExportSpec(GC,                                        &
                               SHORT_NAME = 'AERO_ACI',                   &
                               LONG_NAME  = 'aerosol_mass_mixing_ratios', &
@@ -359,6 +361,8 @@ contains
                               VLOCATION  = MAPL_VLocationCenter,         &
                               DATATYPE   = MAPL_StateItem, __RC__ )
 
+#endif
+      
       call MAPL_AddExportSpec(GC,                                &
                               SHORT_NAME = 'AERO_DP',            &
                               LONG_NAME  = 'aerosol_deposition', &
@@ -377,6 +381,11 @@ contains
       call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO',&
                                 CHILD_ID = AERO_PROVIDER, __RC__  )
 
+#ifdef ENABLE_AERO_ACI
+      ! IMPORTANT: This feature is currently disabled in Physics above,
+      !            waiting for patches in the ESMF. Exporting state
+      !            of child with diffefrent name is niot suypported.
+
       ! GOCART-2G uses a single AERO state for both Radiation and Moist,
       ! so we special handle it here. This approach should be adopted
       ! by the other components.
@@ -389,6 +398,7 @@ contains
          call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO_ACI',&
                                    CHILD_ID = AERO_PROVIDER, __RC__  )
       endif
+#endif
       
       call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO_DP', &
                                 CHILD_ID = AERO_PROVIDER, __RC__  )
