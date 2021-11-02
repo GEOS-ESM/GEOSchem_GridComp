@@ -15,8 +15,6 @@
 eps_for_log_transform_aod:  0.01 
                   verbose: .TRUE.
 
-   no_fuss_if_ana_missing: .TRUE. # simply return if analysis file is missing
-
              CoresPerNode:  8     # Will be reset in SetServices with value from main CF
 
 
@@ -24,11 +22,6 @@ eps_for_log_transform_aod:  0.01
 #                        -------------------
 #                         File Name Templates
 #                        -------------------
-
-aod_ana_filename: ${FVWORK}/${EXPID}.aod_a.sfc.%y4%m2%d2_%h200z.nc4
-aod_bkg_filename: ${FVWORK}/${EXPID}.aod_f.sfc.%y4%m2%d2_%h200z.nc4
-aod_avk_filename: ${FVWORK}/${EXPID}.aod_k.sfc.%y4%m2%d2_%h200z.nc4
-
 aodbias_internal_restart:     aodbias_internal_restart.nc
 aodbias_internal_checkpoint:  aodbias_internal_checkpoint.nc
 

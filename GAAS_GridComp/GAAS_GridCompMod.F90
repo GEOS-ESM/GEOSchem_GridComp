@@ -43,6 +43,7 @@
 ! !REVISION HISTORY:
 !
 !  30Nov2010 da Silva  Initial version.
+!  26Mar2021 E.Sherman Revised to use ESMF/MAPL
 !
 !EOP
 !-------------------------------------------------------------------------
@@ -110,7 +111,7 @@ CONTAINS
 ! !REVISION HISTORY:
 !
 !  30Nov2010 da Silva  Initial version.
-!
+!  26Mar20201 E.Sherman Added AERO state to IMPORT
 !EOP
 !-------------------------------------------------------------------------
 
@@ -148,7 +149,6 @@ CONTAINS
     self%CF = ESMF_ConfigCreate(__RC__)
     call ESMF_ConfigLoadFile ( self%CF,'GAAS_GridComp.rc',__RC__)
     call ESMF_ConfigGetAttribute(self%CF, self%verbose, Label='verbose:',  __RC__ )
-    call ESMF_ConfigGetAttribute(self%CF, self%no_fuss, Label='no_fuss_if_ana_missing:',__RC__ )
     call ESMF_ConfigGetAttribute(self%CF, self%eps, Label='eps_for_log_transform_aod:', &
                                           default=0.01, __RC__)
     call ESMF_ConfigGetAttribute(self%CF, self%channel, Label='single_channel:',  &
@@ -178,6 +178,15 @@ CONTAINS
 ! !IMPORT STATE:
 
 # include "GAAS_ImportSpec___.h"
+
+    call MAPL_AddImportSpec(GC,                                   &
+       LONG_NAME  = 'aerosols',                                   &
+       UNITS      = 'kg kg-1',                                    &
+       SHORT_NAME = 'AERO',                                       &
+       DIMS       = MAPL_DimsHorzVert,                            &
+       VLOCATION  = MAPL_VLocationCenter,                         &
+       DATATYPE   = MAPL_StateItem,                               &
+       RESTART    = MAPL_RestartSkip, __RC__)
 
 ! !INTERNAL STATE: (none for now)
 
@@ -229,8 +238,8 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !
-!  30Nov2010 da Silva  Initial version.
-!
+!  30Nov2010 da Silva   Initial version.
+!  12Feb2021 E. Sherman Removed GEOS-4 legacy constructs. Uses ESMF/MAPL constructs.
 !EOP
 !-------------------------------------------------------------------------
 
@@ -238,6 +247,9 @@ CONTAINS
     type(ESMF_Grid)               :: Grid     ! Grid
     type(ESMF_Config)             :: CF       ! Universal Config 
     type(ESMF_Time)               :: Time     ! Current time
+
+    type(ESMF_State)              :: aero ! Aersol state
+    type(ESMF_FieldBundle)        :: aeroSerialBundle ! serialized aerosol bundle
 
     integer                       :: nymd, nhms  ! date, time
 
@@ -248,9 +260,8 @@ CONTAINS
 
     character(len=ESMF_MAXSTR)    :: comp_name
 
-                              __Iam__('Initialize_')
+    __Iam__('Initialize_')
 
-  
 !  Get my name and set-up traceback handle
 !  ---------------------------------------
    call ESMF_GridCompGet( GC, name=COMP_NAME, __RC__ )
@@ -273,12 +284,12 @@ CONTAINS
 
 !  Registries
 !  ----------
-   self%aerReg = Chem_RegistryCreate ( rcfile='GAAS_AerRegistry.rc', __RC__ )
-   self%aodReg = Chem_RegistryCreate ( rcfile='GAAS_AodRegistry.rc', __RC__ )
+   self%aerReg = Chem_RegistryCreate ( rcfile='GAAS_AerRegistry.rc', __RC__ )  ! REMOVE
+   self%aodReg = Chem_RegistryCreate ( rcfile='GAAS_AodRegistry.rc', __RC__ )  ! REMOVE
 
 !  Mie tables, etc
 !  ---------------
-   self%Mie = Chem_MieCreate(self%CF, chemReg=self%aerReg, __RC__)
+   self%Mie = Chem_MieCreate(self%CF, chemReg=self%aerReg, __RC__)   !REMOVE
 
 !  Grid size, etc
 !  --------------
@@ -300,12 +311,10 @@ CONTAINS
 !  Create AOD grid
 !  ---------------
    if ( isCubed ) then
-
        cs_factory = CubedSphereGridFactory(im_world=im_world,lm=cm_world,nx=nx,ny=ny/6,__RC__)
        self%aodGrid = grid_manager%make_grid(cs_factory,__RC__)
 
    else
-        
        ll_factory = LatLonGridFactory(grid_name='aodGrid',nx=nx,ny=ny, & 
                     im_world=im_world,jm_world=jm_world,lm=cm_world, &
                     pole='PC',dateline='DC',__RC__)
@@ -313,22 +322,51 @@ CONTAINS
    end if
    call ESMF_GridValidate(self%aodGrid,__RC__)
 
+!  Prepare aerosol SimpleBundle
+!  -----------------------------
+!  Execute AERO's serialize_bundle method
+   call ESMF_StateGet(IMPORT, 'AERO', aero, __RC__)
+   call ESMF_MethodExecute(aero, label="serialize_bundle", __RC__)
+   call ESMF_StateGet(aero, 'serialized_aerosolBundle', aeroSerialBundle, __RC__)
+
+!  Create SimpleBundle from aeroBundle
+!  Associate SimpleBundle with concentration analysis/background
+   self%q_f = MAPL_SimpleBundleCreate(aeroSerialBundle, name='q_f', __RC__)
+   self%q_a = MAPL_SimpleBundleCreate(aeroSerialBundle, name='q_a', __RC__)
+
 !  Create AOD Simple Bundles
 !  -------------------------
-   self%y_f = Chem_SimpleBundleCreate ('aod_bkg', self%aodReg, self%aodGrid, &
-                                        Levs=1.e9*self%Mie%channels,         &
-                                        LevUnits="nm", delp=null(), __RC__) 
-   self%y_a = Chem_SimpleBundleCreate ('aod_ana', self%aodReg, self%aodGrid, &
-                                        Levs=1.e9*self%Mie%channels,         &
-                                        LevUnits="nm", delp=null(), __RC__) 
-   self%y_d = Chem_SimpleBundleCreate ('aod_inc', self%aodReg, self%aodGrid, &
-                                        Levs=1.e9*self%Mie%channels,         &
-                                        LevUnits="nm", delp=null(), __RC__) 
+   self%y_f = MAPL_SimpleBundleCreate (self%aodGrid, rc=status, name='y_f')
+   self%y_f%n2d = 1
+   allocate(self%y_f%r2(1), __STAT__)
+   self%y_f%r2(1)%name='aod_bkg'
 
-!  Associate Import state with concentration analysis/background
-!  -------------------------------------------------------------
-   self%q_f = MAPL_SimpleBundleCreate(IMPORT,__RC__)
-   self%q_a = MAPL_SimpleBundleCreate(IMPORT,__RC__) ! Check for Friendlies!!!
+   self%y_a = MAPL_SimpleBundleCreate (self%aodGrid, rc=status, name='y_a')
+   self%y_a%n2d = 1
+   allocate(self%y_a%r2(1), __STAT__)
+   self%y_a%r2(1)%name='aod_ana'
+
+   self%y_d = MAPL_SimpleBundleCreate (self%aodGrid, rc=status, name='y_d')
+   self%y_d%n2d = 1
+   allocate(self%y_d%r2(1), __STAT__)
+   self%y_d%r2(1)%name='aod_inc'
+
+!  Create AOD Simple Bundles from off-line analysis
+!  ------------------------------------------------
+   self%z_f = MAPL_SimpleBundleCreate (self%aodGrid, rc=status, name='z_f')
+   self%z_f%n2d = 1
+   allocate(self%z_f%r2(1), __STAT__)
+   self%z_f%r2(1)%name='z_f'
+
+   self%z_a = MAPL_SimpleBundleCreate (self%aodGrid, rc=status, name='z_a')
+   self%z_a%n2d = 1
+   allocate(self%z_a%r2(1), __STAT__)
+   self%z_a%r2(1)%name='z_a'
+
+   self%z_k = MAPL_SimpleBundleCreate (self%aodGrid, rc=status, name='z_k')
+   self%z_k%n2d = 1
+   allocate(self%z_k%r2(1), __STAT__)
+   self%z_k%r2(1)%name='z_k'
 
 !  Create LDE object
 !  -----------------
@@ -387,7 +425,8 @@ CONTAINS
 ! !REVISION HISTORY:
 !
 !  30Nov2010 da Silva  Initial version.
-!
+!  26Mar2021 E.Sherman Revised to use ESMF/MAPL
+
 !EOP
 !-------------------------------------------------------------------------
 
@@ -410,6 +449,15 @@ CONTAINS
 
     !(stassi,14feb2012)--character(len=ESMF_MAXSTR)    :: TEMPLATE, filename, expid
     character(len=256)            :: TEMPLATE, filename, expid
+
+    type(ESMF_State)              :: aero ! Aersol state
+    character(len=ESMF_MAXSTR)    :: fieldName
+    real, pointer, dimension(:,:) :: ptr2d
+    real, pointer, dimension(:,:,:) :: ptr3d
+    real, dimension(:,:), allocatable, target :: aodInt, aod_a_, aod_k_, aod_f_, &
+                                                 y_a_, y_d_
+    real, pointer, dimension(:,:,:)  :: DUsum, SSsum, SUsum, NIsum, CAOCsum, CABCsum, CABRsum
+
 
 #   include "GAAS_DeclarePointer___.h"
 
@@ -467,23 +515,6 @@ CONTAINS
       RETURN_(ESMF_SUCCESS)
    end if
 
-!  If desired, just bail out if analysis file is not there
-!  -------------------------------------------------------
-   if ( self%no_fuss ) then
-        call ESMF_ConfigGetAttribute(self%CF, expid, Label='EXPID:', default='unknown', __RC__)
-        call ESMF_ConfigGetAttribute(self%CF, template, Label='aod_ana_filename:', __RC__)
-        call StrTemplate ( filename, template, xid=expid, nymd=nymd, nhms=nhms )        
-        inquire ( file=trim(filename), exist=fexists )
-        if ( .not. fexists ) then
-           if (MAPL_AM_I_ROOT()) then
-              PRINT *, TRIM(Iam)//': Ignoring Aerosol Assimilation at ', nymd, nhms
-              PRINT *, TRIM(Iam)//': Cannot find AOD analysis file ', trim(filename)
-              PRINT *,' '
-           end if
-           RETURN_(ESMF_SUCCESS)
-        end if
-     end if
-
 !  OK, let's assimilate the AOD analysis
 !  -------------------------------------
    if (MAPL_AM_I_ROOT()) then
@@ -499,70 +530,121 @@ CONTAINS
 !  ---------------------------------------------
 #  include "GAAS_GetPointer___.h"
 
-!  Calculate on-line AOD
-!  ---------------------
-   call Chem_AodCalculator (self%y_f, self%q_f, self%Mie, self%verbose, __RC__)
+!  Retrieve AOD from AERO state and fill SimpleBundle
+!  ------------------------------------------------------
+   call ESMF_StateGet(import, 'AERO', aero, __RC__)
+
+!  Set RH for aerosol optics
+   call ESMF_AttributeGet(aero, name='relative_humidity_for_aerosol_optics', value=fieldName, __RC__)
+   if (fieldName /= '') then
+      call MAPL_GetPointer(aero, ptr3d, trim(fieldName), __RC__)
+      ptr3d = rh2
+   end if
+
+   call ESMF_AttributeGet(aero, name='air_pressure_for_aerosol_optics', value=fieldName, __RC__)
+   if (fieldName /= '') then
+      call MAPL_GetPointer(aero, ptr3d, trim(fieldName), __RC__)
+      ptr3d = ple
+   end if
+
+   ! Set wavelength at 550nm (550 should be a parameter called "monochromatic_wavelength_nm" defined in GAAS)
+   call ESMF_AttributeSet(aero, name='wavelength_for_aerosol_optics', value=self%channel*1.0e-9, __RC__)
+
+   ! execute the aero provider's optics method
+   call ESMF_MethodExecute(aero, label="get_monochromatic_aop", __RC__)
+
+   ! Retrieve vertically summed AOD from AERO
+   allocate(aodInt(ubound(rh2,1), ubound(rh2,2)), __STAT__)
+   aodInt = 0.0
+   call ESMF_AttributeGet(aero, name='monochromatic_extinction_in_air_due_to_ambient_aerosol', value=fieldName, __RC__)
+   if (fieldName /= '') then
+      call MAPL_GetPointer(aero, ptr2d, trim(fieldName), __RC__)
+      aodInt = ptr2d
+   end if
+
+!  Set AOD value in y_f
+!   self%y_f%r2(1)%name='aod'
+   self%y_f%r2(1)%qr4 => aodInt  ! vertically summed AOD
+   self%y_f%r2(1)%q => self%y_f%r2(1)%qr4
 
    if ( self%verbose ) then
        call MAPL_SimpleBundlePrint(self%y_f)
        call MAPL_SimpleBundlePrint(self%q_f)
    end if
 
+
 !  Read off-line AOD analysis, background and averaging kernel
-!  ----------------------------------------------------------- 
-   self%z_f = Chem_SimpleBundleRead (self%CF, 'aod_bkg_filename', self%aodGrid, & 
-                                     time=Time, only_vars='AOD', __RC__ )
-   self%z_a = Chem_SimpleBundleRead (self%CF, 'aod_ana_filename', self%aodGrid, &
-                                     time=Time, only_vars='AOD',  __RC__ )
-   self%z_k = Chem_SimpleBundleRead (self%CF, 'aod_avk_filename', self%aodGrid, &
-                                     time=Time, only_vars='AOD', __RC__ )
+!  -----------------------------------------------------------    
+   self%z_a%r2(1)%qr4 => aod_a    !Move these pointer assignments to Initialize method? -ES
+   self%z_a%r2(1)%q => self%z_a%r2(1)%qr4
+
+   self%z_f%r2(1)%qr4 => aod_f
+   self%z_f%r2(1)%q => self%z_f%r2(1)%qr4
+
+   self%z_k%r2(1)%qr4 => aod_k
+   self%z_k%r2(1)%q => self%z_k%r2(1)%qr4
 
 !  Print summary of input
 !  ----------------------
    if ( self%verbose ) then
-       call MAPL_SimpleBundlePrint(self%z_f)
-       call MAPL_SimpleBundlePrint(self%z_a)
-       call MAPL_SimpleBundlePrint(self%z_k)
+      call MAPL_SimpleBundlePrint(self%z_f)
+      call MAPL_SimpleBundlePrint(self%z_a)
+      call MAPL_SimpleBundlePrint(self%z_k)
    end if
-
-!  Because the off-line analysis may have other fields in the Bundle,
-!  we explicitly look for the AOD index to be safe
-!  -----------------------------------------------------------------
-   izAOD = MAPL_SimpleBundleGetIndex(self%z_f,'AOD',3,__RC__)
-   iyAOD = MAPL_SimpleBundleGetIndex(self%y_f,'AOD',3,__RC__)
-   _ASSERT(iyAOD==1,'needs informative message') ! what we have created must have only AOD
 
 !  Convert AOD to Log(AOD+eps) for A.K. Adjustment
 !  -----------------------------------------------
-   self%z_a%r3(izAOD)%q = Log(self%z_a%r3(izAOD)%q + self%eps)
-   self%z_f%r3(izAOD)%q = Log(self%z_f%r3(izAOD)%q + self%eps)
-   self%y_f%r3(iyAOD)%q = Log(self%y_f%r3(iyAOD)%q + self%eps)
+   self%z_a%r2(1)%q = Log(self%z_a%r2(1)%q + self%eps)
+   self%z_f%r2(1)%q = Log(self%z_f%r2(1)%q + self%eps)
+   self%y_f%r2(1)%q = Log(self%y_f%r2(1)%q + self%eps)
 
 !  Background adjustment using averaging kernel
 !   This must be done in the Log(AOD+eps) variable
 !  -----------------------------------------------
-   self%y_a%r3(iyAOD)%q = self%z_a%r3(izAOD)%q &
-                        + (1.-self%z_k%r3(izAOD)%q) &
-                        * ( self%y_f%r3(iyAOD)%q - self%z_f%r3(izAOD)%q )
+   allocate(y_a_(ubound(rh2,1), ubound(rh2,2)), __STAT__)
+   y_a_ = self%z_a%r2(1)%q &
+        + (1.-self%z_k%r2(1)%q) &
+        * ( self%y_f%r2(1)%q - self%z_f%r2(1)%q )
+
+   self%y_a%r2(1)%qr4 => y_a_
+   self%y_a%r2(1)%q => self%y_a%r2(1)%qr4
 
 !  Convert from Log(AOD+eps) back to AOD
 !  -------------------------------------
-   self%y_a%r3(iyAOD)%q = Exp(self%y_a%r3(iyAOD)%q) - self%eps
-   self%y_f%r3(iyAOD)%q = Exp(self%y_f%r3(iyAOD)%q) - self%eps
-   self%y_d%r3(iyAOD)%q = self%y_a%r3(iyAOD)%q - self%y_f%r3(iyAOD)%q 
+   self%y_a%r2(1)%q = Exp(self%y_a%r2(1)%q) - self%eps
+   self%y_f%r2(1)%q = Exp(self%y_f%r2(1)%q) - self%eps
+
+   allocate(y_d_(ubound(rh2,1), ubound(rh2,2)), __STAT__)
+   y_d_ = self%y_a%r2(1)%q - self%y_f%r2(1)%q
+   self%y_d%r2(1)%qr4 => y_d_
+   self%y_d%r2(1)%q => self%y_d%r2(1)%qr4
+
 
    if ( self%verbose ) then
        call MAPL_SimpleBundlePrint(self%y_d)
+       call MAPL_SimpleBundlePrint(self%y_a)
+       call MAPL_SimpleBundlePrint(self%y_f)
    end if
+
+
+!  Get sum of aerosol mixing ratios
+   call get_aerosolSum (aero, 'dust', DUsum, __RC__)
+   call get_aerosolSum (aero, 'seasalt', SSsum, __RC__)
+   call get_aerosolSum (aero, 'sulfate', SUsum, __RC__)
+   call get_aerosolSum (aero, 'nitrate', NIsum, __RC__)
+   call get_aerosolSum (aero, 'organicCarbon', CAOCsum, __RC__)
+   call get_aerosolSum (aero, 'blackCarbon', CABCsum, __RC__)
+   call get_aerosolSum (aero, 'brownCarbon', CABRsum, __RC__)
 
 !  Handle 3D exports (save bkg for increments)
 !  -------------------------------------------
-   if ( associated(duinc) ) duinc = du001+du002+du003+du004+du005
-   if ( associated(ssinc) ) ssinc = ss001+ss002+ss003+ss004+ss005
-   if ( associated(niinc) ) niinc = no3an1+no3an2+no3an3
-   if ( associated(bcinc) ) bcinc = bcphobic + bcphilic
-   if ( associated(ocinc) ) ocinc = ocphobic + ocphilic
-   if ( associated(suinc) ) suinc = so4
+   if ( associated(duinc) ) duinc = DUsum
+   if ( associated(ssinc) ) ssinc = SSsum
+   if ( associated(niinc) ) niinc = NIsum
+   if ( associated(bcinc) ) bcinc = CABCsum
+   if ( associated(ocinc) ) ocinc = CAOCsum
+   if ( associated(brinc) ) brinc = CABRsum
+   if ( associated(suinc) ) suinc = SUsum
 
 !  Create concetration analysis from AOD increments
 !   Here we pass in the y_f and y_d in terms of AOD,
@@ -570,48 +652,54 @@ CONTAINS
 !  ------------------------------------------------
    call LDE_Projector1c ( self%E, self%q_a, self%q_f, self%y_f, self%y_d, self%verbose, __RC__ )
 
+!  Get updated sum of aerosol mixing ratios
+   call get_aerosolSum (aero, 'dust', DUsum, __RC__)
+   call get_aerosolSum (aero, 'seasalt', SSsum, __RC__)
+   call get_aerosolSum (aero, 'sulfate', SUsum, __RC__)
+   call get_aerosolSum (aero, 'nitrate', NIsum, __RC__)
+   call get_aerosolSum (aero, 'organicCarbon', CAOCsum, __RC__)
+   call get_aerosolSum (aero, 'blackCarbon', CABCsum, __RC__)
+   call get_aerosolSum (aero, 'brownCarbon', CABRsum, __RC__)
+
 !  Handle 2D exports
 !  -----------------
-   i550nm = getChannel_(self%y_a%coords%levs,__RC__)
-   if ( associated(aodana) ) aodana(:,:) = self%y_a%r3(iyAOD)%q(:,:,i550nm)
-   if ( associated(aodinc) ) aodinc(:,:) = self%y_d%r3(iyAOD)%q(:,:,i550nm)
+   if ( associated(aodana) ) aodana(:,:) = self%y_a%r2(1)%q(:,:)
+   if ( associated(aodinc) ) aodinc(:,:) = self%y_d%r2(1)%q(:,:)
 
 !  Handle 3D exports
 !  -----------------
-   if ( associated(duana) ) duana = du001+du002+du003+du004+du005
-   if ( associated(ssana) ) ssana = ss001+ss002+ss003+ss004+ss005
-   if ( associated(niana) ) niana = no3an1+no3an2+no3an3
-   if ( associated(bcana) ) bcana = bcphobic + bcphilic
-   if ( associated(ocana) ) ocana = ocphobic + ocphilic
-   if ( associated(suana) ) suana = so4
+   if ( associated(duana) ) duana = DUsum
+   if ( associated(ssana) ) ssana = SSsum
+   if ( associated(niana) ) niana = NIsum
+   if ( associated(bcana) ) bcana = CABCsum
+   if ( associated(ocana) ) ocana = CAOCsum
+   if ( associated(brana) ) brana = CABRsum
+   if ( associated(suana) ) suana = SUsum
 
-   if ( associated(duinc) ) duinc = du001+du002+du003+du004+du005 - duinc
-   if ( associated(ssinc) ) ssinc = ss001+ss002+ss003+ss004+ss005 - ssinc
-   if ( associated(niinc) ) niinc = no3an1+no3an2+no3an3 - niinc
-   if ( associated(bcinc) ) bcinc = bcphobic + bcphilic - bcinc
-   if ( associated(ocinc) ) ocinc = ocphobic + ocphilic - ocinc
-   if ( associated(suinc) ) suinc = so4 - suinc
+!  Compute increments
+   if ( associated(duinc) ) duinc = DUsum - duinc
+   if ( associated(ssinc) ) ssinc = SSsum - ssinc
+   if ( associated(niinc) ) niinc = NIsum - niinc
+   if ( associated(bcinc) ) bcinc = CABCsum - bcinc
+   if ( associated(ocinc) ) ocinc = CAOCsum - ocinc
+   if ( associated(brinc) ) brinc = CABRsum - brinc
+   if ( associated(suinc) ) suinc = SUsum - suinc
+
 
 #ifdef PRINT_STATES
-
    if (MAPL_AM_I_ROOT()) then
        print *, trim(Iam)//': IMPORT   State during Run():'
        call ESMF_StatePrint ( IMPORT )
        print *, trim(Iam)//': EXPORT   State during Run():' 
        call ESMF_StatePrint ( EXPORT )
     end if
-
 #endif
-
-! Clean-up
-! --------
-    call MAPL_SimpleBundleDestroy(self%z_f, __RC__)
-    call MAPL_SimpleBundleDestroy(self%z_a, __RC__)
-    call MAPL_SimpleBundleDestroy(self%z_k, __RC__)
 
 !  Stop timers
 !  ------------
    call MAPL_TimerOff( MAPL, "TOTAL")
+
+if (mapl_am_i_root()) print*,'GAAS finished!'
 
 !  All done
 !  --------
@@ -619,21 +707,52 @@ CONTAINS
 
 Contains
 
-   function getChannel_(levs,rc) result (i)
-     integer :: i, j, rc
-     real :: levs(:)
-     i = -1
-     do j = 1, size(levs)
-        if ( abs(levs(j)-self%channel) < 0.1 ) i = j
-     end do
-     if ( i<1 ) then
-          rc = 1
-     else       
-          rc = 0
+   subroutine get_aerosolSum (state, aeroName, aeroSum, rc)
+
+     implicit none
+   
+     !ARGUMENTS:
+     type (ESMF_State),               intent(inout)    :: state
+     character (len=*),               intent(in)       :: aeroName
+     real, dimension(:,:,:), pointer, intent(out)      :: aeroSum
+     integer, optional,               intent(out)      :: rc
+
+     !LOCALS:
+     integer                                          :: status
+     character (len=ESMF_MAXSTR)                      :: fld_name
+     character (len=ESMF_MAXSTR)                      :: aeroToken
+
+     !Begin...
+
+     select case (aeroName)
+        case ('dust')
+           aeroToken = 'DU'
+        case ('seasalt')
+           aeroToken = 'SS'
+        case ('sulfate')
+           aeroToken = 'SU'
+        case ('nitrate')
+           aeroToken = 'NI'
+        case ('organicCarbon')
+           aeroToken = 'CA.oc'
+        case ('blackCarbon')
+           aeroToken = 'CA.bc'
+        case ('brownCarbon')
+           aeroToken = 'CA.br'
+     end select
+
+     ! Set aerosol to retrieve sum for
+     call ESMF_AttributeSet(state, name='aerosolName', value=trim(aeroName), __RC__)
+
+     ! execute the aero provider's optics method
+     call ESMF_MethodExecute(state, label="get_mixRatioSum", __RC__)
+
+     call ESMF_AttributeGet(state, name='sum_of_internalState_aerosol_'//trim(aeroToken), value=fieldName, __RC__)
+     if (fieldName /= '') then
+        call MAPL_GetPointer(state, aeroSum, trim(fieldName), __RC__)
      end if
-     return
-        
-   end function getChannel_
+
+   end subroutine get_aerosolSum
 
    END SUBROUTINE Run_
 

@@ -20,6 +20,7 @@ module GEOS_ChemGridCompMod
 
   use  GEOS_ChemEnvGridCompMod,  only :   ChemEnv_SetServices => SetServices
   use       GOCART_GridCompMod,  only :    GOCART_SetServices => SetServices
+  use     GOCART2G_GridCompMod,  only : GOCART2G_SetServices  => SetServices !GOCART REFACTOR
   use    StratChem_GridCompMod,  only : StratChem_SetServices => SetServices
   use      GMIchem_GridCompMod,  only :       GMI_SetServices => SetServices
   use    CARMAchem_GridCompMod,  only :     CARMA_SetServices => SetServices
@@ -52,6 +53,7 @@ module GEOS_ChemGridCompMod
      LOGICAL :: enable_ACHEM
      LOGICAL :: enable_GOCART
      LOGICAL :: enable_GOCARTdata
+     LOGICAL :: enable_GOCART2G        ! GOCART REFACTOR
      LOGICAL :: enable_GAAS
      LOGICAL :: enable_H2O
      LOGICAL :: enable_STRATCHEM
@@ -87,6 +89,7 @@ module GEOS_ChemGridCompMod
   integer ::        PCHEM = -1
   integer ::        ACHEM = -1
   integer ::       GOCART = -1
+  integer ::     GOCART2G = -1
   integer ::   GOCARTdata = -1
   integer ::         GAAS = -1
   integer ::          H2O = -1
@@ -213,6 +216,7 @@ contains
     call ESMF_ConfigGetAttribute(myCF, myState%enable_ACHEM,      Default=.FALSE., Label="ENABLE_ACHEM:",       __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCART,     Default=.FALSE., Label="ENABLE_GOCART:",      __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCARTdata, Default=.FALSE., Label="ENABLE_GOCART_DATA:", __RC__ )
+    call ESMF_ConfigGetAttribute(myCF,   myState%enable_GOCART2G, Default=.FALSE., Label="ENABLE_GOCART2G:",    __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GAAS,       Default=.FALSE., Label="ENABLE_GAAS:",        __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_H2O,        Default=.FALSE., Label="ENABLE_H2O:",         __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_STRATCHEM,  Default=.FALSE., Label="ENABLE_STRATCHEM:",   __RC__ )
@@ -232,7 +236,7 @@ contains
 ! Sanity checks:
 ! --------------
     if (myState%enable_GAAS) then
-       _ASSERT(myState%enable_GOCART,'needs informative message')
+       _ASSERT(myState%enable_GOCART2G,'when GAAS is enabled GOCART-2G must be enabled as well.')
     end if
 
 ! Create children's gridded components and invoke their SetServices
@@ -244,6 +248,7 @@ contains
     if (     myState%enable_ACHEM)       ACHEM = MAPL_AddChild(GC, NAME=       'ACHEM', SS=AChem_SetServices,     __RC__)
     if (    myState%enable_GOCART)      GOCART = MAPL_AddChild(GC, NAME=      'GOCART', SS=GOCART_SetServices,    __RC__)
     if (myState%enable_GOCARTdata)  GOCARTdata = MAPL_AddChild(GC, NAME= 'GOCART.data', SS=GOCART_SetServices,    __RC__)
+    if (  myState%enable_GOCART2G)    GOCART2G = MAPL_AddChild(GC, NAME=    'GOCART2G', SS=GOCART2G_SetServices,  __RC__)
     if (      myState%enable_GAAS)        GAAS = MAPL_AddChild(GC, NAME=        'GAAS', SS=GAAS_SetServices,      __RC__)
     if (       myState%enable_H2O)         H2O = MAPL_AddChild(GC, NAME=         'H2O', SS=H2O_SetServices,       __RC__)
     if ( myState%enable_STRATCHEM)   STRATCHEM = MAPL_AddChild(GC, NAME=   'STRATCHEM', SS=StratChem_SetServices, __RC__)
@@ -327,10 +332,10 @@ contains
                             CHILD_ID = RATsProviderNumber(1), __RC__ )
 
 ! Aerosol for radiation.  If an AERO_PROVIDER is not specified
-! in the AGCM.tmpl, then the provider defaults to GOCART.data.
+! in the AGCM.tmpl, then the provider defaults to GOCART2G.
 ! -----------------------------------------------------------
 
-  call ESMF_ConfigGetAttribute(CF, providerName, Default='GOCART.data', &
+  call ESMF_ConfigGetAttribute(CF, providerName, Default='GOCART2G', &
                                Label="AERO_PROVIDER:", __RC__ )
 
   str = trim(providerName)
@@ -346,15 +351,19 @@ contains
                               DIMS       = MAPL_DimsHorzVert,            &
                               VLOCATION  = MAPL_VLocationCenter,         &
                               DATATYPE   = MAPL_StateItem, __RC__ )
-
+#ifdef ENABLE_AERO_ACI
+      ! IMPORTANT: This feature is currently disabled in Physics above,
+      !            waiting for patches in the ESMF.
       call MAPL_AddExportSpec(GC,                                &
                               SHORT_NAME = 'AERO_ACI',                   &
-                              LONG_NAME  = 'aerosol_cloud_interaction',  &
+                              LONG_NAME  = 'aerosol_mass_mixing_ratios', &
                               UNITS      = 'kg kg-1',                    &
                               DIMS       = MAPL_DimsHorzVert,            &
                               VLOCATION  = MAPL_VLocationCenter,         &
                               DATATYPE   = MAPL_StateItem, __RC__ )
 
+#endif
+      
       call MAPL_AddExportSpec(GC,                                &
                               SHORT_NAME = 'AERO_DP',            &
                               LONG_NAME  = 'aerosol_deposition', &
@@ -362,15 +371,35 @@ contains
                               DIMS       = MAPL_DimsHorzOnly,    &
                               DATATYPE   = MAPL_BundleItem, __RC__) 
   else
-      call GetProvider_(CF, Label='AERO_PROVIDER:', ID=AERO_PROVIDER, Name=providerName, Default='GOCART.data', __RC__)
+
+      ! Determine Id of the aerosol provider
+      ! ------------------------------------
+      call GetProvider_(CF, Label='AERO_PROVIDER:', ID=AERO_PROVIDER,  &
+                            Name=providerName, Default='GOCART2G', __RC__)
 
 !     Add export specs for aerosols and aerosol deposition
 !     ----------------------------------------------------
       call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO',    &
                                 CHILD_ID = AERO_PROVIDER, __RC__  )
 
+#ifdef ENABLE_AERO_ACI
+      ! IMPORTANT: This feature is currently disabled in Physics above,
+      !            waiting for patches in the ESMF. Exporting state
+      !            of child with diffefrent name is niot suypported.
+
+      ! GOCART-2G uses a single AERO state for both Radiation and Moist,
+      ! so we special handle it here. This approach should be adopted
+      ! by the other components.
+      ! ----------------------------------------------------------------
+      if ( AERO_PROVIDER == GOCART2G ) then
+         call MAPL_AddExportSpec ( GC,    TO_NAME = 'AERO_ACI', & 
+                                       SHORT_NAME = 'AERO',     &
+                                   CHILD_ID = AERO_PROVIDER, __RC__  )
+      else
       call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO_ACI',&
                                 CHILD_ID = AERO_PROVIDER, __RC__  )
+      endif
+#endif
 
       call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO_DP', &
                                 CHILD_ID = AERO_PROVIDER, __RC__  )
@@ -409,27 +438,21 @@ contains
           DST_ID = GOCARTdata, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
+  IF(myState%enable_GOCART2G) then
+     CALL MAPL_AddConnectivity ( GC, &
+          SHORT_NAME  = (/'DELP    ', 'AIRDENS ', 'NCN_PRCP' /), &
+          DST_ID = GOCART2G, SRC_ID = CHEMENV, __RC__  )
+  ENDIF
+
   IF(myState%enable_GAAS) then
      CALL MAPL_AddConnectivity ( GC, &
           SHORT_NAME  = (/ 'AIRDENS ', 'DELP    ' /), &
           DST_ID = GAAS, SRC_ID = CHEMENV, __RC__  )
-          IF(myState%enable_GOCART) then
-              CALL MAPL_AddConnectivity ( GC, &
-                   SRC_NAME  = (/ 'GOCART::du001    ', 'GOCART::du002    ', 'GOCART::du003    ', 'GOCART::du004    ', 'GOCART::du005    ', &
-                                  'GOCART::ss001    ', 'GOCART::ss002    ', 'GOCART::ss003    ', 'GOCART::ss004    ', 'GOCART::ss005    ', &
-                                  'GOCART::NO3an1   ', 'GOCART::NO3an2   ', 'GOCART::NO3an3   ', &
-!                                 'GOCART::BRCphobic', 'GOCART::BRCphilic', &
-                                  'GOCART::OCphobic ', 'GOCART::OCphilic ', &
-                                  'GOCART::BCphobic ', 'GOCART::BCphilic ', &
-                                  'GOCART::SO4      ' /), & 
-                   DST_NAME  = (/ 'du001    ', 'du002    ', 'du003    ', 'du004    ', 'du005    ', &
-                                  'ss001    ', 'ss002    ', 'ss003    ', 'ss004    ', 'ss005    ', &
-                                  'NO3an1   ', 'NO3an2   ', 'NO3an3   ', &
-!                                 'BRCphobic', 'BRCphilic', &
-                                  'OCphobic ', 'OCphilic ', &
-                                  'BCphobic ', 'BCphilic ', &
-                                  'SO4      ' /), &
-                   DST_ID = GAAS, SRC_ID = GOCART, __RC__  )
+          IF(myState%enable_GOCART2G) then
+             call MAPL_AddConnectivity ( GC,        &
+                SHORT_NAME  = (/'AERO'/),       &
+                DST_ID      =  GAAS,                &
+                SRC_ID      =  GOCART2G, __RC__ )
           ELSE
               __raise__(MAPL_RC_ERROR,"Cannot have GAAS enabled without GOCART")
           ENDIF
@@ -558,7 +581,7 @@ contains
 
 ! GOCART <=> ACHEM (OCS CHEMISTRY)
 ! ---------------------------------
-  IF(myState%enable_GOCART .AND. myState%enable_ACHEM) then
+  IF(myState%enable_GOCART2G .AND. myState%enable_ACHEM) then
    IF(chemReg%doing_OCS) THEN
     CALL MAPL_AddConnectivity ( GC, &
          SHORT_NAME  = (/'pSO2_OCS'/), &
@@ -566,7 +589,7 @@ contains
    ENDIF
    CALL MAPL_AddConnectivity ( GC, &
         SHORT_NAME  = (/'pSOA_ANTHRO_VOC', 'pSOA_BIOB_VOC  '/), &
-        DST_ID = GOCART, SRC_ID = ACHEM, __RC__  )
+        DST_ID = GOCART2G, SRC_ID = ACHEM, __RC__  )
   ENDIF
 
 ! GOCART <=> StratChem coupling ...
@@ -767,7 +790,7 @@ contains
                                      DEFAULT="HEMCOsa_Config.rc", __RC__)
 
        IF ( TRIM(ConfigFile) ==    'HEMCOgmi_Config.rc' )    GMI_instance_of_HEMCO = .TRUE.
-       IF ( TRIM(ConfigFile) == 'HEMCOgocart_Config.rc' ) GOCART_instance_of_HEMCO = .TRUE.
+       IF ( TRIM(ConfigFile) == 'HEMCOgocart2g_Config.rc' )  GOCART_instance_of_HEMCO = .TRUE.
 
        ! Verbose
        IF ( MAPL_Am_I_Root() ) WRITE(*,'(a19,i3.3,a2,a)') '--> HEMCO instance ', N, ': ', TRIM(ConfigFile)
@@ -780,20 +803,10 @@ contains
 
 ! HEMCO -> GOCART
 ! ---------------
-  IF( myState%enable_HEMCO .AND. myState%enable_GOCART .and. GOCART_instance_of_HEMCO ) THEN
+  IF( myState%enable_HEMCO .AND. myState%enable_GOCART2G ) THEN
    CALL MAPL_AddConnectivity ( GC, &
-    SHORT_NAME  = (/ 'SU_ANTHROL1' , 'SU_ANTHROL2',    &
-                     'SU_SHIPSO2 ' , 'SU_SHIPSO4 ',    &
-                     'OC_ANTEOC1 ' , 'OC_ANTEOC2 ',    &
-                     'OC_BIOFUEL ' , 'OC_SHIP    ',    &
-                     'OC_TERPENE ' ,                   &
-                     'BC_ANTEBC1 ' , 'BC_ANTEBC2 ',    &
-                     'BC_BIOFUEL ' , 'BC_SHIP    ',    &
-                     'EMI_NH3_AG ' , 'EMI_NH3_EN ',    &
-                     'EMI_NH3_IN ' , 'EMI_NH3_RE ',    &
-                     'EMI_NH3_TR ' ,                   &
-                     'CO_FS      ' , 'CO_BF      ' /), &
-    SRC_ID=HEMCO, DST_ID=GOCART, __RC__)
+    SHORT_NAME  = (/ 'OC_ISOPRENE', 'OC_MTPA    ', 'OC_MTPO    ', 'OC_LIMO    '/), &
+    SRC_ID=HEMCO, DST_ID=GOCART2G, __RC__)
   END IF
 
 ! HEMCO -> GMI 
@@ -886,7 +899,6 @@ contains
    type (ESMF_State),          pointer :: GEX(:)
    type (ESMF_FieldBundle)             :: fBUNDLE
    type (ESMF_State)                   :: AERO
-   type (ESMF_State)                   :: AERO_ACI
    type (ESMF_Config)                  :: CF, myCF
 
 !   Private state
@@ -947,7 +959,10 @@ contains
 
 
 !   AERO State for AERO_PROVIDER set to NONE
-!   ----------------------------------------
+!   NOTE: This is an architecture violation. The parent should NEVER override
+!   the child attributes. Whether these properties are provided or not need
+!   need to be determined inside the child component.
+!   --------------------------------------------------------------------------
     if (myState%AERO_PROVIDER < 0) then
         ! Radiation will not call the aerosol optics method 
         ! unless this attribute is explicitly set to true.
@@ -956,8 +971,7 @@ contains
 
         ! Moist will not call the aerosol activation method 
         ! unless this attribute is explicitly set to true.
-        call ESMF_StateGet(EXPORT, 'AERO_ACI', AERO_ACI, __RC__)
-        call ESMF_AttributeSet(AERO_ACI, name='implements_aerosol_activation_properties_method', value=.false., __RC__)
+        call ESMF_AttributeSet(AERO, name='implements_aerosol_activation_properties_method', value=.false., __RC__)
     end if
 
 #ifdef PRINT_STATES
@@ -980,15 +994,6 @@ contains
                                          if (myState%AERO_PROVIDER > 0) then
                                              call ESMF_StateGet   ( GEX(myState%AERO_PROVIDER), 'AERO', AERO, __RC__ )
                                              call ESMF_StatePrint ( AERO, nestedFlag=.false., __RC__ )
-                                         end if
-
-       print *,  trim(Iam)//": AERO_ACI State (EXPORT)"
-                                             call ESMF_StateGet   ( EXPORT, 'AERO_ACI', AERO_ACI, __RC__ ) 
-                                             call ESMF_StatePrint ( AERO_ACI, nestedFlag=.false., __RC__ )
-       print *,  trim(Iam)//": AERO State (PROVIDER)",  myState%AERO_PROVIDER
-                                         if (myState%AERO_PROVIDER > 0) then
-                                             call ESMF_StateGet   ( GEX(myState%AERO_PROVIDER), 'AERO_ACI', AERO_ACI, __RC__ )
-                                             call ESMF_StatePrint ( AERO_ACI, nestedFlag=.false., __RC__ )
                                          end if
 
        print *,  trim(Iam)//": Friendly Tracers (INTERNAL)"
@@ -1335,6 +1340,8 @@ contains
                                     ID = GOCARTdata
            case ('GOCART')
                                     ID = GOCART
+           case ('GOCART2G')
+                                    ID = GOCART2G
            case ('GAAS')
                                     ID = GAAS
            case ('H2O')
