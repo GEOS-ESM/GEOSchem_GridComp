@@ -33,21 +33,12 @@ target_compile_definitions (${this} PRIVATE MAPL_MODE GEOS5)
 set_target_properties (${this} PROPERTIES COMPILE_FLAGS ${PP})
 target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 
-new_esma_generate_automatic_code (
-  ${this} GEOSachem_Registry.rc
-  "GEOS_AChem_ExportSpec___.h;GEOS_AChem_GetPointer___.h"
-  GEOS_AChem_History___.rc
-  ${include_GEOSachem_GridComp} ${esma_etc}
-  "-f"
-  )
+mapl_acg (${this} GEOSachem_StateSpecs.rc
+          IMPORT_SPECS EXPORT_SPECS INTERNAL_SPECS 
+          GET_POINTERS DECLARE_POINTERS)
 
-set (resource_files
-   GEOS_AChemGridComp.rc
-   GEOSachem_ExtData.rc
-   GEOSachem_Registry.rc
-   )
-
-install(
-   FILES ${resource_files}
-   DESTINATION etc
-   )
+file (GLOB_RECURSE rc_files CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.rc)
+foreach ( file ${rc_files} )
+   get_filename_component( dir ${file} DIRECTORY )
+   install( FILES ${file} DESTINATION etc/${dir} )
+endforeach()
