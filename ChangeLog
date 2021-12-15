@@ -1,5 +1,9 @@
 AeroChem ChangeLog
 
+2021-12-14 <arlindo.m.dasilva@nasa.gov>
+	* Added GEOS-IT scenario instance, see GOCART issue #87
+	* Based on tag rt1.6.1 
+	
 2020-02-03 <michael.manyin@nasa.gov> Tag: Icarus-3_2_p9_MEM_20
     * Added CloudJ photolysis option in GMI (Steve Steenrod)
     * In GMI, changed from 5 RH bins (for aerosols) to 7 bins.
