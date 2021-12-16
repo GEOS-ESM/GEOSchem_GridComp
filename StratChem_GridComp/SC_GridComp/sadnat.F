@@ -125,6 +125,7 @@
       REAL(KIND=DBL), PARAMETER :: dhm = -11397.0
       REAL(KIND=DBL), PARAMETER :: ehm = 0.009179
       REAL(KIND=DBL), PARAMETER :: masshno3 = 1.943e-22
+      REAL(KIND=DBL), PARAMETER :: H2OCOND_TINY = 1.0e-20  ! instead of zero
 
 !    Combine gas and condensed phase hno3.  This is done because
 !    this is an equilibrium routine - given the total number of
@@ -172,7 +173,7 @@
          hno3gas = hno3amb
 
        else if(temp.gt.tnuchno3.and.hno3cond.eq.0.0
-     &        .and.h2ocond.eq.0.0) then
+     &        .and.h2ocond.le.H2OCOND_TINY) then
 
 !    dbc 20000326: added h2ocond to above condition.  If h2ocond
 !    doesnt = 0, then ice exists in gridbox and NAT is cocondensing
@@ -207,7 +208,7 @@
 !    is there any condensed phase h2o? If so, don't calculate SAD.
 !    If condensed h2o exists then the code assumes that the NAT
 !    is cocondensed in a type 2 PSC.
-         if(h2ocond.gt.0.0) then
+         if(h2ocond.gt.H2OCOND_TINY) then
            sanat = 0.0
           else
 

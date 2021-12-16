@@ -682,7 +682,7 @@
 
 ! declare real constants
 
-      real*8 ahm,bhm,chm,dhm,ehm,pi,masshno3
+      real*8 ahm,bhm,chm,dhm,ehm,pi,masshno3,H2OCOND_TINY
 
 ! declare real parameters
 
@@ -698,6 +698,7 @@
       parameter(ehm = 0.009179d0)
       parameter(pi = GMI_PI)
       parameter(masshno3=1.943d-22)
+      parameter(H2OCOND_TINY=1.0d-20)
 
 ! Combine gas and condensed phase hno3.  This is done because
 ! this is an equilibrium routine - given the total number of
@@ -750,10 +751,10 @@
          hno3gas=hno3amb
 
       else if(temp3.gt.tnuchno3.and.hno3cond.eq.0.0d0.and.  &
-     &        h2ocond.eq.0.0d0)then
+     &        h2ocond.le.H2OCOND_TINY)then
 
 ! Change:  11/21/01: added h2ocond to above condition.  If h2ocond
-! doesnt = 0, then ice exists in gridbox and NAT is cocondensing
+! > TINY, then ice exists in gridbox and NAT is cocondensing
 ! on the ice aerosols.  No nucleation barrier for this process.
 
          hno3cond=0.d0
@@ -773,7 +774,7 @@
 
 ! is there any condensed phase h2o? If so, don't calculate SAD:
 
-         if(h2ocond.gt.0.d0)then
+         if(h2ocond.gt.H2OCOND_TINY)then
 
             natsad=0.d0
 
@@ -1472,6 +1473,8 @@
       real*8   prod
       real*8   vfallmax
 
+      REAL, PARAMETER :: TINY_VALUE = 1.00E-20
+
 
 !     -----------------------------------------
 !     Loop over longitude and latitude indices.
@@ -1489,7 +1492,7 @@
 
       do 11 ik = k1,k2
 
-         if(hno3cond(il,ij,ik).gt.0.d0)then
+         if(hno3cond(il,ij,ik).gt.TINY_VALUE)then
             go = .true.
             goto 12
          endif
@@ -1508,8 +1511,8 @@
 
       do 13 ik = k1,k2
 
-         if(hno3cond(il,ij,ik).gt.0.d0  &
-     &      .or.h2ocond(il,ij,ik).gt.0.d0)then
+         if(hno3cond(il,ij,ik).gt.TINY_VALUE  &
+     &      .or.h2ocond(il,ij,ik).gt.TINY_VALUE)then
 
             if(ik.gt.maxht)maxht=ik
             if(ik.lt.minht)minht=ik
@@ -1536,7 +1539,7 @@
 ! code assumes all condensed hno3 is contained in h2o particles.
 ! Therefore, sediment hno3 using h2o particle size distribution.
 
-         if(h2ocond(il,ij,ik).gt.0.d0)then
+         if(h2ocond(il,ij,ik).gt.TINY_VALUE)then
 
             fluxcorr=exp(8.d0*log(sigice)*log(sigice))
 
@@ -1679,12 +1682,12 @@
           hno3cond(il,ij,ik) =  &
      &      hno3cond(il,ij,ik) + ((prod - loss) / dens)
 
-          if (hno3cond(il,ij,ik) .lt. 0.0d0) then
-            hno3cond(il,ij,ik) = 0.0d0
+          if (hno3cond(il,ij,ik) .lt. TINY_VALUE) then
+              hno3cond(il,ij,ik) = 0.0d0
           end if
 
-          if ((h2ocond(il,ij,ik)   .gt. 0.0d0) .or.  &
-     &        (h2ocond(il,ij,ik+1) .gt. 0.0d0)) then
+          if ((h2ocond(il,ij,ik)   .gt. TINY_VALUE) .or.  &
+     &        (h2ocond(il,ij,ik+1) .gt. TINY_VALUE)) then
 
 !           -----------------------------------------------------------
 !           Calculate the changes to the dehyd array.  Sedimentation of
@@ -1707,8 +1710,8 @@
             h2ocond(il,ij,ik) =  &
      &        h2ocond(il,ij,ik) + (loss / dens) - prod
 
-            if (h2ocond(il,ij,ik) .lt. 0.0d0) then
-              h2ocond(il,ij,ik) = 0.0d0
+            if (h2ocond(il,ij,ik) .lt. TINY_VALUE) then
+                h2ocond(il,ij,ik) = 0.0d0
             end if
 
           end if
