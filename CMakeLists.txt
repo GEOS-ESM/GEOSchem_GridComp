@@ -32,6 +32,6 @@ esma_add_library (${this}
   INCLUDES ${INC_ESMF})
 
 install(
-   FILES GEOS_ChemGridComp.rc
+   FILES GEOS_ChemGridComp.rc ChemEnv_ExtData.rc  ChemEnv.rc
    DESTINATION etc
    )
