@@ -811,10 +811,10 @@ CONTAINS
 !  ------------------------
    REAL, POINTER, DIMENSION(:,:) :: cn_prcp, tprec, lwi, zpbl
    REAL, POINTER, DIMENSION(:,:) :: T2m, u10m, v10m, ustar, z0h, swndsrf
-   REAL, POINTER, DIMENSION(:,:) :: cldtt, wet1, dfpar, drpar, lfr
+   REAL, POINTER, DIMENSION(:,:) :: cldtt, wet1, dfpar, drpar
 
    REAL, POINTER, DIMENSION(:,:,:) :: airdens, ple, Q, T, zle
-   REAL, POINTER, DIMENSION(:,:,:) :: cnv_mfc,cnv_mfd
+   REAL, POINTER, DIMENSION(:,:,:) :: cnv_mfc
 
 !  Exports not part of internal state
 !  ----------------------------------
@@ -887,7 +887,6 @@ CONTAINS
    REAL(KIND=DBL), ALLOCATABLE :: diffusePAR(:,:)
    REAL(KIND=DBL), ALLOCATABLE :: directPAR(:,:)
    REAL(KIND=DBL), ALLOCATABLE :: T_15_AVG(:,:)
-   REAL(KIND=DBL), ALLOCATABLE :: flashRate(:,:)
 
    REAL(KIND=DBL), ALLOCATABLE :: var2dDBL(:,:)
 
@@ -897,10 +896,11 @@ CONTAINS
    REAL(KIND=DBL), ALLOCATABLE :: gridBoxThickness(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: kel(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: cmf(:,:,:)
-   REAL(KIND=DBL), ALLOCATABLE :: dtrn(:,:,:)
 
    REAL(KIND=DBL), ALLOCATABLE :: surfEmissForChem(:,:,:)
    INTEGER :: curRecord
+
+   REAL*4, POINTER, DIMENSION(:,:,:) :: light_NO_prod => NULL()
 
    REAL, POINTER, DIMENSION(:,:,:) :: DATA_FOR_OVP_3D => NULL()
    REAL, POINTER, DIMENSION(:,:,:) :: OVP10_OUTPUT_3D => NULL()
@@ -989,8 +989,6 @@ CONTAINS
    VERIFY_(STATUS)
    ALLOCATE(           T_15_AVG(i1:i2,j1:j2),STAT=STATUS)
    VERIFY_(STATUS)
-   ALLOCATE(          flashRate(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
 
    ALLOCATE(                pl(i1:i2,j1:j2,1:km),STAT=STATUS)
    VERIFY_(STATUS)
@@ -1007,8 +1005,6 @@ CONTAINS
    ALLOCATE(               kel(i1:i2,j1:j2,1:km),STAT=STATUS)
    VERIFY_(STATUS)
    ALLOCATE(               cmf(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(              dtrn(i1:i2,j1:j2,1:km),STAT=STATUS)
    VERIFY_(STATUS)
 
    IF (self%Emission%do_semiss_inchem) THEN
@@ -1098,7 +1094,6 @@ CONTAINS
 !  2: None
 ! --------------------------------------------------------
     CALL Get_lightning_opt(self%Emission, lightning_opt)
-    IF(lightning_opt == 1) self%Emission%flashrate(:,:) = flashRate(:,:)
 
     IF (self%Emission%do_ShipEmission) THEN
 
@@ -1117,12 +1112,14 @@ CONTAINS
 
     END IF
 
+    CALL MAPL_GetPointer(impChem, light_NO_prod, 'LIGHT_NO_PROD', __RC__)
+
     CALL RunEmission(self%Emission, self%SpeciesConcentration, self%gmiClock,  &
                      self%gmiGrid,                                             &
                      loc_proc, cosSolarZenithAngle, latdeg, self%cellArea,     &
                      mass, lwi_flags, radswg, TwoMeter_air_temp, surf_rough,   &
                      con_precip, tot_precip, frictionVelocity, fracCloudCover, &
-                     kel, pbl, cmf, press3c, press3e, dtrn, pctm2,             &
+                     kel, pbl, cmf, press3c, press3e, pctm2,                   &
                      tenMeterU, tenMeterV, soilWetness, gridBoxThickness,      &
 		     mw_data, IBOC, IBBC, INOC, IFOC, IFBC, ISSLT1, ISSLT2,    &
                      ISSLT3, ISSLT4, IFSO2, INSO2, INDMS, IAN, IMGAS, INO,     &
@@ -1131,7 +1128,7 @@ CONTAINS
                      self%trans_opt, self%do_aerocom, self%do_drydep,          &
                      self%pr_diag, self%pr_const, self%pr_surf_emiss,          &
                      self%pr_emiss_3d, self%metdata_name_org,                  &
-                     self%metdata_name_model, tdt, mixPBL)
+                     self%metdata_name_model, tdt, mixPBL, light_NO_prod)
 
       if (self%Emission%do_semiss_inchem) then
         call updateSurfEmissionInChemistry (self%pr_surf_emiss, self%pr_emiss_3d, &
@@ -1177,7 +1174,7 @@ CONTAINS
 	      tot_precip, pbl, soilWetness, diffusePAR, directPAR, T_15_AVG, STAT=STATUS)
    VERIFY_(STATUS)
 
-   DEALLOCATE(pl, mass, press3c, press3e, gridBoxThickness, kel, cmf, dtrn, &
+   DEALLOCATE(pl, mass, press3c, press3e, gridBoxThickness, kel, cmf, &
               STAT=STATUS)
    VERIFY_(STATUS)
 
@@ -1957,8 +1954,6 @@ CONTAINS
    VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,     drpar,     'DRPAR', RC=STATUS)
    VERIFY_(STATUS)
-   CALL MAPL_GetPointer(impChem,       lfr,       'LFR', RC=STATUS)
-   VERIFY_(STATUS)
   
    CALL MAPL_GetPointer(impChem,   airdens, 'AIRDENS', RC=STATUS)
    VERIFY_(STATUS)
@@ -1971,8 +1966,6 @@ CONTAINS
    CALL MAPL_GetPointer(impChem,       zle,	'ZLE', RC=STATUS)
    VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,   cnv_mfc, 'CNV_MFC', RC=STATUS)
-   VERIFY_(STATUS)
-   CALL MAPL_GetPointer(impChem,   cnv_mfd, 'CNV_MFD', RC=STATUS)
    VERIFY_(STATUS)
 
 !  Export state pointers
@@ -2011,7 +2004,6 @@ CONTAINS
     CALL pmaxmin('PLE (hPa):', ple, qmin, qmax, iXj, km+1, 0.01 )
     CALL pmaxmin('AIRDENS:', airdens, qmin, qmax, iXj, km, 1. )
     CALL pmaxmin('CNV_MFC:', cnv_mfc, qmin, qmax, iXj, km+1, 1. )
-    CALL pmaxmin('CNV_MFD:', cnv_mfd, qmin, qmax, iXj, km, 1. )
 
     CALL pmaxmin('U10M:', u10m, qmin, qmax, iXj, 1, 1. )
     CALL pmaxmin('V10M:', v10m, qmin, qmax, iXj, 1, 1. )
@@ -2022,7 +2014,6 @@ CONTAINS
     CALL pmaxmin('WET1:', wet1, qmin, qmax, iXj, 1, 1. )
     CALL pmaxmin('DFPAR:', dfpar, qmin, qmax, iXj, 1, 1. )
     CALL pmaxmin('DRPAR:', drpar, qmin, qmax, iXj, 1, 1. )
-    CALL pmaxmin('LFR:', lfr, qmin, qmax, iXj, 1, 1. )
 
    END IF Validate
 
@@ -2085,7 +2076,6 @@ CONTAINS
   soilWetness(i1:i2,j1:j2) = wet1(i1:i2,j1:j2)                              ! fraction
   diffusePar(i1:i2,j1:j2) = dfpar(i1:i2,j1:j2)                              ! w m^{-2}
   directPar(i1:i2,j1:j2) = drpar(i1:i2,j1:j2)                               ! w m^{-2}
-  flashRate(i1:i2,j1:j2) = lfr(i1:i2,j1:j2)                                 ! km^{-2}s^{-1}
 
 ! Layer means                                                               GEOS-5 Units       GMI Units
 ! -----------                                                               ------------       -------------
@@ -2093,7 +2083,6 @@ CONTAINS
    kReverse = km-k+1                                                        ! Lid-to-surf      Surf-to-lid
    press3c(i1:i2,j1:j2,kReverse) = pl(i1:i2,j1:j2,k)*Pa2hPa                 ! Pa               hPa
    kel(i1:i2,j1:j2,kReverse) = T(i1:i2,j1:j2,k)                             ! K
-   dtrn(i1:i2,j1:j2,kReverse) = cnv_mfd(i1:i2,j1:j2,k)                      ! kg m^{-2}s^{-1}
   END DO
 
 ! Layer edges                                                               GEOS-5 Units       GMI Units
@@ -2108,10 +2097,10 @@ CONTAINS
    cmf(i1:i2,j1:j2,kReverse) = cnv_mfc(i1:i2,j1:j2,k)                       ! kg m^{-2}s^{-1}
   END DO
 
-! Increment land-water-ice flag to GMI
-! specification: 1=water 2=land 3=ice
+! Keep land-water-ice flag in GEOS original format:
+!   0=water 1=land 2=ice
 ! ------------------------------------
-   lwi_flags(i1:i2,j1:j2)=1+lwi(i1:i2,j1:j2)
+   lwi_flags(i1:i2,j1:j2)=FLOOR(lwi(i1:i2,j1:j2)+0.1)
 
 ! Cell mass and thickness                                                   GEOS-5 Units       GMI Units
 ! -----------------------                                                   ------------       -------------

@@ -20,7 +20,7 @@
 ! !PUBLIC TYPES:
 !
    PRIVATE
-   PUBLIC :: emiss_lightning
+   PUBLIC :: DEL_emiss_lightning
 
 #include "gmi_phys_constants.h"
 
@@ -43,7 +43,17 @@
 
 CONTAINS
 
- SUBROUTINE emiss_lightning(i1, i2, j1, j2, k1, k2, minDeepCloudTop, ampFactor, numberNOperFlash, &
+!!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!
+!!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!
+!!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!
+!!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!
+!!!!!!!!!   Delete this module !!!
+!!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!
+!!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!
+!!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!
+!!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!  !!!!!!!!!
+
+ SUBROUTINE DEL_emiss_lightning(i1, i2, j1, j2, k1, k2, minDeepCloudTop, ampFactor, numberNOperFlash, &
                             lwi, flashrate, cellDepth, dtrn, pNOx3D, kgNOx3D, rc)
 
   IMPLICIT NONE
@@ -65,7 +75,7 @@ CONTAINS
   INTEGER :: k
   INTEGER :: status, rc
   REAL*8, ALLOCATABLE  :: pNOx2D(:,:)                    ! Lightning NO production [molecules NO m^{-2} s^{-1}]
-  CHARACTER(LEN=*), PARAMETER :: Iam = "emiss_lightning"
+  CHARACTER(LEN=*), PARAMETER :: Iam = "DEL_emiss_lightning"
   rc = 0
   status = 0
 
@@ -98,7 +108,7 @@ CONTAINS
      
 ! Partition vertically without changing units
 ! -------------------------------------------
-  CALL partition(i1, i2, j1, j2, k1, k2, minDeepCloudTop, lwi, pNOx2D, dtrn, cellDepth, pNOx3D, rc)
+  CALL DEL_partition(i1, i2, j1, j2, k1, k2, minDeepCloudTop, lwi, pNOx2D, dtrn, cellDepth, pNOx3D, rc)
 
 ! Place output in useful units
 ! ----------------------------
@@ -120,11 +130,11 @@ CONTAINS
   VERIFY_(status)
 
   RETURN
- END SUBROUTINE emiss_lightning
+ END SUBROUTINE DEL_emiss_lightning
 
 !=============================================================================
 
- SUBROUTINE partition(i1, i2, j1, j2, k1, k2, minDeepCloudTop, lwi, pNOx2D, dtrn, cellDepth, pNOx3D, rc)
+ SUBROUTINE DEL_partition(i1, i2, j1, j2, k1, k2, minDeepCloudTop, lwi, pNOx2D, dtrn, cellDepth, pNOx3D, rc)
 
   IMPLICIT NONE
 
@@ -139,7 +149,7 @@ CONTAINS
 
 ! Local variables
 ! ---------------
-  CHARACTER(LEN=*), PARAMETER :: Iam = "partition"
+  CHARACTER(LEN=*), PARAMETER :: Iam = "DEL_partition"
 
   INTEGER :: i,j,k
   INTEGER :: cl                     ! vertical index
@@ -290,7 +300,7 @@ CONTAINS
    VERIFY_(status)
 
   RETURN
- END SUBROUTINE partition
+ END SUBROUTINE DEL_partition
 
 !=============================================================================
 

@@ -4,16 +4,18 @@
 #############################################################
 esma_set_this ()
 
+esma_mepo_style(HEMCO hemco_dir)
+
 set (src_directories
    ${CMAKE_CURRENT_SOURCE_DIR}
-   ${CMAKE_CURRENT_SOURCE_DIR}/@HEMCO/src/Shared/Headers
-   ${CMAKE_CURRENT_SOURCE_DIR}/@HEMCO/src/Shared/NcdfUtil
-   ${CMAKE_CURRENT_SOURCE_DIR}/@HEMCO/src/Shared/GeosUtil
-   ${CMAKE_CURRENT_SOURCE_DIR}/@HEMCO/src/Core
-   ${CMAKE_CURRENT_SOURCE_DIR}/@HEMCO/src/Extensions
-   ${CMAKE_CURRENT_SOURCE_DIR}/@HEMCO/src/Interfaces/Shared
-   ${CMAKE_CURRENT_SOURCE_DIR}/@HEMCO/src/Interfaces/Standalone
-   ${CMAKE_CURRENT_SOURCE_DIR}/@HEMCO/src/Interfaces/MAPL_ESMF
+   ${CMAKE_CURRENT_SOURCE_DIR}/${hemco_dir}/src/Shared/Headers
+   ${CMAKE_CURRENT_SOURCE_DIR}/${hemco_dir}/src/Shared/NcdfUtil
+   ${CMAKE_CURRENT_SOURCE_DIR}/${hemco_dir}/src/Shared/GeosUtil
+   ${CMAKE_CURRENT_SOURCE_DIR}/${hemco_dir}/src/Core
+   ${CMAKE_CURRENT_SOURCE_DIR}/${hemco_dir}/src/Extensions
+   ${CMAKE_CURRENT_SOURCE_DIR}/${hemco_dir}/src/Interfaces/Shared
+   ${CMAKE_CURRENT_SOURCE_DIR}/${hemco_dir}/src/Interfaces/Standalone
+   ${CMAKE_CURRENT_SOURCE_DIR}/${hemco_dir}/src/Interfaces/MAPL_ESMF
    )
 
 set (srcs)
@@ -28,9 +30,9 @@ endforeach()
 # Essentially a clash between using CPP to deactivate a file vs
 # the config system.  The latter is preferable.  TLC
 list (REMOVE_ITEM srcs
-   ${CMAKE_CURRENT_SOURCE_DIR}/@HEMCO/src/Extensions/hcox_tomas_dustdead_mod.F
-   ${CMAKE_CURRENT_SOURCE_DIR}/@HEMCO/src/Extensions/hcox_tomas_seasalt_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/@HEMCO/src/Extensions/hcox_tomas_jeagle_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/${hemco_dir}/src/Extensions/hcox_tomas_dustdead_mod.F
+   ${CMAKE_CURRENT_SOURCE_DIR}/${hemco_dir}/src/Extensions/hcox_tomas_seasalt_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/${hemco_dir}/src/Extensions/hcox_tomas_jeagle_mod.F90
    )
 
 
