@@ -2534,6 +2534,8 @@ CONTAINS
      VERIFY_(STATUS)
     END IF
 
+       PRINT*,'TIME STEPS: heart, gmi: ', runDt, gmiDt
+
 !   Extract nymd, nhms, day of year from clock
 !   ------------------------------------------
     call ESMF_ClockGet(CLOCK,currTIME=TIME,rc=STATUS)
