@@ -5,7 +5,7 @@
 !-------------------------------------------------------------------------
 !BOP
 !
-! !MODULE: GEOS_AChemGridCompMod - 
+! !MODULE: GEOS_AChemGridCompMod -
 !
 ! !INTERFACE:
 !
@@ -19,7 +19,7 @@
    use m_StrTemplate,         only: StrTemplate
 
    use DryDepositionMod,      only: DryDepositionGOCART
-    
+
    use GACL_ConstantsMod,     only: pi, g_earth, N_avog, R_univ, &
                                     mw_air, mw_S, mw_SO2, mw_SO4, mw_H2SO4, &
                                     mw_DMS, mw_MSA, mw_OH, mw_NO3, mw_N, mw_NH3, mw_NH4, mw_SOAg
@@ -37,7 +37,7 @@
                                     H_SO2_298,  E_R_SO2,  &
                                     H_NH3_298,  E_R_NH3,  &
                                     H_H2O2_298, E_R_H2O2, &
-                                    H_O3_298,   E_R_O3     
+                                    H_O3_298,   E_R_O3
 
 
    implicit none
@@ -47,10 +47,10 @@
 
    public SetServices
 !
-! !DESCRIPTION: 
+! !DESCRIPTION:
 !
-!  {\tt GEOS\_AChem} is an ESMF gridded component implementing gas and aqueous phase 
-!  chemistry in GEOS-5. 
+!  {\tt GEOS\_AChem} is an ESMF gridded component implementing gas and aqueous phase
+!  chemistry in GEOS-5.
 !
 !  Developed for GEOS-5 release Fortuna 2.0 and later.
 !
@@ -132,7 +132,7 @@ contains
     type(ESMF_GridComp), intent(INOUT) :: GC  ! gridded component
     integer, optional                  :: RC  ! return code
 
-! !DESCRIPTION: Sets Initialize, Run and Finalize services. 
+! !DESCRIPTION: Sets Initialize, Run and Finalize services.
 !
 ! !REVISION HISTORY:
 !
@@ -165,7 +165,7 @@ contains
 !   -------------------------------------
     allocate(self, __STAT__)
     wrap%ptr => self
- 
+
 !   Load private Config Attributes
 !   ------------------------------
     self%CF = ESMF_ConfigCreate(__RC__)
@@ -175,7 +175,7 @@ contains
 
     ! gas phase options
     call ESMF_ConfigGetAttribute(self%CF, self%gas_phase_chem, label='gas_chemistry:', default=.true., __RC__)
-    
+
     ! aqueous phase options
     call ESMF_ConfigGetAttribute(self%CF, self%aqu_phase_chem, label='aqueous_chemistry:', default=.true., __RC__)
     call ESMF_ConfigGetAttribute(self%CF, self%aqu_solver_max_dt, label='aqueous_chemistry_solver_max_dt:', default=60.0, __RC__)
@@ -183,13 +183,13 @@ contains
     ! combo(gas- and aqueous-phase) options
     call ESMF_ConfigGetAttribute(self%CF, self%combo_chem, label='combo_chemistry:', default=.true., __RC__)
     call ESMF_ConfigGetAttribute(self%CF, self%combo_solver_max_dt, label='combo_chemistry_max_dt:', default=10.0, __RC__)
-#endif 
+#endif
     ! other options
     call ESMF_ConfigGetAttribute(self%CF, self%apply_diurnal_cycle, label='apply_diurnal_cycle:', default=.true., __RC__)
 
     ! volcanic emissions
     call ESMF_ConfigGetAttribute(self%CF, self%volcanic_emiss_file, Label='volcanoes:', default='/dev/null', __RC__)
-    
+
     ! heights of aviation layers
     self%aviation_layers = 0.0
     call ESMF_ConfigFindLabel(self%CF, Label='aviation_vertical_layers:', __RC__)
@@ -221,7 +221,7 @@ contains
         self%mam_chem = .true.
     else
         self%mam_chem = .false.
-    end if    
+    end if
 
     if (MAPL_AM_I_ROOT()) then
         print *, trim(Iam)//': Configuration'
@@ -242,12 +242,12 @@ contains
     call MAPL_GridCompSetEntryPoint(GC, ESMF_METHOD_INITIALIZE, Initialize_, __RC__)
     call MAPL_GridCompSetEntryPoint(GC, ESMF_METHOD_RUN,        Run_,        __RC__)
     call MAPL_GridCompSetEntryPoint(GC, ESMF_METHOD_FINALIZE,   Finalize_,   __RC__)
-        
+
 !   Store internal state in GC
 !   --------------------------
     call ESMF_UserCompSetInternalState(GC, 'AChem_State', wrap, STATUS)
     VERIFY_(STATUS)
-  
+
 !                         ------------------
 !                         MAPL Data Services
 !                         ------------------
@@ -263,7 +263,7 @@ contains
                             DIMS       = MAPL_DimsHorzVert,    &
                             VLOCATION  = MAPL_VLocationCenter,    &
                             __RC__)
-    
+
     call MAPL_AddImportSpec(GC, &
                             SHORT_NAME = 'DELP',  &
                             LONG_NAME  = 'Pressure Thickness',  &
@@ -279,7 +279,7 @@ contains
                             DIMS       = MAPL_DimsHorzVert,    &
                             VLOCATION  = MAPL_VLocationEdge,    &
                             __RC__)
-                    
+
 
     call MAPL_AddImportSpec(GC, &
                             SHORT_NAME = 'T',  &
@@ -308,7 +308,7 @@ contains
                             DIMS       = MAPL_DimsHorzVert,    &
                             VLOCATION  = MAPL_VLocationEdge,    &
                             __RC__)
-                    
+
     call MAPL_AddImportSpec(GC, &
                             SHORT_NAME = 'QLTOT',  &
                             LONG_NAME  = 'Mass fraction of cloud liquid water',  &
@@ -316,7 +316,7 @@ contains
                             DIMS       = MAPL_DimsHorzVert,    &
                             VLOCATION  = MAPL_VLocationCenter,    &
                             __RC__)
-    
+
     call MAPL_AddImportSpec(GC, &
                             SHORT_NAME = 'FCLD',  &
                             LONG_NAME  = 'Cloud fraction for radiation',  &
@@ -364,7 +364,7 @@ contains
                             DIMS       = MAPL_DimsHorzOnly,    &
                             VLOCATION  = MAPL_VLocationNone,    &
                             __RC__)
-                    
+
     call MAPL_AddImportSpec(GC, &
                             SHORT_NAME = 'SH',  &
                             LONG_NAME  = 'Sensible heat flux',  &
@@ -388,7 +388,7 @@ contains
                             DIMS       = MAPL_DimsHorzOnly,    &
                             VLOCATION  = MAPL_VLocationNone,    &
                             __RC__)
-                                                   
+
     call MAPL_AddImportSpec(GC, &
                             SHORT_NAME = 'TS',  &
                             LONG_NAME  = 'Surface skin temperature',  &
@@ -412,7 +412,7 @@ contains
                             DIMS       = MAPL_DimsHorzVert,    &
                             VLOCATION  = MAPL_VLocationCenter,    &
                             __RC__)
-     
+
     call MAPL_AddImportSpec(GC, &
                             SHORT_NAME = 'NO3',  &
                             LONG_NAME  = 'Nitrogen trixide (NO3)',  &
@@ -428,7 +428,7 @@ contains
                             DIMS       = MAPL_DimsHorzVert,    &
                             VLOCATION  = MAPL_VLocationCenter,    &
                             __RC__)
-     
+
     call MAPL_AddImportSpec(GC, &
                             SHORT_NAME = 'DMS_CONC_OCEAN',  &
                             LONG_NAME  = 'Surface seawater concentration of DMS',  &
@@ -516,7 +516,7 @@ contains
                             DIMS       = MAPL_DimsHorzOnly,    &
                             VLOCATION  = MAPL_VLocationNone,    &
                             __RC__)
-     
+
     end if OPTIONAL_CHEM_IMPORT
 
 
@@ -548,7 +548,7 @@ contains
                                 DIMS       = MAPL_DimsHorzOnly,    &
                                 VLOCATION  = MAPL_VLocationNone,    &
                                 __RC__)
-    
+
          call MAPL_AddImportSpec(GC, &
                                 SHORT_NAME = 'CO_FS_VOC',  &
                                 LONG_NAME  = 'CO Fossil Fuel Emissions',  &
@@ -576,7 +576,7 @@ contains
                                 DIMS       = MAPL_DimsHorzVert,    &
                                 VLOCATION  = MAPL_VLocationCenter, &
                                 __RC__)
-        
+
         call MAPL_AddImportSpec(GC,                                &
                                 SHORT_NAME = 'O3P',                &
                                 LONG_NAME  = 'O triplet P',        &
@@ -609,7 +609,7 @@ contains
                                   FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST',            &
                                   ADD2EXPORT = .true.,                                 &
                                   __RC__)
-    
+
         call MAPL_AddInternalSpec(GC,                                                  &
                                   SHORT_NAME = trim(comp_name)//'::'//'MSA',           &
                                   LONG_NAME  = 'Methanesulfonic acid (MSA)',           &
@@ -619,7 +619,7 @@ contains
                                   FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST',            &
                                   ADD2EXPORT = .true.,                                 &
                                   __RC__)
-    
+
         call MAPL_AddInternalSpec(GC,                                                  &
                                   SHORT_NAME = trim(comp_name)//'::'//'SO2',           &
                                   LONG_NAME  = 'Sulfur dioxide (SO2)',                 &
@@ -629,7 +629,7 @@ contains
                                   FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST:MAM',        &
                                   ADD2EXPORT = .true.,                                 &
                                   __RC__)
-    
+
         call MAPL_AddInternalSpec(GC,                                                  &
                                   SHORT_NAME = trim(comp_name)//'::'//'H2SO4',         &
                                   LONG_NAME  = 'Sulfuric acid (H2SO4 gas)',            &
@@ -639,7 +639,7 @@ contains
                                   FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST:MAM',        &
                                   ADD2EXPORT = .true.,                                 &
                                   __RC__)
-    
+
         call MAPL_AddInternalSpec(GC,                                                  &
                                   SHORT_NAME = trim(comp_name)//'::'//'NH3',           &
                                   LONG_NAME  = 'Ammonia (NH3)',                        &
@@ -649,7 +649,7 @@ contains
                                   FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST:MAM',        &
                                   ADD2EXPORT = .true.,                                 &
                                   __RC__)
-    
+
         call MAPL_AddInternalSpec(GC,                                                  &
                                   SHORT_NAME = trim(comp_name)//'::'//'SOAG',          &
                                   LONG_NAME  = 'Secondary Organic Aerosols (SOA gas)', &
@@ -659,7 +659,7 @@ contains
                                   FRIENDLYTO = 'DYNAMICS:TURBULENCE:MOIST:MAM',        &
                                   ADD2EXPORT = .true.,                                 &
                                   __RC__)
-    end if OPTIONAL_CHEM_INTERNAL 
+    end if OPTIONAL_CHEM_INTERNAL
 
 
     OPTIONAL_OCS_INTERNAL: if (self%ocs_chem) then
@@ -718,7 +718,7 @@ contains
         VLOCATION          = MAPL_VLocationCenter,    &
                                                        RC=STATUS  )
      VERIFY_(STATUS)
-     end if         
+     end if
 
 
      call MAPL_AddExportSpec(GC,  &
@@ -910,7 +910,7 @@ contains
    type(ESMF_State), intent(inout)    :: EXPORT  ! Export State
    integer, intent(out)               :: rc      ! Error return code:
                                                  !  0 - all is well
-                                                 !  1 - 
+                                                 !  1 -
 
 ! !DESCRIPTION: This is a simple ESMF wrapper.
 !
@@ -925,7 +925,7 @@ contains
 
     type(AChem_State), pointer      :: self        ! Legacy state
     type(ESMF_Grid)                 :: GRID        ! Grid
-    type(ESMF_Config)               :: CF          ! Universal Config 
+    type(ESMF_Config)               :: CF          ! Universal Config
 
     integer                         :: i1, i2, im  ! 3D Dimensions
     integer                         :: j1, j2, jm  !
@@ -938,14 +938,14 @@ contains
 
     real, pointer, dimension(:,:,:) :: q_H2O2      ! H2O2
     logical, parameter :: using_GMI_H2O2 = .false. ! coupling with GMI is not implemented
-    
 
-!  Declare pointers to IMPORT/EXPORT/INTERNAL states 
+
+!  Declare pointers to IMPORT/EXPORT/INTERNAL states
 !  -------------------------------------------------
 #if(0)
 #include "GEOS_AChem_DeclarePointer___.h"
 #endif
-  
+
 !  Get my name and set-up traceback handle
 !  ---------------------------------------
    call ESMF_GridCompGet(GC, name=comp_name, __RC__)
@@ -957,7 +957,7 @@ contains
       print *, ''
    end if
 
-   
+
 !  Get my internal MAPL_Generic state
 !  -----------------------------------
    call MAPL_GetObjectFromGC(GC, mgState, __RC__)
@@ -970,7 +970,7 @@ contains
 !  -----------------------
    call MAPL_GenericInitialize(GC, IMPORT, EXPORT, clock, __RC__)
 
-!  Get pointers to IMPORT/EXPORT/INTERNAL states 
+!  Get pointers to IMPORT/EXPORT/INTERNAL states
 !  ---------------------------------------------
 #if(0)
 #include "GEOS_AChem_GetPointer___.h"
@@ -1049,7 +1049,7 @@ contains
    type(ESMF_State), intent(inout)    :: EXPORT ! Export State
    integer, intent(out)               :: rc     ! Error return code:
                                                 !  0 - all is well
-                                                !  1 - 
+                                                !  1 -
 
 ! !DESCRIPTION: This is a simple ESMF wrapper.
 !
@@ -1061,10 +1061,10 @@ contains
 !-------------------------------------------------------------------------
 
                               __Iam__('Run_')
-   
+
    type(AChem_State), pointer     :: self        ! Legacy state
    type(ESMF_Grid)                :: GRID        ! Grid
-   type(ESMF_Config)              :: CF          ! Universal Config 
+   type(ESMF_Config)              :: CF          ! Universal Config
 
    type(MAPL_MetaComp), pointer   :: mgState     ! MAPL generic state
    type(ESMF_Alarm)               :: run_alarm
@@ -1086,74 +1086,74 @@ contains
 
 !  Input fields
 !  ------------
-   real, pointer, dimension(:,:)   :: cell_area
+   real, pointer, dimension(:,:)   :: cell_area => null()
 
-   real, pointer, dimension(:,:,:) :: density_air
-   real, pointer, dimension(:,:,:) :: temperature
-   real, pointer, dimension(:,:,:) :: lwc
-   real, pointer, dimension(:,:,:) :: fcld
-   real, pointer, dimension(:,:,:) :: ple
-   real, pointer, dimension(:,:,:) :: delp
-   real, pointer, dimension(:,:,:) :: zle
-   real, pointer, dimension(:,:)   :: tropp
+   real, pointer, dimension(:,:,:) :: density_air => null()
+   real, pointer, dimension(:,:,:) :: temperature => null()
+   real, pointer, dimension(:,:,:) :: lwc => null()
+   real, pointer, dimension(:,:,:) :: fcld => null()
+   real, pointer, dimension(:,:,:) :: ple => null()
+   real, pointer, dimension(:,:,:) :: delp => null()
+   real, pointer, dimension(:,:,:) :: zle => null()
+   real, pointer, dimension(:,:)   :: tropp => null()
 
-   real, pointer, dimension(:,:)   :: u10n
-   real, pointer, dimension(:,:)   :: v10n
+   real, pointer, dimension(:,:)   :: u10n => null()
+   real, pointer, dimension(:,:)   :: v10n => null()
 
-   real, pointer, dimension(:,:)   :: tskin
+   real, pointer, dimension(:,:)   :: tskin => null()
 
-   real, pointer, dimension(:,:)   :: fr_ocean
+   real, pointer, dimension(:,:)   :: fr_ocean => null()
 
-   real, pointer, dimension(:,:)   :: oro
-   real, pointer, dimension(:,:)   :: ustar
-   real, pointer, dimension(:,:)   :: shflux
-   real, pointer, dimension(:,:)   :: pblh
-   real, pointer, dimension(:,:)   :: z0h
+   real, pointer, dimension(:,:)   :: oro => null()
+   real, pointer, dimension(:,:)   :: ustar => null()
+   real, pointer, dimension(:,:)   :: shflux => null()
+   real, pointer, dimension(:,:)   :: pblh => null()
+   real, pointer, dimension(:,:)   :: z0h => null()
 
-   real, pointer, dimension(:,:,:) :: q_OH
-   real, pointer, dimension(:,:,:) :: q_NO3
-   real, pointer, dimension(:,:,:) :: q_H2O2
-   real, pointer, dimension(:,:,:) :: q_O3
+   real, pointer, dimension(:,:,:) :: q_OH => null()
+   real, pointer, dimension(:,:,:) :: q_NO3 => null()
+   real, pointer, dimension(:,:,:) :: q_H2O2 => null()
+   real, pointer, dimension(:,:,:) :: q_O3 => null()
 
-   real, pointer, dimension(:,:,:) :: q_OH_STRATCHEM
-   real, pointer, dimension(:,:,:) :: q_O3P_STRATCHEM
-   real, pointer, dimension(:,:,:) :: j_ocs
+   real, pointer, dimension(:,:,:) :: q_OH_STRATCHEM => null()
+   real, pointer, dimension(:,:,:) :: q_O3P_STRATCHEM => null()
+   real, pointer, dimension(:,:,:) :: j_ocs => null()
 
-   real, pointer, dimension(:,:)   :: DMS_ocean
+   real, pointer, dimension(:,:)   :: DMS_ocean => null()
 
-   real, pointer, dimension(:,:)   :: SO2_emiss_bb
-   real, pointer, dimension(:,:)   :: SO2_emiss_nonenergy
-   real, pointer, dimension(:,:)   :: SO2_emiss_energy
-   real, pointer, dimension(:,:)   :: SO2_emiss_shipping
-   real, pointer, dimension(:,:)   :: SO2_emiss_aviation_lto
-   real, pointer, dimension(:,:)   :: SO2_emiss_aviation_cds
-   real, pointer, dimension(:,:)   :: SO2_emiss_aviation_crs
+   real, pointer, dimension(:,:)   :: SO2_emiss_bb => null()
+   real, pointer, dimension(:,:)   :: SO2_emiss_nonenergy => null()
+   real, pointer, dimension(:,:)   :: SO2_emiss_energy => null()
+   real, pointer, dimension(:,:)   :: SO2_emiss_shipping => null()
+   real, pointer, dimension(:,:)   :: SO2_emiss_aviation_lto => null()
+   real, pointer, dimension(:,:)   :: SO2_emiss_aviation_cds => null()
+   real, pointer, dimension(:,:)   :: SO2_emiss_aviation_crs => null()
 
-   real, pointer, dimension(:,:)   :: NH3_emiss
-   real, pointer, dimension(:,:)   :: NH3_emiss_bb
+   real, pointer, dimension(:,:)   :: NH3_emiss => null()
+   real, pointer, dimension(:,:)   :: NH3_emiss_bb => null()
 
-   real, pointer, dimension(:,:)   :: SOAG_emiss
+   real, pointer, dimension(:,:)   :: SOAG_emiss => null()
 
-   real,pointer,dimension(:,:)     :: co_biomass_voc
-   real,pointer,dimension(:,:)     :: co_bf_voc
-   real,pointer,dimension(:,:)     :: co_fs_voc
+   real,pointer,dimension(:,:)     :: co_biomass_voc => null()
+   real,pointer,dimension(:,:)     :: co_bf_voc => null()
+   real,pointer,dimension(:,:)     :: co_fs_voc => null()
 
 !  Export fields
 !  -------------
    type(ESMF_State)                :: internal
 
-   real, pointer, dimension(:,:,:) :: ptr3d
-   real, pointer, dimension(:,:)   :: ptr2d
+   real, pointer, dimension(:,:,:) :: ptr3d => null()
+   real, pointer, dimension(:,:)   :: ptr2d => null()
 
-   real, pointer, dimension(:,:,:) :: q_DMS
-   real, pointer, dimension(:,:,:) :: q_MSA
-   real, pointer, dimension(:,:,:) :: q_SO2
-   real, pointer, dimension(:,:,:) :: q_H2SO4
-   real, pointer, dimension(:,:,:) :: q_NH3
-   real, pointer, dimension(:,:,:) :: q_SOAG
-   real, pointer, dimension(:,:,:) :: q_OCS
-   real, pointer, dimension(:,:,:) :: q_VOCanth
-   real, pointer, dimension(:,:,:) :: q_VOCbiob
+   real, pointer, dimension(:,:,:) :: q_DMS => null()
+   real, pointer, dimension(:,:,:) :: q_MSA => null()
+   real, pointer, dimension(:,:,:) :: q_SO2 => null()
+   real, pointer, dimension(:,:,:) :: q_H2SO4 => null()
+   real, pointer, dimension(:,:,:) :: q_NH3 => null()
+   real, pointer, dimension(:,:,:) :: q_SOAG => null()
+   real, pointer, dimension(:,:,:) :: q_OCS => null()
+   real, pointer, dimension(:,:,:) :: q_VOCanth => null()
+   real, pointer, dimension(:,:,:) :: q_VOCbiob => null()
 
    real, allocatable, dimension(:,:,:) :: q_OAanth
    real, allocatable, dimension(:,:,:) :: q_OAanthmmrd
@@ -1169,40 +1169,40 @@ contains
    real, allocatable, dimension(:,:,:) :: lOCS_O3p               ! loss rate of OCS from OCS+O3p, 'molec cm-3 s-1'
    real, allocatable, dimension(:,:,:) :: lOCS_jOCS              ! loss rate of OCS from photolysis, 'molec cm-3 s-1'
 
-   real, pointer, dimension(:,:)   :: dry_dep_DMS            ! dry deposition fluxes
-   real, pointer, dimension(:,:)   :: dry_dep_MSA
-   real, pointer, dimension(:,:)   :: dry_dep_SO2
-   real, pointer, dimension(:,:)   :: dry_dep_H2SO4
-   real, pointer, dimension(:,:)   :: dry_dep_NH3
-   real, pointer, dimension(:,:)   :: dry_dep_SOAG
+   real, pointer, dimension(:,:)   :: dry_dep_DMS => null()  ! dry deposition fluxes
+   real, pointer, dimension(:,:)   :: dry_dep_MSA => null()
+   real, pointer, dimension(:,:)   :: dry_dep_SO2 => null()
+   real, pointer, dimension(:,:)   :: dry_dep_H2SO4 => null()
+   real, pointer, dimension(:,:)   :: dry_dep_NH3 => null()
+   real, pointer, dimension(:,:)   :: dry_dep_SOAG => null()
 
-   real, pointer, dimension(:,:,:) :: ddt_DMS_gas            ! tendencies due to gas phase chemistry
-   real, pointer, dimension(:,:,:) :: ddt_MSA_gas
-   real, pointer, dimension(:,:,:) :: ddt_SO2_gas
-   real, pointer, dimension(:,:,:) :: ddt_H2SO4_gas
-   real, pointer, dimension(:,:,:) :: ddt_NH3_gas
-   real, pointer, dimension(:,:,:) :: ddt_SOAG_gas
+   real, pointer, dimension(:,:,:) :: ddt_DMS_gas => null()  ! tendencies due to gas phase chemistry
+   real, pointer, dimension(:,:,:) :: ddt_MSA_gas => null()
+   real, pointer, dimension(:,:,:) :: ddt_SO2_gas => null()
+   real, pointer, dimension(:,:,:) :: ddt_H2SO4_gas => null()
+   real, pointer, dimension(:,:,:) :: ddt_NH3_gas => null()
+   real, pointer, dimension(:,:,:) :: ddt_SOAG_gas => null()
 
-   real, pointer, dimension(:,:,:) :: ddt_DMS_aq             ! tendencies due to aqueous phase chemistry
-   real, pointer, dimension(:,:,:) :: ddt_MSA_aq
-   real, pointer, dimension(:,:,:) :: ddt_SO2_aq
-   real, pointer, dimension(:,:,:) :: ddt_H2SO4_aq
-   real, pointer, dimension(:,:,:) :: ddt_NH3_aq
-   real, pointer, dimension(:,:,:) :: ddt_SOAG_aq
+   real, pointer, dimension(:,:,:) :: ddt_DMS_aq => null()   ! tendencies due to aqueous phase chemistry
+   real, pointer, dimension(:,:,:) :: ddt_MSA_aq => null()
+   real, pointer, dimension(:,:,:) :: ddt_SO2_aq => null()
+   real, pointer, dimension(:,:,:) :: ddt_H2SO4_aq => null()
+   real, pointer, dimension(:,:,:) :: ddt_NH3_aq => null()
+   real, pointer, dimension(:,:,:) :: ddt_SOAG_aq => null()
 
-   real, pointer, dimension(:,:,:) :: DMS_g_                 ! tendencies due to gas phase chemistry
-   real, pointer, dimension(:,:,:) :: MSA_g_
-   real, pointer, dimension(:,:,:) :: SO2_g_
-   real, pointer, dimension(:,:,:) :: H2SO4_g_
-   real, pointer, dimension(:,:,:) :: NH3_g_
-   real, pointer, dimension(:,:,:) :: SOAG_g_
+   real, pointer, dimension(:,:,:) :: DMS_g_ => null()       ! tendencies due to gas phase chemistry
+   real, pointer, dimension(:,:,:) :: MSA_g_ => null()
+   real, pointer, dimension(:,:,:) :: SO2_g_ => null()
+   real, pointer, dimension(:,:,:) :: H2SO4_g_ => null()
+   real, pointer, dimension(:,:,:) :: NH3_g_ => null()
+   real, pointer, dimension(:,:,:) :: SOAG_g_ => null()
 
-   real, pointer, dimension(:,:,:) :: DMS_a_                 ! tendencies due to aqueous phase chemistry
-   real, pointer, dimension(:,:,:) :: MSA_a_
-   real, pointer, dimension(:,:,:) :: SO2_a_
-   real, pointer, dimension(:,:,:) :: H2SO4_a_
-   real, pointer, dimension(:,:,:) :: NH3_a_
-   real, pointer, dimension(:,:,:) :: SOAG_a_
+   real, pointer, dimension(:,:,:) :: DMS_a_ => null()       ! tendencies due to aqueous phase chemistry
+   real, pointer, dimension(:,:,:) :: MSA_a_ => null()
+   real, pointer, dimension(:,:,:) :: SO2_a_ => null()
+   real, pointer, dimension(:,:,:) :: H2SO4_a_ => null()
+   real, pointer, dimension(:,:,:) :: NH3_a_ => null()
+   real, pointer, dimension(:,:,:) :: SOAG_a_ => null()
 
 
 
@@ -1210,7 +1210,7 @@ contains
 !  ------------------------
    real, allocatable, dimension(:,:) :: dry_dep_frequency
    real, allocatable, dimension(:,:) :: dq
-    
+
 
 !  DMS flux
 !  ---------
@@ -1229,7 +1229,7 @@ contains
 
 
 
-!  Work buffers of oxidant fields 
+!  Work buffers of oxidant fields
 !  ------------------------------
    real, allocatable, dimension(:,:,:) :: q_OH_
    real, allocatable, dimension(:,:,:) :: q_NO3_
@@ -1248,7 +1248,7 @@ contains
    logical, parameter :: using_GMI_OH   = .false.
    logical, parameter :: using_GMI_NO3  = .false.
 
-   integer :: n, n_steps 
+   integer :: n, n_steps
 
    real, allocatable, dimension(:,:) :: SO2_emiss_volc_expl, SO2_emiss_volc_nonexpl
 
@@ -1257,7 +1257,7 @@ contains
 
    real, allocatable, dimension(:,:) :: sza
    real, allocatable, dimension(:,:) :: cos_sza
-   real, allocatable, dimension(:,:) :: sum_cos_sza 
+   real, allocatable, dimension(:,:) :: sum_cos_sza
 
    real, allocatable, dimension(:,:) :: cmd_S                    ! column mass density (i.e., column integrated mass loading) of S from gas species
    real, allocatable, dimension(:,:) :: cmd_DMS
@@ -1265,7 +1265,7 @@ contains
    real, allocatable, dimension(:,:) :: cmd_SO2
    real, allocatable, dimension(:,:) :: cmd_H2SO4
 
-   
+
    real, allocatable, dimension(:,:) :: cmd_NH3
    real, allocatable, dimension(:,:) :: cmd_N
 
@@ -1284,23 +1284,23 @@ contains
    real, allocatable, dimension(:,:) :: cpl_H2SO4
 
 
-!  Declare pointers to IMPORT/EXPORT/INTERNAL states 
+!  Declare pointers to IMPORT/EXPORT/INTERNAL states
 !  -------------------------------------------------
 #if(0)
 #include "GEOS_AChem_DeclarePointer___.h"
-#endif  
+#endif
 
 !  Get my name and set-up traceback handle
 !  ---------------------------------------
    call ESMF_GridCompGet(GC, name=comp_name, __RC__)
    Iam = trim(comp_name) // '::' // trim(Iam)
 
-!  Get pointers to IMPORT/EXPORT/INTERNAL states 
+!  Get pointers to IMPORT/EXPORT/INTERNAL states
 !  ---------------------------------------------
 #if(0)
    #include "GEOS_AChem_GetPointer___.h"
 #else
-   
+
 #endif
 
 !  Get my internal MAPL_Generic state
@@ -1344,14 +1344,14 @@ contains
        call MAPL_GetPointer(import, zle,         'ZLE',     __RC__)
        call MAPL_GetPointer(import, lwc,         'QLTOT',   __RC__)
        call MAPL_GetPointer(import, fcld,        'FCLD',    __RC__)
-    
+
        call MAPL_GetPointer(import, u10n,        'U10N',    __RC__)
        call MAPL_GetPointer(import, v10n,        'V10N',    __RC__)
-    
+
        call MAPL_GetPointer(import, tskin,       'TS',      __RC__)
-    
+
        call MAPL_GetPointer(import, fr_ocean,    'FROCEAN', __RC__)
-    
+
        call MAPL_GetPointer(import, oro,         'LWI',     __RC__)
        call MAPL_GetPointer(import, shflux,      'SH',      __RC__)
        call MAPL_GetPointer(import, ustar,       'USTAR',   __RC__)
@@ -1362,9 +1362,9 @@ contains
        call MAPL_GetPointer(import, q_NO3,       'NO3',     __RC__)
        call MAPL_GetPointer(import, q_H2O2,      'H2O2',    __RC__)
        call MAPL_GetPointer(import, q_O3,        'O3',      __RC__)
-    
+
        call MAPL_GetPointer(import, DMS_ocean, 'DMS_CONC_OCEAN', __RC__)
-    
+
        call MAPL_GetPointer(import, SO2_emiss_bb,           'SO2_EMIS_FIRES',        __RC__)
        call MAPL_GetPointer(import, SO2_emiss_nonenergy,    'SO2_EMIS_NONENERGY',    __RC__)
        call MAPL_GetPointer(import, SO2_emiss_energy,       'SO2_EMIS_ENERGY',       __RC__)
@@ -1372,10 +1372,10 @@ contains
        call MAPL_GetPointer(import, SO2_emiss_aviation_lto, 'SO2_EMIS_AIRCRAFT_LTO', __RC__)
        call MAPL_GetPointer(import, SO2_emiss_aviation_cds, 'SO2_EMIS_AIRCRAFT_CDS', __RC__)
        call MAPL_GetPointer(import, SO2_emiss_aviation_crs, 'SO2_EMIS_AIRCRAFT_CRS', __RC__)
-    
+
        call MAPL_GetPointer(import, NH3_emiss,    'NH3_EMIS',      __RC__)
        call MAPL_GetPointer(import, NH3_emiss_bb, 'NH3_EMIS_FIRE', __RC__)
-    
+
        call MAPL_GetPointer(import, SOAG_emiss,   'SOAG_EMIS',     __RC__)
    end if
 
@@ -1405,28 +1405,28 @@ contains
        call MAPL_GetPointer(export, dry_dep_H2SO4, 'DRY_DEP_H2SO4', __RC__)
        call MAPL_GetPointer(export, dry_dep_NH3,   'DRY_DEP_NH3',   __RC__)
        call MAPL_GetPointer(export, dry_dep_SOAG,  'DRY_DEP_SOAG',  __RC__)
-    
+
        call MAPL_GetPointer(export, ddt_DMS_gas,   'DDT_DMS_gas',   __RC__)
        call MAPL_GetPointer(export, ddt_MSA_gas,   'DDT_MSA_gas',   __RC__)
        call MAPL_GetPointer(export, ddt_SO2_gas,   'DDT_SO2_gas',   __RC__)
        call MAPL_GetPointer(export, ddt_H2SO4_gas, 'DDT_H2SO4_gas', __RC__)
        call MAPL_GetPointer(export, ddt_NH3_gas,   'DDT_NH3_gas',   __RC__)
        call MAPL_GetPointer(export, ddt_SOAG_gas,  'DDT_SOAG_gas',  __RC__)
-    
+
        call MAPL_GetPointer(export, ddt_DMS_aq,    'DDT_DMS_aq',    __RC__)
        call MAPL_GetPointer(export, ddt_MSA_aq,    'DDT_MSA_aq',    __RC__)
        call MAPL_GetPointer(export, ddt_SO2_aq,    'DDT_SO2_aq',    __RC__)
        call MAPL_GetPointer(export, ddt_H2SO4_aq,  'DDT_H2SO4_aq',  __RC__)
        call MAPL_GetPointer(export, ddt_NH3_aq,    'DDT_NH3_aq',    __RC__)
        call MAPL_GetPointer(export, ddt_SOAG_aq,   'DDT_SOAG_aq',   __RC__)
-    
+
        call MAPL_GetPointer(export, DMS_g_,        '_DMS_gas',      __RC__)
        call MAPL_GetPointer(export, MSA_g_,        '_MSA_gas',      __RC__)
        call MAPL_GetPointer(export, SO2_g_,        '_SO2_gas',      __RC__)
        call MAPL_GetPointer(export, H2SO4_g_,      '_H2SO4_gas',    __RC__)
        call MAPL_GetPointer(export, NH3_g_,        '_NH3_gas',      __RC__)
        call MAPL_GetPointer(export, SOAG_g_,       '_SOAG_gas',     __RC__)
-    
+
        call MAPL_GetPointer(export, DMS_a_,        '_DMS_aq',       __RC__)
        call MAPL_GetPointer(export, MSA_a_,        '_MSA_aq',       __RC__)
        call MAPL_GetPointer(export, SO2_a_,        '_SO2_aq',       __RC__)
@@ -1439,9 +1439,9 @@ contains
 !  -------------
    call MAPL_GetObjectFromGC(GC, mgState, __RC__)
    call MAPL_Get(mgState, INTERNAL_ESMF_STATE=internal, __RC__)
-  
+
    if (self%mam_chem) then
-       call MAPL_GetPointer(internal, q_DMS,    trim(comp_name)//'::'//'DMS',     __RC__) 
+       call MAPL_GetPointer(internal, q_DMS,    trim(comp_name)//'::'//'DMS',     __RC__)
        call MAPL_GetPointer(internal, q_MSA,    trim(comp_name)//'::'//'MSA',     __RC__)
        call MAPL_GetPointer(internal, q_SO2,    trim(comp_name)//'::'//'SO2',     __RC__)
        call MAPL_GetPointer(internal, q_H2SO4,  trim(comp_name)//'::'//'H2SO4',   __RC__)
@@ -1457,11 +1457,11 @@ contains
        call MAPL_GetPointer(internal, q_VOCanth, trim(comp_name)//'::'//'VOC', __RC__)
        call MAPL_GetPointer(internal, q_VOCbiob, trim(comp_name)//'::'//'VOCbiob', __RC__)
    end if
-   
+
 
    call MAPL_TimerOn(mgState, '-EMISSIONS', __RC__)
 
-   UPDATE_VOLCANIC_EMISSIONS: if (self%mam_chem) then 
+   UPDATE_VOLCANIC_EMISSIONS: if (self%mam_chem) then
 !  Update volcanic emissions if necessary (daily)
 !  ----------------------------------------------
    if(self%nymd_volcanic_emiss .ne. nymd) then
@@ -1508,7 +1508,7 @@ contains
    if (self%gas_phase_chem) then
        allocate(q_NO3_(i1:i2,j1:j2,km), __STAT__)
        q_NO3_ = q_NO3
-   end if    
+   end if
 
    if (self%apply_diurnal_cycle .and. (self%mam_chem .or. self%voc_chem)) then
        ! find cos(SZA)
@@ -1548,7 +1548,7 @@ contains
 
        night_time = 86400.0 - day_time
 
-       call solar_zenith_angle(doy, f_hour, (180.0/pi)*lons, (180.0/pi)*lats, sza, cos_sza) 
+       call solar_zenith_angle(doy, f_hour, (180.0/pi)*lons, (180.0/pi)*lats, sza, cos_sza)
 
        where(sum_cos_sza > 0)
            f_day_time = (86400.0/cdt)*cos_sza / sum_cos_sza
@@ -1561,11 +1561,11 @@ contains
        do k = 1, km
            q_OH_(:,:,k) = q_OH_(:,:,k) * f_day_time(:,:)
        end do
-    
+
        where(q_OH_ < 0.0) q_OH_ = 0.0
 
 
-       ! set NO3 to 0 in sun lighten grid cells - average is 
+       ! set NO3 to 0 in sun lighten grid cells - average is
        ! distributed only over the night time portion
        where (cos_sza > 0 .or. night_time < tiny(0.0))
            f_night_time = 0.0
@@ -1577,7 +1577,7 @@ contains
            do k = 1, km
                 q_NO3_(:,:,k) = q_NO3_(:,:,k) * f_night_time(:,:)
            end do
-    
+
            where(q_NO3_ < 0.0) q_NO3_ = 0.0
        end if
 
@@ -1588,7 +1588,7 @@ contains
        deallocate(night_time,  __STAT__)
        deallocate(f_day_time,   __STAT__)
        deallocate(f_night_time, __STAT__)
-   end if ! diurnal cycle of oxidants 
+   end if ! diurnal cycle of oxidants
 
    if (self%mam_chem .or. self%voc_chem) then
    call MAPL_GetPointer(export, ptr3d, 'OH', __RC__)
@@ -1603,12 +1603,12 @@ contains
        ptr3d = q_NO3_
    end if
    end if
-   
+
 
 !  If the H2O2 is from climatology, replenish it every 3 hours
 !  -----------------------------------------------------------
    if (.not. using_GMI_H2O2 .and. self%aqu_phase_chem) then
-       if (mod(nhms/10000, 3) == 0 .and. (nhms/10000*100 == nhms/100)) then 
+       if (mod(nhms/10000, 3) == 0 .and. (nhms/10000*100 == nhms/100)) then
            self%h2o2 = q_H2O2
        end if
    end if
@@ -1764,7 +1764,7 @@ contains
 
 !  Dry deposition
 !  --------------
-   UPDATE_CHEM_DRY_DEP: if (self%mam_chem) then 
+   UPDATE_CHEM_DRY_DEP: if (self%mam_chem) then
 
    allocate(dry_dep_frequency(i1:i2,j1:j2), __STAT__)
    allocate(dq(i1:i2,j1:j2),   __STAT__)
@@ -1788,22 +1788,22 @@ contains
    ! SO2
    where (abs(oro - ORO_OCEAN) < 0.5)  ! oro has descrete values 0, 1 or 2
        dq = -q_SO2(i1:i2,j1:j2,km) * (1.0 - exp(-(10.0 * dry_dep_frequency) * cdt))
-   elsewhere 
+   elsewhere
        dq = -q_SO2(i1:i2,j1:j2,km) * (1.0 - exp(-( 3.0 * dry_dep_frequency) * cdt))
    end where
-   
+
    q_SO2(i1:i2,j1:j2,km) = q_SO2(i1:i2,j1:j2,km) + dq
-   
+
    if (associated(dry_dep_SO2)) &
        dry_dep_SO2 = -dq / mw_air / cdt
 
    ! H2SO4
    where (abs(oro - ORO_OCEAN) < 0.5)  ! oro has descrete values 0, 1 or 2
        dq = -q_H2SO4(i1:i2,j1:j2,km) * (1.0 - exp(-(10.0 * dry_dep_frequency) * cdt))
-   elsewhere 
+   elsewhere
        dq = -q_H2SO4(i1:i2,j1:j2,km) * (1.0 - exp(-( 3.0 * dry_dep_frequency) * cdt))
    end where
-   
+
    q_H2SO4(i1:i2,j1:j2,km) = q_H2SO4(i1:i2,j1:j2,km) + dq
 
    if (associated(dry_dep_H2SO4)) &
@@ -1811,7 +1811,7 @@ contains
 
    ! NH3
    dq = -q_NH3(i1:i2,j1:j2,km) * (1.0 - exp(-dry_dep_frequency * cdt))
-   
+
    q_NH3(i1:i2,j1:j2,km) = q_NH3(i1:i2,j1:j2,km) + dq
 
    if (associated(dry_dep_NH3)) &
@@ -1819,7 +1819,7 @@ contains
 
    ! lumped precursor VOC (SOA gas)
    dq = -q_SOAG(i1:i2,j1:j2,km) * (1.0 - exp(-dry_dep_frequency * cdt))
-   
+
    q_SOAG(i1:i2,j1:j2,km) = q_SOAG(i1:i2,j1:j2,km) + dq
 
    if (associated(dry_dep_SOAG)) &
@@ -1844,7 +1844,7 @@ contains
 
    if (self%mam_chem .or. self%voc_chem) then
        where (q_OH_   < tiny(0.0))    q_OH_   = tiny(0.0)
-   end if 
+   end if
 
 
    call MAPL_TimerOn(mgState, '-CHEMISTRY', __RC__)
@@ -1992,7 +1992,7 @@ contains
 
    call MAPL_TimerOff(mgState, '--CHEMISTRY_GAS', __RC__)
 
-   
+
 !  Aqueous-phase chemistry
 !  -----------------------
    call MAPL_TimerOn(mgState, '--CHEMISTRY_AQUEOUS', __RC__)
@@ -2061,7 +2061,7 @@ contains
        if (associated(ddt_NH3_aq))   ddt_NH3_aq   = 0.0
        if (associated(ddt_SOAG_aq))  ddt_SOAG_aq  = 0.0
    end if
-                                                   
+
 
    ! total production in aqueous phase
    call MAPL_GetPointer(export, ptr3d,  'pSO4_aq',  __RC__)
@@ -2182,7 +2182,7 @@ contains
        deallocate(dVOC, dOAanth, dOAbiob, fanth, rk_OA_OH, __STAT__)
    end if OPTIONAL_VOC_CHEMISTRY
 
-   call MAPL_TimerOff(mgState, '--CHEMISTRY_VOC', __RC__)    
+   call MAPL_TimerOff(mgState, '--CHEMISTRY_VOC', __RC__)
 
 
    call MAPL_TimerOn(mgState, '--CHEMISTRY_OCS', __RC__)
@@ -2260,22 +2260,22 @@ contains
    call MAPL_GetPointer(export, ptr3d, 'CONC_DMS', __RC__)
    if (associated(ptr3d)) then
        ptr3d = (N_avog / mw_air) * density_air(:,:,:) * q_DMS(:,:,:)
-   end if    
+   end if
 
    call MAPL_GetPointer(export, ptr3d, 'CONC_MSA', __RC__)
-   if (associated(ptr3d)) then 
+   if (associated(ptr3d)) then
        ptr3d = (N_avog / mw_air) * density_air(:,:,:) * q_MSA(:,:,:)
-   end if 
+   end if
 
    call MAPL_GetPointer(export, ptr3d, 'CONC_SO2', __RC__)
    if (associated(ptr3d)) then
        ptr3d = (N_avog / mw_air) * density_air(:,:,:) * q_SO2(:,:,:)
-   end if    
+   end if
 
    call MAPL_GetPointer(export, ptr3d, 'CONC_H2SO4', __RC__)
    if (associated(ptr3d)) then
        ptr3d = (N_avog / mw_air) * density_air(:,:,:) * q_H2SO4(:,:,:)
-   end if    
+   end if
 
    call MAPL_GetPointer(export, ptr3d, 'CONC_NH3', __RC__)
    if (associated(ptr3d)) then
@@ -2293,32 +2293,32 @@ contains
    call MAPL_GetPointer(export, ptr2d, 'SFC_CONC_DMS', __RC__)
    if (associated(ptr2d)) then
        ptr2d = (N_avog / mw_air) * density_air(:,:,km) * q_DMS(:,:,km)
-   end if    
+   end if
 
    call MAPL_GetPointer(export, ptr2d, 'SFC_CONC_MSA', __RC__)
-   if (associated(ptr2d)) then 
+   if (associated(ptr2d)) then
        ptr2d = (N_avog / mw_air) * density_air(:,:,km) * q_MSA(:,:,km)
-   end if 
+   end if
 
    call MAPL_GetPointer(export, ptr2d, 'SFC_CONC_SO2', __RC__)
    if (associated(ptr2d)) then
        ptr2d = (N_avog / mw_air) * density_air(:,:,km) * q_SO2(:,:,km)
-   end if    
+   end if
 
    call MAPL_GetPointer(export, ptr2d, 'SFC_CONC_H2SO4', __RC__)
    if (associated(ptr2d)) then
        ptr2d = (N_avog / mw_air) * density_air(:,:,km) * q_H2SO4(:,:,km)
-   end if    
+   end if
 
    call MAPL_GetPointer(export, ptr2d, 'SFC_CONC_NH3', __RC__)
    if (associated(ptr2d)) then
        ptr2d = (N_avog / mw_air) * density_air(:,:,km) * q_NH3(:,:,km)
-   end if    
+   end if
 
    call MAPL_GetPointer(export, ptr2d, 'SFC_CONC_SOAG', __RC__)
    if (associated(ptr2d)) then
        ptr2d = (N_avog / mw_air) * density_air(:,:,km) * q_SOAG(:,:,km)
-   end if  
+   end if
 
 
 !  Column mass densities
@@ -2338,7 +2338,7 @@ contains
    if (associated(ptr2d)) ptr2d = (mw_S/mw_DMS) * cmd_DMS
 
    deallocate(cmd_DMS, __STAT__)
-   
+
    ! column mass density of MSA in 'kg-MSA m-2' and 'kg-S m-2'
    allocate(cmd_MSA(i1:i2,j1:j2), __STAT__)
    cmd_MSA = ((mw_MSA/mw_air) / g_earth) * sum(q_MSA*delp, dim=3)
@@ -2448,7 +2448,7 @@ contains
    type(ESMF_State), intent(inout)    :: EXPORT ! Export State
    integer, intent(out)               :: rc     ! Error return code:
                                                 !  0 - all is well
-                                                !  1 - 
+                                                !  1 -
 
 ! !DESCRIPTION: This is a simple ESMF wrapper.
 !
@@ -2460,10 +2460,10 @@ contains
 !-------------------------------------------------------------------------
 
                               __Iam__('Finalize_')
-   
+
     type(AChem_State), pointer     :: self        ! Legacy state
     type(ESMF_Grid)                :: GRID        ! Grid
-    type(ESMF_Config)              :: CF          ! Universal Config 
+    type(ESMF_Config)              :: CF          ! Universal Config
 
     integer                        :: i1, i2, im  ! 3D Dimensions
     integer                        :: j1, j2, jm  !
@@ -2529,7 +2529,7 @@ contains
 
     type(AChem_State), pointer          :: myState      ! Legacy state
     type(ESMF_Grid),     intent(out)    :: GRID         ! Grid
-    type(ESMF_Config),   intent(out)    :: CF           ! Universal Config 
+    type(ESMF_Config),   intent(out)    :: CF           ! Universal Config
 
     integer, intent(out)                :: i1, i2, im   ! Dist grid indices
     integer, intent(out)                :: j1, j2, jm   !
@@ -2857,7 +2857,7 @@ contains
                                                 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0/)
 
    ! local
-   integer       :: ierr 
+   integer       :: ierr
    real(kind=r8) :: RSTATE(20)
    real(kind=r8) :: conc_air_inv
    real(kind=r8) :: time
@@ -2869,7 +2869,7 @@ contains
    integer :: n
 
    real    :: ff
-    
+
 
 #ifdef DEBUG
    real, dimension(:,:,:), allocatable :: conc_air
@@ -2927,20 +2927,20 @@ contains
 
                ! set sunlight intensity for KPP
                kpp_sun = 1.0_r8
-            
+
                ! initialize the KPP integration parameteres
                kpp_step_min = 0.0  ! seconds
                kpp_step_max = 0.0
-            
+
                ! set the KPP realtive (RTOL) and absolute (ATOL) tolerances
                kpp_rtol(:) = rel_tolerance
                kpp_atol(:) = abs_tolerance
-            
+
                ! set KPP times
                kpp_dt         = dt
                kpp_time_start = 0.0_r8
                kpp_time_end   = kpp_time_start + dt
-                  
+
                ! set temperature for KPP
                kpp_temperature      = temperature(i,j,k)
 
@@ -2959,7 +2959,7 @@ contains
 
                time = kpp_time_start
                KPP_TIME_INTEGRATE: do while (time < kpp_time_end)
-               
+
                    kpp_time = time
 
                    ! chemistry solver
@@ -2989,7 +2989,7 @@ contains
 
                    time = RSTATE(1)
                end do KPP_TIME_INTEGRATE
-      
+
 
 
                ! update the model concentrations
@@ -2998,7 +2998,7 @@ contains
                else
                    conc_air_inv = 0.0_r8
                end if
- 
+
                q_DMS(i,j,k)   = kpp_conc(kpp_iDMS)   * conc_air_inv
                q_SO2(i,j,k)   = kpp_conc(kpp_iSO2)   * conc_air_inv
                q_H2SO4(i,j,k) = kpp_conc(kpp_iH2SO4) * conc_air_inv
@@ -3014,7 +3014,7 @@ contains
    cpl_DMS   = (sum(q_DMS   * delp, dim=3) - cpl_DMS  ) * ff
    cpl_MSA   = (sum(q_MSA   * delp, dim=3) - cpl_MSA  ) * ff
    cpl_SO2   = (sum(q_SO2   * delp, dim=3) - cpl_SO2  ) * ff
-   cpl_H2SO4 = (sum(q_H2SO4 * delp, dim=3) - cpl_H2SO4) * ff 
+   cpl_H2SO4 = (sum(q_H2SO4 * delp, dim=3) - cpl_H2SO4) * ff
 
 
 #ifdef DEBUG
@@ -3119,7 +3119,7 @@ contains
    real, parameter :: T_freeze = 258.0            ! freezing point of supercooled cloud water, K
 
 
-   ! local 
+   ! local
    integer :: i, i1, i2
    integer :: j, j1, j2
    integer :: k, k1, km
@@ -3143,7 +3143,7 @@ contains
    pSO4_aq = 0.0
    pNH4_aq = 0.0
 
-   ! contributions of production pathways in aqueous phase 
+   ! contributions of production pathways in aqueous phase
    pSO4_aq_SO2   = 0.0
    pSO4_aq_H2SO4 = 0.0
    pNH4_aq_NH3   = 0.0
@@ -3170,7 +3170,7 @@ contains
 
                    ! aqueous loss
                    l_SO2   = f * SO2
-                   l_H2SO4 = fcld(i,j,k) * H2SO4    
+                   l_H2SO4 = fcld(i,j,k) * H2SO4
                    l_NH3   = fcld(i,j,k) * NH3     ! all NH3 dissociates to NH4 i.e., [NH4] = [NH3] for pH < 5
 
                    ! update TMR
@@ -3201,7 +3201,7 @@ contains
 
                pSO4_aq(i,j,k) = pSO4_aq(i,j,k) + pSO4_aq_SO2(i,j,k)
                pSO4_aq(i,j,k) = pSO4_aq(i,j,k) + pSO4_aq_H2SO4(i,j,k)
-               
+
                ! units are 'kg-NH4/kg-air/s'
                pNH4_aq_NH3(i,j,k) = (mw_NH4/mw_air) * l_NH3 / dt
                pNH4_aq(i,j,k)     = pNH4_aq(i,j,k) + pNH4_aq_NH3(i,j,k)
@@ -3227,7 +3227,7 @@ contains
                           q_O3,          &
                           dt,            &
                           solver_max_dt, &
-                          lwc_min,       & 
+                          lwc_min,       &
                           rc)
 
 ! !USES:
@@ -3282,7 +3282,7 @@ contains
    real, parameter :: f_Hp     = 0.1
 
 
-   ! local 
+   ! local
    real    :: conc_air_inv
 
    integer :: i, i1, i2
@@ -3298,7 +3298,7 @@ contains
    real    :: c_air, c_air_inv                    ! concentration of air and its reciprocal
    real    :: g_NH3, g_SO2, g_H2O2, g_O3          ! gas phase concentrations
    real    :: a_NH3, a_NH4p, a_SO2,             & ! aqueous phase concentrations
-              a_OHm, a_H2O2, a_O3,              & ! ... 
+              a_OHm, a_H2O2, a_O3,              & ! ...
               a_HSO3m, a_SO3mm, a_HSO4m, a_SVI    ! ...
    real    :: p_NH3, p_SO2, p_H2O2, p_O3          ! partial pressure
    real    :: H_NH3, H_SO2, H_H2O2, H_O3          ! Henry's law constant
@@ -3328,7 +3328,7 @@ contains
                if (lwc(i,j,k) > lwc_min) then
 
                    T = temperature(i,j,k)
-                   
+
                    ! air molecules concentrations, #molecules/cm-3
                    c_air = 1.0e-6 * (N_avog/mw_air) * density_air(i,j,k)
 
@@ -3357,11 +3357,11 @@ contains
                    p_SO2  = f_pp  * q_SO2(i,j,k)
 
                    g_NH3  = c_air * q_NH3(i,j,k)
-                   p_NH3  = f_pp  * q_NH3(i,j,k)  
+                   p_NH3  = f_pp  * q_NH3(i,j,k)
 
                    a_SVI  = 1e3 * q_SVI_aq(i,j,k) / (mw_air * lwc(i,j,k)) ! convert from mol/mol-air to mol L-1
 
-                   ! dissociation  rates 
+                   ! dissociation  rates
                    Kw   = K_w(T)
                    Ka1  = K_a1(T)
                    Ks1  = K_s1(T)
@@ -3384,24 +3384,24 @@ contains
 
                        a_HSO3m = H_SO2 * p_SO2 * Ks1 / Hp
                        a_SO3mm = H_SO2 * p_SO2 * Ks1 * Ks2 / Hp**2
-                       
+
                        a_HSO4m = Hp * a_SVI / (Hp + Kso4)
 
                        ! chemical reaction rates
                        k_SIV_H2O2 = 0.0
-                       k_SIV_O3   = 0.0 
+                       k_SIV_O3   = 0.0
                        k_SIV_H2O2 = 0.0
 
                        ! integrate
                        delta_a_SIV = 0.0 * dt_step
 
                        delta_a_SIV = 0.0 * dt_step
-                       
 
-                       ! update model state 
+
+                       ! update model state
                        !q_SO2(i,j,k) = c_SO2 * conc_air_inv
                    end do
-                  
+
                    ! update model state
                    q_NH4_aq(i,j,k) = q_NH4_aq(i,j,k) + (lwc(i,j,k) * mw_air * a_NH4p)
                end if
@@ -3421,7 +3421,7 @@ contains
    elemental real function K_w(T)
        implicit none
        real, intent(in) :: T
-       
+
        real, parameter :: K_298 = 1.0e-14  ! M atm-1
        real, parameter :: dH_R  = 6710.0   ! K
 
@@ -3431,7 +3431,7 @@ contains
    elemental real function K_s1(T)
        implicit none
        real, intent(in) :: T
-       
+
        real, parameter :: K_298 = 1.3e-2   ! M atm-1
        real, parameter :: dH_R  = -1960.0  ! K
 
@@ -3441,17 +3441,17 @@ contains
    elemental real function K_s2(T)
        implicit none
        real, intent(in) :: T
-       
+
        real, parameter :: K_298 = 6.6e-8   ! M atm-1
        real, parameter :: dH_R  = -1500.0  ! K
 
        K_s2 = K_298 * exp(-dH_R * (1/T - 1/298.0))
-   end function K_s2 
+   end function K_s2
 
    elemental real function K_1696(T)
        implicit none
        real, intent(in) :: T
-       
+
        real, parameter :: K_298 = 1.02e-2  ! M atm-1
        real, parameter :: dH_R  = -2720.0  ! K
 
@@ -3461,7 +3461,7 @@ contains
    elemental real function K_a1(T)
        implicit none
        real, intent(in) :: T
-       
+
        real, parameter :: K_298 = 1.7e-5   ! M atm-1
        real, parameter :: dH_R  = 450.0  ! K
 
@@ -3493,7 +3493,7 @@ contains
                           rc)
 
 ! !USES:
- 
+
    use kpp_achem_gas_Precision,  only: kpp_r8 => dp
 
    implicit none
@@ -3558,14 +3558,14 @@ contains
 
    real                     :: k_oh, k_o3p, kk              ! reaction rates
 
-   !reactions parameters from Sander, S. P. et al. (2010), Chemical Kinetics and Photochemical 
+   !reactions parameters from Sander, S. P. et al. (2010), Chemical Kinetics and Photochemical
    !Data for Use in Atmospheric Studies (No. 17) NASA JPL.
    !Rate constant ak = A*exp[-ER/Temperature]
    real, parameter          :: A_oh      =  1.1e-13        ! Arrhenius A-factor OCS+OH
    real, parameter          :: ER_oh     =  1200           ! Temperature dependence OCS+OH
    real, parameter          :: A_o3p     =  2.1e-11        ! Arrhenius A-factor OCS+O3p
    real, parameter          :: ER_o3p    =  2200           ! Temperature dependence OCS+O3p
-   
+
    real, allocatable, dimension(:, :,:) :: prod_SO2        ! production of SO2 from OCS
    real, allocatable, dimension(:, :,:) :: prod_SO2_OH     ! production of SO2 from OCS+OH
    real, allocatable, dimension(:, :,:) :: prod_SO2_O3p    ! production of SO2 from OCS+O3p
@@ -3611,7 +3611,7 @@ contains
                STRATOSPHERE: if (ple(i,j,k) <= tropp(i,j)) then
                    !transform from mol/mol to molecules/cm3
                    conc_air = dble(1e-3 * (N_A/mw_air) * density_air(i,j,k))
-                 
+
                    conc_OCS   = conc_air * dble(q_OCS(i,j,k))
                    conc_OH    = conc_air * dble(q_OH(i,j,k))
                    conc_O3p   = conc_air * dble(q_O3p(i,j,k))
@@ -3676,14 +3676,14 @@ contains
 !-------------------------------------------------------------------------
 !BOP
 !
-! !IROUTINE:  solar_zenith_angle --- Given day of the year, UTC time and 
+! !IROUTINE:  solar_zenith_angle --- Given day of the year, UTC time and
 !             geographical location computes solar zenith angle.
 !
 ! !INTERFACE:
 !
 
  subroutine solar_zenith_angle(doy, utc_hour, lon, lat, sza, cos_sza)
- 
+
 ! !USES:
 
    implicit none
@@ -3723,11 +3723,11 @@ contains
    real, parameter :: a3 = 0.002697
    real, parameter :: b1 = 0.070257
    real, parameter :: b2 = 0.000907
-   real, parameter :: b3 = 0.000148 
-   
+   real, parameter :: b3 = 0.000148
+
    ! local
    real    :: r
-   real    :: solar_declination, sin_sd, cos_sd 
+   real    :: solar_declination, sin_sd, cos_sd
    real    :: local_time
    real    :: hour_angle, cos_ha
    real    :: lat_
@@ -3756,7 +3756,7 @@ contains
            if(local_time > 24) local_time = local_time - 24
 
            hour_angle = (abs(local_time - 12) * 15) * f_deg2rad
-     
+
            cos_ha = cos(hour_angle)
 
            lat_ = lat(i,j) * f_deg2rad
@@ -3828,7 +3828,7 @@ contains
        endif
    endif
 
-   ! calculate day of year 
+   ! calculate day of year
    doy = 0
 
    if (mm == 1) then
@@ -3844,8 +3844,8 @@ contains
 
        doy = doy + dd
    endif
- 
+
  end function day_of_year
- 
+
 
  end module GEOS_AChemGridCompMod
