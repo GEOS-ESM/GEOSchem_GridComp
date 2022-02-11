@@ -76,6 +76,9 @@ esma_add_library (${this}
    DEPENDENCIES MAPL MAPL_cfio_r4 Chem_Base Chem_Shared HEMCO
    )
 
+# Enable OpenMP
+target_link_libraries(${this} PRIVATE OpenMP::OpenMP_Fortran)
+
 target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 
 target_compile_definitions(${this} PRIVATE

@@ -602,8 +602,10 @@ CONTAINS
     ! Call Run method for each instance
     ThisInst => Instances
     DO WHILE ( ASSOCIATED( ThisInst ) )
+
        CALL HEMCOrun_( GC, Import, Export, Clock, ThisInst, __RC__ )
        ThisInst => ThisInst%NextInst
+
     ENDDO
  
     ! Cleanup
@@ -1041,8 +1043,11 @@ CONTAINS
     Inst%HcoState%Options%FillBuffer = .FALSE.
 
     ! Now run driver routine. This calculates all 'core' emissions, 
-    ! i.e. all emissions that are not extensions.
-    CALL HCO_Run( Inst%HcoState, -1, STAT )
+    ! i.e. all emissions that are not extensions. Run phase 1 and 2 
+    ! back to back
+    CALL HCO_Run( Inst%HcoState, 1, STAT )
+    _ASSERT(STAT==HCO_SUCCESS,'needs informative message')
+    CALL HCO_Run( Inst%HcoState, 2, STAT )
     _ASSERT(STAT==HCO_SUCCESS,'needs informative message')
 
     ! ------------------------------------------------------------------
