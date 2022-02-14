@@ -2,8 +2,10 @@
 ! Implements Local Displacement Ensembles. It can handle the GEOS-5 lat/lon
 ! or cubed-sphere grids.
 !
+! REVISION HISTORY:
 ! Arlindo da Silva <arlindo.dasilva@nasa.gov>, April 2010
 ! Cubed sphere support added July 2012.
+! 26March2021 E.Sherman Updated LDE_Projector1c_Cubed_ to work with GOCART2G
 !----------------------------------------------------------------------------
 
 #  include "MAPL_Generic.h"
@@ -730,7 +732,7 @@ merid:        do j = 1, JM_World
      end if
 
      do s = 1, bQ_f%n3d
-        if ( .not. isAerosol_(trim(bQ_f%r3(s)%name)) ) cycle
+!        if ( .not. isAerosol_(trim(bQ_f%r3(s)%name)) ) cycle
 
         if ( MAPL_AM_I_Root() .and. verbose_ ) &
            print *, ' [ ] Working on <'//trim(bQ_f%r3(s)%name)//'>'
@@ -1325,32 +1327,12 @@ merid:     do j = 1, JM_World
 
      V = 0.0 ! ALT: Initialize just in case
 
-!    Determine convenience indices
-!    -----------------------------
-     ifAOD = MAPL_SimpleBundleGetIndex(bY_f,'AOD',3,__RC__)
-     idAOD = MAPL_SimpleBundleGetIndex(bY_d,'AOD',3,__RC__)
 
 !    Use single channel
 !    ------------------
      _ASSERT(size(bY_f%coords%levs) == size(bY_d%coords%levs),'needs informative message')
-     missing_f = .TRUE.
-     missing_d = .TRUE.
-     do k = 1, size(bY_f%coords%levs)
-        if ( abs(bY_f%coords%levs(k)-self%channel) < 0.01 ) then
-             y_f = bY_f%r3(ifAOD)%q(:,:,k)
-             missing_f = .FALSE.
-        end if
-        if ( abs(bY_d%coords%levs(k)-self%channel) < 0.01 ) then
-             y_d = bY_d%r3(idAOD)%q(:,:,k)
-             missing_d = .FALSE.
-        end if
-     end do
-     if ( missing_f ) then
-        __raise__(MAPL_RC_ERROR,"could not find matching channel for <y_f>")
-     end if
-     if ( missing_d ) then
-        __raise__(MAPL_RC_ERROR,"could not find matching channel for <y_d>")
-     end if
+     y_f = bY_f%r2(1)%q(:,:)
+     y_d = bY_d%r2(1)%q(:,:)
 
 #ifdef DEBUG
      if ( MAPL_AM_I_Root() .and. verbose_ ) print *
@@ -1426,7 +1408,6 @@ merid:     do j = 1, JM_World
      end if
 
      do s = 1, bQ_f%n3d
-        if ( .not. isAerosol_(trim(bQ_f%r3(s)%name)) ) cycle
 
         if ( MAPL_AM_I_Root() .and. verbose_ ) &
            print *, ' [ ] Working on <'//trim(bQ_f%r3(s)%name)//'>'
@@ -1441,12 +1422,10 @@ merid:     do j = 1, JM_World
            q_f => bQ_f%r3(s)%q(:,:,k)
            x_2d => x_d(:,:,k)
            call LDE_Qinc_Distrib_Cubed_(x_2d, q_f, V, self%indx, im, jm, em, IM_World, EM_World, nh, self, __RC__ ) 
-        end do
 
-!       Add analysis increments to q
-!       ----------------------------
-        do k = self%ks, km
+!          Add analysis increments to q
            bQ_a%r3(s)%q(:,:,k) = bQ_f%r3(s)%q(:,:,k) + x_d(:,:,k)
+
         end do
 
 !       Zero increments above top analysis level
@@ -1454,7 +1433,8 @@ merid:     do j = 1, JM_World
         do k = 1,self%ks-1 
            bQ_a%r3(s)%q(:,:,k) = bQ_f%r3(s)%q(:,:,k)
         end do
-        
+
+
 #ifdef DEBUG
         call MAPL_MaxMin('      q_a',bQ_a%r3(s)%q(:,:,self%ks:km))
 #endif

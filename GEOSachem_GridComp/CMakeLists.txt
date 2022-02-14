@@ -41,13 +41,9 @@ new_esma_generate_automatic_code (
   "-f"
   )
 
-set (resource_files
-   GEOS_AChemGridComp.rc
-   GEOSachem_ExtData.rc
-   GEOSachem_Registry.rc
-   )
+file (GLOB_RECURSE rc_files CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.rc)
+foreach ( file ${rc_files} )
+   get_filename_component( dir ${file} DIRECTORY )
+   install( FILES ${file} DESTINATION etc/${dir} )
+endforeach()
 
-install(
-   FILES ${resource_files}
-   DESTINATION etc
-   )

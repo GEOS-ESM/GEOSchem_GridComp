@@ -13,5 +13,5 @@ HEMCO_Instances: 1
         # instance 
         ###############################
 
-HEMCO_CONFIG--001: HEMCOgocart_Config.rc
+HEMCO_CONFIG--001: HEMCOgocart2g_Config.rc
 HEMCO_CONFIG--002: HEMCOgmi_Config.rc
