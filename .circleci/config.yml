@@ -107,6 +107,9 @@ commands:
             if [ "${CIRCLE_BRANCH}" != "develop" ] && [ "${CIRCLE_BRANCH}" != "main" ]
             then
                 mepo checkout-if-exists ${CIRCLE_BRANCH}
+            elif [ "${CIRCLE_BRANCH}" == "develop" ]
+            then
+                mepo checkout ${CIRCLE_BRANCH} ${CIRCLE_PROJECT_REPONAME}
             fi
             mepo status
 
