@@ -47,15 +47,15 @@
 doing_H2O: no   # water vapor (must always ON for fvGCM)
 doing_O3:  no   # ozone (must be always ON for fvGCM in DAS mode)
 doing_CO:  yes  # &YesNo Include carbon monoxide?
-doing_CO2: yes  # &YesNo Include carbon dioxide?
-doing_DU:  yes  # &YesNo Include mineral dust?
-doing_SS:  yes  # &YesNo Include sea salt?
-doing_SU:  yes  # &YesNo Include sulfates?
+doing_CO2: no   # &YesNo Include carbon dioxide?
+doing_DU:  no   # &YesNo Include mineral dust?
+doing_SS:  no   # &YesNo Include sea salt?
+doing_SU:  no   # &YesNo Include sulfates?
 doing_CFC: no   # &YesNo Include CFCs?
-doing_BC:  yes  # &YesNo Include black carbon?
-doing_OC:  yes  # &YesNo Include organic carbon?
+doing_BC:  no   # &YesNo Include black carbon?
+doing_OC:  no   # &YesNo Include organic carbon?
 doing_BRC: no   # &YesNo Include brown carbon?
-doing_NI:  yes  # &YesNo Include nitrate?
+doing_NI:  no   # &YesNo Include nitrate?
 doing_Rn:  no   # &YesNo include Radon?
 doing_CH4: no   # &YesNo include Methane?
 doing_SC:  no   # &YesNo Include stratospheric chemistry?
@@ -89,7 +89,7 @@ nbins_SC_r:    33   # stratospheric chemistry (reduced)
 nbins_XX_SC_r: 37   # stratchem (reduced) non-transported species
 nbins_PC:       1   # parameterized chemistry (GEOS-5)
 nbins_GMI:     72   # GMI chemistry (GEOS-5)
-nbins_XX_GMI:  48   # GMI non-transported species
+nbins_XX_GMI:  48   # generic tracer
 nbins_OCS:      1   # ACHEM chemistry (OCS)
 nbins_TR:       4   # passive tracers
 
@@ -559,7 +559,6 @@ e90_n     'mol mol-1'   Constant burden 90 day tracer 40N-pole emiss
 e90_s     'mol mol-1'   Constant burden 90 day tracer 40S-pole emiss
 Be7       'kg kg-1'     Beryllium radionuclide 7(Be)
 Be10      'kg kg-1'     Beryllium radionuclide 10(Be)
-stOX      'mol mol-1'   Strat Ozone with chemical loss
 Be7s      'kg kg-1'     Beryllium radionuclide 7(Be) strat-source
 Be10s     'kg kg-1'     Beryllium radionuclide 10(Be) strat-source
 Pb210s    'kg kg-1'     Lead-210 strat-source
@@ -579,6 +578,7 @@ CO_RBU    'mol mol-1'   CO 50 day tracer Russia & Belarus & Ukraine CMIP6+M2G
 CO_CAS    'mol mol-1'   CO 50 day tracer Central Asia CMIP6+M2G
 CO_ARC    'mol mol-1'   CO 50 day tracer Arctic CMIP6+M2G
 CO_from_CH4 'mol mol-1' CO from global average CH4 oxidation
+stOX      'mol mol-1'   Strat Ozone with chemical loss
 aoa_bl       days       Age of air above boundary layer
 ::
 

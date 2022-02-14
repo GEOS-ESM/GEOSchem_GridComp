@@ -35,6 +35,12 @@ list (REMOVE_ITEM srcs
    ${CMAKE_CURRENT_SOURCE_DIR}/${hemco_dir}/src/Extensions/hcox_tomas_jeagle_mod.F90
    )
 
+# The glob above brings in two nigh-identical hco_julday_mod
+# modules. GNU make seems to allow this, but ninja does not. So we only
+# build one
+list (REMOVE_ITEM srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/${hemco_dir}/src/Shared/NcdfUtil/julday_mod.F90
+  )
 
 esma_add_library (${this}
    SRCS ${srcs}

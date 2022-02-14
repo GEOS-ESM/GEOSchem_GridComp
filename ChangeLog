@@ -1,5 +1,9 @@
 AeroChem ChangeLog
 
+2021-12-20 <michael.manyin@nasa.gov>  Feature added to v1.7.0
+    * Bug fix for HEMCO run phases
+    * Bug fix in Surface Area Density calculation in GMI and StratChem
+    
 NOTE: As of August 2021, this log file reflects changes to the CVS repository.
       The majority of comments are about code in the CHEMISTRY GridComp, but
       occasionally there are notes about other sections of the GEOS codebase.

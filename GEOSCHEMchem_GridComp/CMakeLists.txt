@@ -56,6 +56,8 @@ list (REMOVE_ITEM srcs
    ${geos_chem_dir}/GeosCore/YuIMN_Code.F90
    ${geos_chem_dir}/GeosCore/apm_driv_mod.F90
    ${geos_chem_dir}/Interfaces/GCHP/Chem_GridCompMod.F90
+
+   ${geos_chem_dir}/NcdfUtil/julday_mod.F
    )
 
 if (CMAKE_Fortran_COMPILER_ID MATCHES Intel)
@@ -75,6 +77,9 @@ esma_add_library (${this}
    SRCS ${srcs}
    DEPENDENCIES MAPL MAPL_cfio_r4 Chem_Base Chem_Shared HEMCO
    )
+
+# Enable OpenMP
+target_link_libraries(${this} PRIVATE OpenMP::OpenMP_Fortran)
 
 target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 
