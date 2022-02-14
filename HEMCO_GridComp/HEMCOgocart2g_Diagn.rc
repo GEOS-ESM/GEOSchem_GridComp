@@ -1,0 +1,9 @@
+# This file defines the diagnostics to be written
+# out by the HEMCO standalone model
+#
+# Name           Spec           ExtNr  Cat Hier Dim  Unit
+OC_ISOPRENE      ISOP           108    -1   -1   2   kgC/m2/s
+OC_MTPA          MTPA           108    -1   -1   2   kg/m2/s
+OC_MTPO          MTPO           108    -1   -1   2   kg/m2/s
+OC_LIMO          LIMO           108    -1   -1   2   kg/m2/s
+OC_SESQ          SESQ           108    -1   -1   2   kg/m2/s

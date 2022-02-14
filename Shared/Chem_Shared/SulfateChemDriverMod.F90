@@ -1828,9 +1828,9 @@ CONTAINS
 !        Skip this volcano?
 !        ------------------
          if ( i<1 .OR. j<1 ) cycle ! volcano not in sub-domain
-         if(doingMasking) then
-            if( mask(i,j) == 0 ) cycle
-         end if
+!         if(doingMasking) then
+!            if( mask(i,j) == 0 ) cycle
+!         end if
 
 !        Check time against time range of eruption
 !        -----------------------------------------
