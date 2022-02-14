@@ -48,14 +48,14 @@ doing_H2O: no   # water vapor (must always ON for fvGCM)
 doing_O3:  no   # ozone (must be always ON for fvGCM in DAS mode)
 doing_CO:  yes  # &YesNo Include carbon monoxide?
 doing_CO2: yes  # &YesNo Include carbon dioxide?
-doing_DU:  yes  # &YesNo Include mineral dust?
-doing_SS:  yes  # &YesNo Include sea salt?
-doing_SU:  yes  # &YesNo Include sulfates?
+doing_DU:  no   # &YesNo Include mineral dust?
+doing_SS:  no   # &YesNo Include sea salt?
+doing_SU:  no   # &YesNo Include sulfates?
 doing_CFC: yes  # &YesNo Include CFCs?
-doing_BC:  yes  # &YesNo Include black carbon?
-doing_OC:  yes  # &YesNo Include organic carbon?
+doing_BC:  no   # &YesNo Include black carbon?
+doing_OC:  no   # &YesNo Include organic carbon?
 doing_BRC: no   # &YesNo Include brown carbon?
-doing_NI:  yes  # &YesNo Include nitrate?
+doing_NI:  no   # &YesNo Include nitrate?
 doing_Rn:  no   # &YesNo include Radon?
 doing_CH4: no   # &YesNo include Methane?
 doing_SC:  no   # &YesNo Include stratospheric chemistry?

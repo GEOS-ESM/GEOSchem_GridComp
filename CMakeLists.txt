@@ -28,7 +28,7 @@ set (srcs
 esma_add_library (${this}
   SRCS ${srcs}
   SUBCOMPONENTS ${alldirs}
-  DEPENDENCIES MAPL Chem_Shared Chem_Base GOCART_GridComp
+  DEPENDENCIES MAPL Chem_Shared Chem_Base GOCART_GridComp GOCART2G_GridComp
   INCLUDES ${INC_ESMF})
 
 install(
