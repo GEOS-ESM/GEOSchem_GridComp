@@ -1000,16 +1000,18 @@ contains
    nullify(self%volc_j)
 
    INIT_H2O2: if (self%aqu_phase_chem) then
-!  Initialize the internal copy of H2O2
-!  ------------------------------------
-   allocate(self%h2o2(i1:i2,j1:j2,km), __STAT__)
+      ! Initialize the internal copy of H2O2
+      ! ------------------------------------
+      allocate(self%h2o2(i1:i2,j1:j2,km), __STAT__)
 
-   if (using_GMI_H2O2) then
-       self%h2o2 = 0.0 ! initial value is not important if H2O2 is from GMI
+      if (using_GMI_H2O2) then
+         self%h2o2 = 0.0 ! initial value is not important if H2O2 is from GMI
+      else
+         call MAPL_GetPointer(import, q_H2O2, 'H2O2', __RC__)
+         self%h2o2 = q_H2O2
+      end if
    else
-       call MAPL_GetPointer(import, q_H2O2, 'H2O2', __RC__)
-       self%h2o2 = q_H2O2
-   end if
+      nullify(self%h2o2)
    end if INIT_H2O2
 
 !  All done
