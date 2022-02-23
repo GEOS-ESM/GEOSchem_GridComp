@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [1.8.1] - 2021-02-22
+
+### Fixed
+
+- Fix bug with GNU and Achem Finalize when `aqueous_chemistry: .false.`
+
 ## [1.8.0] - 2021-02-14
 
 ### Changed
@@ -31,8 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- HEMCO_GridComp/HEMCOgocart_*.rc as they relate to legacy GOCART 
-  aerosols which have been removed. 
+- HEMCO_GridComp/HEMCOgocart_*.rc as they relate to legacy GOCART
+  aerosols which have been removed.
 
 ### Added
 
