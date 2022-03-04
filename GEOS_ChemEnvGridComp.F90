@@ -151,21 +151,21 @@ contains
          DIMS      = MAPL_DimsHorzOnly,                            &
          VLOCATION = MAPL_VLocationNone,                    __RC__ )
 
-!   Convective precip
-!   -----------------
+!   Total precip
+!   ------------
     call MAPL_AddImportSpec(GC,                                    &
-         SHORT_NAME='CN_PRCP',                                     &
-         LONG_NAME ='Surface Conv. rain flux needed by land',      &
+         SHORT_NAME='PRECTOT',                                     &
+         LONG_NAME ='total_precipitation',                         &
          UNITS     ='kg m-2 s-1',                                  &
          DEFAULT   = MAPL_UNDEF,                                   &
          DIMS      = MAPL_DimsHorzOnly,                            &
          VLOCATION = MAPL_VLocationNone,                    __RC__ )
 
-!   Total precip
-!   ------------
+!   Convective precip
+!   -----------------
     call MAPL_AddImportSpec(GC,                                    &
-         SHORT_NAME='TPREC',                                       &
-         LONG_NAME ='total_precipitation',                         &
+         SHORT_NAME='CN_PRCP',                                     &
+         LONG_NAME ='convective_precipitation',                    &
          UNITS     ='kg m-2 s-1',                                  &
          DEFAULT   = MAPL_UNDEF,                                   &
          DIMS      = MAPL_DimsHorzOnly,                            &
@@ -765,24 +765,19 @@ contains
 
 ! Exports
   real, pointer, dimension(:,:,:)      :: delp => null()
-  real, pointer, dimension(:,:)        :: tprec => null()
-  real, pointer, dimension(:,:)        :: cn_prcp => null()
+  real, pointer, dimension(:,:)        ::    tprec => null()
+  real, pointer, dimension(:,:)        ::  cn_prcp => null()
   real, pointer, dimension(:,:)        :: ncn_prcp => null()
 
 !=============================================================================
  
     type (MAPL_MetaComp), pointer      :: MAPL
-    type (ESMF_FieldBundle)            :: Bundle
     type (ESMF_Grid)                   :: GRID
     type (ESMF_Time)                   :: CurrentTime
-    character(len=ESMF_MAXSTR)         :: PRECIP_FILE
     integer                            :: year, month, day, hr, mn, se
   
     real, pointer, dimension(:,:)      :: pr_total
     real, pointer, dimension(:,:)      :: pr_conv
-    real, pointer, dimension(:,:)      :: pr_snow
-
-    logical                            :: observed_precip
 
     integer                            :: k, k0
 
@@ -826,56 +821,22 @@ contains
        end do
     end if
 
-! Import precip from MOIST or read observed precip from a file. 
+! Import total precip from SURFACE (either model or observed precip)
 ! Export total, convective and non-convective precipitation.
 !--------------------------------------------------------------
-    call MAPL_GetPointer ( EXPORT, tprec,    'TPREC',     __RC__ )
-    call MAPL_GetPointer ( EXPORT, cn_prcp,  'CN_PRCP',   __RC__ )
+    call MAPL_GetPointer ( EXPORT,    tprec,    'TPREC',  __RC__ )
+    call MAPL_GetPointer ( EXPORT,  cn_prcp,  'CN_PRCP',  __RC__ )
     call MAPL_GetPointer ( EXPORT, ncn_prcp, 'NCN_PRCP',  __RC__ )
 
 
-    call MAPL_GetResource(MAPL, PRECIP_FILE, LABEL="PRECIP_FILE:", default="null", __RC__)
+    call MAPL_GetPointer ( IMPORT, pr_total, 'PRECTOT', __RC__ )
+    call MAPL_GetPointer ( IMPORT, pr_conv,  'CN_PRCP', __RC__ )
+ 
 
-    if (PRECIP_FILE /= "null") then
-        observed_precip = .true.        ! export observed precip
-    else
-        observed_precip = .false.       ! export modeled precip
-    endif
-
-
-    if (observed_precip) then
-       bundle = ESMF_FieldBundleCreate (NAME='PRECIP', __RC__)
-       call ESMF_FieldBundleSet(bundle, GRID=GRID, __RC__)
-
-       call ESMF_ClockGet(CLOCK, currTime=CurrentTime, __RC__)
-
-       call ESMF_TimeGet (CurrentTime, yy=year, mm=month, dd=day, h=hr, m=mn, s=se, __RC__)
-       call ESMF_TimeSet (CurrentTime, yy=year, mm=month, dd=day, h=hr, m=30, s=0,  __RC__)
-
-       call MAPL_CFIORead ( PRECIP_FILE, CurrentTime, Bundle, NOREAD=.true., __RC__ )
-       call MAPL_CFIORead ( PRECIP_FILE, CurrentTime, Bundle, __RC__ )
-
-       call ESMFL_BundleGetPointerToData ( Bundle, 'PRECTOT', pr_total, __RC__ )
-       call ESMFL_BundleGetPointerToData ( Bundle, 'PRECCON', pr_conv,  __RC__ )
-       call ESMFL_BundleGetPointerToData ( Bundle, 'PRECSNO', pr_snow,  __RC__ )
-    else
-       call MAPL_GetPointer ( IMPORT, pr_total, 'TPREC',   __RC__ )
-       call MAPL_GetPointer ( IMPORT, pr_conv,  'CN_PRCP', __RC__ )
-    end if
-
-
-    if (associated(tprec))       tprec = pr_total
-    if (associated(cn_prcp))   cn_prcp = pr_conv
+    if (associated(   tprec))    tprec =  pr_total
+    if (associated( cn_prcp))  cn_prcp =  pr_conv
     if (associated(ncn_prcp)) ncn_prcp = (pr_total - pr_conv)
 
-
-    if (observed_precip) then
-       call ESMF_FieldBundleDestroy(bundle, __RC__) 
-
-       if (associated(pr_total)) deallocate(pr_total)
-       if (associated(pr_conv))  deallocate(pr_conv)
-       if (associated(pr_snow))  deallocate(pr_snow)
-    end if
 
     IF ( OVP_setup_done .eqv. .FALSE. ) THEN
 
