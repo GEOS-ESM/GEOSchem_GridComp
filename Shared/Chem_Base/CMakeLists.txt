@@ -11,8 +11,7 @@ set (srcs
   Chem_AodMod.F90
   Chem_SimpleBundleMod.F90
   )
-esma_add_library(${this} SRCS ${srcs} DEPENDENCIES GMAO_mpeu MAPL GMAO_gfio_r4)
-target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
+esma_add_library(${this} SRCS ${srcs} DEPENDENCIES GMAO_mpeu MAPL GMAO_gfio_r4 esmf NetCDF::NetCDF_Fortran)
 target_compile_definitions (${this} PRIVATE GEOS5)
 
 ecbuild_add_executable(TARGET gogo.x SOURCES gogo.F90 LIBS ${this})
@@ -24,9 +23,9 @@ if (USE_F2PY)
    if (F2PY2_FOUND)
       add_f2py2_module(MieObs_ SOURCES MieObs_py.F90
          DESTINATION lib/Python2
-         LIBRARIES Chem_Base MAPL GMAO_mpeu ${NETCDF_LIBRARIES} ${ESMF_LIBRARY}
-         INCLUDEDIRS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR}/lib ${BASEDIR}/lib ${include_${this}} ${INC_NETCDF}
-         USE_MPI
+         LIBRARIES Chem_Base MAPL GMAO_mpeu ${ESMF_LIBRARY}
+         INCLUDEDIRS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR}/lib ${include_${this}}
+         USE_MPI USE_NETCDF
          )
       add_dependencies(MieObs_ ${this})
    endif ()
@@ -38,9 +37,7 @@ foreach (exe Chem_Aod.x Chem_Aod3d.x ctl_crst.x Chem_BundleToG5rs.x reff_calcula
   ecbuild_add_executable (
     TARGET ${exe}
     SOURCES ${basename}.F90
-    LIBS ${this} ${OpenMP_Fortran_LIBRARIES})
-  # Do not know how to propagate the flags for OpenMP link step from lower libraries.
-  set_target_properties(${exe} PROPERTIES LINK_FLAGS "${OpenMP_Fortran_FLAGS}")
+    LIBS ${this} OpenMP::OpenMP_Fortran)
 endforeach ()
 
 # Copy RC files to build tree

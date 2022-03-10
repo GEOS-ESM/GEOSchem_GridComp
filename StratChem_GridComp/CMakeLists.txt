@@ -72,9 +72,8 @@ include_directories (${include_Chem_Shared})
 include_directories (${CMAKE_CURRENT_BINARY_DIR})
 include_directories (${include_GMAO_mpeu})
 
-set (dependencies Chem_Shared MAPL MAPL_cfio_r4 GMAO_mpeu)
+set (dependencies Chem_Shared MAPL MAPL_cfio_r4 GMAO_mpeu NetCDF::NetCDF_Fortran)
 esma_add_library (${this} SRCS ${srcs} DEPENDENCIES ${dependencies})
-target_include_directories (${this} PUBLIC ${INC_NETCDF})
 
 if (STRATCHEM_REDUCED_MECHANISM)
    target_compile_definitions(${this} PRIVATE REDUCED)

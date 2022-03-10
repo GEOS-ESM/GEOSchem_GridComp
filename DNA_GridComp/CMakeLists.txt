@@ -4,9 +4,8 @@ set (srcs
   DNA_GridCompMod.F90
   )
 
-esma_add_library (${this} SRCS ${srcs} DEPENDENCIES MAPL)
+esma_add_library (${this} SRCS ${srcs} DEPENDENCIES MAPL esmf NetCDF::NetCDF_Fortran)
 target_compile_definitions (${this} PRIVATE MAPL_MODE GEOS5)
-target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 
 set (resource_files
    DNA_ExtData.rc

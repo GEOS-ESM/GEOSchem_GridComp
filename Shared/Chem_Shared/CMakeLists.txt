@@ -32,10 +32,9 @@ else ()
   list (APPEND srcs Chem_UtilMod_geos4.F90)
 endif ()
 
-esma_add_library(${this} 
-   SRCS ${srcs} 
-   DEPENDENCIES GMAO_mpeu MAPL Chem_Base GEOS_Shared GMAO_hermes)
-target_include_directories(${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
+esma_add_library(${this}
+   SRCS ${srcs}
+   DEPENDENCIES GMAO_mpeu MAPL Chem_Base GEOS_Shared GMAO_hermes esmf NetCDF::NetCDF_Fortran)
 #add_definitions(-DDEBUG)
 add_definitions(-DSPMD -DFVCHEM)
 
@@ -48,5 +47,5 @@ install(
   PROGRAMS bundleParser.py
   DESTINATION bin
 )
-  
-  
+
+
