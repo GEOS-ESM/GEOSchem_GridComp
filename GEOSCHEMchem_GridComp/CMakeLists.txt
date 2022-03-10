@@ -56,6 +56,8 @@ list (REMOVE_ITEM srcs
    ${geos_chem_dir}/GeosCore/YuIMN_Code.F90
    ${geos_chem_dir}/GeosCore/apm_driv_mod.F90
    ${geos_chem_dir}/Interfaces/GCHP/Chem_GridCompMod.F90
+
+   ${geos_chem_dir}/NcdfUtil/julday_mod.F
    )
 
 if (CMAKE_Fortran_COMPILER_ID MATCHES Intel)
