@@ -291,15 +291,6 @@ CONTAINS
       STATUS = 0
 
 
-     CASE("None")
-
-      STATUS = 0
-
-     CASE("NONE")
-
-      STATUS = 0
-
-
      CASE DEFAULT
 
       PRINT *, TRIM(Iam)//": Invalid AERO_PROVIDER when running GMIChem."
