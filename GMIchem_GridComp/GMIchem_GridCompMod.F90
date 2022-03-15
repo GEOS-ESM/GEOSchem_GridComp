@@ -189,6 +189,8 @@ CONTAINS
 
     CALL ESMF_ConfigGetAttribute(CF, aeroProviderName, DEFAULT='none', LABEL="AERO_PROVIDER:", __RC__ )
 
+    If (ESMF_UtilStringLowerCase(trim(aeroProviderName)).eq.'none') aeroProviderName = 'none'
+
     SELECT CASE (TRIM(aeroProviderName))
 
      CASE ("GOCART")
@@ -282,6 +284,12 @@ CONTAINS
      CASE("GMICHEM")
 
       STATUS = 0
+
+
+     CASE("none")
+
+      STATUS = 0
+
 
      CASE DEFAULT
 
@@ -1100,7 +1108,10 @@ CONTAINS
 !  ---------------------
    CALL ESMF_ConfigGetAttribute(CF, providerName, Default="PCHEM", &
                                 Label="AERO_PROVIDER:", __RC__ )
-   gcGMI%gcPhot%aeroProviderName = TRIM(providerName)
+
+   If (ESMF_UtilStringLowerCase(trim(ProviderName)).eq.'none') ProviderName = 'none'
+
+   gcGMI%gcPhot%aeroProviderName = TRIM(ProviderName)
    IF(TRIM(providerName) == "GMICHEM") THEN
     gcGMI%gcPhot%AM_I_AERO_PROVIDER = .TRUE.
    ELSE
