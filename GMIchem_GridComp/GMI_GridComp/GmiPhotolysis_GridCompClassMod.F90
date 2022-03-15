@@ -1665,6 +1665,18 @@ CONTAINS
     IF(ASSOCIATED(BCphilic) .AND. self%AM_I_AERO_PROVIDER) BCphilic(:,:,:) = PTR3D(:,:,:)/airdens(:,:,:)
     NULLIFY(PTR3D)
 
+   CASE("none")
+
+     self%dAersl(:,:,1:km,1) = 0.0
+     self%wAersl(:,:,1:km,2) = 0.0
+
+     IF(self%verbose) THEN
+      PTR3D(:,:,1:km) = self%dAersl(:,:,1:km,1)
+      CALL pmaxmin('BCphobic:', PTR3D, qmin, qmax, iXj, km, 1. )
+      PTR3D(:,:,1:km) = self%wAersl(:,:,1:km,2)
+      CALL pmaxmin('BCphilic:', PTR3D, qmin, qmax, iXj, km, 1. )
+     END IF
+
    CASE DEFAULT
 
     STATUS = 1
@@ -1854,6 +1866,22 @@ CONTAINS
 
     END DO
 
+   CASE("none")
+
+     self%dust(:,:,1:km,1) = 0.0
+     self%dust(:,:,1:km,2) = 0.0
+     self%dust(:,:,1:km,3) = 0.0
+     self%dust(:,:,1:km,4) = 0.0
+     self%dust(:,:,1:km,5) = 0.0
+     self%dust(:,:,1:km,6) = 0.0
+     self%dust(:,:,1:km,7) = 0.0
+
+     IF(self%verbose) THEN
+      PTR3D(:,:,:) = 0.0
+      CALL pmaxmin('DUST:', PTR3D, qmin, qmax, iXj, km, 1. )
+     END IF
+
+
    CASE DEFAULT
 
     STATUS = 1
@@ -1921,6 +1949,7 @@ CONTAINS
     IF(self%verbose) CALL pmaxmin('OCphilic:', PTR3D, qmin, qmax, iXj, km, 1. )
     NULLIFY(PTR3D)
 
+
    CASE("GOCART")
 
     IF(self%usingGOCART_OC) THEN
@@ -1940,6 +1969,7 @@ CONTAINS
 
     END IF
 
+
    CASE("GMICHEM")
 
     CALL MAPL_GetPointer(impChem, PTR3D, 'OC1', RC=STATUS)
@@ -1955,6 +1985,20 @@ CONTAINS
     IF(self%verbose) CALL pmaxmin('OCphilic:', PTR3D, qmin, qmax, iXj, km, 1. )
     IF(ASSOCIATED(OCphilic) .AND. self%AM_I_AERO_PROVIDER) OCphilic(:,:,:) = PTR3D(:,:,:)/airdens(:,:,:)
     NULLIFY(PTR3D)
+
+
+   CASE("none")
+
+     self%dAersl(:,:,1:km,2) = 0.0
+     self%wAersl(:,:,1:km,3) = 0.0
+
+     IF(self%verbose) THEN
+      PTR3D(:,:,:) = self%dAersl(:,:,1:km,2)
+      CALL pmaxmin('OCphobic:', PTR3D, qmin, qmax, iXj, km, 1. )
+      PTR3D(:,:,:) = self%wAersl(:,:,1:km,3)
+      CALL pmaxmin('OCphilic:', PTR3D, qmin, qmax, iXj, km, 1. )
+     END IF
+
 
    CASE DEFAULT
 
@@ -2117,6 +2161,18 @@ CONTAINS
 
     END DO
 
+   CASE("none")
+
+     self%wAersl(:,:,1:km,4) = 0.0
+     self%wAersl(:,:,1:km,5) = 0.0
+
+     IF(self%verbose) THEN
+      PTR3D(:,:,1:km) = self%wAersl(:,:,1:km,4)
+      CALL pmaxmin('SS Accumulated:', PTR3D, qmin, qmax, iXj, km, 1. )
+      PTR3D(:,:,1:km) = self%wAersl(:,:,1:km,5)
+      CALL pmaxmin('SS Coarse:', PTR3D, qmin, qmax, iXj, km, 1. )
+     END IF
+
    CASE DEFAULT
 
     STATUS = 1
@@ -2217,6 +2273,16 @@ CONTAINS
     IF(self%verbose) CALL pmaxmin('SO4:', PTR3D, qmin, qmax, iXj, km, 1. )
     IF(ASSOCIATED(SO4) .AND. self%AM_I_AERO_PROVIDER) SO4(:,:,:) = PTR3D(:,:,:)/airdens(:,:,:)
     NULLIFY(PTR3D)
+
+   CASE("none")
+
+     self%wAersl(:,:,1:km,1) = 0.0
+
+     IF(self%verbose) THEN
+      PTR3D(:,:,1:km) = self%wAersl(:,:,1:km,1)
+      CALL pmaxmin('SO4:', PTR3D, qmin, qmax, iXj, km, 1. )
+     END IF
+
 
    CASE DEFAULT
 
