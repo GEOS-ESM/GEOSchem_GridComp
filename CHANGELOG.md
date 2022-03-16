@@ -10,19 +10,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Moved CircleCI to use circleci-tools orb
+
 ### Removed
 
 ### Added
 
+- Added Changelog Enforcer GitHub Action
+
 ### Fixed
 
-## [1.8.1] - 2021-02-22
+## [1.9.0] - 2022-03-15
+
+### Added
+
+- Added files for new ACHEM scenario: "20th century AMIP"
+
+### Changed
+
+- Modified version of QFED emissions for the ACHEM AMIP scenario.
+- Modified GMI to support running without aerosols, since the coupling between GMI and GOCART2G is not working yet.
+
+## [1.8.1] - 2022-02-22
 
 ### Fixed
 
 - Fix bug with GNU and Achem Finalize when `aqueous_chemistry: .false.`
 
-## [1.8.0] - 2021-02-14
+## [1.8.0] - 2022-02-14
 
 ### Changed
 
@@ -39,8 +54,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - HEMCO_GridComp/HEMCOgocart_*.rc as they relate to legacy GOCART
   aerosols which have been removed.
-
-### Added
-
-### Fixed
 
