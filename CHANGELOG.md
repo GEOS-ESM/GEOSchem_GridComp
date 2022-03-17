@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Moved CircleCI to use circleci-tools orb
+- Code was modified to receive Observed Precip data from Surface GridComp Exports (rather read an ad-hoc READ from within Chem). Therefore, Precip into Chem is based on whatever method is used in Surface.
 
 ### Removed
 
