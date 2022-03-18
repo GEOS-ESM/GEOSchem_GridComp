@@ -8,11 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.1] - 2022-03-18
+
 ### Changed
+
+- Updates to CMake to support Spack
+- Moved CircleCI to use circleci-tools orb
+- Code was modified to receive Observed Precip data from Surface GridComp Exports (rather than an ad-hoc READ from within Chem). Therefore, Precip into Chem is based on whatever method is used in Surface.
 
 ### Removed
 
 ### Added
+
+- Added Changelog Enforcer GitHub Action
 
 ### Fixed
 
