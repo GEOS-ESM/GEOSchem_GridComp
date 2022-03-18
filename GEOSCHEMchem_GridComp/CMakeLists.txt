@@ -76,12 +76,8 @@ endif ()
 esma_add_library (${this}
    SRCS ${srcs}
    DEPENDENCIES MAPL MAPL_cfio_r4 Chem_Base Chem_Shared HEMCO
+                OpenMP::OpenMP_Fortran esmf NetCDF::NetCDF_Fortran
    )
-
-# Enable OpenMP
-target_link_libraries(${this} PRIVATE OpenMP::OpenMP_Fortran)
-
-target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 
 target_compile_definitions(${this} PRIVATE
    ESMF_ UCX EXTERNAL_GRID EXTERNAL_FORCING USE_REAL8 MODEL_GEOS)

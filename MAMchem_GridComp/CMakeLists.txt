@@ -54,9 +54,8 @@ set (srcs
   )
 
 
-set (dependencies MAPL Chem_Shared GMAO_mpeu)
+set (dependencies MAPL Chem_Shared GMAO_mpeu esmf NetCDF::NetCDF_Fortran)
 esma_add_library (${this} SRCS ${srcs} DEPENDENCIES ${dependencies} SUBDIRS optics)
-target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 target_compile_definitions (${this} PRIVATE GEOS5 MODAL_AERO MODAL_AERO_7MODE GEOS5_PORT)
 
 esma_generate_gocart_code (${this} -F)

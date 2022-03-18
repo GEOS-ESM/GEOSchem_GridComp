@@ -16,7 +16,7 @@ set (srcs
   ${kpp_gas_dir}/kpp_achem_gas_Monitor.f90
   ${kpp_gas_dir}/kpp_achem_gas_Util.f90
   ${kpp_gas_dir}/kpp_achem_gas_LinearAlgebra.f90
-  ${kpp_gas_dir}/kpp_achem_gas_Integrator.f90  
+  ${kpp_gas_dir}/kpp_achem_gas_Integrator.f90
   GACL_ConstantsMod.F90
   GACL_EmissionsMod.F90
   GACL_ReactionRatesMod.F90
@@ -27,11 +27,10 @@ set (srcs
 esma_add_library (
   ${this}
   SRCS ${srcs}
-  DEPENDENCIES Chem_Shared MAPL GMAO_mpeu
+  DEPENDENCIES Chem_Shared MAPL GMAO_mpeu esmf NetCDF::NetCDF_Fortran
   )
 target_compile_definitions (${this} PRIVATE MAPL_MODE GEOS5)
 set_target_properties (${this} PROPERTIES COMPILE_FLAGS ${PP})
-target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 
 new_esma_generate_automatic_code (
   ${this} GEOSachem_Registry.rc
