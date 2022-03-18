@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Updates to CMake to support Spack
 - Moved CircleCI to use circleci-tools orb
 
 ### Removed

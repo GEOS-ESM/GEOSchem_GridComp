@@ -44,10 +44,8 @@ list (REMOVE_ITEM srcs
 
 esma_add_library (${this}
    SRCS ${srcs}
-   DEPENDENCIES MAPL
+   DEPENDENCIES MAPL esmf NetCDF::NetCDF_Fortran
    )
-
-target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
 
 target_compile_definitions (${this} PRIVATE ESMF_ USE_REAL8 MODEL_GEOS)
 set_target_properties (${this} PROPERTIES Fortran_MODULE_DIRECTORY ${include_${this}})
