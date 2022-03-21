@@ -22,8 +22,7 @@ set (srcs
   MATRIXchem_GridCompMod.F90
   )
 
-esma_add_library (${this} SRCS ${srcs} DEPENDENCIES Chem_Shared MAPL)
-target_include_directories (${this} PUBLIC ${INC_ESMF}) # ${esma_include}/MAPL_Base)
+esma_add_library (${this} SRCS ${srcs} DEPENDENCIES Chem_Shared MAPL esmf)
 if (EXTENDED_SOURCE)
   set_target_properties (${this} PROPERTIES COMPILE_FLAGS ${EXTENDED_SOURCE})
 endif ()
@@ -36,4 +35,4 @@ file (GLOB resource_files CONFIGURE_DEPENDS "*.rc")
 install(
    FILES ${resource_files}
    DESTINATION etc
-   ) 
+   )

@@ -57,7 +57,7 @@ if (CMAKE_Fortran_COMPILER_ID MATCHES Intel)
    endif ()
 endif ()
 if (CMAKE_BUILD_TYPE MATCHES Release)
-   set_source_files_properties( GMI_GridComp/GmiChem_GridCompMod.F90 
+   set_source_files_properties( GMI_GridComp/GmiChem_GridCompMod.F90
       PROPERTIES COMPILE_FLAGS "-O2 ${common_Fortran_flags} ${GEOS_Fortran_Release_FPE_Flags} ${ALIGNCOM}")
    set_source_files_properties( GMI_GridComp/GmiChem_GridCompClassMod.F90
       PROPERTIES COMPILE_FLAGS "-O1 ${common_Fortran_flags} ${GEOS_Fortran_Release_FPE_Flags} ${ALIGNCOM}")
@@ -65,7 +65,7 @@ endif ()
 
 
 
-esma_add_library (${this} SRCS ${srcs} DEPENDENCIES Chem_Shared GEOS_Shared)
+esma_add_library (${this} SRCS ${srcs} DEPENDENCIES Chem_Shared GEOS_Shared esmf)
 
 target_include_directories (${this}
   PUBLIC
@@ -83,7 +83,6 @@ target_include_directories (${this}
   )
 
 target_include_directories (${this} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/GMI_GridComp>)
-target_include_directories (${this} PUBLIC ${INC_ESMF})
 
 
 
@@ -142,7 +141,7 @@ add_dependencies (${this} phony_gmi)
 #  OUTPUT something
 #  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/gmi_acg.pl -v
 #  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/gmi_acg.pl
-#  DEPENDS 
+#  DEPENDS
 #  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 #  COMMENT "2nd stage generation of automatic code in GMI"
 #  )
