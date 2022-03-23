@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- More updates to CMake for spack
+
 ## [1.9.1] - 2022-03-18
 
 ### Changed
