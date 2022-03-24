@@ -7,10 +7,9 @@ set (srcs
   TR_GridCompMod.F90
   )
 
-esma_add_library (${this} 
-   SRCS ${srcs} 
-   DEPENDENCIES MAPL GMAO_mpeu Chem_Shared GEOS_Shared
-   INCLUDES ${INC_ESMF})
+esma_add_library (${this}
+   SRCS ${srcs}
+   DEPENDENCIES MAPL GMAO_mpeu Chem_Shared GEOS_Shared esmf)
 
 #esma_generate_gocart_code (${this} -F)
 
