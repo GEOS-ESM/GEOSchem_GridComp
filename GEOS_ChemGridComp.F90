@@ -481,7 +481,8 @@ contains
 
   IF(myState%enable_GMICHEM) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'AIRDENS      ', 'DELP         ', 'LFR          ', 'LIGHT_NO_PROD'/), &
+          SHORT_NAME  = (/'AIRDENS      ', 'DELP         ', 'LFR          ', &
+                          'TPREC        ', 'LIGHT_NO_PROD'/),                &
           DST_ID = GMICHEM, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
