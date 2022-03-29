@@ -428,7 +428,7 @@ contains
 ! -------------------------------
   IF(myState%enable_GOCART) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'AIRDENS     ','AIRDENS_DRYP', 'DELP        ', 'TPREC       ', 'CN_PRCP     ', 'NCN_PRCP    '/), &
+          SHORT_NAME  = (/'AIRDENS     ','AIRDENS_DRYP', 'DELP        ', 'CN_PRCP     ', 'NCN_PRCP    '/), &
           DST_ID = GOCART, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
@@ -460,7 +460,7 @@ contains
 
   IF(myState%enable_CARMA) then
       CALL MAPL_AddConnectivity ( GC, &
-           SHORT_NAME  = (/'AIRDENS ', 'TPREC   ', 'CN_PRCP ', 'NCN_PRCP'/), &
+           SHORT_NAME  = (/'AIRDENS ', 'CN_PRCP ', 'NCN_PRCP'/), &
            DST_ID = CARMA, SRC_ID = CHEMENV, __RC__  )
            
       if(myState%enable_GOCART) then
@@ -474,8 +474,8 @@ contains
 
   IF(myState%enable_STRATCHEM) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/ 'AIRDENS     ', 'AIRDENS_DRYP', 'DELP        ', 'TPREC       ', &
-                           'CN_PRCP     ', 'NCN_PRCP    ', 'LFR         ' /),              &
+          SHORT_NAME  = (/ 'AIRDENS     ', 'AIRDENS_DRYP', 'DELP        ',    &
+                           'CN_PRCP     ', 'NCN_PRCP    ', 'LFR         ' /), &
           DST_ID = STRATCHEM, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
@@ -494,13 +494,13 @@ contains
 
   IF(myState%enable_MAM) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'AIRDENS ', 'DELP    ', 'TPREC   ', 'CN_PRCP ', 'NCN_PRCP'/), &
+          SHORT_NAME  = (/'AIRDENS ', 'DELP    ', 'CN_PRCP ', 'NCN_PRCP'/), &
           DST_ID = MAM, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
   IF(myState%enable_ACHEM) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'AIRDENS ', 'DELP    ', 'TPREC   ', 'CN_PRCP ', 'NCN_PRCP'/), &
+          SHORT_NAME  = (/'AIRDENS ', 'DELP    ', 'CN_PRCP ', 'NCN_PRCP'/), &
           DST_ID = ACHEM, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 

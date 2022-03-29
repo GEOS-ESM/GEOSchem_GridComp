@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Several CHEM children no longer use TPREC, removed Connectivity
+
 ### Fixed
 
 - Fixed bug related to recent Precip change, to satisfy GMI import
