@@ -1,0 +1,23 @@
+setenv NEW_SPECIES ABC
+
+mv XX_GridComp_ExtData.rc ${NEW_SPECIES}_GridComp_ExtData.rc
+mv XX_GridCompMod.F90     ${NEW_SPECIES}_GridCompMod.F90
+mv XX_instance_XX.rc      ${NEW_SPECIES}_instance_${NEW_SPECIES}.rc
+mv XX_StateSpecs.rc       ${NEW_SPECIES}_StateSpecs.rc
+
+cd AMIP
+'rm' -f XX_GridComp_ExtData.rc XX_instance_XX.rc
+ln -s ../${NEW_SPECIES}_GridComp_ExtData.rc  .
+ln -s ../${NEW_SPECIES}_instance_${NEW_SPECIES}.rc  .
+cd ..
+
+vi CMakeLists.txt :  change XX_StateSpecs.rc  to  ${NEW_SPECIES}_StateSpecs.rc
+
+vi *ExtData.rc  :  XX->NEW_SPEC   xx->new_spec
+
+vi *_StateSpecs.rc 
+
+vi *_instance_OH.rc
+
+vi *_GridCompMod.F90
+

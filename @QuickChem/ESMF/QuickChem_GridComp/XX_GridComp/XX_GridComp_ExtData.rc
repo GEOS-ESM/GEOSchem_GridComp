@@ -1,0 +1,18 @@
+PrimaryExports%%
+# -------------|-------|-------|--------|----------------------|--------|--------|-------------|----------|
+#  Import      |       |       | Regrid |        Refresh       | OffSet | Scale  | Variable On |   File   |
+#  Name        | Units | Clim  | Method |     Time Template    | Factor | Factor |     File    | Template |
+# -------------|-------|-------|--------|----------------------|--------|--------|-------------|----------|
+XX_SRC        NA  N Y - none none du_src     ExtData/chemistry/DUST/v0.0.0/sfc/gocart.dust_source.v5a.x1152_y721.nc
+
+# USED FOR DATA-DRIVEN:
+
+# XX data - 3D
+climxx001           'kg kg-1'            Y        N               0              0.0      1.0     du001      ExtData/chemistry/MERRAero/v0.0.0/L72/dR_MERRA-AA-r2.aer_Nv.2003_2014.2008clm.nc4
+
+# See GOCART2G DU for example of additional 2D imports (dry dep, wet drp, settling, scavenging)
+
+
+%%
+
+

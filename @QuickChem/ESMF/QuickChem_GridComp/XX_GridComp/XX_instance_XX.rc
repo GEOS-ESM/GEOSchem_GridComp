@@ -1,0 +1,15 @@
+#
+# Resource file XX parameters. 
+#
+
+# Example of vector, read in QC_EnvironmentMod.F90:
+#particle_radius_microns: 0.73 1.4 2.4 4.5 8.0
+
+# Example of vector, read in XX_GridCompMod.F90:
+#radius_lower: 0.1 1.0 1.8 3.0 6.0
+
+# Molecular weight of species [kg mole-1]
+# Read in QC_EnvironmentMod.F90:
+#molecular_weight: 0.1  0.1  0.1  0.1  0.1
+
+nbins: 1
