@@ -109,7 +109,7 @@ module OH_GridCompMod
 contains
 
 !-------------------------------------------------------------------------
-   subroutine predict_OH_with_XGB( xgb_fname, icount, jcount, kcount, tropp, bb, OH_ML, rc)
+   subroutine predict_OH_with_XGB( xgb_fname, icount, jcount, kcount, pl, tropp, bb, OH_ML, rc)
 
 ! !USES:
 
@@ -121,9 +121,10 @@ contains
 
    character(len=*),          intent(IN   ) :: xgb_fname
    integer,                   intent(IN   ) :: icount, jcount, kcount   ! assume all indices start at 1
-   REAL, POINTER,             intent(IN   ) :: tropp(:,:)   ! Pa
+   REAL, ALLOCATABLE,         intent(IN   ) :: pl(:,:,:)    ! Pa - pressure at midlevel
+   REAL, POINTER,             intent(IN   ) :: tropp(:,:)   ! Pa - tropopause pressure
    TYPE(OH_BOOST_INPUT_DATA), intent(IN   ) :: bb        ! XGBoost input data pointers
-   REAL,                      intent(INOUT) :: OH_ML(:,:,:) ! top-down  (gather the answer in this)
+   REAL,                      intent(INOUT) :: OH_ML(:,:,:) ! mol/mol  top-down  (gather the answer in this)
    integer,                   intent(  OUT) :: rc
 
 ! !DESCRIPTION: Predict OH using XGBoost
@@ -265,7 +266,7 @@ contains
       DO k=1,kcount
 
 !      Units of Pa for both:
-       IF ( bb%PL(i,j,k) .GT. tropp(i,j) ) THEN
+       IF ( pl(i,j,k) .GT. tropp(i,j) ) THEN
 
         !!!!!!!!!!!!!
 
@@ -610,6 +611,16 @@ contains
 ! edge
 #define ADD_IMPORT_24_3DE(sss,lll,uuu)       call MAPL_AddImportSpec(GC, SHORT_NAME=sss, LONG_NAME=lll, UNITS=uuu, __HV__, __VE__, __24__, __RC__)
 
+!!!
+!!!  Always import (to do units conversion of the predicted OH, and
+!!!                 to avoid setting values in the stratosphere):
+!!!
+     ADD_IMPORT_NORST_2D(  'TROPP', 'Tropopause Pressure',         'Pa'      )
+
+     ADD_IMPORT_NORST_3DC( 'T',     'air_temperature',             'K'       )
+     ADD_IMPORT_NORST_3DC( 'Q',     'specific_humidity',           'kg kg-1' )
+
+     ADD_IMPORT_NORST_3DE( 'PLE',   'edge_pressures',              'Pa'      )
 
 !!!
 !!!  Optional imports:
@@ -622,15 +633,13 @@ contains
                     (self%OH_data_source == ONLINE_AVG24 .AND. self%spinup_24hr_imports) ) THEN
 
      ! These are computed before OH is run, no restart needed:
-     ADD_IMPORT_NORST_2D(  'TROPP',  'Tropopause Pressure',        'Pa'      )
-
      ADD_IMPORT_NORST_3DC( 'CH4',  'Methane',                      '?'       )
      ADD_IMPORT_NORST_3DC( 'CO',   'CO',                           '?'       )
-     ADD_IMPORT_NORST_3DC( 'T',    'air_temperature',              'K'       )
+!    ADD_IMPORT_NORST_3DC( 'T',    'air_temperature',              'K'       )     [always imported]
      ADD_IMPORT_NORST_3DC( 'FCLD', 'cloud_fraction_for_radiation', '1'       )
-     ADD_IMPORT_NORST_3DC( 'Q',    'specific_humidity',            'kg kg-1' )
+!    ADD_IMPORT_NORST_3DC( 'Q',    'specific_humidity',            'kg kg-1' )     [always imported]
 
-     ADD_IMPORT_NORST_3DE( 'PLE',  'edge_pressures',               'Pa'      )
+!    ADD_IMPORT_NORST_3DE( 'PLE',  'edge_pressures',               'Pa'      )     [always imported]
      ADD_IMPORT_NORST_3DE( 'ZLE',  'edge_heights',                 'm'       )
 
      ADD_IMPORT_NORST_4DC( 'BCSCACOEF',   'Black Carbon Scattering Coefficient [550 nm]', 'm-1' )
@@ -650,8 +659,6 @@ contains
    IMPORT_24: IF ( self%OH_data_source == ONLINE_AVG24 ) THEN
 
      ! Save each of these in the import_rst
-     ADD_IMPORT_24_2D(      'TROPP_avg24', 'daily_mean_tropopause_pressure',                            'Pa'      )
-
      ADD_IMPORT_24_3DC(       'CH4_avg24', 'daily_mean_methane',                                        '?'       )
      ADD_IMPORT_24_3DC(        'CO_avg24', 'daily_mean_CO',                                             '?'       )
      ADD_IMPORT_24_3DC(         'T_avg24', 'daily_mean_air_temperature',                                'K'       )
@@ -675,8 +682,6 @@ contains
 
 
    IMPORT_PRECOMPUTED: IF ( self%OH_data_source == PRECOMPUTED ) THEN
-
-     ADD_IMPORT_NORST_2D(  'oh_TROPP',  'Tropopause Pressure',                               'Pa'      )
 
      ADD_IMPORT_NORST_3DC( 'oh_CH4',    'Methane for OH algorithm',                          '1'       )
      ADD_IMPORT_NORST_3DC( 'oh_CO',     'CO for OH algorithm',                               '1'       )
@@ -969,7 +974,6 @@ contains
 
 !  All 3D fields are top-down
 
-      REAL, POINTER, DIMENSION(:,:,:) ::  ZLE        => null()
       REAL, POINTER, DIMENSION(:,:,:) ::  TAUCLI     => null()
       REAL, POINTER, DIMENSION(:,:,:) ::  TAUCLW     => null()
 
@@ -994,15 +998,22 @@ contains
 
 !     REAL, POINTER, DIMENSION(:,:,:,:) ::  DU_4d       => null()
 
-      REAL, POINTER, DIMENSION(:,:)   ::     TROPP => null()   ! Pa
-      REAL, POINTER, DIMENSION(:,:,:) ::       PLE => null()   ! Pa
+      REAL, POINTER, DIMENSION(:,:,:) ::   ZLE_BST => null()   ! m   - for XGBoost computation
+      REAL, POINTER, DIMENSION(:,:,:) ::   PLE_BST => null()   ! Pa  - for XGBoost computation
+      REAL, POINTER, DIMENSION(:,:,:) ::   PLE_MOD => null()   ! Pa  - current value in the model
 
-      REAL, POINTER, DIMENSION(:,:)   ::  ptr2d      => null()
-      REAL, POINTER, DIMENSION(:,:,:) ::  ptr3d      => null()
+      REAL, POINTER, DIMENSION(:,:)   :: TROPP_MOD => null()   ! Pa  - current value in the model
 
-      REAL, ALLOCATABLE, TARGET ::        TV(:,:,:) ! top-down
-      REAL, ALLOCATABLE, TARGET ::     ndWet(:,:,:) ! top-down
-      REAL, ALLOCATABLE, TARGET ::        PL(:,:,:) ! top-down   ! Pa
+      REAL, POINTER, DIMENSION(:,:)   ::  ptr2d    => null()
+      REAL, POINTER, DIMENSION(:,:,:) ::  ptr3d    => null()
+
+      REAL, POINTER, DIMENSION(:,:,:) ::  Q_MOD    => null()   ! top-down  - current value in the model
+      REAL, POINTER, DIMENSION(:,:,:) ::  T_MOD    => null()   ! top-down  - current value in the model
+
+      REAL, ALLOCATABLE         ::    TV_MOD(:,:,:) ! top-down  - current value in the model
+      REAL, ALLOCATABLE         :: NDWET_MOD(:,:,:) ! top-down  - current value in the model
+      REAL, ALLOCATABLE         ::    PL_MOD(:,:,:) ! top-down   ! Pa  - vcurrent value in the model
+      REAL, ALLOCATABLE, TARGET ::    PL_BST(:,:,:) ! top-down   ! Pa  - value for XGBoost
 
       REAL, ALLOCATABLE, TARGET :: tauclwDN(:,:,:) ! top-down
       REAL, ALLOCATABLE, TARGET :: taucliDN(:,:,:) ! top-down
@@ -1121,12 +1132,12 @@ contains
       !  Initialize the BOOST pointers
       !  -----------------------------
       NULLIFY( bb%LAT        )   ! online
-      NULLIFY( bb%PL         )   ! online values - instantaneous
-      NULLIFY( bb%T          )   ! online values - instantaneous
+      NULLIFY( bb%PL         )   ! online (3 options)
+      NULLIFY( bb%T          )   ! online (3 options)
       NULLIFY( bb%NO2        )   ! ExtData
       NULLIFY( bb%O3         )   ! ExtData
-      NULLIFY( bb%CH4        )   ! online (inst) or from ExtData
-      NULLIFY( bb%CO         )   ! online (inst) or from ExtData
+      NULLIFY( bb%CH4        )   ! online (3 options)
+      NULLIFY( bb%CO         )   ! online (3 options)
       NULLIFY( bb%ISOP       )   ! ExtData
       NULLIFY( bb%ACET       )   ! ExtData
       NULLIFY( bb%C2H6       )   ! ExtData
@@ -1135,30 +1146,31 @@ contains
       NULLIFY( bb%ALK4       )   ! ExtData
       NULLIFY( bb%MP         )   ! ExtData
       NULLIFY( bb%H2O2       )   ! ExtData
-      NULLIFY( bb%TAUCLWDN   )   ! derived from online (inst)
-      NULLIFY( bb%TAUCLIDN   )   ! derived from online (inst)
-      NULLIFY( bb%TAUCLIUP   )   ! derived from online (inst)
-      NULLIFY( bb%TAUCLWUP   )   ! derived from online (inst)
-      NULLIFY( bb%CLOUD      )   ! online (instantaneous)
-      NULLIFY( bb%QV         )   ! online (instantaneous)
+      NULLIFY( bb%TAUCLWDN   )   ! derived from online (3 options)
+      NULLIFY( bb%TAUCLIDN   )   ! derived from online (3 options)
+      NULLIFY( bb%TAUCLIUP   )   ! derived from online (3 options)
+      NULLIFY( bb%TAUCLWUP   )   ! derived from online (3 options)
+      NULLIFY( bb%CLOUD      )   ! online (3 options)
+      NULLIFY( bb%QV         )   ! online (3 options)
       NULLIFY( bb%GMISTRATO3 )   ! computed from ExtData
       NULLIFY( bb%ALBUV      )   ! ExtData climatology
-      NULLIFY( bb%AODUP      )   ! derived from 6 aerosols - ExtData or online  -- online is broken as of 12/30/21
-      NULLIFY( bb%AODDN      )   ! derived from 6 aerosols - ExtData or online  -- online is broken as of 12/30/21
+      NULLIFY( bb%AODUP      )   ! derived from 6 aerosols - (3 options)
+      NULLIFY( bb%AODDN      )   ! derived from 6 aerosols - (3 options)
       NULLIFY( bb%CH2O       )   ! ExtData
       NULLIFY( bb%SZA        )   ! computed for local noon
 
       ! Reserve Some local work space
       !------------------------------
       allocate(gridBoxThickness(i1:i2,j1:j2,1:km), __STAT__ )
-      allocate(           ndWet(i1:i2,j1:j2,1:km), __STAT__ )
-      allocate(              TV(i1:i2,j1:j2,1:km), __STAT__ )
+      allocate(       NDWET_MOD(i1:i2,j1:j2,1:km), __STAT__ )
+      allocate(          TV_MOD(i1:i2,j1:j2,1:km), __STAT__ )
 
       allocate(          latarr(i1:i2,j1:j2),      __STAT__ )
       allocate(         stratO3(i1:i2,j1:j2),      __STAT__ )
       allocate(        sza_noon(i1:i2,j1:j2),      __STAT__ )
 
-      allocate(              PL(i1:i2,j1:j2,1:km), __STAT__ )
+      allocate(          PL_BST(i1:i2,j1:j2,1:km), __STAT__ )
+      allocate(          PL_MOD(i1:i2,j1:j2,1:km), __STAT__ )
       allocate(        tauclwDN(i1:i2,j1:j2,1:km), __STAT__ )
       allocate(        taucliDN(i1:i2,j1:j2,1:km), __STAT__ )
       allocate(        taucliUP(i1:i2,j1:j2,1:km), __STAT__ )
@@ -1187,39 +1199,46 @@ contains
    if ( .NOT. self%use_inst_values ) PRINT*,'OH is *NOT* in the SPINUP period for 24-hour averages'
   endif
 
-!! Save directly into bb:
-
-      if ( self%OH_data_source == PRECOMPUTED  ) CALL MAPL_GetPointer(import, bb%T,  'oh_T',         __RC__ )
-      if ( self%OH_data_source == ONLINE_INST  ) CALL MAPL_GetPointer(import, bb%T,     'T',         __RC__ )
+! Get the current model value:
+                                                 CALL MAPL_GetPointer(import, T_MOD,      'T',           __RC__ )
+! Get the value to use when calling XGBoost:
+! (save directly into bb)
+      if ( self%OH_data_source == PRECOMPUTED  ) CALL MAPL_GetPointer(import, bb%T,    'oh_T',           __RC__ )
+      if ( self%OH_data_source == ONLINE_INST  ) CALL MAPL_GetPointer(import, bb%T,       'T',           __RC__ )
       if ( self%OH_data_source == ONLINE_AVG24 ) then
-         if (       self%use_inst_values )       CALL MAPL_GetPointer(import, bb%T,     'T',         __RC__ )
-         if ( .NOT. self%use_inst_values )       CALL MAPL_GetPointer(import, bb%T,     'T_avg24',   __RC__ )
+         if (       self%use_inst_values )       CALL MAPL_GetPointer(import, bb%T,       'T',           __RC__ )
+         if ( .NOT. self%use_inst_values )       CALL MAPL_GetPointer(import, bb%T,       'T_avg24',     __RC__ )
       endif
 
 ! CALL MAPL_GetPointer(export, ptr3d, 'DIAG_T_in_OH',    __RC__)
 ! IF (ASSOCIATED(ptr3d))   ptr3d(:,:,:) = bb%T
 
-      if ( self%OH_data_source == PRECOMPUTED  ) CALL MAPL_GetPointer(import, bb%QV,  'oh_Q',            __RC__ )
-      if ( self%OH_data_source == ONLINE_INST  ) CALL MAPL_GetPointer(import, bb%QV,     'Q',            __RC__ )
+! Get the current model value:
+                                                 CALL MAPL_GetPointer(import, Q_MOD,      'Q',           __RC__ )
+! Get the value to use when calling XGBoost:
+! (save directly into bb)
+      if ( self%OH_data_source == PRECOMPUTED  ) CALL MAPL_GetPointer(import, bb%QV,   'oh_Q',           __RC__ )
+      if ( self%OH_data_source == ONLINE_INST  ) CALL MAPL_GetPointer(import, bb%QV,      'Q',           __RC__ )
       if ( self%OH_data_source == ONLINE_AVG24 ) then
-         if (       self%use_inst_values )       CALL MAPL_GetPointer(import, bb%QV,     'Q',            __RC__ )
-         if ( .NOT. self%use_inst_values )       CALL MAPL_GetPointer(import, bb%QV,     'Q_avg24',      __RC__ )
+         if (       self%use_inst_values )       CALL MAPL_GetPointer(import, bb%QV,      'Q',           __RC__ )
+         if ( .NOT. self%use_inst_values )       CALL MAPL_GetPointer(import, bb%QV,      'Q_avg24',     __RC__ )
       endif
 
-!! Save as a secondary pointer:
-
-      if ( self%OH_data_source == PRECOMPUTED  ) CALL MAPL_GetPointer(import, PLE,    'oh_PLE',          __RC__ )
-      if ( self%OH_data_source == ONLINE_INST  ) CALL MAPL_GetPointer(import, PLE,       'PLE',          __RC__ )
+! Get the current model value:
+                                                 CALL MAPL_GetPointer(import, PLE_MOD,    'PLE',         __RC__ )
+! Get the value to use when calling XGBoost:
+      if ( self%OH_data_source == PRECOMPUTED  ) CALL MAPL_GetPointer(import, PLE_BST, 'oh_PLE',         __RC__ )
+      if ( self%OH_data_source == ONLINE_INST  ) CALL MAPL_GetPointer(import, PLE_BST,    'PLE',         __RC__ )
       if ( self%OH_data_source == ONLINE_AVG24 ) then
-         if (       self%use_inst_values )       CALL MAPL_GetPointer(import, PLE,       'PLE',          __RC__ )
-         if ( .NOT. self%use_inst_values )       CALL MAPL_GetPointer(import, PLE,       'PLE_avg24',    __RC__ )
+         if (       self%use_inst_values )       CALL MAPL_GetPointer(import, PLE_BST,    'PLE',         __RC__ )
+         if ( .NOT. self%use_inst_values )       CALL MAPL_GetPointer(import, PLE_BST,    'PLE_avg24',   __RC__ )
       endif
 
-      if ( self%OH_data_source == PRECOMPUTED  ) CALL MAPL_GetPointer(import, ZLE,    'oh_ZLE',          __RC__ )
-      if ( self%OH_data_source == ONLINE_INST  ) CALL MAPL_GetPointer(import, ZLE,       'ZLE',          __RC__ )
+      if ( self%OH_data_source == PRECOMPUTED  ) CALL MAPL_GetPointer(import, ZLE_BST, 'oh_ZLE',         __RC__ )
+      if ( self%OH_data_source == ONLINE_INST  ) CALL MAPL_GetPointer(import, ZLE_BST,    'ZLE',         __RC__ )
       if ( self%OH_data_source == ONLINE_AVG24 ) then
-           if (       self%use_inst_values )     CALL MAPL_GetPointer(import, ZLE,       'ZLE',          __RC__ )
-           if ( .NOT. self%use_inst_values )     CALL MAPL_GetPointer(import, ZLE,       'ZLE_avg24',    __RC__ )
+           if (       self%use_inst_values )     CALL MAPL_GetPointer(import, ZLE_BST,    'ZLE',         __RC__ )
+           if ( .NOT. self%use_inst_values )     CALL MAPL_GetPointer(import, ZLE_BST,    'ZLE_avg24',   __RC__ )
       endif
 
       if ( self%OH_data_source == PRECOMPUTED  ) CALL MAPL_GetPointer(import, TAUCLW, 'oh_TAUCLW',       __RC__ )
@@ -1304,22 +1323,23 @@ contains
 
 !  !  Layer mean pressures  (Pa)
 !  !  --------------------
-      _ASSERT(lbound(PLE,3)==0, "Error. Expecting PLE starting index 0")
-!     p(:,:,1:km) = (ple(:,:,0:km-1)+ple(:,:,1:km))*0.5
+      _ASSERT(lbound(PLE_MOD,3)==0, "Error. Expecting PLE starting index 0")
+      PL_MOD = (PLE_MOD(:,:,0:km-1)+PLE_MOD(:,:,1:km))*0.5
 
    !  Virtual Temperature (K)
-      TV = bb%T * (1.0 + bb%QV/MAPL_EPSILON)/(1.0 + bb%QV)
+      TV_MOD = T_MOD * (1.0 + Q_MOD/MAPL_EPSILON)/(1.0 + Q_MOD)
 
    !  Moist air number density  (molec/m3)
    !  NOTE: Odd units for MAPL_AVOGAD = molec / kmol   (usually expressed in terms of mol)
    !  NOTE: Odd units for MAPL_RUNIV  = J / (kmol K)   (usually expressed in terms of mol)
+   !  Use online, instantaneous values to compute
    !  ------------------------
-      ndWet = (MAPL_AVOGAD * (PLE(:,:,0:km-1)+PLE(:,:,1:km))*0.5) / (MAPL_RUNIV * TV)
+      NDWET_MOD = (MAPL_AVOGAD * PL_MOD) / (MAPL_RUNIV * TV_MOD)
 
    !  Cell depth (in meters)
    !  ---------------------
-      _ASSERT(lbound(ZLE,3)==0, "Error. Expecting ZLE starting index 0")
-      gridBoxThickness(:,:,1:km) = ZLE(:,:,0:km-1)-ZLE(:,:,1:km)
+      _ASSERT(lbound(ZLE_BST,3)==0, "Error. Expecting ZLE starting index 0")
+      gridBoxThickness(:,:,1:km) = ZLE_BST(:,:,0:km-1)-ZLE_BST(:,:,1:km)
 
    !  Aerosol Optical Depth
    !  ---------------------
@@ -1353,8 +1373,8 @@ contains
 
         bb%LAT => latarr
 
-        PL = (PLE(:,:,0:km-1)+PLE(:,:,1:km))*0.5
-        bb%PL => PL
+        PL_BST = (PLE_BST(:,:,0:km-1)+PLE_BST(:,:,1:km))*0.5
+        bb%PL => PL_BST
 
 !       bb%T  set above
 
@@ -1409,29 +1429,30 @@ contains
 
         bb%SZA    =>  sza_noon   ! 11.24
 
-
-        if ( self%OH_data_source == PRECOMPUTED  ) CALL MAPL_GetPointer(import, TROPP,     'oh_TROPP',       __RC__ )
-        if ( self%OH_data_source == ONLINE_INST  ) CALL MAPL_GetPointer(import, TROPP,        'TROPP',       __RC__ )
-        if ( self%OH_data_source == ONLINE_AVG24 ) then
-           if (       self%use_inst_values )       CALL MAPL_GetPointer(import, TROPP,        'TROPP',       __RC__ )
-           if ( .NOT. self%use_inst_values )       CALL MAPL_GetPointer(import, TROPP,        'TROPP_avg24', __RC__ )
-        endif
-
         ! default OH values; prediction will only be done in the troposphere
         CALL MAPL_GetPointer(import, ptr3d,             'oh_OH',   __RC__ )
         OH_ML(:,:,:) = ptr3d(:,:,:)
 
-      CALL MAPL_GetPointer(export, ptr3d,     'DIAG_OH_M2G',     __RC__)
-      IF (ASSOCIATED(ptr3d))   ptr3d(:,:,:) = OH_ML(:,:,:)
+!       ! capture MERRA2GMI version as diagnostic:
+        CALL MAPL_GetPointer(export, ptr3d,     'DIAG_OH_M2G',     __RC__)
+        IF (ASSOCIATED(ptr3d))   ptr3d(:,:,:) = OH_ML(:,:,:)
 
-!  ! set to zero for debugging purposes:
-!  OH_ML(:,:,:) = 0.0
+!       ! set OH to zero for debugging purposes:
+!       OH_ML(:,:,:) = 0.0
 
-   CALL MAPL_MaxMin ( 'OH: OH From M2G ', ptr3d )
+        CALL MAPL_MaxMin ( 'OH: OH From M2G ', ptr3d )
 
-! if (( self%OH_data_source /= ONLINE_AVG24 ) .OR. (self%use_inst_values == .TRUE.) )then
-        CALL predict_OH_with_XGB( XGBoostFilename, (i2-i1)+1,  (j2-j1)+1, km, TROPP, bb, OH_ML, __RC__ )
-! endif
+        CALL MAPL_GetPointer(import, TROPP_MOD, 'TROPP',  __RC__ )
+
+        CALL predict_OH_with_XGB( XGBoostFilename, (i2-i1)+1,  (j2-j1)+1, km, PL_MOD, TROPP_MOD, bb, OH_ML, __RC__ )
+
+        CALL MAPL_GetPointer(export, ptr3d,     'OH_boost',     __RC__)
+        IF (ASSOCIATED(ptr3d))   ptr3d(:,:,:) = OH_ML(:,:,:)
+
+!! debug - did BOOST introduce differences in the stratosphere?
+!IF (ASSOCIATED(ptr3d))   THEN
+!  CALL MAPL_MaxMin ( 'MINMAX of TOP 25 levels of OH difference: ', OH_ML(:,:,1:25)-ptr3d(:,:,1:25)  )
+!ENDIF
 
 !!
 !!  March 2022:  Store the XGBoost version of OH in data3d; convert from mol/mol to molec/cm3
@@ -1439,10 +1460,11 @@ contains
 !!
       !   [mol_OH/mol_MoistAir] * nd_moist_air[molec_MoistAir/m3] = [molec_OH/m3]
       !   / 1.0e+6 = molec_OH/cm3
-      OH = (OH_ML * ndWet) * 1.0e-6
+      OH = (OH_ML * NDWET_MOD) * 1.0e-6
 
-      CALL MAPL_GetPointer(export, ptr3d,     'OH_boost',     __RC__)
-      IF (ASSOCIATED(ptr3d))   ptr3d(:,:,:) = OH_ML(:,:,:)
+! debug - DIAG for moist air number density
+CALL MAPL_GetPointer(export, ptr3d,     'DIAG_NDWET',     __RC__)
+IF (ASSOCIATED(ptr3d))   ptr3d(:,:,:) = NDWET_MOD(:,:,:)
 
       ! Diagnostics for debugging
 
@@ -1500,7 +1522,7 @@ contains
       IF (ASSOCIATED(ptr3d))   ptr3d(:,:,:) = bb%QV
 
       CALL MAPL_GetPointer(export, ptr3d, 'DIAG_ZLE',       __RC__)
-      IF (ASSOCIATED(ptr3d))   ptr3d(:,:,:) = ZLE
+      IF (ASSOCIATED(ptr3d))   ptr3d(:,:,:) = ZLE_BST
 
       CALL MAPL_GetPointer(export, ptr3d, 'DIAG_AOD',       __RC__)
       IF (ASSOCIATED(ptr3d))   ptr3d(:,:,:) = AOD
@@ -1562,9 +1584,9 @@ contains
       ENDIF
 
 
-      DEALLOCATE(gridBoxThickness, PL, latarr, stratO3, sza_noon,   &
-                 tauclwDN, taucliDN, taucliUP, tauclwUP, ndWet, &
-                 TV, aod, aodUP, aodDN, OH_ML, __STAT__ )
+      DEALLOCATE(gridBoxThickness, PL_BST, PL_MOD, latarr, stratO3, sza_noon,   &
+                 tauclwDN, taucliDN, taucliUP, tauclwUP, NDWET_MOD, &
+                 TV_MOD, aod, aodUP, aodDN, OH_ML, __STAT__ )
 
     RETURN_(ESMF_SUCCESS)
 
