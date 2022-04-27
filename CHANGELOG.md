@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.2] - 2022-04-29
+
+### Added
+
+- Added `AMIP.20C` directory to Chem_Base
+
+### Changed
+
+- Cleaned up `AMIP` directory in Chem_Base
+
 ## [1.9.1] - 2022-03-18
 
 ### Changed
