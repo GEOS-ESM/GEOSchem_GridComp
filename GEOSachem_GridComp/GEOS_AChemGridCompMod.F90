@@ -411,6 +411,7 @@ contains
                             UNITS      = 'mol mol-1', &
                             DIMS       = MAPL_DimsHorzVert,    &
                             VLOCATION  = MAPL_VLocationCenter,    &
+                            RESTART    = MAPL_RestartSkip, &
                             __RC__)
 
     call MAPL_AddImportSpec(GC, &
@@ -419,6 +420,7 @@ contains
                             UNITS      = 'mol mol-1', &
                             DIMS       = MAPL_DimsHorzVert,    &
                             VLOCATION  = MAPL_VLocationCenter,    &
+                            RESTART    = MAPL_RestartSkip, &
                             __RC__)
 
     call MAPL_AddImportSpec(GC, &
@@ -427,6 +429,7 @@ contains
                             UNITS      = 'kg kg-1', &
                             DIMS       = MAPL_DimsHorzVert,    &
                             VLOCATION  = MAPL_VLocationCenter,    &
+                            RESTART    = MAPL_RestartSkip, &
                             __RC__)
 
     call MAPL_AddImportSpec(GC, &
@@ -435,6 +438,7 @@ contains
                             UNITS      = 'nmol L-1-1', &
                             DIMS       = MAPL_DimsHorzOnly,    &
                             VLOCATION  = MAPL_VLocationNone,    &
+                            RESTART    = MAPL_RestartSkip, &
                             __RC__)
 
     call MAPL_AddImportSpec(GC, &
@@ -443,6 +447,7 @@ contains
                             UNITS      = 'kg m-2 s-1', &
                             DIMS       = MAPL_DimsHorzOnly,    &
                             VLOCATION  = MAPL_VLocationNone,    &
+                            RESTART    = MAPL_RestartSkip, &
                             __RC__)
 
     call MAPL_AddImportSpec(GC, &
@@ -451,6 +456,7 @@ contains
                             UNITS      = 'kg m-2 s-1', &
                             DIMS       = MAPL_DimsHorzOnly,    &
                             VLOCATION  = MAPL_VLocationNone,    &
+                            RESTART    = MAPL_RestartSkip, &
                             __RC__)
 
     call MAPL_AddImportSpec(GC, &
@@ -459,6 +465,7 @@ contains
                             UNITS      = 'kg m-2 s-1', &
                             DIMS       = MAPL_DimsHorzOnly,    &
                             VLOCATION  = MAPL_VLocationNone,    &
+                            RESTART    = MAPL_RestartSkip, &
                             __RC__)
 
     call MAPL_AddImportSpec(GC, &
@@ -467,6 +474,7 @@ contains
                             UNITS      = 'kg m-2 s-1', &
                             DIMS       = MAPL_DimsHorzOnly,    &
                             VLOCATION  = MAPL_VLocationNone,    &
+                            RESTART    = MAPL_RestartSkip, &
                             __RC__)
 
     call MAPL_AddImportSpec(GC, &
@@ -475,6 +483,7 @@ contains
                             UNITS      = 'kg m-2 s-1', &
                             DIMS       = MAPL_DimsHorzOnly,    &
                             VLOCATION  = MAPL_VLocationNone,    &
+                            RESTART    = MAPL_RestartSkip, &
                             __RC__)
 
     call MAPL_AddImportSpec(GC, &
@@ -483,6 +492,7 @@ contains
                             UNITS      = 'kg m-2 s-1', &
                             DIMS       = MAPL_DimsHorzOnly,    &
                             VLOCATION  = MAPL_VLocationNone,    &
+                            RESTART    = MAPL_RestartSkip, &
                             __RC__)
 
     call MAPL_AddImportSpec(GC, &
@@ -491,6 +501,7 @@ contains
                             UNITS      = 'kg m-2 s-1', &
                             DIMS       = MAPL_DimsHorzOnly,    &
                             VLOCATION  = MAPL_VLocationNone,    &
+                            RESTART    = MAPL_RestartSkip, &
                             __RC__)
 
     call MAPL_AddImportSpec(GC, &
@@ -499,6 +510,7 @@ contains
                             UNITS      = 'kg m-2 s-1', &
                             DIMS       = MAPL_DimsHorzOnly,    &
                             VLOCATION  = MAPL_VLocationNone,    &
+                            RESTART    = MAPL_RestartSkip, &
                             __RC__)
 
     call MAPL_AddImportSpec(GC, &
@@ -507,6 +519,7 @@ contains
                             UNITS      = 'kg m-2 s-1', &
                             DIMS       = MAPL_DimsHorzOnly,    &
                             VLOCATION  = MAPL_VLocationNone,    &
+                            RESTART    = MAPL_RestartSkip, &
                             __RC__)
 
     call MAPL_AddImportSpec(GC, &
@@ -515,6 +528,7 @@ contains
                             UNITS      = 'm-2 s-1', &
                             DIMS       = MAPL_DimsHorzOnly,    &
                             VLOCATION  = MAPL_VLocationNone,    &
+                            RESTART    = MAPL_RestartSkip, &
                             __RC__)
 
     end if OPTIONAL_CHEM_IMPORT
@@ -530,6 +544,7 @@ contains
                                 UNITS      = 'mol mol-1', &
                                 DIMS       = MAPL_DimsHorzVert,    &
                                 VLOCATION  = MAPL_VLocationCenter,    &
+                                RESTART    = MAPL_RestartSkip, &
                                 __RC__)
      end if
 
@@ -539,6 +554,7 @@ contains
                                 UNITS      = 'kg m-2 s-1', &
                                 DIMS       = MAPL_DimsHorzOnly,    &
                                 VLOCATION  = MAPL_VLocationNone,   &
+                                RESTART    = MAPL_RestartSkip, &
                                 __RC__)
 
          call MAPL_AddImportSpec(GC, &
@@ -547,6 +563,7 @@ contains
                                 UNITS      = 'kg m-2 s-1', &
                                 DIMS       = MAPL_DimsHorzOnly,    &
                                 VLOCATION  = MAPL_VLocationNone,    &
+                                RESTART    = MAPL_RestartSkip, &
                                 __RC__)
 
          call MAPL_AddImportSpec(GC, &
@@ -555,6 +572,7 @@ contains
                                 UNITS      = 'kg m-2 s-1', &
                                 DIMS       = MAPL_DimsHorzOnly,    &
                                 VLOCATION  = MAPL_VLocationNone,    &
+                                RESTART    = MAPL_RestartSkip, &
                                 __RC__)
 
     end if OPTIONAL_VOC_IMPORTS
@@ -1397,6 +1415,7 @@ contains
        call MAPL_GetPointer(import, co_bf_voc,      'CO_BF_VOC',      __RC__)
        call MAPL_GetPointer(import, co_fs_voc,      'CO_FS_VOC',      __RC__)
    end if
+   if (mapL_am_i_root()) write(*,*)"bmaa0 ",maxval(q_oh)
 
 !  Get Exports
 !  -------------
@@ -1550,6 +1569,7 @@ contains
 
        night_time = 86400.0 - day_time
 
+       if (mapl_am_I_root()) write(*,*)"bmaa doy ",doy,f_hour
        call solar_zenith_angle(doy, f_hour, (180.0/pi)*lons, (180.0/pi)*lats, sza, cos_sza)
 
        where(sum_cos_sza > 0)
