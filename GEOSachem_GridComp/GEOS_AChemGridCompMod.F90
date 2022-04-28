@@ -1415,7 +1415,6 @@ contains
        call MAPL_GetPointer(import, co_bf_voc,      'CO_BF_VOC',      __RC__)
        call MAPL_GetPointer(import, co_fs_voc,      'CO_FS_VOC',      __RC__)
    end if
-   if (mapL_am_i_root()) write(*,*)"bmaa0 ",maxval(q_oh)
 
 !  Get Exports
 !  -------------
@@ -1569,7 +1568,6 @@ contains
 
        night_time = 86400.0 - day_time
 
-       if (mapl_am_I_root()) write(*,*)"bmaa doy ",doy,f_hour
        call solar_zenith_angle(doy, f_hour, (180.0/pi)*lons, (180.0/pi)*lats, sza, cos_sza)
 
        where(sum_cos_sza > 0)
