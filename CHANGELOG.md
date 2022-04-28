@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Cleaned up `AMIP` directory in Chem_Base
+- 
+### Fixed
+
+- Fixed bug in GEOS_Achem, variables being provided via ExtData did not have restart skip
 
 ## [1.9.1] - 2022-03-18
 
