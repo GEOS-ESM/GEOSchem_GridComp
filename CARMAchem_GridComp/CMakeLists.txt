@@ -12,10 +12,9 @@ foreach (dir ${src_directories})
   list (APPEND srcs ${tmpsrcs})
 endforeach()
 
-set (dependencies Chem_Shared Chem_Base GMAO_mpeu)
+set (dependencies Chem_Shared Chem_Base GMAO_mpeu esmf)
 esma_add_library (${this} SRCS ${srcs} DEPENDENCIES ${dependencies})
 target_include_directories (${this} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/CARMA/source/base>)
-target_include_directories (${this} PUBLIC ${INC_ESMF})
 
 new_esma_generate_automatic_code (
   ${this} CARMAchem_Registry.rc
@@ -31,7 +30,7 @@ set (resource_files
    CARMAchem_Registry.rc
    )
 
-install( 
-   FILES ${resource_files} 
+install(
+   FILES ${resource_files}
    DESTINATION etc
    )

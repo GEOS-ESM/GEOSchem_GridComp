@@ -7,12 +7,12 @@ set (alldirs
   StratChem_GridComp
   GMIchem_GridComp
   CARMAchem_GridComp
-  GEOSCHEMchem_GridComp 
+  GEOSCHEMchem_GridComp
   MATRIXchem_GridComp
-  MAMchem_GridComp 
+  MAMchem_GridComp
   GAAS_GridComp
   H2O_GridComp
-  TR_GridComp 
+  TR_GridComp
   GEOSachem_GridComp
   DNA_GridComp
   HEMCO_GridComp
@@ -28,8 +28,7 @@ set (srcs
 esma_add_library (${this}
   SRCS ${srcs}
   SUBCOMPONENTS ${alldirs}
-  DEPENDENCIES MAPL Chem_Shared Chem_Base GOCART_GridComp GOCART2G_GridComp
-  INCLUDES ${INC_ESMF})
+  DEPENDENCIES MAPL Chem_Shared Chem_Base GOCART_GridComp GOCART2G_GridComp esmf)
 
 install(
    FILES GEOS_ChemGridComp.rc ChemEnv_ExtData.rc  ChemEnv.rc
