@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed bug related to recent Precip change, to satisfy GMI import
+- Corrected the connectivity in GEOS_ChemGridComp.F90 for the pSO2_OCS; destination is now GOCART2G instead of GOCART. This is zero-diff except when running the StratChem/ACHEM/GOCART2G OCS-produced SO2 mechanism (not presently used in FP).
 
 ### Changed
 
