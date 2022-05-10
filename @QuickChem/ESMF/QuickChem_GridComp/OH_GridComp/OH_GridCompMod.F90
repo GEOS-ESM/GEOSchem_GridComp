@@ -1440,7 +1440,7 @@ contains
 !       ! set OH to zero for debugging purposes:
 !       OH_ML(:,:,:) = 0.0
 
-        CALL MAPL_MaxMin ( 'OH: OH From M2G ', ptr3d )
+        CALL MAPL_MaxMin ( 'OH: OH From M2G ', OH_ML )
 
         CALL MAPL_GetPointer(import, TROPP_MOD, 'TROPP',  __RC__ )
 
