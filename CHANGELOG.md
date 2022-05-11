@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- ChemEnv now provides several more Overpass diagnostics.  It also now has a (thread safe) internal state.
+
 ### Changed
 
 - Several CHEM children no longer use TPREC, removed Connectivity
