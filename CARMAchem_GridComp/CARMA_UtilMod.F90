@@ -24,6 +24,7 @@
    USE Chem_UtilMod
    USE Chem_ConstMod, only: undef
    USE m_inpak90	     ! Resource file management
+   USE m_die, only: die
 
 !  Utility Modules
    use DustEmissionMod       ! Dust Emissions

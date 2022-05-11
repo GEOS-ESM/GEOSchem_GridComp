@@ -8,7 +8,24 @@
   use Chem_Mod
   use m_die
 
-! PUBLIC
+  IMPLICIT NONE
+  PRIVATE
+
+!
+! PUBLIC MEMBER FUNCTIONS:
+!
+  PUBLIC  :: convection
+  PUBLIC  :: set_vud
+  PUBLIC  :: disable_convection  ! no-op
+
+!
+! PRIVATE MEMBER FUNCTIONS:
+!
+  PRIVATE :: f_aerosol
+  PRIVATE :: cldcnv
+! PRIVATE :: COMPUTE_F   ! currently unused - guarded with ifdef
+! PRIVATE :: zflip       ! currently unused
+
 
 ! Description
 ! TC is tracer mixing ratio (Mass Mixing Ratio)
@@ -17,35 +34,26 @@
 ! Assumption is that H2O2 passed in is in units of mass mixing ratio
 
 ! Parameters
- real*8, parameter :: kc = 5.0e-3      ! conversion rate of cloud condensate to precipation [s-1]
+ real*8,  parameter :: kc = 5.0e-3      ! conversion rate of cloud condensate to precipation [s-1]
  logical, parameter :: lsadirect = .false.
-
-! ALT: for the time being we need a simple mechanism to disable
-!      convection if GF was chosen in Moist 
-!      (otherwise we would be doing it twice) 
- logical, private :: doing_convection = .true.
- public enable_convection
- public disable_convection
  
 CONTAINS
-  subroutine enable_convection
-    doing_convection = .true.
-  end subroutine enable_convection
 
+! Delete this when MOIST and GOCART no longer refer to it:
   subroutine disable_convection
-    doing_convection = .false.
+    IF ( .FALSE. ) print*,'Disable convection'
   end subroutine disable_convection
 
-  subroutine zflip (varin, varout, km)
-! reorder a variable in the vertical
-  real*8, dimension(:,:,:) :: varin, varout
-  integer*4                :: km, k
 
-  do k = 1, km
-   varout(:,:,k) = varin(:,:,km-k+1)
-  enddo
-
-end subroutine zflip
+!  subroutine zflip (varin, varout, km)
+!! reorder a variable in the vertical
+!  real*8, dimension(:,:,:) :: varin, varout
+!  integer*4                :: km, k
+!
+!  do k = 1, km
+!   varout(:,:,k) = varin(:,:,km-k+1)
+!  enddo
+!end subroutine zflip
 
 
 ! ----------------------------------------------------------------------------------
@@ -91,16 +99,6 @@ end subroutine zflip
   REAL*8,    DIMENSION(i1:i2,j1:j2,km) :: cldliq
   REAL*8,    DIMENSION(i1:i2,j1:j2,km) :: cldice
 
-
-!srf----------------------
-!ALT: a better protection to not do convection is Moist chooses GF
-  if (.not. doing_convection) then
-     bcnv(:,:,:) = 0.0
-     RETURN
-  end if
-!srf----------------------
-
-
 !  Initialize local variables
 !  --------------------------
 !  c_h2o, cldliq, and cldice are respectively intended to be the 
@@ -128,7 +126,8 @@ end subroutine zflip
      if (TRIM(aero_type) .eq. 'nitrate' .and. n .gt. n1 )  kin = .true.   ! treat others as aerosol
 
      if (kin) then
-        CALL f_aerosol(i1, i2, j1, j2, km, kc, f(:,:,:,n), delz, vud )
+        CALL f_aerosol(i1, i2, j1, j2, km, aero_type, kc, f(:,:,:,n),&
+                       delz, vud, tmpu )
      else
         ! gas tracer NH3
         if (TRIM(aero_type) .eq. 'nitrate' .and. n .eq. n1 )  then
@@ -239,6 +238,9 @@ end subroutine zflip
         f(:,:,:,n2) = 0.d0
      end where
   end if
+
+! reduce scavenging efficiency for dust to 20% of the predicted value
+  if(trim(aero_type) .eq. 'DU') f(:,:,:,n1:n2) = 0.2 * f(:,:,:,n1:n2)
 
   if (trim(aero_type) .eq. 'OC'       .or. &
       trim(aero_type) .eq. 'sea_salt' .or. &
@@ -427,9 +429,11 @@ END SUBROUTINE convection
   END SUBROUTINE set_vud
 
 
+#ifdef USE_COMPUTE_F
 ! ----------------------------------------------------------------------------------
 !  SUBROUTINE COMPUTE_F( i1, i2 ,j1 ,j2, km, n, aero_type, F, bxheight, vud, tc1, h2o2, kc)
-  SUBROUTINE COMPUTE_F( i1, i2 ,j1 ,j2, km, n, aero_type, F, bxheight, vud, tc1, kc)
+!  SUBROUTINE COMPUTE_F( i1, i2 ,j1 ,j2, km, n, aero_type, F, bxheight, vud, tc1, kc)
+   SUBROUTINE COMPUTE_F( i1, i2 ,j1 ,j2, km, n, aero_type, F, bxheight, vud, tmpu, tc1, kc)
 !
 !******************************************************************************
 !  Subroutine COMPUTE_F computes F, the fraction of soluble tracer lost by 
@@ -485,6 +489,8 @@ END SUBROUTINE convection
 !        F_AEROSOL a module procedure rather than an internal routine to
 !        COMPUTE_F in order to facilitate parallelization on the Altix.  Also
 !        now pass all arguments explicitly to F_AEROSOL. (bmy, 7/20/04)
+!  (15) Added tmpu so that f_aerosol can do temperature dependent scavenging
+!        for Pb and Be (hyl, Nov 2018)
 !******************************************************************************
 !
       ! References to F90 modules
@@ -499,16 +505,19 @@ END SUBROUTINE convection
   IMPLICIT NONE
 
   ! Arguments
-  INTEGER, INTENT(IN)    :: i1, i2, j1, j2, km
-  character(len=*)     :: aero_type
-  INTEGER, INTENT(IN)    :: n
-  REAL*8,    INTENT(IN)    :: bxheight(I1:I2,J1:J2,KM), vud(i1:i2,j1:j2,km)
-  REAL*8,    INTENT(IN)    :: kc
-!  REAL*8,    INTENT(INOUT) :: tc1(i1:i2,j1:j2,km), h2o2(i1:i2,j1:j2,km)
-  REAL*8,    INTENT(INOUT) :: tc1(i1:i2,j1:j2,km)
-  REAL*8,    INTENT(OUT)   :: f(I1:I2,J1:J2,KM)
+  INTEGER,          INTENT(IN)    :: i1, i2, j1, j2, km
+  character(len=*), INTENT(IN)    :: aero_type
+  INTEGER,          INTENT(IN)    :: n
+  REAL*8,           INTENT(IN)    :: bxheight(I1:I2,J1:J2,KM), vud(i1:i2,j1:j2,km)
+  REAL*8,           INTENT(IN)    :: tmpu(i1:i2,j1:j2,km)
+  REAL*8,           INTENT(IN)    :: kc
+! REAL*8,           INTENT(INOUT) :: tc1(i1:i2,j1:j2,km), h2o2(i1:i2,j1:j2,km)
+  REAL*8,           INTENT(INOUT) :: tc1(i1:i2,j1:j2,km)
+  REAL*8,           INTENT(OUT)   :: f(I1:I2,J1:J2,KM)
 
   ! Local variables 
+  INTEGER    :: I, J, L
+  REAL*8     :: SO2LOSS
   
   ! Kc is the conversion rate from cloud condensate to precip [s^-1]
 !  REAL*8, PARAMETER    :: KC   = 5.0E-3
@@ -560,7 +569,8 @@ END SUBROUTINE convection
         
         ! Compute fraction of SO2 scavenged
         
-        CALL f_aerosol(i1, i2, j1, j2, km, kc, f, bxheight, vud )
+        CALL f_aerosol(i1, i2, j1, j2, km, aero_type, kc, f,&
+                       bxheight,vud,tmpu )
         
         !==============================================================
         ! Coupled full chemistry/aerosol simulation:
@@ -606,7 +616,8 @@ END SUBROUTINE convection
         ! SO4 (aerosol)
         !----------------------------
 
-        CALL f_aerosol(i1, i2, j1, j2, km, kc, f, bxheight, vud ) 
+        CALL f_aerosol(i1, i2, j1, j2, km, aero_type, kc, f, &
+                       bxheight, vud, tmpu )
 
      ELSE IF ( n == NMSA ) THEN
         
@@ -614,7 +625,8 @@ END SUBROUTINE convection
         ! MSA (aerosol)
         !---------------------------
 
-        CALL f_aerosol(i1, i2, j1, j2, km, kc, f, bxheight, vud )
+        CALL f_aerosol(i1, i2, j1, j2, km, aero_type, kc, f, &
+                       bxheight, vud, tmpu )
 
      ELSE  IF ( n == NDMS) THEN 
         
@@ -641,7 +653,8 @@ F = 0.0
         ! HYDROPHILIC (aerosol)
         !----------------------------
      
-        CALL f_aerosol(i1, i2, j1, j2, km, kc, f, bxheight, vud )
+        CALL f_aerosol(i1, i2, j1, j2, km, aero_type, kc, f, &
+                       bxheight, vud, tmpu )
         
         
 !     ELSE IF ( n == n1 ) THEN
@@ -661,21 +674,25 @@ F = 0.0
      ! DUST (aerosol) (all dust bins)
      !----------------------------
      
-     CALL f_aerosol(i1, i2, j1, j2, km, kc, f, bxheight, vud )
+     CALL f_aerosol(i1, i2, j1, j2, km, aero_type, kc, f, &
+                    bxheight, vud, tmpu )
      
+
   CASE ('sea_salt')
      
      !----------------------------
      ! seasalt aerosol (accum mode and coarse mode)
      !----------------------------
      
-     CALL f_aerosol(i1, i2, j1, j2, km, kc, f, bxheight, vud )
+     CALL f_aerosol(i1, i2, j1, j2, km, aero_type, kc, f, &
+                    bxheight, vud, tmpu )
 
   CASE ('co')
 
      IF ( lsadirect ) THEN
      
-        CALL f_aerosol(i1, i2, j1, j2, km, kc, f, bxheight, vud ) 
+        CALL f_aerosol(i1, i2, j1, j2, km, aero_type, kc, f, &
+                       bxheight, vud, tmpu )
 
      ELSE
 
@@ -694,10 +711,12 @@ F = 0.0
   ! Return to calling program
 
 END SUBROUTINE COMPUTE_F
+#endif
 
 
 ! ----------------------------------------------------------------------------------
-  SUBROUTINE f_aerosol( i1, i2, j1, j2, km, kc, f, bxheight, vud) 
+  SUBROUTINE f_aerosol( i1, i2, j1, j2, km, aero_type, kc, f, &
+                        bxheight, vud, tmpu) 
 !
 !******************************************************************************
 !  Subroutine F_AEROSOL returns the fraction of aerosol scavenged in updrafts
@@ -713,6 +732,8 @@ END SUBROUTINE COMPUTE_F
 !
 !  NOTES:
 !  (1 ) Split off 
+!  (2 ) Hongyu Liu - Nov 2018 :
+!       Apply temperature-dependent scale factors to the kc rate for Pb, Be
 !******************************************************************************
 !
   ! References to F90 modules
@@ -721,12 +742,15 @@ END SUBROUTINE COMPUTE_F
 
   ! Arguments
   INTEGER, INTENT(IN)  :: i1, i2, j1, j2, km
+  character(len=*)     :: aero_type
+  REAL*8,    INTENT(IN)  :: tmpu(i1:i2,j1:j2,km)
   REAL*8,    INTENT(IN)  :: kc
   REAL*8,    INTENT(IN)  :: bxheight(i1:i2,j1:j2,km), vud(i1:i2,j1:j2,km)
   REAL*8,    INTENT(OUT) :: f(i1:i2,j1:j2,km)
   
   ! Local variables
   INTEGER             :: i, j, l
+  REAL*8              :: KcScale(3), scaled_kc
   
   !=================================================================
   ! F_AEROSOL begins here!
@@ -734,6 +758,10 @@ END SUBROUTINE COMPUTE_F
   ! Aerosol tracers are 100% in the cloud condensate phase, so 
   ! we set K = Kc, and compute F accordingly (cf Jacob et al 2000 )    
   !=================================================================
+
+  ! HYL: Halve the kc (cloud condensate -> precip) rate
+  ! for the temperature range 237 K <= T < 258 K.
+    KcScale = (/ 1.0, 0.5, 1.0 /)
   
   ! Turn off scavenging in the first level by setting F = 0
 !!!  f(:,:,1) = 0.0
@@ -746,11 +774,27 @@ END SUBROUTINE COMPUTE_F
         DO i = i1, i2
            ! Distance between grid box centers [m]
 !           tmp = 0.5 * ( bxheight(i,j,l-1) + bxheight(i,j,l) ) 
+
+            if  (aero_type == 'Pb210' .or. aero_type == 'Pb210s' .or. &
+                 aero_type == 'Be7'   .or. aero_type == 'Be7s'   .or. &
+                 aero_type == 'Be10'  .or. aero_type == 'Be10s'  ) then
+
+                 ! Apply temperature-dependent scale factors to the kc rate
+                  if ( tmpu(i,j,l) < 237.0 ) then
+                     scaled_kc = kc * KcScale(1)
+                  else if ( tmpu(i,j,l) >= 237.0 .and. tmpu(i,j,l) < 258.0) then
+                     scaled_kc = kc * KcScale(2)
+                  else 
+                     scaled_kc = kc * KcScale(3)
+                  endif
+            else 
+                  scaled_kc = kc 
+            endif
        
            ! (Eq. 2, Jacob et al, 2000, with K = Kc)
 !           f(i,j,l) = 1.0 - EXP( -kc * tmp / vud(i,j,l) )
            if(vud(i,j,l) > 1.e-14) &
-            f(i,j,l) = 1.0 - EXP( -kc * bxheight(i,j,l) / vud(i,j,l) )
+            f(i,j,l) = 1.0 - EXP( -scaled_kc * bxheight(i,j,l) / vud(i,j,l) )
            
         END DO
      END DO
@@ -810,8 +854,10 @@ END SUBROUTINE f_aerosol
 
   REAL*8    :: bmass(i1:i2,j1:j2,km), qb(i1:i2,j1:j2), mb(i1:i2,j1:j2), qc(i1:i2,j1:j2)
   REAL*8    :: tdt, qc_pres, cmout, entrn, delq
+! REAL*8    :: dq
   REAL*8    :: term_1, term_2, term_3, term_4, tsum
-  INTEGER :: nsteps, ktop, ic, istep, i, j, k
+  INTEGER   :: nsteps, ktop, ic, istep, i, j, k
+! INTEGER   :: jump, js, jn
   REAL*8, PARAMETER :: tiny = 1.0E-14 
 
   ! executable statements
@@ -839,7 +885,7 @@ END SUBROUTINE f_aerosol
 
 ! Use fixed internal convection time step of 300s
 ! nstep: number of internal time steps to reach dt_conv, which is the external
-  ! time interval for the convection process
+!        time interval for the convection process
 
   _UNUSED_DUMMY(aero_type)
   _UNUSED_DUMMY(delz)

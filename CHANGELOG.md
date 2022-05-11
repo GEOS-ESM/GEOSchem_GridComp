@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Several CHEM children no longer use TPREC, removed Connectivity
+- Updates to the ConvectionMod in Chem_Shared: reduced dust scavenging by 80%; added temperature-dependent scavenging of Pb, Be species
+- Update to the WetRemovalMod in Chem_Shared: added temperature-dependent snow scavenging of Pb, Be species
 
 ### Fixed
 

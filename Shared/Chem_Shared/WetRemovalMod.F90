@@ -266,6 +266,19 @@ CONTAINS
         endif
 
         effRemoval = qa(n1+n-1)%fwet
+
+!       hyl 2018:
+        if (tmpu(i,j,k) < 258d0 .and. snow_scavenging) then
+!           effRemoval = 1.
+          if  (aero_type == 'Pb210' .or. aero_type == 'Pb210s' .or. &
+               aero_type == 'Be7'   .or. aero_type == 'Be7s'   .or. &
+               aero_type == 'Be10'  .or. aero_type == 'Be10s'  ) then
+            if (tmpu(i,j,k) >= 237d0 ) then
+              effRemoval = 0.5
+            endif
+          endif
+        endif
+
         DC(n) = qa(n1+n-1)%data3d(i,j,k) * F * effRemoval *(1.-exp(-BT))
         if (DC(n).lt.0.) DC(n) = 0.
         qa(n1+n-1)%data3d(i,j,k) = qa(n1+n-1)%data3d(i,j,k)-DC(n)
