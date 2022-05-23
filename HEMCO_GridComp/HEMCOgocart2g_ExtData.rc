@@ -35,6 +35,19 @@ CLM4_PFT_C3_NARC_GRSS        '1' N    N -                    none     none    PF
 CLM4_PFT_C4_GRSS             '1' N    N -                    none     none    PFT_C4_GRSS             ExtData/chemistry/HEMCO/v0.0.0/sfc/CLM4_PFT.geos.025x03125.esmf.nc
 CLM4_PFT_CROP                '1' N    N -                    none     none    PFT_CROP                ExtData/chemistry/HEMCO/v0.0.0/sfc/CLM4_PFT.geos.025x03125.esmf.nc
 MEGAN_ORVC       'kgC/m2/s'      Y    Y 1999-%m2-01T00:00:00 none     none    OCPI                    ExtData/chemistry/HEMCO/v0.0.0/sfc/NVOC.geos.1x1.esmf.nc
+GOCART_SO2_ANTHROL1           NA  N    Y %y4-%m2-%d2t12:00:00 none     none    so2_nonenergy   ExtData/chemistry/CEDS/v2021-04-21/sfc/SO2-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4
+GOCART_SO2_ANTHROL2           NA  N    Y %y4-%m2-%d2t12:00:00 none     none    so2_energy      ExtData/chemistry/CEDS/v2021-04-21/sfc/SO2-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4
+GOCART_SU_SHIPSO2 NA  N Y %y4-%m2-%d2t12:00:00 none none so2_shipping ExtData/chemistry/CEDS/v2021-04-21/sfc/SO2-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4
+#GOCART_SU_AIRCRAFT NA  N Y %y4-%m2-%d2t12:00:00 none none so2_aviation   ExtData/chemistry/CEDS/v2021-04-21/L72/SO2-em-AIR-anthro_input4MIPs_emissions_CMIP_CEDS-2021-04-21_gn__aviation.x576_y361_z72_t12.%y4.nc4
+GOCART_OC_ANTEOC1 NA  N Y %y4-%m2-%d2t12:00:00 none none oc_nonenergy ExtData/chemistry/CEDS/v2021-04-21/sfc/OC-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4
+GOCART_OC_ANTEOC2 NA  N Y %y4-%m2-%d2t12:00:00 none none oc_energy    ExtData/chemistry/CEDS/v2021-04-21/sfc/OC-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4
+GOCART_NH3_EN   'kg m-2 s-1'  N      Y      %y4-%m2-%d2t12:00:00    none     none      nh3         ExtData/chemistry/CEDS/v2021-04-21/sfc/NH3-em-anthro_CMIP_CEDS_gn.x2304_y1441_t12.%y4.nc4
+GOCART_BC_ANTEBC1 NA  N Y %y4-%m2-%d2t12:00:00 none none bc_nonenergy ExtData/chemistry/CEDS/v2021-04-21/sfc/BC-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4
+GOCART_BC_ANTEBC2 NA  N Y %y4-%m2-%d2t12:00:00 none none bc_energy    ExtData/chemistry/CEDS/v2021-04-21/sfc/BC-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4
+GOCART_BC_SHIP    NA  N Y %y4-%m2-%d2t12:00:00 none none bc_shipping  ExtData/chemistry/CEDS/v2021-04-21/sfc/BC-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4
+GOCART_OC_SHIP    NA  N Y %y4-%m2-%d2t12:00:00 none none oc_shipping  ExtData/chemistry/CEDS/v2021-04-21/sfc/OC-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4
+#GOCART_OC_AIRCRAFT NA  N Y %y4-%m2-%d2t12:00:00 none none oc_aviation ExtData/chemistry/CEDS/v2021-04-21/L72/OC-em-AIR-anthro_input4MIPs_emissions_CMIP_CEDS-2021-04-21_gn__aviation.x576_y361_z72_t12.%y4.nc4
+#GOCART_BC_AIRCRAFT NA  N Y %y4-%m2-%d2t12:00:00 none none bc_aviation ExtData/chemistry/CEDS/v2021-04-21/L72/BC-em-AIR-anthro_input4MIPs_emissions_CMIP_CEDS-2021-04-21_gn__aviation.x576_y361_z72_t12.%y4.nc4
 
 # --- Mask ---
 #TIMEZONES NA  N V - none none  UTC_OFFSET ExtData/chemistry/HEMCO/v0.0.0/sfc/timezones_esmf.2x25.nc

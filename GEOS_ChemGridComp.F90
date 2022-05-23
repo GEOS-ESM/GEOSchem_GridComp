@@ -805,7 +805,7 @@ contains
 ! ---------------
   IF( myState%enable_HEMCO .AND. myState%enable_GOCART2G ) THEN
    CALL MAPL_AddConnectivity ( GC, &
-    SHORT_NAME  = (/ 'OC_ISOPRENE', 'OC_MTPA    ', 'OC_MTPO    ', 'OC_LIMO    '/), &
+    SHORT_NAME  = (/ 'OC_ISOPRENE', 'OC_MTPA    ', 'OC_MTPO    ', 'OC_LIMO    ', 'SU_ANTHROL1', 'SU_ANTHROL2', 'SU_SHIPSO2', 'OC_ANTEOC1', 'OC_ANTEOC2', 'OC_SHIP', 'BC_ANTEBC1', 'BC_ANTEBC2', 'BC_SHIP','EMI_NH3_EN', 'SU_SHIPSO4'/), &
     SRC_ID=HEMCO, DST_ID=GOCART2G, __RC__)
   END IF
 
