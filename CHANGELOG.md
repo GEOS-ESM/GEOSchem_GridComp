@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## 2022-05-23
+
+###Changed
+- Made edits to pull in anthropogenic emissions through HEMCO instead of GOCART ExtData to implement diurnal and day of the week scaling factors
+
+
 ## [1.9.0] - 2022-03-15
 
 ### Added
