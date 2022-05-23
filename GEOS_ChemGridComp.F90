@@ -586,7 +586,7 @@ contains
    IF(chemReg%doing_OCS) THEN
     CALL MAPL_AddConnectivity ( GC, &
          SHORT_NAME  = (/'pSO2_OCS'/), &
-         DST_ID = GOCART, SRC_ID = ACHEM, __RC__  )
+         DST_ID = GOCART2G, SRC_ID = ACHEM, __RC__  )
    ENDIF
    CALL MAPL_AddConnectivity ( GC, &
         SHORT_NAME  = (/'pSOA_ANTHRO_VOC', 'pSOA_BIOB_VOC  '/), &

@@ -8,13 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- ChemEnv now provides several more Overpass diagnostics.  It also now has a (thread safe) internal state.
+
 ### Changed
 
 - Several CHEM children no longer use TPREC, removed Connectivity
+- Updates to the ConvectionMod in Chem_Shared: reduced dust scavenging by 80%; added temperature-dependent scavenging of Pb, Be species
+- Update to the WetRemovalMod in Chem_Shared: added temperature-dependent snow scavenging of Pb, Be species
 
 ### Fixed
 
 - Fixed bug related to recent Precip change, to satisfy GMI import
+- Corrected the connectivity in GEOS_ChemGridComp.F90 for the pSO2_OCS; destination is now GOCART2G instead of GOCART. This is zero-diff except when running the StratChem/ACHEM/GOCART2G OCS-produced SO2 mechanism (not presently used in FP).
 
 ### Changed
 
