@@ -20,13 +20,21 @@ module GEOS_ChemEnvGridCompMod
   implicit none
   private
 
-  INTEGER, SAVE, ALLOCATABLE :: MASK_10AM(:,:)
-  INTEGER, SAVE, ALLOCATABLE :: MASK_2PM(:,:)
-  INTEGER, SAVE              :: OVP_FIRST_HMS
-  INTEGER, SAVE              :: OVP_RUN_DT
-  INTEGER, SAVE              :: OVP_GC_DT
-  INTEGER, SAVE              :: OVP_MASK_DT
-  LOGICAL                    :: OVP_setup_done
+      !Derived types for the internal state
+      type T_ChemEnv_STATE
+         private
+         INTEGER, ALLOCATABLE       :: MASK_10AM(:,:)
+         INTEGER, ALLOCATABLE       :: MASK_2PM(:,:)
+         INTEGER                    :: OVP_FIRST_HMS
+         INTEGER                    :: OVP_RUN_DT
+         INTEGER                    :: OVP_GC_DT
+         INTEGER                    :: OVP_MASK_DT
+         LOGICAL                    :: OVP_setup_done = .FALSE.
+      end type T_ChemEnv_STATE
+
+      type ChemEnv_WRAP
+         type (T_ChemEnv_STATE), pointer :: PTR
+      end type ChemEnv_WRAP
 
   integer,  parameter        :: r8 = 8
   character(len=ESMF_MAXSTR) :: rcfilen = 'ChemEnv.rc'
@@ -94,7 +102,9 @@ contains
 
 ! Locals
 
-    type (ESMF_Config)         :: CF
+    type (ESMF_Config)              :: CF
+    type (T_ChemEnv_STATE), pointer :: state
+    type (ChemEnv_WRAP)             :: wrap
 
 !=============================================================================
 
@@ -107,7 +117,12 @@ contains
     call ESMF_GridCompGet( GC, NAME=COMP_NAME, CONFIG=CF, __RC__ )
     Iam = trim(COMP_NAME) // 'SetServices'
 
-    OVP_setup_done = .FALSE.
+    ! Wrap internal state for storing in GC; rename legacyState
+    ! -------------------------------------
+    allocate ( state, stat=STATUS )
+    VERIFY_(STATUS)
+    wrap%ptr => state
+
 
 ! Register services for this component
 ! ------------------------------------
@@ -115,61 +130,68 @@ contains
     call MAPL_GridCompSetEntryPoint ( GC, ESMF_METHOD_RUN,        Run1,        __RC__ ) 
     call MAPL_GridCompSetEntryPoint ( GC, ESMF_METHOD_RUN,        Run2,        __RC__ ) 
 
+    ! Save pointer to the wrapped internal state in the GC
+    !-----------------------------------------------------
+
+    call ESMF_UserCompSetInternalState ( GC, 'ChemEnv', wrap, STATUS )
+    VERIFY_(STATUS)
+    state%OVP_setup_done = .FALSE.
+
 !BOS
 
     call read_flash_source ( rcfilen, flash_source_enum, __RC__ )
 
 ! !IMPORT STATE:
 
-    call MAPL_AddImportSpec(GC,                                    &
-         SHORT_NAME = 'PLE',                                       &
-         LONG_NAME  = 'air_pressure',                              &
-         UNITS      = 'Pa',                                        &
-         DIMS       =  MAPL_DimsHorzVert,                          &
-         VLOCATION  =  MAPL_VLocationEdge,                  __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'PLE',                                            &
+         LONG_NAME  = 'air_pressure',                                   &
+         UNITS      = 'Pa',                                             &
+         DIMS       =  MAPL_DimsHorzVert,                               &
+         VLOCATION  =  MAPL_VLocationEdge,                       __RC__ )
 
-    call MAPL_AddImportSpec(GC,                                    &
-         SHORT_NAME = 'TH',                                        &
-         LONG_NAME  = 'potential_temperature',                     &
-         UNITS      = 'K',                                         &
-         DIMS       =  MAPL_DimsHorzVert,                          &
-         VLOCATION  =  MAPL_VLocationCenter,                __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'TH',                                             &
+         LONG_NAME  = 'potential_temperature',                          &
+         UNITS      = 'K',                                              &
+         DIMS       =  MAPL_DimsHorzVert,                               &
+         VLOCATION  =  MAPL_VLocationCenter,                     __RC__ )
 
-     call MAPL_AddImportSpec(GC,                                   &
-        SHORT_NAME = 'Q',                                          &
-        LONG_NAME  = 'specific_humidity',                          &
-        UNITS      = 'kg kg-1',                                    &
-        DIMS       = MAPL_DimsHorzVert,                            &
-        VLOCATION  = MAPL_VLocationCenter,                  __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'Q',                                              &
+         LONG_NAME  = 'specific_humidity',                              &
+         UNITS      = 'kg kg-1',                                        &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
 !   Geopotential Height
 !   -------------------
-    call MAPL_AddImportSpec(GC,                                    &
-         SHORT_NAME='PHIS',                                        &
-         LONG_NAME ='Geopotential Height at Surface',              &
-         UNITS     ='m+2 s-2',                                     &
-         DIMS      = MAPL_DimsHorzOnly,                            &
-         VLOCATION = MAPL_VLocationNone,                    __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'PHIS',                                           &
+         LONG_NAME  = 'Geopotential Height at Surface',                 &
+         UNITS      = 'm+2 s-2',                                        &
+         DIMS       =  MAPL_DimsHorzOnly,                               &
+         VLOCATION  =  MAPL_VLocationNone,                       __RC__ )
 
 !   Total precip
 !   ------------
-    call MAPL_AddImportSpec(GC,                                    &
-         SHORT_NAME='PRECTOT',                                     &
-         LONG_NAME ='total_precipitation',                         &
-         UNITS     ='kg m-2 s-1',                                  &
-         DEFAULT   = MAPL_UNDEF,                                   &
-         DIMS      = MAPL_DimsHorzOnly,                            &
-         VLOCATION = MAPL_VLocationNone,                    __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'PRECTOT',                                        &
+         LONG_NAME  = 'total_precipitation',                            &
+         UNITS      = 'kg m-2 s-1',                                     &
+         DEFAULT    =  MAPL_UNDEF,                                      &
+         DIMS       =  MAPL_DimsHorzOnly,                               &
+         VLOCATION  =  MAPL_VLocationNone,                       __RC__ )
 
 !   Convective precip
 !   -----------------
-    call MAPL_AddImportSpec(GC,                                    &
-         SHORT_NAME='CN_PRCP',                                     &
-         LONG_NAME ='convective_precipitation',                    &
-         UNITS     ='kg m-2 s-1',                                  &
-         DEFAULT   = MAPL_UNDEF,                                   &
-         DIMS      = MAPL_DimsHorzOnly,                            &
-         VLOCATION = MAPL_VLocationNone,                    __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'CN_PRCP',                                        &
+         LONG_NAME  = 'convective_precipitation',                       &
+         UNITS      = 'kg m-2 s-1',                                     &
+         DEFAULT    =  MAPL_UNDEF,                                      &
+         DIMS       =  MAPL_DimsHorzOnly,                               &
+         VLOCATION  =  MAPL_VLocationNone,                       __RC__ )
 
 !   call MAPL_AddImportSpec(GC,                                    &
 !      SHORT_NAME  = 'FRLANDICE',                                  &
@@ -190,218 +212,425 @@ contains
 !    						          __RC__ )
 
     if (flash_source_enum == FLASH_SOURCE_FIT) then
-      call MAPL_AddImportSpec(GC,                                    &
-               SHORT_NAME  = 'MCOR',                                 &
-               LONG_NAME   = 'agrid_cell_area',                      &
-               UNITS       = 'm+2',                                  &
-               DIMS        = MAPL_DimsHorzOnly,                      &
-               VLOCATION   = MAPL_VLocationNone,              __RC__ )
+      call MAPL_AddImportSpec(GC,                                       &
+           SHORT_NAME = 'MCOR',                                         &
+           LONG_NAME  = 'agrid_cell_area',                              &
+           UNITS      = 'm+2',                                          &
+           DIMS       = MAPL_DimsHorzOnly,                              &
+           VLOCATION  = MAPL_VLocationNone,                      __RC__ )
 
-      call MAPL_AddImportSpec(GC,                                    &
-               SHORT_NAME  = 'RATIO_LOCAL',                          &
-               LONG_NAME   = 'local_ratios_lightning',               &
-               UNITS       = '1',                                    &
-               DIMS        = MAPL_DimsHorzOnly,                      &
-               VLOCATION   = MAPL_VLocationNone,              __RC__ )
+      call MAPL_AddImportSpec(GC,                                       &
+           SHORT_NAME = 'RATIO_LOCAL',                                  &
+           LONG_NAME  = 'local_ratios_lightning',                       &
+           UNITS      = '1',                                            &
+           DIMS       = MAPL_DimsHorzOnly,                              &
+           VLOCATION  = MAPL_VLocationNone,                      __RC__ )
     
-      call MAPL_AddImportSpec(GC,                                    &
-               SHORT_NAME  = 'MIDLAT_ADJ',                           &
-               LONG_NAME   = 'midlat_adjustment_lightning',          &
-               UNITS       = '1',                                    &
-               DIMS        = MAPL_DimsHorzOnly,                      &
-               VLOCATION   = MAPL_VLocationNone,              __RC__ )
+      call MAPL_AddImportSpec(GC,                                       &
+           SHORT_NAME = 'MIDLAT_ADJ',                                   &
+           LONG_NAME  = 'midlat_adjustment_lightning',                  &
+           UNITS      = '1',                                            &
+           DIMS       = MAPL_DimsHorzOnly,                              &
+           VLOCATION  = MAPL_VLocationNone,                      __RC__ )
     endif
 
-    call MAPL_AddImportSpec(GC,                                    &
-             SHORT_NAME = 'CNV_MFC',                               &
-             LONG_NAME  = 'cumulative_mass_flux',                  &
-             UNITS      = 'kg m-2 s-1',                            &
-             DIMS       = MAPL_DimsHorzVert,                       &
-             VLOCATION  = MAPL_VLocationEdge,               __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'CNV_MFC',                                        &
+         LONG_NAME  = 'cumulative_mass_flux',                           &
+         UNITS      = 'kg m-2 s-1',                                     &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationEdge,                        __RC__ )
 
-    call MAPL_AddImportSpec(GC,                                    &
-             SHORT_NAME = 'CNV_MFD',                               &
-             LONG_NAME  = 'detraining_mass_flux',                  &
-             UNITS      = 'kg m-2 s-1',                            &
-             DIMS       = MAPL_DimsHorzVert,                       &
-             VLOCATION  = MAPL_VLocationCenter,             __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'CNV_MFD',                                        &
+         LONG_NAME  = 'detraining_mass_flux',                           &
+         UNITS      = 'kg m-2 s-1',                                     &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
-    call MAPL_AddImportSpec(GC,                                    &
-             SHORT_NAME = 'PFI_CN',                                &
-             LONG_NAME  = 'ice_convective_precipitation',          &
-             UNITS      = 'kg m-2 s-1',                            &
-             DIMS       = MAPL_DimsHorzVert,                       &
-             VLOCATION  = MAPL_VLocationEdge,               __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'PFI_CN',                                         &
+         LONG_NAME  = 'ice_convective_precipitation',                   &
+         UNITS      = 'kg m-2 s-1',                                     &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationEdge,                        __RC__ )
 
-    call MAPL_AddImportSpec ( gc,                                  &
-             SHORT_NAME = 'T',                                     &
-             LONG_NAME  = 'air_temperature',                       &
-             UNITS      = 'K',                                     &
-             DIMS       = MAPL_DimsHorzVert,                       &
-             VLOCATION  = MAPL_VLocationCenter,             __RC__ )
+    call MAPL_AddImportSpec ( gc,                                       &
+         SHORT_NAME = 'T',                                              &
+         LONG_NAME  = 'air_temperature',                                &
+         UNITS      = 'K',                                              &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
-    call MAPL_AddImportSpec(GC,                                    &
-             SHORT_NAME = 'TS',                                    &
-             LONG_NAME  = 'surface_skin_temperature',              &
-             UNITS      = 'K',                                     &
-             DIMS       = MAPL_DimsHorzOnly,                       &
-             VLOCATION  = MAPL_VLocationNone,               __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'TS',                                             &
+         LONG_NAME  = 'surface_skin_temperature',                       &
+         UNITS      = 'K',                                              &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
 
-    call MAPL_AddImportSpec(GC,                                    &
-             SHORT_NAME = 'FROCEAN',                               &
-             LONG_NAME  = 'fraction_of_ocean',                     &
-             UNITS      = '1',                                     &
-             DIMS       = MAPL_DimsHorzOnly,                       &
-             VLOCATION  = MAPL_VLocationNone,               __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'FROCEAN',                                        &
+         LONG_NAME  = 'fraction_of_ocean',                              &
+         UNITS      = '1',                                              &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
 
-    call MAPL_AddImportSpec(GC,                                    &
-             SHORT_NAME = 'FRLAND',                                &
-             LONG_NAME  = 'fraction_of_land',                      &
-             UNITS      = '1',                                     &
-             DIMS       = MAPL_DimsHorzOnly,                       &
-             VLOCATION  = MAPL_VLocationNone,               __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'FRLAND',                                         &
+         LONG_NAME  = 'fraction_of_land',                               &
+         UNITS      = '1',                                              &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
 
-    call MAPL_AddImportSpec(GC,                                    &
-             SHORT_NAME         = 'ZLE',                           &
-             LONG_NAME          = 'geopotential_height',           &
-             UNITS              = 'm',                             &
-             DIMS               = MAPL_DimsHorzVert,               &
-             VLOCATION          = MAPL_VLocationEdge,       __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'ZLE',                                            &
+         LONG_NAME  = 'geopotential_height',                            &
+         UNITS      = 'm',                                              &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationEdge,                        __RC__ )
 
-    call MAPL_AddImportSpec(GC,                                    &
-             SHORT_NAME         = 'LWI',                           &
-             LONG_NAME          = 'land(1)_water(0)_ice(2)_flag',  &
-             UNITS              = '1',                             &
-             DIMS               = MAPL_DimsHorzOnly,               &
-             VLOCATION          = MAPL_VLocationNone,       __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'LWI',                                            &
+         LONG_NAME  = 'land(1)_water(0)_ice(2)_flag',                   &
+         UNITS      = '1',                                              &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
 
-    call MAPL_AddImportSpec(GC,                                    &
-             SHORT_NAME     = 'ZPBL',                              &
-             LONG_NAME      = 'planetary_boundary_layer_height',   &
-             UNITS          = 'm',                                 &
-             DIMS           = MAPL_DimsHorzOnly,                   &
-             VLOCATION      = MAPL_VLocationNone,           __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'ZPBL',                                           &
+         LONG_NAME  = 'planetary_boundary_layer_height',                &
+         UNITS      = 'm',                                              &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
 
-    call MAPL_AddImportSpec(GC,                                    &
-             SHORT_NAME        = 'AREA',                           &
-             LONG_NAME         = 'agrid_cell_area',                &
-             UNITS             = 'm+2',                            &
-             DIMS              = MAPL_DimsHorzOnly,                &
-             VLOCATION         = MAPL_VLocationNone,        __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'AREA',                                           &
+         LONG_NAME  = 'agrid_cell_area',                                &
+         UNITS      = 'm+2',                                            &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
 
-    call MAPL_AddImportSpec(GC,                                    &
-             SHORT_NAME = 'CNV_QC',                                &
-             LONG_NAME  = 'grid_mean_convective_condensate',       &
-             UNITS      = 'kg kg-1',                               &
-             DIMS       = MAPL_DimsHorzVert,                       &
-             VLOCATION  = MAPL_VLocationCenter,             __RC__ )
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'CNV_QC',                                         &
+         LONG_NAME  = 'grid_mean_convective_condensate',                &
+         UNITS      = 'kg kg-1',                                        &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
+    call MAPL_AddImportSpec ( gc,                                       &
+         SHORT_NAME = 'QLTOT',                                          &
+         LONG_NAME  = 'mass_fraction_of_cloud_liquid_water',            &
+         UNITS      = 'kg kg-1',                                        &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
+
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'PS',                                             &
+         LONG_NAME  = 'surface_pressure',                               &
+         UNITS      = 'Pa',                                             &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                         __RC__)
+
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'U10M',                                           &
+         LONG_NAME  = '10-meter_eastward_wind',                         &
+         UNITS      = 'm s-1',                                          &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                         __RC__)
+
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'V10M',                                           &
+         LONG_NAME  = '10-meter_northward_wind',                        &
+         UNITS      = 'm s-1',                                          &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                         __RC__)
+
+!    call MAPL_AddImportSpec ( gc,                                       &
+!         SHORT_NAME = 'EPV',                                            &
+!         LONG_NAME  = 'ertels_potential_vorticity',                     &
+!         UNITS      = 'K m+2 kg-1 s-1',                                 &
+!         RESTART    = MAPL_RestartSkip,                                 &
+!         DIMS       = MAPL_DimsHorzVert,                                &
+!         VLOCATION  = MAPL_VLocationCenter,                       __RC__)
+
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'PPBL',                                           &
+         LONG_NAME  = 'pbltop_pressure',                                &
+         UNITS      = '1',                                              &
+         RESTART    = MAPL_RestartSkip,                                 &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                         __RC__)
+
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'TROPP',                                          &
+         LONG_NAME  = 'tropopause_pressure_based_on_blended_estimate',  &
+         UNITS      = 'Pa',                                             &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                         __RC__)
 
 
 ! !EXPORT STATE:
 
 !    AIRDENS: Provided for Children
 !    ------------------------------
-     call MAPL_AddExportSpec(GC,                             &
-        SHORT_NAME         = 'AIRDENS',                      &
-        LONG_NAME          = 'moist_air_density',            &
-        UNITS              = 'kg m-3',                       &
-        DIMS               = MAPL_DimsHorzVert,              &
-        VLOCATION          = MAPL_VLocationCenter,    __RC__ )
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'AIRDENS',                                        &
+         LONG_NAME  = 'moist_air_density',                              &
+         UNITS      = 'kg m-3',                                         &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
 !    Density of dry air
 !    ------------------
-     call MAPL_AddExportSpec(GC,                             &
-        SHORT_NAME         = 'AIRDENS_DRYP',                 &
-        LONG_NAME          = 'partial_dry_air_density',      &
-        UNITS              = 'kg dry m-3 tot',               &
-        DIMS               = MAPL_DimsHorzVert,              &
-        VLOCATION          = MAPL_VLocationCenter,    __RC__ )
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'AIRDENS_DRYP',                                   &
+         LONG_NAME  = 'partial_dry_air_density',                        &
+         UNITS      = 'kg dry m-3 tot',                                 &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
 !    DELP (This should be wired from DYN)
 !    ------------------------------------
-     call MAPL_AddExportSpec(GC,                             &
-        SHORT_NAME         = 'DELP',                         &
-        LONG_NAME          = 'pressure_thickness',           &
-        UNITS              = 'Pa',                           &
-        DIMS               = MAPL_DimsHorzVert,              &
-        VLOCATION          = MAPL_VLocationCenter,    __RC__ )
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'DELP',                                           &
+         LONG_NAME  = 'pressure_thickness',                             &
+         UNITS      = 'Pa',                                             &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
 !   Total precip
 !   ------------
-    call MAPL_AddExportSpec(GC,                              &
-         SHORT_NAME        = 'TPREC',                        &
-         LONG_NAME         = 'total_precipitation',          &
-         UNITS             = 'kg m-2 s-1',                   &
-         DIMS              = MAPL_DimsHorzOnly,              &
-         VLOCATION         = MAPL_VLocationNone,      __RC__ )
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'TPREC',                                          &
+         LONG_NAME  = 'total_precipitation',                            &
+         UNITS      = 'kg m-2 s-1',                                     &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
 
 !    Convective precip
 !    -----------------
-     call MAPL_AddExportSpec(GC,                             &
-        SHORT_NAME         = 'CN_PRCP',                      &
-        LONG_NAME          = 'Convective precipitation',     &
-        UNITS              = 'kg m-2 s-1',                   &
-        DIMS               = MAPL_DimsHorzOnly,              &
-        VLOCATION          = MAPL_VLocationNone,      __RC__ )
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'CN_PRCP',                                        &
+         LONG_NAME  = 'Convective precipitation',                       &
+         UNITS      = 'kg m-2 s-1',                                     &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
 
 !    Non-convective precip
 !    ---------------------
-     call MAPL_AddExportSpec(GC,                             &
-        SHORT_NAME         = 'NCN_PRCP',                     &
-        LONG_NAME          = 'Non-convective precipitation', &
-        UNITS              = 'kg m-2 s-1',                   &
-        DIMS               = MAPL_DimsHorzOnly,              &
-        VLOCATION          = MAPL_VLocationNone,      __RC__ )
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'NCN_PRCP',                                       &
+         LONG_NAME  = 'Non-convective precipitation',                   &
+         UNITS      = 'kg m-2 s-1',                                     &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'LFR',                                            &
+         LONG_NAME  = 'lightning_flash_rate',                           &
+         UNITS      = 'km-2 s-1',                                       &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'BYNCY',                                          &
+         LONG_NAME  = 'buoyancy_of surface_parcel',                     &
+         UNITS      = 'm s-2',                                          &
+         DIMS       =  MAPL_DimsHorzVert,                               &
+         VLOCATION  =  MAPL_VLocationCenter,                     __RC__ )
+
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'CAPE',                                           &
+         LONG_NAME  = 'convective_avail_pot_energy',                    &
+         UNITS      = 'J m^{-2} <check this!>',                         &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'LIGHT_NO_PROD',                                  &
+         LONG_NAME  = 'lightning_NO_prod_rate',                         &
+         UNITS      = 'm-3 s-1',                                        &
+         DIMS       =  MAPL_DimsHorzVert,                               &
+         PRECISION  =  ESMF_KIND_R4,                                    &
+         VLOCATION  =  MAPL_VLocationCenter,                     __RC__ )
+
+!!!! >>>>>>>>>>>>>>>>  OVP
 
 !    10am overpass AIRDENS
 !    ---------------------
-     call MAPL_AddExportSpec(GC,                             &
-        SHORT_NAME         = 'OVP10_AIRDENS',                &
-        LONG_NAME          = 'moist_air_density_10am_local', &
-        UNITS              = 'kg m-3',                       &
-        DIMS               = MAPL_DimsHorzVert,              &
-        VLOCATION          = MAPL_VLocationCenter,  RC=STATUS)
-     VERIFY_(STATUS)
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP10_AIRDENS',                                  &
+         LONG_NAME  = 'moist_air_density_10am_local',                   &
+         UNITS      = 'kg m-3',                                         &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
 !    2pm  overpass AIRDENS
 !    ---------------------
-     call MAPL_AddExportSpec(GC,                             &
-        SHORT_NAME         = 'OVP14_AIRDENS',                &
-        LONG_NAME          = 'moist_air_density_2pm_local',  &
-        UNITS              = 'kg m-3',                       &
-        DIMS               = MAPL_DimsHorzVert,              &
-        VLOCATION          = MAPL_VLocationCenter,  RC=STATUS)
-     VERIFY_(STATUS)
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP14_AIRDENS',                                  &
+         LONG_NAME  = 'moist_air_density_2pm_local',                    &
+         UNITS      = 'kg m-3',                                         &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
-     call MAPL_AddExportSpec(GC,                             &
-        SHORT_NAME         = 'LFR',                          &
-        LONG_NAME          = 'lightning_flash_rate',         &
-        UNITS              = 'km-2 s-1',                     &
-        DIMS               = MAPL_DimsHorzOnly,              &
-        VLOCATION          = MAPL_VLocationNone,      __RC__ )
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP10_T',                                        &
+         LONG_NAME  = 'air_temperature_10am_local',                     &
+         UNITS      = 'K',                                              &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
-     call MAPL_AddExportSpec(GC,                             &
-        SHORT_NAME         = 'BYNCY',                        &
-        LONG_NAME          = 'buoyancy_of surface_parcel',   &
-        UNITS              = 'm s-2',                        &
-        DIMS               =  MAPL_DimsHorzVert,             &
-        VLOCATION          =  MAPL_VLocationCenter,   __RC__ )
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP14_T',                                        &
+         LONG_NAME  = 'air_temperature_2pm_local',                      &
+         UNITS      = 'K',                                              &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
-     call MAPL_AddExportSpec(GC,                             &
-        SHORT_NAME         = 'CAPE',                         &
-        LONG_NAME          = 'convective_avail_pot_energy',  &
-        UNITS              = 'J m^{-2} <check this!>',       &
-        DIMS               = MAPL_DimsHorzOnly,              &
-        VLOCATION          = MAPL_VLocationNone,      __RC__ )
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP10_PL',                                       &
+         LONG_NAME  = 'mid_level_pressure_10am_local',                  &
+         UNITS      = 'Pa',                                             &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
-     call MAPL_AddExportSpec(GC,                             &
-        SHORT_NAME         = 'LIGHT_NO_PROD',                &
-        LONG_NAME          = 'lightning_NO_prod_rate',       &
-        UNITS              = 'm-3 s-1',                      &
-        DIMS               =  MAPL_DimsHorzVert,             &
-        PRECISION          =  ESMF_KIND_R4,                  &
-        VLOCATION          =  MAPL_VLocationCenter,   __RC__ )
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP14_PL',                                       &
+         LONG_NAME  = 'mid_level_pressure_2pm_local',                   &
+         UNITS      = 'Pa',                                             &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP10_PLE',                                      &
+         LONG_NAME  = 'edge_pressure_10am_local',                       &
+         UNITS      = 'Pa',                                             &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationEdge,                        __RC__ )
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP14_PLE',                                      &
+         LONG_NAME  = 'edge_pressure_2pm_local',                        &
+         UNITS      = 'Pa',                                             &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationEdge,                        __RC__ )
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP10_QV_VMR',                                   &
+         LONG_NAME  = 'water_vapor_10am_local',                         &
+         UNITS      = 'mol mol-1',                                      &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP14_QV_VMR',                                   &
+         LONG_NAME  = 'water_vapor_2pm_local',                          &
+         UNITS      = 'mol mol-1',                                      &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP10_QLTOT',                                    &
+         LONG_NAME  = 'mass_fraction_of_cloud_liquid_water_10am_local', &
+         UNITS      = 'kg kg-1',                                        &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP14_QLTOT',                                    &
+         LONG_NAME  = 'mass_fraction_of_cloud_liquid_water_2pm_local',  &
+         UNITS      = 'kg kg-1',                                        &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP10_PS',                                       &
+         LONG_NAME  = 'surface_pressure_10am_local',                    &
+         UNITS      = 'Pa',                                             &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP14_PS',                                       &
+         LONG_NAME  = 'surface_pressure_2pm_local',                     &
+         UNITS      = 'Pa',                                             &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP10_PPBL',                                     &
+         LONG_NAME  = 'pbltop_pressure_10am_local',                     &
+         UNITS      = 'Pa',                                             &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP14_PPBL',                                     &
+         LONG_NAME  = 'pbltop_pressure_2pm_local',                      &
+         UNITS      = 'Pa',                                             &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP10_TROPP',                                    &
+         LONG_NAME  = 'tropopause_pressure_10am_local',                 &
+         UNITS      = 'Pa',                                             &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP14_TROPP',                                    &
+         LONG_NAME  = 'tropopause_pressure_2pm_local',                  &
+         UNITS      = 'Pa',                                             &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP10_U10M',                                     &
+         LONG_NAME  = 'eastward_10m_wind_speed_10am_local',             &
+         UNITS      = 'm s-1',                                          &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP14_U10M',                                     &
+         LONG_NAME  = 'eastward_10m_wind_speed_2pm_local',              &
+         UNITS      = 'm s-1',                                          &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP10_V10M',                                     &
+         LONG_NAME  = 'northward_10m_wind_speed_10am_local',            &
+         UNITS      = 'm s-1',                                          &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'OVP14_V10M',                                     &
+         LONG_NAME  = 'northward_10m_wind_speed_2pm_local',             &
+         UNITS      = 'm s-1',                                          &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+!    CALL MAPL_AddExportSpec(GC,                                         &
+!         SHORT_NAME = 'OVP10_EPV',                                      &
+!         LONG_NAME  = 'ertels_potential_vorticity_10am_local',          &
+!         UNITS      = 'K m+2 kg-1 s-1',                                 &
+!         DIMS       = MAPL_DimsHorzVert,                                &
+!         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
+
+!    CALL MAPL_AddExportSpec(GC,                                         &
+!         SHORT_NAME = 'OVP14_EPV',                                      &
+!         LONG_NAME  = 'ertels_potential_vorticity_2pm_local',           &
+!         UNITS      = 'K m+2 kg-1 s-1',                                 &
+!         DIMS       = MAPL_DimsHorzVert,                                &
+!         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
+
+!!!! <<<<<<<<<<<<<<<<  OVP
 
 
 !EOS
@@ -760,6 +989,9 @@ contains
   integer                              :: STATUS
   character(len=ESMF_MAXSTR)           :: COMP_NAME
 
+  type (T_ChemEnv_STATE), pointer  :: ChemEnv_STATE
+  type (ChemEnv_wrap)              :: WRAP
+
 ! Imports
   real, pointer, dimension(:,:,:)      :: PLE => null()
 
@@ -784,10 +1016,15 @@ contains
     REAL, POINTER, DIMENSION(:,:,:)    :: DATA_FOR_OVP_3D => NULL()
     REAL, POINTER, DIMENSION(:,:,:)    :: OVP10_OUTPUT_3D => NULL()
     REAL, POINTER, DIMENSION(:,:,:)    :: OVP14_OUTPUT_3D => NULL()
+    REAL, POINTER, DIMENSION(:,:)      :: DATA_FOR_OVP_2D => NULL()
+    REAL, POINTER, DIMENSION(:,:)      :: OVP10_OUTPUT_2D => NULL()
+    REAL, POINTER, DIMENSION(:,:)      :: OVP14_OUTPUT_2D => NULL()
 
     INTEGER                            :: CURRENT_HMS  !  for the end of the timestep
 
     real(ESMF_KIND_R4), pointer, dimension(:,:) :: LONS
+    REAL, ALLOCATABLE, TARGET, DIMENSION(:,:,:) :: scratch_3d
+    INTEGER                                     :: idim, jdim, kdim
 
 
 ! Begin... 
@@ -801,9 +1038,22 @@ contains
 !-----------------------------------
     call MAPL_GetObjectFromGC ( GC, MAPL, __RC__ )
 
+    ! Get my private state from the component
+    !----------------------------------------
+    call ESMF_UserCompGetInternalState(gc, 'ChemEnv', WRAP, STATUS)
+    VERIFY_(STATUS)
+
+    ChemEnv_STATE => WRAP%PTR
+
 !   Get to the imports...
 !   ---------------------
     call MAPL_GetPointer ( IMPORT,  PLE,  'PLE', __RC__ )
+
+!   Dimensions of fields with VLOC=center
+!   -------------------------------------
+    idim = size(PLE,1)
+    jdim = size(PLE,2)
+    kdim = size(PLE,3) - 1
 
 !   Get to the exports...
 !   ---------------------
@@ -838,24 +1088,26 @@ contains
     if (associated(ncn_prcp)) ncn_prcp = (pr_total - pr_conv)
 
 
-    IF ( OVP_setup_done .eqv. .FALSE. ) THEN
+    IF ( ChemEnv_STATE%OVP_setup_done .eqv. .FALSE. ) THEN
 
 !     Set up Overpass Masks
 !     --------------------
-      CALL OVP_init ( GC, "CHEM_DT:", LONS, OVP_RUN_DT, OVP_GC_DT, __RC__ ) !  Get LONS, timesteps
+      CALL OVP_init ( GC, "CHEM_DT:", LONS, ChemEnv_STATE%OVP_RUN_DT, ChemEnv_STATE%OVP_GC_DT, __RC__ ) !  Get LONS, timesteps
 
-!     IF(MAPL_AM_I_ROOT()) PRINT*,'in CHEMENV the RUN_DT and CHEM_DT values are: ', OVP_RUN_DT, OVP_GC_DT
+!     IF(MAPL_AM_I_ROOT()) PRINT*,'in CHEMENV the RUN_DT and CHEM_DT values are: ', ChemEnv_STATE%OVP_RUN_DT, ChemEnv_STATE%OVP_GC_DT
 
       ! In this case we update the Exports only after each CHEMENV timestep:
-      OVP_MASK_DT = OVP_GC_DT
+      ChemEnv_STATE%OVP_MASK_DT = ChemEnv_STATE%OVP_GC_DT
 
-      OVP_FIRST_HMS = OVP_end_of_timestep_hms( CLOCK, OVP_MASK_DT )
-!     IF(MAPL_AM_I_ROOT()) PRINT*,'CHEMENV FIRST_HMS =',OVP_FIRST_HMS
+      ChemEnv_STATE%OVP_FIRST_HMS = OVP_end_of_timestep_hms( CLOCK, ChemEnv_STATE%OVP_MASK_DT )
+!     IF(MAPL_AM_I_ROOT()) PRINT*,'CHEMENV FIRST_HMS =',ChemEnv_STATE%OVP_FIRST_HMS
 
-      CALL OVP_mask ( LONS=LONS, DELTA_TIME=OVP_MASK_DT, OVERPASS_HOUR=10, MASK=MASK_10AM )
-      CALL OVP_mask ( LONS=LONS, DELTA_TIME=OVP_MASK_DT, OVERPASS_HOUR=14, MASK=MASK_2PM  )
+      CALL OVP_mask ( LONS=LONS, DELTA_TIME=ChemEnv_STATE%OVP_MASK_DT, &
+                      OVERPASS_HOUR=10, MASK=ChemEnv_STATE%MASK_10AM )
+      CALL OVP_mask ( LONS=LONS, DELTA_TIME=ChemEnv_STATE%OVP_MASK_DT, &
+                      OVERPASS_HOUR=14, MASK=ChemEnv_STATE%MASK_2PM  )
 
-      OVP_setup_done = .TRUE.
+      ChemEnv_STATE%OVP_setup_done = .TRUE.
 
     END IF
 
@@ -863,17 +1115,156 @@ contains
 !  Record the Overpass values
 !  -------------------------------------------------------------------
 
-   CURRENT_HMS = OVP_end_of_timestep_hms( CLOCK, OVP_RUN_DT )
+   CURRENT_HMS = OVP_end_of_timestep_hms( CLOCK, ChemEnv_STATE%OVP_RUN_DT )
 !  IF(MAPL_AM_I_ROOT()) PRINT*,'AGCM CURRENT_HMS =',CURRENT_HMS
-
+!
 ! AIRDENS overpass
-
+!
    CALL MAPL_GetPointer(EXPORT,  DATA_FOR_OVP_3D,         'AIRDENS', __RC__)
    CALL MAPL_GetPointer(EXPORT,  OVP10_OUTPUT_3D,   'OVP10_AIRDENS', __RC__)
    CALL MAPL_GetPointer(EXPORT,  OVP14_OUTPUT_3D,   'OVP14_AIRDENS', __RC__)
 
-   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP10_OUTPUT_3D, MASK_10AM, OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
-   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP10_OUTPUT_3D, ChemEnv_STATE%MASK_10AM, &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, ChemEnv_STATE%MASK_2PM,  &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+!
+! T overpass
+!
+   CALL MAPL_GetPointer(IMPORT,  DATA_FOR_OVP_3D,         'T', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP10_OUTPUT_3D,   'OVP10_T', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP14_OUTPUT_3D,   'OVP14_T', __RC__)
+
+   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP10_OUTPUT_3D, ChemEnv_STATE%MASK_10AM, &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, ChemEnv_STATE%MASK_2PM,  &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+!
+! PL overpass
+!
+   allocate(scratch_3d(idim,jdim,kdim), __STAT__ )
+
+   ! We already have PLE
+   scratch_3d = 0.5*(PLE(:,:,1:kdim)+PLE(:,:,0:kdim-1))
+   DATA_FOR_OVP_3D => scratch_3d
+
+   CALL MAPL_GetPointer(EXPORT,  OVP10_OUTPUT_3D,   'OVP10_PL', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP14_OUTPUT_3D,   'OVP14_PL', __RC__)
+
+   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP10_OUTPUT_3D, ChemEnv_STATE%MASK_10AM, &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, ChemEnv_STATE%MASK_2PM,  &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+
+   deallocate(scratch_3d, __STAT__ )
+!
+! PLE overpass
+!
+   CALL MAPL_GetPointer(IMPORT,  DATA_FOR_OVP_3D,         'PLE', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP10_OUTPUT_3D,   'OVP10_PLE', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP14_OUTPUT_3D,   'OVP14_PLE', __RC__)
+
+   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP10_OUTPUT_3D, ChemEnv_STATE%MASK_10AM, &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.TRUE., __RC__ )
+   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, ChemEnv_STATE%MASK_2PM,  &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.TRUE., __RC__ )
+!
+! QV_VMR overpass
+!
+   allocate(scratch_3d(idim,jdim,kdim), __STAT__ )
+
+   CALL MAPL_GetPointer(IMPORT,  DATA_FOR_OVP_3D,              'Q', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP10_OUTPUT_3D,   'OVP10_QV_VMR', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP14_OUTPUT_3D,   'OVP14_QV_VMR', __RC__)
+
+   scratch_3d = DATA_FOR_OVP_3D/(1.0 - DATA_FOR_OVP_3D)  ! mass mixing ratio wrt dry air
+   DATA_FOR_OVP_3D => scratch_3d
+
+   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP10_OUTPUT_3D, ChemEnv_STATE%MASK_10AM, &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., &
+                        SCALE=(MAPL_AIRMW/MAPL_H2OMW), __RC__ )
+   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, ChemEnv_STATE%MASK_2PM,  &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., &
+                        SCALE=(MAPL_AIRMW/MAPL_H2OMW), __RC__ )
+
+   deallocate(scratch_3d, __STAT__ )
+!
+! QLTOT overpass
+!
+   CALL MAPL_GetPointer(IMPORT,  DATA_FOR_OVP_3D,         'QLTOT', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP10_OUTPUT_3D,   'OVP10_QLTOT', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP14_OUTPUT_3D,   'OVP14_QLTOT', __RC__)
+
+   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP10_OUTPUT_3D, ChemEnv_STATE%MASK_10AM, &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, ChemEnv_STATE%MASK_2PM,  &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+!
+! PS overpass
+!
+   CALL MAPL_GetPointer(IMPORT,  DATA_FOR_OVP_2D,         'PS', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP10_OUTPUT_2D,   'OVP10_PS', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP14_OUTPUT_2D,   'OVP14_PS', __RC__)
+
+   CALL OVP_apply_mask( DATA_FOR_OVP_2D, OVP10_OUTPUT_2D, ChemEnv_STATE%MASK_10AM, &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS,  __RC__ )
+   CALL OVP_apply_mask( DATA_FOR_OVP_2D, OVP14_OUTPUT_2D, ChemEnv_STATE%MASK_2PM,  &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS,  __RC__ )
+!
+! PPBL overpass
+!
+   CALL MAPL_GetPointer(IMPORT,  DATA_FOR_OVP_2D,         'PPBL', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP10_OUTPUT_2D,   'OVP10_PPBL', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP14_OUTPUT_2D,   'OVP14_PPBL', __RC__)
+
+   CALL OVP_apply_mask( DATA_FOR_OVP_2D, OVP10_OUTPUT_2D, ChemEnv_STATE%MASK_10AM, &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, __RC__ )
+   CALL OVP_apply_mask( DATA_FOR_OVP_2D, OVP14_OUTPUT_2D, ChemEnv_STATE%MASK_2PM,  &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, __RC__ )
+!
+! TROPP overpass
+!
+   CALL MAPL_GetPointer(IMPORT,  DATA_FOR_OVP_2D,         'TROPP', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP10_OUTPUT_2D,   'OVP10_TROPP', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP14_OUTPUT_2D,   'OVP14_TROPP', __RC__)
+
+   CALL OVP_apply_mask( DATA_FOR_OVP_2D, OVP10_OUTPUT_2D, ChemEnv_STATE%MASK_10AM, &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, __RC__ )
+   CALL OVP_apply_mask( DATA_FOR_OVP_2D, OVP14_OUTPUT_2D, ChemEnv_STATE%MASK_2PM,  &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, __RC__ )
+!
+! U10M overpass
+!
+   CALL MAPL_GetPointer(IMPORT,  DATA_FOR_OVP_2D,         'U10M', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP10_OUTPUT_2D,   'OVP10_U10M', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP14_OUTPUT_2D,   'OVP14_U10M', __RC__)
+
+   CALL OVP_apply_mask( DATA_FOR_OVP_2D, OVP10_OUTPUT_2D, ChemEnv_STATE%MASK_10AM, &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, __RC__ )
+   CALL OVP_apply_mask( DATA_FOR_OVP_2D, OVP14_OUTPUT_2D, ChemEnv_STATE%MASK_2PM,  &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, __RC__ )
+!
+! V10M overpass
+!
+   CALL MAPL_GetPointer(IMPORT,  DATA_FOR_OVP_2D,         'V10M', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP10_OUTPUT_2D,   'OVP10_V10M', __RC__)
+   CALL MAPL_GetPointer(EXPORT,  OVP14_OUTPUT_2D,   'OVP14_V10M', __RC__)
+
+   CALL OVP_apply_mask( DATA_FOR_OVP_2D, OVP10_OUTPUT_2D, ChemEnv_STATE%MASK_10AM, &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, __RC__ )
+   CALL OVP_apply_mask( DATA_FOR_OVP_2D, OVP14_OUTPUT_2D, ChemEnv_STATE%MASK_2PM,  &
+                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, __RC__ )
+!
+! EPV overpass
+!
+!   CALL MAPL_GetPointer(IMPORT,  DATA_FOR_OVP_3D,         'EPV', __RC__)
+!   CALL MAPL_GetPointer(EXPORT,  OVP10_OUTPUT_3D,   'OVP10_EPV', __RC__)
+!   CALL MAPL_GetPointer(EXPORT,  OVP14_OUTPUT_3D,   'OVP14_EPV', __RC__)
+!
+!   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP10_OUTPUT_3D, ChemEnv_STATE%MASK_10AM, &
+!                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+!   CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, ChemEnv_STATE%MASK_2PM,  &
+!                        ChemEnv_STATE%OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 
 !   All Done
