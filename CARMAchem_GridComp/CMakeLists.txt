@@ -26,6 +26,7 @@ new_esma_generate_automatic_code (
 
 set (resource_files
    CARMAchem_GridComp_ExtData.rc
+   CARMAchem_GridComp_ExtData.yaml
    CARMAchem_MieRegistry.rc
    CARMAchem_Registry.rc
    )

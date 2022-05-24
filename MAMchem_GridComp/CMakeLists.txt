@@ -60,7 +60,7 @@ target_compile_definitions (${this} PRIVATE GEOS5 MODAL_AERO MODAL_AERO_7MODE GE
 
 esma_generate_gocart_code (${this} -F)
 
-file (GLOB resource_files CONFIGURE_DEPENDS "*.rc")
+file (GLOB resource_files CONFIGURE_DEPENDS "*.rc" "*.yaml")
 
 set (mamscripts mam_optics_calculator.py mam_optics_calculator.csh)
 

@@ -104,6 +104,7 @@ set (resource_files
    SC_GridComp/SC_GridComp.rc
    SC_GridComp/SC_Registry.rc
    SC_GridComp/StratChem_ExtData.rc
+   SC_GridComp/StratChem_ExtData.yaml
    )
 
 install(

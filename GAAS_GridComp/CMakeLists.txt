@@ -11,7 +11,7 @@ esma_add_library (${this} SRCS ${srcs} DEPENDENCIES MAPL Chem_Base Chem_Shared G
 
 esma_generate_gocart_code (${this} -F)
 
-file (GLOB_RECURSE rc_files CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.rc)
+file (GLOB_RECURSE rc_files CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.rc *.yaml)
 foreach ( file ${rc_files} )
    get_filename_component( dir ${file} DIRECTORY )
    install( FILES ${file} DESTINATION etc/${dir} )
