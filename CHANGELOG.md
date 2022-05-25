@@ -29,6 +29,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - More updates to CMake for spack
 
+## [1.9.2] - 2022-04-29
+
+### Added
+
+- Added `AMIP.20C` directory to Chem_Base
+
+### Changed
+
+- Cleaned up `AMIP` directory in Chem_Base
+
+### Fixed
+
+- Fixed bug in GEOS_Achem, variables being provided via ExtData did not have restart skip
 ## [1.9.1] - 2022-03-18
 
 ### Changed
