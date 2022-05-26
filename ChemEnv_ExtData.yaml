@@ -1,0 +1,28 @@
+Collections:
+  ChemEnv_FlashRatio_const_x288_y181_2005.nc:
+    template: /discover/nobackup/mmanyin/Lightning/FlashRatio_const_x288_y181_2005.nc
+  ChemEnv_FlashRatio_x288_y181_t1.%y4%m201.nc:
+    template: /discover/nobackup/mmanyin/Lightning/FlashRatio_x288_y181_t1.%y4%m201.nc
+  ChemEnv_mcor_x288_y181_2005.nc:
+    template: /discover/nobackup/mmanyin/Lightning/mcor_x288_y181_2005.nc
+
+Samplings:
+  ChemEnv_sample_0:
+    time_interpolation: 'False'
+  ChemEnv_sample_1:
+    extrapolation: clim
+
+Exports:
+  MCOR:
+    collection: ChemEnv_mcor_x288_y181_2005.nc
+    sample: ChemEnv_sample_1
+    variable: mcor
+  MIDLAT_ADJ:
+    collection: ChemEnv_FlashRatio_const_x288_y181_2005.nc
+    sample: ChemEnv_sample_1
+    variable: midlat
+  RATIO_LOCAL:
+    collection: ChemEnv_FlashRatio_x288_y181_t1.%y4%m201.nc
+    sample: ChemEnv_sample_0
+    variable: ratio_local
+

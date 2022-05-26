@@ -7,14 +7,13 @@ set (srcs
   TR_GridCompMod.F90
   )
 
-esma_add_library (${this} 
-   SRCS ${srcs} 
-   DEPENDENCIES MAPL GMAO_mpeu Chem_Shared GEOS_Shared
-   INCLUDES ${INC_ESMF})
+esma_add_library (${this}
+   SRCS ${srcs}
+   DEPENDENCIES MAPL GMAO_mpeu Chem_Shared GEOS_Shared esmf)
 
 #esma_generate_gocart_code (${this} -F)
 
-file (GLOB_RECURSE rc_files CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.rc)
+file (GLOB_RECURSE rc_files CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.rc *.yaml)
 foreach ( file ${rc_files} )
    get_filename_component( dir ${file} DIRECTORY )
    install( FILES ${file} DESTINATION etc/${dir} )

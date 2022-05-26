@@ -9,6 +9,7 @@ target_compile_definitions (${this} PRIVATE MAPL_MODE GEOS5)
 
 set (resource_files
    DNA_ExtData.rc
+   DNA_ExtData.yaml
    DNA_GridComp.rc
    DNA_Registry.rc
    )

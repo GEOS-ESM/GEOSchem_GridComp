@@ -49,7 +49,6 @@
   CNV_MFD            |  kg m-2 s-1 | xyz | C |    |   |   |     |      |    | detraining_mass_flux 
   PFL_LSAN           |  kg m-2 s-1 | xyz | E |    |   |   |     |      |    | 3D_flux_of_liquid_nonconvective_precipitation 
   PFI_LSAN           |  kg m-2 s-1 | xyz | E |    |   |   |     |      |    | 3D_flux_of_ice_nonconvective_precipitation
-  TPREC              |  kg m-2 s-1 | xy  |   |    |   |   |     |      |    | total_precipitation
   DQDT               |  s-1        | xyz | C |    |   |   |     |      |    | specific_humidity_tendency_due_to_moist
   F11FLUX   	     |  kg m-2 s-1 | xy  |   |    |   |   |	|      |  x | flux_of_cfc11
   F12FLUX            |  kg m-2 s-1 | xy  |   |    |   |   |     |      |  x | flux_of_cfc11
