@@ -1,0 +1,77 @@
+Collections:
+  CARMAchem_AeroCom.noship_OC_src.sfc.x360_y181_t44.19780703_12z_20210703_12z.nc:
+    template: ExtData/AeroCom/sfc/AeroCom.noship_OC_src.sfc.x360_y181_t44.19780703_12z_20210703_12z.nc
+  CARMAchem_edgar-v41.emis_oc.navigation.x360_y181_t47.19750703T12z_20210703T00z.nc4:
+    template: ExtData/MERRA2/sfc/edgar-v41.emis_oc.navigation.x360_y181_t47.19750703T12z_20210703T00z.nc4
+  CARMAchem_geia.terpene_biogenic.x144_y91_t12.1971.nc:
+    template: ExtData/PIESA/sfc/geia.terpene_biogenic.x144_y91_t12.1971.nc
+  CARMAchem_gocart.dust_source.v5a.x1152_y721.nc:
+    template: ExtData/PIESA/sfc/gocart.dust_source.v5a.x1152_y721.nc
+  CARMAchem_qfed2.emis_oc.005.%y4%m2%d2.nc4:
+    template: ExtData/PIESA/sfc/QFED/v2.4r6/Y%y4/M%m2/qfed2.emis_oc.005.%y4%m2%d2.nc4
+
+Samplings:
+  CARMAchem_sample_0:
+    extrapolation: persist_closest
+  CARMAchem_sample_1:
+    update_frequency: PT24H
+    update_offset: PT12H
+    update_reference_time: '0'
+  CARMAchem_sample_2:
+    extrapolation: clim
+    update_frequency: PT24H
+    update_offset: PT12H
+    update_reference_time: '0'
+
+Exports:
+  CARMA_DU_SRC:
+    collection: CARMAchem_gocart.dust_source.v5a.x1152_y721.nc
+    regrid: CONSERVE
+    sample: CARMAchem_sample_0
+    variable: du_src
+  CARMA_OC_TERPENE:
+    collection: CARMAchem_geia.terpene_biogenic.x144_y91_t12.1971.nc
+    regrid: CONSERVE
+    sample: CARMAchem_sample_2
+    variable: terpene
+  CARMA_SM_ANTEOC1:
+    collection: CARMAchem_AeroCom.noship_OC_src.sfc.x360_y181_t44.19780703_12z_20210703_12z.nc
+    regrid: CONSERVE
+    sample: CARMAchem_sample_2
+    variable: anteoc1
+  CARMA_SM_ANTEOC2:
+    collection: /dev/null
+    regrid: CONSERVE
+    sample: CARMAchem_sample_2
+    variable: anteoc2
+  CARMA_SM_BIOFUEL:
+    collection: /dev/null
+    regrid: CONSERVE
+    sample: CARMAchem_sample_2
+    variable: biofuel
+  CARMA_SM_BIOMASS:
+    collection: CARMAchem_qfed2.emis_oc.005.%y4%m2%d2.nc4
+    regrid: CONSERVE
+    sample: CARMAchem_sample_1
+    variable: biomass
+  CARMA_SM_SHIP:
+    collection: CARMAchem_edgar-v41.emis_oc.navigation.x360_y181_t47.19750703T12z_20210703T00z.nc4
+    regrid: CONSERVE
+    sample: CARMAchem_sample_2
+    variable: oc_ship
+  PSO4TOT:
+    collection: /dev/null
+    regrid: CONSERVE
+    sample: CARMAchem_sample_2
+    variable: pso4tot
+  pSOA_ANTHRO_VOC:
+    collection: /dev/null
+    regrid: CONSERVE
+    sample: CARMAchem_sample_2
+    variable: biofuel
+  pSOA_BIOB_VOC:
+    collection: /dev/null
+    regrid: CONSERVE
+    sample: CARMAchem_sample_2
+    variable: biofuel
+

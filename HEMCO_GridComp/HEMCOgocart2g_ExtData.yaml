@@ -1,0 +1,122 @@
+Collections:
+  HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc:
+    template: ExtData/chemistry/HEMCO/v0.0.0/sfc/CLM4_PFT.geos.025x03125.esmf.nc
+  HEMCOgocart2g_MEGAN2.1_EF.geos.025x03125.esmf.nc:
+    template: ExtData/chemistry/HEMCO/v0.0.0/sfc/MEGAN2.1_EF.geos.025x03125.esmf.nc
+  HEMCOgocart2g_NVOC.geos.1x1.esmf.nc:
+    template: ExtData/chemistry/HEMCO/v0.0.0/sfc/NVOC.geos.1x1.esmf.nc
+
+Samplings:
+  HEMCOgocart2g_sample_0:
+    extrapolation: persist_closest
+  HEMCOgocart2g_sample_1:
+    extrapolation: clim
+    update_frequency: P1M
+    update_reference_time: '0'
+
+Exports:
+  CLM4_PFT_BARE:
+    collection: HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc
+    sample: HEMCOgocart2g_sample_0
+    variable: PFT_BARE
+  CLM4_PFT_BDLF_DECD_BORL_SHRB:
+    collection: HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc
+    sample: HEMCOgocart2g_sample_0
+    variable: PFT_BDLF_DECD_BORL_SHRB
+  CLM4_PFT_BDLF_DECD_BORL_TREE:
+    collection: HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc
+    sample: HEMCOgocart2g_sample_0
+    variable: PFT_BDLF_DECD_BORL_TREE
+  CLM4_PFT_BDLF_DECD_TMPT_SHRB:
+    collection: HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc
+    sample: HEMCOgocart2g_sample_0
+    variable: PFT_BDLF_DECD_TMPT_SHRB
+  CLM4_PFT_BDLF_DECD_TMPT_TREE:
+    collection: HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc
+    sample: HEMCOgocart2g_sample_0
+    variable: PFT_BDLF_DECD_TMPT_TREE
+  CLM4_PFT_BDLF_DECD_TROP_TREE:
+    collection: HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc
+    sample: HEMCOgocart2g_sample_0
+    variable: PFT_BDLF_DECD_TROP_TREE
+  CLM4_PFT_BDLF_EVGN_SHRB:
+    collection: HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc
+    sample: HEMCOgocart2g_sample_0
+    variable: PFT_BDLF_EVGN_SHRB
+  CLM4_PFT_BDLF_EVGN_TMPT_TREE:
+    collection: HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc
+    sample: HEMCOgocart2g_sample_0
+    variable: PFT_BDLF_EVGN_TMPT_TREE
+  CLM4_PFT_BDLF_EVGN_TROP_TREE:
+    collection: HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc
+    sample: HEMCOgocart2g_sample_0
+    variable: PFT_BDLF_EVGN_TROP_TREE
+  CLM4_PFT_C3_ARCT_GRSS:
+    collection: HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc
+    sample: HEMCOgocart2g_sample_0
+    variable: PFT_C3_ARCT_GRSS
+  CLM4_PFT_C3_NARC_GRSS:
+    collection: HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc
+    sample: HEMCOgocart2g_sample_0
+    variable: PFT_C3_NARC_GRSS
+  CLM4_PFT_C4_GRSS:
+    collection: HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc
+    sample: HEMCOgocart2g_sample_0
+    variable: PFT_C4_GRSS
+  CLM4_PFT_CROP:
+    collection: HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc
+    sample: HEMCOgocart2g_sample_0
+    variable: PFT_CROP
+  CLM4_PFT_NDLF_DECD_BORL_TREE:
+    collection: HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc
+    sample: HEMCOgocart2g_sample_0
+    variable: PFT_NDLF_DECD_BORL_TREE
+  CLM4_PFT_NDLF_EVGN_BORL_TREE:
+    collection: HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc
+    sample: HEMCOgocart2g_sample_0
+    variable: PFT_NDLF_EVGN_BORL_TREE
+  CLM4_PFT_NDLF_EVGN_TMPT_TREE:
+    collection: HEMCOgocart2g_CLM4_PFT.geos.025x03125.esmf.nc
+    sample: HEMCOgocart2g_sample_0
+    variable: PFT_NDLF_EVGN_TMPT_TREE
+  MEGAN_AEF_BPIN:
+    collection: HEMCOgocart2g_MEGAN2.1_EF.geos.025x03125.esmf.nc
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_0
+    variable: AEF_BETA_PINENE
+  MEGAN_AEF_CARE:
+    collection: HEMCOgocart2g_MEGAN2.1_EF.geos.025x03125.esmf.nc
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_0
+    variable: AEF_CARENE
+  MEGAN_AEF_ISOP:
+    collection: HEMCOgocart2g_MEGAN2.1_EF.geos.025x03125.esmf.nc
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_0
+    variable: AEF_ISOPRENE
+  MEGAN_AEF_LIMO:
+    collection: HEMCOgocart2g_MEGAN2.1_EF.geos.025x03125.esmf.nc
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_0
+    variable: AEF_LIMONENE
+  MEGAN_AEF_MBOX:
+    collection: HEMCOgocart2g_MEGAN2.1_EF.geos.025x03125.esmf.nc
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_0
+    variable: AEF_MBO
+  MEGAN_AEF_OCIM:
+    collection: HEMCOgocart2g_MEGAN2.1_EF.geos.025x03125.esmf.nc
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_0
+    variable: AEF_OCIMENE
+  MEGAN_AEF_SABI:
+    collection: HEMCOgocart2g_MEGAN2.1_EF.geos.025x03125.esmf.nc
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_0
+    variable: AEF_SABINENE
+  MEGAN_ORVC:
+    collection: HEMCOgocart2g_NVOC.geos.1x1.esmf.nc
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_1
+    variable: OCPI
+

@@ -1,0 +1,260 @@
+Collections:
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel001:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel001
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel002:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel002
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel003:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel003
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel004:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel004
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel005:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel005
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel006:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel006
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel007:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel007
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel008:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel008
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel009:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel009
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel010:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel010
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel011:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel011
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel012:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel012
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel013:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel013
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel014:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel014
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel015:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel015
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel016:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel016
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel017:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel017
+  DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel018:
+    template: /home/adarmeno/tmp/pad-3d/pad.inst3_3d_aer_Nv.20150915_0000.nc.channel018
+
+Samplings:
+  DNA_sample_0:
+    extrapolation: clim
+
+Exports:
+  AEROSOL_ASY_BAND01:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel001
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND02:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel002
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND03:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel003
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND04:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel004
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND05:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel005
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND06:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel006
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND07:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel007
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND08:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel008
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND09:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel009
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND10:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel010
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND11:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel011
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND12:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel012
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND13:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel013
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND14:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel014
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND15:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel015
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND16:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel016
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND17:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel017
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_ASY_BAND18:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel018
+    sample: DNA_sample_0
+    variable: gasym
+  AEROSOL_EXT_BAND01:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel001
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND02:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel002
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND03:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel003
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND04:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel004
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND05:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel005
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND06:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel006
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND07:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel007
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND08:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel008
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND09:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel009
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND10:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel010
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND11:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel011
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND12:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel012
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND13:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel013
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND14:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel014
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND15:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel015
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND16:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel016
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND17:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel017
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_EXT_BAND18:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel018
+    sample: DNA_sample_0
+    variable: extinction
+  AEROSOL_SSA_BAND01:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel001
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND02:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel002
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND03:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel003
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND04:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel004
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND05:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel005
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND06:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel006
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND07:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel007
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND08:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel008
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND09:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel009
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND10:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel010
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND11:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel011
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND12:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel012
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND13:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel013
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND14:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel014
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND15:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel015
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND16:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel016
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND17:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel017
+    sample: DNA_sample_0
+    variable: ssa
+  AEROSOL_SSA_BAND18:
+    collection: DNA_pad.inst3_3d_aer_Nv.20150915_0000.nc.channel018
+    sample: DNA_sample_0
+    variable: ssa
+

@@ -38,3 +38,10 @@ install(
    FILES ${resource_files}
    DESTINATION etc
    )
+
+file (GLOB yaml_files CONFIGURE_DEPENDS "*.yaml")
+
+install(
+   FILES ${yaml_files}
+   DESTINATION etc
+   )

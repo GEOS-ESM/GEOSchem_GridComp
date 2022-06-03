@@ -9,23 +9,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+### Removed
+### Changed
+### Fixed
+
+## [1.9.4] - 2022-05-31
+
+### Fixed
+- Fixed ExtData2G YAML files for AMIP emissions to handle magic date and removed input file for AMIP.20C
+
+## [1.9.3] - 2022-05-25
+
+### Added
 
 - ChemEnv now provides several more Overpass diagnostics.  It also now has a (thread safe) internal state.
+- Add ExtData2G YAML Files
 
 ### Changed
 
 - Several CHEM children no longer use TPREC, removed Connectivity
 - Updates to the ConvectionMod in Chem_Shared: reduced dust scavenging by 80%; added temperature-dependent scavenging of Pb, Be species
 - Update to the WetRemovalMod in Chem_Shared: added temperature-dependent snow scavenging of Pb, Be species
+- Update CircleCI to v1 orb
+- More updates to CMake for spack
 
 ### Fixed
 
 - Fixed bug related to recent Precip change, to satisfy GMI import
 - Corrected the connectivity in GEOS_ChemGridComp.F90 for the pSO2_OCS; destination is now GOCART2G instead of GOCART. This is zero-diff except when running the StratChem/ACHEM/GOCART2G OCS-produced SO2 mechanism (not presently used in FP).
 
+## [1.9.2] - 2022-04-29
+
+### Added
+
+- Added `AMIP.20C` directory to Chem_Base
+
 ### Changed
 
-- More updates to CMake for spack
+- Cleaned up `AMIP` directory in Chem_Base
+
+### Fixed
+
+- Fixed bug in GEOS_Achem, variables being provided via ExtData did not have restart skip
 
 ## [1.9.1] - 2022-03-18
 
@@ -35,13 +60,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved CircleCI to use circleci-tools orb
 - Code was modified to receive Observed Precip data from Surface GridComp Exports (rather than an ad-hoc READ from within Chem). Therefore, Precip into Chem is based on whatever method is used in Surface.
 
-### Removed
-
 ### Added
 
 - Added Changelog Enforcer GitHub Action
-
-### Fixed
 
 ## [1.9.0] - 2022-03-15
 

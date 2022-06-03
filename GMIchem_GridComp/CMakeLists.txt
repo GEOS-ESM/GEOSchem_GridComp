@@ -148,6 +148,7 @@ add_dependencies (${this} phony_gmi)
 
 set ( rc_files
    GMI_GridComp/GMI_ExtData.rc
+   GMI_GridComp/GMI_ExtData.yaml
    GMI_GridComp/GMI_GridComp.rc
    GMI_GridComp/GMI_Registry.rc
 )
