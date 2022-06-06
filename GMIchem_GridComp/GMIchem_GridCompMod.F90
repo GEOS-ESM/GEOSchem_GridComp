@@ -1055,12 +1055,13 @@ CONTAINS
    integer                         :: dims(3), k, l, n
 
    type(Chem_Array), pointer       :: q(:)	   ! array of pointers
-   type(MAPL_MetaComp), pointer    :: ggState	   ! GEOS Generic State
+   type(MAPL_MetaComp), pointer    :: MAPLobj	   ! GEOS Generic State 
    type(ESMF_State)                :: internal
    type(MAPL_VarSpec), pointer     :: InternalSpec(:)
 
    REAL, POINTER, DIMENSION(:,:)   :: LATS
    REAL, POINTER, DIMENSION(:,:)   :: LONS
+   type (MAPL_SunOrbit)            :: ORBIT ! VV adding Mike's SZA edits
 
    CHARACTER(LEN=ESMF_MAXSTR)	   :: short_name
    CHARACTER(LEN=ESMF_MAXSTR)	   :: diurnal_bb
@@ -1082,13 +1083,13 @@ CONTAINS
 
 !  Get my internal MAPL_Generic state
 !  -----------------------------------
-   call MAPL_GetObjectFromGC ( GC, ggState, RC=STATUS)
+   call MAPL_GetObjectFromGC ( GC, MAPLobj, RC=STATUS)
    VERIFY_(STATUS)
 
 !  Start timers
 !  ------------
-   CALL MAPL_TimerOn(ggSTATE, "TOTAL")
-   CALL MAPL_TimerOn(ggSTATE, "INITIALIZE")
+   CALL MAPL_TimerOn(MAPLobj, "TOTAL")
+   CALL MAPL_TimerOn(MAPLobj, "INITIALIZE")
    
 !  Initialize GEOS Generic
 !  ------------------------
@@ -1135,9 +1136,10 @@ CONTAINS
 
 !  Associate the Internal State fields with our legacy state 
 !  ---------------------------------------------------------
-   call MAPL_Get ( ggSTATE, INTERNALSPEC=InternalSpec, &
+   call MAPL_Get ( MAPLobj, INTERNALSPEC=InternalSpec, &
                    INTERNAL_ESMF_STATE=internal, &
-                   LONS=LONS, LATS=LATS, RC=STATUS  )
+                   LONS=LONS, LATS=LATS, ORBIT=ORBIT, RC=STATUS  )
+   
    VERIFY_(STATUS)
 
 !  Local sizes of three dimensions
@@ -1244,8 +1246,8 @@ CONTAINS
 
 !  Stop timers
 !  -----------
-   CALL MAPL_TimerOff(ggSTATE, "INITIALIZE")
-   CALL MAPL_TimerOff(ggSTATE, "TOTAL")
+   CALL MAPL_TimerOff(MAPLobj, "INITIALIZE")
+   CALL MAPL_TimerOff(MAPLobj, "TOTAL")
 
    RETURN_(ESMF_SUCCESS)
 
@@ -1296,6 +1298,8 @@ CONTAINS
    gcGMI%gcPhot%j2 = j2
    gcGMI%gcPhot%jm = jm
    gcGMI%gcPhot%km = km
+   gcGMI%gcPhot%orbit = ORBIT ! VV adding Mike's SZA edits
+   gcGMI%gcPhot%clock = CLOCK
    
    gcGMI%gcSAD%i1 = i1
    gcGMI%gcSAD%i2 = i2
@@ -1660,8 +1664,8 @@ CONTAINS
    type(ESMF_Time)                 :: TIME
    TYPE(ESMF_Alarm)                :: ALARM
 
-   type(MAPL_MetaComp), pointer    :: ggState      ! GEOS Generic State
-
+   type(MAPL_MetaComp), pointer    :: MAPLobj      ! GEOS Generic State
+   
    real, pointer, dimension(:,:,:) :: rh2
    real, pointer, dimension(:,:)   :: LATS
    real, pointer, dimension(:,:)   :: LONS
@@ -1714,15 +1718,15 @@ CONTAINS
 
 !  Get my internal MAPL_Generic state
 !  -----------------------------------
-   CALL MAPL_GetObjectFromGC(GC, ggState, __RC__)
+   CALL MAPL_GetObjectFromGC(GC, MAPLobj, __RC__)
 
 !  Start a comprehensive timer
 !  ---------------------------
-   CALL MAPL_TimerOn(ggState, "TOTAL")
+   CALL MAPL_TimerOn(MAPLobj, "TOTAL")
 
 !  Get parameters from generic state
 !  ---------------------------------
-   CALL MAPL_Get(ggState, IM=i2, JM=j2, LM=km, LONS=LONS, LATS=LATS,  &
+   CALL MAPL_Get(MAPLobj, IM=i2, JM=j2, LM=km, LONS=LONS, LATS=LATS,  &
                  RUNALARM=ALARM, __RC__)
 
 !  Query the alarm
@@ -1928,12 +1932,12 @@ CONTAINS
      PRINT *, TRIM(Iam)//": Running GMI Phase 1 (emissions) ..."
     END IF
 
-    CALL MAPL_TimerOn( ggState, "RUN")
+    CALL MAPL_TimerOn( MAPLobj, "RUN")
 
     CALL GMI_GridCompRun1(gcGMI, w_c, impChem, expChem, nymd, nhms, runDt, clock, STATUS)
     VERIFY_(STATUS)
 
-    CALL MAPL_TimerOff(ggState, "RUN")
+    CALL MAPL_TimerOff(MAPLobj, "RUN")
 
     IF(MAPL_AM_I_ROOT()) PRINT *, " "
 
@@ -1954,12 +1958,12 @@ CONTAINS
         END IF
      END IF
 
-     CALL MAPL_TimerOn(ggState, "RUN")
+     CALL MAPL_TimerOn(MAPLobj, "RUN")
 
      CALL GMI_GridCompRun2(gcGMI, w_c, impChem, expChem, nymd, nhms, runDt, gmiDt, RunGMINow, STATUS)
      VERIFY_(STATUS)
 
-     CALL MAPL_TimerOff(ggState, "RUN")
+     CALL MAPL_TimerOff(MAPLobj, "RUN")
 
      IF(RunGMINow) CALL ESMF_AlarmRingerOff(ALARM, __RC__)
 
@@ -1981,12 +1985,12 @@ CONTAINS
           PRINT *, TRIM(Iam)//": Running GMI Phase 99 (emissions & chemistry) ..."
        END IF
 
-       CALL MAPL_TimerOn(ggState, "RUN")
+       CALL MAPL_TimerOn(MAPLobj, "RUN")
 
        CALL GMI_GridCompRunOrig(gcGMI, w_c, impChem, expChem, nymd, nhms, gmiDt, clock, STATUS)
        VERIFY_(STATUS)
 
-       CALL MAPL_TimerOff(ggState, "RUN")
+       CALL MAPL_TimerOff(MAPLobj, "RUN")
 
        CALL ESMF_AlarmRingerOff(ALARM, __RC__)
 
@@ -2374,7 +2378,7 @@ CONTAINS
 
 !  Stop timer
 !  ----------
-   CALL MAPL_TimerOff(ggState, "TOTAL")
+   CALL MAPL_TimerOff(MAPLobj, "TOTAL")
 
    RETURN_(ESMF_SUCCESS)
 
@@ -2428,7 +2432,7 @@ CONTAINS
    type(Chem_Registry), pointer    :: chemReg
    type(GMI_GridComp), pointer     :: gcGMI       ! Grid Component
    type(Chem_Bundle), pointer      :: w_c         ! Chemical tracer fields     
-   type(MAPL_MetaComp), pointer    :: ggState     ! GEOS Generic State
+   type(MAPL_MetaComp), pointer    :: MAPLobj     ! GEOS Generic State
    integer                         :: nymd, nhms  ! time
    real                            :: gmiDt       ! chemistry timestep (secs)
    real                            :: runDt       ! heartbeat (secs)
@@ -2443,12 +2447,12 @@ CONTAINS
 
 !  Get my internal MAPL_Generic state
 !  -----------------------------------
-   CALL MAPL_GetObjectFromGC(GC, ggState, RC=STATUS)
+   CALL MAPL_GetObjectFromGC(GC, MAPLobj, RC=STATUS)
 
 !  Start timers
 !  ------------
-   CALL MAPL_TimerOn(ggState, "TOTAL")
-   CALL MAPL_TimerOn(ggState, "FINALIZE")
+   CALL MAPL_TimerOn(MAPLobj, "TOTAL")
+   CALL MAPL_TimerOn(MAPLobj, "FINALIZE")
 
 !  Get ESMF parameters from gc and clock
 !  -------------------------------------
@@ -2482,8 +2486,8 @@ CONTAINS
 
 !  Stop timers
 !  -----------
-   CALL MAPL_TimerOff(ggState, "FINALIZE")
-   CALL MAPL_TimerOff(ggState, "TOTAL")
+   CALL MAPL_TimerOff(MAPLobj, "FINALIZE")
+   CALL MAPL_TimerOff(MAPLobj, "TOTAL")
 
 !  Finalize MAPL Generic
 !  ---------------------

@@ -68,7 +68,7 @@
 !
 
       subroutine calcPhotolysisRateConstants( JXbundle, chem_mecha, tropp,     &
-     &               pr_qj_o3_o1d,  pr_qj_opt_depth, photintv, rsec_jan1,      &
+     &               pr_qj_o3_o1d,  pr_qj_opt_depth,                           &
      &               pctm2, mass3, pres3e, pres3c, temp3, concentration,       &
      &               solarZenithAngle, mcor, surf_alb_uv,                      &
      &               fracCloudCover, tau_cloud, tau_clw, tau_cli,              &
@@ -114,8 +114,6 @@
       INTEGER, INTENT(IN) :: jNOindex
       REAL   , INTENT(IN) :: jNOamp
       real*8 , intent(in) :: synoz_threshold
-      real*8 , intent(in) :: photintv                                ! photolysis time step  (s)
-      real*8 , intent(in) :: rsec_jan1                               ! seconds from Jan. 1st (s)
       real*8 , intent(in) :: fastj_offset_sec
       real*8 , intent(in) :: mcor  (i1:i2, ju1:j2)                   ! area of grid box (m^2)
       REAL*8 , INTENT(IN) :: tropp(i1:i2, ju1:j2)                    ! Tropopause pressure (hPa)
