@@ -17,6 +17,7 @@ set (src_directories
    ${geos_chem_dir}/KPP/fullchem
    ${geos_chem_dir}/GeosCore
    ${geos_chem_dir}/Interfaces/GCHP
+   ${geos_chem_dir}/Interfaces/GEOS  
    ${geos_chem_dir}/ObsPack
   )
 include_directories (${geos_chem_dir}/Headers)
