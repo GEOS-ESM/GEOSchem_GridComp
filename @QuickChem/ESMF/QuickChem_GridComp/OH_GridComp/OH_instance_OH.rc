@@ -15,7 +15,10 @@
 nbins: 1
 
 Untuned_GBoostFile: /discover/nobackup/mmanyin/CCM/run/oh26/OH_model/OH_NoTune.bin
-XGBoostFile: /discover/nobackup/mmanyin/CCM/run/oh26/OH_model/OH_Tuned_M01.bin
+XGBoost_0.81_File: /discover/nobackup/mmanyin/CCM/run/oh26/OH_model/OH_Tuned_M01.bin
+XGBoost_1.6.0_File: /discover/nobackup/mmanyin/CCM/OH_Boost/XGBoost_1.6.0/xgboh_UpDwnALBUVSZAAll_NoGMIALB_NoScale_NoRegressor_NewXGB_M01.model
+XGBoostFile: /discover/nobackup/mmanyin/CCM/OH_Boost/XGBoost_1.6.0/xgboh_UpDwnALBUVSZAAll_NoGMIALB_NoScale_NoRegressor_NewXGB_M01.model
+
 #
 #  Options are  PRECOMPUTED, ONLINE_INST, ONLINE_AVG24
 OH_data_source: ONLINE_AVG24
