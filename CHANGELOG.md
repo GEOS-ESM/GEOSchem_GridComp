@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Fixed
 
+### Fixed
+- Fixed Dry Deposition in GMI
+
 ### Changed
 - Changed GMI from internal SZA calculation to using MAPL SZA.
 
