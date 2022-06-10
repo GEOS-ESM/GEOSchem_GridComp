@@ -1,7 +1,7 @@
 
 !=============================================================================
 !
-! $Id: emiss_harvard.F90,v 1.2.24.2.6.1.72.1.4.1.4.2.32.1.202.1.2.1 2020/12/04 18:54:21 mmanyin Exp $
+! $Id: emiss_harvard.F90,v 1.2.24.2.6.1.72.1.4.1.4.2.32.1.202.1.2.1.2.1 2020/12/29 20:17:06 mmanyin Exp $
 !
 ! CODE DEVELOPER
 !   John Tannahill, LLNL
@@ -49,7 +49,7 @@
 !   ino_num       : index of NO       in const
 !   nhms          : hour/minute/sec  (HHMMSS)
 !   nymd          : year/month/day   (YYYYMMDD)
-!   lwi_flags     : array of flags:  0=water; 1=land; 2=ice
+!   lwis_flags    : array of flags:  0=water; 1=land; 2=ice, 3=snow
 !   tdt           : model time step  (s)
 !   mw            : array of species' molecular weights (g/mol)
 !   latdeg        : latitude         (deg)
@@ -72,7 +72,7 @@
 !-----------------------------------------------------------------------------
 
       SUBROUTINE Update_Emiss_Harvard (gmiGrid, idaySoilType, firstBiogenicBase,  &
-     &   iisoprene_num, ino_num, lwi_flags, tdt, mw, cosSolarZenithAngle, latdeg, &
+     &   iisoprene_num, ino_num, lwis_flags, tdt, mw, cosSolarZenithAngle, latdeg,&
          nymd, mcor, tempk, radswg, surf_rough, con_precip, tot_precip, ustar,    &
          fracCloudCover, emiss_isop, emiss_monot, emiss_nox, index_soil,          &
          ncon_soil, soil_fert, soil_precip, soil_pulse, ireg, iland, iuse,        &
@@ -117,7 +117,7 @@
      integer :: iisoprene_num, ino_num
      real*8  :: latdeg     (i1:i2, ju1:j2), cosSolarZenithAngle (i1:i2, ju1:j2)
      real*8, intent(in) :: exp_fac(NPULSE)    ! pulsing decay per time step (day^-1)
-     integer :: lwi_flags  (i1:i2, ju1:j2)    ! 0=water; 1=land; 2=ice
+     integer :: lwis_flags (i1:i2, ju1:j2)    ! 0=water; 1=land; 2=ice, 3=snow
      real*8  :: tdt
      real*8  :: mw         (num_species)  , mcor       (i1:i2, ju1:j2)
      real*8  :: tempk      (i1:i2, ju1:j2), radswg     (i1:i2, ju1:j2)
@@ -208,7 +208,7 @@
 !     ==================
       call Do_Soil_Emiss (gmiGrid, &
 !     ==================
-     &   ino_num, nymd, lwi_flags, ireg, iland, iuse, index_soil,  &
+     &   ino_num, nymd, lwis_flags, ireg, iland, iuse, index_soil,  &
      &   ncon_soil, tdt, mw, latdeg, cosSolarZenithAngle, mcor, tempk, radswg,  &
      &   surf_rough, con_precip, tot_precip, ustar, fracCloudCover,  &
      &   soil_fert, soil_precip, soil_pulse, xlai, emiss_nox, idaySoilType, &
@@ -391,7 +391,7 @@
 ! ARGUMENTS
 !   ino_num       : index of NO in const
 !   nymd          : year/month/day  (YYYYMMDD)
-!   lwi_flags     : array of flags that indicate land, water, or ice
+!   lwis_flags    : array of flags that indicate land, water, ice, or snow
 !   ireg          : number of land types in a grid square
 !   iland         : land type id in grid square for ireg land types
 !   iuse          : fraction of grid box area occupied by land type (mil^-1?)
@@ -418,7 +418,7 @@
 !-----------------------------------------------------------------------------
 
       subroutine Do_Soil_Emiss (gmiGrid,  &
-     &   ino_num, nymd, lwi_flags, ireg, iland, iuse, index_soil,  &
+     &   ino_num, nymd, lwis_flags, ireg, iland, iuse, index_soil,  &
      &   ncon_soil, tdt, mw, latdeg, cossza, mcor, tempk, radswg,  &
      &   surf_rough, con_precip, tot_precip, ustar, fracCloudCover,  &
      &   soil_fert, soil_precip, soil_pulse, xlai, emiss_nox, idaySoilType,   &
@@ -443,7 +443,7 @@
       integer, intent(in) :: loc_proc, i1, i2, ju1, j2, ju1_gl, j2_gl, num_species
       integer :: ino_num
       integer :: nymd
-      integer :: lwi_flags  (i1:i2, ju1:j2)    !  0=water; 1=land; 2=ice
+      integer :: lwis_flags (i1:i2, ju1:j2)    !  0=water; 1=land; 2=ice; 3=snow
       integer :: ireg       (i1:i2, ju1:j2)
       integer :: iland      (i1:i2, ju1:j2, NTYPE)
       integer :: iuse       (i1:i2, ju1:j2, NTYPE)
@@ -535,7 +535,7 @@
 !     ====================
       call Calc_Canopy_Nox  &
 !     ====================
-     &  (ino_num, lwi_flags, ireg, iland, iuse, mw, fracCloudCover,  &
+     &  (ino_num, lwis_flags, ireg, iland, iuse, mw, fracCloudCover,  &
      &   radswg, cossza, tempk, xlai, canopy_nox, &
      &   pr_diag, loc_proc, i1, i2, ju1, j2, num_species)
 

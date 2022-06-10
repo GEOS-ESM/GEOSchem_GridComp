@@ -521,7 +521,7 @@ CONTAINS
 !  -------------------
    REAL, POINTER, DIMENSION(:,:) :: cn_prcp, tprec, lwi, TsAir
    REAL, POINTER, DIMENSION(:,:) :: ustar, z0h, swndsrf, T2m
-   REAL, POINTER, DIMENSION(:,:) :: cldtt, area
+   REAL, POINTER, DIMENSION(:,:) :: cldtt, area, frlandice, snowdp
 
    REAL, POINTER, DIMENSION(:,:,:) :: airdens, ple, Q, T, zle
    REAL, POINTER, DIMENSION(:,:,:) :: dqdt,pfl_lsan,pfl_cn
@@ -561,7 +561,7 @@ CONTAINS
    
 ! Allocatables.  Use KIND=DBL where GMI expects REAL*8.
 ! -----------------------------------------------------
-   INTEGER, ALLOCATABLE :: lwi_flags(:,:)
+   INTEGER, ALLOCATABLE :: lwis_flags(:,:)
 
    REAL, ALLOCATABLE :: var3d(:,:,:)
    REAL, ALLOCATABLE :: pl(:,:,:)
@@ -636,7 +636,7 @@ CONTAINS
    ALLOCATE(latDeg(i1:i2,j1:j2),STAT=STATUS)
    VERIFY_(STATUS)
 
-   ALLOCATE(          lwi_flags(i1:i2,j1:j2),STAT=STATUS)
+   ALLOCATE(         lwis_flags(i1:i2,j1:j2),STAT=STATUS)
    VERIFY_(STATUS)
    ALLOCATE(     fracCloudCover(i1:i2,j1:j2),STAT=STATUS)
    VERIFY_(STATUS)
@@ -766,7 +766,7 @@ CONTAINS
      VERIFY_(STATUS)
     END IF
     CALL RunDryDeposition(self%Deposition, self%Emission, self%SpeciesConcentration, &
-                          self%gmiGrid, lwi_flags, self%cellArea,                    &
+                          self%gmiGrid, lwis_flags, self%cellArea,                   &
                           cosSolarZenithAngle, fracCloudCover, radswg,               &
                           TwoMeter_air_temp, surf_rough, frictionVelocity, mass,     &
                           diffaer, s_radius, s_velocity, gridBoxThickness(:,:,1),    &
@@ -820,7 +820,7 @@ CONTAINS
    DEALLOCATE(lonDeg, latDeg, STAT=STATUS)
    VERIFY_(STATUS)
 
-   DEALLOCATE(lwi_flags, TwoMeter_air_temp, &
+   DEALLOCATE(lwis_flags, TwoMeter_air_temp, &
               fracCloudCover, surf_rough, cosSolarZenithAngle, &
               radswg, frictionVelocity, con_precip, tot_precip, STAT=STATUS)
    VERIFY_(STATUS)
@@ -1048,6 +1048,10 @@ CONTAINS
    VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,       lwi,       'LWI', rc=STATUS)
    VERIFY_(STATUS)
+   CALL MAPL_GetPointer(impChem, frlandice, 'FRLANDICE', rc=STATUS)
+   VERIFY_(STATUS)
+   CALL MAPL_GetPointer(impChem,    snowdp,    'SNOWDP', rc=STATUS)
+   VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,     TsAir,        'TA', rc=STATUS)
    VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,       T2m,       'T2M', rc=STATUS)
@@ -1089,6 +1093,8 @@ CONTAINS
     CALL pmaxmin('CN_PRCP:', cn_prcp, qmin, qmax, iXj, 1, 1. )
     CALL pmaxmin('TPREC:', tprec, qmin, qmax, iXj, 1, 1. )
     CALL pmaxmin('LWI:', lwi, qmin, qmax, iXj, 1, 1. )
+    CALL pmaxmin('FRLANDICE:', frlandice, qmin, qmax, iXj, 1, 1. )
+    CALL pmaxmin('SNOWDP:', snowdp, qmin, qmax, iXj, 1, 1. )
     CALL pmaxmin('TSAIR:', TsAir, qmin, qmax, iXj, 1, 1. )
     CALL pmaxmin('T2M:', T2m, qmin, qmax, iXj, 1, 1. )
     CALL pmaxmin('Q:', Q, qmin, qmax, iXj, km, 1. )
@@ -1177,10 +1183,15 @@ CONTAINS
    rain3Dcn(i1:i2,j1:j2,kReverse) = pfl_cn(i1:i2,j1:j2,k)*secPerDay         ! kg m^{-2}s^{-1}  mm d^{-1}
   END DO
 
-! Increment land-water-ice flag to GMI
-! specification: 1=water 2=land 3=ice
-! ------------------------------------
-   lwi_flags(i1:i2,j1:j2)=1+lwi(i1:i2,j1:j2)
+! Retain land-water-ice flag numbering from GEOS
+! Make land-water-ice-snow flag for Dry deposition
+! specification: 0=water 1=land 2=ice 3=snow/glaciated
+! ----------------------------------------------------
+   lwis_flags(i1:i2,j1:j2)=FLOOR(lwi(i1:i2,j1:j2)+0.1)
+!  Note - SNOWDP can be undefined (BIG)
+   WHERE( (frlandice(i1:i2,j1:j2) > 0.5 .OR. (snowdp(i1:i2,j1:j2) >= 0.35 .AND.     &
+                                              snowdp(i1:i2,j1:j2) <  1000.0)    ) ) &
+          lwis_flags(i1:i2,j1:j2) = 3
 
 ! Cell mass and thickness                                                   GEOS-5 Units       GMI Units
 ! -----------------------                                                   ------------       -------------

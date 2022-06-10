@@ -946,7 +946,7 @@
 !
       subroutine RunEmission(self, SpeciesConcentration, gmiClock, gmiGrid,    &
      &              loc_proc, cosSolarZenithAngle, latdeg, mcor, mass,         &
-     &              lwi_flags, radswg, TwoMeter_air_temp, surf_rough,          &
+     &              lwis_flags, radswg, TwoMeter_air_temp, surf_rough,         &
      &              con_precip, tot_precip, ustar, fracCloudCover, kel, pbl,   &
      &              cmf, press3c, press3e, pctm2, u10m, v10m,                  &
      &              gwet, gridBoxHeight, mw, IBOC, IBBC, INOC, IFOC, IFBC,     &
@@ -982,7 +982,7 @@
 
       real*8 , intent(in) :: pctm2  (:, :), press3c(:, :, :), press3e(:, :, :)
 
-      integer, intent(in) :: lwi_flags(:, :)            ! 0=water; 1=land; 2=ice
+      integer, intent(in) :: lwis_flags(:, :)            ! 0=water; 1=land; 2=ice; 3=snow
 
       real*8 , intent(in) :: radswg(:, :), TwoMeter_air_temp(:, :), surf_rough(:, :)
       real*8 , intent(in) :: pardif(:, :), pardir(:, :), T_15_AVG(:, :)
@@ -1077,35 +1077,35 @@
       rootProc = MAPL_AM_I_ROOT()
 
       call Update_Emiss (gmiGrid, self%idaySoilType, self%firstBiogenicBase,   &
-                 lwi_flags, cosSolarZenithAngle, latdeg,      &
-     &           mcor, self%emiss_isop, self%emiss_monot, self%emiss_nox,      &
-     &           self%do_ShipEmission, self%emiss_hno3, self%emiss_o3,         &
-     &           ihno3_num, io3_num, radswg, TwoMeter_air_temp, surf_rough,    &
-     &           con_precip, tot_precip, ustar, mass, fracCloudCover, kel,     &
-     &           self%surf_emiss_out, self%surf_emiss_out2, self%emiss_3d_out, &
-     &           self%aerosolEmiss3D, self%aerosolSurfEmiss,                   &
-     &           self%aerosolSurfEmissMap, concentration, self%emissionArray,  &
-     &           self%emissDust_t, self%emissDust, self%emissAero_t,           &
-     &           self%emissAero, pbl, gridBoxHeight, self%index_soil,          &
-     &           self%ncon_soil, self%soil_fert, self%soil_precip,             &
-     &           self%soil_pulse, self%ireg, self%iland, self%iuse,            &
-     &           self%convert_isop, self%convert_monot, self%coeff_isop,       &
-     &           self%base_isop, self%base_monot, self%xlai, IBOC, IBBC, INOC, &
-     &           IFOC, IFBC, ISSLT1, ISSLT2, ISSLT3, ISSLT4, IFSO2, INSO2,     &
-     &           INDMS, IAN, IMGAS, INO, iisoprene_num, ino_num, ico_num,      &
-     &           ipropene_num, pr_surf_emiss, pr_emiss_3d, pr_diag, loc_proc,  &
-     &           rootProc, met_opt, self%emiss_opt, chem_opt, trans_opt,       &
-     &           self%emiss_aero_opt, self%emiss_dust_opt, do_aerocom,         &
-     &           self%do_semiss_inchem, self%do_gcr, do_drydep, self%emiss_map,&
-     &           self%emiss_map_dust, self%emiss_map_aero, self%ndust,         &
-     &           self%nst_dust, self%nt_dust, self%naero, nymd, num_time_steps,&
-     &           mw, tdt8, ndt, self%emiss_timpyr, self%num_emiss,             &
-     &           self%isop_scale, i1, i2, ju1, j2, k1, k2, ilo, ihi, julo, jhi,&
-     &           i1_gl, i2_gl, ju1_gl, j2_gl, ilong, numSpecies,               &
-     &           self%doMEGANemission, self%doMEGANviaHEMCO, self%aefIsop,     &
-     &           self%aefMbo, self%aefMonot, self%isoLaiPrev, self%isoLaiCurr, &
-     &           self%isoLaiNext, pardif, pardir, T_15_AVG,                    &
-     &           self%emissionSpeciesLayers, self%exp_fac, mixPBL)
+                 lwis_flags, cosSolarZenithAngle, latdeg,                      &
+                 mcor, self%emiss_isop, self%emiss_monot, self%emiss_nox,      &
+                 self%do_ShipEmission, self%emiss_hno3, self%emiss_o3,         &
+                 ihno3_num, io3_num, radswg, TwoMeter_air_temp, surf_rough,    &
+                 con_precip, tot_precip, ustar, mass, fracCloudCover, kel,     &
+                 self%surf_emiss_out, self%surf_emiss_out2, self%emiss_3d_out, &
+                 self%aerosolEmiss3D, self%aerosolSurfEmiss,                   &
+                 self%aerosolSurfEmissMap, concentration, self%emissionArray,  &
+                 self%emissDust_t, self%emissDust, self%emissAero_t,           &
+                 self%emissAero, pbl, gridBoxHeight, self%index_soil,          &
+                 self%ncon_soil, self%soil_fert, self%soil_precip,             &
+                 self%soil_pulse, self%ireg, self%iland, self%iuse,            &
+                 self%convert_isop, self%convert_monot, self%coeff_isop,       &
+                 self%base_isop, self%base_monot, self%xlai, IBOC, IBBC, INOC, &
+                 IFOC, IFBC, ISSLT1, ISSLT2, ISSLT3, ISSLT4, IFSO2, INSO2,     &
+                 INDMS, IAN, IMGAS, INO, iisoprene_num, ino_num, ico_num,      &
+                 ipropene_num, pr_surf_emiss, pr_emiss_3d, pr_diag, loc_proc,  &
+                 rootProc, met_opt, self%emiss_opt, chem_opt, trans_opt,       &
+                 self%emiss_aero_opt, self%emiss_dust_opt, do_aerocom,         &
+                 self%do_semiss_inchem, self%do_gcr, do_drydep, self%emiss_map,&
+                 self%emiss_map_dust, self%emiss_map_aero, self%ndust,         &
+                 self%nst_dust, self%nt_dust, self%naero, nymd, num_time_steps,&
+                 mw, tdt8, ndt, self%emiss_timpyr, self%num_emiss,             &
+                 self%isop_scale, i1, i2, ju1, j2, k1, k2, ilo, ihi, julo, jhi,&
+                 i1_gl, i2_gl, ju1_gl, j2_gl, ilong, numSpecies,               &
+                 self%doMEGANemission, self%doMEGANviaHEMCO, self%aefIsop,     &
+                 self%aefMbo, self%aefMonot, self%isoLaiPrev, self%isoLaiCurr, &
+                 self%isoLaiNext, pardif, pardir, T_15_AVG,                    &
+                 self%emissionSpeciesLayers, self%exp_fac, mixPBL)
 
 ! NO production from lightning, with flashRate imported from MOIST
 ! ----------------------------------------------------------------
@@ -1179,7 +1179,6 @@
   integer :: il, ij, num_emiss, ic
   real*8  :: tr_source
   real*8  :: units_fac
-  integer :: lwi_flags(i1:i2, ju1:j2)
 
 ! ----------------
 ! Begin execution.

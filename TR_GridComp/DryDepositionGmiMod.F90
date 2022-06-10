@@ -60,7 +60,7 @@ CONTAINS
 !   velocities calculated by the Harvard dry deposition model.
 !
 ! ARGUMENTS
-!   lwi_flags  : array of flags that indicate land, water, or ice
+!   lwis_flags : array of flags that indicate land, water, ice, or snow
 !   mcor       : area of grid box (m^2)  [only need if PRESENT(dry_depos)]
 !   latdeg     : latitude  (deg)
 !   londeg     : longitude (deg)
@@ -81,7 +81,7 @@ CONTAINS
 !-----------------------------------------------------------------------------
 
       subroutine TR_GMI_DryDeposition  &
-     &  (lwi_flags, mcor, cosSolarZenithAngle, &
+     &  (lwis_flags, mcor, cosSolarZenithAngle, &
      &   fracCloudCover, radswg, surf_air_temp,  &
      &   surf_rough, ustar, mass, &
      &   diffaer,  &
@@ -109,7 +109,7 @@ CONTAINS
       real*4 , intent(in) :: cdt
       integer, intent(in) :: i1, i2, ju1, j2, k1, k2
       real   , intent(in) :: mw
-      integer, intent(in) :: lwi_flags           (i1:i2, ju1:j2)
+      integer, intent(in) :: lwis_flags          (i1:i2, ju1:j2)
       real*4 , intent(in) :: mcor                (i1:i2, ju1:j2)
       real*8 , intent(in) :: fracCloudCover      (i1:i2, ju1:j2)
       real*8 , intent(in) :: cosSolarZenithAngle (i1:i2, ju1:j2)
@@ -320,7 +320,7 @@ CONTAINS
 !       ===========
      &   (ij, radswg(:,ij), surf_air_temp(:,ij), cosSolarZenithAngle(:, ij), f0,  &
      &    hstar, mw, aero_flag, ustar(:,ij), cz1, obk, fracCloudCover(:,ij),  &
-     &    lwi_flags(:,ij), dvel, ireg, iland, iuse, xlai, diffa,  &
+     &    lwis_flags(:,ij), dvel, ireg, iland, iuse, xlai, diffa,  &
      &    s_ra, s_vel, delh_298_over_r, i1, i2, ju1, j2)
 
 
@@ -436,7 +436,8 @@ CONTAINS
 !   cz1     : altitude at which deposition velocity is computed (m)
 !   obk     : Monin-Obukhov length, set to 1.0d5 under neutral conditions (m)
 !   cfrac   : fractional cloud cover
-!   lsnow   : integer for snow and sea ice (1=>water, 2=>land, 3=>ice)
+!   lwis    : integer for snow and sea ice (0=>water, 1=>land, 2=>ice, 3=>snow)
+!             used to be named lsnow
 !   dvel    : deposition velocities (m/s)
 !   ireg    : # of landtypes in grid square
 !   iland   : land type id for elements ldt = 1, ireg;
@@ -452,7 +453,7 @@ CONTAINS
 
       subroutine CalcDepositionVelocity  &
      &  (ij, radiat, tempk, suncos, f0, hstar, mw, aero_flag,  &
-     &   ustar, cz1, obk, cfrac, lsnow, dvel, ireg, iland, iuse, xlai,  &
+     &   ustar, cz1, obk, cfrac, lwis, dvel, ireg, iland, iuse, xlai,  &
      &   diffa, s_ra, s_vel, delh_298_over_r, &
      &   i1, i2, ju1, j2)
 
@@ -481,7 +482,7 @@ CONTAINS
       real*8  :: cz1    (i1:i2)
       real*8  :: obk    (i1:i2)
       real*8  :: cfrac  (i1:i2)
-      integer :: lsnow  (i1:i2)
+      integer :: lwis   (i1:i2)
       real*8  :: dvel   (i1:i2)
       integer :: ireg   (i1:i2, ju1:j2)
       integer :: iland  (i1:i2, ju1:j2, 1:NTYPE)
@@ -662,7 +663,7 @@ CONTAINS
           if (iuse(iloop,ij,ldt) == 0) cycle LDTLOOP1
 !                                      ==============
 
-          if (lsnow(iloop) == 3) then  ! snow or ice
+          if (lwis(iloop) >= 2) then  !  ice=2 or snow=3
             idep1  = 1
           else
             iolson = iland(iloop,ij,ldt) + 1

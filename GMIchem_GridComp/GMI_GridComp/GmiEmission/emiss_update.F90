@@ -1,6 +1,6 @@
 !=============================================================================
 !
-! $Id: emiss_update.F90,v 1.1.1.1.2.2.14.1.8.1.108.1.40.1.188.1.10.1.2.1 2020/12/04 18:48:56 mmanyin Exp $
+! $Id: emiss_update.F90,v 1.1.1.1.2.2.14.1.8.1.108.1.40.1.188.1.10.1.2.1.2.1 2020/12/29 20:17:04 mmanyin Exp $
 !
 ! CODE DEVELOPER
 !   John Tannahill, LLNL
@@ -32,7 +32,7 @@
 !   This routine updates const based on emissions.
 !
 ! ARGUMENTS
-!   lwi_flags     : 0=water; 1=land; 2=ice
+!   lwis_flags    : 0=water; 1=land; 2=ice; 3=snow
 !   latdeg        : latitude  (deg)
 !   mcor          : area of grid box (m^2)
 !   emiss_isop    : isoprene    emissions (kg/s)
@@ -62,7 +62,7 @@
 !-----------------------------------------------------------------------------
 
       subroutine Update_Emiss (gmiGrid, idaySoilType, firstBiogenicBase, &
-     &   lwi_flags, cosSolarZenithAngle, latdeg, mcor, emiss_isop, emiss_monot,  &
+     &   lwis_flags, cosSolarZenithAngle, latdeg, mcor, emiss_isop, emiss_monot,  &
      &   emiss_nox, do_ShipEmission, emiss_hno3, emiss_o3, ihno3_num, io3_num, &
      &   radswg, TwoMeter_air_temp, surf_rough, con_precip, tot_precip, ustar, &
      &   mass, fracCloudCover, kel, surf_emiss_out, surf_emiss_out2, emiss_3d_out, &
@@ -114,7 +114,7 @@
       integer, intent(in   ) :: emiss_map(num_species), emiss_map_dust(num_species)
       integer, intent(in   ) :: emiss_map_aero(num_species)
       logical, intent(in   ) :: do_semiss_inchem, do_gcr, do_drydep, do_aerocom, do_ShipEmission
-      integer, intent(in   ) :: lwi_flags(i1:i2, ju1:j2)    ! 0=water; 1=land; 2=ice
+      integer, intent(in   ) :: lwis_flags(i1:i2, ju1:j2)    ! 0=water; 1=land; 2=ice; 3=snow
       real*8 , intent(in   ) :: cosSolarZenithAngle(i1:i2, ju1:j2)
       real*8 , intent(in   ) :: latdeg   (i1:i2, ju1:j2)
       real*8 , intent(in   ) :: mcor     (i1:i2, ju1:j2)
@@ -259,7 +259,7 @@
           end if
 
           call Update_Emiss_Harvard (gmiGrid, idaySoilType, firstBiogenicBase, &
-     &       iisoprene_num, ino_num, lwi_flags, tdt, mw, cosSolarZenithAngle, latdeg, nymd, &
+     &       iisoprene_num, ino_num, lwis_flags, tdt, mw, cosSolarZenithAngle, latdeg, nymd, &
      &       mcor, tempk, radswg, surf_rough, con_precip, tot_precip, ustar, fracCloudCover,  &
      &       emiss_isop, emiss_monot, emiss_nox, index_soil, ncon_soil, soil_fert, soil_precip, &
      &       soil_pulse, ireg, iland, iuse, convert_isop, convert_monot, coeff_isop,  &
