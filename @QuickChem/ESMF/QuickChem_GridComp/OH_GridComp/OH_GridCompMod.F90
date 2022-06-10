@@ -175,12 +175,14 @@ contains
  real(c_float), allocatable :: xx_carr(:)
  character(len=255)         :: xx_fname
  ! for prediction
- integer(c_int)             :: xx_option_mask, xx_ntree_limit
+ integer(c_int)             :: xx_option_mask, xx_ntree_limit, xx_training
  type(c_ptr)                :: xx_cpred
  integer(c_int64_t)         :: xx_pred_len 
  real(c_float), pointer     :: xx_pred(:)
 
  integer :: i,j,k
+
+ integer :: m  ! index into xx_carr
 
 !--- Parameter
  ! missing value 
@@ -206,8 +208,9 @@ contains
  xx_carr(:) = 0.0
  ! Settings for prediction 
  xx_option_mask = 0
- xx_ntree_limit = 0
- xx_ntree_limit = 160
+ xx_ntree_limit = 100  ! Per Dan: "The final version of the parameterization has 100 trees"
+                       ! Tried value 0, apparently zero-diff
+ xx_training    = 0    ! actually FALSE or TRUE - new for v1.6.0
 
 !--- Starts here
  if(debug) write(*,*) 'Starting XGBoost program'
@@ -306,10 +309,15 @@ contains
 
         rc = XGDMatrixCreateFromMat_f(xx_carr, xx_nrow, xx_ncol, xx_miss, xx_dmtrx)
         if(rc /= 0) write(*,*) __FILE__,__LINE__,'Failed in XGDMatrixCreateFromMat_f, Return code: ',rc
+        if(rc /= 0) then
+         DO m=1,xx_ncol
+           print*,'  Failing - xx_carr ', m, xx_carr(m)
+         end do
+        endif
         VERIFY_(rc)
 
         ! Make prediction. The result will be stored in c pointer xx_cpred 
-        rc = XGBoosterPredict_f(xx_bst,xx_dmtrx,xx_option_mask,xx_ntree_limit,xx_pred_len,xx_cpred)
+        rc = XGBoosterPredict_f(xx_bst,xx_dmtrx,xx_option_mask,xx_ntree_limit,xx_training,xx_pred_len,xx_cpred)
         if(rc /= 0) write(*,*) __FILE__,__LINE__,'Failed in XGBoosterPredict_f, Return code: ',rc
         VERIFY_(rc)
 
@@ -356,9 +364,6 @@ contains
 !  Computes the solar zenith angle for local noon
 !  Based on the GMI function computeSolarZenithAngle_Photolysis
 !
-! !DEFINED PARAMETERS:
-    real, parameter :: PI180 = MAPL_PI / 180.0
-!
 ! !LOCAL VARIABLES:
     REAL    :: sindec, soldek, cosdec
     REAL    :: sinlat(i1:i2,j1:j2), sollat(i1:i2,j1:j2), coslat(i1:i2,j1:j2)
@@ -369,7 +374,7 @@ contains
 !EOP
 !------------------------------------------------------------------------------
 !BOC
-      sindec=0.3978*sin(0.9863*(jday-80.0)*PI180)
+      sindec=0.3978*sin(0.9863*(jday-80.0)*MAPL_DEGREES_TO_RADIANS)
       soldek=asin(sindec)
       cosdec=cos(soldek)
       sinlat(i1:i2,j1:j2)=sin(latRad(i1:i2,j1:j2))
@@ -387,9 +392,24 @@ contains
          if ( mylon .LT. -180.0 ) mylon=mylon+360.0
          tau = 12.0 + (mylon/-180.0)*12.0
 
-         loct       = ((tau*15.0)-180.0)*PI180 + lonRad(i,j)
+         loct       = ((tau*15.0)-180.0)*MAPL_DEGREES_TO_RADIANS + lonRad(i,j)
          cosz(i,j)  = cosdec*coslat(i,j)*cos(loct) + sindec*sinlat(i,j)
-         this_(i,j) = acos(cosz(i,j))/PI180
+
+         IF ( cosz(i,j) < -1.0 ) THEN
+           PRINT*,'COS LESS THAN -1 by:', cosz(i,j) + 1.0
+           PRINT*,'<    DAY LAT LON:', jday, latRad(i,j)*MAPL_RADIANS_TO_DEGREES, lonRad(i,j)*MAPL_RADIANS_TO_DEGREES
+         ENDIF
+
+         IF ( cosz(i,j) >  1.0 ) THEN
+           PRINT*,'COS GREATER THAN 1 by:', cosz(i,j) - 1.0
+           PRINT*,'>    DAY LAT LON:', jday, latRad(i,j)*MAPL_RADIANS_TO_DEGREES, lonRad(i,j)*MAPL_RADIANS_TO_DEGREES
+         ENDIF
+
+! cosz was above 1 by 1e-7 on occasion
+         cosz(i,j) = MIN(  1.0, cosz(i,j) )
+         cosz(i,j) = MAX( -1.0, cosz(i,j) )
+
+         this_(i,j) = acos(cosz(i,j))*MAPL_RADIANS_TO_DEGREES
        enddo
       enddo
 

@@ -59,13 +59,14 @@ interface
 end interface
 
 interface
-  integer(c_int) function XGBoosterPredict_f(handle, dmat, option_mask, ntree_limit, length, prediction) &
+  integer(c_int) function XGBoosterPredict_f(handle, dmat, option_mask, ntree_limit, training, length, prediction) &
         bind(C, name="XGBoosterPredict")
    use iso_c_binding, only: c_int, c_ptr, c_int64_t, c_float, c_double
    type(c_ptr), value        :: handle       ! BoosterHandle
    type(c_ptr), value        :: dmat         ! DMatrixHandle
    integer(c_int), value     :: option_mask  ! option mask
    integer(c_int), value     :: ntree_limit  ! limit number of trees in the prediction
+   integer(c_int), value     :: training     ! training - as of v1.6.0
    integer(c_int64_t)        :: length       ! length of prediction
    type(c_ptr)               :: prediction   ! prediction
   end function
