@@ -20,7 +20,7 @@ module GEOS_ChemGridCompMod
 
   use  GEOS_ChemEnvGridCompMod,  only :   ChemEnv_SetServices => SetServices
   use       GOCART_GridCompMod,  only :    GOCART_SetServices => SetServices
-  use     GOCART2G_GridCompMod,  only : GOCART2G_SetServices  => SetServices !GOCART REFACTOR
+  use     GOCART2G_GridCompMod,  only :  GOCART2G_SetServices => SetServices !GOCART REFACTOR
   use    StratChem_GridCompMod,  only : StratChem_SetServices => SetServices
   use      GMIchem_GridCompMod,  only :       GMI_SetServices => SetServices
   use    CARMAchem_GridCompMod,  only :     CARMA_SetServices => SetServices
@@ -136,7 +136,7 @@ contains
 
 ! Locals
 
-   type (ESMF_GridComp), pointer :: GCS(:)
+    type (ESMF_GridComp), pointer :: GCS(:)
 
     integer                    :: I, RATS_PROVIDER, AERO_PROVIDER
     type (ESMF_Config), target :: CF, myCF
@@ -426,6 +426,12 @@ contains
 
 ! Connectivities between Children
 ! -------------------------------
+  IF(myState%enable_GOCART2G .AND. myState%enable_GEOSCHEM) then
+     CALL MAPL_AddConnectivity ( GC, &
+          SHORT_NAME  = (/"DST1","DST2","DST3","DST4"/), &
+          DST_ID = GEOSCHEM, SRC_ID = GOCART2G, __RC__  )
+  ENDIF
+
   IF(myState%enable_GOCART) then
      CALL MAPL_AddConnectivity ( GC, &
           SHORT_NAME  = (/'AIRDENS     ','AIRDENS_DRYP', 'DELP        ', 'TPREC       ', 'CN_PRCP     ', 'NCN_PRCP    '/), &
@@ -898,6 +904,7 @@ contains
    type (ESMF_State)                   :: INTERNAL
    type (ESMF_State),          pointer :: GEX(:)
    type (ESMF_FieldBundle)             :: fBUNDLE
+   type (ESMF_FieldBundle)             :: imSS, imDU ! internally mixed species from chem
    type (ESMF_State)                   :: AERO
    type (ESMF_Config)                  :: CF, myCF
 
@@ -905,6 +912,15 @@ contains
 !   -------------
     type (GEOS_ChemGridComp), pointer  :: myState   ! private, that is
     type (GEOS_ChemGridComp_Wrap)      :: wrap
+
+!   Internal Mixture vars
+    type (ESMF_Field), allocatable     :: fieldList(:)
+    integer                            :: nFields, n, nn, nbins, n_imspec
+    integer, allocatable               :: imbins(:)
+    real, allocatable                  :: imbinsplit(:), imbinemisfrac(:)
+    real, allocatable                  :: binsplit(:), binemisfrac(:)
+    character(len=ESMF_MAXSTR)         :: attributeName
+    character(len=ESMF_MAXSTR), allocatable :: fieldNameList(:), binFieldNameList(:)
 
 !=============================================================================
  
@@ -1001,6 +1017,80 @@ contains
     end if
 
 #endif
+
+!   Fill internal mixture bundles from CHEM (M.Long)
+!   ________________________________________________
+    call ESMF_StateGet   (GEX(GOCART2G),  'imSS' , imSS, __RC__ )
+    call MAPL_GridCompGetFriendlies(GCS(GEOSCHEM), "SS", imSS, AddGCPrefix=.false., __RC__ )
+!   Process attributes
+    call ESMF_FieldBundleGet( imSS, fieldCount=nFields,  __RC__ )
+    allocate (fieldNameList(nFields), __STAT__)
+    call ESMF_FieldBundleGet( imss, fieldNameList=fieldNameList, __RC__ )
+    allocate (fieldList(nFields), __STAT__)
+    call ESMF_FieldBundleGet( imss, fieldList=fieldList, __RC__ )
+
+    ! Map field attributes into the bundle for easy access by aerosol gridcomp
+    ! -- adds one value for each attribute per field associated with bin%d
+    do n=1,nFields
+       ! Get number of bins associated with field
+       call ESMF_AttributeGet( fieldList(n), 'internally_mixed_nbins',     value=nbins, __RC__ )
+       allocate( imbins(nbins)       , __STAT__ )
+       allocate( imbinsplit(nbins)   , __STAT__ )
+       allocate( imbinemisfrac(nbins), __STAT__ )
+       call ESMF_AttributeGet( fieldList(n), 'internally_mixed_with_bins',   valuelist=imbins,  __RC__ )
+       call ESMF_AttributeGet( fieldList(n), 'internally_mixed_bins_split',  valueList=imbinsplit, __RC__)
+       call ESMF_AttributeGet( fieldList(n), 'internally_mixed_emis_frac',   valueList=imbinemisfrac, __RC__)
+       ! Loop over number of bins
+       do nn=1,nbins
+          !Number of IM fields in aerosol bin
+          ! Create attribute name
+          write( attributeName, '(A3,I0)') 'bin', imbins(nn)
+          ! Get current attribute value
+          call ESMF_AttributeGet( imSS, attributename, VALUE=n_imspec, defaultValue=0, __RC__ )
+          ! Increment
+          call ESMF_AttributeSet( imSS, attributename, VALUE=n_imspec+1, __RC__ )
+
+          ! Field names
+          ! Create attribute name
+          write( attributeName, '(A3,I0,A11)') 'bin', imbins(nn),'_fieldnames'
+          allocate(binfieldnamelist(n_imspec+1))
+          ! Get current attribute value
+          if (n_imspec .gt. 0) &
+               call ESMF_AttributeGet( imSS, attributename, VALUELIST=binfieldnamelist(1:n_imspec), defaultValuelist=(/''/), __RC__ )
+          ! Increment
+          binFieldNameList(n_imspec+1) = fieldNameList(n)
+          call ESMF_AttributeSet( imSS, attributename, VALUELIST=binfieldnamelist, __RC__ )
+
+          ! Field bin split (fraction of field attributed to bin%d)
+          ! Create attribute name
+          write( attributeName, '(A3,I0,A6)') 'bin', imbins(nn),'_split'
+          allocate(binsplit(n_imspec+1))
+          ! Get current attribute value
+          if (n_imspec .gt. 0) &
+               call ESMF_AttributeGet( imSS, attributename, VALUELIST=binsplit(1:n_imspec), defaultValuelist=(/0./), __RC__ )
+          ! Increment
+          binsplit(n_imspec+1) = imbinsplit(n)
+          call ESMF_AttributeSet( imSS, attributename, VALUELIST=binsplit, __RC__ )
+
+          ! Field emission fraction (fraction of field emitted with bin%d)
+          ! Create attribute name
+          write( attributeName, '(A3,I0,A9)') 'bin', imbins(nn),'_emisfrac'
+          allocate(binemisfrac(n_imspec+1))
+          ! Get current attribute value
+          if (n_imspec .gt. 0) &
+               call ESMF_AttributeGet( imSS, attributename, VALUELIST=binemisfrac(1:n_imspec), defaultValuelist=(/0./), __RC__ )
+          ! Increment
+          binemisfrac(n_imspec+1) = imbinemisfrac(n)
+          call ESMF_AttributeSet( imSS, attributename, VALUELIST=binemisfrac, __RC__ )
+
+          ! Clean up
+          deallocate(binfieldnamelist, binsplit, binemisfrac)
+       enddo
+       deallocate(imbins)
+    enddo
+    deallocate(fieldList)
+!    print *,  trim(Iam)//"<<>>: Friendly Tracers (INTERNAL)"
+!                                             call ESMF_FieldBundlePrint ( imSS )
 
 !   All Done
 !   --------
