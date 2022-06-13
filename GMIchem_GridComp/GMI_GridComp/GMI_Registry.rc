@@ -65,6 +65,7 @@
   FRLAND  	     |  1	       | xy  |   |    |   |   |     |	   |    | fraction_of_land
   FRLANDICE  	     |  1	       | xy  |   |    |   |   |     |	   |    | fraction_of_land_ice
   ASNOW  	     |  1	       | xy  |   |    |   |   |     |	   |    | fractional_area_of_land_snowcover
+  SNOWDP 	     |  1	       | xy  |   |    |   |   |     |	   |    | snow_depth
   AREA  	     |  m^2	       | xy  |   |    |   |   |     |	   |    | agrid_cell_area
   LFR   	     |  km-2 s-1       | xy  |   |    |   |   |     |	   |    | lightning_flash_rate
   ACET_FIXED   	     |  mol mol-1      | xyz | C |    |   |   |     |	   |  x | acetone

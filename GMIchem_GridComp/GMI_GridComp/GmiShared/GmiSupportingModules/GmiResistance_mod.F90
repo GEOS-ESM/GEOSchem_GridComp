@@ -271,7 +271,7 @@ module GmiResistance_mod
       else
 
         rlu1 = irlu(idep1)
-        rlu1 = (rlu1 / xlai1) + rt
+        rlu1 = (rlu1 / xlai1) * rt
 
       end if
 
@@ -286,18 +286,18 @@ module GmiResistance_mod
       if (rac1  >= 9999.0d0) rac1  = BIG2
 
       rgss1 = irgss(idep1)
-      rgss1 = Max (rgss1+rt, 1.0d0)
+      rgss1 = Max (rgss1*rt, 1.0d0)
 
       rgso1 = irgso(idep1)
-      rgso1 = Max (rgso1+rt, 1.0d0)
+      rgso1 = Max (rgso1*rt, 1.0d0)
       if (rgso1 >= 9999.0d0) rgso1 = BIG2
 
       rcls1 = ircls(idep1)
-      rcls1 = rcls1 + rt
+      rcls1 = rcls1 * rt
       if (rcls1 >= 9999.0d0) rcls1 = BIG2
 
       rclo1 = irclo(idep1)
-      rclo1 = rclo1 + rt
+      rclo1 = rclo1 * rt
       if (rclo1 >= 9999.0d0) rclo1 = BIG2
 
 

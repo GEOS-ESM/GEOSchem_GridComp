@@ -48,7 +48,7 @@ module GmiSoilEmission_mod
 !
 ! !INTERFACE:
 !
-      subroutine Calc_Canopy_Nox (ino_num, lwi, ireg, iland, iuse, mw,       &
+      subroutine Calc_Canopy_Nox (ino_num, lwis, ireg, iland, iuse, mw,       &
                      cfrac, radiat, suncos, tempk, xlai, canopynox, pr_diag,   &
                      loc_proc, i1, i2, ju1, j2, num_species)
 !
@@ -60,8 +60,8 @@ module GmiSoilEmission_mod
       integer, intent(in) :: i1, i2, ju1, j2
       integer, intent(in) :: num_species
       integer, intent(in) :: ino_num                      ! index of NO in const
-      integer, intent(in) :: lwi (i1:i2, ju1:j2)          ! 0=water; 1=land; 2=ice
-                                                          ! NOTE: lwi used to be named lsnow
+      integer, intent(in) :: lwis (i1:i2, ju1:j2)         ! 0=water; 1=land; 2=ice; 3=snow
+                                                          ! NOTE: lwis used to be named lsnow
       integer, intent(in) :: ireg  (i1:i2, ju1:j2)        ! number of land types in a grid square
       integer, intent(in) :: iland (i1:i2, ju1:j2, NTYPE) ! land type id in grid square for ireg land types
       integer, intent(in) :: iuse  (i1:i2, ju1:j2, NTYPE) ! fraction of grid box area occupied by land type (mil^-1?)
@@ -110,11 +110,16 @@ module GmiSoilEmission_mod
             ! hold the resistance fixed.
             ! --------------------------------------------------------------------
 
-            if (tempc1 < -18.0d0) then
-               rt = 1.2d9
-            else
-               rt = 1000.0d0 * Exp (-tempc1 - 4.0d0)
-            end if
+!           if (tempc1 < -18.0d0) then
+!              rt = 1.2d9
+!           else
+!              rt = 1000.0d0 * Exp (-tempc1 - 4.0d0)
+!           end if
+! LDO - Change to Zhang et al. 2003 resistance temperature dependence 
+            rt = 1.0d0
+            if (tempc1 < -1.0d0) rt = Exp (0.2d0*(-1.0d0 - tempc1))
+            rt = Min (rt, 2.0d0)
+
 
             ! --------------------------------------------------------------------
             ! Get surface resistances; loop over land types, ldt.  The land types
@@ -139,7 +144,7 @@ module GmiSoilEmission_mod
                if (iuse(il,ij,ldt) == 0) cycle LDTLOOP
                                         !=============
 
-               if (lwi(il,ij) == 2) then  ! snow or ice
+               if (lwis(il,ij) >= 2) then  ! snow=3 or ice=2
                   idep1  = 1
                else
                   iolson = iland(il,ij,ldt) + 1

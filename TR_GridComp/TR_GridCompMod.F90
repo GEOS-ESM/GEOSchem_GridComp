@@ -707,9 +707,9 @@ CONTAINS
                                                        __RC__  )
 
      call MAPL_AddImportSpec(GC,                                   &
-        SHORT_NAME         = 'ASNOW',                              &
-        LONG_NAME          = 'fractional_area_of_land_snowcover',  &
-        UNITS              = '1',                                  &
+        SHORT_NAME         = 'SNOWDP',                             &
+        LONG_NAME          = 'snow_depth',                         &
+        UNITS              = 'm',                                  &
         DIMS               = MAPL_DimsHorzOnly,                    &
         VLOCATION          = MAPL_VLocationNone,                   &
         RESTART            = MAPL_RestartSkip,                     &
@@ -3464,8 +3464,6 @@ CONTAINS
    INTEGER         ::  iXj
    REAL            ::  qmin, qmax
 
-   INTEGER, ALLOCATABLE ::      lwi_flags(:,:)
-
    INTEGER                             :: CURRENT_HMS  ! store time of day as hhmmss
    REAL, POINTER, DIMENSION(:,:,:)     :: OVP10_OUTPUT_3D => NULL()
    REAL, POINTER, DIMENSION(:,:,:)     :: OVP14_OUTPUT_3D => NULL()
@@ -4589,12 +4587,14 @@ CONTAINS
     REAL, POINTER, DIMENSION(:,:,:) :: ple     => null()
 
     ! needed for Dry Deposition
-    REAL, POINTER, DIMENSION(:,:)   :: lwi     => null()
-    REAL, POINTER, DIMENSION(:,:)   :: T2m     => null()
-    REAL, POINTER, DIMENSION(:,:)   :: cldtt   => null()
-    REAL, POINTER, DIMENSION(:,:)   :: z0h     => null()
-    REAL, POINTER, DIMENSION(:,:)   :: swndsrf => null()
-    REAL, POINTER, DIMENSION(:,:)   :: ustar   => null()
+    REAL, POINTER, DIMENSION(:,:)   :: lwi       => null()
+    REAL, POINTER, DIMENSION(:,:)   :: T2m       => null()
+    REAL, POINTER, DIMENSION(:,:)   :: cldtt     => null()
+    REAL, POINTER, DIMENSION(:,:)   :: z0h       => null()
+    REAL, POINTER, DIMENSION(:,:)   :: swndsrf   => null()
+    REAL, POINTER, DIMENSION(:,:)   :: ustar     => null()
+    REAL, POINTER, DIMENSION(:,:)   :: frlandice => null()
+    REAL, POINTER, DIMENSION(:,:)   :: snowdp    => null()
 
     ! needed to compute tendencies
     REAL*4, ALLOCATABLE, DIMENSION(:,:)   :: snapshot_2d
@@ -4607,7 +4607,7 @@ CONTAINS
     ! we fill these
     REAL                              mass( kit%i1:kit%i2, kit%j1:kit%j2, 1:kit%km )
     REAL                             geoht( kit%i1:kit%i2, kit%j1:kit%j2, 1:kit%km )
-    INTEGER                      lwi_flags( kit%i1:kit%i2, kit%j1:kit%j2 )
+    INTEGER                     lwis_flags( kit%i1:kit%i2, kit%j1:kit%j2 )
 
     ! these will be filled by TR_GMI_GravitationalSettling
     REAL*8                         diffaer( kit%i1:kit%i2, kit%j1:kit%j2 )
@@ -4703,14 +4703,24 @@ CONTAINS
     loc_proc = 999
     chem_opt = 999
 
-   CALL MAPL_GetPointer(impChem,       lwi,       'LWI', __RC__ ) 
-   lwi_flags = lwi + 1  ! 1=water 2=land 3=ice; as in GmiDepos_GridCompClassMod.F90
+   CALL MAPL_GetPointer(impChem,   lwi,       'LWI',        __RC__ ) 
+   CALL MAPL_GetPointer(impChem,   T2m,       'T2M',        __RC__ )
+   CALL MAPL_GetPointer(impChem,   cldtt,     'CLDTT',      __RC__ )
+   CALL MAPL_GetPointer(impChem,   z0h,       'Z0H',        __RC__ )
+   CALL MAPL_GetPointer(impChem,   swndsrf,   'SWNDSRF',    __RC__ )
+   CALL MAPL_GetPointer(impChem,   ustar,     'USTAR',      __RC__ )
+   CALL MAPL_GetPointer(impChem,   frlandice, 'FRLANDICE',  __RC__ )
+   CALL MAPL_GetPointer(impChem,   snowdp,    'SNOWDP',     __RC__ )
 
-   CALL MAPL_GetPointer(impChem,       T2m,       'T2M', __RC__ )
-   CALL MAPL_GetPointer(impChem,     cldtt,     'CLDTT', __RC__ )
-   CALL MAPL_GetPointer(impChem,       z0h,       'Z0H', __RC__ )
-   CALL MAPL_GetPointer(impChem,   swndsrf,   'SWNDSRF', __RC__ )
-   CALL MAPL_GetPointer(impChem,     ustar,     'USTAR', __RC__ )
+   ! Retain land-water-ice flag numbering from GEOS
+   ! Make land-water-ice-snow flag for Dry deposition
+   ! specification: 0=water 1=land 2=ice 3=snow/glaciated
+   ! ----------------------------------------------------
+   lwis_flags = FLOOR(lwi+0.1)
+   !  Note - SNOWDP can be undefined (BIG)
+   WHERE( (frlandice > 0.5 .OR. (snowdp >= 0.35 .AND.     &
+                                 snowdp <  1000.0)    ) ) &
+          lwis_flags = 3
 
    TwoMeter_air_temp(:,:) =     T2m(:,:)       ! K
       fracCloudCover(:,:) =   cldtt(:,:)       ! fraction
@@ -4727,7 +4737,7 @@ CONTAINS
    END IF
 
    ! routine in Chem_Shared; optional output-> 'dry_depos'
-   CALL TR_GMI_DryDeposition ( lwi_flags, area, cosSolarZenithAngle,                     &
+   CALL TR_GMI_DryDeposition ( lwis_flags, area, cosSolarZenithAngle,                    &
              fracCloudCover, radswg, TwoMeter_air_temp, surf_rough, frictionVelocity,    &
              mass(:,:,kit%km), diffaer, s_radius, s_velocity, geoht(:,:,kit%km),         &
              kit%ireg, kit%iland, kit%iuse, kit%xlai,                                    &

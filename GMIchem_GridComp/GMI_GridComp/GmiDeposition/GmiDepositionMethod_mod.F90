@@ -214,7 +214,7 @@
 ! !INTERFACE:
 !
       subroutine RunDryDeposition (self, Emission, SpeciesConcentration,       &
-     &              gmiGrid, lwi_flags, mcor, cosSolarZenithAngle,             &
+     &              gmiGrid, lwis_flags, mcor, cosSolarZenithAngle,            &
      &              fracCloudCover, radswg, surf_air_temp, surf_rough, ustar,  &
      &              mass, diffaer, s_radius, s_velocity, BoxHeightEdge,        &
      &              loc_proc, mw, numSpecies, chem_opt, pr_dry_depos, pr_diag, &
@@ -229,7 +229,7 @@
       integer,              intent(in) :: chem_opt
       integer,              intent(in) :: numSpecies
       real*8 ,              intent(in) :: mw(numSpecies)
-      integer,              intent(in) :: lwi_flags (:,:)
+      integer,              intent(in) :: lwis_flags (:,:)  ! water=0, land=1, ice=2, snow=3
       real*8 ,              intent(in) :: mcor(:,:)
       real*8 ,              intent(in) :: mass(:,:,:)
       real*8 ,              intent(in) :: cosSolarZenithAngle (:,:)
@@ -280,7 +280,7 @@
 
       call Get_concentration(SpeciesConcentration, concentration)
 
-      call Update_Drydep (pr_dry_depos, lwi_flags, mcor, cosSolarZenithAngle,  &
+      call Update_Drydep (pr_dry_depos, lwis_flags, mcor, cosSolarZenithAngle, &
      &           fracCloudCover, radswg, surf_air_temp, surf_rough, ustar,     &
      &           mass, concentration, self%dry_depos, diffaer, s_radius,       &
      &           s_velocity, BoxHeightEdge, Emission%ireg, Emission%iland,     &
