@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Changed
 ### Fixed
-- Fixed ExtData2G YAML files for AMIP emissions to handle magic date and removed input file for AMIP.20C
+- Fixed ExtData2G YAML files for OPS and AMIP emissions to handle magic date and removed input file for AMIP.20C
 
 ## [1.9.3] - 2022-05-25
 

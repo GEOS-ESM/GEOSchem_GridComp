@@ -62,8 +62,8 @@ Exports:
     sample: GEOSachem_sample_1
     variable: emcobf
   CO_BIOMASS_VOC:
-    -{starting: "2014-12-01T12:00",collection: GEOSachem_qfed2.emis_co.006.%y4%m2%d2.nc4,regrid: CONSERVE,sample: GEOSachem_sample_0,variable: biomass}
-    -{starting: "2021-11-01T12:00",collection: GEOSachem_qfed2.emis_co.061.%y4%m2%d2.nc4,regrid: CONSERVE,sample: GEOSachem_sample_0,variable: biomass}
+    - {starting: "2014-12-01T12:00",collection: GEOSachem_qfed2.emis_co.006.%y4%m2%d2.nc4,regrid: CONSERVE,sample: GEOSachem_sample_0,variable: biomass}
+    - {starting: "2021-11-01T12:00",collection: GEOSachem_qfed2.emis_co.061.%y4%m2%d2.nc4,regrid: CONSERVE,sample: GEOSachem_sample_0,variable: biomass}
   CO_FS_VOC:
     collection: GEOSachem_CO-em-anthro_CMIP_CEDS_gn.x2304_y1441_t12.%y4.nc4
     regrid: CONSERVE
@@ -85,8 +85,8 @@ Exports:
     regrid: CONSERVE
     variable: emi_nh3
   NH3_EMIS_FIRE:
-    -{starting: "2014-12-01T12:00",collection: GEOSachem_qfed2.emis_nh3.006.%y4%m2%d2.nc4,regrid: CONSERVE,sample: GEOSachem_sample_0,variable: biomass}
-    -{starting: "2021-11-01T12:00",collection: GEOSachem_qfed2.emis_nh3.061.%y4%m2%d2.nc4,regrid: CONSERVE,sample: GEOSachem_sample_0,variable: biomass}
+    - {starting: "2014-12-01T12:00",collection: GEOSachem_qfed2.emis_nh3.006.%y4%m2%d2.nc4,regrid: CONSERVE,sample: GEOSachem_sample_0,variable: biomass}
+    - {starting: "2021-11-01T12:00",collection: GEOSachem_qfed2.emis_nh3.061.%y4%m2%d2.nc4,regrid: CONSERVE,sample: GEOSachem_sample_0,variable: biomass}
   NH3_EMIS_OCEAN:
     collection: GEOSachem_GEIA.emis_NH3.ocean.x576_y361.t12.20080715_12z.nc4
     regrid: CONSERVE
@@ -119,8 +119,8 @@ Exports:
     sample: GEOSachem_sample_1
     variable: sanl2
   SO3_EMIS_FIRE:
-    -{starting: "2014-12-01T12:00",collection: GEOSachem_qfed2.emis_so3.006.%y4%m2%d2.nc4,regrid: CONSERVE,sample: GEOSachem_sample_0,variable: biomass}
-    -{starting: "2021-11-01T12:00",collection: GEOSachem_qfed2.emis_so3.061.%y4%m2%d2.nc4,regrid: CONSERVE,sample: GEOSachem_sample_0,variable: biomass}
+    - {starting: "2014-12-01T12:00",collection: GEOSachem_qfed2.emis_so3.006.%y4%m2%d2.nc4,regrid: CONSERVE,sample: GEOSachem_sample_0,variable: biomass}
+    - {starting: "2021-11-01T12:00",collection: GEOSachem_qfed2.emis_so3.061.%y4%m2%d2.nc4,regrid: CONSERVE,sample: GEOSachem_sample_0,variable: biomass}
   SO2_EMIS_NONENERGY:
     collection: GEOSachem_htapv2.2.emisso2.surface.x3600y1800t12.2017.integrate.nc4
     regrid: CONSERVE
