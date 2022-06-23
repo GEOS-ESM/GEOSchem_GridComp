@@ -5,7 +5,7 @@ on:
   pull_request:
       types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
 jobs:
-  lintAllTheThings:
+  validate-YAML:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -16,8 +16,6 @@ jobs:
           no_warnings: true
           format: colored
           config_file: .yamllint.yml
-
-      - run: echo ${{ steps.yaml-lint.outputs.logfile }}
 
       - uses: actions/upload-artifact@v2
         if: always()
