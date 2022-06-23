@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Fixed
 
+### Added
+
+- Add YAML validator GitHub Action
+  - This action makes sure all YAML files are valid (to a relaxed standard)
+
 ### Fixed
 
 - Fixed Dry Deposition in GMI
