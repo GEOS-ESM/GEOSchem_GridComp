@@ -14,15 +14,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Fixed
+
 - Fixed Dry Deposition in GMI
 
 ### Changed
+
 - Changed GMI from internal SZA calculation to using MAPL SZA.
 
-## [1.9.4] - 2022-05-31
+## [1.9.5] - 2022-06-22
 
 ### Fixed
-- Fixed ExtData2G YAML files for AMIP emissions to handle magic date and removed input file for AMIP.20C
+
+- Fix YAML typo in `GEOSachem_GridComp/GEOSachem_ExtData.yaml`
+
+## [1.9.4] - 2022-05-31 
+
+### Fixed
+
+- Fixed ExtData2G YAML files for OPS and AMIP emissions to handle magic date and removed input file for AMIP.20C
 
 ## [1.9.3] - 2022-05-25
 
