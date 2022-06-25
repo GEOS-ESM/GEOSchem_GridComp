@@ -426,12 +426,6 @@ contains
 
 ! Connectivities between Children
 ! -------------------------------
-  IF(myState%enable_GOCART2G .AND. myState%enable_GEOSCHEM) then
-     CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/"DST1","DST2","DST3","DST4"/), &
-          DST_ID = GEOSCHEM, SRC_ID = GOCART2G, __RC__  )
-  ENDIF
-
   IF(myState%enable_GOCART) then
      CALL MAPL_AddConnectivity ( GC, &
           SHORT_NAME  = (/'AIRDENS     ','AIRDENS_DRYP', 'DELP        ', 'TPREC       ', 'CN_PRCP     ', 'NCN_PRCP    '/), &
@@ -921,6 +915,9 @@ contains
     real, allocatable                  :: binsplit(:), binemisfrac(:)
     character(len=ESMF_MAXSTR)         :: attributeName
     character(len=ESMF_MAXSTR), allocatable :: fieldNameList(:), binFieldNameList(:)
+    ! IM Testing
+    integer :: itemCount
+    type(ESMF_TypeKind_Flag) :: typeKind
 
 !=============================================================================
  
@@ -1018,79 +1015,19 @@ contains
 
 #endif
 
+! <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+! THIS SHOULD BE IN A ROUTINE. IT'S JUST NOT CLEAR WHERE TO PUT IT YET. SO... BLUNT FORCE
 !   Fill internal mixture bundles from CHEM (M.Long)
 !   ________________________________________________
+!   Seasalt
     call ESMF_StateGet   (GEX(GOCART2G),  'imSS' , imSS, __RC__ )
     call MAPL_GridCompGetFriendlies(GCS(GEOSCHEM), "SS", imSS, AddGCPrefix=.false., __RC__ )
-!   Process attributes
-    call ESMF_FieldBundleGet( imSS, fieldCount=nFields,  __RC__ )
-    allocate (fieldNameList(nFields), __STAT__)
-    call ESMF_FieldBundleGet( imss, fieldNameList=fieldNameList, __RC__ )
-    allocate (fieldList(nFields), __STAT__)
-    call ESMF_FieldBundleGet( imss, fieldList=fieldList, __RC__ )
+    CALL IM_FieldBundleInit( imSS, __RC__ )
 
-    ! Map field attributes into the bundle for easy access by aerosol gridcomp
-    ! -- adds one value for each attribute per field associated with bin%d
-    do n=1,nFields
-       ! Get number of bins associated with field
-       call ESMF_AttributeGet( fieldList(n), 'internally_mixed_nbins',     value=nbins, __RC__ )
-       allocate( imbins(nbins)       , __STAT__ )
-       allocate( imbinsplit(nbins)   , __STAT__ )
-       allocate( imbinemisfrac(nbins), __STAT__ )
-       call ESMF_AttributeGet( fieldList(n), 'internally_mixed_with_bins',   valuelist=imbins,  __RC__ )
-       call ESMF_AttributeGet( fieldList(n), 'internally_mixed_bins_split',  valueList=imbinsplit, __RC__)
-       call ESMF_AttributeGet( fieldList(n), 'internally_mixed_emis_frac',   valueList=imbinemisfrac, __RC__)
-       ! Loop over number of bins
-       do nn=1,nbins
-          !Number of IM fields in aerosol bin
-          ! Create attribute name
-          write( attributeName, '(A3,I0)') 'bin', imbins(nn)
-          ! Get current attribute value
-          call ESMF_AttributeGet( imSS, attributename, VALUE=n_imspec, defaultValue=0, __RC__ )
-          ! Increment
-          call ESMF_AttributeSet( imSS, attributename, VALUE=n_imspec+1, __RC__ )
-
-          ! Field names
-          ! Create attribute name
-          write( attributeName, '(A3,I0,A11)') 'bin', imbins(nn),'_fieldnames'
-          allocate(binfieldnamelist(n_imspec+1))
-          ! Get current attribute value
-          if (n_imspec .gt. 0) &
-               call ESMF_AttributeGet( imSS, attributename, VALUELIST=binfieldnamelist(1:n_imspec), defaultValuelist=(/''/), __RC__ )
-          ! Increment
-          binFieldNameList(n_imspec+1) = fieldNameList(n)
-          call ESMF_AttributeSet( imSS, attributename, VALUELIST=binfieldnamelist, __RC__ )
-
-          ! Field bin split (fraction of field attributed to bin%d)
-          ! Create attribute name
-          write( attributeName, '(A3,I0,A6)') 'bin', imbins(nn),'_split'
-          allocate(binsplit(n_imspec+1))
-          ! Get current attribute value
-          if (n_imspec .gt. 0) &
-               call ESMF_AttributeGet( imSS, attributename, VALUELIST=binsplit(1:n_imspec), defaultValuelist=(/0./), __RC__ )
-          ! Increment
-          binsplit(n_imspec+1) = imbinsplit(n)
-          call ESMF_AttributeSet( imSS, attributename, VALUELIST=binsplit, __RC__ )
-
-          ! Field emission fraction (fraction of field emitted with bin%d)
-          ! Create attribute name
-          write( attributeName, '(A3,I0,A9)') 'bin', imbins(nn),'_emisfrac'
-          allocate(binemisfrac(n_imspec+1))
-          ! Get current attribute value
-          if (n_imspec .gt. 0) &
-               call ESMF_AttributeGet( imSS, attributename, VALUELIST=binemisfrac(1:n_imspec), defaultValuelist=(/0./), __RC__ )
-          ! Increment
-          binemisfrac(n_imspec+1) = imbinemisfrac(n)
-          call ESMF_AttributeSet( imSS, attributename, VALUELIST=binemisfrac, __RC__ )
-
-          ! Clean up
-          deallocate(binfieldnamelist, binsplit, binemisfrac)
-       enddo
-       deallocate(imbins)
-    enddo
-    deallocate(fieldList)
-!    print *,  trim(Iam)//"<<>>: Friendly Tracers (INTERNAL)"
-!                                             call ESMF_FieldBundlePrint ( imSS )
+!   Dust
+    call ESMF_StateGet   (GEX(GOCART2G),  'imDU' , imDU, __RC__ )
+    call MAPL_GridCompGetFriendlies(GCS(GEOSCHEM), "DU", imDU, AddGCPrefix=.false., __RC__ )
+    CALL IM_FieldBundleInit( imDU, __RC__ )
 
 !   All Done
 !   --------
@@ -1470,6 +1407,159 @@ contains
 
    end subroutine GetProvider_
 
+  subroutine IM_FieldBundleInit( IMFB, RC )
+
+    implicit none
+
+!   type (ESMF_State),          intent(in), pointer :: GEX
+!   type (ESMF_GridComp),       intent(in), pointer :: GC
+   type (ESMF_FieldBundle), intent(inout)       :: IMFB
+   integer,         intent(out)       :: RC ! Error code
+   
+!   Internal Mixture vars
+   type (ESMF_Field), allocatable     :: fieldList(:)
+   integer                            :: nFields, n, nn, nbins, n_imspec
+   integer, allocatable               :: imbins(:)
+   real, allocatable                  :: imbinsplit(:), imbinemisfrac(:)
+   real, allocatable                  :: binsplit(:), binemisfrac(:)
+   character(len=ESMF_MAXSTR)         :: attributeName
+   character(len=ESMF_MAXSTR), allocatable :: fieldNameList(:), binFieldNameList(:)
+   logical                            :: lmixstate
+   ! IM Testing
+   integer :: itemCount
+   type(ESMF_TypeKind_Flag) :: typeKind
+   
+   __Iam__('IM_FieldBundleInit')
+
+   ! <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+   !   Fill internal mixture bundles from CHEM (M.Long)
+   !   ________________________________________________
+   ! Process attributes
+   ! Map field attributes into the bundle for easy access by aerosol gridcomp
+   call ESMF_FieldBundleGet( IMFB, fieldCount=nFields,  __RC__ )
+   allocate (fieldNameList(nFields), __STAT__)
+   call ESMF_FieldBundleGet( IMFB, fieldNameList=fieldNameList, __RC__ )
+   allocate (fieldList(nFields), __STAT__)
+   call ESMF_FieldBundleGet( IMFB, fieldList=fieldList, __RC__ )
+   
+   ! The following collates values from the individual IM fields into attributes
+   !    assigned to the IM fieldbundle containing the IM fields. This enables fast 
+   !    processing within the 'FriendlyTo' aerosol gridcomp's Run methods.
+   do n=1,nFields
+      call ESMF_AttributeGet( fieldList(n), 'directly_mixed', value=lmixstate, defaultvalue=.false., __RC__ )
+
+      if (.not. lmixstate) then
+         ! Get attribute values associated with each IM field
+         call ESMF_AttributeGet( fieldList(n), 'internally_mixed_nbins',     value=nbins, __RC__ )
+         allocate( imbins(nbins)       , __STAT__ )
+         allocate( imbinsplit(nbins)   , __STAT__ )
+         allocate( imbinemisfrac(nbins), __STAT__ )
+         call ESMF_AttributeGet( fieldList(n), 'internally_mixed_with_bins',   valuelist=imbins,  __RC__ )
+         call ESMF_AttributeGet( fieldList(n), 'internally_mixed_bins_split',  valueList=imbinsplit, __RC__)
+         call ESMF_AttributeGet( fieldList(n), 'internally_mixed_emis_frac',   valueList=imbinemisfrac, __RC__)
+
+         ! Loop over number of aerosol bins a given IM field is associated with and
+         !    process the necessary attributes from Field->FieldBundle
+         do nn=1,nbins
+            ! Number of IM fields in aerosol bin
+            ! -- Create attribute name
+            write( attributeName, '(A3,I0)') 'imbin', imbins(nn)
+            ! -- Get current attribute value
+            call ESMF_AttributeGet( IMFB, trim(attributename), VALUE=n_imspec, defaultValue=0, __RC__ )
+            ! -- Increment
+            call ESMF_AttributeSet( IMFB, trim(attributename), VALUE=n_imspec+1, __RC__ )
+
+            ! Append Field names to bin
+            ! -- Create attribute name
+            write( attributeName, '(A3,I0,A11)') 'imbin', imbins(nn),'_fieldnames'
+            allocate(binfieldnamelist(n_imspec+1))
+            ! -- Get current attribute value
+            if (n_imspec .gt. 0) &
+                 call ESMF_AttributeGet( IMFB, trim(attributename), VALUELIST=binfieldnamelist(1:n_imspec), __RC__ )
+            ! -- Increment
+            binFieldNameList(n_imspec+1) = fieldNameList(n)
+            call ESMF_AttributeSet( IMFB, trim(attributename), VALUELIST=binfieldnamelist, __RC__ )
+
+            ! Append field bin split (fraction of field attributed to bin%d)
+            ! -- Create attribute name
+            write( attributename, '(A3,I0,A6)') 'imbin', imbins(nn),'_split'
+            allocate(binsplit(n_imspec+1))
+            ! -- Get current attribute value
+            if (n_imspec .gt. 0) &
+                 call ESMF_AttributeGet( IMFB, trim(attributename), VALUELIST=binsplit(1:n_imspec),  __RC__ )
+            ! -- Increment
+            binsplit(n_imspec+1) = imbinsplit(nn)
+            call ESMF_AttributeSet( IMFB, trim(attributename), VALUELIST=binsplit, __RC__ )
+
+            ! Append field emission fraction (fraction of field emitted with bin%d)
+            ! -- Create attribute name
+            write( attributename, '(A3,I0,A9)') 'imbin', imbins(nn),'_emisfrac'
+            allocate(binemisfrac(n_imspec+1))
+            ! -- Get current attribute value
+            if (n_imspec .gt. 0) &
+                 call ESMF_AttributeGet( IMFB, trim(attributename), VALUELIST=binemisfrac(1:n_imspec), __RC__ )
+            ! -- Increment
+            binemisfrac(n_imspec+1) = imbinemisfrac(nn)
+            call ESMF_AttributeSet( IMFB, trim(attributename), VALUELIST=binemisfrac, __RC__ )
+
+            ! Clean up
+            deallocate(binfieldnamelist, binsplit, binemisfrac)
+         enddo
+         deallocate(imbins,imbinsplit,imbinemisfrac)
+      else ! Directly mixed (DM)
+         ! Get attribute values associated with each DM field
+         call ESMF_AttributeGet( fieldList(n), 'directly_mixed_nbins',     value=nbins, __RC__ )
+         allocate( imbins(nbins)       , __STAT__ )
+         allocate( imbinsplit(nbins)   , __STAT__ )
+         call ESMF_AttributeGet( fieldList(n), 'directly_mixed_with_bins',   valuelist=imbins,  __RC__ )
+         call ESMF_AttributeGet( fieldList(n), 'directly_mixed_bins_split',  valueList=imbinsplit, __RC__)
+
+         ! Loop over number of aerosol bins a given IM field is associated with and
+         !    process the necessary attributes from Field->FieldBundle
+         do nn=1,nbins
+            ! Number of IM fields in aerosol bin
+            ! -- Create attribute name
+            write( attributeName, '(A3,I0)') 'dmbin', imbins(nn)
+            ! -- Get current attribute value
+            call ESMF_AttributeGet( IMFB, trim(attributename), VALUE=n_imspec, defaultValue=0, __RC__ )
+            ! -- Increment
+            call ESMF_AttributeSet( IMFB, trim(attributename), VALUE=n_imspec+1, __RC__ )
+
+            ! Append Field names to bin
+            ! -- Create attribute name
+            write( attributeName, '(A3,I0,A11)') 'dmbin', imbins(nn),'_fieldnames'
+            allocate(binfieldnamelist(n_imspec+1))
+            ! -- Get current attribute value
+            if (n_imspec .gt. 0) &
+                 call ESMF_AttributeGet( IMFB, trim(attributename), VALUELIST=binfieldnamelist(1:n_imspec), __RC__ )
+            ! -- Increment
+            binFieldNameList(n_imspec+1) = fieldNameList(n)
+            call ESMF_AttributeSet( IMFB, trim(attributename), VALUELIST=binfieldnamelist, __RC__ )
+
+            ! Append field bin split (fraction of field attributed to bin%d)
+            ! -- Create attribute name
+            write( attributename, '(A3,I0,A6)') 'dmbin', imbins(nn),'_split'
+            allocate(binsplit(n_imspec+1))
+            ! -- Get current attribute value
+            if (n_imspec .gt. 0) &
+                 call ESMF_AttributeGet( IMFB, trim(attributename), VALUELIST=binsplit(1:n_imspec),  __RC__ )
+            ! -- Increment
+            binsplit(n_imspec+1) = imbinsplit(nn)
+            call ESMF_AttributeSet( IMFB, trim(attributename), VALUELIST=binsplit, __RC__ )
+
+            deallocate(binfieldnamelist, binsplit)
+         enddo
+         deallocate(imbins,imbinsplit)
+      endif
+   enddo
+   deallocate(fieldList, fieldNameList)
+   ! <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+   
+   !   All Done
+   !   --------
+   RETURN_(ESMF_SUCCESS)
+   
+ end subroutine IM_FieldBundleInit
 end module GEOS_ChemGridCompMod
 
 
