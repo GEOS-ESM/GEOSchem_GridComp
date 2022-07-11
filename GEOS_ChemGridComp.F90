@@ -20,7 +20,8 @@ module GEOS_ChemGridCompMod
 
   use  GEOS_ChemEnvGridCompMod,  only :   ChemEnv_SetServices => SetServices
   use       GOCART_GridCompMod,  only :    GOCART_SetServices => SetServices
-  use     GOCART2G_GridCompMod,  only : GOCART2G_SetServices  => SetServices !GOCART REFACTOR
+  use     GOCART2G_GridCompMod,  only :  GOCART2G_SetServices => SetServices !GOCART REFACTOR
+  use    QuickChem_GridCompMod,  only : QUICKCHEM_SetServices => SetServices
   use    StratChem_GridCompMod,  only : StratChem_SetServices => SetServices
   use      GMIchem_GridCompMod,  only :       GMI_SetServices => SetServices
   use    CARMAchem_GridCompMod,  only :     CARMA_SetServices => SetServices
@@ -54,6 +55,7 @@ module GEOS_ChemGridCompMod
      LOGICAL :: enable_GOCART
      LOGICAL :: enable_GOCARTdata
      LOGICAL :: enable_GOCART2G        ! GOCART REFACTOR
+     LOGICAL :: enable_QUICKCHEM
      LOGICAL :: enable_GAAS
      LOGICAL :: enable_H2O
      LOGICAL :: enable_STRATCHEM
@@ -68,6 +70,16 @@ module GEOS_ChemGridCompMod
      LOGICAL :: enable_HEMCO
      INTEGER :: AERO_PROVIDER
      INTEGER :: RATS_PROVIDER          ! WARNING: May be multiple RATS_PROVIDERs 
+
+!    LOGICAL :: running_BC
+!    LOGICAL :: running_OC
+!    LOGICAL :: running_DU
+!    LOGICAL :: running_SU
+!    LOGICAL :: running_SS
+!    LOGICAL :: running_NI
+     LOGICAL :: running_CO
+     LOGICAL :: running_CH4
+     LOGICAL :: running_OH
   END TYPE GEOS_ChemGridComp
 
 ! Hook for the ESMF
@@ -91,6 +103,7 @@ module GEOS_ChemGridCompMod
   integer ::       GOCART = -1
   integer ::     GOCART2G = -1
   integer ::   GOCARTdata = -1
+  integer ::    QUICKCHEM = -1
   integer ::         GAAS = -1
   integer ::          H2O = -1
   integer ::    STRATCHEM = -1
@@ -216,7 +229,8 @@ contains
     call ESMF_ConfigGetAttribute(myCF, myState%enable_ACHEM,      Default=.FALSE., Label="ENABLE_ACHEM:",       __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCART,     Default=.FALSE., Label="ENABLE_GOCART:",      __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCARTdata, Default=.FALSE., Label="ENABLE_GOCART_DATA:", __RC__ )
-    call ESMF_ConfigGetAttribute(myCF,   myState%enable_GOCART2G, Default=.FALSE., Label="ENABLE_GOCART2G:",    __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCART2G,   Default=.FALSE., Label="ENABLE_GOCART2G:",    __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_QUICKCHEM,  Default=.FALSE., Label="ENABLE_QUICKCHEM:",   __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GAAS,       Default=.FALSE., Label="ENABLE_GAAS:",        __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_H2O,        Default=.FALSE., Label="ENABLE_H2O:",         __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_STRATCHEM,  Default=.FALSE., Label="ENABLE_STRATCHEM:",   __RC__ )
@@ -233,6 +247,16 @@ contains
 !ALT: valgrind flagged a memory leak.    myState%CF => myCF ! save for later
     call ESMF_ConfigDestroy(myCF, __RC__)
 
+!   myState%running_BC  = myState%enable_GOCART2G .AND. chemReg%doing_BC
+!   myState%running_OC  = myState%enable_GOCART2G .AND. chemReg%doing_OC
+!   myState%running_DU  = myState%enable_GOCART2G .AND. chemReg%doing_DU
+!   myState%running_SU  = myState%enable_GOCART2G .AND. chemReg%doing_SU
+!   myState%running_SS  = myState%enable_GOCART2G .AND. chemReg%doing_SS
+!   myState%running_NI  = myState%enable_GOCART2G .AND. chemReg%doing_NI
+    myState%running_CO  = myState%enable_GOCART   .AND. chemReg%doing_CO    ! Make sure to overwrite the AMIP copy of the registry
+    myState%running_CH4 = myState%enable_GOCART   .AND. chemReg%doing_CH4   ! Make sure to overwrite the AMIP copy of the registry
+    myState%running_OH  = myState%enable_QUICKCHEM                          ! there should be QC routine to get the active species
+
 ! Sanity checks:
 ! --------------
     if (myState%enable_GAAS) then
@@ -243,23 +267,24 @@ contains
 ! -----------------------------------------------------------------
     CHEMENV = MAPL_AddChild(GC, NAME='CHEMENV', SS=ChemEnv_SetServices, __RC__)
 
-    if (     myState%enable_HEMCO)       HEMCO = MAPL_AddChild(GC, NAME=       'HEMCO', SS=HEMCO_SetServices,     __RC__)
-    if (     myState%enable_PCHEM)       PCHEM = MAPL_AddChild(GC, NAME=       'PCHEM', SS=PChem_SetServices,     __RC__)
-    if (     myState%enable_ACHEM)       ACHEM = MAPL_AddChild(GC, NAME=       'ACHEM', SS=AChem_SetServices,     __RC__)
-    if (    myState%enable_GOCART)      GOCART = MAPL_AddChild(GC, NAME=      'GOCART', SS=GOCART_SetServices,    __RC__)
-    if (myState%enable_GOCARTdata)  GOCARTdata = MAPL_AddChild(GC, NAME= 'GOCART.data', SS=GOCART_SetServices,    __RC__)
-    if (  myState%enable_GOCART2G)    GOCART2G = MAPL_AddChild(GC, NAME=    'GOCART2G', SS=GOCART2G_SetServices,  __RC__)
-    if (      myState%enable_GAAS)        GAAS = MAPL_AddChild(GC, NAME=        'GAAS', SS=GAAS_SetServices,      __RC__)
-    if (       myState%enable_H2O)         H2O = MAPL_AddChild(GC, NAME=         'H2O', SS=H2O_SetServices,       __RC__)
-    if ( myState%enable_STRATCHEM)   STRATCHEM = MAPL_AddChild(GC, NAME=   'STRATCHEM', SS=StratChem_SetServices, __RC__)
-    if (   myState%enable_GMICHEM)     GMICHEM = MAPL_AddChild(GC, NAME=     'GMICHEM', SS=GMI_SetServices,       __RC__)
-    if (     myState%enable_CARMA)       CARMA = MAPL_AddChild(GC, NAME=       'CARMA', SS=CARMA_SetServices,     __RC__)
-    if (  myState%enable_GEOSCHEM)    GEOSCHEM = MAPL_AddChild(GC, NAME='GEOSCHEMCHEM', SS=GCChem_SetServices,    __RC__)
-    if (    myState%enable_MATRIX)      MATRIX = MAPL_AddChild(GC, NAME=      'MATRIX', SS=MATRIX_SetServices,    __RC__)
-    if (       myState%enable_MAM)         MAM = MAPL_AddChild(GC, NAME=         'MAM', SS=MAM_SetServices,       __RC__)
-    if (   myState%enable_MAMdata)     MAMdata = MAPL_AddChild(GC, NAME=    'MAM.data', SS=MAM_SetServices,       __RC__)
-    if (        myState%enable_TR)          TR = MAPL_AddChild(GC, NAME=          'TR', SS=TR_SetServices,        __RC__)
-    if (       myState%enable_DNA)         DNA = MAPL_AddChild(GC, NAME=         'DNA', SS=DNA_SetServices,       __RC__)
+    if (myState%enable_HEMCO     )       HEMCO = MAPL_AddChild(GC, NAME='HEMCO',        SS=HEMCO_SetServices,     __RC__)
+    if (myState%enable_PCHEM     )       PCHEM = MAPL_AddChild(GC, NAME='PCHEM',        SS=PChem_SetServices,     __RC__)
+    if (myState%enable_ACHEM     )       ACHEM = MAPL_AddChild(GC, NAME='ACHEM',        SS=AChem_SetServices,     __RC__)
+    if (myState%enable_GOCART    )      GOCART = MAPL_AddChild(GC, NAME='GOCART',       SS=GOCART_SetServices,    __RC__)
+    if (myState%enable_GOCARTdata)  GOCARTdata = MAPL_AddChild(GC, NAME='GOCART.data',  SS=GOCART_SetServices,    __RC__)
+    if (myState%enable_GOCART2G  )    GOCART2G = MAPL_AddChild(GC, NAME='GOCART2G',     SS=GOCART2G_SetServices,  __RC__)
+    if (myState%enable_QUICKCHEM )   QUICKCHEM = MAPL_AddChild(GC, NAME='QUICKCHEM',    SS=QUICKCHEM_SetServices, __RC__)
+    if (myState%enable_GAAS      )        GAAS = MAPL_AddChild(GC, NAME='GAAS',         SS=GAAS_SetServices,      __RC__)
+    if (myState%enable_H2O       )         H2O = MAPL_AddChild(GC, NAME='H2O',          SS=H2O_SetServices,       __RC__)
+    if (myState%enable_STRATCHEM )   STRATCHEM = MAPL_AddChild(GC, NAME='STRATCHEM',    SS=StratChem_SetServices, __RC__)
+    if (myState%enable_GMICHEM   )     GMICHEM = MAPL_AddChild(GC, NAME='GMICHEM',      SS=GMI_SetServices,       __RC__)
+    if (myState%enable_CARMA     )       CARMA = MAPL_AddChild(GC, NAME='CARMA',        SS=CARMA_SetServices,     __RC__)
+    if (myState%enable_GEOSCHEM  )    GEOSCHEM = MAPL_AddChild(GC, NAME='GEOSCHEMCHEM', SS=GCChem_SetServices,    __RC__)
+    if (myState%enable_MATRIX    )      MATRIX = MAPL_AddChild(GC, NAME='MATRIX',       SS=MATRIX_SetServices,    __RC__)
+    if (myState%enable_MAM       )         MAM = MAPL_AddChild(GC, NAME='MAM',          SS=MAM_SetServices,       __RC__)
+    if (myState%enable_MAMdata   )     MAMdata = MAPL_AddChild(GC, NAME='MAM.data',     SS=MAM_SetServices,       __RC__)
+    if (myState%enable_TR        )          TR = MAPL_AddChild(GC, NAME='TR',           SS=TR_SetServices,        __RC__)
+    if (myState%enable_DNA       )         DNA = MAPL_AddChild(GC, NAME='DNA',          SS=DNA_SetServices,       __RC__)
 
 
 ! A container for the friendly tracers
@@ -444,6 +469,29 @@ contains
           DST_ID = GOCART2G, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
+  IF(myState%enable_QUICKCHEM) then
+     CALL MAPL_AddConnectivity ( GC, &
+          SHORT_NAME  = (/'DELP    ', 'AIRDENS ' /), &
+          DST_ID = QUICKCHEM, SRC_ID = CHEMENV, __RC__  )
+  ENDIF
+
+  IF(myState%enable_GOCART .AND. myState%enable_QUICKCHEM) then
+
+     IF(myState%running_CO ) THEN
+       CALL MAPL_AddConnectivity(GC, SRC_NAME=(/'GOCART::CO'/),  DST_NAME=(/'CO'/),        SRC_ID=GOCART, DST_ID=QUICKCHEM, __RC__)
+       CALL MAPL_AddConnectivity(GC, SRC_NAME=(/'GOCART::CO'/),  DST_NAME=(/'CO_avg24'/),  SRC_ID=GOCART, DST_ID=QUICKCHEM, __RC__)
+     ENDIF
+     IF(myState%running_CH4) THEN
+       CALL MAPL_AddConnectivity(GC, SRC_NAME=(/'GOCART::CH4'/), DST_NAME=(/'CH4'/),       SRC_ID=GOCART, DST_ID=QUICKCHEM, __RC__)
+       CALL MAPL_AddConnectivity(GC, SRC_NAME=(/'GOCART::CH4'/), DST_NAME=(/'CH4_avg24'/), SRC_ID=GOCART, DST_ID=QUICKCHEM, __RC__)
+     ENDIF
+
+     IF(myState%running_OH ) THEN
+       CALL MAPL_AddConnectivity(GC, SRC_NAME=(/'OH'/),          DST_NAME=(/'CO_OH'/),     SRC_ID=QUICKCHEM, DST_ID=GOCART, __RC__)
+       CALL MAPL_AddConnectivity(GC, SRC_NAME=(/'OH'/),          DST_NAME=(/'CH4_oh'/),    SRC_ID=QUICKCHEM, DST_ID=GOCART, __RC__)
+     ENDIF
+  ENDIF
+
   IF(myState%enable_GAAS) then
      CALL MAPL_AddConnectivity ( GC, &
           SHORT_NAME  = (/ 'AIRDENS ', 'DELP    ' /), &
@@ -580,7 +628,7 @@ contains
   ENDIF
  
 
-! GOCART <=> ACHEM (OCS CHEMISTRY)
+! GOCART2G <=> ACHEM (OCS CHEMISTRY)
 ! ---------------------------------
   IF(myState%enable_GOCART2G .AND. myState%enable_ACHEM) then
    IF(chemReg%doing_OCS) THEN
@@ -591,6 +639,27 @@ contains
    CALL MAPL_AddConnectivity ( GC, &
         SHORT_NAME  = (/'pSOA_ANTHRO_VOC', 'pSOA_BIOB_VOC  '/), &
         DST_ID = GOCART2G, SRC_ID = ACHEM, __RC__  )
+  ENDIF
+
+! GOCART2G <=> QUICKCHEM
+! ----------------------
+  IF(myState%enable_GOCART2G .AND. myState%enable_QUICKCHEM) then
+   CALL MAPL_AddConnectivity ( GC, SHORT_NAME=(/'DUSCACOEF'/),                                      SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
+   CALL MAPL_AddConnectivity ( GC, SHORT_NAME=(/'SUSCACOEF'/),                                      SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
+   CALL MAPL_AddConnectivity ( GC, SHORT_NAME=(/'SSSCACOEF'/),                                      SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
+   CALL MAPL_AddConnectivity ( GC, SHORT_NAME=(/'NISCACOEF'/),                                      SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
+   CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CASCACOEFCA.bc'/), DST_NAME=(/'BCSCACOEF'/),       SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
+   CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CASCACOEFCA.oc'/), DST_NAME=(/'OCSCACOEF'/),       SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
+! MAY NEED TO CHANGE SYNTAX in NEXT VERSION OF G2G:
+!  CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CA.bcSCACOEF'/), DST_NAME=(/'BCSCACOEF'/),         SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
+!  CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CA.ocSCACOEF'/), DST_NAME=(/'OCSCACOEF'/),         SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
+
+   CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'DUSCACOEF'/),      DST_NAME=(/'DUSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
+   CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'SUSCACOEF'/),      DST_NAME=(/'SUSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
+   CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'SSSCACOEF'/),      DST_NAME=(/'SSSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
+   CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'NISCACOEF'/),      DST_NAME=(/'NISCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
+   CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CASCACOEFCA.bc'/), DST_NAME=(/'BCSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
+   CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CASCACOEFCA.oc'/), DST_NAME=(/'OCSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
   ENDIF
 
 ! GOCART <=> StratChem coupling ...
@@ -1264,6 +1333,9 @@ contains
                         userRC = userRC, &
                                    __RC__ )
           _ASSERT(userRC==ESMF_SUCCESS,'needs informative message')
+
+          call MAPL_GenericRunCouplers( MAPL, i, CLOCK, __RC__ )
+
           call MAPL_TimerOff(MAPL,trim(CHILD_NAME))
         enddo !I
       endif
@@ -1343,6 +1415,8 @@ contains
                                     ID = GOCART
            case ('GOCART2G')
                                     ID = GOCART2G
+           case ('QUICKCHEM')
+                                    ID = QUICKCHEM
            case ('GAAS')
                                     ID = GAAS
            case ('H2O')

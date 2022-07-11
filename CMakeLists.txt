@@ -1,6 +1,6 @@
 esma_set_this ()
 
-esma_add_subdirectories(Shared GOCART)
+esma_add_subdirectories(Shared GOCART QuickChem)
 
 set (alldirs
   GEOSpchem_GridComp
@@ -23,12 +23,12 @@ set (srcs
   GEOS_ChemEnvGridComp.F90
   )
 
-# Note: GOCART_GridComp is added specifically as it is not longer
+# Note: GOCART_GridComp is added specifically as it is no longer
 #       automatically a dependence through alldirs
 esma_add_library (${this}
   SRCS ${srcs}
   SUBCOMPONENTS ${alldirs}
-  DEPENDENCIES MAPL Chem_Shared Chem_Base GOCART_GridComp GOCART2G_GridComp esmf)
+  DEPENDENCIES MAPL Chem_Shared Chem_Base GOCART_GridComp GOCART2G_GridComp QuickChem esmf)
 
 install(
    FILES GEOS_ChemGridComp.rc ChemEnv_ExtData.rc  ChemEnv.rc
