@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fixed bug in GEOS_ChemGridComp.F90 for connectivity of pSO2_OCS
+  from ACHEM to GOCART2G; was erroneously destination ID for legacy
+  GOCART; zero-diff for standard set up
+
 ## [1.9.2] - 2022-04-29
 
 ### Added
