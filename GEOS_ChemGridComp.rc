@@ -25,3 +25,5 @@
   ENABLE_TR:          .TRUE.
   ENABLE_DNA:         .FALSE.
   ENABLE_HEMCO:       .TRUE.
+
+  strict_child_timing: .FALSE.

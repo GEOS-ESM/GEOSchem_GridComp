@@ -36,6 +36,9 @@ module GEOS_ChemGridCompMod
   use          DNA_GridCompMod,  only :       DNA_SetServices => SetServices
   use        HEMCO_GridCompMod,  only :     HEMCO_SetServices => SetServices
 
+  use    QuickChem_GridCompMod,  only : IS_QC_INSTANCE_RUNNING
+  use     GOCART2G_GridCompMod,  only : IS_G2G_INSTANCE_RUNNING
+
   implicit none
   private
 
@@ -68,15 +71,16 @@ module GEOS_ChemGridCompMod
      LOGICAL :: enable_TR
      LOGICAL :: enable_DNA
      LOGICAL :: enable_HEMCO
+     LOGICAL :: strict_child_timing    ! Add a barrier after each child is called
      INTEGER :: AERO_PROVIDER
      INTEGER :: RATS_PROVIDER          ! WARNING: May be multiple RATS_PROVIDERs 
 
-!    LOGICAL :: running_BC
-!    LOGICAL :: running_OC
-!    LOGICAL :: running_DU
-!    LOGICAL :: running_SU
-!    LOGICAL :: running_SS
-!    LOGICAL :: running_NI
+     LOGICAL :: running_BC
+     LOGICAL :: running_OC
+     LOGICAL :: running_DU
+     LOGICAL :: running_SU
+     LOGICAL :: running_SS
+     LOGICAL :: running_NI
      LOGICAL :: running_CO
      LOGICAL :: running_CH4
      LOGICAL :: running_OH
@@ -115,6 +119,9 @@ module GEOS_ChemGridCompMod
   integer ::      MAMdata = -1
   integer ::           TR = -1
   integer ::          DNA = -1
+
+  INTEGER, PARAMETER :: DBL = KIND(0.00D+00)
+
 
 contains
 
@@ -225,37 +232,60 @@ contains
 
     call ESMF_ConfigLoadFile ( myCF, chem_gridcomp_rc_file, __RC__ )
 
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_PCHEM,      Default=.FALSE., Label="ENABLE_PCHEM:",       __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_ACHEM,      Default=.FALSE., Label="ENABLE_ACHEM:",       __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCART,     Default=.FALSE., Label="ENABLE_GOCART:",      __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCARTdata, Default=.FALSE., Label="ENABLE_GOCART_DATA:", __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCART2G,   Default=.FALSE., Label="ENABLE_GOCART2G:",    __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_QUICKCHEM,  Default=.FALSE., Label="ENABLE_QUICKCHEM:",   __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_GAAS,       Default=.FALSE., Label="ENABLE_GAAS:",        __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_H2O,        Default=.FALSE., Label="ENABLE_H2O:",         __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_STRATCHEM,  Default=.FALSE., Label="ENABLE_STRATCHEM:",   __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_GMICHEM,    Default=.FALSE., Label="ENABLE_GMICHEM:",     __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_CARMA,      Default=.FALSE., Label="ENABLE_CARMA:",       __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_GEOSCHEM,   Default=.FALSE., Label="ENABLE_GEOSCHEM:",    __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_MATRIX,     Default=.FALSE., Label="ENABLE_MATRIX:",      __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_MAM,        Default=.FALSE., Label="ENABLE_MAM:",         __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_MAMdata,    Default=.FALSE., Label="ENABLE_MAM_DATA:",    __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_TR,         Default=.FALSE., Label="ENABLE_TR:",          __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_DNA,        Default=.FALSE., Label="ENABLE_DNA:",         __RC__ )
-    call ESMF_ConfigGetAttribute(myCF, myState%enable_HEMCO,      Default=.FALSE., Label="ENABLE_HEMCO:",       __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_PCHEM,        Default=.FALSE., Label="ENABLE_PCHEM:",        __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_ACHEM,        Default=.FALSE., Label="ENABLE_ACHEM:",        __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCART,       Default=.FALSE., Label="ENABLE_GOCART:",       __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCARTdata,   Default=.FALSE., Label="ENABLE_GOCART_DATA:",  __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCART2G,     Default=.FALSE., Label="ENABLE_GOCART2G:",     __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_QUICKCHEM,    Default=.FALSE., Label="ENABLE_QUICKCHEM:",    __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_GAAS,         Default=.FALSE., Label="ENABLE_GAAS:",         __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_H2O,          Default=.FALSE., Label="ENABLE_H2O:",          __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_STRATCHEM,    Default=.FALSE., Label="ENABLE_STRATCHEM:",    __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_GMICHEM,      Default=.FALSE., Label="ENABLE_GMICHEM:",      __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_CARMA,        Default=.FALSE., Label="ENABLE_CARMA:",        __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_GEOSCHEM,     Default=.FALSE., Label="ENABLE_GEOSCHEM:",     __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_MATRIX,       Default=.FALSE., Label="ENABLE_MATRIX:",       __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_MAM,          Default=.FALSE., Label="ENABLE_MAM:",          __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_MAMdata,      Default=.FALSE., Label="ENABLE_MAM_DATA:",     __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_TR,           Default=.FALSE., Label="ENABLE_TR:",           __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_DNA,          Default=.FALSE., Label="ENABLE_DNA:",          __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_HEMCO,        Default=.FALSE., Label="ENABLE_HEMCO:",        __RC__ )
+
+    call ESMF_ConfigGetAttribute(myCF, myState%strict_child_timing, Default=.FALSE., Label="strict_child_timing:", __RC__ )
 
 !ALT: valgrind flagged a memory leak.    myState%CF => myCF ! save for later
     call ESMF_ConfigDestroy(myCF, __RC__)
 
-!   myState%running_BC  = myState%enable_GOCART2G .AND. chemReg%doing_BC
-!   myState%running_OC  = myState%enable_GOCART2G .AND. chemReg%doing_OC
-!   myState%running_DU  = myState%enable_GOCART2G .AND. chemReg%doing_DU
-!   myState%running_SU  = myState%enable_GOCART2G .AND. chemReg%doing_SU
-!   myState%running_SS  = myState%enable_GOCART2G .AND. chemReg%doing_SS
-!   myState%running_NI  = myState%enable_GOCART2G .AND. chemReg%doing_NI
+! GOCART instances:
+! -----------------
     myState%running_CO  = myState%enable_GOCART   .AND. chemReg%doing_CO    ! Make sure to overwrite the AMIP copy of the registry
     myState%running_CH4 = myState%enable_GOCART   .AND. chemReg%doing_CH4   ! Make sure to overwrite the AMIP copy of the registry
-    myState%running_OH  = myState%enable_QUICKCHEM                          ! there should be QC routine to get the active species
+
+! GOCART2G instances:
+! -------------------
+    if ( myState%enable_GOCART2G ) then
+      call IS_G2G_INSTANCE_RUNNING ( aerosol_name="CA", instance_name="CA.bc", running=myState%running_BC, __RC__ )
+      call IS_G2G_INSTANCE_RUNNING ( aerosol_name="CA", instance_name="CA.oc", running=myState%running_OC, __RC__ )
+      call IS_G2G_INSTANCE_RUNNING ( aerosol_name="DU", instance_name="DU"   , running=myState%running_DU, __RC__ )
+      call IS_G2G_INSTANCE_RUNNING ( aerosol_name="SU", instance_name="SU"   , running=myState%running_SU, __RC__ )
+      call IS_G2G_INSTANCE_RUNNING ( aerosol_name="SS", instance_name="SS"   , running=myState%running_SS, __RC__ )
+      call IS_G2G_INSTANCE_RUNNING ( aerosol_name="NI", instance_name="NI"   , running=myState%running_NI, __RC__ )
+    else
+      myState%running_BC = .FALSE.
+      myState%running_OC = .FALSE.
+      myState%running_DU = .FALSE.
+      myState%running_SU = .FALSE.
+      myState%running_SS = .FALSE.
+      myState%running_NI = .FALSE.
+    end if
+
+! QUICKCHEM instances:
+! --------------------
+    if ( myState%enable_QUICKCHEM ) then
+      call IS_QC_INSTANCE_RUNNING ( species_name="OH", instance_name="OH", running=myState%running_OH, __RC__ )
+    else
+      myState%running_OH = .FALSE.
+    end if
 
 ! Sanity checks:
 ! --------------
@@ -643,23 +673,40 @@ contains
 
 ! GOCART2G <=> QUICKCHEM
 ! ----------------------
-  IF(myState%enable_GOCART2G .AND. myState%enable_QUICKCHEM) then
-   CALL MAPL_AddConnectivity ( GC, SHORT_NAME=(/'DUSCACOEF'/),                                      SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
-   CALL MAPL_AddConnectivity ( GC, SHORT_NAME=(/'SUSCACOEF'/),                                      SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
-   CALL MAPL_AddConnectivity ( GC, SHORT_NAME=(/'SSSCACOEF'/),                                      SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
-   CALL MAPL_AddConnectivity ( GC, SHORT_NAME=(/'NISCACOEF'/),                                      SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
-   CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CASCACOEFCA.bc'/), DST_NAME=(/'BCSCACOEF'/),       SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
-   CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CASCACOEFCA.oc'/), DST_NAME=(/'OCSCACOEF'/),       SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
-! MAY NEED TO CHANGE SYNTAX in NEXT VERSION OF G2G:
-!  CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CA.bcSCACOEF'/), DST_NAME=(/'BCSCACOEF'/),         SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
-!  CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CA.ocSCACOEF'/), DST_NAME=(/'OCSCACOEF'/),         SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
+  IF (myState%enable_GOCART2G .AND. myState%enable_QUICKCHEM) THEN
 
-   CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'DUSCACOEF'/),      DST_NAME=(/'DUSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
-   CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'SUSCACOEF'/),      DST_NAME=(/'SUSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
-   CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'SSSCACOEF'/),      DST_NAME=(/'SSSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
-   CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'NISCACOEF'/),      DST_NAME=(/'NISCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
-   CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CASCACOEFCA.bc'/), DST_NAME=(/'BCSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
-   CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CASCACOEFCA.oc'/), DST_NAME=(/'OCSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__  )
+     IF (myState%running_BC ) THEN
+       CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CASCACOEFCA.bc'/), DST_NAME=(/'BCSCACOEF'/),       SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__ )
+       CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CASCACOEFCA.bc'/), DST_NAME=(/'BCSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__ )
+       ! MAY NEED TO CHANGE SYNTAX in NEXT VERSION OF G2G:  SRC_NAME=(/'CA.bcSCACOEF'/)
+     ENDIF
+
+     IF (myState%running_OC ) THEN
+       CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CASCACOEFCA.oc'/), DST_NAME=(/'OCSCACOEF'/),       SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__ )
+       CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CASCACOEFCA.oc'/), DST_NAME=(/'OCSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__ )
+       ! MAY NEED TO CHANGE SYNTAX in NEXT VERSION OF G2G:  SRC_NAME=(/'CA.ocSCACOEF'/)
+     ENDIF
+
+     IF (myState%running_DU ) THEN
+       CALL MAPL_AddConnectivity ( GC, SHORT_NAME=(/'DUSCACOEF'/),                                      SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__ )
+       CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'DUSCACOEF'/),      DST_NAME=(/'DUSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__ )
+     ENDIF
+
+     IF (myState%running_SU ) THEN
+       CALL MAPL_AddConnectivity ( GC, SHORT_NAME=(/'SUSCACOEF'/),                                      SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__ )
+       CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'SUSCACOEF'/),      DST_NAME=(/'SUSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__ )
+     ENDIF
+
+     IF (myState%running_SS ) THEN
+       CALL MAPL_AddConnectivity ( GC, SHORT_NAME=(/'SSSCACOEF'/),                                      SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__ )
+       CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'SSSCACOEF'/),      DST_NAME=(/'SSSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__ )
+     ENDIF
+
+     IF (myState%running_NI ) THEN
+       CALL MAPL_AddConnectivity ( GC, SHORT_NAME=(/'NISCACOEF'/),                                      SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__ )
+       CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'NISCACOEF'/),      DST_NAME=(/'NISCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__ )
+     ENDIF
+
   ENDIF
 
 ! GOCART <=> StratChem coupling ...
@@ -1121,6 +1168,16 @@ contains
   character(len=ESMF_MAXSTR)            :: CHILD_NAME
   real, pointer                         :: th(:,:,:) => NULL()
 
+! Private state
+  type (GEOS_ChemGridComp), pointer  :: myState   ! private, that is
+  type (GEOS_ChemGridComp_Wrap)      :: wrap
+
+! For a 'gather' operation:
+  REAL(KIND=DBL)    ::  local_tally
+  REAL(KIND=DBL)    ::  global_tally
+  TYPE(ESMF_VM)     ::  vm
+
+
 !=============================================================================
 
 ! Begin... 
@@ -1133,6 +1190,12 @@ contains
    VERIFY_(STATUS)
    call MAPL_Get(MAPL, RUNALARM = ALARM, RC=STATUS )
    VERIFY_(STATUS)
+
+!  Get my internal state
+!  ---------------------
+   call ESMF_UserCompGetInternalState(gc, 'GEOSchem_GridComp_State', WRAP, STATUS)
+   VERIFY_(STATUS)
+   myState => wrap%ptr
 
 !  Start timers
 !  ------------
@@ -1197,6 +1260,14 @@ contains
                           userRC = userRC, &
                                      __RC__ )
             _ASSERT(userRC==ESMF_SUCCESS,'needs informative message')
+
+            IF ( myState%strict_child_timing ) THEN
+              IF ( MAPL_Am_I_Root() ) PRINT*,'CHEM Run1: Gather after CHILD ',i
+              local_tally = 123.0
+              call ESMF_VmGetCurrent(vm, __RC__)
+              call MAPL_CommsAllReduceSum(vm, sendbuf=local_tally, recvbuf=global_tally, cnt=1, __RC__)
+            END IF
+
             call MAPL_TimerOff(MAPL,trim(CHILD_NAME))
           endif
         enddo !I
@@ -1268,6 +1339,16 @@ contains
     integer                               :: NPHASE, IPHASE
     integer                               :: userRC
     character(len=ESMF_MAXSTR)            :: CHILD_NAME
+
+!   Private state
+    type (GEOS_ChemGridComp), pointer  :: myState   ! private, that is
+    type (GEOS_ChemGridComp_Wrap)      :: wrap
+
+!   For a 'gather' operation:
+    REAL(KIND=DBL)    ::  local_tally
+    REAL(KIND=DBL)    ::  global_tally
+    TYPE(ESMF_VM)     ::  vm
+
 !-------------------------------------------------------------------
 ! Begin... 
 
@@ -1278,6 +1359,12 @@ contains
    call MAPL_GetObjectFromGC ( GC, MAPL, RC=STATUS)
    VERIFY_(STATUS)
    call MAPL_Get(MAPL, RUNALARM = ALARM, __RC__ ) 
+
+!  Get my internal state
+!  ---------------------
+   call ESMF_UserCompGetInternalState(gc, 'GEOSchem_GridComp_State', WRAP, STATUS)
+   VERIFY_(STATUS)
+   myState => wrap%ptr
 
 !  Start timers
 !  ------------
@@ -1335,6 +1422,13 @@ contains
           _ASSERT(userRC==ESMF_SUCCESS,'needs informative message')
 
           call MAPL_GenericRunCouplers( MAPL, i, CLOCK, __RC__ )
+
+          IF ( myState%strict_child_timing ) THEN
+            IF ( MAPL_Am_I_Root() ) PRINT*,'CHEM Run2: Gather after CHILD ',i
+            local_tally = 123.0
+            call ESMF_VmGetCurrent(vm, __RC__)
+            call MAPL_CommsAllReduceSum(vm, sendbuf=local_tally, recvbuf=global_tally, cnt=1, __RC__)
+          END IF
 
           call MAPL_TimerOff(MAPL,trim(CHILD_NAME))
         enddo !I
