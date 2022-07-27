@@ -17,6 +17,7 @@ set (src_directories
    ${geos_chem_dir}/KPP/fullchem
    ${geos_chem_dir}/GeosCore
    ${geos_chem_dir}/Interfaces/GCHP
+   ${geos_chem_dir}/Interfaces/GEOS
    ${geos_chem_dir}/ObsPack
   )
 include_directories (${geos_chem_dir}/Headers)
@@ -102,7 +103,7 @@ endif ()
 set_target_properties (${this} PROPERTIES Fortran_MODULE_DIRECTORY ${include_${this}})
 
 new_esma_generate_automatic_code (
-   ${this} GEOSCHEMchem_Registry.rc
+   ${this} ${geos_chem_path}/Interfaces/GEOS/GEOSCHEMchem_Registry.rc
    "GEOSCHEMCHEM_InternalSpec___.h;GEOSCHEMCHEM_DeclarePointer___.h;GEOSCHEMCHEM_GetPointer___.h"
    GEOSCHEMCHEM_History___.rc
    ${include_GEOSCHEMchem_GridComp} ${esma_etc}
