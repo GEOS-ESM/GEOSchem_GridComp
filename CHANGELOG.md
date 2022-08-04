@@ -26,6 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Changed GMI from internal SZA calculation to using MAPL SZA.
 
+## [1.9.6] - 2022-08-04
+
+### Fixed
+
+- Updated CI to work with latest GEOSgcm
+- Added QuickChem repo to `.gitignore`
+
 ## [1.9.5] - 2022-06-22
 
 ### Fixed
