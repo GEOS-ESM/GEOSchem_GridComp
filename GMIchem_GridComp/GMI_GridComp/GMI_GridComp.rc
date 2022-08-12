@@ -119,6 +119,10 @@ do_simpledep: F
 do_emission: T
 do_dust_emiss: F
 Diurnal_Emission_Species: 9
+
+        ##################################################################################
+        # Are emissions provided per m^2 (by area) or per gridbox?  Default: by area = T
+        ##################################################################################
 clim_emiss_by_area: T
 
         #############################################################################
@@ -136,15 +140,17 @@ C2H6_biom
 PRPE_biom
 C3H8_biom
 CH2O_biom
-CO_biom
 MEK_biom
+CO_biom
 NO_biom
 NO_air
+ALK4_fosf
+C2H6_fosf
+PRPE_fosf
+C3H8_fosf
+MEK_fosf
 CO_fosf
-CO_biof
 NO_fosf
-NO_biof
-NO_pwrp
 ::
 
 emissionSpeciesLayers::
@@ -158,6 +164,8 @@ emissionSpeciesLayers::
 1
 1
 72
+1
+1
 1
 1
 1
@@ -191,7 +199,7 @@ monotconv_infile_name: ExtData/g5chem/x/GMI_MONOT_convTable.asc
 
 do_gcr: F
 do_solar_cycle: T
-sc_infile_name: /discover/nobackup/ldoman/fvInput/solar_cycle_NRL_1882_present_fill2100.asc
+sc_infile_name: ExtData/g5chem/x/solar_cycle/solar_cycle_NRL_1882_present_fill2100.asc
 
         ######################################
         #     Lightning related variables
@@ -230,17 +238,19 @@ AerDust_Effect_opt: 0
         ###########################################################
 
 forc_bc_opt: 2
-forc_bc_years: 151
+forc_bc_years: 69
 forc_bc_start_num: 1950
 forc_bc_kmin: 1
 forc_bc_kmax: 2
-# prev_bc_infile_name: EXTDATA/g5chem/sfc/wmo2002_GHGODS.y19_t1200.1970-2069.asc
-#
+# Previous entry (151 years):
 # Be aware that this forc_bc_infile is for RCP 6.0; other options include RCP 4.5, 8.5 and 3PD.
 # CO2 is not included in this file; it is specified in getco2.F90 which has different RCP versions too.
 # Be sure to use the same RCP versions of forc_bc_infile and getco2.F90 .
 #
-forc_bc_infile_name: /discover/nobackup/ldoman/fvInput/RCP6.0_5BrWMO2018_ch4latvar_1950_2100.asc
+#forc_bc_infile_name: /discover/nobackup/ldoman/fvInput/RCP6.0_5BrWMO2014_ch4latvar_1950_2100.asc
+#forc_bc_infile_name:              ExtData/g5chem/x/GMI/RCP6.0_5BrWMO2014_ch4latvar_1950_2100.asc
+#forc_bc_infile_name:              ExtData/g5chem/x/GMI/RCP6.0_5BrWMO2018_ch4latvar_1950_2100.asc
+forc_bc_infile_name:               ExtData/g5chem/x/GMI/ccmiRefD1_GMIbc_1950_2018.asc
 
 forcedBcSpeciesNames:: 
 CFCl3
@@ -359,17 +369,17 @@ do_ozone_inFastJX: F
 #     (as listed in GmiPhotolysis_GridCompClassMod.F90)
 
 ## For FastJX & JPL02
-# cross section file: ExtData/g5chem/x/xsec_jx_06a.dat
+# cross section file: ExtData/g5chem/x/photolysis/FastJX/xsec_jx_06a.dat
 
 ## For FastJX & JPL10
-# cross section file: /discover/nobackup/ldoman/fvInput/xsec_jx_jpl10update2_JNOx1_0.dat
+# cross section file: ExtData/g5chem/x/photolysis/FastJX/xsec_jx_jpl10update2_JNOx1_0.dat
 
 ## For FastJX 6.5 & JPL10
  fastj_opt: 4
- cross_section_file: /discover/nobackup/mmanyin/fvInput/fastjx/65/xsec_jx65_jpl10update2_JNOx1_0.dat
+ cross_section_file: ExtData/g5chem/x/photolysis/FastJX_6.5/xsec_jx65_jpl10update2_JNOx1_0.dat
 # rate_file not needed for FastJX6.5; new approach only differs by roundoff
-# rate_file: ExtData/g5chem/x/ratec_124spc_jx_gmiv2.dat
-# rate_file: /discover/nobackup/mmanyin/CCM/fvInput/fastjx/ratec_119spc_jx_gmiv3.dat
+# rate_file: ExtData/g5chem/x/photolysis/FastJX/ratec_124spc_jx_gmiv2.dat
+# rate_file: ExtData/g5chem/x/photolysis/FastJX/ratec_119spc_jx_gmiv3.dat
  T_O3_climatology_file: ExtData/g5chem/x/atms_jx_o3andtemp.dat
 
 ##
@@ -385,14 +395,14 @@ do_ozone_inFastJX: F
 ###   7: RECOMMENDED - Use all (up to 4) QCAs (average clouds within each Q-bin)
 ###   8: Calculate Js for ALL ICAs (up to 20,000 per cell!)
 # CloudJ_cldflag:  7
-# cross_section_file:       /home/ssteenro/gmi/gmi_gsfc/Components/GmiChemistry/photolysis/CloudJ/reference/data/FJX_spec_JNOx1_0.dat
-# cloud_scat_file:          /home/ssteenro/gmi/gmi_gsfc/Components/GmiChemistry/photolysis/CloudJ/reference/data/FJX_scat-cld.dat
-# ssa_scat_file:            /home/ssteenro/gmi/gmi_gsfc/Components/GmiChemistry/photolysis/CloudJ/reference/data/FJX_scat-ssa.dat
-# aer_scat_file:            /home/ssteenro/gmi/gmi_gsfc/Components/GmiChemistry/photolysis/CloudJ/reference/data/FJX_scat-aer.dat
-# UMaer_scat_file:          /home/ssteenro/gmi/gmi_gsfc/Components/GmiChemistry/photolysis/CloudJ/reference/data/FJX_scat-UMa.dat
-# GMI_scat_file:            /home/ssteenro/gmi/gmi_gsfc/Components/GmiChemistry/photolysis/CloudJ/reference/data/GMI_scat-aer.dat
-# T_O3_climatology_file:    /home/ssteenro/gmi/gmi_gsfc/Components/GmiChemistry/photolysis/CloudJ/reference/data/atmos_std.dat
-# H2O_CH4_climatology_file: /home/ssteenro/gmi/gmi_gsfc/Components/GmiChemistry/photolysis/CloudJ/reference/data/atmos_h2och4.dat
+# cross_section_file:       ExtData/g5chem/x/photolysis/CloudJ/FJX_spec_JNOx1_0.dat
+# cloud_scat_file:          ExtData/g5chem/x/photolysis/CloudJ/FJX_scat-cld.dat
+# ssa_scat_file:            ExtData/g5chem/x/photolysis/CloudJ/FJX_scat-ssa.dat
+# aer_scat_file:            ExtData/g5chem/x/photolysis/CloudJ/FJX_scat-aer.dat
+# UMaer_scat_file:          ExtData/g5chem/x/photolysis/CloudJ/FJX_scat-UMa.dat
+# GMI_scat_file:            ExtData/g5chem/x/photolysis/CloudJ/GMI_scat-aer.dat
+# T_O3_climatology_file:    ExtData/g5chem/x/photolysis/CloudJ/atmos_std.dat
+# H2O_CH4_climatology_file: ExtData/g5chem/x/photolysis/CloudJ/atmos_h2och4.dat
 ##
 
  #####################################################

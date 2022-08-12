@@ -1,10 +1,10 @@
 Collections:
   ChemEnv_FlashRatio_const_x288_y181_2005.nc:
-    template: /discover/nobackup/mmanyin/Lightning/FlashRatio_const_x288_y181_2005.nc
+    template: ExtData/g5chem/x/lightning/FlashRatio_const_x288_y181_2005.nc
   ChemEnv_FlashRatio_x288_y181_t1.%y4%m201.nc:
-    template: /discover/nobackup/mmanyin/Lightning/FlashRatio_x288_y181_t1.%y4%m201.nc
+    template: ExtData/g5chem/x/lightning/FlashRatio_x288_y181_t1.%y4%m201.nc
   ChemEnv_mcor_x288_y181_2005.nc:
-    template: /discover/nobackup/mmanyin/Lightning/mcor_x288_y181_2005.nc
+    template: ExtData/g5chem/x/lightning/mcor_x288_y181_2005.nc
 
 Samplings:
   ChemEnv_sample_0:
