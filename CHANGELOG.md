@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Fixed
 
+
+## [Unreleased]
+
 ### Added
 
 - Add YAML validator GitHub Action
@@ -25,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Changed GMI from internal SZA calculation to using MAPL SZA.
+- Changed GMI to use (CMIP6) emissions and boundary conditions from CCMI REF-D1
+- Moved external data files (like emissions) from personal space to GMAO shared space
 
 ## [1.9.6] - 2022-08-04
 
