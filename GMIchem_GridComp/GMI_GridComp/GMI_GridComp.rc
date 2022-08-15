@@ -405,6 +405,12 @@ do_ozone_inFastJX: F
 # H2O_CH4_climatology_file: ExtData/g5chem/x/photolysis/CloudJ/atmos_h2och4.dat
 ##
 
+ #################################
+ # Copy GMI H2O back to GEOS ?
+ #################################
+
+FeedBack_QV: T
+
  #####################################################
  #    PSC related variables controlling HNO3COND
  #####################################################
