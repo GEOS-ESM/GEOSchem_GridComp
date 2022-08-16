@@ -14,22 +14,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 
-## [Unreleased]
+## [1.10.0] - 2022-08-16
 
 ### Added
 
 - Add YAML validator GitHub Action
   - This action makes sure all YAML files are valid (to a relaxed standard)
+- Added flag to control whether GMI feeds back QV value to rest of model
 
 ### Fixed
 
 - Fixed Dry Deposition in GMI
+- Fixed small memory leak in GMI
 
 ### Changed
 
 - Changed GMI from internal SZA calculation to using MAPL SZA.
 - Changed GMI to use (CMIP6) emissions and boundary conditions from CCMI REF-D1
 - Moved external data files (like emissions) from personal space to GMAO shared space
+- Improved diagnostic print statements
 
 ## [1.9.6] - 2022-08-04
 
