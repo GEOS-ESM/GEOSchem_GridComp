@@ -755,6 +755,7 @@ CONTAINS
          !--------------------------------------------------------
          ! Calculate the air density at the center of each grid box
          ! (molecules/cm^3).
+         ! NOTE: BOLTZMN_E units = erg/K/molec
          !--------------------------------------------------------
 
           self%SpeciesConcentration%concentration(IMGAS)%pArray3D(:,:,:) =  &

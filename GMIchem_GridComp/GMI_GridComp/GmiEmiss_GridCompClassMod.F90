@@ -270,8 +270,6 @@ CONTAINS
    LOGICAL :: one_proc, rootProc
    LOGICAL :: exists,open,found
    
-   REAL :: qmin, qmax
-
 ! Grid cell area can be set by initialize
 ! ---------------------------------------
    REAL, POINTER, DIMENSION(:,:) :: cellArea
@@ -809,7 +807,7 @@ CONTAINS
 
 !  Input fields from GEOS-5
 !  ------------------------
-   REAL, POINTER, DIMENSION(:,:) :: cn_prcp, tprec, lwi, zpbl
+   REAL, POINTER, DIMENSION(:,:) :: cn_prcp, tprec, lwi, zpbl, frlandice, snowdp
    REAL, POINTER, DIMENSION(:,:) :: T2m, u10m, v10m, ustar, z0h, swndsrf
    REAL, POINTER, DIMENSION(:,:) :: cldtt, wet1, dfpar, drpar
 
@@ -830,7 +828,7 @@ CONTAINS
 !  Local
 !  -----
    INTEGER :: cymd, dymd, hms
-   INTEGER :: i, i1, i2, ic, im, iXj
+   INTEGER :: i, i1, i2, ic, im
    INTEGER :: j, j1, j2, jm
    INTEGER :: k, km, kReverse
    INTEGER :: lightning_opt, loc_proc
@@ -862,7 +860,7 @@ CONTAINS
    
 ! Allocatables.  Use KIND=DBL where GMI expects REAL*8.
 ! -----------------------------------------------------
-   INTEGER, ALLOCATABLE :: lwi_flags(:,:)
+   INTEGER, ALLOCATABLE :: lwis_flags(:,:)
 
    REAL, ALLOCATABLE :: var2d(:,:)
    REAL, ALLOCATABLE :: var3d(:,:,:)
@@ -922,8 +920,6 @@ CONTAINS
    
    km = self%km
    
-   iXj = (i2-i1+1)*(j2-j1+1)
-
 !  Some real constants
 !  -------------------
    pi = 4.00*ATAN(1.00)
@@ -953,7 +949,7 @@ CONTAINS
    ALLOCATE(latDeg(i1:i2,j1:j2),STAT=STATUS)
    VERIFY_(STATUS)
 
-   ALLOCATE(          lwi_flags(i1:i2,j1:j2),STAT=STATUS)
+   ALLOCATE(         lwis_flags(i1:i2,j1:j2),STAT=STATUS)
    VERIFY_(STATUS)
    ALLOCATE(              var2d(i1:i2,j1:j2),STAT=STATUS)
    VERIFY_(STATUS)
@@ -1117,7 +1113,7 @@ CONTAINS
     CALL RunEmission(self%Emission, self%SpeciesConcentration, self%gmiClock,  &
                      self%gmiGrid,                                             &
                      loc_proc, cosSolarZenithAngle, latdeg, self%cellArea,     &
-                     mass, lwi_flags, radswg, TwoMeter_air_temp, surf_rough,   &
+                     mass, lwis_flags, radswg, TwoMeter_air_temp, surf_rough,  &
                      con_precip, tot_precip, frictionVelocity, fracCloudCover, &
                      kel, pbl, cmf, press3c, press3e, pctm2,                   &
                      tenMeterU, tenMeterV, soilWetness, gridBoxThickness,      &
@@ -1168,7 +1164,7 @@ CONTAINS
    DEALLOCATE(lonDeg, latDeg, STAT=STATUS)
    VERIFY_(STATUS)
 
-   DEALLOCATE(lwi_flags, var2d, TwoMeter_air_temp, &
+   DEALLOCATE(lwis_flags, var2d, TwoMeter_air_temp, &
               pctm2, fracCloudCover, surf_rough, cosSolarZenithAngle, &
 	      radswg, tenMeterU, tenMeterV, frictionVelocity, con_precip, &
 	      tot_precip, pbl, soilWetness, diffusePAR, directPAR, T_15_AVG, STAT=STATUS)
@@ -1233,8 +1229,6 @@ CONTAINS
 
   REAL, PARAMETER :: VEG_MIN_VALID = 1.0
 
-  REAL :: qmin, qmax
-  
   rc = 0
   IAm = "Acquire_Clims"
 
@@ -1331,7 +1325,7 @@ CONTAINS
    ! get MEGAN emissions pointers from HEMCO  (already kgC/m2/s)
       CALL MAPL_GetPointer(impChem,   PTR2D, 'GMI_ISOPRENE', RC=STATUS)
       VERIFY_(STATUS)
-      CALL pmaxmin('emiss_isop ptr in gmiEmiss:', PTR2D, qmin, qmax, iXj, 1, 1. )
+      CALL MAPL_MaxMin('emiss_isop ptr in gmiEmiss:', PTR2D)
       self%Emission%emiss_isop(:,:) = PTR2D(:,:)
       NULLIFY(PTR2D)
    END IF
@@ -1586,7 +1580,6 @@ CONTAINS
 !---------------------------------------------------------------------------
   type(ESMF_FieldBundle)      :: sadBundle
   real(rPrec), pointer        :: ptr3D(:,:,:)
-  REAL                        :: qmin, qmax           ! for pmaxmin
   real*4                      :: tmpisop(i1:i2,j1:j2) ! for pmaxmin
 
   CHARACTER(LEN=255) :: IAm
@@ -1607,7 +1600,7 @@ CONTAINS
 
      IF(ASSOCIATED(emIsopSfc)) THEN
        tmpisop = emIsopSfc(i1:i2,j1:j2) 
-       CALL pmaxmin('emIsopSfc in gmiEmiss:',tmpisop(:,:),qmin, qmax, iXj, 1, 1. ) 
+       CALL MAPL_MaxMin('emIsopSfc in gmiEmiss:',tmpisop(:,:))
      END IF
    END IF
 
@@ -1919,7 +1912,6 @@ CONTAINS
 !---------------------------------------------------------------------------
 
   CHARACTER(LEN=255) :: IAm
-  REAL :: qmin,qmax
   
   rc=0
   IAm="FindPointers"
@@ -1931,6 +1923,10 @@ CONTAINS
    CALL MAPL_GetPointer(impChem,     tprec,     'TPREC', RC=STATUS)
    VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,       lwi,       'LWI', RC=STATUS)
+   VERIFY_(STATUS)
+   CALL MAPL_GetPointer(impChem, frlandice, 'FRLANDICE', RC=STATUS)
+   VERIFY_(STATUS)
+   CALL MAPL_GetPointer(impChem,    snowdp,    'SNOWDP', RC=STATUS)
    VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,       T2m,       'T2M', RC=STATUS)
    VERIFY_(STATUS)
@@ -1993,27 +1989,29 @@ CONTAINS
 !  ----------
    Validate: IF(self%verbose) THEN
     IF(MAPL_AM_I_ROOT( ))PRINT *,TRIM(IAm),": Input ..."
-    CALL pmaxmin('CN_PRCP:', cn_prcp, qmin, qmax, iXj, 1, 1. )
-    CALL pmaxmin('TPREC:', tprec, qmin, qmax, iXj, 1, 1. )
-    CALL pmaxmin('LWI:', lwi, qmin, qmax, iXj, 1, 1. )
-    CALL pmaxmin('T2M:', T2m, qmin, qmax, iXj, 1, 1. )
-    CALL pmaxmin('ZPBL:', zpbl, qmin, qmax, iXj, 1, 1. )
-    CALL pmaxmin('Q:', Q, qmin, qmax, iXj, km, 1. )
-    CALL pmaxmin('T:', T, qmin, qmax, iXj, km, 1. )
-    CALL pmaxmin('ZLE:', zle, qmin, qmax, iXj, km+1, 1. )
-    CALL pmaxmin('PLE (hPa):', ple, qmin, qmax, iXj, km+1, 0.01 )
-    CALL pmaxmin('AIRDENS:', airdens, qmin, qmax, iXj, km, 1. )
-    CALL pmaxmin('CNV_MFC:', cnv_mfc, qmin, qmax, iXj, km+1, 1. )
+    CALL MAPL_MaxMin('CN_PRCP:', cn_prcp)
+    CALL MAPL_MaxMin('TPREC:', tprec)
+    CALL MAPL_MaxMin('LWI:', lwi)
+    CALL MAPL_MaxMin('FRLANDICE:', frlandice)
+    CALL MAPL_MaxMin('SNOWDP:', snowdp)
+    CALL MAPL_MaxMin('T2M:', T2m)
+    CALL MAPL_MaxMin('ZPBL:', zpbl)
+    CALL MAPL_MaxMin('Q:', Q)
+    CALL MAPL_MaxMin('T:', T)
+    CALL MAPL_MaxMin('ZLE:', zle)
+    CALL MAPL_MaxMin('PLE (hPa):', ple)
+    CALL MAPL_MaxMin('AIRDENS:', airdens)
+    CALL MAPL_MaxMin('CNV_MFC:', cnv_mfc)
 
-    CALL pmaxmin('U10M:', u10m, qmin, qmax, iXj, 1, 1. )
-    CALL pmaxmin('V10M:', v10m, qmin, qmax, iXj, 1, 1. )
-    CALL pmaxmin('USTAR:', ustar, qmin, qmax, iXj, 1, 1. )
-    CALL pmaxmin('SURF_ROUGH:', z0h, qmin, qmax, iXj, 1, 1. )
-    CALL pmaxmin('SWNDSRF:', swndsrf, qmin, qmax, iXj, 1, 1. )
-    CALL pmaxmin('CLDTT:', cldtt, qmin, qmax, iXj, 1, 1. )
-    CALL pmaxmin('WET1:', wet1, qmin, qmax, iXj, 1, 1. )
-    CALL pmaxmin('DFPAR:', dfpar, qmin, qmax, iXj, 1, 1. )
-    CALL pmaxmin('DRPAR:', drpar, qmin, qmax, iXj, 1, 1. )
+    CALL MAPL_MaxMin('U10M:', u10m)
+    CALL MAPL_MaxMin('V10M:', v10m)
+    CALL MAPL_MaxMin('USTAR:', ustar)
+    CALL MAPL_MaxMin('SURF_ROUGH:', z0h)
+    CALL MAPL_MaxMin('SWNDSRF:', swndsrf)
+    CALL MAPL_MaxMin('CLDTT:', cldtt)
+    CALL MAPL_MaxMin('WET1:', wet1)
+    CALL MAPL_MaxMin('DFPAR:', dfpar)
+    CALL MAPL_MaxMin('DRPAR:', drpar)
 
    END IF Validate
 
@@ -2097,10 +2095,17 @@ CONTAINS
    cmf(i1:i2,j1:j2,kReverse) = cnv_mfc(i1:i2,j1:j2,k)                       ! kg m^{-2}s^{-1}
   END DO
 
-! Keep land-water-ice flag in GEOS original format:
+! Incoming land-water-ice flag in GEOS original format:
 !   0=water 1=land 2=ice
-! ------------------------------------
-   lwi_flags(i1:i2,j1:j2)=FLOOR(lwi(i1:i2,j1:j2)+0.1)
+! Add snow flag (3) for Dry deposition
+! specification: 0=water 1=land 2=ice 3=snow/glaciated
+! ----------------------------------------------------
+   lwis_flags(i1:i2,j1:j2)=FLOOR(lwi(i1:i2,j1:j2)+0.1)
+!  Note - SNOWDP can be undefined (BIG)
+   WHERE( (frlandice(i1:i2,j1:j2) > 0.5 .OR. (snowdp(i1:i2,j1:j2) >= 0.35 .AND.     &
+                                              snowdp(i1:i2,j1:j2) <  1000.0)    ) ) &
+          lwis_flags(i1:i2,j1:j2) = 3
+
 
 ! Cell mass and thickness                                                   GEOS-5 Units       GMI Units
 ! -----------------------                                                   ------------       -------------

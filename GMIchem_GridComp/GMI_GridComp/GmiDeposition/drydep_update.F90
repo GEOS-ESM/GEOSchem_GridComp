@@ -1,7 +1,7 @@
 
 !=============================================================================
 !
-! $Id$
+! $Id: drydep_update.F90,v 1.1.1.1.2.1.20.1.66.1.166.1.26.1.14.1 2020/12/29 20:17:02 mmanyin Exp $
 !
 ! CODE DEVELOPER
 !   Dan Bergmann, LLNL
@@ -29,7 +29,7 @@
 ! ARGUMENTS
 !   pr_dry_depos  : should dry depositions be written to periodic const
 !                   output file?
-!   lwi_flags  : array of flags that indicate land, water, or ice
+!   lwis_flags : array of flags that indicate water=0, land=1, ice=2, or snow=3
 !   mcor       : area of grid box (m^2)
 !   latdeg     : latitude  (deg)
 !   londeg     : longitude (deg)
@@ -50,7 +50,7 @@
 !-----------------------------------------------------------------------------
 
       subroutine Update_Drydep  &
-     &  (pr_dry_depos, lwi_flags, mcor, cosSolarZenithAngle, &
+     &  (pr_dry_depos, lwis_flags, mcor, cosSolarZenithAngle, &
      &   fracCloudCover, radswg, surf_air_temp,  &
      &   surf_rough, ustar, mass, concentration, dry_depos, diffaer,  &
      &   s_radius, s_velocity, BoxHeightEdge, &
@@ -86,7 +86,7 @@
       integer, intent(in) :: num_species
       real*8 , intent(in) :: mw(num_species)
       logical, intent(in) :: pr_dry_depos
-      integer, intent(in) :: lwi_flags (i1:i2, ju1:j2)
+      integer, intent(in) :: lwis_flags (i1:i2, ju1:j2)
       real*8 , intent(in) :: mcor      (i1:i2, ju1:j2)
       real*8 , intent(in) :: fracCloudCover (i1:i2, ju1:j2)
       real*8 , intent(in) :: cosSolarZenithAngle (i1:i2, ju1:j2)
@@ -298,7 +298,7 @@
 !       ===========
      &   (ilong, ij, radswg(:,ij), surf_air_temp(:,ij), cosSolarZenithAngle(:, ij), oxidize,  &
      &    hstar_dry, mw, aerosol, ustar(:,ij), cz1, obk, fracCloudCover(:,ij),  &
-     &    lwi_flags(i1,ij), dvel, ireg, iland, iuse, xlai, diffa,  &
+     &    lwis_flags(i1,ij), dvel, ireg, iland, iuse, xlai, diffa,  &
      &    s_ra, s_vel, delh_298_over_r_dry, i1, i2, ju1, j2, num_species)
 
 
@@ -425,7 +425,7 @@
 !   cz1     : altitude at which deposition velocity is computed (m)
 !   obk     : Monin-Obukhov length, set to 1.0d5 under neutral conditions (m)
 !   cfrac   : fractional cloud cover
-!   lsnow   : integer for snow and sea ice (1=>water, 2=>land, 3=>ice)
+!   lsnow   : integer for snow and sea ice (0=>water, 1=>land, 2=>ice, 3=>snow)
 !   dvel    : deposition velocities (m/s)
 !   ireg    : # of landtypes in grid square
 !   iland   : land type id for elements ldt = 1, ireg;
@@ -631,10 +631,14 @@
 !       temperatures below -18 C, so at colder temperatures, hold the
 !       resistance fixed.
 !       -----------------------------------------------------------------
-
-        rt = 1000.0d0 * Exp (-tempc1 - 4.0d0)
-
-        if (tempc1 < -18.0d0) rt = 1.2d9
+!
+!       rt = 1000.0d0 * Exp (-tempc1 - 4.0d0)
+!
+!       if (tempc1 < -18.0d0) rt = 1.2d9
+! LDO - Change to Zhang et al. 2003 resistance temperature dependence 
+        rt = 1.0d0
+        if (tempc1 < -1.0d0) rt = Exp (0.2d0*(-1.0d0 - tempc1))
+        rt = Min (rt, 2.0d0)
 
 
 !       ------------------------------------------------------------------
@@ -664,7 +668,7 @@
           if (iuse(ijloop+i1-1,ij,ldt) == 0) cycle LDTLOOP1
 !                                            ==============
 
-          if (lsnow(ijloop) == 3) then  ! snow or ice
+          if (lsnow(ijloop) >= 2) then  ! snow=3 or ice=2
             idep1  = 1
           else
             iolson = iland(ijloop+i1-1,ij,ldt) + 1

@@ -219,7 +219,12 @@
    TYPE(t_GmiClock  )           :: gmiClock
    TYPE(t_SpeciesConcentration) :: SpeciesConcentration
  
-   TYPE(t_fastJXbundle)   :: JXbundle
+   TYPE(t_fastJXbundle)         :: JXbundle
+
+! Needed for MAPL call to get SZA
+! -------------------------------
+   TYPE(MAPL_SunOrbit)          :: ORBIT  ! GMI_GridComp will pass this in
+   TYPE(ESMF_Clock)             :: CLOCK  ! GMI_GridComp will pass this in
 
   END TYPE GmiPhotolysis_GridComp
 
@@ -1265,8 +1270,9 @@ CONTAINS
    LOGICAL :: found, rootProc
    LOGICAL, PARAMETER :: doThis = .FALSE.
    
-   integer :: nsec_jan1, jday
-   real*8  :: rsec_jan1, time_sec
+!  integer :: nsec_jan1, jday      !  only used when calling the GMI routine for SZA
+!  real*8  :: time_sec             !  only used when calling the GMI routine for SZA
+
 
 ! Allocatables.  Use KIND=DBL where GMI expects REAL*8.
 ! -----------------------------------------------------
@@ -1274,10 +1280,8 @@ CONTAINS
    REAL, ALLOCATABLE :: var3d(:,:,:)
    REAL, ALLOCATABLE :: pl(:,:,:)
 
-   REAL(KIND=DBL), ALLOCATABLE :: lonDeg(:,:)
-   REAL(KIND=DBL), ALLOCATABLE :: latDeg(:,:)
-
-   REAL(KIND=DBL), ALLOCATABLE :: averagePressEdge(:)
+!  REAL(KIND=DBL), ALLOCATABLE :: lonDeg(:,:)   !  only used when calling the GMI routine for SZA
+!  REAL(KIND=DBL), ALLOCATABLE :: latDeg(:,:)   !  only used when calling the GMI routine for SZA
 
    REAL(KIND=DBL), ALLOCATABLE :: tropopausePress(:,:)
    REAL(KIND=DBL), ALLOCATABLE :: pctm2(:,:)
@@ -1306,12 +1310,23 @@ CONTAINS
    REAL(KIND=DBL), ALLOCATABLE :: ri_(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: rl_(:,:,:)
 
+! VV adding Mike's MAPL SZA edits
+   REAL          , ALLOCATABLE ::  ZTH(:,:)
+   REAL          , ALLOCATABLE ::  SLR(:,:)
+   REAL          , ALLOCATABLE :: ZTHP(:,:)
+
    REAL(KIND=DBL), ALLOCATABLE :: solarZenithAngle(:,:)
 
-   REAL*8  :: tdt8
+   TYPE (ESMF_TimeInterval)    ::  GMI_timestep
+   TYPE (ESMF_TimeInterval)    :: MAPL_timestep
+   TYPE (ESMF_Time)            :: CURRENTTIME
+   TYPE (ESMF_Time)            :: SZA_start_time   ! compute average SZA starting at this time
+   TYPE (ESMF_Time)            :: SZA_midpoint
 
-   tdt8 = tdt
+   LOGICAL :: verbose_time   ! To see details on SZA time averaging
 
+   verbose_time = .FALSE.
+ 
    loc_proc = -99
 
 !  Grid specs
@@ -1359,75 +1374,49 @@ CONTAINS
 
 !  Reserve some local work space
 !  -----------------------------
-   ALLOCATE(lonDeg(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(latDeg(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(averagePressEdge(0:km),STAT=STATUS)
-   VERIFY_(STATUS)
+!  ALLOCATE(lonDeg(i1:i2,j1:j2), __STAT__ )
+!  ALLOCATE(latDeg(i1:i2,j1:j2), __STAT__ )
 
-   ALLOCATE(              var2d(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(    tropopausePress(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(              pctm2(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(     fracCloudCover(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(           surf_alb(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(   solarZenithAngle(i1:i2,j1:j2),STAT=STATUS)
-   VERIFY_(STATUS)
+   ALLOCATE(                  var2d(i1:i2,j1:j2), __STAT__ )
+   ALLOCATE(        tropopausePress(i1:i2,j1:j2), __STAT__ )
+   ALLOCATE(                  pctm2(i1:i2,j1:j2), __STAT__ )
+   ALLOCATE(         fracCloudCover(i1:i2,j1:j2), __STAT__ )
+   ALLOCATE(               surf_alb(i1:i2,j1:j2), __STAT__ )
+   ALLOCATE(       solarZenithAngle(i1:i2,j1:j2), __STAT__ )
 
-   ALLOCATE(                pl(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(             var3d(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(              mass(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(           press3c(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(           press3e(i1:i2,j1:j2,0:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(  gridBoxThickness(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(               kel(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(          humidity(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(totalCloudFraction(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(         tau_cloud(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(              clwc(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(               cmf(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(  relativeHumidity(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(            moistq(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(           tau_clw(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(           tau_cli(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-!  ALLOCATE(          cnv_frc_(i1:i2,j1:j2),     STAT=STATUS)
-!  VERIFY_(STATUS)
-!  ALLOCATE(           frland_(i1:i2,j1:j2),     STAT=STATUS)
-!  VERIFY_(STATUS)
-   ALLOCATE(               qi_(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(               ql_(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(               ri_(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(               rl_(i1:i2,j1:j2,1:km),STAT=STATUS)
-   VERIFY_(STATUS)
+   ALLOCATE(                pl(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(             var3d(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(              mass(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(           press3c(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(           press3e(i1:i2,j1:j2,0:km), __STAT__ )
+   ALLOCATE(  gridBoxThickness(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(               kel(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(          humidity(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(totalCloudFraction(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(         tau_cloud(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(              clwc(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(               cmf(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(  relativeHumidity(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(            moistq(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(           tau_clw(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(           tau_cli(i1:i2,j1:j2,1:km), __STAT__ )
+!  ALLOCATE(          cnv_frc_(i1:i2,j1:j2),      __STAT__ )
+!  ALLOCATE(           frland_(i1:i2,j1:j2),      __STAT__ )
+   ALLOCATE(               qi_(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(               ql_(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(               ri_(i1:i2,j1:j2,1:km), __STAT__ )
+   ALLOCATE(               rl_(i1:i2,j1:j2,1:km), __STAT__ )
+
+   ALLOCATE(               ZTH(i1:i2,j1:j2), &
+                           SLR(i1:i2,j1:j2), &
+                          ZTHP(i1:i2,j1:j2),     __STAT__ )
+
+   
 
 ! Geolocation
 ! -----------
-   lonDeg(i1:i2,j1:j2)=self%lonRad(i1:i2,j1:j2)*radToDeg
-   latDeg(i1:i2,j1:j2)=self%latRad(i1:i2,j1:j2)*radToDeg
+!   lonDeg(i1:i2,j1:j2)=self%lonRad(i1:i2,j1:j2)*radToDeg !VV adding Mike's MAPL SZA
+!   latDeg(i1:i2,j1:j2)=self%latRad(i1:i2,j1:j2)*radToDeg
 
 !  Layer mean pressures. NOTE: ple(:,:,0:km)
 !  -----------------------------------------
@@ -1493,23 +1482,91 @@ CONTAINS
 ! ------------------------------------------------------------------------
 
       IF (self%gotImportRst) THEN
-         if ((self%phot_opt == 3) .or. (self%phot_opt == 4) .or.  &
-             (self%phot_opt == 5)) then 
+        if (self%phot_opt == 3) then
+! GMI routine, provided SZA > 90
+!         if ((self%phot_opt == 3) then 
 
-            call GetSecondsFromJanuary1 (nsec_jan1, nymd, nhms)
-            rsec_jan1 = nsec_jan1
+!            call GetSecondsFromJanuary1 (nsec_jan1, nymd, nhms)
 
-            call GetDaysFromJanuary1 (jday, nymd)
-            time_sec = ConvertTimeToSeconds (nhms)
+!            call GetDaysFromJanuary1 (jday, nymd)
+!            time_sec = ConvertTimeToSeconds (nhms)
 
-            solarZenithAngle(i1:i2,j1:j2) = &
-                 computeSolarZenithAngle_Photolysis (jday, time_sec, &
-                          self%fastj_offset_sec, latDeg, lonDeg, i1, i2, j1, j2)
+!            solarZenithAngle(i1:i2,j1:j2) = &
+!                 computeSolarZenithAngle_Photolysis (jday, time_sec, &
+!                          self%fastj_offset_sec, latDeg, lonDeg, i1, i2, j1, j2)
 
+! MEM 6.30.20
+!     Now get the SZA using a MAPL call:
+
+          call ESMF_ClockGet(self%clock, TIMESTEP=MAPL_timestep, currTIME=CURRENTTIME, __RC__ )
+
+          IF( verbose_time .AND. MAPL_AM_I_ROOT() ) THEN
+
+            call ESMF_TimePrint(CURRENTTIME, preString="CURRENTTIME = ", __RC__ )
+
+            print *, "MAPL_timestep = "
+            call ESMF_TimeIntervalPrint(MAPL_timestep, options="string", __RC__ )
+
+          ENDIF
+
+          call ESMF_TimeIntervalSet(GMI_timestep, s=INT(tdt+0.1), __RC__ )
+
+          IF( verbose_time .AND. MAPL_AM_I_ROOT() ) THEN
+
+            print *, "GMI_timestep = "
+            call ESMF_TimeIntervalPrint(GMI_timestep, options="string", __RC__ )
+
+            print *, "computing Photolysis w/ tdt = ", tdt
+
+          ENDIF
+
+          ! We want a starting time = MAPL time + 1/2 MAPL timestep - 1/2 GMI timestep
+          ! We want a time interval == GMI timestep
+
+          ! Position SZA_midpoint to be midpoint of MAPL_timestep
+          SZA_midpoint = CURRENTTIME + (MAPL_timestep/2)
+
+          ! Position SZA_start_time to be half of a GMI timestep earlier
+          SZA_start_time = SZA_midpoint - (GMI_timestep/2)
+
+          IF( verbose_time .AND. MAPL_AM_I_ROOT() ) THEN
+            call ESMF_TimePrint(SZA_start_time,              preString="SZA averaging start_time = ", __RC__ )
+            call ESMF_TimePrint(SZA_start_time+GMI_timestep, preString="SZA averaging   end_time = ", __RC__ )
+          ENDIF
+
+! Calling sequence from SOLAR GridComp:
+!     call MAPL_SunGetInsolation(   &
+!             self%lonRad,          &    !  from the MAPL_Get  REAL, pointer, (IM,JM)
+!             self%latRad,          &    !  from the MAPL_Get  REAL, pointer, (IM,JM)
+!             self%orbit,           &    !  from MAPL_Get      type (MAPL_SunOrbit)
+!             ZTH,                  &    !  OUT                REAL,          (IM,JM)
+!             SLR,                  &    !  OUT                REAL,          (IM,JM)
+!             INTV = MAPL_timestep, &    !  INOUT              type (ESMF_TimeInterval)
+!                                   &    !   the CLOCK timestep    [optional]   Why INOUT?
+!             CLOCK = self%clock,   &    !  IN   [optional]    type(ESMF_Clock)
+!         !   TIME = SUNFLAG,       &    !  IN   [optional]    INTEGER
+!         !   ZTHN = ZTHN,          &    !  OUT  [optional]    REAL,          (IM,JM )
+!             ZTHP = ZTHP,          &    !  OUT  [optional]    REAL,          (IM,JM)
+!             RC=STATUS )
+!     VERIFY_(STATUS)
+
+          call MAPL_SunGetInsolation(        &
+                  self%lonRad,               &
+                  self%latRad,               &
+                  self%orbit,                &
+                  ZTH,                       &
+                  SLR,                       &
+                  CURRTIME = SZA_start_time, &
+                  INTV     = GMI_timestep,   &
+                  ZTHP     = ZTHP,           &
+                  __RC__ )
+
+          solarZenithAngle(i1:i2,j1:j2) = ACOS( ZTHP ) * radToDeg
+         
             call calcPhotolysisRateConstants (self%JXbundle,                   &
                      self%chem_mecha, tropopausePress,                         &
-     &               self%pr_qj_o3_o1d, self%pr_qj_opt_depth, tdt8,            &
-     &               rsec_jan1, pctm2, mass, press3e, press3c, kel,            &
+     &               self%pr_qj_o3_o1d, self%pr_qj_opt_depth,                  & ! VV
+     &               pctm2, mass, press3e, press3c, kel,                       &
      &               self%SpeciesConcentration%concentration, solarZenithAngle,&
      &               self%cellArea, surf_alb, fracCloudCover,                  &
      &               tau_cloud, tau_clw, tau_cli, totalCloudFraction,          &
@@ -1527,7 +1584,7 @@ CONTAINS
      &               NUM_J, self%num_qjo, ilo, ihi, julo, jhi,                 &
      &               i1, i2, ju1, j2, k1, k2, self%jNOindex, self%jNOamp,      &
      &               self%cldflag)
-         endif
+        endif
       END IF
 
 ! Return species concentrations to the chemistry bundle
@@ -1549,8 +1606,8 @@ CONTAINS
 
 ! Scratch local work space
 ! ------------------------
-   DEALLOCATE(lonDeg, latDeg, averagePressEdge, STAT=STATUS)
-   VERIFY_(STATUS)
+!  DEALLOCATE(lonDeg, latDeg, STAT=STATUS)
+!  VERIFY_(STATUS)
 
    DEALLOCATE(var2d, tropopausePress, pctm2, fracCloudCover, surf_alb, &
               solarZenithAngle, STAT=STATUS)
@@ -1561,7 +1618,7 @@ CONTAINS
               moistq, STAT=STATUS)
    VERIFY_(STATUS)
 
-   DEALLOCATE(tau_clw, tau_cli, qi_, ql_, ri_, rl_, STAT=STATUS)
+   DEALLOCATE(tau_clw, tau_cli, qi_, ql_, ri_, rl_, ZTH, SLR, ZTHP, STAT=STATUS)
 !  DEALLOCATE(cnv_frc_, frland_,                    STAT=STATUS)
    VERIFY_(STATUS)
 
@@ -2324,8 +2381,8 @@ CONTAINS
 ! Solar zenith angle used in photolysis
 ! -------------------------------------
   IF(ASSOCIATED(SZAPHOT)) THEN
-   IF( (self%phot_opt == 3 .OR. self%phot_opt == 4 .OR. self%phot_opt == 5) .AND. &
-        self%gotImportRst) SZAPHOT(i1:i2,j1:j2) = solarZenithAngle(i1:i2,j1:j2)
+   IF( (self%phot_opt == 3) .AND. self%gotImportRst ) &
+      SZAPHOT(i1:i2,j1:j2) = solarZenithAngle(i1:i2,j1:j2)
   END IF
 
 ! Ship Emisssions
