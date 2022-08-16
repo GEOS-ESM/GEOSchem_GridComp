@@ -816,11 +816,11 @@ CONTAINS
    rc = 0
    i1 = self%i1
    i2 = self%i2
-   im = self%im
+   im = self%im   ! e.g. 90
    
    j1 = self%j1
    j2 = self%j2
-   jm = self%jm
+   jm = self%jm   ! e.g. 540
    
    km = self%km
    
@@ -963,6 +963,17 @@ CONTAINS
     r = MAXVAL(self%SpeciesConcentration%concentration(ic)%pArray3D(:,:,:))
     IF(r > self%HNO3Ice_MAX*1.00E-09) THEN
      PRINT *,TRIM(Iam)//": Found HNO3COND above limit: ",r*1.00E+09," ppbv"
+     DO i = i1,i2
+     DO j = j1,j2
+     DO k = 1,km
+         IF ( self%SpeciesConcentration%concentration(ic)%pArray3D(i,j,k) > self%HNO3Ice_MAX*1.00E-09 ) THEN
+           PRINT*,'TRAP HNO3COND ', &
+                   self%SpeciesConcentration%concentration(ic)%pArray3D(i,j,k)*1.00E+09, &
+                   latDeg(i,j), lonDeg(i,j), press3c(i,j,k)
+         END IF
+     END DO
+     END DO
+     END DO
      status = 1
      VERIFY_(status)
     END IF
@@ -975,6 +986,17 @@ CONTAINS
     r = MAXVAL(self%SpeciesConcentration%concentration(ic)%pArray3D(:,:,:))
     IF(r > self%HCl_MAX*1.00E-09) THEN
      PRINT *,TRIM(Iam)//": Found HCl above limit: ",r*1.00E+09," ppbv"
+     DO i = i1,i2
+     DO j = j1,j2
+     DO k = 1,km
+         IF ( self%SpeciesConcentration%concentration(ic)%pArray3D(i,j,k) > self%HCl_MAX*1.00E-09 ) THEN
+           PRINT*,'TRAP HCl ', &
+                   self%SpeciesConcentration%concentration(ic)%pArray3D(i,j,k)*1.00E+09, &
+                   latDeg(i,j), lonDeg(i,j), press3c(i,j,k)
+         END IF
+     END DO
+     END DO
+     END DO
      status = 1
      VERIFY_(status)
     END IF
@@ -993,7 +1015,7 @@ CONTAINS
    DEALLOCATE(tropopausePress, STAT=STATUS)
    VERIFY_(STATUS)
 
-   DEALLOCATE(pl, press3c, press3e, kel, STAT=STATUS)
+   DEALLOCATE(pl, press3c, press3e, kel, latDeg, lonDeg, STAT=STATUS)
    VERIFY_(STATUS)
 
 ! IMPORTANT: Reset this switch to .TRUE. after first pass.

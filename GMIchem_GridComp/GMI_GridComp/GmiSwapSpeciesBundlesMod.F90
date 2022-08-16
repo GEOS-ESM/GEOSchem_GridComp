@@ -11,9 +11,9 @@ module GmiSwapSpeciesBundlesMod
    USE ESMF
    USE MAPL
 
-      use GmiStringManipulation_mod, only : stringLowerCase
-      use GmiArrayBundlePointer_mod, only : t_GmiArrayBundle
-      Use Chem_ArrayMod
+      USE GmiStringManipulation_mod, ONLY : stringLowerCase
+      USE GmiArrayBundlePointer_mod, ONLY : t_GmiArrayBundle
+      USE Chem_ArrayMod
 !
       implicit none
 !
@@ -72,17 +72,23 @@ module GmiSwapSpeciesBundlesMod
 !  from a future GMI strat/trop mechanism it can be eliminated here, too.]
 !
 ! !LOCAL VARIABLES:
+      INTEGER :: STATUS
       INTEGER :: i, ic
       INTEGER :: k, km
       LOGICAL :: found
+      LOGICAL :: FeedBack_QV    ! TRUE for CCM, FALSE for CTM
       CHARACTER(LEN=255) :: speciesName
       CHARACTER(LEN=255) :: MyName
+      CHARACTER(LEN=ESMF_MAXSTR) :: Iam
 !
 !EOP
 !---------------------------------------------------------------------------
 !BOC
       rc=0
       MyName="GMI_SwapSpeciesBundles"
+      Iam="SwapSpeciesBundles"
+
+      CALL CheckConfig(FeedBack_QV, __RC__)
 
       IF (ABS(direction) /= 1) THEN
          rc=1
@@ -102,7 +108,9 @@ module GmiSwapSpeciesBundlesMod
             CASE ( 1)
                gmiBundle(ic)%pArray3D(:,:,km:1:-1) = specHum(:,:,1:km)*(MWTAIR/MWTH2O)
             CASE (-1)
+              IF ( FeedBack_QV ) THEN
                specHum(:,:,1:km) = gmiBundle(ic)%pArray3D(:,:,km:1:-1)*(MWTH2O/MWTAIR)
+              END IF
             END SELECT
     
             found=.TRUE.
@@ -168,8 +176,8 @@ module GmiSwapSpeciesBundlesMod
 !BOC
       regCCM(:) = wrongIndex
 
-! Scan the GMI mechanism's specie list, with numSpecies = NSP
-! -----------------------------------------------------------
+! Scan the GMI mechanism's species list, with numSpecies = NSP
+! ------------------------------------------------------------
       GMIList: DO ic = 1, numSpecies
 
          speciesName = nameSpecies(ic)
@@ -203,4 +211,65 @@ module GmiSwapSpeciesBundlesMod
       END FUNCTION speciesReg_for_CCM
 !EOC
 !------------------------------------------------------------------------------
+!BOP
+!
+! !ROUTINE:  CheckConfig
+!
+! !INTERFACE:
+
+      SUBROUTINE CheckConfig(FeedBack_QV, rc)
+
+      IMPLICIT NONE
+!
+! !OUTPUT PARAMETERS:
+      LOGICAL, INTENT(OUT) :: FeedBack_QV
+      INTEGER, INTENT(OUT) :: rc
+!
+! !DESCRIPTION:
+!  Report the configuration settings
+!    FeedBack_QV - default TRUE - whether to copy H2O field from GMI back into SPEC HUM field of GEOS
+!
+! !LOCAL VARIABLES:
+      LOGICAL, SAVE              :: finished_reading = .FALSE.
+      LOGICAL, SAVE              :: saved_feedback_qv
+
+      INTEGER                    :: STATUS
+      CHARACTER(LEN=255)         :: rcfilen = 'GMI_GridComp.rc'
+      type (ESMF_Config)         :: gmiConfig
+      character(len=ESMF_MAXSTR) :: Iam
+!
+!EOP
+!---------------------------------------------------------------------------
+!BOC
+      rc=0
+      Iam="GmiSwapSpeciesBundlesMod:CheckConfig"
+
+      !!!
+      !!!  NOTE: Consider making FeedBack_QV depend on the SimType
+      !!!        i.e. if CTM then set to FALSE
+      !!!
+
+      IF ( .NOT. finished_reading ) THEN
+
+        gmiConfig = ESMF_ConfigCreate(__RC__)
+
+        call ESMF_ConfigLoadFile(gmiConfig, TRIM(rcfilen), __RC__)
+
+        call ESMF_ConfigGetAttribute(gmiConfig, value=saved_feedback_qv, &
+                                     label="FeedBack_QV:", default=.TRUE., __RC__)
+
+        call ESMF_ConfigDestroy(gmiConfig, __RC__)
+
+        finished_reading = .TRUE.
+
+      END IF
+
+      FeedBack_QV = saved_feedback_qv
+
+      RETURN
+
+      END SUBROUTINE CheckConfig
+!EOC
+!------------------------------------------------------------------------------
+
 end module GmiSwapSpeciesBundlesMod

@@ -711,7 +711,7 @@ contains
     ! SimType is added by ctm_setup
     call ESMF_GridCompGet ( GC, CONFIG=CF, __RC__ )
     call ESMF_ConfigGetAttribute ( CF, rc_string, Label="SimType:", Default="undefined", __RC__ )
-1   IF(MAPL_AM_I_ROOT()) PRINT*,'The SimType resource is '//TRIM(rc_string)
+!   IF(MAPL_AM_I_ROOT()) PRINT*,'The SimType resource is '//TRIM(rc_string)
 
     IF ( TRIM(rc_string) == "CTM" ) THEN
       SimType = "CTM"
