@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Fixed
 
+- Fixed typo in yaml files
 
 ## [1.10.0] - 2022-08-16
 

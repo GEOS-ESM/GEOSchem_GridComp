@@ -8,7 +8,7 @@ Collections:
 
 Samplings:
   GAAS_sample_0:
-    time_interpolation: 'False'
+    time_interpolation: False
 
 Exports:
   aod_a:

@@ -8,7 +8,7 @@ Collections:
 
 Samplings:
   ChemEnv_sample_0:
-    time_interpolation: 'False'
+    time_interpolation: False
   ChemEnv_sample_1:
     extrapolation: clim
 
