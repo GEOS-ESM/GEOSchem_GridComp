@@ -10,7 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Removed
+
+- Removed diagnostic messages for GMI isoprene emissions
+
 ### Changed
+
+- GMI photolysis now uses "random cloud overlap" instead of "maximal overlap"
+- GMI now enforces a floor value for transported species
+
 ### Fixed
 
 - Fixed typo in yaml files

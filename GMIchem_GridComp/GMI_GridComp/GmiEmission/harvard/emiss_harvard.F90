@@ -676,8 +676,8 @@
 
         iXj = (i2-i1+1)*(j2-ju1+1)
         tempemis = emiss_isop(:,:)/mcor(:,:)
-        CALL pmaxmin('emiss_isop in add_emiss:', tempemis(:,:) &
-     &   , qmin, qmax, iXj, 1, 1. )
+!       CALL pmaxmin('emiss_isop in add_emiss:', tempemis(:,:) &
+!    &   , qmin, qmax, iXj, 1, 1. )
 
         concentration(iisoprene_num)%pArray3D(:,:,1) =  &
      &    concentration(iisoprene_num)%pArray3D(:,:,1) +  &
