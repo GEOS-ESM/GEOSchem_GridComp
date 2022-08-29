@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- Added new Runtime_Registry module in Shared/Chem_Base, for Chem children to use instead of Chem_Registry.
+
 ### Removed
 
 - Removed diagnostic messages for GMI isoprene emissions
@@ -17,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - GMI photolysis now uses "random cloud overlap" instead of "maximal overlap"
 - GMI now enforces a floor value for transported species
+- TR now uses Runtime_Registry instead of Chem_Registry
 
 ### Fixed
 

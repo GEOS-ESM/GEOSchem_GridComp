@@ -515,7 +515,9 @@ contains
      ! First test - add O3 and the species needed to compute O3 loss
      ! Later, parse the TR .rc files to determine the fields we need
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'OX    ', 'QQK007', 'QQK027', 'QQK028', 'DD_OX ', 'QQK005', &
+            SRC_NAME  = (/'OX    ', 'QQK007', 'QQK027', 'QQK028', 'DD_OX ', 'QQK005', &
+                          'QQK235', 'QQK170', 'QQK216', 'QQK179', 'QQK150'/), &
+            DST_NAME  = (/'OX_TR ', 'QQK007', 'QQK027', 'QQK028', 'DD_OX ', 'QQK005', &
                           'QQK235', 'QQK170', 'QQK216', 'QQK179', 'QQK150'/), &
           DST_ID = TR, SRC_ID = GMICHEM, __RC__  )
   ENDIF
