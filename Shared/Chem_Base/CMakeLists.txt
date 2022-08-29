@@ -2,6 +2,7 @@ esma_set_this ()
 
 set (srcs
   Chem_RegistryMod.F90
+  Runtime_RegistryMod.F90
   Chem_ArrayMod.F90
   Chem_BundleMod.F90
   Chem_Mod.F90
