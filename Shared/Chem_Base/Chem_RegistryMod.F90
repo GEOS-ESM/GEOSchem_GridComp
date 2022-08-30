@@ -93,7 +93,6 @@
      logical :: doing_GMI   ! GMI Chemistry (GEOS-5)
      logical :: doing_OCS   ! ACHEM chemistry (OCS)
      logical :: doing_NI    ! Nitrate
-     logical :: doing_TR    ! passive tracers
 
 !    Number of bins and tracer index ranges for each constituent:
 !        n_TT - number of bins for tracer TT (n_TT = j_TT - i_TT + 1)
@@ -117,7 +116,6 @@
      integer :: n_GMI, i_GMI, j_GMI  ! GMI chemistry (GEOS-5)
      integer :: n_OCS, i_OCS, j_OCS  ! OCS chemistry (ACHEM)
      integer :: n_NI, i_NI, j_NI     ! Nitrate
-     integer :: n_TR, i_TR, j_TR     ! passive tracers
 
 !    GEOS-5 Short-hands: all combined tracers from CO to OC
 !    ------------------------------------------------------
@@ -143,7 +141,6 @@
      character(len=nch) :: units_GMI   ! GMI chemistry (GEOS-5)
      character(len=nch) :: units_OCS   ! OCS chemistry (ACHEM)
      character(len=nch) :: units_NI    ! Nitrate
-     character(len=nch) :: units_TR    ! passive tracers
 
 !    CF Style metadata
 !    -----------------
@@ -257,7 +254,6 @@ CONTAINS
    call parserc_ ( 'XX', this%doing_XX, this%n_XX, this%units_XX )
    call parserc_ ( 'PC', this%doing_PC, this%n_PC, this%units_PC )
    call parserc_ ( 'OCS', this%doing_OCS, this%n_OCS, this%units_OCS )
-   call parserc_ ( 'TR', this%doing_TR, this%n_TR, this%units_TR )
 
 !  Set internal indices
 !  --------------------
@@ -280,7 +276,6 @@ CONTAINS
    call setidx_ ( this%doing_XX, this%n_XX, this%i_XX, this%j_XX )
 !  call setidx_ ( this%doing_PC, this%n_PC, this%i_PC, this%j_PC )
    call setidx_ ( this%doing_OCS, this%n_OCS, this%i_OCS, this%j_OCS )
-   call setidx_ ( this%doing_TR, this%n_TR, this%i_TR, this%j_TR )
 
 !  Allocate memory in registry
 !  ---------------------------
@@ -344,8 +339,6 @@ CONTAINS
 !                  this%units_PC,  this%i_PC, this%j_PC )
    call setmeta_ ( this%doing_OCS,  'ocs', 'Carbonyl Sulfide', &
                    this%units_OCS,  this%i_OCS, this%j_OCS )
-   call setmeta_ ( this%doing_TR,  'TR', 'Passive Tracers', &
-                   this%units_TR,  this%i_TR, this%j_TR )
 		   
    call I90_Release()
 
@@ -608,7 +601,6 @@ RealNames: IF( ier .EQ. 0 ) THEN
    this%doing_OCS = .false.   ! ACHEM chemistry (OCS)
    this%doing_NI = .false.    ! Nitrate
    this%doing_GMI = .false.   ! GMI chemistry (GEOS-5)
-   this%doing_TR = .false.    ! passive tracers
    deallocate ( this%vname, this%vtitle, this%vunits, this%fscav, &
                 this%rhop, this%molwght, this%rlow, this%rup, this%rmed, &
                 this%sigma, this%fNum, this%Hcts, stat=ios )
@@ -682,7 +674,6 @@ end subroutine Chem_RegistryDestroy
    IF ( reg%doing_XX ) ActiveList = TRIM(ActiveList)//'  XX'
    IF ( reg%doing_PC ) ActiveList = TRIM(ActiveList)//'  PC'
    IF ( reg%doing_OCS ) ActiveList = TRIM(ActiveList)//'  OCS'
-   IF ( reg%doing_TR ) ActiveList = TRIM(ActiveList)//'  TR'
    
    PRINT *
    PRINT *, 'Active chemistry components:',TRIM(ActiveList)
@@ -706,7 +697,6 @@ end subroutine Chem_RegistryDestroy
    IF ( reg%doing_XX ) CALL reg_prt_( 'XX', reg%n_XX, reg%i_XX, reg%j_XX )
 !  IF ( reg%doing_PC ) CALL reg_prt_( 'PC', reg%n_PC, reg%i_PC, reg%j_PC )
    IF ( reg%doing_OCS ) CALL reg_prt_( 'OCS', reg%n_OCS, reg%i_OCS, reg%j_OCS )
-   IF ( reg%doing_TR ) CALL reg_prt_( 'TR', reg%n_TR, reg%i_TR, reg%j_TR )
 
    IF ( reg%doing_GOCART ) & 
         CALL reg_prt_( 'GOCART is a COMPOSITE and', &

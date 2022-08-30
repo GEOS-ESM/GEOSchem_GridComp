@@ -16,10 +16,6 @@
 #  NOTES: The water vapor and ozone tracers are not really being used
 #         in GEOS-5. They are still kept for compatibility with GEOS-4.
 #
-#         Beginning with Heracles-1_0, four TR tracers are enabled in the 
-#         default configuration. For the complete list of TR tracers, see 
-#         Chem_MieRegistry.rc.
-#
 #         StratChem can be run with Full or Reduced equation sets.
 #         When running Full,    the string SC_f should be changed to SC.
 #         When running Reduced, the string SC_r should be changed to SC.
@@ -63,7 +59,6 @@ doing_GMI: no   # &YesNo GMI chemistry (GEOS-5)
 doing_XX:  no   # &YesNo generic tracer
 doing_PC:  yes  # parameterized chemistry (GEOS-5)
 doing_OCS: no   # ACHEM chemistry (OCS)
-doing_TR:  yes  # &YesNo run passive tracers?
 
 # You can select the number of bins (e.g., particle size)
 # for each of the constituents. Note nbins>1 may not be
@@ -91,7 +86,6 @@ nbins_PC:       1   # parameterized chemistry (GEOS-5)
 nbins_GMI:     72   # GMI chemistry (GEOS-5)
 nbins_XX_GMI:  48   # generic tracer
 nbins_OCS:      1   # ACHEM chemistry (OCS)
-nbins_TR:       4   # passive tracers
 
 # Units for each constituent
 # --------------------------
@@ -114,7 +108,6 @@ units_XX:  'mol mol-1'   # generic tracer
 units_PC:  'kg kg-1'     # parameterized chemistry (GEOS-5)
 units_GMI: 'mol mol-1'   # GMI chemistry (GEOS-5)
 units_OCS: 'kg kg-1'     # ACHEM chemistry (OCS)
-units_TR:  'mol mol-1'   # passive tracers
 
 # Variable names to override defaults.  Optional.  Name and Units must 
 # be 1 token. Long names can be more than one token.
@@ -535,54 +528,6 @@ NUMDENS     cm-3        Total number density
 T2M15d      K           Daily T2M time average
 ::
 
-variable_table_TR::
-
-# Name     Units        Long Name
-# -----    ------       --------------------------------
-aoa          days       Age of air (uniform source) tracer
-e90       'mol mol-1'   Constant burden 90 day tracer
-Rn222     'kg kg-1'     Radon-222
-CH3I      'mol mol-1'   Methyl iodide
-Pb210     'kg kg-1'     Lead-210
-nh_5      'mol mol-1'   Northern Hemisphere 5 day tracer
-nh_50     'mol mol-1'   Northern Hemisphere 50 day tracer
-aoa_nh       days       Age of air northern hemisphere tracer
-st80_25   'mol mol-1'   Stratospheric source 25 day tracer
-CO_25     'mol mol-1'   Anthro CO 25 day tracer
-CO_50     'mol mol-1'   Anthro CO 50 day tracer
-CO_50_ea  'mol mol-1'   Anthro CO 50 day tracer East Asia
-CO_50_na  'mol mol-1'   Anthro CO 50 day tracer North America
-CO_50_eu  'mol mol-1'   Anthro CO 50 day tracer Europe
-CO_50_sa  'mol mol-1'   Anthro CO 50 day tracer South Asia
-SF6       'mol mol-1'   Sulfur Hexafluoride tracer
-e90_n     'mol mol-1'   Constant burden 90 day tracer 40N-pole emiss
-e90_s     'mol mol-1'   Constant burden 90 day tracer 40S-pole emiss
-Be7       'kg kg-1'     Beryllium radionuclide 7(Be)
-Be10      'kg kg-1'     Beryllium radionuclide 10(Be)
-Be7s      'kg kg-1'     Beryllium radionuclide 7(Be) strat-source
-Be10s     'kg kg-1'     Beryllium radionuclide 10(Be) strat-source
-Pb210s    'kg kg-1'     Lead-210 strat-source
-CO_GLB    'mol mol-1'   CO 50 day tracer Global CMIP6+M2G
-CO_NAM    'mol mol-1'   CO 50 day tracer North America CMIP6+M2G
-CO_EUR    'mol mol-1'   CO 50 day tracer Europe CMIP6+M2G
-CO_SAS    'mol mol-1'   CO 50 day tracer South Asia CMIP6+M2G
-CO_EAS    'mol mol-1'   CO 50 day tracer East Asia CMIP6+M2G
-CO_SEA    'mol mol-1'   CO 50 day tracer Southeast Asia CMIP6+M2G
-CO_ANZ    'mol mol-1'   CO 50 day tracer Australia & New Zealand CMIP6+M2G
-CO_NAF    'mol mol-1'   CO 50 day tracer North Africa CMIP6+M2G
-CO_RAF    'mol mol-1'   CO 50 day tracer Rest of Africa CMIP6+M2G
-CO_MDE    'mol mol-1'   CO 50 day tracer Middle East CMIP6+M2G
-CO_CAM    'mol mol-1'   CO 50 day tracer Central America CMIP6+M2G
-CO_SAM    'mol mol-1'   CO 50 day tracer South America CMIP6+M2G
-CO_RBU    'mol mol-1'   CO 50 day tracer Russia & Belarus & Ukraine CMIP6+M2G
-CO_CAS    'mol mol-1'   CO 50 day tracer Central Asia CMIP6+M2G
-CO_ARC    'mol mol-1'   CO 50 day tracer Arctic CMIP6+M2G
-CO_from_CH4 'mol mol-1' CO from global average CH4 oxidation
-stOX      'mol mol-1'   Strat Ozone with chemical loss
-aoa_bl       days       Age of air above boundary layer
-::
-
-
 #........................................................................
 
 #               -------------------
@@ -610,7 +555,6 @@ advect_XX:  no   # generic tracer
 advect_PC:  yes  # parameterized chemistry (GEOS-5)
 advect_GMI: yes  # GMI chemistry (GEOS-5)
 advect_OCS: yes  # ACHEM chemistry (OCS)
-advect_TR:  yes  # passive tracers
 
 # Whether to diffuse the constituent
 # ----------------------------------
@@ -634,5 +578,4 @@ diffuse_XX:  yes  # generic tracer
 diffuse_PC:  yes  # parameterized chemistry (GEOS-5)
 diffuse_GMI: yes  # GMI chemistry (GEOS-5)
 diffuse_OCS: yes  # ACHEM chemistry (OCS)
-diffuse_TR:  yes  # passive tracers
 
