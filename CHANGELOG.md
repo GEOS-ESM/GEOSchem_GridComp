@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Removed diagnostic messages for GMI isoprene emissions
+- Removed code related to TR from Chem_Registry; now handled with Runtime_Registry
 
 ### Changed
 
