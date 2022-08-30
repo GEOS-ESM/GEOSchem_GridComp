@@ -7,12 +7,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-
 ### Added
 ### Removed
 ### Changed
 ### Fixed
 
+## [1.10.1] - 2022-08-30
+
+### Added
+
+- Added new Runtime_Registry module in Shared/Chem_Base, for Chem children to use instead of Chem_Registry.
+
+### Removed
+
+- Removed diagnostic messages for GMI isoprene emissions
+- Removed code related to TR from Chem_Registry; now handled with Runtime_Registry
+
+### Changed
+
+- GMI photolysis now uses "random cloud overlap" instead of "maximal overlap"
+- GMI now enforces a floor value for transported species
+- TR now uses Runtime_Registry instead of Chem_Registry
+
+### Fixed
+
+- Fixed typo in yaml files
 
 ## [1.10.0] - 2022-08-16
 

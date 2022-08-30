@@ -1709,8 +1709,6 @@ CONTAINS
    TYPE(ESMF_Alarm)                  :: PredictorIsActive
    LOGICAL                           :: doingPredictorNow
 
-   LOGICAL                           :: RAS_NO_NEG  ! Whether RAS will guard against negatives
-
 !  Get my name and set-up traceback handle
 !  ---------------------------------------
    CALL ESMF_GridCompGet(GC, NAME=COMP_NAME, CONFIG=CF, GRID=grid, __RC__)
@@ -1754,22 +1752,22 @@ CONTAINS
    CALL MAPL_GetPointer(impChem, rh2, 'RH2', __RC__)
    w_c%rh = rh2
 
-!  Assure non-negative volumetric mixing ratios [mole fractions]
-!  -------------------------------------------------------------
-   CALL ESMF_ConfigGetAttribute( CF, RAS_NO_NEG, Label='RAS_NO_NEG:', default=.FALSE. , __RC__)
-   IF ( .NOT. RAS_NO_NEG ) THEN
-     DO n = ChemReg%i_GMI, ChemReg%j_GMI
-! original approach - make all values no less than a tiny positive number:
-       CALL Chem_UtilNegFiller(w_c%qa(n)%data3d, DELP, i2, j2, QMIN=TINY(1.0))
+!  Guard against overflow/underflow due to near-zero numbers (mixing ratios)
+!  -------------------------------------------------------------------------
+#define FLOOR_VALUE 1.0e-30
+   DO n = ChemReg%i_GMI, ChemReg%j_GMI
 ! debug print:
-!      IF(  ANY(w_c%qa(n)%data3d < 1.0e-30) ) THEN
-!        m = COUNT( w_c%qa(n)%data3d < 1.0e-30 )
-!        PRINT*,'GMI SPECIES TOO SMALL (species,count):', n-ChemReg%i_GMI+1, m
-!      ENDIF
-! first take:
-!     WHERE(w_c%qa(n)%data3d < 1.0e-30) w_c%qa(n)%data3d=1.0e-30
-     END DO
-   END IF
+!    IF(  ANY(w_c%qa(n)%data3d < FLOOR_VALUE) ) THEN
+!      m = COUNT( w_c%qa(n)%data3d < FLOOR_VALUE )
+!      PRINT*,'NEGDIAG:GMI SPECIES TOO SMALL (species,count):', n-ChemReg%i_GMI+1, m
+!    ENDIF
+! original approach - steal from the column to fill negatives
+!                     this leads to NOx issues in stratosphere
+!      CALL Chem_UtilNegFiller(w_c%qa(n)%data3d, DELP, i2, j2, QMIN=TINY(1.0))
+! for now, just impose a floor
+     WHERE(w_c%qa(n)%data3d < FLOOR_VALUE) w_c%qa(n)%data3d=FLOOR_VALUE
+   END DO
+#undef FLOOR_VALUE
 
 !  Occasionally, MAPL_UNDEFs appear in the imported tropopause pressures,
 !  TROPP. To avoid encountering them, save the most recent valid tropopause 
@@ -2359,6 +2357,15 @@ CONTAINS
      END IF
 
     END DO
+
+!  -------------------------------------------------------------
+!    DO n = ChemReg%i_GMI, ChemReg%j_GMI
+!     IF(  ANY(w_c%qa(n)%data3d < 0.0) ) THEN
+!       m = COUNT( w_c%qa(n)%data3d < 0.0 )
+!       PRINT*,'NEGDIAG:GMI SPECIES finish NEGATIVE (phase,species,count):', phase, n-ChemReg%i_GMI+1, m
+!     ENDIF
+!    END DO
+!  -------------------------------------------------------------
 
 !  Clean up
 !  --------
