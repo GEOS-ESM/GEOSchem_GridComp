@@ -7,22 +7,70 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-
 ### Added
 ### Removed
 ### Changed
 ### Fixed
 
-### Fixed
-- Fixed Dry Deposition in GMI
+## [1.10.1] - 2022-08-30
+
+### Added
+
+- Added new Runtime_Registry module in Shared/Chem_Base, for Chem children to use instead of Chem_Registry.
+
+### Removed
+
+- Removed diagnostic messages for GMI isoprene emissions
+- Removed code related to TR from Chem_Registry; now handled with Runtime_Registry
 
 ### Changed
-- Changed GMI from internal SZA calculation to using MAPL SZA.
 
-## [1.9.4] - 2022-05-31
+- GMI photolysis now uses "random cloud overlap" instead of "maximal overlap"
+- GMI now enforces a floor value for transported species
+- TR now uses Runtime_Registry instead of Chem_Registry
 
 ### Fixed
-- Fixed ExtData2G YAML files for AMIP emissions to handle magic date and removed input file for AMIP.20C
+
+- Fixed typo in yaml files
+
+## [1.10.0] - 2022-08-16
+
+### Added
+
+- Add YAML validator GitHub Action
+  - This action makes sure all YAML files are valid (to a relaxed standard)
+- Added flag to control whether GMI feeds back QV value to rest of model
+
+### Fixed
+
+- Fixed Dry Deposition in GMI
+- Fixed small memory leak in GMI
+
+### Changed
+
+- Changed GMI from internal SZA calculation to using MAPL SZA.
+- Changed GMI to use (CMIP6) emissions and boundary conditions from CCMI REF-D1
+- Moved external data files (like emissions) from personal space to GMAO shared space
+- Improved diagnostic print statements
+
+## [1.9.6] - 2022-08-04
+
+### Fixed
+
+- Updated CI to work with latest GEOSgcm
+- Added QuickChem repo to `.gitignore`
+
+## [1.9.5] - 2022-06-22
+
+### Fixed
+
+- Fix YAML typo in `GEOSachem_GridComp/GEOSachem_ExtData.yaml`
+
+## [1.9.4] - 2022-05-31 
+
+### Fixed
+
+- Fixed ExtData2G YAML files for OPS and AMIP emissions to handle magic date and removed input file for AMIP.20C
 
 ## [1.9.3] - 2022-05-25
 

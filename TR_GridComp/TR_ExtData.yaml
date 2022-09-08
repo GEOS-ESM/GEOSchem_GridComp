@@ -38,6 +38,10 @@ Samplings:
     update_reference_time: '0'
   TR_sample_1:
     extrapolation: persist_closest
+  TR_sample_2:
+    update_frequency: PT24H
+    update_offset: PT12H
+    update_reference_time: '0'
 
 Exports:
   CO_CMIP6_ANTHRO:
@@ -65,11 +69,33 @@ Exports:
     regrid: CONSERVE
     sample: TR_sample_0
     variable: co_bionmvoc
+  DD_OX:
+    collection: /dev/null
   HTAP2_REGION_MASK_COASTAL_MOD:
     collection: TR_HTAP2.region_map_modified_coastlines.x720_y360.nc4
     regrid: VOTE
     sample: TR_sample_1
     variable: region_map
+  OX_TR:
+    collection: /dev/null
+  QQK005:
+    collection: /dev/null
+  QQK007:
+    collection: /dev/null
+  QQK027:
+    collection: /dev/null
+  QQK028:
+    collection: /dev/null
+  QQK150:
+    collection: /dev/null
+  QQK170:
+    collection: /dev/null
+  QQK179:
+    collection: /dev/null
+  QQK216:
+    collection: /dev/null
+  QQK235:
+    collection: /dev/null
   SRC_2D_CH3I:
     collection: TR_unity.x144_y91.nc
     linear_transformation:
@@ -154,4 +180,52 @@ Exports:
     regrid: VOTE
     sample: TR_sample_1
     variable: REGION_MASK
+
+Derived:
+  SRC_2D_CO_ANZ:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_ARC:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_CAM:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_CAS:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_EAS:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_EUR:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_GLB:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_MDE:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_NAF:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_NAM:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_RAF:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_RBU:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_SAM:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_SAS:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_SEA:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+
 

@@ -20,7 +20,7 @@
 
    USE Chem_Mod              ! Chemistry Base Class
    USE Chem_ArrayMod
-   USE Chem_RegistryMod
+   USE Runtime_RegistryMod
    USE Chem_UtilMod          ! I/O
 
    USE OVP,                    ONLY:  OVP_init, OVP_end_of_timestep_hms, OVP_mask, OVP_apply_mask
@@ -261,35 +261,35 @@
   TYPE TR_State
 
      PRIVATE
-     type(ESMF_Config)           :: CF                ! Private Config
+     type(ESMF_Config)               :: CF                ! Private Config
 
-     type(ESMF_Grid)             :: grid              ! Grid
+     type(ESMF_Grid)                 :: grid              ! Grid
 
-     type(Chem_Registry), pointer:: chemReg => NULL()
+     type(Runtime_Registry), pointer :: registry => NULL()
 
-     type(MAPL_SimpleBundle)     :: qa                ! Passive tracers
+     type(MAPL_SimpleBundle)         :: qa                ! Passive tracers
 
-     real                        :: dt                ! Model time step
+     real                            :: dt                ! Model time step
 
-     type(TR_TracerKit),  pointer:: kit     => NULL() ! Set of values common to all tracers
+     type(TR_TracerKit),  pointer    :: kit     => NULL() ! Set of values common to all tracers
 
-     type(TR_TracerSpec), pointer:: spec(:) => NULL() ! Tracer specific values
+     type(TR_TracerSpec), pointer    :: spec(:) => NULL() ! Tracer specific values
 
-!    integer                     :: model             ! MAM7 or MAM3
-!    type(MAM_MetaSpec)          :: meta              ! MAM meta data
+!    integer                         :: model             ! MAM7 or MAM3
+!    type(MAM_MetaSpec)              :: meta              ! MAM meta data
 
-!    real                        :: femisSS           ! Seasalt emission tuning parameter
-!    real                        :: femisDU           ! Dust emission tuning parameter
+!    real                            :: femisSS           ! Seasalt emission tuning parameter
+!    real                            :: femisDU           ! Dust emission tuning parameter
 
-!    logical                     :: dry_removal       ! turn on/off dry removal processes
-!    logical                     :: wet_removal       ! turn on/off wet removal processes
-!    logical                     :: nucleation        ! turn on/off nucleation process
-!    logical                     :: condensation      ! turn on/off condensation process
-!    logical                     :: coagulation       ! turn on/off coagulation process
+!    logical                         :: dry_removal       ! turn on/off dry removal processes
+!    logical                         :: wet_removal       ! turn on/off wet removal processes
+!    logical                         :: nucleation        ! turn on/off nucleation process
+!    logical                         :: condensation      ! turn on/off condensation process
+!    logical                         :: coagulation       ! turn on/off coagulation process
 
-     logical                     :: verbose           ! turn on/off more verbose messages
+     logical                         :: verbose           ! turn on/off more verbose messages
 
-     integer                     :: pet               ! ID of the persistent execution thread
+     integer                         :: pet               ! ID of the persistent execution thread
 
   END TYPE TR_State
 
@@ -339,10 +339,10 @@ CONTAINS
 
 !   Local derived type aliases
 !   --------------------------
-    type (TR_State), pointer       :: myState   ! internal state
-    type (TR_Wrap)                 :: wrap
-    type (Chem_Registry), pointer  :: r
-    TYPE (ESMF_VM)                 :: vm
+    type (TR_State), pointer          :: myState   ! internal state
+    type (TR_Wrap)                    :: wrap
+    type (Runtime_Registry), pointer  :: r
+    TYPE (ESMF_VM)                    :: vm
 
     character(len=ESMF_MAXSTR) :: comp_name
 
@@ -397,10 +397,10 @@ CONTAINS
 !   It might be better to break off the Passive Tracers into a
 !    separate file, but for now use the Chem Registry. (MeM 5.27.14)
 !   ----------------------------------
-    allocate ( myState%chemReg, __STAT__ )
-    myState%chemReg = Chem_RegistryCreate ( STATUS )
+    allocate ( myState%registry, __STAT__ )
+    myState%registry = Runtime_RegistryCreate ( 'TR_Registry.rc', 'TR_table::', STATUS )
     VERIFY_(STATUS)
-    r => myState%chemReg   ! short-hand
+    r => myState%registry   ! short-hand
 
 !   Load private Config Attributes
 !   ------------------------------
@@ -819,10 +819,12 @@ CONTAINS
 
 ! Got this from GMICHEM_InternalSpec___.h
 
-  IF ( r%doing_GMI ) THEN
+! We no longer use Chem_Registry, so we don't know if GMI is running
+! Add these entries to ExtData.rc
+! IF ( r%doing_GMI ) THEN
 
      call MAPL_AddImportSpec(GC,                                           &
-        SHORT_NAME         = 'OX',                                         &
+        SHORT_NAME         = 'OX_TR',                                      &
         LONG_NAME          = 'Ozone',                                      &
         UNITS              = 'mol mol-1',                                  &
         DIMS               = MAPL_DimsHorzVert,                            &
@@ -921,7 +923,7 @@ CONTAINS
         VLOCATION          = MAPL_VLocationCenter,                                                                                                    &
         RESTART            = MAPL_RestartSkip,                                                                                                        &
                                                        __RC__  )
-  END IF
+! END IF
 
 !! --------------------------------------
 
@@ -940,10 +942,10 @@ CONTAINS
 !!
     lai_needed = .FALSE.
 
-    allocate ( str_array( r%j_TR - r%i_TR + 1), __STAT__ )
+    allocate ( str_array( r%nq ), __STAT__ )
     s_count = 0
 
-    do n = r%i_TR, r%j_TR
+    do n = 1, r%nq
 
      rcfilen = 'TR_GridComp---' // TRIM(r%vname(n)) // '.rc'
 
@@ -1185,7 +1187,7 @@ CONTAINS
 !!  Add the 3D Tracer fields listed in the Registry, to the INTERNAL state
 !!  Also add diagnostic EXPORTs
 !!
-    do n = r%i_TR, r%j_TR
+    do n = 1, r%nq
 
      rcfilen = 'TR_GridComp---' // TRIM(r%vname(n)) // '.rc'
 
@@ -1366,10 +1368,10 @@ CONTAINS
 
     character(len=ESMF_MAXSTR)    :: comp_name
 
-    type (Chem_Registry), pointer :: r
+    type (Runtime_Registry), pointer :: r
     type (TR_TracerKit),  pointer :: k
 
-    integer                       :: n, ichem
+    integer                       :: n
 
     REAL, POINTER, DIMENSION(:,:) :: lats
     REAL, POINTER, DIMENSION(:,:) :: lons
@@ -1445,15 +1447,15 @@ CONTAINS
    call extract_ ( GC, CLOCK, myState, GRID, CF, nymd, nhms, cdt, __RC__ )
 
 
-!  Shorthand to reference the Chem Registry:
-   r => myState%chemReg
+!  Shorthand to reference the Runtime Registry for TR:
+   r => myState%registry
 
 
 !  Init the Tracer Kit of values
 !  -----------------------------
    k => myState%kit   ! short-hand
 
-     k%tr_count = r%n_TR
+     k%tr_count = r%nq
 
 !    Local dimensions
 !    ----------------
@@ -1498,16 +1500,13 @@ CONTAINS
 
 !  Allocate storage for all of the Tracer Specs
 !  --------------------------------------------
-   allocate( myState%spec(r%n_TR), __STAT__ )
+   allocate( myState%spec(r%nq), __STAT__ )
 
 !  Initialize the Tracer Specs  (parse the RC files)
 !  -------------------------------------------------
-   do n = 1, r%n_TR
+   do n = 1, r%nq
 
-     ichem = r%i_TR + n - 1   ! ichem = index of tracer in the chem registry
-
-     ! If we TRIM the first 2 args, we do not adequately clear the contents of the receiving strings
-     call TR_init_tracer_spec_ ( r%vname(ichem), r%vunits(ichem), myState%kit, myState%CF, myState%spec(n), &
+     call TR_init_tracer_spec_ ( r%vname(n), r%vunits(n), myState%kit, myState%CF, myState%spec(n), &
                                   IMPORT, EXPORT,  nymd, nhms, cdt, __RC__ )
 
    end do
@@ -1522,9 +1521,9 @@ CONTAINS
 
 !  Bundle the passive tracers
 !  -------------------------------------------------
-   do n = r%i_TR, r%j_TR
+   do n = 1, r%nq
 
-     if ( n .EQ. r%i_TR ) then
+     if ( n .EQ. 1 ) then
        var_names =                           TRIM(r%vname(n))
      else
        var_names = TRIM(var_names) // ',' // TRIM(r%vname(n))
@@ -1539,7 +1538,7 @@ CONTAINS
 
 !  Optional elements of the Tracer Kit
 !  -------------------------------------------------
-   IF ( ANY(myState%spec(1:r%n_TR)%GMI_dry_deposition) ) THEN
+   IF ( ANY(myState%spec(1:r%nq)%GMI_dry_deposition) ) THEN
 
      allocate ( k%ireg (k%i1 : k%i2, k%j1 : k%j2       ), __STAT__ )
      allocate ( k%iland(k%i1 : k%i2, k%j1 : k%j2, NTYPE), __STAT__ )
@@ -1926,7 +1925,7 @@ CONTAINS
 !  Free up the dynamically allocated memory
 !  ----------------------------------------
 #define test_and_dealloc(A) if(associated(A)) deallocate(A)
-   deallocate( myState%chemReg )
+   deallocate( myState%registry )
 
    do i = 1, myState%kit%tr_count
      do j = 1, myState%spec(i)%surface_constraint_count
@@ -2098,8 +2097,8 @@ CONTAINS
 
 ! !INPUT PARAMETERS:
 
-   CHARACTER(LEN=128),  INTENT(IN)          :: tname      ! Name of the tracer
-   CHARACTER(LEN=128),  INTENT(IN)          :: tunits     ! Units for the tracer
+   CHARACTER(LEN=*),    INTENT(IN)          :: tname      ! Name of the tracer
+   CHARACTER(LEN=*),    INTENT(IN)          :: tunits     ! Units for the tracer
    TYPE(TR_TracerKit),  INTENT(IN), pointer :: kit        ! A set of values common to all passive tracers
    INTEGER,             INTENT(IN)          :: nymd, nhms ! time
    REAL,                INTENT(IN)          :: cdt        ! chemical timestep (secs)

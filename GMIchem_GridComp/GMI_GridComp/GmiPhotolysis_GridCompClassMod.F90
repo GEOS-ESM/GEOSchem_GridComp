@@ -1208,7 +1208,6 @@ CONTAINS
 !  Input fields from GEOS-5
 !  ------------------------
    REAL, POINTER, DIMENSION(:,:) :: cldtt, albvf
-!  REAL, POINTER, DIMENSION(:,:) :: cnv_frc, frland
 
    REAL, POINTER, DIMENSION(:,:,:) :: airdens, ple, Q, T, zle
    REAL, POINTER, DIMENSION(:,:,:) :: fcld, taucli, tauclw, ql, cnv_mfc
@@ -1295,16 +1294,13 @@ CONTAINS
    REAL(KIND=DBL), ALLOCATABLE :: kel(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: humidity(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: totalCloudFraction(:,:,:)
-   REAL(KIND=DBL), ALLOCATABLE :: tau_cloud(:,:,:)
+   REAL(KIND=DBL), ALLOCATABLE :: tau_cloud(:,:,:)           ! grid-box avg optical depth
    REAL(KIND=DBL), ALLOCATABLE :: tau_clw(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: tau_cli(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: clwc(:,:,:)
-   REAL(KIND=DBL), ALLOCATABLE :: cmf(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: relativeHumidity(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: moistq(:,:,:)
 !... for CloudJ
-!  REAL(KIND=DBL), ALLOCATABLE :: frland_(:,:)
-!  REAL(KIND=DBL), ALLOCATABLE :: cnv_frc_(:,:)
    REAL(KIND=DBL), ALLOCATABLE :: qi_(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: ql_(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: ri_(:,:,:)
@@ -1395,13 +1391,10 @@ CONTAINS
    ALLOCATE(totalCloudFraction(i1:i2,j1:j2,1:km), __STAT__ )
    ALLOCATE(         tau_cloud(i1:i2,j1:j2,1:km), __STAT__ )
    ALLOCATE(              clwc(i1:i2,j1:j2,1:km), __STAT__ )
-   ALLOCATE(               cmf(i1:i2,j1:j2,1:km), __STAT__ )
    ALLOCATE(  relativeHumidity(i1:i2,j1:j2,1:km), __STAT__ )
    ALLOCATE(            moistq(i1:i2,j1:j2,1:km), __STAT__ )
    ALLOCATE(           tau_clw(i1:i2,j1:j2,1:km), __STAT__ )
    ALLOCATE(           tau_cli(i1:i2,j1:j2,1:km), __STAT__ )
-!  ALLOCATE(          cnv_frc_(i1:i2,j1:j2),      __STAT__ )
-!  ALLOCATE(           frland_(i1:i2,j1:j2),      __STAT__ )
    ALLOCATE(               qi_(i1:i2,j1:j2,1:km), __STAT__ )
    ALLOCATE(               ql_(i1:i2,j1:j2,1:km), __STAT__ )
    ALLOCATE(               ri_(i1:i2,j1:j2,1:km), __STAT__ )
@@ -1571,7 +1564,6 @@ CONTAINS
      &               self%cellArea, surf_alb, fracCloudCover,                  &
      &               tau_cloud, tau_clw, tau_cli, totalCloudFraction,          &
      &               qi_, ql_, ri_, rl_,                                       &
-!    &               cnv_frc_, frland_,                                        &
      &               self%overheadO3col, self%qjgmi, gridBoxThickness,         &
      &               self%optDepth, self%eRadius, self%tArea, self%odAer,      &
      &               relativeHumidity, self%odMdust, self%dust, self%wAersl,   &
@@ -1614,12 +1606,11 @@ CONTAINS
    VERIFY_(STATUS)
 
    DEALLOCATE(pl, mass, press3c, press3e, gridBoxThickness, kel, humidity, &
-              totalCloudFraction, tau_cloud, clwc, cmf, relativeHumidity, &
+              totalCloudFraction, tau_cloud, clwc, relativeHumidity, &
               moistq, STAT=STATUS)
    VERIFY_(STATUS)
 
    DEALLOCATE(tau_clw, tau_cli, qi_, ql_, ri_, rl_, ZTH, SLR, ZTHP, STAT=STATUS)
-!  DEALLOCATE(cnv_frc_, frland_,                    STAT=STATUS)
    VERIFY_(STATUS)
 
 ! IMPORTANT: Reset this switch to .TRUE. after first pass.
@@ -2585,10 +2576,6 @@ CONTAINS
      CALL MAPL_GetPointer(impChem,        rl,      'RL', RC=STATUS)
      VERIFY_(STATUS)
    END IF
-!  CALL MAPL_GetPointer(impChem,   cnv_frc, 'CNV_FRC', RC=STATUS)
-!  VERIFY_(STATUS)
-!  CALL MAPL_GetPointer(impChem,    frland,  'FRLAND', RC=STATUS)
-!  VERIFY_(STATUS)
 
 !  Export state pointers
 !  ---------------------
@@ -2659,8 +2646,6 @@ CONTAINS
     CALL pmaxmin('TROPP:', w_c%qa(i)%data3d(:,:,km), qmin, qmax, iXj, 1, 0.01 )
     CALL pmaxmin('CLDTT:', cldtt, qmin, qmax, iXj, 1, 1. )
     CALL pmaxmin('ALBEDO:', albvf, qmin, qmax, iXj, 1, 1. )
-!   CALL pmaxmin('CNV_FRC:', cnv_frc, qmin, qmax, iXj, 1, 1. )
-!   CALL pmaxmin('FRLAND:', frland, qmin, qmax, iXj, 1, 1. )
    END IF Validate
 
 !  Dust and aerosols are (instead!) part of the export state when GMICHEM is the AERO provider.
@@ -2735,42 +2720,40 @@ CONTAINS
 ! The most recent valid tropopause pressures are stored in T2M15D(:,:,km)
 ! -----------------------------------------------------------------------   ------------       -------------
   i = w_c%reg%j_XX
-  tropopausePress(i1:i2,j1:j2) = w_c%qa(i)%data3d(i1:i2,j1:j2,km)*Pa2hPa    ! Pa               hPa
-  pctm2(i1:i2,j1:j2) = ple(i1:i2,j1:j2,km)*Pa2hPa                           ! Pa               hPa
-  fracCloudCover(i1:i2,j1:j2) = cldtt(i1:i2,j1:j2)                          ! fraction
+  tropopausePress(:,:) = w_c%qa(i)%data3d(:,:,km)*Pa2hPa                    ! Pa               hPa
+            pctm2(:,:) =              ple(:,:,km)*Pa2hPa                    ! Pa               hPa
+   fracCloudCover(:,:) =            cldtt(:,:)                              ! fraction
 
-! Layer means                                                               GEOS-5 Units       GMI Units
-! -----------                                                               ------------       -------------
-  DO k=1,km
-   kReverse = km-k+1                                                        ! Lid-to-surf      Surf-to-lid
-   press3c(i1:i2,j1:j2,kReverse) = pl(i1:i2,j1:j2,k)*Pa2hPa                 ! Pa               hPa
-   kel(i1:i2,j1:j2,kReverse) = T(i1:i2,j1:j2,k)                             ! K
-   humidity(i1:i2,j1:j2,kReverse) = Q(i1:i2,j1:j2,k)*ToGrPerKg              ! kg kg^{-1}       g kg^{-1}
-   totalCloudFraction(i1:i2,j1:j2,kReverse) = fcld(i1:i2,j1:j2,k)           ! fraction
-   clwc(i1:i2,j1:j2,kReverse) = ql(i1:i2,j1:j2,k)*ToGrPerKg                 ! kg kg^{-1}       g kg^{-1}
-   relativeHumidity(i1:i2,j1:j2,kReverse) = rh2(i1:i2,j1:j2,k)              ! fraction
-   moistq(i1:i2,j1:j2,kReverse) = dqdt(i1:i2,j1:j2,k)*ToGrPerKg*secPerDay   ! kg kg^{-1}s^{-1} g kg^{-1}d^{-1}
-   tau_cloud(i1:i2,j1:j2,kReverse) = (tauclw(i1:i2,j1:j2,k)+  &             ! 1
-                                      taucli(i1:i2,j1:j2,k))*fcld(i1:i2,j1:j2,k)
+! Multi-layer                                                            GEOS-5 Units       GMI Units
+! -----------                                                            ------------       -------------
+              press3c(:,:,km:1:-1) =   pl(:,:,1:km)*Pa2hPa               ! Pa               hPa
+                  kel(:,:,km:1:-1) =    T(:,:,1:km)                      ! K
+             humidity(:,:,km:1:-1) =    Q(:,:,1:km)*ToGrPerKg            ! kg kg^{-1}       g kg^{-1}
+   totalCloudFraction(:,:,km:1:-1) = fcld(:,:,1:km)                      ! fraction
+                 clwc(:,:,km:1:-1) =   ql(:,:,1:km)*ToGrPerKg            ! kg kg^{-1}       g kg^{-1}
+     relativeHumidity(:,:,km:1:-1) =  rh2(:,:,1:km)                      ! fraction
+               moistq(:,:,km:1:-1) = dqdt(:,:,1:km)*ToGrPerKg*secPerDay  ! kg kg^{-1}s^{-1} g kg^{-1}d^{-1}
 
-!   tau_clw(i1:i2,j1:j2,kReverse) =  tauclw(i1:i2,j1:j2,k)
-!   tau_cli(i1:i2,j1:j2,kReverse) =  taucli(i1:i2,j1:j2,k)
-   tau_clw(i1:i2,j1:j2,kReverse) =  tauclw(i1:i2,j1:j2,k)*fcld(i1:i2,j1:j2,k)
-   tau_cli(i1:i2,j1:j2,kReverse) =  taucli(i1:i2,j1:j2,k)*fcld(i1:i2,j1:j2,k)
 !...parameters for CloudJ
-       qi_(i1:i2,j1:j2,kReverse) =      qi(i1:i2,j1:j2,k)
-       ql_(i1:i2,j1:j2,kReverse) =      ql(i1:i2,j1:j2,k)
+                  qi_(:,:,km:1:-1) =   qi(:,:,1:km)
+                  ql_(:,:,km:1:-1) =   ql(:,:,1:km)
+
+!...compute grid-box optical depth from in-cloud OD
+!...use the exponent of 1.5 for random overlapping clouds
+!...(if you prefer to use maximally overlapping clouds, remove the exponent)
+              tau_clw(:,:,km:1:-1) = tauclw(:,:,1:km)*(fcld(:,:,1:km)**1.5)
+              tau_cli(:,:,km:1:-1) = taucli(:,:,1:km)*(fcld(:,:,1:km)**1.5)
+
+            tau_cloud(:,:,:) = tau_clw(:,:,:) + tau_cli(:,:,:)
+
    IF ( self%fastj_opt == 5 ) THEN
-       ri_(i1:i2,j1:j2,kReverse) =      ri(i1:i2,j1:j2,k)
-       rl_(i1:i2,j1:j2,kReverse) =      rl(i1:i2,j1:j2,k)
+                  ri_(:,:,km:1:-1) =      ri(:,:,1:km)
+                  rl_(:,:,km:1:-1) =      rl(:,:,1:km)
    ELSE
-       ri_ = 0.0
-       rl_ = 0.0
+                  ri_(:,:,:) = 0.0
+                  rl_(:,:,:) = 0.0
    ENDIF
-  END DO
-!...parameter for CloudJ
-! cnv_frc_(i1:i2,j1:j2)          = cnv_frc(i1:i2,j1:j2)
-!  frland_(i1:i2,j1:j2)          =  frland(i1:i2,j1:j2)
+
 ! These bounds are in Jules' RH code
 ! ----------------------------------
   WHERE(relativeHumidity < 0.00D+00) relativeHumidity = 0.00D+00
@@ -2778,33 +2761,25 @@ CONTAINS
 
 ! Layer edges                                                               GEOS-5 Units       GMI Units
 ! -----------                                                               ------------       -------------
-  DO k=0,km
-   kReverse = km-k
-   press3e(i1:i2,j1:j2,kReverse) = ple(i1:i2,j1:j2,k)*Pa2hPa                ! Pa               hPa
-  END DO
-
-  DO k=0,km-1
-   kReverse = km-k
-   cmf(i1:i2,j1:j2,kReverse) = cnv_mfc(i1:i2,j1:j2,k)                       ! kg m^{-2}s^{-1}
-  END DO
-
+  ! covers all km+1 edges:
+  press3e(:,:,km:0:-1) =     ple(:,:,0:km)*Pa2hPa                           ! Pa               hPa
 
 ! Surface Vis/UV albedoes are MAPL_UNDEF at night.  They
 ! are NOT weighted by cosine solar zenith angle during daytime.
 ! -------------------------------------------------------------
-  surf_alb(i1:i2,j1:j2) = albvf(i1:i2,j1:j2)
+  surf_alb(:,:) = albvf(:,:)
   WHERE(surf_alb > 2.00D+00) surf_alb = 0.00D+00
   WHERE(surf_alb > 1.00D+00) surf_alb = 1.00D+00
   WHERE(surf_alb < 0.00D+00) surf_alb = 0.00D+00
 
 ! Cell mass and thickness                                                   GEOS-5 Units       GMI Units
 ! -----------------------                                                   ------------       -------------
-   DO k=1,km
+  gridBoxThickness(:,:,km:1:-1) = zle(:,:,0:km-1)-zle(:,:,1:km)             ! m
+  DO k=1,km
     kReverse = km-k+1
     mass(:,:,kReverse)=airdens(:,:,k)*self%cellArea(:,:)* &                 ! kg
                        (zle(:,:,k-1)-zle(:,:,k))
-    gridBoxThickness(:,:,kReverse) = zle(:,:,k-1)-zle(:,:,k)                ! m
-   END DO
+  END DO
 
 ! Set the dust and aerosol diagnostic to zero
 ! -------------------------------------------

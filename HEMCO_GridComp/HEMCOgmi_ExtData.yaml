@@ -1,10 +1,10 @@
 Collections:
   HEMCOgmi_CLM4_PFT.geos.025x03125.esmf.nc:
-    template: /discover/nobackup/cakelle2/data/MEGAN_20180519/CLM4_PFT.geos.025x03125.esmf.nc
+    template: ExtData/g5chem/sfc/HEMCO/CLM4_PFT.geos.025x03125.esmf.nc
   HEMCOgmi_MEGAN2.1_EF.geos.025x03125.esmf.nc:
-    template: /discover/nobackup/cakelle2/data/MEGAN_20180519/MEGAN2.1_EF.geos.025x03125.esmf.nc
+    template: ExtData/g5chem/sfc/HEMCO/MEGAN2.1_EF.geos.025x03125.esmf.nc
   HEMCOgmi_NVOC.geos.1x1.esmf.nc:
-    template: /discover/nobackup/cakelle2/data/NVOC.geos.1x1.esmf.nc
+    template: ExtData/g5chem/sfc/HEMCO/NVOC.geos.1x1.esmf.nc
 
 Samplings:
   HEMCOgmi_sample_0:

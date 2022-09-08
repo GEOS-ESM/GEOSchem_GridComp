@@ -1345,7 +1345,7 @@ CONTAINS
    ! get MEGAN emissions pointers from HEMCO  (already kgC/m2/s)
       CALL MAPL_GetPointer(impChem,   PTR2D, 'GMI_ISOPRENE', RC=STATUS)
       VERIFY_(STATUS)
-      CALL MAPL_MaxMin('emiss_isop ptr in gmiEmiss:', PTR2D)
+!     CALL MAPL_MaxMin('emiss_isop ptr in gmiEmiss:', PTR2D)
       self%Emission%emiss_isop(:,:) = PTR2D(:,:)
       NULLIFY(PTR2D)
    END IF
