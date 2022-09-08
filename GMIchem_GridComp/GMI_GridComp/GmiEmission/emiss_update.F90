@@ -80,7 +80,7 @@
      &   i1, i2, ju1, j2, k1, k2, ilo, ihi, julo, jhi, i1_gl, i2_gl, ju1_gl, j2_gl, &
      &   ilong, num_species, doMEGANemission, doMEGANviaHEMCO, aefIsop, aefMbo, &
      &   aefMonot, isoLaiPrev, isoLaiCurr, isoLaiNext, pardif, pardir, T_15_AVG, &
-     &   emissionSpeciesLayers, exp_fac, mixPBL)
+     &   emissionSpeciesLayers, exp_fac, mixPBL, press3c )
 
       use GmiArrayBundlePointer_mod, only : t_GmiArrayBundle
       use GmiTimeControl_mod       , only : GmiSplitDateTime
@@ -158,7 +158,8 @@
       real*8 , intent(in) :: exp_fac(NPULSE)    ! pulsing decay per time step (day^-1)
       logical, intent(in) :: mixPBL             ! whether to explicitly distribute
                                                 ! aerosol emissions within the PBL
-
+      real*8 , intent(in) :: press3c(i1:i2,ju1:j2,k1:k2)
+      
       INTEGER, INTENT(IN   ) :: emissionSpeciesLayers(num_species)
 
       type (t_GmiArrayBundle), intent(inout) :: concentration(num_species)
@@ -299,7 +300,6 @@
 !=================================================
 !   Do Galactic Cosmic Ray Emissions of N and NO
 !=================================================
-
       if (do_gcr) then
         if (pr_diag) then
           Write (6,*) 'Add_Emiss_Gsfc called by ', loc_proc
@@ -309,7 +309,8 @@
 !       ===================
      &    (mass, concentration, nymd, tdt, &
      &     IAN, IMGAS, INO, &
-     &     pr_diag, loc_proc, i1, i2, ju1, j2, k1, k2, num_species)
+     &     pr_diag, loc_proc, i1, i2, ju1, j2, k1, k2, num_species, &
+     &     latdeg, press3c, kel )
       end if
 
 

@@ -188,6 +188,7 @@
   EM_ACET   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | acetone_emissions
   EM_CH4   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | methane_emissions
   EM_LGTNO          | mol mol-1 s-1  | xyz | C |    |	|   |	  | NO_emissions_from_lightning
+  EM_GCR_NO         | molec cm-3 s-1 | xyz | C |    |	|   |	  | NO_emissions_from_galactic_cosmic_rays
   SZAPHOT  	    | deg            | xy  |   |    |	|   |	  | solar_zenith_angle_for_GMIchem_photolysis
   FJXCLDOD   	    | 1              | xyz | C |    |	|   |	  | FastJX_cloud_optical_depth_(400_nm - daylight only)
   FJXFCLD    	    | 1              | xyz | C |    |	|   |	  | FastJX_cloud_fraction
