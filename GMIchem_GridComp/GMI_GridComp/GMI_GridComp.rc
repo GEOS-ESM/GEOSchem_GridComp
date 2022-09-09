@@ -197,7 +197,8 @@ soil_infile_name:      ExtData/g5chem/x/GMI_SoilType.asc
 isopconv_infile_name:  ExtData/g5chem/x/GMI_ISOP_convTable.asc
 monotconv_infile_name: ExtData/g5chem/x/GMI_MONOT_convTable.asc
 
-do_gcr: F
+do_gcr: T
+gcr_infile_name: ExtData/g5chem/x/gcr/GCR_1970-2025_33.nc 
 do_solar_cycle: T
 sc_infile_name: ExtData/g5chem/x/solar_cycle/solar_cycle_NRL_1882_present_fill2100.asc
 

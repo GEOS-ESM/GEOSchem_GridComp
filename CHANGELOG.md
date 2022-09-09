@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 ### Removed
 ### Changed
+
+- Updates to emissions from galactic cosmic rays
+
 ### Fixed
 
 ## [1.10.1] - 2022-08-30

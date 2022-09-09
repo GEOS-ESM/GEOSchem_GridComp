@@ -124,6 +124,7 @@
    LOGICAL :: do_aerocom             
    LOGICAL :: pr_const
    LOGICAL :: do_synoz
+   LOGICAL :: do_gcr
    LOGICAL :: pr_surf_emiss
    LOGICAL :: pr_emiss_3d
    LOGICAL :: do_qqjk_inchem
@@ -208,6 +209,7 @@ CONTAINS
    USE GmiTimeControl_mod,            ONLY : Set_curGmiDate, Set_curGmiTime
    USE GmiTimeControl_mod,            ONLY : Set_begGmiDate, Set_begGmiTime
    USE GmiTimeControl_mod,            ONLY : Set_numTimeSteps
+   USE gcr_mod,                       ONLY : INIT_GCR_DIAG
 
    IMPLICIT none
    INTEGER, PARAMETER :: DBL = KIND(0.00D+00)
@@ -358,6 +360,10 @@ CONTAINS
      &              LABEL="Diurnal_Emission_Species:", DEFAULT=0, RC=STATUS)
       VERIFY_(STATUS)
 
+      CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%do_gcr, &
+     &              LABEL="do_gcr:", DEFAULT=.FALSE., RC=STATUS)
+      VERIFY_(STATUS)
+
       !------------------------------
       ! Diagnostics related variables
       !------------------------------
@@ -421,6 +427,8 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%BCRealTime, &
      &           label="BCRealTime:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
+     
+      if (self%do_gcr) call INIT_GCR_DIAG(i1,i2,j1,j2,1,km)
       
 ! Does the GMICHEM import restart file exist?  If not,
 ! the species must "freewheel" through the first time step.
@@ -539,7 +547,8 @@ CONTAINS
 
 
       CALL initReadEmission(self%Emission, self%gmiClock, self%gmiGrid,     &
-     &               self%cellArea, loc_proc, self%pr_diag)
+     &               self%cellArea, loc_proc, self%pr_diag, RC=STATUS)
+      VERIFY_(STATUS)
 
 !     !-----------------------------------
 !     ! Initialize Surface Emission Bundle
@@ -730,7 +739,7 @@ CONTAINS
             call addTracerToBundle (surfEmissBundle, var, w_c%grid_esmf, varName)
          end do
 
-         call ESMF_FieldBundleGet(surfEmissBundle, fieldCount=numVars , rc=STATUS)
+         call ESMF_FieldBundleGet(surfEmissBundle, fieldCount=numVars , RC=STATUS)
          VERIFY_(STATUS)
          ASSERT_(NSP == numVars)
 
@@ -887,6 +896,7 @@ CONTAINS
    REAL(KIND=DBL), ALLOCATABLE :: T_15_AVG(:,:)
 
    REAL(KIND=DBL), ALLOCATABLE :: var2dDBL(:,:)
+   REAL(KIND=DBL), ALLOCATABLE :: var3dDBL(:,:,:)
 
    REAL(KIND=DBL), ALLOCATABLE :: mass(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: press3c(:,:,:)
@@ -1110,6 +1120,15 @@ CONTAINS
 
     CALL MAPL_GetPointer(impChem, light_NO_prod, 'LIGHT_NO_PROD', __RC__)
 
+
+!--------------------------------------------------------
+! Calculate the air density at the center of each grid box
+! (molecules/cm^3).
+!--------------------------------------------------------
+    self%SpeciesConcentration%concentration(IMGAS)%pArray3D(:,:,:) =  &
+                     press3c(i1:i2,j1:j2,:) * MB2CGS /  &
+                     (kel (i1:i2,j1:j2,:) * BOLTZMN_E)
+
     CALL RunEmission(self%Emission, self%SpeciesConcentration, self%gmiClock,  &
                      self%gmiGrid,                                             &
                      loc_proc, cosSolarZenithAngle, latdeg, self%cellArea,     &
@@ -1158,6 +1177,7 @@ CONTAINS
 ! Export states
 ! -------------
    CALL FillExports(STATUS)
+   VERIFY_(STATUS)
 
 ! Scratch local work space
 ! ------------------------
@@ -1567,7 +1587,9 @@ CONTAINS
 ! !INTERFACE:
 
   SUBROUTINE FillExports(rc)
-  
+
+  USE gcr_mod,                       ONLY : GET_GCR_EMISS
+    
   IMPLICIT NONE
 
   INTEGER, INTENT(OUT) :: rc
@@ -1635,14 +1657,41 @@ CONTAINS
      fieldName = TRIM(self%EM_ExportNames(n))
      unitsName = TRIM(self%EM_ExportUnits(n))
      CALL getMW(TRIM(fieldName), ic, mw, rc)
+     VERIFY_(rc)
      CALL ESMFL_StateGetPointerToData(expChem, EM_pointer, TRIM(fieldName), RC=STATUS)
      VERIFY_(STATUS)
      
      IsAssociated: IF(ASSOCIATED(EM_pointer)) THEN
+! GCR emissions
+! ------------
+      IF(TRIM(fieldName) == "EM_GCR_NO") THEN
+       ALLOCATE(var3dDBL(i1:i2,j1:j2,1:km),STAT=STATUS) 
+       VERIFY_(STATUS)
+       if (self%do_gcr) then
+        CALL GET_GCR_EMISS ( var3dDBL, i1, i2, j1, j2, 1, km )  ! (molec/cm3/sec) (bottom up)
+
+        SELECT CASE (unitsName)
+        CASE ("molec cm-3 s-1")
+         EM_pointer(:,:,km:1:-1) = var3dDBL(:,:,1:km)        
+        CASE ("kg m-3 s-1")
+         EM_pointer(:,:,km:1:-1) = var3dDBL(:,:,1:km) / MAPL_AVOGAD * mw * 1.e+6
+        CASE ("kg m-2 s-1")
+         EM_pointer(:,:,km:1:-1) = var3dDBL(:,:,1:km) / MAPL_AVOGAD * mw * 1.e+6  *  gridBoxThickness(:,:,1:km) 
+        CASE DEFAULT
+         PRINT *,TRIM(Iam)//": Modifications needed to export  "//TRIM(unitsName)//" for "//TRIM(fieldName)
+         STATUS = -1
+         VERIFY_(STATUS)
+        END SELECT
+
+       else        
+        EM_pointer(:,:,km:1:-1) = 0.0 
+       end if
+
+       DEALLOCATE(var3dDBL)
 
 ! Lightning NO section
 ! --------------------
-      IF(TRIM(fieldName) == "EM_LGTNO") THEN
+      ELSE IF(TRIM(fieldName) == "EM_LGTNO") THEN
 
        CALL Get_lightning_opt(self%Emission,lightning_opt)
 
@@ -1715,7 +1764,7 @@ CONTAINS
          EM_pointer(:,:,kReverse) = self%Emission%emiss_3d_out(:,:,k,ic)*var2dDBL(:,:)
         CASE DEFAULT
          PRINT *,TRIM(Iam)//": Modifications needed to export  "//TRIM(unitsName)//" for "//TRIM(fieldName)
-         STATUS = -1 
+         STATUS = -1
          VERIFY_(STATUS)
         END SELECT
 
@@ -1831,6 +1880,9 @@ CONTAINS
     mw = mw_data( ICH4)
     i =  ICH4
    CASE ("EM_LGTNO")
+    mw = mw_data(  INO)
+    i =  -1
+   CASE ("EM_GCR_NO")
     mw = mw_data(  INO)
     i =  -1
    CASE DEFAULT
@@ -2265,6 +2317,7 @@ CONTAINS
    SUBROUTINE GmiEmiss_GridCompFinalize ( self, w_c, impChem, expChem, &
                                      nymd, nhms, cdt, rc )
 
+  USE gcr_mod,                       ONLY : Finalize_GCR
   IMPLICIT none
 
 ! !INPUT/OUTPUT PARAMETERS:
@@ -2307,6 +2360,8 @@ CONTAINS
 !  --------------------
    deallocate ( MASK_10AM, MASK_2PM, stat = STATUS )
    VERIFY_(STATUS)
+
+   if (self%do_gcr) call Finalize_GCR()
 
    RETURN
 
