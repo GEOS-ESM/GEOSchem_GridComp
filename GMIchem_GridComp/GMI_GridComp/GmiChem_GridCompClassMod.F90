@@ -21,6 +21,8 @@
    USE Chem_Mod 	     ! Chemistry Base Class
    USE Chem_UtilMod
 
+   USE Species_BundleMod
+
    USE GmiChemistryMethod_mod,        ONLY : t_Chemistry
    USE GmiDepositionMethod_mod,       ONLY : t_Deposition
    USE GmiSpcConcentrationMethod_mod, ONLY : t_SpeciesConcentration
@@ -143,7 +145,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE GmiChemistry_GridCompInitialize( self, w_c, impChem, expChem, nymd, nhms, &
+   SUBROUTINE GmiChemistry_GridCompInitialize( self, bgg, bxx, impChem, expChem, nymd, nhms, &
                                       tdt, rc )
 
    USE GmiSpcConcentrationMethod_mod, ONLY : InitializeSpcConcentration
@@ -159,7 +161,8 @@ CONTAINS
 
 ! !INPUT PARAMETERS:
 
-   TYPE(Chem_Bundle), INTENT(in) :: w_c                ! Chemical tracer fields, delp, +
+   TYPE(Species_Bundle), INTENT(in) :: bgg                ! Chemical tracer fields, delp, +
+   TYPE(Species_Bundle), INTENT(in) :: bxx                ! Chemical tracer fields, delp, +
    INTEGER, INTENT(IN) :: nymd, nhms		       ! Time from AGCM
    REAL,    INTENT(IN) :: tdt			       ! Chemistry time step (secs)
 
@@ -203,7 +206,7 @@ CONTAINS
    INTEGER :: ilo, ihi, julo, jvlo, jhi
    INTEGER :: ilo_gl, ihi_gl, julo_gl, jvlo_gl, jhi_gl
    INTEGER :: gmi_nborder
-   INTEGER :: numSpecies
+   INTEGER :: NMR      ! number of species from the GMI_Mech_Registry.rc
    INTEGER :: LogicalUnitNum
 
    INTEGER :: loc_proc, locGlobProc, commu_slaves
@@ -437,20 +440,23 @@ CONTAINS
                           ilo_gl, ihi_gl, julo_gl, jvlo_gl, jhi_gl, &
                           ilong, ilat, ivert, itloop, j1p, j2p)  
 
-! Number of species and perform a consistency check with setkin_par.h.
-! NOTES:
-!  1. H2O is specie number 10 in the strat-trop mechanism, but will not be
-!     found in w_c%reg%vname. H2O will be initialized from specific humidity, Q.
-!  2. The GEOS-5 bundle has an Age-Of-Air tracer, which is not carried by GMI.
-!  3. At the end of the XX (non-transported) species is a place holder for T2M15d.
-! So w_c%reg%j_XX-w_c%reg%i_GMI must equal the parameter NSP = NCONST + NDYN.
+! Perform a consistency check with setkin_par.h.
+!   NSP is the number of species in setkins
+!   NMR is the number of species in the Mech Registry
+!
+!   H2O   is in setkins,           but not in GMI_Mech_Registry
+!   AOA   is in GMI_Mech_Registry, but not in setkins
+!   T2M15 is in GMI_Mech_Registry, but not in setkins
+!
+!   The number of species common to both is therefore
+!     NMR - 2     ! number in GMI_Mech_Registry - 2
+!     NSP - 1     ! number in setkins - 1
 ! --------------------------------------------------------------------------------
-   numSpecies = w_c%reg%j_XX-w_c%reg%i_GMI
-   IF(numSpecies /= NSP) THEN
-    PRINT *,TRIM(IAm),': Number of species from Chem_Registry.rc does not match number in setkin_par.h'
+   NMR = bgg%nq + bxx%nq
+   IF( NMR-2 /= NSP-1 ) THEN
+    PRINT *,TRIM(IAm),': Number of species from GMI_Mech_Registry.rc does not match number in setkin_par.h'
     STATUS = 1
     VERIFY_(STATUS)
-    RETURN
    END IF
 
 ! Photolysis reaction list.  Read from kinetics
@@ -472,11 +478,11 @@ CONTAINS
 ! ----------------------------------------------------------
 
       CALL InitializeSpcConcentration(self%SpeciesConcentration,              &
-                     self%gmiGrid, gmiConfigFile, numSpecies, NMF, NCHEM,     &
+                     self%gmiGrid, gmiConfigFile, NSP, NMF, NCHEM,            &
                      loc_proc)
 
       CALL InitializeChemistry(self%Chemistry, self%gmiGrid,                  &
-                     gmiConfigFile, loc_proc, numSpecies, self%pr_diag,       &
+                     gmiConfigFile, loc_proc, NSP, self%pr_diag,              &
                      self%pr_qqjk, self%do_qqjk_inchem, self%pr_smv2,         &
                      rootProc, tdt)
 
@@ -500,7 +506,7 @@ CONTAINS
       WRITE (binName ,'(i4.4)') ib
       varName = 'qqj'//binName
 
-      CALL addTracerToBundle (qqjBundle, var, w_c%grid_esmf, varName)
+      CALL addTracerToBundle (qqjBundle, var, bgg%grid_esmf, varName)
    END DO
 
    ! Sanity check
@@ -523,7 +529,7 @@ CONTAINS
       WRITE (binName ,'(i4.4)') ib
       varName = 'qqk'//binName
 
-      CALL addTracerToBundle (qqkBundle, var, w_c%grid_esmf, varName)
+      CALL addTracerToBundle (qqkBundle, var, bgg%grid_esmf, varName)
    END DO
 
    ! Sanity check
@@ -539,8 +545,8 @@ CONTAINS
     ! GEOS-5 species indices
     !---------------------------------------------------------------
 
-    allocate(self%mapSpecies(numSpecies))
-    self%mapSpecies(:) = speciesReg_for_CCM(lchemvar, w_c%reg%vname, numSpecies, w_c%reg%i_GMI, w_c%reg%j_XX)
+    allocate(self%mapSpecies(NSP))
+    self%mapSpecies(:) = speciesReg_for_CCM(lchemvar, NSP, bgg%reg%vname, bxx%reg%vname )
 
   RETURN
 
@@ -556,7 +562,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE GmiChemistry_GridCompRun ( self, w_c, impChem, expChem, nymd, nhms, &
+   SUBROUTINE GmiChemistry_GridCompRun ( self, bgg, bxx, impChem, expChem, nymd, nhms, &
                                 tdt, rc )
 
 ! !USES:
@@ -573,7 +579,8 @@ CONTAINS
 ! !INPUT/OUTPUT PARAMETERS:
 
    TYPE(GmiChemistry_GridComp), INTENT(INOUT) :: self ! Grid Component
-   TYPE(Chem_Bundle), INTENT(INOUT) :: w_c    ! Chemical tracer fields   
+   TYPE(Species_Bundle), INTENT(INOUT) :: bgg    ! Chemical tracer fields   
+   TYPE(Species_Bundle), INTENT(INOUT) :: bxx    ! Chemical tracer fields   
 
 ! !INPUT PARAMETERS:
 
@@ -684,15 +691,15 @@ CONTAINS
 !  Grid specs from Chem_Bundle%grid
 !  --------------------------------
    rc = 0
-   i1 = w_c%grid%i1
-   i2 = w_c%grid%i2
-   im = w_c%grid%im
+   i1 = bgg%grid%i1
+   i2 = bgg%grid%i2
+   im = bgg%grid%im
    
-   j1 = w_c%grid%j1
-   j2 = w_c%grid%j2
-   jm = w_c%grid%jm
+   j1 = bgg%grid%j1
+   j2 = bgg%grid%j2
+   jm = bgg%grid%jm
    
-   km = w_c%grid%km
+   km = bgg%grid%km
    
    iXj = (i2-i1+1)*(j2-j1+1)
 
@@ -806,7 +813,7 @@ CONTAINS
 ! -----------------------------------------------
    IF (self%gotImportRst) THEN
       CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration, &
-               w_c%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, &
+               bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, &
                STATUS)
       VERIFY_(STATUS)
    END IF
@@ -837,7 +844,7 @@ CONTAINS
 ! -----------------------------------------------------
    IF (self%gotImportRst) then
       CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration, &
-               w_c%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
+               bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
                STATUS)
       VERIFY_(STATUS)
    END IF
@@ -969,15 +976,15 @@ CONTAINS
 
 ! Note: SwapSpeciesBundles(ToGMI,rc) must already be done.
 ! --------------------------------------------------------
-   DO i=w_c%reg%i_GMI,w_c%reg%j_GMI
-    IF(TRIM(w_c%reg%vname(i)) == "OX") ic = i
+   DO i=1,bgg%reg%nq
+    IF(TRIM(bgg%reg%vname(i)) == "OX") ic = i
    END DO
 
    IF(ASSOCIATED(O3ppmv)) &
-    O3ppmv(i1:i2,j1:j2,1:km) = w_c%qa(ic)%data3d(i1:i2,j1:j2,1:km)*1.00E+06
+    O3ppmv(i1:i2,j1:j2,1:km) = bgg%qa(ic)%data3d(i1:i2,j1:j2,1:km)*1.00E+06
 
    IF(ASSOCIATED(O3)) &
-    O3(i1:i2,j1:j2,1:km) = w_c%qa(ic)%data3d(i1:i2,j1:j2,1:km)*(MAPL_O3MW/MAPL_AIRMW)
+    O3(i1:i2,j1:j2,1:km) = bgg%qa(ic)%data3d(i1:i2,j1:j2,1:km)*(MAPL_O3MW/MAPL_AIRMW)
 
 ! --------------------------------------------------------------------
 ! Reaction rate constants (q) and rates (qq)
@@ -1194,8 +1201,8 @@ CONTAINS
 !  ----------
    Validate: IF(self%verbose) THEN
     IF(MAPL_AM_I_ROOT( ))PRINT *,TRIM(IAm),": Input ..."
-    i = w_c%reg%j_XX
-    CALL pmaxmin('TROPP:', w_c%qa(i)%data3d(:,:,km), qmin, qmax, iXj, 1, 0.01 )
+    i = bxx%reg%nq
+    CALL pmaxmin('TROPP:', bxx%qa(i)%data3d(:,:,km), qmin, qmax, iXj, 1, 0.01 )
     CALL pmaxmin('ZPBL:', zpbl, qmin, qmax, iXj, 1, 1. )
     CALL pmaxmin('Q:', Q, qmin, qmax, iXj, km, 1. )
     CALL pmaxmin('T:', T, qmin, qmax, iXj, km, 1. )
@@ -1249,8 +1256,8 @@ CONTAINS
 ! Singly-layered                                                            GEOS-5 Units       GMI Units
 ! The most recent valid tropopause pressures are stored in T2M15D(:,:,km)
 ! -----------------------------------------------------------------------   ------------       -------------
-  i = w_c%reg%j_XX
-  tropopausePress(i1:i2,j1:j2) = w_c%qa(i)%data3d(i1:i2,j1:j2,km)*Pa2hPa    ! Pa               hPa
+  i = bxx%reg%nq
+  tropopausePress(i1:i2,j1:j2) = bxx%qa(i)%data3d(i1:i2,j1:j2,km)*Pa2hPa    ! Pa               hPa
   pctm2(i1:i2,j1:j2) = ple(i1:i2,j1:j2,km)*Pa2hPa                           ! Pa               hPa
 
 ! Layer means                                                               GEOS-5 Units       GMI Units
@@ -1296,7 +1303,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE GmiChemistry_GridCompFinalize ( self, w_c, impChem, expChem, &
+   SUBROUTINE GmiChemistry_GridCompFinalize ( self, impChem, expChem, &
                                      nymd, nhms, cdt, rc )
 
   IMPLICIT none
@@ -1307,7 +1314,6 @@ CONTAINS
 
 ! !INPUT PARAMETERS:
 
-   TYPE(Chem_Bundle), INTENT(in)  :: w_c      ! Chemical tracer fields   
    INTEGER, INTENT(in) :: nymd, nhms	      ! time
    REAL,    INTENT(in) :: cdt  	              ! chemical timestep (secs)
 

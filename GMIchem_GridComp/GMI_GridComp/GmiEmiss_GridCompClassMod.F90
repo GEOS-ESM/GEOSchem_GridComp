@@ -21,6 +21,8 @@
    USE Chem_Mod
    USE Chem_UtilMod
 
+   USE Species_BundleMod
+
    USE GmiChemistryMethod_mod,        ONLY : t_Chemistry
    USE GmiEmissionMethod_mod,         ONLY : t_Emission
    USE GmiDepositionMethod_mod,       ONLY : t_Deposition
@@ -199,7 +201,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE GmiEmiss_GridCompInitialize( self, w_c, impChem, expChem, nymd, nhms, &
+   SUBROUTINE GmiEmiss_GridCompInitialize( self, bgg, bxx, impChem, expChem, nymd, nhms, &
                                       tdt, gc, clock, rc )
 
    USE GmiSpcConcentrationMethod_mod, ONLY : InitializeSpcConcentration
@@ -216,7 +218,8 @@ CONTAINS
 
 ! !INPUT PARAMETERS:
 
-   TYPE(Chem_Bundle), INTENT(in) :: w_c                ! Chemical tracer fields, delp, +
+   TYPE(Species_Bundle), INTENT(in) :: bgg                ! Chemical tracer fields, delp, +
+   TYPE(Species_Bundle), INTENT(in) :: bxx                ! Chemical tracer fields, delp, +
    INTEGER, INTENT(IN) :: nymd, nhms                   ! Time from AGCM
    REAL,    INTENT(IN) :: tdt                          ! Chemistry time step (secs)
 
@@ -265,8 +268,9 @@ CONTAINS
    INTEGER :: ilo, ihi, julo, jvlo, jhi
    INTEGER :: ilo_gl, ihi_gl, julo_gl, jvlo_gl, jhi_gl
    INTEGER :: gmi_nborder
+   INTEGER :: NMR      ! number of species from the GMI_Mech_Registry.rc
    INTEGER :: lightning_opt, LogicalUnitNum
-   INTEGER :: num_emiss, numSpecies
+   INTEGER :: num_emiss
 
    INTEGER :: loc_proc, locGlobProc, commu_slaves
    LOGICAL :: one_proc, rootProc
@@ -508,20 +512,23 @@ CONTAINS
                           ilo_gl, ihi_gl, julo_gl, jvlo_gl, jhi_gl, &
                           ilong, ilat, ivert, itloop, j1p, j2p)
 
-! Number of species and perform a consistency check with setkin_par.h.
-! NOTES:
-!  1. H2O is specie number 10 in the strat-trop mechanism, but will not be
-!     found in w_c%reg%vname. H2O will be initialized from specific humidity, Q.
-!  2. The GEOS-5 bundle has an Age-Of-Air tracer, which is not carried by GMI.
-!  3. At the end of the XX (non-transported) species is a place holder for T2M15d.
-! So w_c%reg%j_XX-w_c%reg%i_GMI must equal the parameter NSP = NCONST + NDYN.
+! Perform a consistency check with setkin_par.h.
+!   NSP is the number of species in setkins
+!   NMR is the number of species in the Mech Registry
+!
+!   H2O   is in setkins,           but not in GMI_Mech_Registry
+!   AOA   is in GMI_Mech_Registry, but not in setkins
+!   T2M15 is in GMI_Mech_Registry, but not in setkins
+!
+!   The number of species common to both is therefore
+!     NMR - 2     ! number in GMI_Mech_Registry - 2
+!     NSP - 1     ! number in setkins - 1
 ! --------------------------------------------------------------------------------
-   numSpecies = w_c%reg%j_XX-w_c%reg%i_GMI
-   IF(numSpecies /= NSP) THEN
-    PRINT *,TRIM(IAm),': Number of species from Chem_Registry.rc does not match number in setkin_par.h'
+   NMR = bgg%nq + bxx%nq
+   IF( NMR-2 /= NSP-1 ) THEN
+    PRINT *,TRIM(IAm),': Number of species from GMI_Mech_Registry.rc does not match number in setkin_par.h'
     STATUS = 1
     VERIFY_(STATUS)
-    RETURN
    END IF
 
 ! Allocate space, etc., but the initialization of the
@@ -529,14 +536,14 @@ CONTAINS
 ! ----------------------------------------------------------
 
       CALL InitializeSpcConcentration(self%SpeciesConcentration,              &
-     &               self%gmiGrid, gmiConfigFile, numSpecies, NMF, NCHEM,     &
-     &               loc_proc)
+                     self%gmiGrid, gmiConfigFile, NSP, NMF, NCHEM,            &
+                     loc_proc)
 
       CALL InitializeEmission(self%Emission, self%SpeciesConcentration,      &
-     &               self%gmiGrid, gmiConfigFile, self%cellArea, IHNO3, IO3, &
-     &               NSP, loc_proc, rootProc, self%chem_opt, self%trans_opt, &
-     &               self%pr_diag,   &
-     &               self%pr_const, self%pr_surf_emiss, self%pr_emiss_3d, tdt)
+                     self%gmiGrid, gmiConfigFile, self%cellArea, IHNO3, IO3, &
+                     NSP, loc_proc, rootProc, self%chem_opt, self%trans_opt, &
+                     self%pr_diag,   &
+                     self%pr_const, self%pr_surf_emiss, self%pr_emiss_3d, tdt)
 
       IF (BTEST(self%Emission%emiss_opt,1)) THEN
 
@@ -579,7 +586,7 @@ CONTAINS
     !---------------------------------------------------------------
 
     allocate(self%mapSpecies(NSP))
-    self%mapSpecies(:) = speciesReg_for_CCM(lchemvar, w_c%reg%vname, NSP, w_c%reg%i_GMI, w_c%reg%j_XX)
+    self%mapSpecies(:) = speciesReg_for_CCM(lchemvar, NSP, bgg%reg%vname, bxx%reg%vname )
 
 ! Which (used) emission field is for lightning NO?
 ! ------------------------------------------------
@@ -690,10 +697,10 @@ CONTAINS
 !
 ! !INTERFACE:
 !
-            SUBROUTINE GmiEmiss_initSurfEmissBundle (self, w_c, expChem, rc)
+            SUBROUTINE GmiEmiss_initSurfEmissBundle (self, bgg, expChem, rc)
 !
 ! !INPUT PARAMETERS:
-   TYPE(Chem_Bundle), INTENT(in) :: w_c                ! Chemical tracer fields, delp
+   TYPE(Species_Bundle), INTENT(in) :: bgg                ! Chemical tracer fields, delp
 
 ! !OUTPUT PARAMETERS:
       INTEGER, INTENT(out) ::  rc                  ! Error return code:
@@ -736,7 +743,7 @@ CONTAINS
             write (binName ,'(i4.4)') ib
             varName = 'surfEmiss'//binName
 
-            call addTracerToBundle (surfEmissBundle, var, w_c%grid_esmf, varName)
+            call addTracerToBundle (surfEmissBundle, var, bgg%grid_esmf, varName)
          end do
 
          call ESMF_FieldBundleGet(surfEmissBundle, fieldCount=numVars , RC=STATUS)
@@ -760,7 +767,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE GmiEmiss_GridCompRun ( self, w_c, impChem, expChem, nymd, nhms, &
+   SUBROUTINE GmiEmiss_GridCompRun ( self, bgg, bxx, impChem, expChem, nymd, nhms, &
                                      tdt, clock, mixPBL, rc )
 
 ! !USES:
@@ -778,7 +785,8 @@ CONTAINS
 ! !INPUT/OUTPUT PARAMETERS:
 
    TYPE(GmiEmiss_GridComp), INTENT(INOUT) :: self        ! Grid Component
-   TYPE(Chem_Bundle),       INTENT(INOUT) :: w_c         ! Chemical tracer fields   
+   TYPE(Species_Bundle),       INTENT(INOUT) :: bgg         ! Chemical tracer fields   
+   TYPE(Species_Bundle),       INTENT(INOUT) :: bxx         ! Chemical tracer fields   
    TYPE(ESMF_State),        INTENT(INOUT) :: impChem     ! Import State
    TYPE(ESMF_State),        INTENT(INOUT) :: expChem     ! Export State
    TYPE(ESMF_Clock),        INTENT(INOUT) :: clock       ! The clock
@@ -1056,7 +1064,7 @@ CONTAINS
     CALL MonitorT2M(STATUS)
     VERIFY_(STATUS)
    END IF
-   T_15_AVG(i1:i2,j1:j2) = w_c%qa(w_c%reg%j_XX)%data3d(i1:i2,j1:j2,1)
+   T_15_AVG(i1:i2,j1:j2) = bxx%qa(bxx%reg%nq)%data3d(i1:i2,j1:j2,1)
 
 ! Grab imports and do units conversions
 ! -------------------------------------
@@ -1067,9 +1075,9 @@ CONTAINS
 ! -----------------------------------------------
    IF (self%gotImportRst) THEN
       CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration, &
-               w_c%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, &
+               bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, &
                STATUS)
-   VERIFY_(STATUS)
+      VERIFY_(STATUS)
    END IF
 
    DEALLOCATE(var3D, STAT=STATUS)
@@ -1169,7 +1177,7 @@ CONTAINS
 ! -----------------------------------------------------
    IF (self%gotImportRst) THEN
       CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration, &
-               w_c%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
+               bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
                STATUS)
       VERIFY_(STATUS)
    END IF
@@ -2070,7 +2078,7 @@ CONTAINS
 ! Ship Emisssions
 ! ---------------
    if (self%Emission%do_ShipEmission) then
-      jNO2val_phot(i1:i2,j1:j2) = w_c%qa(w_c%reg%j_XX)%data3d(i1:i2,j1:j2,km-1)
+      jNO2val_phot(i1:i2,j1:j2) = bxx%qa(bxx%reg%nq)%data3d(i1:i2,j1:j2,km-1)
    end if
 
   RETURN
@@ -2253,7 +2261,7 @@ CONTAINS
 
 ! Index of T2M15d in the non-transported species bundle
 ! -----------------------------------------------------
-  i = w_c%reg%j_XX
+  i = bxx%reg%nq
 
 ! Sanity check
 ! ------------
@@ -2279,25 +2287,25 @@ CONTAINS
 ! Age-off
 ! -------
    DO k = 1,15
-    w_c%qa(i)%data3d(i1:i2,j1:j2,k) = w_c%qa(i)%data3d(i1:i2,j1:j2,k+1)
+    bxx%qa(i)%data3d(i1:i2,j1:j2,k) = bxx%qa(i)%data3d(i1:i2,j1:j2,k+1)
    END DO
 
 ! Calculate average T2M for previous 15 whole days
 ! ------------------------------------------------
    DO k = 2,15
-    w_c%qa(i)%data3d(i1:i2,j1:j2,1) = w_c%qa(i)%data3d(i1:i2,j1:j2,1) + w_c%qa(i)%data3d(i1:i2,j1:j2,k)
+    bxx%qa(i)%data3d(i1:i2,j1:j2,1) = bxx%qa(i)%data3d(i1:i2,j1:j2,1) + bxx%qa(i)%data3d(i1:i2,j1:j2,k)
    END DO
-   w_c%qa(i)%data3d(i1:i2,j1:j2,1) = w_c%qa(i)%data3d(i1:i2,j1:j2,1)/15.00
+   bxx%qa(i)%data3d(i1:i2,j1:j2,1) = bxx%qa(i)%data3d(i1:i2,j1:j2,1)/15.00
 
 ! Initialize to zero for day that is just starting
 ! ------------------------------------------------
-   w_c%qa(i)%data3d(:,:,16) = 0.00
+   bxx%qa(i)%data3d(:,:,16) = 0.00
 
   END IF
 
 ! Otherwise, keep running average for current day
 ! -----------------------------------------------
-  w_c%qa(i)%data3d(i1:i2,j1:j2,16) = w_c%qa(i)%data3d(i1:i2,j1:j2,16) + T2m(i1:i2,j1:j2)*avgFactor
+  bxx%qa(i)%data3d(i1:i2,j1:j2,16) = bxx%qa(i)%data3d(i1:i2,j1:j2,16) + T2m(i1:i2,j1:j2)*avgFactor
     
   RETURN
  END SUBROUTINE MonitorT2M
@@ -2314,7 +2322,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE GmiEmiss_GridCompFinalize ( self, w_c, impChem, expChem, &
+   SUBROUTINE GmiEmiss_GridCompFinalize ( self, impChem, expChem, &
                                      nymd, nhms, cdt, rc )
 
   USE gcr_mod,                       ONLY : Finalize_GCR
@@ -2326,7 +2334,6 @@ CONTAINS
 
 ! !INPUT PARAMETERS:
 
-   TYPE(Chem_Bundle), INTENT(in)  :: w_c      ! Chemical tracer fields   
    INTEGER, INTENT(in) :: nymd, nhms	      ! time
    REAL,    INTENT(in) :: cdt  	              ! chemical timestep (secs)
 

@@ -15,6 +15,8 @@
 !
    USE ESMF
    USE MAPL
+   USE Runtime_RegistryMod
+   USE Species_BundleMod
    USE Chem_Mod 	                        ! Chemistry Base Class
    USE GMI_GridCompMod                          ! ESMF parent component
    USE Chem_UtilMod, ONLY : Chem_UtilNegFiller  ! Eliminates negative vmr
@@ -50,7 +52,7 @@
 
    PRIVATE                    :: extract_           ! Get values from ESMF
    PRIVATE                    :: aerosol_optics     ! Get params for aero optics
-   PRIVATE                    :: secure_species_ptr ! Find species in w_c%qa
+   PRIVATE                    :: secure_species_ptr ! Find species in a Species Bundle
 
 
 !
@@ -72,9 +74,13 @@
 
   TYPE GMIchem_State
      PRIVATE
-     TYPE(Chem_Registry), POINTER :: chemReg  => null()
-     TYPE(GMI_GridComp),  POINTER :: gcGMI    => null()
-     TYPE(Chem_Bundle),   POINTER :: w_c      => null()
+     TYPE(Chem_Registry),    POINTER :: chemReg  => null()
+     TYPE(Runtime_Registry), POINTER ::   ggReg  => null()    ! the (transported) chemical species
+     TYPE(Runtime_Registry), POINTER ::   xxReg  => null()    ! the non-transported species
+     TYPE(GMI_GridComp),     POINTER :: gcGMI    => null()
+     TYPE(Chem_Bundle),      POINTER :: w_c      => null()
+     TYPE(Species_Bundle),   POINTER :: bgg      => null()
+     TYPE(Species_Bundle),   POINTER :: bxx      => null()
   END TYPE GMIchem_State
 
   TYPE GMIchem_WRAP
@@ -158,9 +164,18 @@ CONTAINS
 
 !   Start by loading the Chem Registry
 !   ----------------------------------
-    allocate ( state%chemReg )
+    allocate ( state%chemReg, __STAT__ )
     state%chemReg = Chem_RegistryCreate ( STATUS )
     VERIFY_(STATUS)
+
+    allocate ( state%ggReg, __STAT__ )
+    state%ggReg = Runtime_RegistryCreate ( 'GMI_Mech_Registry.rc', 'GMI_table::', STATUS )
+    VERIFY_(STATUS)
+
+    allocate ( state%xxReg, __STAT__ )
+    state%xxReg =  Runtime_RegistryCreate ( 'GMI_Mech_Registry.rc',  'XX_table::', STATUS )
+    VERIFY_(STATUS)
+
 
 !                       ------------------------
 !                       ESMF Functional Services
@@ -168,7 +183,11 @@ CONTAINS
 
 
     IF(MAPL_AM_I_ROOT()) THEN
-     PRINT *, TRIM(Iam)//': ACTIVE'
+     PRINT *, TRIM(Iam)//': GMI'
+     CALL Runtime_RegistryPrint ( state%ggReg, 'GMI' )
+     PRINT *, TRIM(Iam)//': XX'
+     CALL Runtime_RegistryPrint ( state%xxReg,   'XX' )
+     PRINT *, TRIM(Iam)//': OTHERS'
      CALL Chem_RegistryPrint ( state%chemReg )
     END IF
 
@@ -401,9 +420,9 @@ CONTAINS
 
 !   Species to be transported:
 !   --------------------------
-    DO n = state%chemReg%i_GMI, state%chemReg%j_GMI
+    DO n = 1, state%ggReg%nq
 
-	  IF(TRIM(state%chemReg%vname(n)) == "OX" .AND. TRIM(providerName) == "GMICHEM") THEN
+	  IF(TRIM(state%ggReg%vname(n)) == "OX" .AND. TRIM(providerName) == "GMICHEM") THEN
            FRIENDLIES="ANALYSIS:DYNAMICS:TURBULENCE:MOIST"
 	  ELSE
            FRIENDLIES="DYNAMICS:TURBULENCE:MOIST"
@@ -412,9 +431,9 @@ CONTAINS
           FRIENDLIES = FRIENDLIES//':'//TRIM(COMP_NAME)
 	 
           CALL MAPL_AddInternalSpec(GC,                                  &
-               SHORT_NAME         = TRIM(state%chemReg%vname(n)),        &
-               LONG_NAME          = TRIM(state%chemReg%vtitle(n)),       &
-               UNITS              = TRIM(state%chemReg%vunits(n)),       &     
+               SHORT_NAME         = TRIM(state%ggReg%vname(n)),         &
+               LONG_NAME          = TRIM(state%ggReg%vtitle(n)),        &
+               UNITS              = TRIM(state%ggReg%vunits(n)),        &     
                FRIENDLYTO         = TRIM(FRIENDLIES),                    &
                DIMS               = MAPL_DimsHorzVert,                   &
                VLOCATION          = MAPL_VLocationCenter,     RC=STATUS  )
@@ -424,12 +443,12 @@ CONTAINS
 
 !   Non-transported species
 !   -----------------------
-    DO n = state%chemReg%i_XX, state%chemReg%j_XX 
+    DO n = 1, state%xxReg%nq
 
           CALL MAPL_AddInternalSpec(GC,                               &
-               SHORT_NAME      = TRIM(state%chemReg%vname(n)),        &
-               LONG_NAME       = TRIM(state%chemReg%vtitle(n)),       &
-               UNITS           = TRIM(state%chemReg%vunits(n)),       &     
+               SHORT_NAME      = TRIM(state%xxReg%vname(n)),          &
+               LONG_NAME       = TRIM(state%xxReg%vtitle(n)),         &
+               UNITS           = TRIM(state%xxReg%vunits(n)),         &     
                FRIENDLYTO      = TRIM(COMP_NAME),                     &
                ADD2EXPORT      = .TRUE.,                              &
                DIMS            = MAPL_DimsHorzVert,                   &
@@ -1040,8 +1059,12 @@ CONTAINS
    character(len=ESMF_MAXSTR)      :: COMP_NAME
 
    type(Chem_Registry), pointer    :: chemReg
+   type(Runtime_Registry), pointer :: ggReg
+   type(Runtime_Registry), pointer ::  xxReg
    type(GMI_GridComp), pointer     :: gcGMI       ! Grid Component
    type(Chem_Bundle), pointer      :: w_c         ! Chemical tracer fields
+   type(Species_Bundle), pointer   :: bgg         ! Chemical tracer fields
+   type(Species_Bundle), pointer   :: bxx         ! Chemical tracer fields
    integer                         :: nymd, nhms  ! time of day
    real                            :: gmiDt       ! chemistry timestep (secs)
    real                            :: runDt       ! heartbeat (secs)
@@ -1098,7 +1121,7 @@ CONTAINS
 
 !  Get parameters from gc and clock
 !  --------------------------------
-   call extract_ ( gc, clock, chemReg, gcGMI, w_c, nymd, nhms, gmiDt, runDt, STATUS )
+   call extract_ ( gc, clock, chemReg, ggReg, xxReg, gcGMI, w_c, bgg, bxx, nymd, nhms, gmiDt, runDt, STATUS )
    VERIFY_(STATUS)
    IF(MAPL_AM_I_ROOT()) THEN
     PRINT *," "
@@ -1159,9 +1182,20 @@ CONTAINS
                              w_c, lon=lons, lat=lats, &
                              skipAlloc=.true., rc=STATUS )
    VERIFY_(STATUS)
+   call Species_BundleCreate ( ggReg, i1, i2, ig, im, j1, j2, jg, jm, km,  &
+                             bgg, lon=lons, lat=lats, &
+                             skipAlloc=.true., rc=STATUS )
+   VERIFY_(STATUS)
+   call Species_BundleCreate ( xxReg, i1, i2, ig, im, j1, j2, jg, jm, km,  &
+                             bxx, lon=lons, lat=lats, &
+                             skipAlloc=.true., rc=STATUS )
+   VERIFY_(STATUS)
 
    w_c%grid_esmf = grid
    ALLOCATE(w_c%delp(i1:i2,j1:j2,km),w_c%rh(i1:i2,j1:j2,km),__STAT__)
+
+   bgg%grid_esmf = grid
+   bxx%grid_esmf = grid
 
 !  Allow user to specify 1 or 2 RUN phases   (set in AGCM.rc)
 !  --------------------------------------------------------------------------
@@ -1184,10 +1218,10 @@ CONTAINS
 
 !  Consistency Checks
 !  ------------------
-   ASSERT_ ( chemReg%i_XX == (chemReg%j_GMI+1) )
-   ASSERT_ ( size(InternalSpec) == (chemReg%n_GMI+chemReg%n_XX) + 2)  ! Bry and Cly families are extra internal species
+!  ASSERT_ ( chemReg%i_XX == (chemReg%j_GMI+1) )
+   ASSERT_ ( size(InternalSpec) == (ggReg%nq+xxReg%nq) + 2)  ! Bry and Cly families are extra internal species
 
-   do L = 1, size(InternalSpec) - 2
+   do L = 1, ggReg%nq
 
       call MAPL_VarSpecGet ( InternalSpec(L),          &
                              SHORT_NAME = short_name,  &
@@ -1196,14 +1230,20 @@ CONTAINS
 
 !     IF(MAPL_AM_I_ROOT()) print*,'GMI species SHORT NAME '//TRIM(short_name)
 
+      ! fill the CHEM REG ones, while debugging
       N = chemReg%i_GMI + L - 1 ! Assumption: XX species immediately follow GMI species
       CALL MAPL_GetPointer ( internal, NAME=short_name, ptr=w_c%qa(N)%data3d, &
                              rc = STATUS )
       VERIFY_(STATUS)
 
+      ! get the GMI REG pointers
+      CALL MAPL_GetPointer ( internal, NAME=short_name, ptr=bgg%qa(L)%data3d, &
+                             rc = STATUS )
+      VERIFY_(STATUS)
+
 
       IF ( TRIM(short_name) == 'RCOOH' ) THEN
-        IF ( MAXVAL(w_c%qa(N)%data3d) > 1.e-9 ) THEN
+        IF ( MAXVAL(bgg%qa(L)%data3d) > 1.e-9 ) THEN
           PRINT*,'RCOOH values are too high (GT 1e-9), likely from an old RESTART'
           PRINT*,'Remove RCOOH from gmichem_internal_rst.'
           STATUS = 1
@@ -1213,9 +1253,31 @@ CONTAINS
 
    end do
 
+   do L = 1, xxReg%nq
+
+      call MAPL_VarSpecGet ( InternalSpec(ggReg%nq+L), &
+                             SHORT_NAME = short_name,   &
+                             RC=STATUS )
+      VERIFY_(STATUS)
+
+!     IF(MAPL_AM_I_ROOT()) print*,'GMI species SHORT NAME '//TRIM(short_name)
+
+      ! fill the CHEM REG ones, while debugging
+      N = chemReg%i_XX + L - 1 ! Assumption: XX species immediately follow GMI species
+      CALL MAPL_GetPointer ( internal, NAME=short_name, ptr=w_c%qa(N)%data3d, &
+                             rc = STATUS )
+      VERIFY_(STATUS)
+
+      ! get the XX REG pointers
+      CALL MAPL_GetPointer ( internal, NAME=short_name, ptr=bxx%qa(L)%data3d, &
+                             rc = STATUS )
+      VERIFY_(STATUS)
+
+   end do
+
 !  Call initialize
 !  ---------------
-   call GMI_GridCompInitialize(gcGMI, w_c, impChem, expChem, nymd, nhms, gmiDt, GC, clock, STATUS)
+   call GMI_GridCompInitialize(gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, gmiDt, GC, clock, STATUS)
    VERIFY_(STATUS)
 
 !  Set up Overpass Masks
@@ -1419,7 +1481,7 @@ CONTAINS
     DO n = 1,numAttributes
      CALL ESMF_AttributeGet(aero, NAME=TRIM(attName(n)), VALUE=fieldName, __RC__)
      IF(fieldName /= '') THEN
-      field = MAPL_FieldCreateEmpty(TRIM(fieldName), w_c%grid_esmf, __RC__)
+      field = MAPL_FieldCreateEmpty(TRIM(fieldName), bgg%grid_esmf, __RC__)
       CALL MAPL_FieldAllocCommit(field, DIMS=MAPL_DimsHorzVert, LOCATION=loc(n), TYPEKIND=MAPL_R4, HW=0, __RC__)
       CALL MAPL_StateAdd(aero, field, __RC__)
      END IF
@@ -1651,8 +1713,12 @@ CONTAINS
    character(len=ESMF_MAXSTR)      :: COMP_NAME
 
    type(Chem_Registry), pointer    :: chemReg
+   type(Runtime_Registry), pointer :: ggReg
+   type(Runtime_Registry), pointer ::  xxReg
    type(GMI_GridComp), pointer     :: gcGMI       ! Grid Component
    type(Chem_Bundle), pointer      :: w_c         ! Chemical tracer fields     
+   type(Species_Bundle), pointer   :: bgg         ! Chemical tracer fields     
+   type(Species_Bundle), pointer   :: bxx         ! Chemical tracer fields     
    integer                         :: nymd, nhms  ! time
    real                            :: gmiDt       ! chemistry timestep (secs)
    real                            :: runDt       ! heartbeat (secs)
@@ -1733,7 +1799,7 @@ CONTAINS
 
 !  Get ESMF parameters from gc and clock
 !  -------------------------------------
-   CALL extract_(GC, clock, chemReg, gcGMI, w_c, nymd, nhms, gmiDt, runDt, STATUS)
+   CALL extract_(GC, clock, chemReg, ggReg, xxReg, gcGMI, w_c, bgg, bxx, nymd, nhms, gmiDt, runDt, STATUS)
    VERIFY_(STATUS)
 
    dtInverse = 1.00/runDt
@@ -1767,17 +1833,31 @@ CONTAINS
 ! for now, just impose a floor
      WHERE(w_c%qa(n)%data3d < FLOOR_VALUE) w_c%qa(n)%data3d=FLOOR_VALUE
    END DO
+
+   DO n = 1, ggReg%nq
+! debug print:
+!    IF(  ANY(bgg%qa(n)%data3d < FLOOR_VALUE) ) THEN
+!      m = COUNT( bgg%qa(n)%data3d < FLOOR_VALUE )
+!      PRINT*,'NEGDIAG:GMI SPECIES TOO SMALL (species,count):', n, m
+!    ENDIF
+! original approach - steal from the column to fill negatives
+!                     this leads to NOx issues in stratosphere
+!      CALL Chem_UtilNegFiller(bgg%qa(n)%data3d, DELP, i2, j2, QMIN=TINY(1.0))
+! for now, just impose a floor
+     WHERE(bgg%qa(n)%data3d < FLOOR_VALUE) bgg%qa(n)%data3d=FLOOR_VALUE
+   END DO
 #undef FLOOR_VALUE
 
 !  Occasionally, MAPL_UNDEFs appear in the imported tropopause pressures,
 !  TROPP. To avoid encountering them, save the most recent valid tropopause 
-!  pressures in an unused "layer" of T2M15D, i.e. w_c%qa(iT2M)%data3d(:,:,km). 
-!  By passing the information through the internal state via w_c%qa (at least
+!  pressures in an unused "layer" of T2M15D, i.e. bxx%qa(iT2M)%data3d(:,:,km). 
+!  By passing the information through the internal state via bxx%qa (at least
 !  for now), reproducibility across various layouts is assured, which is a 
 !  requirement that Chem_UtilTroppFixer, used before Ganymed, cannot satisfy.
 !  --------------------------------------------------------------------------
    CALL MAPL_GetPointer(impChem, TROPP, 'TROPP', __RC__)
 
+! OLD METHOD:
    m = ChemReg%i_XX
    n = ChemReg%j_XX
    iT2M = -1
@@ -1801,26 +1881,50 @@ CONTAINS
     VERIFY_(STATUS)
    END IF
 
+! NEW METHOD:
+   m = 1
+   n = xxReg%nq
+   iT2M = -1
+    
+   DO i = m,n
+    IF(TRIM(xxReg%vname(i)) == "T2M15d") iT2M = i
+    IF(iT2M > 0) EXIT
+   END DO
+
+   IF(iT2M < 1) THEN
+    PRINT *,TRIM(Iam)//": Invalid index for T2M15d (",iT2M,")"
+    STATUS = 1
+    VERIFY_(STATUS)
+   END IF
+
+   WHERE(tropp /= MAPL_UNDEF) bxx%qa(iT2M)%data3d(:,:,km) = TROPP
+
+   IF( ANY(bxx%qa(iT2M)%data3d(:,:,km) == MAPL_UNDEF) ) THEN
+    PRINT *,TRIM(Iam)//": At least one invalid tropopause pressure."
+    STATUS = 1
+    VERIFY_(STATUS)
+   END IF
+
 !  For comparison purposes, export both the "no MAPL_UNDEFs" TROPP and the
 !  imported TROPP. Note that AGCM updates TROPP before HISTORY is written.
 !  -----------------------------------------------------------------------
    CALL MAPL_GetPointer(expChem,  GMITROPP, 'GMITROPP',  __RC__)
-   IF(ASSOCIATED( GMITROPP))  GMITROPP = w_c%qa(iT2M)%data3d(:,:,km)
+   IF(ASSOCIATED( GMITROPP))  GMITROPP = bxx%qa(iT2M)%data3d(:,:,km)
 
    CALL MAPL_GetPointer(expChem, AGCMTROPP, 'AGCMTROPP', __RC__)
    IF(ASSOCIATED(AGCMTROPP)) AGCMTROPP = TROPP
 
 ! Are species tendencies requested?
 ! ---------------------------------
-    m = ChemReg%i_GMI
-    n = ChemReg%j_GMI
+    m = 1
+    n = ggReg%nq
     ALLOCATE(doMyTendency(m:n), __STAT__)
     doMyTendency(:) = .FALSE.
 
     nAlloc = 0
     DO i = m,n
 
-     fieldName = TRIM(chemReg%vname(i))
+     fieldName = TRIM(ggReg%vname(i))
      incFieldName = TRIM(fieldName)//"_GMITEND"
 
      CALL MAPL_GetPointer(expChem, sIncrement, TRIM(incFieldName), __RC__)
@@ -1851,12 +1955,12 @@ CONTAINS
     ALLOCATE(sInitial(1:i2,1:j2,km,nAlloc), __STAT__)
 
     k = 1
-    m = ChemReg%i_GMI
-    n = ChemReg%j_GMI
+    m = 1
+    n = ggReg%nq
   
     DO i = m,n
      IF(doMyTendency(i)) THEN
-      sInitial(:,:,:,k) = w_c%qa(i)%data3d
+      sInitial(:,:,:,k) = bgg%qa(i)%data3d
       k = k+1
      END IF
     END DO
@@ -1878,12 +1982,12 @@ CONTAINS
      CALL MAPL_GetPointer(impChem, OCS_import,  'OCS_CLIMO',  __RC__)
 !    CALL MAPL_GetPointer(impChem, OCS_import,  'ACHEM::OCS', __RC__)
 
-     m = ChemReg%i_XX
-     n = ChemReg%j_XX
+     m = 1
+     n = xxReg%nq
      iOCS = -1
     
      DO i = m,n
-       IF(TRIM(chemReg%vname(i)) == "OCSg") THEN
+       IF(TRIM(xxReg%vname(i)) == "OCSg") THEN
          iOCS = i
          EXIT
        END IF
@@ -1895,7 +1999,7 @@ CONTAINS
       VERIFY_(STATUS)
      END IF
 
-     w_c%qa(iOCS)%data3d(:,:,:) = OCS_import(:,:,:)
+     bxx%qa(iOCS)%data3d(:,:,:) = OCS_import(:,:,:)
 
    END IF OCS
 
@@ -1932,7 +2036,7 @@ CONTAINS
 
     CALL MAPL_TimerOn( MAPLobj, "RUN")
 
-    CALL GMI_GridCompRun1(gcGMI, w_c, impChem, expChem, nymd, nhms, runDt, clock, STATUS)
+    CALL GMI_GridCompRun1(gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, runDt, clock, STATUS)
     VERIFY_(STATUS)
 
     CALL MAPL_TimerOff(MAPLobj, "RUN")
@@ -1958,7 +2062,7 @@ CONTAINS
 
      CALL MAPL_TimerOn(MAPLobj, "RUN")
 
-     CALL GMI_GridCompRun2(gcGMI, w_c, impChem, expChem, nymd, nhms, runDt, gmiDt, RunGMINow, STATUS)
+     CALL GMI_GridCompRun2(gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, runDt, gmiDt, RunGMINow, STATUS)
      VERIFY_(STATUS)
 
      CALL MAPL_TimerOff(MAPLobj, "RUN")
@@ -1985,7 +2089,7 @@ CONTAINS
 
        CALL MAPL_TimerOn(MAPLobj, "RUN")
 
-       CALL GMI_GridCompRunOrig(gcGMI, w_c, impChem, expChem, nymd, nhms, gmiDt, clock, STATUS)
+       CALL GMI_GridCompRunOrig(gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, gmiDt, clock, STATUS)
        VERIFY_(STATUS)
 
        CALL MAPL_TimerOff(MAPLobj, "RUN")
@@ -2003,13 +2107,13 @@ CONTAINS
    END IF Phase99
 
 !  Update age-of-air.
-!  This transported species is at w_c%qa(ChemReg%i_GMI)%data3d.
+!  This transported species is at bgg%qa(1)%data3d.
 !  This process is done at the Heartbeat (runDt)
 !  --------------------------------------------------------------------------------
    IF ( phase == 1 .OR. phase == 99 ) THEN
-     n = ChemReg%i_GMI
-     w_c%qa(n)%data3d(:,:,:) = w_c%qa(n)%data3d(:,:,:)+runDt/86400.00
-     w_c%qa(n)%data3d(:,:,km) = 0.00
+     n = 1
+     bgg%qa(n)%data3d(:,:,:) = bgg%qa(n)%data3d(:,:,:)+runDt/86400.00
+     bgg%qa(n)%data3d(:,:,km) = 0.00
    END IF
 
 !  Gas-phase water in mole fraction.  Purpose: Allow plotting of mole 
@@ -2040,12 +2144,12 @@ CONTAINS
 
      DoingTotalOzone: IF(ASSOCIATED(TTO3) .OR. ASSOCIATED(TO3)) THEN
 
-      m = ChemReg%i_GMI
-      n = ChemReg%j_GMI
+      m = 1
+      n = ggReg%nq
       iOX = -1
     
       DO i = m,n
-       IF(TRIM(chemReg%vname(i)) == "OX") iOX = i
+       IF(TRIM(ggReg%vname(i)) == "OX") iOX = i
        IF(iOx > 0) EXIT
       END DO
 
@@ -2059,11 +2163,11 @@ CONTAINS
       ALLOCATE(wgt(SIZE(LATS,1), SIZE(LATS,2)), __STAT__)
 
       DO k = 1,km
-       wrk = w_c%qa(iOX)%data3d(:,:,k)*(PLE(:,:,k)-PLE(:,:,k-1))*(MAPL_AVOGAD/2.69E+20)/(MAPL_AIRMW*MAPL_GRAV)
+       wrk = bgg%qa(iOX)%data3d(:,:,k)*(PLE(:,:,k)-PLE(:,:,k-1))*(MAPL_AVOGAD/2.69E+20)/(MAPL_AIRMW*MAPL_GRAV)
        IF(ASSOCIATED( TO3)) TO3 = TO3+wrk
 
        IF(ASSOCIATED(TTO3)) THEN
-        wgt  = MAX(0.0,MIN(1.0,(PLE(:,:,k)-w_c%qa(iT2M)%data3d(:,:,km))/(PLE(:,:,k)-PLE(:,:,k-1))))
+        wgt  = MAX(0.0,MIN(1.0,(PLE(:,:,k)-bgg%qa(iT2M)%data3d(:,:,km))/(PLE(:,:,k)-PLE(:,:,k-1))))
         TTO3 = TTO3+wrk*wgt
        END IF
 
@@ -2084,7 +2188,7 @@ CONTAINS
 
 ! NO2 overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'NO2', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'NO2', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP10_OUTPUT_3D, 'OVP10_NO2', __RC__)
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_NO2', __RC__)
@@ -2094,7 +2198,7 @@ CONTAINS
 
 ! CH2O overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'CH2O', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'CH2O', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP10_OUTPUT_3D, 'OVP10_CH2O', __RC__)
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_CH2O', __RC__)
@@ -2104,7 +2208,7 @@ CONTAINS
 
 ! CO overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'CO', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'CO', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP10_OUTPUT_3D, 'OVP10_CO', __RC__)
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_CO', __RC__)
@@ -2114,7 +2218,7 @@ CONTAINS
 
 ! OX overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'OX', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'OX', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP10_OUTPUT_3D, 'OVP10_OX', __RC__)
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_OX', __RC__)
@@ -2124,7 +2228,7 @@ CONTAINS
 
 ! CH4 overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'CH4', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'CH4', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP10_OUTPUT_3D, 'OVP10_CH4', __RC__)
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_CH4', __RC__)
@@ -2134,77 +2238,77 @@ CONTAINS
 
 ! BrO overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'BrO', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'BrO', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_BrO', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! PAN overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'PAN', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'PAN', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_PAN', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! ISOP overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'ISOP', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'ISOP', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_ISOP', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! MOH overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'MOH', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'MOH', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_MOH', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! HCOOH overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'HCOOH', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'HCOOH', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_HCOOH', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! N2O overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'N2O', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'N2O', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_N2O', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! HCl overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'HCl', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'HCl', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_HCl', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! HNO3 overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'HNO3', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'HNO3', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_HNO3', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! ClO overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'ClO', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'ClO', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_ClO', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! CH3Cl overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'CH3Cl', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'CH3Cl', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_CH3Cl', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! NO overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'NO', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'NO', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP10_OUTPUT_3D, 'OVP10_NO', __RC__)
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_NO', __RC__)
@@ -2214,105 +2318,105 @@ CONTAINS
 
 ! HOCl overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'HOCl', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'HOCl', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_HOCl', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! ClONO2 overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'ClONO2', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'ClONO2', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_ClONO2', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! Cl2O2 overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'Cl2O2', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'Cl2O2', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_Cl2O2', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! Cl overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'Cl', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'Cl', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_Cl', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! Cl2 overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'Cl2', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'Cl2', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_Cl2', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! OClO overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'OClO', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'OClO', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_OClO', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! BrCl overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'BrCl', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'BrCl', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_BrCl', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! Br overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'Br', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'Br', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_Br', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! BrONO2 overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'BrONO2', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'BrONO2', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_BrONO2', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! HBr overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'HBr', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'HBr', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_HBr', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! HOBr overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'HOBr', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'HOBr', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_HOBr', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! OH overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'OH', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'OH', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_OH', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! HO2 overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'HO2', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'HO2', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_HO2', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! R4N2 overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'R4N2', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'R4N2', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_R4N2', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 ! HNO3COND overpass
 
-     CALL secure_species_ptr( ChemReg, w_c, 'HNO3COND', DATA_FOR_OVP_3D )
+     CALL secure_species_ptr( ggReg, bgg, 'HNO3COND', DATA_FOR_OVP_3D )
 
      CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_HNO3COND', __RC__)
      CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
@@ -2330,24 +2434,24 @@ CONTAINS
    StoreTendencies: IF(doingTendencies) THEN
 
     k = 1
-    m = ChemReg%i_GMI
-    n = ChemReg%j_GMI
+    m = 1
+    n = ggReg%nq
 
     DO i = m,n
 
      IF(doMyTendency(i)) THEN
 
-      fieldName = TRIM(chemReg%vname(i))
+      fieldName = TRIM(ggReg%vname(i))
       incFieldName = TRIM(fieldName)//"_GMITEND"
 
       CALL MAPL_GetPointer(expChem, sIncrement, TRIM(incFieldName), __RC__)
 
       IF(ASSOCIATED(sIncrement)) THEN
         IF ( phase == 1 .OR. phase == 99 ) THEN
-          sIncrement =              (w_c%qa(i)%data3d - sInitial(:,:,:,k))*dtInverse
+          sIncrement =              (bgg%qa(i)%data3d - sInitial(:,:,:,k))*dtInverse
         END IF
         IF ( phase == 2 ) THEN
-          sIncrement = sIncrement + (w_c%qa(i)%data3d - sInitial(:,:,:,k))*dtInverse
+          sIncrement = sIncrement + (bgg%qa(i)%data3d - sInitial(:,:,:,k))*dtInverse
         END IF
       END IF
 
@@ -2359,10 +2463,10 @@ CONTAINS
     END DO
 
 !  -------------------------------------------------------------
-!    DO n = ChemReg%i_GMI, ChemReg%j_GMI
-!     IF(  ANY(w_c%qa(n)%data3d < 0.0) ) THEN
-!       m = COUNT( w_c%qa(n)%data3d < 0.0 )
-!       PRINT*,'NEGDIAG:GMI SPECIES finish NEGATIVE (phase,species,count):', phase, n-ChemReg%i_GMI+1, m
+!    DO n = 1, ggReg%nq
+!     IF(  ANY(bgg%qa(n)%data3d < 0.0) ) THEN
+!       m = COUNT( bgg%qa(n)%data3d < 0.0 )
+!       PRINT*,'NEGDIAG:GMI SPECIES finish NEGATIVE (phase,species,count):', phase, n, m
 !     ENDIF
 !    END DO
 !  -------------------------------------------------------------
@@ -2437,8 +2541,12 @@ CONTAINS
    character(len=ESMF_MAXSTR)      :: COMP_NAME
 
    type(Chem_Registry), pointer    :: chemReg
+   type(Runtime_Registry), pointer :: ggReg
+   type(Runtime_Registry), pointer ::  xxReg
    type(GMI_GridComp), pointer     :: gcGMI       ! Grid Component
    type(Chem_Bundle), pointer      :: w_c         ! Chemical tracer fields     
+   type(Species_Bundle), pointer   :: bgg         ! Chemical tracer fields     
+   type(Species_Bundle), pointer   :: bxx
    type(MAPL_MetaComp), pointer    :: MAPLobj     ! GEOS Generic State
    integer                         :: nymd, nhms  ! time
    real                            :: gmiDt       ! chemistry timestep (secs)
@@ -2463,12 +2571,12 @@ CONTAINS
 
 !  Get ESMF parameters from gc and clock
 !  -------------------------------------
-   call extract_(gc, clock, chemReg, gcGMI, w_c, nymd, nhms, gmiDt, runDt, STATUS, state = state)
+   call extract_(gc, clock, chemReg, ggReg, xxReg, gcGMI, w_c, bgg, bxx, nymd, nhms, gmiDt, runDt, STATUS, state = state)
    VERIFY_(STATUS)
 
 !  Call ESMF version
 !  -----------------
-   call GMI_GridCompFinalize(gcGMI, w_c, impChem, expChem, nymd, nhms, gmiDt, STATUS)
+   call GMI_GridCompFinalize(gcGMI, impChem, expChem, nymd, nhms, gmiDt, STATUS)
    VERIFY_(STATUS)
 
 !  Destroy Chem_Bundle
@@ -2476,14 +2584,28 @@ CONTAINS
    call Chem_BundleDestroy ( w_c, STATUS )
    VERIFY_(STATUS)
 
+!  Destroy Species_Bundles
+!  -----------------------
+   call Species_BundleDestroy ( bgg, STATUS )
+   VERIFY_(STATUS)
+   call Species_BundleDestroy ( bxx, STATUS )
+   VERIFY_(STATUS)
+
 !  Destroy Chem_Registry
 !  ---------------------
    call Chem_RegistryDestroy ( chemReg, STATUS ) 
    VERIFY_(STATUS)
 
+!  Destroy Runtime Registries
+!  --------------------------
+   call Runtime_RegistryDestroy ( ggReg, STATUS ) 
+   VERIFY_(STATUS)
+   call Runtime_RegistryDestroy (  xxReg, STATUS ) 
+   VERIFY_(STATUS)
+
 !  Destroy Legacy state
 !  --------------------
-   deallocate ( state%chemReg, state%gcGMI, state%w_c, stat = STATUS )
+   deallocate ( state%chemReg, state%ggReg, state%xxReg, state%gcGMI, state%w_c, state%bgg, state%bxx, stat = STATUS )
    VERIFY_(STATUS)
 
 !  Free the masks
@@ -2508,13 +2630,17 @@ CONTAINS
 !-------------------------------------------------------------------------
 !     NASA/GSFC, Global Modeling and Assimilation Office, Code 610.1     !
 !-------------------------------------------------------------------------
-    SUBROUTINE extract_(gc, clock, chemReg, gcGMI, w_c, nymd, nhms, gmiDt, runDt, rc, state)
+    SUBROUTINE extract_(gc, clock, chemReg, ggReg, xxReg, gcGMI, w_c, bgg, bxx, nymd, nhms, gmiDt, runDt, rc, state)
 
     type(ESMF_GridComp), intent(inout) :: gc
     type(ESMF_Clock), intent(in)       :: clock
     type(Chem_Registry), pointer       :: chemReg
+    type(Runtime_Registry), pointer    :: ggReg
+    type(Runtime_Registry), pointer    ::  xxReg
     type(GMI_GridComp), pointer        :: gcGMI
     type(Chem_Bundle), pointer         :: w_c
+    type(Species_Bundle), pointer      :: bgg
+    type(Species_Bundle), pointer      :: bxx
     integer, intent(out)               :: nymd, nhms
     real, intent(out)                  :: gmiDt
     real, intent(out)                  :: runDt
@@ -2559,6 +2685,14 @@ CONTAINS
          allocate ( myState%chemReg, stat=STATUS )
          VERIFY_(STATUS)
     end if
+    if ( .not. associated(myState%ggReg) ) then
+         allocate ( myState%ggReg, stat=STATUS )
+         VERIFY_(STATUS)
+    end if
+    if ( .not. associated(myState%xxReg) ) then
+         allocate ( myState%xxReg, stat=STATUS )
+         VERIFY_(STATUS)
+    end if
     if ( .not. associated(myState%gcGMI) ) then
          allocate ( myState%gcGMI, stat=STATUS )
          VERIFY_(STATUS)
@@ -2567,10 +2701,22 @@ CONTAINS
          allocate ( myState%w_c, stat=STATUS )
          VERIFY_(STATUS)
     end if
+    if ( .not. associated(myState%bgg) ) then
+         allocate ( myState%bgg, stat=STATUS )
+         VERIFY_(STATUS)
+    end if
+    if ( .not. associated(myState%bxx) ) then
+         allocate ( myState%bxx, stat=STATUS )
+         VERIFY_(STATUS)
+    end if
 
     chemReg => myState%chemReg
+    ggReg => myState%ggReg
+     xxReg => myState%xxReg
     gcGMI  => myState%gcGMI
     w_c     => myState%w_c
+    bgg     => myState%bgg
+    bxx     => myState%bxx
 
 !   Get the configuration
 !   ---------------------
@@ -2810,12 +2956,12 @@ contains
 
 end subroutine aerosol_optics
 
-SUBROUTINE secure_species_ptr( ChemReg, w_c, SPECIES_NAME, DATA_PTR )
+SUBROUTINE secure_species_ptr( reg, w_s, SPECIES_NAME, DATA_PTR )
 
 ! !ARGUMENTS
 
-     TYPE(Chem_Registry), POINTER,    INTENT(in)  :: chemReg
-     TYPE(Chem_Bundle),   POINTER,    INTENT(in)  :: w_c
+     TYPE(Runtime_Registry), POINTER,    INTENT(in)  :: reg
+     TYPE(Species_Bundle),   POINTER,    INTENT(in)  :: w_s
      CHARACTER(len=*),                INTENT(in)  :: SPECIES_NAME
      REAL, POINTER, DIMENSION(:,:,:), INTENT(out) :: DATA_PTR
 
@@ -2825,15 +2971,15 @@ SUBROUTINE secure_species_ptr( ChemReg, w_c, SPECIES_NAME, DATA_PTR )
 
     iSpecies = -1
 
-    DO i = ChemReg%i_GMI,ChemReg%j_GMI
-     IF(TRIM(chemReg%vname(i)) == SPECIES_NAME) iSpecies = i
+    DO i = 1,reg%nq
+     IF(TRIM(reg%vname(i)) == SPECIES_NAME) iSpecies = i
 !    IF(iSpecies > 0) EXIT
     END DO
 
     IF(iSpecies < 1) THEN
       NULLIFY(DATA_PTR)
     ELSE
-      DATA_PTR => w_c%qa(iSpecies)%data3d
+      DATA_PTR => w_s%qa(iSpecies)%data3d
     END IF
 
     RETURN
