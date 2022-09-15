@@ -121,7 +121,7 @@ CONTAINS
    type(ESMF_Config)  ::  cf
 
    type(Runtime_Registry) :: this
-   integer :: nq, item_count, retcode
+   integer :: nq, nx, item_count, retcode
    integer :: i
 
    rc = 0
@@ -132,8 +132,8 @@ CONTAINS
    call ESMF_ConfigLoadFile(cf, rcfile, rc=rc)
    _ASSERT(rc==0, TRIM(Iam)//': Cannot load RC file '//TRIM(rcfile))
 
-   call ESMF_ConfigGetAttribute(cf, nq, label='tracer_count:', rc=rc)
-   _ASSERT(rc==0, TRIM(Iam)//': Cannot find tracer_count in file '//TRIM(rcfile))
+   call ESMF_ConfigGetDim(cf, nq, nx, label=table_name, rc=rc)
+   _ASSERT(rc==0, TRIM(Iam)//': Cannot get dims for table '//TRIM(table_name)//' in '//TRIM(rcfile))
 
 !  Allocate memory in registry
 !  ---------------------------
@@ -147,9 +147,9 @@ CONTAINS
       call get_line ( cf, 3, str_arr, item_count, retcode )
       select case( retcode )
         case( RC_END_OF_FILE  )
-          _ASSERT(.FALSE., TRIM(Iam)//': early EOF in file '//TRIM(rcfile))
+          _FAIL(TRIM(Iam)//': early EOF in file '//TRIM(rcfile))
         case( RC_END_OF_TABLE )
-          _ASSERT(.FALSE., TRIM(Iam)//': table too short '//TRIM(table_name)//' in file '//TRIM(rcfile))
+          _FAIL(TRIM(Iam)//': table too short '//TRIM(table_name)//' in file '//TRIM(rcfile))
         case( RC_DATA_LINE    )
           _ASSERT(item_count==3, TRIM(Iam)//': fewer than 3 entries in '//TRIM(table_name)//' in file '//TRIM(rcfile))
           this%vname(i)  = str_arr(1)
