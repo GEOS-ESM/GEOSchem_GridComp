@@ -101,10 +101,10 @@
 
 ! !INPUT PARAMETERS:
 
-   TYPE(Species_Bundle), INTENT(in) :: bgg         ! Chemical tracer fields, delp, +
-   TYPE(Species_Bundle), INTENT(in) :: bxx         ! Chemical tracer fields, delp, +
-   INTEGER,	      INTENT(in) :: nymd, nhms  ! Time from AGCM
-   REAL, 	      INTENT(in) :: cdt         ! Chemistry time step (secs)
+   TYPE(Species_Bundle), INTENT(in) :: bgg         ! GMI Species - transported
+   TYPE(Species_Bundle), INTENT(in) :: bxx         ! GMI Species - not transported
+   INTEGER,	         INTENT(in) :: nymd, nhms  ! Time from AGCM
+   REAL, 	         INTENT(in) :: cdt         ! Chemistry time step (secs)
 
 ! !INPUT/OUTPUT PARAMETERS:
 
@@ -177,12 +177,12 @@
 
 ! !INPUT/OUTPUT PARAMETERS:
 
-   TYPE(GMI_GridComp), INTENT(inOut) :: gcGMI   ! Grid Component
-   TYPE(Species_Bundle),  INTENT(inOut) :: bgg     ! Chemical tracer fields   
-   TYPE(Species_Bundle),  INTENT(inOut) :: bxx     ! Chemical tracer fields   
-   TYPE(ESMF_State),   INTENT(inOut) :: impChem ! Import State
-   TYPE(ESMF_State),   INTENT(inOut) :: expChem ! Export State
-   TYPE(ESMF_Clock),   INTENT(inOut) :: clock   ! The clock
+   TYPE(GMI_GridComp),   INTENT(inOut) :: gcGMI   ! Grid Component
+   TYPE(Species_Bundle), INTENT(inOut) :: bgg     ! GMI Species - transported
+   TYPE(Species_Bundle), INTENT(inOut) :: bxx     ! GMI Species - not transported
+   TYPE(ESMF_State),     INTENT(inOut) :: impChem ! Import State
+   TYPE(ESMF_State),     INTENT(inOut) :: expChem ! Export State
+   TYPE(ESMF_Clock),     INTENT(inOut) :: clock   ! The clock
 
 ! !INPUT PARAMETERS:
 
@@ -248,11 +248,11 @@
 
 ! !INPUT/OUTPUT PARAMETERS:
 
-   TYPE(GMI_GridComp), INTENT(inOut) :: gcGMI   ! Grid Component
-   TYPE(Species_Bundle),  INTENT(inOut) :: bgg     ! Chemical tracer fields   
-   TYPE(Species_Bundle),  INTENT(inOut) :: bxx     ! Chemical tracer fields   
-   TYPE(ESMF_State),   INTENT(inOut) :: impChem ! Import State
-   TYPE(ESMF_State),   INTENT(inOut) :: expChem ! Export State
+   TYPE(GMI_GridComp),   INTENT(inOut) :: gcGMI   ! Grid Component
+   TYPE(Species_Bundle), INTENT(inOut) :: bgg     ! GMI Species - transported
+   TYPE(Species_Bundle), INTENT(inOut) :: bxx     ! GMI Species - not transported
+   TYPE(ESMF_State),     INTENT(inOut) :: impChem ! Import State
+   TYPE(ESMF_State),     INTENT(inOut) :: expChem ! Export State
 
 ! !INPUT PARAMETERS:
 
@@ -327,12 +327,12 @@
 
 ! !INPUT/OUTPUT PARAMETERS:
 
-   TYPE(GMI_GridComp), INTENT(inOut) :: gcGMI   ! Grid Component
-   TYPE(Species_Bundle),  INTENT(inOut) :: bgg     ! Chemical tracer fields   
-   TYPE(Species_Bundle),  INTENT(inOut) :: bxx     ! Chemical tracer fields   
-   TYPE(ESMF_State),   INTENT(inOut) :: impChem ! Import State
-   TYPE(ESMF_State),   INTENT(inOut) :: expChem ! Export State
-   TYPE(ESMF_Clock),   INTENT(inOut) :: clock   ! The clock
+   TYPE(GMI_GridComp),   INTENT(inOut) :: gcGMI   ! Grid Component
+   TYPE(Species_Bundle), INTENT(inOut) :: bgg     ! GMI Species - transported
+   TYPE(Species_Bundle), INTENT(inOut) :: bxx     ! GMI Species - not transported
+   TYPE(ESMF_State),     INTENT(inOut) :: impChem ! Import State
+   TYPE(ESMF_State),     INTENT(inOut) :: expChem ! Export State
+   TYPE(ESMF_Clock),     INTENT(inOut) :: clock   ! The clock
 
 ! !INPUT PARAMETERS:
 

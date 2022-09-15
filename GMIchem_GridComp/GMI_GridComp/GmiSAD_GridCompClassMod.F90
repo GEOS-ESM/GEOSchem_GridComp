@@ -167,7 +167,7 @@
 
 ! Component derived type declarations
 ! -----------------------------------
-   TYPE(t_gmiGrid   )		:: gmiGrid
+   TYPE(t_gmiGrid   )           :: gmiGrid
    TYPE(t_GmiClock  )           :: gmiClock
    TYPE(t_SpeciesConcentration) :: SpeciesConcentration
  
@@ -189,7 +189,7 @@ CONTAINS
                                       tdt, rc )
 
    USE GmiSpcConcentrationMethod_mod, ONLY : InitializeSpcConcentration
-   USE GmiGrid_mod,		      ONLY : InitializeGmiGrid
+   USE GmiGrid_mod,                   ONLY : InitializeGmiGrid
    USE GmiTimeControl_mod,            ONLY : Set_curGmiDate, Set_curGmiTime
    USE GmiTimeControl_mod,            ONLY : Set_begGmiDate, Set_begGmiTime
    USE GmiTimeControl_mod,            ONLY : Set_numTimeSteps
@@ -199,16 +199,16 @@ CONTAINS
 
 ! !INPUT PARAMETERS:
 
-   TYPE(Species_Bundle), INTENT(in) :: bgg                ! Chemical tracer fields, delp, +
-   TYPE(Species_Bundle), INTENT(in) :: bxx                ! Chemical tracer fields, delp, +
-   INTEGER, INTENT(IN) :: nymd, nhms		       ! Time from AGCM
-   REAL,    INTENT(IN) :: tdt			       ! time step (secs)
+   TYPE(Species_Bundle), INTENT(IN) :: bgg                ! GMI Species - transported
+   TYPE(Species_Bundle), INTENT(IN) :: bxx                ! GMI Species - not transported
+   INTEGER,              INTENT(IN) :: nymd, nhms         ! Time from AGCM
+   REAL,                 INTENT(IN) :: tdt                ! time step (secs)
 
 ! !OUTPUT PARAMETERS:
 
-   TYPE(GmiSAD_GridComp), INTENT(INOUT)  :: self      ! Grid Component
-   TYPE(ESMF_State),   INTENT(INOUT)  :: impChem    ! Import State
-   TYPE(ESMF_State),   INTENT(INOUT)  :: expChem    ! Export State
+   TYPE(GmiSAD_GridComp), INTENT(INOUT)  :: self       ! Grid Component
+   TYPE(ESMF_State),      INTENT(INOUT)  :: impChem    ! Import State
+   TYPE(ESMF_State),      INTENT(INOUT)  :: expChem    ! Export State
 
    INTEGER, INTENT(out) ::  rc                  ! Error return code:
                                                 !  0 - all is well
@@ -725,15 +725,15 @@ CONTAINS
 
 ! !INPUT/OUTPUT PARAMETERS:
 
-   TYPE(GmiSAD_GridComp), INTENT(INOUT) :: self ! Grid Component
-   TYPE(Species_Bundle), INTENT(INOUT) :: bgg    ! Chemical tracer fields   
-   TYPE(Species_Bundle), INTENT(INOUT) :: bxx    ! Chemical tracer fields   
+   TYPE(GmiSAD_GridComp), INTENT(INOUT) :: self   ! Grid Component
+   TYPE(Species_Bundle),  INTENT(INOUT) :: bgg    ! GMI Species - transported
+   TYPE(Species_Bundle),  INTENT(INOUT) :: bxx    ! GMI Species - not transported
 
 ! !INPUT PARAMETERS:
 
    TYPE(ESMF_State), INTENT(INOUT) :: impChem ! Import State
-   INTEGER, INTENT(IN) :: nymd, nhms	      ! time
-   REAL,    INTENT(IN) :: tdt		      ! chemical timestep (secs)
+   INTEGER, INTENT(IN) :: nymd, nhms          ! time
+   REAL,    INTENT(IN) :: tdt                 ! chemical timestep (secs)
 
 ! !OUTPUT PARAMETERS:
 
@@ -928,7 +928,7 @@ CONTAINS
 ! Hand the species concentrations to GMI's bundle
 ! -----------------------------------------------
    IF (self%gotImportRst) then
-      CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration, &
+      CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration,    &
                bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, &
                STATUS)
       VERIFY_(STATUS)
@@ -950,22 +950,22 @@ CONTAINS
     self%dehydmin = 0.00
 
     CALL updateSurfaceAreaDensities (tdt8, tropopausePress, press3c,      &
-    	       press3e, kel, self%SpeciesConcentration%concentration,	  &
-    	       self%ch4clim, self%h2oclim, self%hno3cond, self%hno3gas,   &
-    	       self%lbssad, self%sadgmi, self%h2oback, self%h2ocond,	  &
-    	       self%reffice, self%reffsts, self%vfall, self%dehydmin,	  &
-    	       self%dehyd_opt, self%h2oclim_opt, self%lbssad_opt,	  &
-    	       self%sad_opt, IHNO3COND, self%idehyd_num, ICH4,  	  &
-    	       IHNO3, IH2O, nymd, self%pr_diag, loc_proc, NSP,  	  &
-    	       NSAD, self%lbssad_timpyr, self%h2oclim_timpyr,		  &
-    	       ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1, k2, londeg,	  &
-    	       latdeg, self%NoPSCZone, self%PSCMaxP, self%chem_mecha)
+               press3e, kel, self%SpeciesConcentration%concentration,     &
+               self%ch4clim, self%h2oclim, self%hno3cond, self%hno3gas,   &
+               self%lbssad, self%sadgmi, self%h2oback, self%h2ocond,      &
+               self%reffice, self%reffsts, self%vfall, self%dehydmin,     &
+               self%dehyd_opt, self%h2oclim_opt, self%lbssad_opt,         &
+               self%sad_opt, IHNO3COND, self%idehyd_num, ICH4,            &
+               IHNO3, IH2O, nymd, self%pr_diag, loc_proc, NSP,            &
+               NSAD, self%lbssad_timpyr, self%h2oclim_timpyr,             &
+               ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1, k2, londeg,      &
+               latdeg, self%NoPSCZone, self%PSCMaxP, self%chem_mecha)
 
 ! Return species concentrations to the chemistry bundle
 ! -----------------------------------------------------
-    CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration, &
-    	     bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
-    	     STATUS)
+    CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration,   &
+             bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
+             STATUS)
     VERIFY_(STATUS)
 
 ! Check for HNO3COND above chosen limit

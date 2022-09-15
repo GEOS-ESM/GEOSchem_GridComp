@@ -159,8 +159,8 @@ CONTAINS
 
 ! !INPUT PARAMETERS:
 
-   TYPE(Species_Bundle), INTENT(in) :: bgg             ! Transported GMI species
-   TYPE(Species_Bundle), INTENT(in) :: bxx             ! Non-transported GMI species
+   TYPE(Species_Bundle), INTENT(in) :: bgg             ! GMI Species - transported
+   TYPE(Species_Bundle), INTENT(in) :: bxx             ! GMI Species - not transported
    INTEGER, INTENT(IN) :: nymd, nhms		       ! Time from AGCM
    REAL,    INTENT(IN) :: tdt			       ! Chemistry time step (secs)
 
@@ -417,8 +417,8 @@ CONTAINS
                      self%gmiGrid, gmiConfigFile, NSP, NMF, NCHEM,            &
                      loc_proc)
 
-      CALL InitializeDeposition(self%Deposition, self%gmiGrid,               &
-                     gmiConfigFile, NSP, loc_proc, self%pr_diag,      &
+      CALL InitializeDeposition(self%Deposition, self%gmiGrid,                &
+                     gmiConfigFile, NSP, loc_proc, self%pr_diag,              &
                      self%pr_dry_depos, self%pr_wet_depos, self%pr_scav)
 
       !#################################################################
@@ -488,9 +488,9 @@ CONTAINS
 
 ! !INPUT/OUTPUT PARAMETERS:
 
-   TYPE(GmiDepos_GridComp), INTENT(INOUT) :: self ! Grid Component
-   TYPE(Species_Bundle), INTENT(INOUT) :: bgg             ! Transported GMI species
-   TYPE(Species_Bundle), INTENT(INOUT) :: bxx             ! Non-transported GMI species
+   TYPE(GmiDepos_GridComp), INTENT(INOUT) :: self   ! Grid Component
+   TYPE(Species_Bundle),    INTENT(INOUT) :: bgg    ! GMI Species - transported
+   TYPE(Species_Bundle),    INTENT(INOUT) :: bxx    ! GMI Species - not transported
 
 ! !INPUT PARAMETERS:
 

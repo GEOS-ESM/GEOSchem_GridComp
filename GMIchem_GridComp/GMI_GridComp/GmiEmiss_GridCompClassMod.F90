@@ -218,10 +218,10 @@ CONTAINS
 
 ! !INPUT PARAMETERS:
 
-   TYPE(Species_Bundle), INTENT(in) :: bgg                ! Chemical tracer fields, delp, +
-   TYPE(Species_Bundle), INTENT(in) :: bxx                ! Chemical tracer fields, delp, +
-   INTEGER, INTENT(IN) :: nymd, nhms                   ! Time from AGCM
-   REAL,    INTENT(IN) :: tdt                          ! Chemistry time step (secs)
+   TYPE(Species_Bundle), INTENT(IN) :: bgg             ! GMI Species - transported
+   TYPE(Species_Bundle), INTENT(IN) :: bxx             ! GMI Species - not transported
+   INTEGER,              INTENT(IN) :: nymd, nhms      ! Time from AGCM
+   REAL,                 INTENT(IN) :: tdt             ! Chemistry time step (secs)
 
 ! !OUTPUT PARAMETERS:
 
@@ -539,10 +539,10 @@ CONTAINS
                      self%gmiGrid, gmiConfigFile, NSP, NMF, NCHEM,            &
                      loc_proc)
 
-      CALL InitializeEmission(self%Emission, self%SpeciesConcentration,      &
-                     self%gmiGrid, gmiConfigFile, self%cellArea, IHNO3, IO3, &
-                     NSP, loc_proc, rootProc, self%chem_opt, self%trans_opt, &
-                     self%pr_diag,   &
+      CALL InitializeEmission(self%Emission, self%SpeciesConcentration,       &
+                     self%gmiGrid, gmiConfigFile, self%cellArea, IHNO3, IO3,  &
+                     NSP, loc_proc, rootProc, self%chem_opt, self%trans_opt,  &
+                     self%pr_diag,                                            &
                      self%pr_const, self%pr_surf_emiss, self%pr_emiss_3d, tdt)
 
       IF (BTEST(self%Emission%emiss_opt,1)) THEN
@@ -700,10 +700,10 @@ CONTAINS
             SUBROUTINE GmiEmiss_initSurfEmissBundle (self, bgg, expChem, rc)
 !
 ! !INPUT PARAMETERS:
-   TYPE(Species_Bundle), INTENT(in) :: bgg                ! Chemical tracer fields, delp
+   TYPE(Species_Bundle), INTENT(in) :: bgg      ! GMI Species - transported
 
 ! !OUTPUT PARAMETERS:
-      INTEGER, INTENT(out) ::  rc                  ! Error return code:
+      INTEGER, INTENT(out) ::  rc               ! Error return code:
                                                 !  0 - all is well
                                                 !  1 - 
 !
@@ -785,8 +785,8 @@ CONTAINS
 ! !INPUT/OUTPUT PARAMETERS:
 
    TYPE(GmiEmiss_GridComp), INTENT(INOUT) :: self        ! Grid Component
-   TYPE(Species_Bundle),       INTENT(INOUT) :: bgg         ! Chemical tracer fields   
-   TYPE(Species_Bundle),       INTENT(INOUT) :: bxx         ! Chemical tracer fields   
+   TYPE(Species_Bundle),    INTENT(INOUT) :: bgg         ! GMI Species - transported
+   TYPE(Species_Bundle),    INTENT(INOUT) :: bxx         ! GMI Species - not transported
    TYPE(ESMF_State),        INTENT(INOUT) :: impChem     ! Import State
    TYPE(ESMF_State),        INTENT(INOUT) :: expChem     ! Export State
    TYPE(ESMF_Clock),        INTENT(INOUT) :: clock       ! The clock
@@ -1074,9 +1074,8 @@ CONTAINS
 ! Hand the species concentrations to GMI's bundle
 ! -----------------------------------------------
    IF (self%gotImportRst) THEN
-      CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration, &
-               bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, &
-               STATUS)
+      CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration,          &
+               bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, STATUS)
       VERIFY_(STATUS)
    END IF
 
@@ -1176,7 +1175,7 @@ CONTAINS
 ! Return species concentrations to the chemistry bundle
 ! -----------------------------------------------------
    IF (self%gotImportRst) THEN
-      CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration, &
+      CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration,   &
                bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
                STATUS)
       VERIFY_(STATUS)

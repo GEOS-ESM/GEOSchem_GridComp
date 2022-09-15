@@ -13,7 +13,6 @@ module GmiSwapSpeciesBundlesMod
 
       USE GmiStringManipulation_mod, ONLY : stringLowerCase
       USE GmiArrayBundlePointer_mod, ONLY : t_GmiArrayBundle
-!     USE Chem_ArrayMod
       USE Species_ArrayMod
 !
       implicit none
@@ -62,8 +61,8 @@ module GmiSwapSpeciesBundlesMod
 ! !INPUT/OUTPUT PARAMETERS:
       REAL                    :: specHum(:,:,:)
       type (t_GmiArrayBundle) :: gmiBundle(:)
-      type(species_array)        :: geos5BundleGG(:)
-      type(species_array)        :: geos5BundleXX(:)
+      type(Species_Array)     :: geos5BundleGG(:)
+      type(Species_Array)     :: geos5BundleXX(:)
 !
 ! !DESCRIPTION:
 !  Copy chemistry bundle to GMI's species concentration bundle and 

@@ -75,12 +75,12 @@
   TYPE GMIchem_State
      PRIVATE
      TYPE(Chem_Registry),    POINTER :: chemReg  => null()
-     TYPE(Runtime_Registry), POINTER ::   ggReg  => null()    ! the (transported) chemical species
-     TYPE(Runtime_Registry), POINTER ::   xxReg  => null()    ! the non-transported species
+     TYPE(Runtime_Registry), POINTER ::   ggReg  => null()    ! Names of GMI Species - transported
+     TYPE(Runtime_Registry), POINTER ::   xxReg  => null()    ! Names of GMI Species - not transported
      TYPE(GMI_GridComp),     POINTER :: gcGMI    => null()
      TYPE(Chem_Bundle),      POINTER :: w_c      => null()
-     TYPE(Species_Bundle),   POINTER :: bgg      => null()
-     TYPE(Species_Bundle),   POINTER :: bxx      => null()
+     TYPE(Species_Bundle),   POINTER :: bgg      => null()    ! Bundle of GMI Species - transported
+     TYPE(Species_Bundle),   POINTER :: bxx      => null()    ! Bundle of GMI Species - not transported
   END TYPE GMIchem_State
 
   TYPE GMIchem_WRAP
@@ -431,9 +431,9 @@ CONTAINS
           FRIENDLIES = FRIENDLIES//':'//TRIM(COMP_NAME)
 	 
           CALL MAPL_AddInternalSpec(GC,                                  &
-               SHORT_NAME         = TRIM(state%ggReg%vname(n)),         &
-               LONG_NAME          = TRIM(state%ggReg%vtitle(n)),        &
-               UNITS              = TRIM(state%ggReg%vunits(n)),        &     
+               SHORT_NAME         = TRIM(state%ggReg%vname(n)),          &
+               LONG_NAME          = TRIM(state%ggReg%vtitle(n)),         &
+               UNITS              = TRIM(state%ggReg%vunits(n)),         &     
                FRIENDLYTO         = TRIM(FRIENDLIES),                    &
                DIMS               = MAPL_DimsHorzVert,                   &
                VLOCATION          = MAPL_VLocationCenter,     RC=STATUS  )
@@ -1059,12 +1059,12 @@ CONTAINS
    character(len=ESMF_MAXSTR)      :: COMP_NAME
 
    type(Chem_Registry), pointer    :: chemReg
-   type(Runtime_Registry), pointer :: ggReg
-   type(Runtime_Registry), pointer ::  xxReg
+   type(Runtime_Registry), pointer ::   ggReg
+   type(Runtime_Registry), pointer ::   xxReg
    type(GMI_GridComp), pointer     :: gcGMI       ! Grid Component
    type(Chem_Bundle), pointer      :: w_c         ! Chemical tracer fields
-   type(Species_Bundle), pointer   :: bgg         ! Chemical tracer fields
-   type(Species_Bundle), pointer   :: bxx         ! Chemical tracer fields
+   type(Species_Bundle), pointer   :: bgg         ! GMI Species - transported
+   type(Species_Bundle), pointer   :: bxx         ! GMI Species - not transported
    integer                         :: nymd, nhms  ! time of day
    real                            :: gmiDt       ! chemistry timestep (secs)
    real                            :: runDt       ! heartbeat (secs)
@@ -1218,7 +1218,6 @@ CONTAINS
 
 !  Consistency Checks
 !  ------------------
-!  ASSERT_ ( chemReg%i_XX == (chemReg%j_GMI+1) )
    ASSERT_ ( size(InternalSpec) == (ggReg%nq+xxReg%nq) + 2)  ! Bry and Cly families are extra internal species
 
    do L = 1, ggReg%nq
@@ -1229,12 +1228,6 @@ CONTAINS
       VERIFY_(STATUS)
 
 !     IF(MAPL_AM_I_ROOT()) print*,'GMI species SHORT NAME '//TRIM(short_name)
-
-      ! fill the CHEM REG ones, while debugging
-      N = chemReg%i_GMI + L - 1 ! Assumption: XX species immediately follow GMI species
-      CALL MAPL_GetPointer ( internal, NAME=short_name, ptr=w_c%qa(N)%data3d, &
-                             rc = STATUS )
-      VERIFY_(STATUS)
 
       ! get the GMI REG pointers
       CALL MAPL_GetPointer ( internal, NAME=short_name, ptr=bgg%qa(L)%data3d, &
@@ -1261,12 +1254,6 @@ CONTAINS
       VERIFY_(STATUS)
 
 !     IF(MAPL_AM_I_ROOT()) print*,'GMI species SHORT NAME '//TRIM(short_name)
-
-      ! fill the CHEM REG ones, while debugging
-      N = chemReg%i_XX + L - 1 ! Assumption: XX species immediately follow GMI species
-      CALL MAPL_GetPointer ( internal, NAME=short_name, ptr=w_c%qa(N)%data3d, &
-                             rc = STATUS )
-      VERIFY_(STATUS)
 
       ! get the XX REG pointers
       CALL MAPL_GetPointer ( internal, NAME=short_name, ptr=bxx%qa(L)%data3d, &
@@ -1713,12 +1700,12 @@ CONTAINS
    character(len=ESMF_MAXSTR)      :: COMP_NAME
 
    type(Chem_Registry), pointer    :: chemReg
-   type(Runtime_Registry), pointer :: ggReg
-   type(Runtime_Registry), pointer ::  xxReg
+   type(Runtime_Registry), pointer ::   ggReg     ! Names of GMI Species - transported
+   type(Runtime_Registry), pointer ::   xxReg     ! Names of GMI Species - not transported
    type(GMI_GridComp), pointer     :: gcGMI       ! Grid Component
    type(Chem_Bundle), pointer      :: w_c         ! Chemical tracer fields     
-   type(Species_Bundle), pointer   :: bgg         ! Chemical tracer fields     
-   type(Species_Bundle), pointer   :: bxx         ! Chemical tracer fields     
+   type(Species_Bundle), pointer   :: bgg         ! GMI Species - transported
+   type(Species_Bundle), pointer   :: bxx         ! GMI Species - not transported
    integer                         :: nymd, nhms  ! time
    real                            :: gmiDt       ! chemistry timestep (secs)
    real                            :: runDt       ! heartbeat (secs)
@@ -1821,19 +1808,6 @@ CONTAINS
 !  Guard against overflow/underflow due to near-zero numbers (mixing ratios)
 !  -------------------------------------------------------------------------
 #define FLOOR_VALUE 1.0e-30
-   DO n = ChemReg%i_GMI, ChemReg%j_GMI
-! debug print:
-!    IF(  ANY(w_c%qa(n)%data3d < FLOOR_VALUE) ) THEN
-!      m = COUNT( w_c%qa(n)%data3d < FLOOR_VALUE )
-!      PRINT*,'NEGDIAG:GMI SPECIES TOO SMALL (species,count):', n-ChemReg%i_GMI+1, m
-!    ENDIF
-! original approach - steal from the column to fill negatives
-!                     this leads to NOx issues in stratosphere
-!      CALL Chem_UtilNegFiller(w_c%qa(n)%data3d, DELP, i2, j2, QMIN=TINY(1.0))
-! for now, just impose a floor
-     WHERE(w_c%qa(n)%data3d < FLOOR_VALUE) w_c%qa(n)%data3d=FLOOR_VALUE
-   END DO
-
    DO n = 1, ggReg%nq
 ! debug print:
 !    IF(  ANY(bgg%qa(n)%data3d < FLOOR_VALUE) ) THEN
@@ -1857,31 +1831,6 @@ CONTAINS
 !  --------------------------------------------------------------------------
    CALL MAPL_GetPointer(impChem, TROPP, 'TROPP', __RC__)
 
-! OLD METHOD:
-   m = ChemReg%i_XX
-   n = ChemReg%j_XX
-   iT2M = -1
-    
-   DO i = m,n
-    IF(TRIM(chemReg%vname(i)) == "T2M15d") iT2M = i
-    IF(iT2M > 0) EXIT
-   END DO
-
-   IF(iT2M < 1) THEN
-    PRINT *,TRIM(Iam)//": Invalid index for T2M15d (",iT2M,")"
-    STATUS = 1
-    VERIFY_(STATUS)
-   END IF
-
-   WHERE(tropp /= MAPL_UNDEF) w_c%qa(iT2M)%data3d(:,:,km) = TROPP
-
-   IF( ANY(w_c%qa(iT2M)%data3d(:,:,km) == MAPL_UNDEF) ) THEN
-    PRINT *,TRIM(Iam)//": At least one invalid tropopause pressure."
-    STATUS = 1
-    VERIFY_(STATUS)
-   END IF
-
-! NEW METHOD:
    m = 1
    n = xxReg%nq
    iT2M = -1
@@ -2541,12 +2490,12 @@ CONTAINS
    character(len=ESMF_MAXSTR)      :: COMP_NAME
 
    type(Chem_Registry), pointer    :: chemReg
-   type(Runtime_Registry), pointer :: ggReg
-   type(Runtime_Registry), pointer ::  xxReg
+   type(Runtime_Registry), pointer ::   ggReg     ! Names of GMI Species - transported
+   type(Runtime_Registry), pointer ::   xxReg     ! Names of GMI Species - not transported
    type(GMI_GridComp), pointer     :: gcGMI       ! Grid Component
    type(Chem_Bundle), pointer      :: w_c         ! Chemical tracer fields     
-   type(Species_Bundle), pointer   :: bgg         ! Chemical tracer fields     
-   type(Species_Bundle), pointer   :: bxx
+   type(Species_Bundle), pointer   :: bgg         ! Bundle of GMI Species - transported
+   type(Species_Bundle), pointer   :: bxx         ! Bundle of GMI Species - not transported
    type(MAPL_MetaComp), pointer    :: MAPLobj     ! GEOS Generic State
    integer                         :: nymd, nhms  ! time
    real                            :: gmiDt       ! chemistry timestep (secs)
@@ -2600,7 +2549,7 @@ CONTAINS
 !  --------------------------
    call Runtime_RegistryDestroy ( ggReg, STATUS ) 
    VERIFY_(STATUS)
-   call Runtime_RegistryDestroy (  xxReg, STATUS ) 
+   call Runtime_RegistryDestroy ( xxReg, STATUS ) 
    VERIFY_(STATUS)
 
 !  Destroy Legacy state
@@ -2635,12 +2584,12 @@ CONTAINS
     type(ESMF_GridComp), intent(inout) :: gc
     type(ESMF_Clock), intent(in)       :: clock
     type(Chem_Registry), pointer       :: chemReg
-    type(Runtime_Registry), pointer    :: ggReg
-    type(Runtime_Registry), pointer    ::  xxReg
+    type(Runtime_Registry), pointer    ::   ggReg       ! Names of GMI Species - transported
+    type(Runtime_Registry), pointer    ::   xxReg       ! Names of GMI Species - not transported
     type(GMI_GridComp), pointer        :: gcGMI
     type(Chem_Bundle), pointer         :: w_c
-    type(Species_Bundle), pointer      :: bgg
-    type(Species_Bundle), pointer      :: bxx
+    type(Species_Bundle), pointer      :: bgg           ! Bundle of GMI Species - transported
+    type(Species_Bundle), pointer      :: bxx           ! Bundle of GMI Species - not transported
     integer, intent(out)               :: nymd, nhms
     real, intent(out)                  :: gmiDt
     real, intent(out)                  :: runDt
@@ -2711,9 +2660,9 @@ CONTAINS
     end if
 
     chemReg => myState%chemReg
-    ggReg => myState%ggReg
-     xxReg => myState%xxReg
-    gcGMI  => myState%gcGMI
+      ggReg => myState%ggReg
+      xxReg => myState%xxReg
+    gcGMI   => myState%gcGMI
     w_c     => myState%w_c
     bgg     => myState%bgg
     bxx     => myState%bxx

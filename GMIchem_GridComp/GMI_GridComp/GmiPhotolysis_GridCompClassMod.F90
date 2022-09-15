@@ -262,10 +262,10 @@ CONTAINS
 !
 ! !INPUT PARAMETERS:
 !
-   TYPE(Species_Bundle), INTENT(in) :: bgg                ! Chemical tracer fields, delp, +
-   TYPE(Species_Bundle), INTENT(in) :: bxx                ! Chemical tracer fields, delp, +
-   INTEGER, INTENT(IN) :: nymd, nhms                   ! Time from AGCM
-   REAL,    INTENT(IN) :: tdt                          ! Chemistry time step (secs)
+   TYPE(Species_Bundle), INTENT(IN) :: bgg                ! GMI Species - transported
+   TYPE(Species_Bundle), INTENT(IN) :: bxx                ! GMI Species - not transported
+   INTEGER,              INTENT(IN) :: nymd, nhms         ! Time from AGCM
+   REAL,                 INTENT(IN) :: tdt                ! Chemistry time step (secs)
 !
 ! !OUTPUT PARAMETERS:
 !
@@ -1177,9 +1177,9 @@ CONTAINS
 
 ! !INPUT/OUTPUT PARAMETERS:
 
-   TYPE(GmiPhotolysis_GridComp), INTENT(INOUT) :: self ! Grid Component
-   TYPE(Species_Bundle), INTENT(INOUT) :: bgg    ! Chemical tracer fields   
-   TYPE(Species_Bundle), INTENT(INOUT) :: bxx    ! Chemical tracer fields   
+   TYPE(GmiPhotolysis_GridComp), INTENT(INOUT) :: self   ! Grid Component
+   TYPE(Species_Bundle),         INTENT(INOUT) :: bgg    ! GMI Species - transported
+   TYPE(Species_Bundle),         INTENT(INOUT) :: bxx    ! GMI Species - not transported
 
 ! !INPUT PARAMETERS:
 
@@ -1463,7 +1463,7 @@ CONTAINS
 ! Hand the species concentrations to GMI's bundle
 ! -----------------------------------------------
    IF (self%gotImportRst) then
-      CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration, &
+      CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration,    &
                bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, &
                STATUS)
       VERIFY_(STATUS)
@@ -1590,7 +1590,7 @@ CONTAINS
 ! Return species concentrations to the chemistry bundle
 ! -----------------------------------------------------
    IF (self%gotImportRst) then
-      CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration, &
+      CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration,   &
                bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
                STATUS)
       VERIFY_(STATUS)

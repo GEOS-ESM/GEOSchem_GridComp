@@ -161,10 +161,10 @@ CONTAINS
 
 ! !INPUT PARAMETERS:
 
-   TYPE(Species_Bundle), INTENT(in) :: bgg                ! Chemical tracer fields, delp, +
-   TYPE(Species_Bundle), INTENT(in) :: bxx                ! Chemical tracer fields, delp, +
-   INTEGER, INTENT(IN) :: nymd, nhms		       ! Time from AGCM
-   REAL,    INTENT(IN) :: tdt			       ! Chemistry time step (secs)
+   TYPE(Species_Bundle), INTENT(in) :: bgg                ! GMI Species - transported
+   TYPE(Species_Bundle), INTENT(in) :: bxx                ! GMI Species - not transported
+   INTEGER,              INTENT(IN) :: nymd, nhms         ! Time from AGCM
+   REAL,                 INTENT(IN) :: tdt                ! Chemistry time step (secs)
 
 ! !OUTPUT PARAMETERS:
 
@@ -578,15 +578,15 @@ CONTAINS
 
 ! !INPUT/OUTPUT PARAMETERS:
 
-   TYPE(GmiChemistry_GridComp), INTENT(INOUT) :: self ! Grid Component
-   TYPE(Species_Bundle), INTENT(INOUT) :: bgg    ! Chemical tracer fields   
-   TYPE(Species_Bundle), INTENT(INOUT) :: bxx    ! Chemical tracer fields   
+   TYPE(GmiChemistry_GridComp), INTENT(INOUT) :: self   ! Grid Component
+   TYPE(Species_Bundle),        INTENT(INOUT) :: bgg    ! GMI Species - transported
+   TYPE(Species_Bundle),        INTENT(INOUT) :: bxx    ! GMI Species - not transported
 
 ! !INPUT PARAMETERS:
 
    TYPE(ESMF_State), INTENT(INOUT) :: impChem ! Import State
-   INTEGER, INTENT(IN) :: nymd, nhms	      ! time
-   REAL,    INTENT(IN) :: tdt		      ! chemical timestep (secs)
+   INTEGER, INTENT(IN) :: nymd, nhms          ! time
+   REAL,    INTENT(IN) :: tdt                 ! chemical timestep (secs)
 
 ! !OUTPUT PARAMETERS:
 
@@ -984,7 +984,7 @@ CONTAINS
     O3ppmv(i1:i2,j1:j2,1:km) = bgg%qa(ic)%data3d(i1:i2,j1:j2,1:km)*1.00E+06
 
    IF(ASSOCIATED(O3)) &
-    O3(i1:i2,j1:j2,1:km) = bgg%qa(ic)%data3d(i1:i2,j1:j2,1:km)*(MAPL_O3MW/MAPL_AIRMW)
+        O3(i1:i2,j1:j2,1:km) = bgg%qa(ic)%data3d(i1:i2,j1:j2,1:km)*(MAPL_O3MW/MAPL_AIRMW)
 
 ! --------------------------------------------------------------------
 ! Reaction rate constants (q) and rates (qq)

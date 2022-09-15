@@ -300,7 +300,7 @@ end subroutine Runtime_RegistryDestroy
    PRINT *
    PRINT *,'****'
    PRINT *,'****       Summary of the '//mod_name//' Registry'
-   PRINT *,'****            from Runtime_RegistryPrint'
+   PRINT *,'****       from Runtime_RegistryPrint'
    PRINT *,'****'
    WRITE(*,FMT="(' ','       Number of species: ',I3)") reg%nq
 

@@ -151,6 +151,7 @@ set ( rc_files
    GMI_GridComp/GMI_ExtData.yaml
    GMI_GridComp/GMI_GridComp.rc
    GMI_GridComp/GMI_Registry.rc
+   GMI_GridComp/GMI_Mech_Registry.rc
 )
 install (
    FILES ${rc_files}
