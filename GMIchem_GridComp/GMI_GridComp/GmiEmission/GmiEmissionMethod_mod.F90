@@ -9,6 +9,7 @@
   module GmiEmissionMethod_mod
 !
 ! !USES:
+
       use ESMF, only : ESMF_Config, ESMF_MAXSTR, ESMF_ConfigGetAttribute
       use MAPL
       use GmiTimeControl_mod  , only : t_GmiClock, Get_curGmiDate
@@ -678,9 +679,10 @@
 ! !INTERFACE:
 !
       subroutine initReadEmission (self, gmiClock, gmiGrid, mcor, loc_proc, &
-                     pr_diag)
+                     pr_diag, rc )
 !
 ! !USES:
+      use gcr_mod             , only : READ_GCR_FILE
 
 ! !INPUT PARAMETERS:
       logical,           intent(in) :: pr_diag
@@ -690,7 +692,9 @@
       type (t_GmiClock), intent(in) :: gmiClock
 !
 ! !INPUT/OUTPUT PARAMETERS:
-      type (t_Emission)  , intent(inOut) :: self
+      type (t_Emission), intent(inOut) :: self
+      integer,           intent(out)   :: rc
+
 !
 ! !DESCRIPTION:
 ! This routines reads in (daily or monthly) emission related files.
@@ -720,6 +724,7 @@
   call Get_ilat  (gmiGrid, ilat)
 
   rootProc = MAPL_AM_I_ROOT()
+  rc = 0 
 
   if (self%emiss_dust_opt == 1 ) then  ! GMI sulfurous dust emissions
      call InitEmissDust (self, mcor, loc_proc, rootProc, &
@@ -733,6 +738,10 @@
 
   call Get_curGmiDate(gmiClock, nymd)
 
+  if (self%do_gcr) then
+    CALL READ_GCR_FILE( self%gcr_infile_name, rc )   ! Store data in the GCR module
+  end if
+  
   return
 
   end subroutine initReadEmission
@@ -756,6 +765,7 @@
   use GocartDerivedVariables_mod, only : AllocateGocartDerivedVars
   use GmiSeaSaltMethod_mod      , only : InitializationSeaSalt
   use GmiDustMethod_mod         , only : InitializationDust
+
 !
 ! !INPUT PARAMETERS:
   logical,           intent(in) :: pr_diag, pr_const, pr_surf_emiss, pr_emiss_3d
@@ -989,7 +999,8 @@
       real*8 , intent(in) :: con_precip(:, :), tot_precip(:, :), ustar(:, :)
       real*8 , intent(in) :: kel(:, :, :), pbl(:, :), u10m(:,:), v10m(:,:), gwet(:,:)
       real*8 , intent(in) :: fracCloudCover (:,:) , cmf(:,:,:)
-      real*8 , intent(in) :: gridBoxHeight (:,:,:) 
+      real*8 , intent(in) :: gridBoxHeight (:,:,:)
+
       character (len=MAX_LENGTH_MET_NAME), intent(in) :: metdata_name_org
       character (len=MAX_LENGTH_MET_NAME), intent(in) :: metdata_name_model
       real   , intent(in) :: tdt4
@@ -1075,7 +1086,6 @@
 ! Emission control routines
 
       rootProc = MAPL_AM_I_ROOT()
-
       call Update_Emiss (gmiGrid, self%idaySoilType, self%firstBiogenicBase,   &
                  lwis_flags, cosSolarZenithAngle, latdeg,                      &
                  mcor, self%emiss_isop, self%emiss_monot, self%emiss_nox,      &
@@ -1105,8 +1115,7 @@
                  self%doMEGANemission, self%doMEGANviaHEMCO, self%aefIsop,     &
                  self%aefMbo, self%aefMonot, self%isoLaiPrev, self%isoLaiCurr, &
                  self%isoLaiNext, pardif, pardir, T_15_AVG,                    &
-                 self%emissionSpeciesLayers, self%exp_fac, mixPBL)
-
+                 self%emissionSpeciesLayers, self%exp_fac, mixPBL, press3c )
 ! NO production from lightning, with flashRate imported from MOIST
 ! ----------------------------------------------------------------
       IF(self%lightning_opt == 1) THEN

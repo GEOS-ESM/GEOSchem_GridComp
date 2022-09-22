@@ -13,7 +13,7 @@ module GmiSwapSpeciesBundlesMod
 
       USE GmiStringManipulation_mod, ONLY : stringLowerCase
       USE GmiArrayBundlePointer_mod, ONLY : t_GmiArrayBundle
-      USE Chem_ArrayMod
+      USE Species_ArrayMod
 !
       implicit none
 !
@@ -41,7 +41,7 @@ module GmiSwapSpeciesBundlesMod
 !
 ! !INTERFACE:
 
-      SUBROUTINE SwapSpeciesBundles(direction, gmiBundle, geos5Bundle, &
+      SUBROUTINE SwapSpeciesBundles(direction, gmiBundle, geos5BundleGG, geos5BundleXX, &
                      specHum, mapSpecies, lchemvar, do_synoz, numSpecies, rc)
 
       IMPLICIT NONE
@@ -49,6 +49,8 @@ module GmiSwapSpeciesBundlesMod
 ! !INPUT PARAMETERS:
       INTEGER, INTENT(IN) :: numSpecies
       INTEGER, INTENT(IN) :: direction       ! 1=To GMI  -1=FromGMI
+#define GEOS_TO_GMI 1
+#define GMI_TO_GEOS -1
       INTEGER, INTENT(IN) :: mapSpecies(numSpecies) ! map GMI species indices to CCM indices
       LOGICAL, INTENT(IN) :: do_synoz
       character (len=*), intent(in) :: lchemvar(numSpecies) ! GMI list of species
@@ -59,7 +61,8 @@ module GmiSwapSpeciesBundlesMod
 ! !INPUT/OUTPUT PARAMETERS:
       REAL                    :: specHum(:,:,:)
       type (t_GmiArrayBundle) :: gmiBundle(:)
-      type(chem_array)        :: geos5Bundle(:)
+      type(Species_Array)     :: geos5BundleGG(:)
+      type(Species_Array)     :: geos5BundleXX(:)
 !
 ! !DESCRIPTION:
 !  Copy chemistry bundle to GMI's species concentration bundle and 
@@ -75,6 +78,7 @@ module GmiSwapSpeciesBundlesMod
       INTEGER :: STATUS
       INTEGER :: i, ic
       INTEGER :: k, km
+      INTEGER :: nqGG, nqXX
       LOGICAL :: found
       LOGICAL :: FeedBack_QV    ! TRUE for CCM, FALSE for CTM
       CHARACTER(LEN=255) :: speciesName
@@ -90,13 +94,16 @@ module GmiSwapSpeciesBundlesMod
 
       CALL CheckConfig(FeedBack_QV, __RC__)
 
-      IF (ABS(direction) /= 1) THEN
+      IF ( direction /= GEOS_TO_GMI .AND. direction /= GMI_TO_GEOS ) THEN
          rc=1
          PRINT *,TRIM(MyName),": Invalid direction specified for swapping bundles."
          RETURN
       END IF
 
       km = size(specHum, 3)
+
+      nqGG = size(geos5BundleGG)
+      nqXX = size(geos5BundleXX)
 
       DO ic=1,numSpecies
          found=.FALSE.
@@ -105,9 +112,9 @@ module GmiSwapSpeciesBundlesMod
          IF (TRIM(speciesName) == "H2O") THEN
     
             SELECT CASE (direction)
-            CASE ( 1)
+            CASE ( GEOS_TO_GMI )
                gmiBundle(ic)%pArray3D(:,:,km:1:-1) = specHum(:,:,1:km)*(MWTAIR/MWTH2O)
-            CASE (-1)
+            CASE ( GMI_TO_GEOS )
               IF ( FeedBack_QV ) THEN
                specHum(:,:,1:km) = gmiBundle(ic)%pArray3D(:,:,km:1:-1)*(MWTH2O/MWTAIR)
               END IF
@@ -123,16 +130,24 @@ module GmiSwapSpeciesBundlesMod
             i = mapSpecies(ic)
     
             SELECT CASE (direction)
-            CASE ( 1)
-               gmiBundle(ic)%pArray3D(:,:,km:1:-1) = geos5Bundle(i)%data3d(:,:,1:km)
+            CASE ( GEOS_TO_GMI )
+               IF ( i .LE. nqGG ) THEN
+                 gmiBundle(ic)%pArray3D(:,:,km:1:-1) = geos5BundleGG(i     )%data3d(:,:,1:km)
+               ELSE
+                 gmiBundle(ic)%pArray3D(:,:,km:1:-1) = geos5BundleXX(i-nqGG)%data3d(:,:,1:km)
+               END IF
 ! ########
 !                IF( MAPL_AM_I_ROOT() ) THEN
 !                  print*,'+++SPEC,iGMI,iGEOS '//TRIM(speciesName), ic, i
 !                END IF
 ! ########
 
-            CASE (-1)
-               geos5Bundle(i)%data3d(:,:,1:km) = gmiBundle(ic)%pArray3D(:,:,km:1:-1)
+            CASE ( GMI_TO_GEOS )
+               IF ( i .LE. nqGG ) THEN
+                 geos5BundleGG(i     )%data3d(:,:,1:km) = gmiBundle(ic)%pArray3D(:,:,km:1:-1)
+               ELSE
+                 geos5BundleXX(i-nqGG)%data3d(:,:,1:km) = gmiBundle(ic)%pArray3D(:,:,km:1:-1)
+               END IF
             END SELECT
     
             found=.TRUE.
@@ -149,14 +164,15 @@ module GmiSwapSpeciesBundlesMod
 ! !ROUTINE: speciesReg_for_CCM
 !
 ! !INTERFACE:
-      FUNCTION speciesReg_for_CCM(nameSpecies, vname, numSpecies, iStart, iEnd) RESULT(regCCM)
+      FUNCTION speciesReg_for_CCM(nameSpecies, numSpecies, vnameGG, vnameXX ) RESULT(regCCM)
 !
 ! !INPUT PARAMETERS:
-    INTEGER, INTENT(IN) :: numSpecies ! number of GMI species
-    INTEGER, INTENT(IN) :: iStart     ! Starting index for GMI transported species in w_c%qa
-    INTEGER, INTENT(IN) :: iEnd       ! Last index for GMI non-transported species in w_c%qa
-    CHARACTER (LEN=*), INTENT(IN) :: nameSpecies(numSpecies) ! GMI mechanism list of species
-    CHARACTER (LEN=*), INTENT(IN) :: vname(*)		     ! GMIChem internal list of species
+
+    CHARACTER (LEN=*), INTENT(IN) :: nameSpecies(numSpecies) ! GMI mechanism list of species  - setkins names
+    INTEGER,           INTENT(IN) :: numSpecies              ! number of setkins species
+
+    CHARACTER (LEN=*), INTENT(IN) :: vnameGG(:)		     ! GEOS list of species - part A (transported)
+    CHARACTER (LEN=*), INTENT(IN) :: vnameXX(:)		     ! GEOS list of species - part B (non-transported)
 !
 ! !RETURNED VALUE:
     INTEGER :: regCCM(numSpecies)
@@ -170,11 +186,15 @@ module GmiSwapSpeciesBundlesMod
     LOGICAL :: found
     CHARACTER(LEN=255) :: speciesName
     INTEGER, PARAMETER :: wrongIndex = -999
+    INTEGER  nqGG, nqXX
 !
 !EOP
 !------------------------------------------------------------------------------
 !BOC
       regCCM(:) = wrongIndex
+
+      nqGG = size(vnameGG)
+      nqXX = size(vnameXX)
 
 ! Scan the GMI mechanism's species list, with numSpecies = NSP
 ! ------------------------------------------------------------
@@ -190,17 +210,27 @@ module GmiSwapSpeciesBundlesMod
 
          found = .FALSE.
 
-! Look for a match in the Chem_Registry.rc
-! ----------------------------------------
-         GEOS5List: DO ii = iStart, iEnd
+! Look for a match in the GEOS set
+! --------------------------------
+         GEOS5ListGG: DO ii = 1, nqGG
 
-            IF(TRIM(stringLowerCase(speciesName)) == TRIM(stringLowerCase(vname(ii)))) THEN
+            IF(TRIM(stringLowerCase(speciesName)) == TRIM(stringLowerCase(vnameGG(ii)))) THEN
                regCCM(ic) = ii
                found = .TRUE.
-               EXIT GEOS5List
+               EXIT GEOS5ListGG
             END IF
 
-         END DO GEOS5List
+         END DO GEOS5ListGG
+
+         GEOS5ListXX: DO ii = 1, nqXX
+
+            IF(TRIM(stringLowerCase(speciesName)) == TRIM(stringLowerCase(vnameXX(ii)))) THEN
+               regCCM(ic) = ii + nqGG
+               found = .TRUE.
+               EXIT GEOS5ListXX
+            END IF
+
+         END DO GEOS5ListXX
 
          IF (.NOT. found .AND. TRIM(nameSpecies(ic)) /= "H2O" ) THEN
             PRINT *,"speciesReg_for_CCM: "//TRIM(nameSpecies(ic))//" not found in GMIChem internal state"

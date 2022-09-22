@@ -21,6 +21,8 @@
    USE Chem_Mod
    USE Chem_UtilMod
 
+   USE Species_BundleMod
+
    USE GmiChemistryMethod_mod,        ONLY : t_Chemistry
    USE GmiEmissionMethod_mod,         ONLY : t_Emission
    USE GmiDepositionMethod_mod,       ONLY : t_Deposition
@@ -124,6 +126,7 @@
    LOGICAL :: do_aerocom             
    LOGICAL :: pr_const
    LOGICAL :: do_synoz
+   LOGICAL :: do_gcr
    LOGICAL :: pr_surf_emiss
    LOGICAL :: pr_emiss_3d
    LOGICAL :: do_qqjk_inchem
@@ -198,7 +201,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE GmiEmiss_GridCompInitialize( self, w_c, impChem, expChem, nymd, nhms, &
+   SUBROUTINE GmiEmiss_GridCompInitialize( self, bgg, bxx, impChem, expChem, nymd, nhms, &
                                       tdt, gc, clock, rc )
 
    USE GmiSpcConcentrationMethod_mod, ONLY : InitializeSpcConcentration
@@ -208,15 +211,17 @@ CONTAINS
    USE GmiTimeControl_mod,            ONLY : Set_curGmiDate, Set_curGmiTime
    USE GmiTimeControl_mod,            ONLY : Set_begGmiDate, Set_begGmiTime
    USE GmiTimeControl_mod,            ONLY : Set_numTimeSteps
+   USE gcr_mod,                       ONLY : INIT_GCR_DIAG
 
    IMPLICIT none
    INTEGER, PARAMETER :: DBL = KIND(0.00D+00)
 
 ! !INPUT PARAMETERS:
 
-   TYPE(Chem_Bundle), INTENT(in) :: w_c                ! Chemical tracer fields, delp, +
-   INTEGER, INTENT(IN) :: nymd, nhms                   ! Time from AGCM
-   REAL,    INTENT(IN) :: tdt                          ! Chemistry time step (secs)
+   TYPE(Species_Bundle), INTENT(IN) :: bgg             ! GMI Species - transported
+   TYPE(Species_Bundle), INTENT(IN) :: bxx             ! GMI Species - not transported
+   INTEGER,              INTENT(IN) :: nymd, nhms      ! Time from AGCM
+   REAL,                 INTENT(IN) :: tdt             ! Chemistry time step (secs)
 
 ! !OUTPUT PARAMETERS:
 
@@ -263,8 +268,9 @@ CONTAINS
    INTEGER :: ilo, ihi, julo, jvlo, jhi
    INTEGER :: ilo_gl, ihi_gl, julo_gl, jvlo_gl, jhi_gl
    INTEGER :: gmi_nborder
+   INTEGER :: NMR      ! number of species from the GMI_Mech_Registry.rc
    INTEGER :: lightning_opt, LogicalUnitNum
-   INTEGER :: num_emiss, numSpecies
+   INTEGER :: num_emiss
 
    INTEGER :: loc_proc, locGlobProc, commu_slaves
    LOGICAL :: one_proc, rootProc
@@ -358,6 +364,10 @@ CONTAINS
      &              LABEL="Diurnal_Emission_Species:", DEFAULT=0, RC=STATUS)
       VERIFY_(STATUS)
 
+      CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%do_gcr, &
+     &              LABEL="do_gcr:", DEFAULT=.FALSE., RC=STATUS)
+      VERIFY_(STATUS)
+
       !------------------------------
       ! Diagnostics related variables
       !------------------------------
@@ -421,6 +431,8 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%BCRealTime, &
      &           label="BCRealTime:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
+     
+      if (self%do_gcr) call INIT_GCR_DIAG(i1,i2,j1,j2,1,km)
       
 ! Does the GMICHEM import restart file exist?  If not,
 ! the species must "freewheel" through the first time step.
@@ -500,20 +512,23 @@ CONTAINS
                           ilo_gl, ihi_gl, julo_gl, jvlo_gl, jhi_gl, &
                           ilong, ilat, ivert, itloop, j1p, j2p)
 
-! Number of species and perform a consistency check with setkin_par.h.
-! NOTES:
-!  1. H2O is specie number 10 in the strat-trop mechanism, but will not be
-!     found in w_c%reg%vname. H2O will be initialized from specific humidity, Q.
-!  2. The GEOS-5 bundle has an Age-Of-Air tracer, which is not carried by GMI.
-!  3. At the end of the XX (non-transported) species is a place holder for T2M15d.
-! So w_c%reg%j_XX-w_c%reg%i_GMI must equal the parameter NSP = NCONST + NDYN.
+! Perform a consistency check with setkin_par.h.
+!   NSP is the number of species in setkins
+!   NMR is the number of species in the Mech Registry
+!
+!   H2O   is in setkins,           but not in GMI_Mech_Registry
+!   AOA   is in GMI_Mech_Registry, but not in setkins
+!   T2M15 is in GMI_Mech_Registry, but not in setkins
+!
+!   The number of species common to both is therefore
+!     NMR - 2     ! number in GMI_Mech_Registry - 2
+!     NSP - 1     ! number in setkins - 1
 ! --------------------------------------------------------------------------------
-   numSpecies = w_c%reg%j_XX-w_c%reg%i_GMI
-   IF(numSpecies /= NSP) THEN
-    PRINT *,TRIM(IAm),': Number of species from Chem_Registry.rc does not match number in setkin_par.h'
+   NMR = bgg%nq + bxx%nq
+   IF( NMR-2 /= NSP-1 ) THEN
+    PRINT *,TRIM(IAm),': Number of species from GMI_Mech_Registry.rc does not match number in setkin_par.h'
     STATUS = 1
     VERIFY_(STATUS)
-    RETURN
    END IF
 
 ! Allocate space, etc., but the initialization of the
@@ -521,14 +536,14 @@ CONTAINS
 ! ----------------------------------------------------------
 
       CALL InitializeSpcConcentration(self%SpeciesConcentration,              &
-     &               self%gmiGrid, gmiConfigFile, numSpecies, NMF, NCHEM,     &
-     &               loc_proc)
+                     self%gmiGrid, gmiConfigFile, NSP, NMF, NCHEM,            &
+                     loc_proc)
 
-      CALL InitializeEmission(self%Emission, self%SpeciesConcentration,      &
-     &               self%gmiGrid, gmiConfigFile, self%cellArea, IHNO3, IO3, &
-     &               NSP, loc_proc, rootProc, self%chem_opt, self%trans_opt, &
-     &               self%pr_diag,   &
-     &               self%pr_const, self%pr_surf_emiss, self%pr_emiss_3d, tdt)
+      CALL InitializeEmission(self%Emission, self%SpeciesConcentration,       &
+                     self%gmiGrid, gmiConfigFile, self%cellArea, IHNO3, IO3,  &
+                     NSP, loc_proc, rootProc, self%chem_opt, self%trans_opt,  &
+                     self%pr_diag,                                            &
+                     self%pr_const, self%pr_surf_emiss, self%pr_emiss_3d, tdt)
 
       IF (BTEST(self%Emission%emiss_opt,1)) THEN
 
@@ -539,7 +554,8 @@ CONTAINS
 
 
       CALL initReadEmission(self%Emission, self%gmiClock, self%gmiGrid,     &
-     &               self%cellArea, loc_proc, self%pr_diag)
+     &               self%cellArea, loc_proc, self%pr_diag, RC=STATUS)
+      VERIFY_(STATUS)
 
 !     !-----------------------------------
 !     ! Initialize Surface Emission Bundle
@@ -570,7 +586,7 @@ CONTAINS
     !---------------------------------------------------------------
 
     allocate(self%mapSpecies(NSP))
-    self%mapSpecies(:) = speciesReg_for_CCM(lchemvar, w_c%reg%vname, NSP, w_c%reg%i_GMI, w_c%reg%j_XX)
+    self%mapSpecies(:) = speciesReg_for_CCM(lchemvar, NSP, bgg%reg%vname, bxx%reg%vname )
 
 ! Which (used) emission field is for lightning NO?
 ! ------------------------------------------------
@@ -681,13 +697,13 @@ CONTAINS
 !
 ! !INTERFACE:
 !
-            SUBROUTINE GmiEmiss_initSurfEmissBundle (self, w_c, expChem, rc)
+            SUBROUTINE GmiEmiss_initSurfEmissBundle (self, bgg, expChem, rc)
 !
 ! !INPUT PARAMETERS:
-   TYPE(Chem_Bundle), INTENT(in) :: w_c                ! Chemical tracer fields, delp
+   TYPE(Species_Bundle), INTENT(in) :: bgg      ! GMI Species - transported
 
 ! !OUTPUT PARAMETERS:
-      INTEGER, INTENT(out) ::  rc                  ! Error return code:
+      INTEGER, INTENT(out) ::  rc               ! Error return code:
                                                 !  0 - all is well
                                                 !  1 - 
 !
@@ -727,10 +743,10 @@ CONTAINS
             write (binName ,'(i4.4)') ib
             varName = 'surfEmiss'//binName
 
-            call addTracerToBundle (surfEmissBundle, var, w_c%grid_esmf, varName)
+            call addTracerToBundle (surfEmissBundle, var, bgg%grid_esmf, varName)
          end do
 
-         call ESMF_FieldBundleGet(surfEmissBundle, fieldCount=numVars , rc=STATUS)
+         call ESMF_FieldBundleGet(surfEmissBundle, fieldCount=numVars , RC=STATUS)
          VERIFY_(STATUS)
          ASSERT_(NSP == numVars)
 
@@ -751,7 +767,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE GmiEmiss_GridCompRun ( self, w_c, impChem, expChem, nymd, nhms, &
+   SUBROUTINE GmiEmiss_GridCompRun ( self, bgg, bxx, impChem, expChem, nymd, nhms, &
                                      tdt, clock, mixPBL, rc )
 
 ! !USES:
@@ -769,7 +785,8 @@ CONTAINS
 ! !INPUT/OUTPUT PARAMETERS:
 
    TYPE(GmiEmiss_GridComp), INTENT(INOUT) :: self        ! Grid Component
-   TYPE(Chem_Bundle),       INTENT(INOUT) :: w_c         ! Chemical tracer fields   
+   TYPE(Species_Bundle),    INTENT(INOUT) :: bgg         ! GMI Species - transported
+   TYPE(Species_Bundle),    INTENT(INOUT) :: bxx         ! GMI Species - not transported
    TYPE(ESMF_State),        INTENT(INOUT) :: impChem     ! Import State
    TYPE(ESMF_State),        INTENT(INOUT) :: expChem     ! Export State
    TYPE(ESMF_Clock),        INTENT(INOUT) :: clock       ! The clock
@@ -887,6 +904,7 @@ CONTAINS
    REAL(KIND=DBL), ALLOCATABLE :: T_15_AVG(:,:)
 
    REAL(KIND=DBL), ALLOCATABLE :: var2dDBL(:,:)
+   REAL(KIND=DBL), ALLOCATABLE :: var3dDBL(:,:,:)
 
    REAL(KIND=DBL), ALLOCATABLE :: mass(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: press3c(:,:,:)
@@ -1046,7 +1064,7 @@ CONTAINS
     CALL MonitorT2M(STATUS)
     VERIFY_(STATUS)
    END IF
-   T_15_AVG(i1:i2,j1:j2) = w_c%qa(w_c%reg%j_XX)%data3d(i1:i2,j1:j2,1)
+   T_15_AVG(i1:i2,j1:j2) = bxx%qa(bxx%reg%nq)%data3d(i1:i2,j1:j2,1)
 
 ! Grab imports and do units conversions
 ! -------------------------------------
@@ -1056,10 +1074,9 @@ CONTAINS
 ! Hand the species concentrations to GMI's bundle
 ! -----------------------------------------------
    IF (self%gotImportRst) THEN
-      CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration, &
-               w_c%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, &
-               STATUS)
-   VERIFY_(STATUS)
+      CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration,          &
+               bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, STATUS)
+      VERIFY_(STATUS)
    END IF
 
    DEALLOCATE(var3D, STAT=STATUS)
@@ -1110,6 +1127,15 @@ CONTAINS
 
     CALL MAPL_GetPointer(impChem, light_NO_prod, 'LIGHT_NO_PROD', __RC__)
 
+
+!--------------------------------------------------------
+! Calculate the air density at the center of each grid box
+! (molecules/cm^3).
+!--------------------------------------------------------
+    self%SpeciesConcentration%concentration(IMGAS)%pArray3D(:,:,:) =  &
+                     press3c(i1:i2,j1:j2,:) * MB2CGS /  &
+                     (kel (i1:i2,j1:j2,:) * BOLTZMN_E)
+
     CALL RunEmission(self%Emission, self%SpeciesConcentration, self%gmiClock,  &
                      self%gmiGrid,                                             &
                      loc_proc, cosSolarZenithAngle, latdeg, self%cellArea,     &
@@ -1149,8 +1175,8 @@ CONTAINS
 ! Return species concentrations to the chemistry bundle
 ! -----------------------------------------------------
    IF (self%gotImportRst) THEN
-      CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration, &
-               w_c%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
+      CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration,   &
+               bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
                STATUS)
       VERIFY_(STATUS)
    END IF
@@ -1158,6 +1184,7 @@ CONTAINS
 ! Export states
 ! -------------
    CALL FillExports(STATUS)
+   VERIFY_(STATUS)
 
 ! Scratch local work space
 ! ------------------------
@@ -1567,7 +1594,9 @@ CONTAINS
 ! !INTERFACE:
 
   SUBROUTINE FillExports(rc)
-  
+
+  USE gcr_mod,                       ONLY : GET_GCR_EMISS
+    
   IMPLICIT NONE
 
   INTEGER, INTENT(OUT) :: rc
@@ -1635,14 +1664,41 @@ CONTAINS
      fieldName = TRIM(self%EM_ExportNames(n))
      unitsName = TRIM(self%EM_ExportUnits(n))
      CALL getMW(TRIM(fieldName), ic, mw, rc)
+     VERIFY_(rc)
      CALL ESMFL_StateGetPointerToData(expChem, EM_pointer, TRIM(fieldName), RC=STATUS)
      VERIFY_(STATUS)
      
      IsAssociated: IF(ASSOCIATED(EM_pointer)) THEN
+! GCR emissions
+! ------------
+      IF(TRIM(fieldName) == "EM_GCR_NO") THEN
+       ALLOCATE(var3dDBL(i1:i2,j1:j2,1:km),STAT=STATUS) 
+       VERIFY_(STATUS)
+       if (self%do_gcr) then
+        CALL GET_GCR_EMISS ( var3dDBL, i1, i2, j1, j2, 1, km )  ! (molec/cm3/sec) (bottom up)
+
+        SELECT CASE (unitsName)
+        CASE ("molec cm-3 s-1")
+         EM_pointer(:,:,km:1:-1) = var3dDBL(:,:,1:km)        
+        CASE ("kg m-3 s-1")
+         EM_pointer(:,:,km:1:-1) = var3dDBL(:,:,1:km) / MAPL_AVOGAD * mw * 1.e+6
+        CASE ("kg m-2 s-1")
+         EM_pointer(:,:,km:1:-1) = var3dDBL(:,:,1:km) / MAPL_AVOGAD * mw * 1.e+6  *  gridBoxThickness(:,:,1:km) 
+        CASE DEFAULT
+         PRINT *,TRIM(Iam)//": Modifications needed to export  "//TRIM(unitsName)//" for "//TRIM(fieldName)
+         STATUS = -1
+         VERIFY_(STATUS)
+        END SELECT
+
+       else        
+        EM_pointer(:,:,km:1:-1) = 0.0 
+       end if
+
+       DEALLOCATE(var3dDBL)
 
 ! Lightning NO section
 ! --------------------
-      IF(TRIM(fieldName) == "EM_LGTNO") THEN
+      ELSE IF(TRIM(fieldName) == "EM_LGTNO") THEN
 
        CALL Get_lightning_opt(self%Emission,lightning_opt)
 
@@ -1715,7 +1771,7 @@ CONTAINS
          EM_pointer(:,:,kReverse) = self%Emission%emiss_3d_out(:,:,k,ic)*var2dDBL(:,:)
         CASE DEFAULT
          PRINT *,TRIM(Iam)//": Modifications needed to export  "//TRIM(unitsName)//" for "//TRIM(fieldName)
-         STATUS = -1 
+         STATUS = -1
          VERIFY_(STATUS)
         END SELECT
 
@@ -1831,6 +1887,9 @@ CONTAINS
     mw = mw_data( ICH4)
     i =  ICH4
    CASE ("EM_LGTNO")
+    mw = mw_data(  INO)
+    i =  -1
+   CASE ("EM_GCR_NO")
     mw = mw_data(  INO)
     i =  -1
    CASE DEFAULT
@@ -2018,7 +2077,7 @@ CONTAINS
 ! Ship Emisssions
 ! ---------------
    if (self%Emission%do_ShipEmission) then
-      jNO2val_phot(i1:i2,j1:j2) = w_c%qa(w_c%reg%j_XX)%data3d(i1:i2,j1:j2,km-1)
+      jNO2val_phot(i1:i2,j1:j2) = bxx%qa(bxx%reg%nq)%data3d(i1:i2,j1:j2,km-1)
    end if
 
   RETURN
@@ -2201,7 +2260,7 @@ CONTAINS
 
 ! Index of T2M15d in the non-transported species bundle
 ! -----------------------------------------------------
-  i = w_c%reg%j_XX
+  i = bxx%reg%nq
 
 ! Sanity check
 ! ------------
@@ -2227,25 +2286,25 @@ CONTAINS
 ! Age-off
 ! -------
    DO k = 1,15
-    w_c%qa(i)%data3d(i1:i2,j1:j2,k) = w_c%qa(i)%data3d(i1:i2,j1:j2,k+1)
+    bxx%qa(i)%data3d(i1:i2,j1:j2,k) = bxx%qa(i)%data3d(i1:i2,j1:j2,k+1)
    END DO
 
 ! Calculate average T2M for previous 15 whole days
 ! ------------------------------------------------
    DO k = 2,15
-    w_c%qa(i)%data3d(i1:i2,j1:j2,1) = w_c%qa(i)%data3d(i1:i2,j1:j2,1) + w_c%qa(i)%data3d(i1:i2,j1:j2,k)
+    bxx%qa(i)%data3d(i1:i2,j1:j2,1) = bxx%qa(i)%data3d(i1:i2,j1:j2,1) + bxx%qa(i)%data3d(i1:i2,j1:j2,k)
    END DO
-   w_c%qa(i)%data3d(i1:i2,j1:j2,1) = w_c%qa(i)%data3d(i1:i2,j1:j2,1)/15.00
+   bxx%qa(i)%data3d(i1:i2,j1:j2,1) = bxx%qa(i)%data3d(i1:i2,j1:j2,1)/15.00
 
 ! Initialize to zero for day that is just starting
 ! ------------------------------------------------
-   w_c%qa(i)%data3d(:,:,16) = 0.00
+   bxx%qa(i)%data3d(:,:,16) = 0.00
 
   END IF
 
 ! Otherwise, keep running average for current day
 ! -----------------------------------------------
-  w_c%qa(i)%data3d(i1:i2,j1:j2,16) = w_c%qa(i)%data3d(i1:i2,j1:j2,16) + T2m(i1:i2,j1:j2)*avgFactor
+  bxx%qa(i)%data3d(i1:i2,j1:j2,16) = bxx%qa(i)%data3d(i1:i2,j1:j2,16) + T2m(i1:i2,j1:j2)*avgFactor
     
   RETURN
  END SUBROUTINE MonitorT2M
@@ -2262,9 +2321,10 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE GmiEmiss_GridCompFinalize ( self, w_c, impChem, expChem, &
+   SUBROUTINE GmiEmiss_GridCompFinalize ( self, impChem, expChem, &
                                      nymd, nhms, cdt, rc )
 
+  USE gcr_mod,                       ONLY : Finalize_GCR
   IMPLICIT none
 
 ! !INPUT/OUTPUT PARAMETERS:
@@ -2273,7 +2333,6 @@ CONTAINS
 
 ! !INPUT PARAMETERS:
 
-   TYPE(Chem_Bundle), INTENT(in)  :: w_c      ! Chemical tracer fields   
    INTEGER, INTENT(in) :: nymd, nhms	      ! time
    REAL,    INTENT(in) :: cdt  	              ! chemical timestep (secs)
 
@@ -2307,6 +2366,8 @@ CONTAINS
 !  --------------------
    deallocate ( MASK_10AM, MASK_2PM, stat = STATUS )
    VERIFY_(STATUS)
+
+   if (self%do_gcr) call Finalize_GCR()
 
    RETURN
 
