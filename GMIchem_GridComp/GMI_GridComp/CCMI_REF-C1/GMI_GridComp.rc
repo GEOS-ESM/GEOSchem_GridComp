@@ -9,12 +9,6 @@
 kineticsTextFile: setkin_chem_mech.txt___.rc
 
         #############################
-        # GMI Chemical Mechanism Name
-        #############################
-
-chem_mecha: strat_trop
-
-        #############################
         # MetFields Related Variables
         #############################
 

@@ -89,6 +89,7 @@
    LOGICAL :: pr_qqjk
    LOGICAL :: do_wetchem
    LOGICAL :: do_AerDust_Calc
+   LOGICAL :: do_LBSplusBCOC_SAD
    INTEGER :: phot_opt
 
 ! Dimensions
@@ -97,7 +98,6 @@
 
 ! Useful character strings
 ! ------------------------
-   CHARACTER(LEN=255) :: chem_mecha
    CHARACTER(LEN=MAX_LENGTH_MET_NAME) :: metdata_name_org
    CHARACTER(LEN=MAX_LENGTH_MET_NAME) :: metdata_name_model
 
@@ -249,11 +249,6 @@ CONTAINS
      &                default = ' ', rc=STATUS )
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%chem_mecha, &
-     &                label   = "chem_mecha:", &
-     &                default = 'strat_trop', rc=STATUS )
-      VERIFY_(STATUS)
-
       call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_synoz, &
      &           label="do_synoz:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
@@ -291,6 +286,10 @@ CONTAINS
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_AerDust_Calc, &
      &           label="do_AerDust_Calc:", default=.false., rc=STATUS)
+      VERIFY_(STATUS)
+
+      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_LBSplusBCOC_SAD, &
+     &           label="do_LBSplusBCOC_SAD:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_qqjk, &
@@ -785,13 +784,13 @@ CONTAINS
 
           CALL Get_numTimeSteps(self%gmiClock, num_time_steps)
 
-          call calcThermalRateConstants (self%do_wetchem, self%chem_mecha,      &
+          call calcThermalRateConstants (self%do_wetchem,       &
      &             rootProc, num_time_steps, IH2O, IMGAS, nymd,                 &
      &             self%rxnr_adjust_map,     &
      &             press3c, tropopausePress, kel, clwc, cmf, gmiSAD,    &
      &             self%qkgmi, self%SpeciesConcentration%concentration,         &
      &             self%rxnr_adjust, eRadius, tArea, relativeHumidity,          &
-     &             conPBLFlag, self%do_AerDust_Calc, self%phot_opt,             &
+     &             conPBLFlag, self%do_AerDust_Calc, self%do_LBSplusBCOC_SAD, self%phot_opt,             &
      &             self%pr_diag, loc_proc, self%num_rxnr_adjust,                &
      &             self%rxnr_adjust_timpyr, ivert, NSAD, NUM_K, NMF, NSP,       &
      &             ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1, k2)

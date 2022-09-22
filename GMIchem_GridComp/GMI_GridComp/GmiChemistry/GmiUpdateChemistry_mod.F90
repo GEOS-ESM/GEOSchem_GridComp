@@ -39,7 +39,7 @@
 !
 ! !INTERFACE:
 !
-      subroutine updateChemistry ( savedVars, rootProc, chem_mecha, do_ftiming,&
+      subroutine updateChemistry ( savedVars, rootProc, do_ftiming,&
      &                 metdata_name_org, metdata_name_model, do_qqjk_inchem,   &
      &                 do_qqjk_reset, pr_qqjk, surfEmissForChem, press3c,      &
      &                 press3e, pr_smv2, pr_nc_period, mass, concentration,    &
@@ -62,7 +62,6 @@
 #     include "gmi_AerDust_const.h"
 !
 ! !INPUT PARAMETERS:
-      CHARACTER (LEN=*) ,INTENT(IN) :: chem_mecha
                          ! first  part of metdata_name, e.g., "NCAR"
       character (len=*) ,intent(in) :: metdata_name_org
                          ! second part of metdata_name, e.g., "MATCH"
@@ -155,7 +154,7 @@
       end if
 
       do ix = 1, num_loops
-         call Update_Smv2chem (savedVars, chemintv, chem_mecha, surfEmissForChem, &
+         call Update_Smv2chem (savedVars, chemintv, surfEmissForChem, &
      &             humidity, qjgmi, qkgmi, press3e, pctm2, kel, concentration, &
      &             pr_diag, pr_qqjk, pr_smv2, do_smv_reord, do_synoz,          &
      &             do_qqjk_inchem, do_semiss_inchem, imgas_num, initrogen_num, &

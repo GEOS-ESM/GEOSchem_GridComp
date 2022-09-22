@@ -50,9 +50,9 @@
 !      ibcb(42) = 1
 !                CCl4
 !      ibcb(43) = 1
-!                CFCl3
+!                CFC11
 !      ibcb(44) = 1
-!                CF2Cl2
+!                CFC12
 !      ibcb(45) = 1
 !                CFC113
 !      ibcb(46) = 1

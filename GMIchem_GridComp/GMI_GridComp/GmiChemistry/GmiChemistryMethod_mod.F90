@@ -19,7 +19,7 @@
       use GmiGrid_mod             , only : Get_ilo, Get_ihi, Get_julo, Get_jhi
       use GmiGrid_mod             , only : Get_ilong, Get_ilat, Get_ivert, Get_itloop
       use GmiTimeControl_mod,       only : t_GmiClock, Get_curGmiDate, GmiSplitDateTime
-      use GmiSpeciesRegistry_mod,   only : getSpeciesIndex, UNKNOWN_SPECIES
+      use GmiSpeciesRegistry_mod,   only : UNKNOWN_SPECIES
       use GmiPrintError_mod,        only : GmiPrintError
       use GmiESMFrcFileReading_mod, only : rcEsmfReadTable
       use GmiArrayBundlePointer_mod, only : t_GmiArrayBundle
@@ -642,7 +642,7 @@
      &              pctm2, loc_proc, num_species, do_qqjk_reset, HNO3CONDsad,   &
      &              HNO3GASsad, gmiQK, gmiQQK, gmiQJ, gmiQQJ, surfEmissForChem, &
      &              pr_diag, do_ftiming, do_qqjk_inchem, pr_qqjk,               &
-     &              do_semiss_inchem, pr_smv2, pr_nc_period, chem_mecha,        &
+     &              do_semiss_inchem, pr_smv2, pr_nc_period,         &
      &              rootProc, metdata_name_org, metdata_name_model, tdt4)
 
 ! !USES:
@@ -676,7 +676,6 @@
       type (t_GmiArrayBundle), intent(in) :: gmiQK(:)
       type (t_GmiArrayBundle), intent(inout) :: gmiQQJ(:)
       type (t_GmiArrayBundle), intent(inout) :: gmiQQK(:)
-      CHARACTER(LEN=255), intent(in) :: chem_mecha
       character (len=MAX_LENGTH_MET_NAME), intent(in) :: metdata_name_org
       character (len=MAX_LENGTH_MET_NAME), intent(in) :: metdata_name_model
       real,             intent(in) :: tdt4
@@ -737,7 +736,7 @@
 
 
       ! Call the Chemistry control routine
-      call updateChemistry (self%savedVars, rootProc, TRIM(chem_mecha), do_ftiming, &
+      call updateChemistry (self%savedVars, rootProc, do_ftiming, &
      &           TRIM(metdata_name_org), TRIM(metdata_name_model),             &
      &           do_qqjk_inchem, do_qqjk_reset, pr_qqjk,  surfEmissForChem,    &
      &           press3c, press3e, pr_smv2, pr_nc_period, mass, concentration, &

@@ -106,10 +106,6 @@
 ! ----------
    INTEGER :: i1, i2, im, j1, j2, jm, km
 
-! Useful character strings
-! ------------------------
-   CHARACTER(LEN=255) :: chem_mecha
-
 ! Surface area of grid cells
 ! --------------------------
    REAL(KIND=DBL), POINTER :: cellArea(:,:)
@@ -260,11 +256,6 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, importRestartFile, &
      &                label   = "importRestartFile:", &
      &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS)
-
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%chem_mecha, &
-     &                label   = "chem_mecha:", &
-     &                default = 'strat_trop', rc=STATUS )
       VERIFY_(STATUS)
 
       !------------------------------
@@ -837,7 +828,7 @@ CONTAINS
                  gmiQQK, gmiQJ, gmiQQJ, surfEmissForChem, self%pr_diag,        &
                  self%do_ftiming, self%do_qqjk_inchem, self%pr_qqjk,           &
                  self%do_semiss_inchem, self%pr_smv2, self%pr_nc_period,       &
-                 self%chem_mecha, rootProc, self%metdata_name_org,             &
+                 rootProc, self%metdata_name_org,             &
                  self%metdata_name_model, tdt)
 
 ! Return species concentrations to the chemistry bundle

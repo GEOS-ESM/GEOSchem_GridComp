@@ -1709,7 +1709,7 @@ CONTAINS
    integer                         :: nymd, nhms  ! time
    real                            :: gmiDt       ! chemistry timestep (secs)
    real                            :: runDt       ! heartbeat (secs)
-   integer                         :: i, i2, iOX, iT2M, iOCS, j2, k, km, m, n
+   integer                         :: i, i2, iOX, iT2M, iOCS, j2, k, km, m, n, iH2SO4
    LOGICAL                         :: RunGMINow
 
    type(ESMF_Config)               :: CF
@@ -1931,24 +1931,38 @@ CONTAINS
      CALL MAPL_GetPointer(impChem, OCS_import,  'OCS_CLIMO',  __RC__)
 !    CALL MAPL_GetPointer(impChem, OCS_import,  'ACHEM::OCS', __RC__)
 
+!... OCSg is active species
      m = 1
-     n = xxReg%nq
+     n = ggReg%nq
      iOCS = -1
     
      DO i = m,n
-       IF(TRIM(xxReg%vname(i)) == "OCSg") THEN
+       IF(TRIM(ggReg%vname(i)) == "OCSg") THEN
          iOCS = i
+         bgg%qa(iOCS)%data3d(:,:,km-1:km) = OCS_import(:,:,km-1:km)
          EXIT
        END IF
      END DO
 
+!... OCSg is passive species
      IF(iOCS < 1) THEN
-      PRINT *,TRIM(Iam)//": Cannot find species OCSg in XX"
-      STATUS = 1
-      VERIFY_(STATUS)
-     END IF
+       m = 1
+       n = xxReg%nq
+     
+       DO i = m,n
+         IF(TRIM(xxReg%vname(i)) == "OCSg") THEN
+           iOCS = i
+           bxx%qa(iOCS)%data3d(:,:,:) = OCS_import(:,:,:)
+           EXIT
+         END IF
+       END DO
+     ENDIF
 
-     bxx%qa(iOCS)%data3d(:,:,:) = OCS_import(:,:,:)
+     IF(iOCS < 1) THEN
+       PRINT *,TRIM(Iam)//": Cannot find species OCSg in GMI"
+       STATUS = 1
+       VERIFY_(STATUS)
+     END IF
 
    END IF OCS
 
@@ -1985,7 +1999,7 @@ CONTAINS
 
     CALL MAPL_TimerOn( MAPLobj, "RUN")
 
-    CALL GMI_GridCompRun1(gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, runDt, clock, STATUS)
+    CALL GMI_GridCompRun1(gc, gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, runDt, clock, STATUS)
     VERIFY_(STATUS)
 
     CALL MAPL_TimerOff(MAPLobj, "RUN")
@@ -2038,7 +2052,7 @@ CONTAINS
 
        CALL MAPL_TimerOn(MAPLobj, "RUN")
 
-       CALL GMI_GridCompRunOrig(gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, gmiDt, clock, STATUS)
+       CALL GMI_GridCompRunOrig(gc, gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, gmiDt, clock, STATUS)
        VERIFY_(STATUS)
 
        CALL MAPL_TimerOff(MAPLobj, "RUN")
@@ -2054,6 +2068,23 @@ CONTAINS
      ! Also compute OVP fields - see below
 
    END IF Phase99
+
+!.TEMP.. if H2SO4 exists in GMI then ZERO OUT H2SO4 until coupled into GOCART2G
+   SDSTEMP: IF ( phase == 2 .OR. phase == 99 ) THEN
+     m = ChemReg%i_GMI
+     n = ChemReg%j_GMI
+     iH2SO4 = -1
+     DO i = m,n
+       IF(TRIM(chemReg%vname(i)) == "H2SO4") THEN
+         iH2SO4 = i
+         EXIT
+       ENDIF
+     ENDDO
+     IF(iH2SO4 >= 1) THEN
+       w_c%qa(iH2SO4)%data3d(:,:,:) = 1e-30
+     ENDIF
+   ENDIF SDSTEMP
+
 
 !  Update age-of-air.
 !  This transported species is at bgg%qa(1)%data3d.

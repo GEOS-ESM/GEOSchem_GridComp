@@ -861,16 +861,14 @@ end subroutine INPHOT
 !     endif
       do J = 1, NJVAL
          T_JX = TITLEJ (J)
-         ! Note: C3H6Ot renamed as Acet-a already
-         !if (TITLEJ(J) .eq. 'Acet-a' .or. TITLEJ(J) .eq. 'Acet-b') T_JX = 'C3H6O'
 
 !... FastJ7+ names mapped to these FastJ6.5 names
-         if (TITLEJ(J) .eq. 'Acet-a') T_JX = 'C3H6O'
+         if (trim(TITLEJ(J)) .eq. 'Acet-a') T_JX = 'C3H6O'
 !.sds.. need to map CloudJ cross-section names with Fastjx6.5 cross-section names
-         if (JLABEL(J) .eq. 'PrAld') JLABEL(J) = 'EAld'
-         if (JLABEL(J) .eq. 'MeCCl3') JLABEL(J) = 'CH3CCl3'
-         if (JLABEL(J) .eq. 'Acet-a') JLABEL(J) = 'C3H6O'
-         if (JLABEL(J) .eq. 'Glyxlc') JLABEL(J) = 'Glyxlb' !
+         if (trim(JLABEL(J)) .eq. 'PrAld') JLABEL(J) = 'EAld'
+         if (trim(JLABEL(J)) .eq. 'MeCCl3') JLABEL(J) = 'CH3CCl3'
+         if (trim(JLABEL(J)) .eq. 'Acet-a') JLABEL(J) = 'C3H6O'
+         if (trim(JLABEL(J)) .eq. 'Glyxlc') JLABEL(J) = 'Glyxlb' !
          !!! don't delete comment for following line
          !if (TITLEJ(J) .eq. 'Acet-b') T_JX = 'C3H6O'
          do K = 1, NRATJ
@@ -885,10 +883,10 @@ end subroutine INPHOT
          do K = 1, NRATJ
             J = JIND (K)
             if (J.eq.0) then
-               write(6,'(i5,a9,f6.2,a,i4,1x,a40)') J, TITLEJ(J), JFACTA(K) &
-                             , ' has no mapping onto onto fast-JX'
+               write(6,'(2i5,a9,f6.2,a33,1x,a40)') K, J, JLABEL(K), JFACTA(K) &
+                             , ' has no mapping onto onto fast-JX', lqjchem(K)
             else
-               write(6,'(i5,a9,f6.2,a,i4,1x,a80)') J, TITLEJ(J), JFACTA(K) &
+               write(6,'(i5,2a9,f6.2,a22,i4,1x,a80)') J, TITLEJ(J), JLABEL(K), JFACTA(K) &
                      , ' mapped onto fast-JX:', K, lqjchem(K)
             endif
          enddo
@@ -2154,7 +2152,6 @@ end subroutine JP_ATM
 !      do K=1,3
 !        read(NJ1,103) TITLEJ(K,3),TQQ(K,3), (Q1D(IW,K),IW=1,NWWW)
 !      enddo
-
 !
 !---Read remaining species:  X-sections at 2 T's
       do J=1,NQQQ
@@ -2169,6 +2166,13 @@ end subroutine JP_ATM
         if(TRIM(titlej(j+3)).eq."MeVK")  ncat_met_vinyl_ketone  = J+3  ! Added for GMI to catch  methylvinylketone {AOO, 8/04}
         if(TRIM(titlej(j+3)).eq."MEKeto") ncat_met_ethyl_ketone = J+3  ! Added for GMI to catch methylethylketone {AOO, 8/04}
         if(TRIM(titlej(j+3)).eq."MGlyxl") ncat_methyl_glyoxal   = J+3  ! Added for GMI to catch methy glyoxal  {AOO, 8/04}
+!--------
+!  Reset the titles for Q1A-Ac and Q1B-Ac to be the two acetone J_s
+!   60: C3H6O  = Acet-a     (CH3CO + CH3)
+!   61: Q2-Ac  = Acet-b     (CH3 + CO + CH3)
+        if(TRIM(TITLEJ(J+3)).eq."C3H6Ot") TITLEJ(J+3) = 'Acet-a'
+        if(TRIM(TITLEJ(J+3)).eq."Q2-Ac")  TITLEJ(J+3) = 'Acet-b'
+
       enddo
 
       read(NJ1,'(A)') TITLE0
@@ -2400,12 +2404,12 @@ end subroutine JP_ATM
 !      enddo
 !
 !--------
-!  Reset the titles for NJVAL-1 & NJVAL to be the two acetone J_s
-!   60: C3H6O  = Acet-a     (CH3CO + CH3)
-!   61: Q2-Ac  = Acet-b     (CH3 + CO + CH3)
-      TITLEJ (NJVAL - 1) = 'Acet-a'
-
-      TITLEJ (NJVAL) = 'Acet-b'
+!.sds!  Reset the titles for NJVAL-1 & NJVAL to be the two acetone J_s
+!.sds!   60: C3H6O  = Acet-a     (CH3CO + CH3)
+!.sds!   61: Q2-Ac  = Acet-b     (CH3 + CO + CH3)
+!.sds      TITLEJ (NJVAL - 1) = 'Acet-a'
+!.sds
+!.sds      TITLEJ (NJVAL) = 'Acet-b'
 
   101 FORMAT(8E10.3)
   102 FORMAT((10X,6E10.3)/(10X,6E10.3)/(10X,6E10.3))

@@ -169,7 +169,7 @@
 !
 ! !INTERFACE:
 !
-   SUBROUTINE GMI_GridCompRun1(gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, tdt, clock, rc)
+   SUBROUTINE GMI_GridCompRun1(gc, gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, tdt, clock, rc)
 
 ! !USES:
 
@@ -177,6 +177,7 @@
 
 ! !INPUT/OUTPUT PARAMETERS:
 
+   type(ESMF_GridComp),intent(inout) :: gc     ! Gridded component 
    TYPE(GMI_GridComp),   INTENT(inOut) :: gcGMI   ! Grid Component
    TYPE(Species_Bundle), INTENT(inOut) :: bgg     ! GMI Species - transported
    TYPE(Species_Bundle), INTENT(inOut) :: bxx     ! GMI Species - not transported
@@ -223,9 +224,9 @@
 
       mixPBL = .FALSE.
 
-      CALL GmiEmiss_GridCompRun     (gcGMI%gcEmiss, bgg, bxx, impChem, expChem, nymd, nhms, tdt, clock, mixPBL, __RC__)
+      CALL GmiEmiss_GridCompRun     (gcGMI%gcEmiss, bgg, bxx, impChem, expChem, nymd, nhms, tdt, gc, clock, mixPBL, __RC__)
 
-      CALL GmiForcingBC_GridCompRun (gcGMI%gcFBC,   bgg, bxx, impChem, expChem, nymd, nhms, tdt,                __RC__)
+      CALL GmiForcingBC_GridCompRun (gcGMI%gcFBC,   bgg, bxx, impChem, expChem, nymd, nhms, tdt,                    __RC__)
 
       RETURN
 
@@ -319,7 +320,7 @@
 !
 ! !INTERFACE:
 !
-   SUBROUTINE GMI_GridCompRunOrig(gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, cdt, clock, rc)
+   SUBROUTINE GMI_GridCompRunOrig(gc, gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, cdt, clock, rc)
 
 ! !USES:
 
@@ -327,6 +328,7 @@
 
 ! !INPUT/OUTPUT PARAMETERS:
 
+   TYPE(ESMF_GridComp),  INTENT(inOut) :: gc      ! Gridded Component
    TYPE(GMI_GridComp),   INTENT(inOut) :: gcGMI   ! Grid Component
    TYPE(Species_Bundle), INTENT(inOut) :: bgg     ! GMI Species - transported
    TYPE(Species_Bundle), INTENT(inOut) :: bxx     ! GMI Species - not transported
@@ -375,19 +377,19 @@
 
       mixPBL = .TRUE.
 
-      CALL GmiDepos_GridCompRun     (gcGMI%gcDepos,     bgg, bxx, impChem, expChem, nymd, nhms, cdt,               __RC__)
+      CALL GmiDepos_GridCompRun     (gcGMI%gcDepos,     bgg, bxx, impChem, expChem, nymd, nhms, cdt,                    __RC__)
 
-      CALL GmiEmiss_GridCompRun     (gcGMI%gcEmiss,     bgg, bxx, impChem, expChem, nymd, nhms, cdt, clock, mixPBL, __RC__)
+      CALL GmiEmiss_GridCompRun     (gcGMI%gcEmiss,     bgg, bxx, impChem, expChem, nymd, nhms, cdt, gc, clock, mixPBL, __RC__)
 
-      CALL GmiSAD_GridCompRun       (gcGMI%gcSAD,       bgg, bxx, impChem, expChem, nymd, nhms, cdt,               __RC__)
+      CALL GmiSAD_GridCompRun       (gcGMI%gcSAD,       bgg, bxx, impChem, expChem, nymd, nhms, cdt,                    __RC__)
 
-      CALL GmiPhotolysis_GridCompRun(gcGMI%gcPhot,      bgg, bxx, impChem, expChem, nymd, nhms, cdt,               __RC__)
+      CALL GmiPhotolysis_GridCompRun(gcGMI%gcPhot,      bgg, bxx, impChem, expChem, nymd, nhms, cdt,                    __RC__)
 
-      CALL GmiForcingBC_GridCompRun (gcGMI%gcFBC,       bgg, bxx, impChem, expChem, nymd, nhms, cdt,               __RC__)
+      CALL GmiForcingBC_GridCompRun (gcGMI%gcFBC,       bgg, bxx, impChem, expChem, nymd, nhms, cdt,                    __RC__)
 
-      CALL GmiThermalRC_GridCompRun (gcGMI%gcThermalRC, bgg, bxx, impChem, expChem, nymd, nhms, cdt,               __RC__)
+      CALL GmiThermalRC_GridCompRun (gcGMI%gcThermalRC, bgg, bxx, impChem, expChem, nymd, nhms, cdt,                    __RC__)
 
-      CALL GmiChemistry_GridCompRun (gcGMI%gcChem,      bgg, bxx, impChem, expChem, nymd, nhms, cdt,               __RC__)
+      CALL GmiChemistry_GridCompRun (gcGMI%gcChem,      bgg, bxx, impChem, expChem, nymd, nhms, cdt,                    __RC__)
 
       RETURN
 

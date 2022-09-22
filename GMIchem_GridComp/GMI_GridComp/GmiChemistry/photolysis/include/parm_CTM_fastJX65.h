@@ -32,7 +32,8 @@
 
       integer, parameter :: I_ = 1,  J_   = 1
 !      integer, parameter :: X_ = 64, A_   = 40, WX_ = 18
-      integer, parameter :: X_ = 63, A_   = 56, WX_ = 18
+      integer, parameter :: X_ = 65, A_   = 56, WX_ = 18
+!.w/o H2SO4/SO3      integer, parameter :: X_ = 63, A_   = 56, WX_ = 18
       integer, parameter :: MX = 45,  NTR_ = 1  
 !integer, parameter :: MX = 4,  NTR_ = 1  
       integer            ::  L_, JVL_, JVN_, L1_, L2_, NCTA

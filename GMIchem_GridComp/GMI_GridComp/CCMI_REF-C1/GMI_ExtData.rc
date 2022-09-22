@@ -45,6 +45,23 @@ NO_pwrp      'kg NO m-2 s-1'    Y   Y   %y4-%m2-%d2T12:00:00     none    none  N
 NO_ship      'kg NO m-2 s-1'    Y   Y   %y4-%m2-%d2T12:00:00     none    none  NO_ship-UNUSED    /dev/null
 CH4_biom    'kg CH4 m-2 s-1'    N   Y   %y4-%m2-%d2T12:00:00     none    none  biomass-UNUSED    /dev/null
 CH4_aggr    'kg CH4 m-2 s-1'    Y   Y   %y4-%m2-%d2T12:00:00     none    none  CH4_TOT-UNUSED    /dev/null
+CFC11_FLUX      'kg m-2 s-1'    N   Y   %y4-%m2-%d2T12:00:00     none    none  CFC11_emission    /discover/nobackup/ssteenro/qing/SC.ODS.Emission.x360_y181.%y4.V1.nc
+CFC12_FLUX      'kg m-2 s-1'    N   Y   %y4-%m2-%d2T12:00:00     none    none  CFC12_emission    /discover/nobackup/ssteenro/qing/SC.ODS.Emission.x360_y181.%y4.V1.nc
+CFC113_FLUX     'kg m-2 s-1'    N   Y   %y4-%m2-%d2T12:00:00     none    none  CFC113_emission   /discover/nobackup/ssteenro/qing/SC.ODS.Emission.x360_y181.%y4.V1.nc
+HCFC22_FLUX     'kg m-2 s-1'    N   Y   %y4-%m2-%d2T12:00:00     none    none  HCFC22_emission   /discover/nobackup/ssteenro/qing/SC.ODS.Emission.x360_y181.%y4.V1.nc
+CH3CCL3_FLUX    'kg m-2 s-1'    N   Y   %y4-%m2-%d2T12:00:00     none    none  CH3CCL3_emission  /discover/nobackup/ssteenro/qing/SC.ODS.Emission.x360_y181.%y4.V1.nc
+CCL4_FLUX       'kg m-2 s-1'    N   Y   %y4-%m2-%d2T12:00:00     none    none  CCL4_emission     /discover/nobackup/ssteenro/qing/SC.ODS.Emission.x360_y181.%y4.V1.nc
+CHBR3_FLUX      'kg m-2 s-1'    N   Y   %y4-%m2-%d2T12:00:00     none    none  CHBR3_emission    /discover/nobackup/ssteenro/qing/SC.ODS.Emission.x360_y181.%y4.V1.nc
+CH2BR2_FLUX     'kg m-2 s-1'    N   Y   %y4-%m2-%d2T12:00:00     none    none  CH2BR2_emission   /discover/nobackup/ssteenro/qing/SC.ODS.Emission.x360_y181.%y4.V1.nc
+N2O_OCEAN-FLUX  'kg m-2 s-1'    N   Y   %y4-%m2-%d2T12:00:00     none    none  N2OOCEAN_emission  /discover/nobackup/ssteenro/qing/SC.ODS.Emission.x360_y181.%y4.V1.nc
+N2O_LAND-FLUX   'kg m-2 s-1'    N   Y   %y4-%m2-%d2T12:00:00     none    none  N2OLAND_emission   /discover/nobackup/ssteenro/qing/SC.ODS.Emission.x360_y181.%y4.V1.nc
+N2O_ANTHRO-FLUX 'kg m-2 s-1'    N   Y   %y4-%m2-%d2T12:00:00     none    none  N2OANTHRO_emission /discover/nobackup/ssteenro/qing/SC.ODS.Emission.x360_y181.%y4.V1.nc
+SO2_FIRES-FLUX     'kg m-2 s-1' N   Y   %y4-%m2-%d2T12:00:00     none    none  SO2               ExtData/CMIP6/sfc/SU/SO2-em-biomassburning_input4MIPs_emissions_CMIP_VUA-CMIP-BB4CMIP6-1-2_gn__surface.x1440_y720_t12.%y4.nc
+SO2_NONENERGY-FLUX 'kg m-2 s-1' N   Y   %y4-%m2-%d2t12:00:00     none    none  SO2_nonenergy     ExtData/CMIP6/sfc/SU/SO2-em-anthro_input4MIPs_emissions_CMIP_CEDS-2017-05-18_gn__nonenergy_surface.x720_y360_t12.%y4.nc
+SO2_ENERGY-FLUX    'kg m-2 s-1' N   Y   %y4-%m2-%d2t12:00:00     none    none  SO2_energy        ExtData/CMIP6/sfc/SU/SO2-em-anthro_input4MIPs_emissions_CMIP_CEDS-2017-05-18_gn__energy_elevated.x720_y360_t12.%y4.nc
+SO2_SHIPPING-FLUX  'kg m-2 s-1' N   Y   %y4-%m2-%d2t12:00:00     none    none  SO2_shipping      ExtData/CMIP6/sfc/SU/SO2-em-anthro_input4MIPs_emissions_CMIP_CEDS-2017-05-18_gn__shipping_surface.x720_y360_t12.%y4.nc
+SO2_AIRCRAFT-FLUX  'kg m-2 s-1' Y   Y   %y4-%m2-%d2t12:00:00     none    none  SO2_aviation      ExtData/CMIP6/L72/CMIP6_CEDS.airSO2emis.x720_y360_z72_t12.%y4.nc4
+DMS_OCEAN          'kg/m3'      Y   Y   1985-%m2-01T00:00:00     none    none  DMS_OCEAN         /discover/nobackup/cakelle2/data/OCEAN/DMS_lana.geos.1x1.esmf.nc
 MEGAN_ISOP    'mg C m-2 h-1'    Y   Y   -			 none    none  BIOGSRCE_AEF_ISOP /discover/nobackup/projects/gmao/share/dasilva/fvInput/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
 MEGAN_MBO     'mg C m-2 h-1'    Y   Y   -			 none    none  BIOGSRCE_AEF_MBO  /discover/nobackup/projects/gmao/share/dasilva/fvInput/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
 MEGAN_MPE     'mg C m-2 h-1'    Y   Y   -			 none    none  BIOGSRCE_AEF_MPE  /discover/nobackup/projects/gmao/share/dasilva/fvInput/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc

@@ -17,7 +17,6 @@ set (src_directories
   GMI_GridComp/GmiChemistry/photolysis/utils
   GMI_GridComp/GmiChemistry/sad
   GMI_GridComp/GmiChemistry/smv2chem
-  GMI_GridComp/GmiChemistry/stratTropMech
   GMI_GridComp/GmiDeposition
   GMI_GridComp/GmiEmission
   GMI_GridComp/GmiEmission/GOCARTroutines
@@ -32,9 +31,27 @@ set (src_directories
   GMI_GridComp/GmiSpeciesConcentration/spcConcentrationMethod
   )
 
-# External dependencies
-#include_directories (${include_Chem_Shared})
-#include_directories (${include_Chem_Base})
+# Choose (hardcode in) the GMI mechanism
+set (GMI_MECHANISM "StratTrop_Orig" CACHE STRING "GMI Mechanism chosen by the user at CMake configure time (default: StratTrop_Orig)")
+# Compile list of possible mechanisms
+set (mechdir ${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry)
+file (GLOB tmpmechfn ${mechdir}/*/setkin_chem_mech.txt)
+set (ALLOWED_MECHANISM)
+foreach (tmpfn ${tmpmechfn})
+  execute_process (COMMAND /bin/echo ${tmpfn} COMMAND awk --field-separator=/ "{print NF}" OUTPUT_VARIABLE NUM_MECH)
+  math (EXPR NUM_MECH "${NUM_MECH}-1")
+  execute_process (COMMAND /bin/echo ${tmpfn} COMMAND /usr/bin/cut --field=${NUM_MECH} --delimiter=/ OUTPUT_VARIABLE POSS_MECH)
+  string(STRIP ${POSS_MECH} POSS_MECH)
+  list (APPEND ALLOWED_MECHANISM ${POSS_MECH})
+endforeach()
+
+if (GMI_MECHANISM IN_LIST ALLOWED_MECHANISM)
+  set (MECHANISM_DIR "${GMI_MECHANISM}")
+  message(STATUS "GMI Mechanism chosen: ${GMI_MECHANISM}:")
+else ()
+  message(FATAL_ERROR "GMI_MECHANISM must be one of ${ALLOWED_MECHANISM}: is set to: ${GMI_MECHANISM}:")
+endif()
+list (APPEND src_directories GMI_GridComp/GmiChemistry/${MECHANISM_DIR})
 
 set (srcs)
 foreach (dir ${src_directories})
@@ -65,14 +82,14 @@ endif ()
 
 
 
-esma_add_library (${this} SRCS ${srcs} DEPENDENCIES Chem_Shared GEOS_Shared esmf)
+esma_add_library (${this} SRCS ${srcs} DEPENDENCIES Chem_Shared GEOS_Shared esmf Process_Library)
 
 target_include_directories (${this}
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry/photolysis/include>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry/stratTropMech>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry/${GMI_MECHANISM}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiShared/GmiInclude>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry/photolysis/CloudJ>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry/photolysis/fast_JX>
@@ -83,15 +100,16 @@ target_include_directories (${this}
   )
 
 target_include_directories (${this} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/GMI_GridComp>)
+target_include_directories (${this} PUBLIC ${INC_ESMF})
 
 
 
 set (gmi_gc ${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp)
-set (registry ${gmi_gc}/GMI_Registry.rc)
-set (mechanism ${gmi_gc}/GmiChemistry/stratTropMech/setkin_lchem.h)
-set (deposParam ${gmi_gc}/GmiChemistry/stratTropMech/setkin_depos.h)
-set (mechParam ${gmi_gc}/GmiChemistry/stratTropMech/setkin_par.h)
-set (mechRC ${gmi_gc}/GmiChemistry/stratTropMech/setkin_chem_mech.txt)
+set (registry ${gmi_gc}/GmiChemistry/${GMI_MECHANISM}/GMI_Registry.rc)
+set (mechanism ${gmi_gc}/GmiChemistry/${GMI_MECHANISM}/setkin_lchem.h)
+set (deposParam ${gmi_gc}/GmiChemistry/${GMI_MECHANISM}/setkin_depos.h)
+set (mechParam ${gmi_gc}/GmiChemistry/${GMI_MECHANISM}/setkin_par.h)
+set (mechRC ${gmi_gc}/GmiChemistry/${GMI_MECHANISM}/setkin_chem_mech.txt)
 set (first_stage_files Deposition_Registry___.rc Reactions_Registry___.rc GMI_Tendency_Registry___.rc setkin_chem_mech.txt___.rc GMICHEM_History___.rc)
 
 find_file (generator
@@ -124,7 +142,7 @@ add_custom_command (
   COMMAND ${CMAKE_COMMAND} -E copy GMI_GridComp/Deposition_GetPointer2___.h GMI_GridComp/Deposition_GetPointer___.h
   COMMAND ${CMAKE_COMMAND} -E copy GMI_GridComp/Reactions_GetPointer2___.h GMI_GridComp/Reactions_GetPointer___.h
 
-  COMMAND ${generator} ${acg_flags} -N ${name} ${gmi_gc}/GMI_Registry.rc
+  COMMAND ${generator} ${acg_flags} -N ${name} ${registry}
   COMMAND ${CMAKE_COMMAND} -E copy ${name}_DeclarePointer___.h GMI_GridComp/Tendency_DeclarePointer___.h
   COMMAND ${CMAKE_COMMAND} -E copy ${name}_History___.rc GMI_GridComp/${name}_History___.rc
 
@@ -149,9 +167,9 @@ add_dependencies (${this} phony_gmi)
 set ( rc_files
    GMI_GridComp/GMI_ExtData.rc
    GMI_GridComp/GMI_ExtData.yaml
-   GMI_GridComp/GMI_GridComp.rc
-   GMI_GridComp/GMI_Registry.rc
-   GMI_GridComp/GMI_Mech_Registry.rc
+   GMI_GridComp/GmiChemistry/${GMI_MECHANISM}/GMI_GridComp.rc
+   GMI_GridComp/GmiChemistry/${GMI_MECHANISM}/GMI_Registry.rc
+   GMI_GridComp/GmiChemistry/${GMI_MECHANISM}/GMI_Mech_Registry.rc
 )
 install (
    FILES ${rc_files}

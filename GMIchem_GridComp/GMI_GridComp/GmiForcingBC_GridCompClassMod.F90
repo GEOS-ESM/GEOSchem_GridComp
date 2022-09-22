@@ -108,10 +108,6 @@
 ! ----------
    INTEGER :: i1, i2, im, j1, j2, jm, km
 
-! Useful character strings
-! ------------------------
-   CHARACTER(LEN=255) :: chem_mecha
-
 ! Latitudes (radians)
 ! -------------------
    REAL, POINTER :: latRad(:,:)
@@ -270,11 +266,6 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, importRestartFile, &
      &                label   = "importRestartFile:", &
      &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS)
-
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%chem_mecha, &
-     &                label   = "chem_mecha:", &
-     &                default = 'strat_trop', rc=STATUS )
       VERIFY_(STATUS)
 
       !------------------------------

@@ -51,11 +51,11 @@
 ! !INTERFACE:
 !
 
-      subroutine calcThermalRateConstants (do_wetchem, chem_mecha, rootProc,    &
+      subroutine calcThermalRateConstants (do_wetchem, rootProc,    &
      &               num_time_steps, ih2o_num, imgas_num, nymd, rxnr_adjust_map,&
      &               pres3c, tropp, temp3, clwc, cmf, sadgmi, qkgmi,            &
      &               concentration, rxnr_adjust, Eradius, Tarea,                &
-     &               relativeHumidity, conPBLFlag, do_AerDust_Calc, phot_opt,   &
+     &               relativeHumidity, conPBLFlag, do_AerDust_Calc, do_LBSplusBCOC_SAD, phot_opt,   &
      &               pr_diag, loc_proc, num_rxnr_adjust, rxnr_adjust_timpyr,    &
      &               ivert, num_sad, num_qks, num_molefrac, num_species,        &
      &               ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1, k2)
@@ -69,7 +69,7 @@
 !
 ! !INPUT PARAMETERS:
       logical, intent(in) :: pr_diag
-      logical, intent(in) :: do_AerDust_Calc, rootProc
+      logical, intent(in) :: do_AerDust_Calc, do_LBSplusBCOC_SAD, rootProc
            ! do wet chemistry?
       logical, intent(in) :: do_wetchem
       integer, intent(in) :: loc_proc
@@ -109,8 +109,6 @@
       REAL*8 , intent(in) :: relativeHumidity (i1:i2, ju1:j2, k1:k2)
       REAL*8 , intent(in) :: ERADIUS (i1:i2, ju1:j2, k1:k2, NSADdust+NSADaer)
       REAL*8 , intent(in) :: TAREA   (i1:i2, ju1:j2, k1:k2, NSADdust+NSADaer)
-                             ! Chemical mechanism
-      character(len=*), intent(in) :: chem_mecha
                              ! array of reaction rate adjustment factors
       real*8 , intent(in) :: rxnr_adjust(i1:i2, ju1:j2, k1:k2, num_rxnr_adjust, &
      &                       rxnr_adjust_timpyr)
@@ -195,20 +193,23 @@
           end do
           rhcol(:)     = 0.0d0
 
-          if ((TRIM(chem_mecha) ==        'troposphere') .OR. &
-     &        (TRIM(chem_mecha) ==         'strat_trop') .OR. &
-     &        (TRIM(chem_mecha) == 'strat_trop_aerosol')) THEN
-             if ((phot_opt == 3) .or. (phot_opt == 8)) then
-                if (do_AerDust_Calc) then
-                   do ic = 1, NSADdust+NSADaer
-                      sadcol2(ic,:) = TAREA  (il,ij,:,ic)
-                      radA   (ic,:) = ERADIUS(il,ij,:,ic)
-                   end do
-                   rhcol(:)     = relativeHumidity(il,ij,:)
-                end if
+          if ((phot_opt == 3) .or. (phot_opt == 8)) then
+             if (do_AerDust_Calc) then
+                do ic = 1, NSADdust+NSADaer
+                   sadcol2(ic,:) = TAREA  (il,ij,:,ic)
+                   radA   (ic,:) = ERADIUS(il,ij,:,ic)
+                end do
+                rhcol(:)     = relativeHumidity(il,ij,:)
              end if
           end if
-	  
+!
+!... Special case to add GOCART BC + OC to LBS for O3 het reactions
+!...  use GOCART soot (BC+OC) for these reactions
+          if (do_LBSplusBCOC_SAD) then
+            sadcol(1,:) = sadcol(1,:) + sadcol2(NSADdust+2,:) + sadcol2(NSADdust+3,:)
+          endif
+!
+!
 	  cPBLcol(:) = conPBLFlag(il,ij,:)
 
 !         ==========
