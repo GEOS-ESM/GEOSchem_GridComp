@@ -869,8 +869,10 @@ end subroutine INPHOT
          if (trim(JLABEL(J)) .eq. 'MeCCl3') JLABEL(J) = 'CH3CCl3'
          if (trim(JLABEL(J)) .eq. 'Acet-a') JLABEL(J) = 'C3H6O'
          if (trim(JLABEL(J)) .eq. 'Glyxlc') JLABEL(J) = 'Glyxlb' !
-         !!! don't delete comment for following line
-         !if (TITLEJ(J) .eq. 'Acet-b') T_JX = 'C3H6O'
+!.sds.. need to map CloudJ cross-section names with Fastjx6.5 cross-section names
+         if (trim(JLABEL(J)) .eq. 'CFC11') JLABEL(J) = 'CFCl3'
+         if (trim(JLABEL(J)) .eq. 'CFC12') JLABEL(J) = 'CF2Cl2'
+ 
          do K = 1, NRATJ
             T_CHEM = JLABEL (K)
             if (T_CHEM (1:6) .eq.T_JX (1:6) ) JIND (K) = J

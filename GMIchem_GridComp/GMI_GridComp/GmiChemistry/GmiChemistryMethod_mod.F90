@@ -19,7 +19,6 @@
       use GmiGrid_mod             , only : Get_ilo, Get_ihi, Get_julo, Get_jhi
       use GmiGrid_mod             , only : Get_ilong, Get_ilat, Get_ivert, Get_itloop
       use GmiTimeControl_mod,       only : t_GmiClock, Get_curGmiDate, GmiSplitDateTime
-      use GmiSpeciesRegistry_mod,   only : UNKNOWN_SPECIES
       use GmiPrintError_mod,        only : GmiPrintError
       use GmiESMFrcFileReading_mod, only : rcEsmfReadTable
       use GmiArrayBundlePointer_mod, only : t_GmiArrayBundle

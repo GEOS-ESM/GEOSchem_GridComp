@@ -345,8 +345,8 @@
       dehydmin = 0.00D+00
       denssts (:,:,:) = 0.0d0
 
-
-!.sds      ih2so4_num = 
+!... do we want to passs in H2SO4gas if the meechanism has it
+!.sds      ih2so4_num = <find this>
 !.sds      h2so4gas(:,:,:) = concentration(ih2so4_num)%pArray3D(:,:,:)
       h2so4gas(:,:,:) = 0.0d0
       reffnat(:,:,:) = 0.0d0

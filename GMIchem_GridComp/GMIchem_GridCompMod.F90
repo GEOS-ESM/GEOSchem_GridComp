@@ -1931,7 +1931,7 @@ CONTAINS
      CALL MAPL_GetPointer(impChem, OCS_import,  'OCS_CLIMO',  __RC__)
 !    CALL MAPL_GetPointer(impChem, OCS_import,  'ACHEM::OCS', __RC__)
 
-!... OCSg is active species
+!... if OCSg is active species
      m = 1
      n = ggReg%nq
      iOCS = -1
@@ -1944,7 +1944,7 @@ CONTAINS
        END IF
      END DO
 
-!... OCSg is passive species
+!... if OCSg is passive species
      IF(iOCS < 1) THEN
        m = 1
        n = xxReg%nq
@@ -2071,17 +2071,17 @@ CONTAINS
 
 !.TEMP.. if H2SO4 exists in GMI then ZERO OUT H2SO4 until coupled into GOCART2G
    SDSTEMP: IF ( phase == 2 .OR. phase == 99 ) THEN
-     m = ChemReg%i_GMI
-     n = ChemReg%j_GMI
+     m = 1
+     n = ggReg%nq
      iH2SO4 = -1
      DO i = m,n
-       IF(TRIM(chemReg%vname(i)) == "H2SO4") THEN
+       IF(TRIM(ggReg%vname(i)) == "H2SO4") THEN
          iH2SO4 = i
          EXIT
        ENDIF
      ENDDO
      IF(iH2SO4 >= 1) THEN
-       w_c%qa(iH2SO4)%data3d(:,:,:) = 1e-30
+       bgg%qa(iH2SO4)%data3d(:,:,:) = 1e-30
      ENDIF
    ENDIF SDSTEMP
 

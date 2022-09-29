@@ -574,7 +574,7 @@
          self%num_emiss = Count (tempListNames(:) /= '')
 !
 !.sds.. Is DMS in mechanism? If so, need to turn on emissions
-         ic = getSpeciesIndex('DMS',.true.)
+         ic = getSpeciesIndex('DMS',NOSTOP=.true.)
          if(ic .gt. 0) then
            self%GMIDMSEmissIndex = self%num_emiss + 1
            self%num_emiss = self%num_emiss + 1
@@ -604,7 +604,7 @@
 
                IF      ( TRIM(sp_name) ==        '*shipO3*'   ) THEN
                  self%emiss_map(ic) = getSpeciesIndex('O3')
-                ELSE IF ( TRIM(sp_name) == '*shipHNO3*' ) THEN
+                ELSE IF ( TRIM(sp_name) ==       '*shipHNO3*' ) THEN
                  self%emiss_map(ic) = getSpeciesIndex('HNO3')
                 ELSE
                  self%emiss_map(ic) = getSpeciesIndex(TRIM(sp_name))
@@ -635,7 +635,7 @@
                  self%num_emiss, 0, 0.0d0, 0.0d0)
              endif
 !... get index number of species
-             ic = getSpeciesIndex(sp_name,.true.)
+             ic = getSpeciesIndex(sp_name,NOSTOP=.true.)
 !... add to emissionSpeciesNames, etc
              self%num_emiss = self%num_emiss + 1
              self%emissionSpeciesNames(self%num_emiss) = TRIM(sp_name)
@@ -1207,7 +1207,7 @@
 ! Update NO mole fraction and save the nitrogen density tendency for export
 ! -------------------------------------------------------------------------
      	concentration(ino_num)%pArray3D(:,:,:) = &
-     	       concentration(ino_num)%pArray3D(:,:,:) + productionNO(:,:,:) * tdt8
+     	 concentration(ino_num)%pArray3D(:,:,:) + productionNO(:,:,:) * tdt8
 
      	DEALLOCATE(productionNO)
 

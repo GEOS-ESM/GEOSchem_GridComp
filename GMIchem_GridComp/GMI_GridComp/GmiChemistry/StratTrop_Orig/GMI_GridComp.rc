@@ -372,7 +372,8 @@ do_ozone_inFastJX: F
 
 ## For FastJX 6.5 & JPL10
  fastj_opt: 4
- cross_section_file: /discover/nobackup/mmanyin/fvInput/fastjx/65/xsec_jx65_jpl10update2_JNOx1_0.dat
+ cross_section_file: /discover/nobackup/ssteenro/geosctm/xsec_jx65wSO4_jpl10update2_JNOx1_0.dat
+#  cross_section_file: /discover/nobackup/mmanyin/fvInput/fastjx/65/xsec_jx65_jpl10update2_JNOx1_0.dat
 # rate_file not needed for FastJX6.5; new approach only differs by roundoff
 # rate_file: ExtData/g5chem/x/ratec_124spc_jx_gmiv2.dat
 # rate_file: /discover/nobackup/mmanyin/CCM/fvInput/fastjx/ratec_119spc_jx_gmiv3.dat

@@ -872,7 +872,7 @@
 !  Local
 !  -----
    INTEGER :: cymd, dymd, hms
-   INTEGER :: i, i1, i2, ic, im, iXj
+   INTEGER :: i, i1, i2, ic, im
    INTEGER :: j, j1, j2, jm
    INTEGER :: k, km, kReverse
    INTEGER :: lightning_opt, loc_proc
@@ -972,8 +972,6 @@
    jm = self%jm
    
    km = self%km
-   
-   iXj = (i2-i1+1)*(j2-j1+1)
 
 !  Some real constants
 !  -------------------

@@ -56,8 +56,6 @@
   LAI   	     |  1	       | xy  |   |    |   |   |     |	   |    | leaf_area_index
   U10M  	     |  m s-1	       | xy  |   |    |   |   |     |	   |    | 10-meter_eastward_wind
   V10M  	     |  m s-1	       | xy  |   |    |   |   |     |	   |    | 10-meter_northward_wind
-  U10N               |  m s-1          | xy  |   |    |   |   |     |      |    | Equivalent neutral 10 meter eastward wind
-  V10N               |  m s-1          | xy  |   |    |   |   |     |      |    | Equivalent neutral 10 meter northward wind
   FROCEAN            |  1              | xy  |   |    |   |   |     |      |    | Fraction of ocean 
   TS                 |  K              | xy  |   |    |   |   |     |      |    | Surface skin temperature
   USTAR 	     |  m s-1	       | xy  |   |    |   |   |     |	   |    | surface_velocity_scale
@@ -201,8 +199,8 @@
   EMSHIPO3   	    | kg m-2 s-1     | xy  |   |    |	|   |	  | surface_ship_source_of_ozone
   EM_NO   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | nitric_oxide_emissions
   EM_CO   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | carbon_monoxide_emissions
-  EM_MEK   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | methynol_(CH3OH)_emissions
-  EM_MOH   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | methyl_ethyl_ketone_(C4H8O)_emissions
+  EM_MEK   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | methyl_ethyl_ketone_(C4H8O)_emissions
+  EM_MOH   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | methynol_(CH3OH)_emissions
   EM_H2O   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | water_emissions
   EM_PRPE   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | propene_(C3H6)_emissions
   EM_C2H6   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | ethane_emissions
@@ -232,6 +230,7 @@
   EM_H2SO4          | mol mol-1 s-1  | xyz | C |    |   |   |     | H2SO4_emissions
   EM_OCSg           | mol mol-1 s-1  | xyz | C |    |   |   |     | OCSg_emissions
   EM_LGTNO          | mol mol-1 s-1  | xyz | C |    |	|   |	  | NO_emissions_from_lightning
+  EM_GCR_NO         | molec cm-3 s-1 | xyz | C |    |	|   |	  | NO_emissions_from_galactic_cosmic_rays
   SZAPHOT  	    | deg            | xy  |   |    |	|   |	  | solar_zenith_angle_for_GMIchem_photolysis
   FJXCLDOD   	    | 1              | xyz | C |    |	|   |	  | FastJX_cloud_optical_depth_(400_nm - daylight only)
   FJXFCLD    	    | 1              | xyz | C |    |	|   |	  | FastJX_cloud_fraction
@@ -335,9 +334,9 @@
   HFC134a       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | 1,1,1,2-Tetrafluoroethane (C2H2F4)
   HFC143a       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | 1,1,1-Trifluoroethane (C2H3F3)
   HFC152a       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | 1,1-Difluoroethane (C2H4F2) 
-  CF2Br2        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Dibromodifluoromethane (CBr2F2)          
-  CF2ClBr       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Bromochlorodifluoromethane (CBrClF2)         
-  CF3Br         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | bromotrifluoromethane (CBrF3)           
+  CF2Br2        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Dibromodifluoromethane (CBr2F2) - Halon 1202
+  CF2ClBr       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Bromochlorodifluoromethane (CBrClF2) - Halon 1211
+  CF3Br         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | bromotrifluoromethane (CBrF3) - Halon 1301
   CHBr3         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Bromoform
   CH2Br2        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Dibromomethane
   H2402         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Halon 24O2 (C2Br2F4)

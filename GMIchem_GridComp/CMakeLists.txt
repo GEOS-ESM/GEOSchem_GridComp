@@ -47,10 +47,10 @@ endforeach()
 
 if (GMI_MECHANISM IN_LIST ALLOWED_MECHANISM)
   set (MECHANISM_DIR "${GMI_MECHANISM}")
-  message(STATUS "GMI Mechanism chosen: ${GMI_MECHANISM}:")
 else ()
   message(FATAL_ERROR "GMI_MECHANISM must be one of ${ALLOWED_MECHANISM}: is set to: ${GMI_MECHANISM}:")
 endif()
+message(STATUS "GMI Mechanism chosen: ${MECHANISM_DIR}:")
 list (APPEND src_directories GMI_GridComp/GmiChemistry/${MECHANISM_DIR})
 
 set (srcs)

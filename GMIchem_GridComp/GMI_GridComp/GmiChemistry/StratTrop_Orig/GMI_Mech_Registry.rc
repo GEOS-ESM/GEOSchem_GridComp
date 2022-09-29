@@ -110,7 +110,6 @@ R4N2       'mol mol-1'  C4-C5 alkylnitrates (C4H9O3N)
 RCHO       'mol mol-1'  C2 aldehydes (C3H6O)
 RCOOH      'mol mol-1'  C2 organic acids
 HNO3COND   'mol mol-1'  Condensed nitric acid
-OCSg       'mol mol-1'  Carbonyl sulfide in GMI
 ::
 
 XX_table::
@@ -161,6 +160,7 @@ RP         'mol mol-1'  Methacrolein peroxy acid (C4H6O3)
 VRO2       'mol mol-1'  RO2 (C4H7O4) from MVK+OH
 VRP        'mol mol-1'  Peroxide (C4H8O4) from VRO2
 ACET       'mol mol-1'  Acetone
+OCSg       'mol mol-1'  Carbonyl sulfide in GMI
 O2          cm-3        Molecular oxygen
 N2          cm-3        Molecular nitrogen
 NUMDENS     cm-3        Total number density
