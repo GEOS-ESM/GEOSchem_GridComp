@@ -531,6 +531,12 @@ contains
      CALL MAPL_AddConnectivity ( GC, &
           SHORT_NAME  = (/'AIRDENS', 'DELP   ', 'LFR    ', 'BYNCY  '/), &
           DST_ID = GEOSCHEM, SRC_ID = CHEMENV, __RC__  )
+     CALL MAPL_AddConnectivity ( GC, &
+          SHORT_NAME  = (/'SSEMOUT', 'SSDDOUT', 'SSWDOUT', 'SSSDOUT'/), &
+          DST_ID = GEOSCHEM, SRC_ID = GOCART2G, __RC__  )
+     CALL MAPL_AddConnectivity ( GC, &
+          SHORT_NAME  = (/'DUEMOUT', 'DUDDOUT', 'DUWDOUT', 'DUSDOUT'/), &
+          DST_ID = GEOSCHEM, SRC_ID = GOCART2G, __RC__  )
   ENDIF
 
 ! Ozone mole fraction needed by GOCART for
@@ -1037,7 +1043,7 @@ contains
     ! AddGCPrefix ensures that GOCART2G's children are scanned for friendlies to GEOSCHEMCHEM
     call ESMF_StateGet   (GEX(GEOSCHEM),  'fSPC' , SPC, __RC__ )
     call MAPL_GridCompGetFriendlies(GCS(GOCART2G), "GEOSCHEMCHEM", SPC, AddGCPrefix=.true., __RC__ )
-    if (mapl_am_I_Root()) CALL ESMF_FieldBundlePrint( SPC )
+!    if (mapl_am_I_Root()) CALL ESMF_FieldBundlePrint( SPC )
 
 !   All Done
 !   --------
