@@ -35,22 +35,25 @@ set (src_directories
 set (GMI_MECHANISM "StratTrop_Orig" CACHE STRING "GMI Mechanism chosen by the user at CMake configure time (default: StratTrop_Orig)")
 # Compile list of possible mechanisms
 set (mechdir ${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry)
-file (GLOB tmpmechfn ${mechdir}/*/setkin_chem_mech.txt)
+
+# Glob through the files relative to the mechdir
+file (GLOB_RECURSE mechfiles CONFIGURE_DEPENDS RELATIVE ${mechdir} setkin_chem_mech.txt)
+
+# This will return a list like: StratTrop_HFC_S/setkin_chem_mech.txt;StratTrop_Orig/setkin_chem_mech.txt
+# loop through mechfiles and extract the directory names
 set (ALLOWED_MECHANISM)
-foreach (tmpfn ${tmpmechfn})
-  execute_process (COMMAND /bin/echo ${tmpfn} COMMAND awk --field-separator=/ "{print NF}" OUTPUT_VARIABLE NUM_MECH)
-  math (EXPR NUM_MECH "${NUM_MECH}-1")
-  execute_process (COMMAND /bin/echo ${tmpfn} COMMAND /usr/bin/cut --field=${NUM_MECH} --delimiter=/ OUTPUT_VARIABLE POSS_MECH)
-  string(STRIP ${POSS_MECH} POSS_MECH)
-  list (APPEND ALLOWED_MECHANISM ${POSS_MECH})
-endforeach()
+foreach (mechfile ${mechfiles})
+  get_filename_component (mechdir ${mechfile} DIRECTORY)
+  message (STATUS "Found GMI mechanism: ${mechdir}")
+  list (APPEND ALLOWED_MECHANISM ${mechdir})
+endforeach ()
 
 if (GMI_MECHANISM IN_LIST ALLOWED_MECHANISM)
   set (MECHANISM_DIR "${GMI_MECHANISM}")
 else ()
-  message(FATAL_ERROR "GMI_MECHANISM must be one of ${ALLOWED_MECHANISM}: is set to: ${GMI_MECHANISM}:")
+  message(FATAL_ERROR "GMI_MECHANISM must be one of ${ALLOWED_MECHANISM}, is set to: ${GMI_MECHANISM}")
 endif()
-message(STATUS "GMI Mechanism chosen: ${MECHANISM_DIR}:")
+message(STATUS "GMI Mechanism chosen: ${MECHANISM_DIR}")
 list (APPEND src_directories GMI_GridComp/GmiChemistry/${MECHANISM_DIR})
 
 set (srcs)
