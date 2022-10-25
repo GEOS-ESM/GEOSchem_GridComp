@@ -31,7 +31,7 @@ set (src_directories
   GMI_GridComp/GmiSpeciesConcentration/spcConcentrationMethod
   )
 
-# Choose (hardcode in) the GMI mechanism
+# Set (i.e. hardcode in) the default GMI mechanism
 set (GMI_MECHANISM "StratTrop_Orig" CACHE STRING "GMI Mechanism chosen by the user at CMake configure time (default: StratTrop_Orig)")
 # Compile list of possible mechanisms
 set (mechdir ${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry)
