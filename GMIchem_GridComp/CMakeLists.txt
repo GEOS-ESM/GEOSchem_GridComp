@@ -40,11 +40,10 @@ set (mechdir ${CMAKE_CURRENT_SOURCE_DIR}/GMI_GridComp/GmiChemistry)
 file (GLOB_RECURSE mechfiles CONFIGURE_DEPENDS RELATIVE ${mechdir} setkin_chem_mech.txt)
 
 # This will return a list like: StratTrop_HFC_S/setkin_chem_mech.txt;StratTrop_Orig/setkin_chem_mech.txt
-# loop through mechfiles and extract the directory names
+# Now, loop through mechfiles and extract the directory names
 set (ALLOWED_MECHANISM)
 foreach (mechfile ${mechfiles})
   get_filename_component (mechdir ${mechfile} DIRECTORY)
-  message (STATUS "Found GMI mechanism: ${mechdir}")
   list (APPEND ALLOWED_MECHANISM ${mechdir})
 endforeach ()
 
