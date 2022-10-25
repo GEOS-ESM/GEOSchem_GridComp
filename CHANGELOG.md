@@ -8,20 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+### Removed
+### Changed
+### Fixed
+
+## [1.10.2] - 2022-09-22
+
+### Added
 
 - Species_Bundle and Species_Array modules are simpler versions of the Chemistry counterparts
 - Capability of multiple GMI mechanisms, choose at compile time
 - New GMI mechanism: StratTrop_HFC_S
 - Add point emission capability for GMI chemical species in GMIchem
 
-### Removed
 ### Changed
 
 - Updates to emissions from galactic cosmic rays in GMI
 - Minor improvement to Runtime_Registry module.
 - Broke away the GMI contents from Chem_Registry.rc, into a separate file 
-
-### Fixed
 
 ## [1.10.1] - 2022-08-30
 
