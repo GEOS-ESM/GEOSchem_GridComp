@@ -675,7 +675,7 @@ CONTAINS
      &                default = '', rc=STATUS )
       VERIFY_(STATUS)
 
-      call CheckNamelistOptionRange ('phot_opt', self%phot_opt, 0, 7)
+      call CheckNamelistOptionRange ('phot_opt', self%phot_opt, 0, 3)
       call CheckNamelistOptionRange ('fastj_opt', self%fastj_opt, 4, 5)
       call CheckNamelistOptionRange ('AerDust_Effect_opt', self%AerDust_Effect_opt, 0, 3)
 
@@ -967,7 +967,7 @@ CONTAINS
             !=======
                 call initializeFastJX65 (k1, k2, self%chem_mask_khi, NUM_J,    &
      &                         self%cross_section_file,                        &
-     &                         self%T_O3_climatology_file, rootproc)
+     &                         self%T_O3_climatology_file, rootProc)
             !=======
             case (5)
             !=======
@@ -1548,8 +1548,8 @@ CONTAINS
                   __RC__ )
 
           solarZenithAngle(i1:i2,j1:j2) = ACOS( ZTHP ) * radToDeg
-         
-            call calcPhotolysisRateConstants (self%JXbundle,                   &
+
+          call calcPhotolysisRateConstants (self%JXbundle,                     &
                      tropopausePress,                         &
      &               self%pr_qj_o3_o1d, self%pr_qj_opt_depth,                  & ! VV
      &               pctm2, mass, press3e, press3c, kel,                       &

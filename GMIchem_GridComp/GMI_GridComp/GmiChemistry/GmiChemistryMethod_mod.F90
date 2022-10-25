@@ -316,12 +316,6 @@
 !!       2:  read in qj values 
 !!       3:  use fastj routine (for fastJX65 or CloudJ)
 !!           This option should be combined with fastj_opt.
-!!       4:  lookup table for qj (Kawa style)
-!!       5:  lookup table for qj (Kawa style) +
-!!           use ozone climatology for column ozone calc.
-!!       6:  calculate from table and Gmimod data (Quadchem)
-!!       7:  read in qj values (2-D, 12 months)
-!!       8:  use fast-JX routine (troposphere/stratosphere)
 !!     -----------------------------------------------------
 !
       call ESMF_ConfigGetAttribute(config, self%phot_opt, &
@@ -1121,13 +1115,6 @@
             call GmiPrintError  &
      &        (err_msg, .true., 1, self%ihno3_num, 0, 0, 0.0d0, 0.0d0)
           end if
-        end if
-        
-        if (((self%io3_num  == 0) .or. (self%io3_num  /= IO3)) .and.  &
-     &      (self%phot_opt == 4)) then
-          err_msg = 'io3_num/IO3 problem in the rc File.'
-          call GmiPrintError  &
-     &      (err_msg, .true., 2, self%io3_num, IO3, 0, 0.0d0, 0.0d0)
         end if
 
         if ((self%num_chem == 0) .or. (self%num_chem /= NCHEM)) then

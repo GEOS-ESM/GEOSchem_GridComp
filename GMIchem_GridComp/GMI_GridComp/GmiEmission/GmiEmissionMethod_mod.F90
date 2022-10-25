@@ -582,6 +582,8 @@
            self%emissionSpeciesLayers(self%num_emiss) = 1
 !... Add another entry to tempListNames
            tempListNames(self%num_emiss) = 'DMS'
+         else
+           self%GMIDMSEmissIndex = 0
          endif
 !.sds.end
 ! MEM

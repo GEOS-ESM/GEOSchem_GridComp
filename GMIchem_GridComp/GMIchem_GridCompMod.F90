@@ -1876,7 +1876,12 @@ CONTAINS
      fieldName = TRIM(ggReg%vname(i))
      incFieldName = TRIM(fieldName)//"_GMITEND"
 
-     CALL MAPL_GetPointer(expChem, sIncrement, TRIM(incFieldName), __RC__)
+!    CALL MAPL_GetPointer(expChem, sIncrement, TRIM(incFieldName), __RC__)
+     CALL MAPL_GetPointer(expChem, sIncrement, TRIM(incFieldName), RC=STATUS)
+     IF ( STATUS /= 0 ) THEN
+       PRINT*,'Problem getting pointer for EXPORT name:' // TRIM(incFieldName)
+       VERIFY_(STATUS)
+     END IF
 
      IF(ASSOCIATED(sIncrement)) THEN
       NULLIFY(sIncrement)

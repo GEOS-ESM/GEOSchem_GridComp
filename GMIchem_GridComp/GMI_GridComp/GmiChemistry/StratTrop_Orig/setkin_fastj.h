@@ -29,7 +29,7 @@
      & "N2O5  ", "HNO4  ", "Cl2   ", "OClO  ", "Cl2O2 ",  &
      & "HOCl  ", "ClNO3a", "ClNO3b", "BrCl  ", "BrO   ",  &
      & "HOBr  ", "BrNO3 ", "CH3Cl ", "CCl4  ", "MeCCl3",  &
-     & "CFC11 ", "CFC12 ", "F113  ", "F114  ", "F115  ",  &
+     & "CFCl3 ", "CF2Cl2", "F113  ", "F114  ", "F115  ",  &
      & "F141b ", "F142b ", "CH3Br ", "H1301 ", "H1211 ",  &
      & "H2402 ", "H1211 ", "ActAld", "PAN   ", "PrAld ",  &
      & "Acet-a", "MEKeto", "GlyAld", "Glyxlb", "Glyxla",  &

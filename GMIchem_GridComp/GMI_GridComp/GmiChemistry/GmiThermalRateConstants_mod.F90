@@ -39,6 +39,8 @@
 !   10January 2011 - Jules Kouatchou
 !     Used the provided cloud liquid water content instead of 
 !     calculating it internally. THis is done when do_wetchem is set to true.
+!   22October2022 - Stephen Steenrod
+!     Took out chem_mecha and obsolete phot_opts 4-8
 !     
 !EOP
 !------------------------------------------------------------------------------
@@ -193,7 +195,7 @@
           end do
           rhcol(:)     = 0.0d0
 
-          if ((phot_opt == 3) .or. (phot_opt == 8)) then
+          if (phot_opt == 3) then
              if (do_AerDust_Calc) then
                 do ic = 1, NSADdust+NSADaer
                    sadcol2(ic,:) = TAREA  (il,ij,:,ic)

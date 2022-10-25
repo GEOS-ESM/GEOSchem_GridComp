@@ -144,21 +144,7 @@ PRPE_fosf
 C3H8_fosf
 MEK_fosf
 CO_fosf
-CO_biof
 NO_fosf
-NO_biof
-NO_pwrp
-CFC11_FLUX
-CFC12_FLUX
-CFC113_FLUX
-HCFC22_FLUX
-CH3CCL3_FLUX
-CCL4_FLUX
-CHBR3_FLUX
-CH2BR2_FLUX
-N2O_OCEAN-FLUX
-N2O_LAND-FLUX
-N2O_ANTHRO-FLUX
 SO2_FIRES-FLUX
 SO2_NONENERGY-FLUX
 SO2_ENERGY-FLUX
@@ -177,20 +163,6 @@ emissionSpeciesLayers::
 1
 1
 72
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
 1
 1
 1
@@ -355,12 +327,6 @@ lbssad_opt: 4
 #       2:  read in qj values 
 #       3:  use fastj routine (for fastJ, fastJx, fastJx53b)
 #           This option should be combined with fastj_opt.
-#       4:  lookup table for qj (Kawa style)
-#       5:  lookup table for qj (Kawa style) +
-#           use ozone climatology for column ozone calc.
-#       6:  calculate from table and Gmimod data (Quadchem)
-#       7:  read in qj values (2-D, 12 months)
-#       8:  use fast-JX routine (troposphere/stratosphere)
 #     -----------------------------------------------------
 #     (as listed in GmiChemistryMethod_mod.F90)
 
