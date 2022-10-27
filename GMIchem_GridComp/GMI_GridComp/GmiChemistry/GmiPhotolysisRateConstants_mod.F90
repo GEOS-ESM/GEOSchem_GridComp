@@ -67,7 +67,7 @@
 ! !INTERFACE:
 !
 
-      subroutine calcPhotolysisRateConstants( JXbundle, chem_mecha, tropp,     &
+      subroutine calcPhotolysisRateConstants( JXbundle, tropp,     &
      &               pr_qj_o3_o1d,  pr_qj_opt_depth,                           &
      &               pctm2, mass3, pres3e, pres3c, temp3, concentration,       &
      &               solarZenithAngle, mcor, surf_alb_uv,                      &
@@ -92,7 +92,6 @@
 #     include "gmi_AerDust_const.h"
 !
 ! !INPUT PARAMETERS:
-      CHARACTER(LEN=*), INTENT(IN) :: chem_mecha
       logical, intent(in) :: pr_diag
       logical, intent(in) :: do_AerDust_calc, do_clear_sky
       logical, intent(in) :: do_ozone_inFastJX, do_synoz
@@ -194,13 +193,9 @@
 !      if (first) then
 !         first = .false.
          if (phot_opt == 3) then
-            if ((TRIM(chem_mecha) ==        'troposphere') .OR. &
-     &          (TRIM(chem_mecha) ==         'strat_trop') .OR. &
-     &          (TRIM(chem_mecha) == 'strat_trop_aerosol')) THEN
-               if (do_AerDust_Calc) then
-                  if (fastj_opt == 4) then
-                     call  GetQAA_RAAinFastJX65 (RAA_b, QAA_b, four, NP_b)
-                  end if
+            if (do_AerDust_Calc) then
+               if (fastj_opt == 4) then
+                  call  GetQAA_RAAinFastJX65 (RAA_b, QAA_b, four, NP_b)
                end if
             end if
          end if
@@ -222,25 +217,21 @@
         time_sec = ConvertTimeToSeconds (nhms)
 
         ! For aerosol/dust optical depth/surface area calculations
-        if ((TRIM(chem_mecha) ==        'troposphere') .OR. &
-     &      (TRIM(chem_mecha) ==         'strat_trop') .OR. &
-     &      (TRIM(chem_mecha) == 'strat_trop_aerosol')) THEN
-           if (do_AerDust_Calc .and. fastj_opt /= 5) then
-              call Aero_OptDep_SurfArea(gridBoxHeight, concentration, tropp,   &
-     &                 pres3c, OptDepth, Eradius, Tarea, Odaer,                &
-     &                 relativeHumidity, Daersl, Waersl, RAA_b, QAA_b,         &
-     &                 do_synoz, isynoz_num, synoz_threshold,                  &
-     &                 AerDust_Effect_opt, i1, i2, ju1, j2, k1, k2, ilo, ihi,  &
-     &                 julo, jhi, num_species, num_AerDust)
+        if (do_AerDust_Calc .and. fastj_opt /= 5) then
+           call Aero_OptDep_SurfArea(gridBoxHeight, concentration, tropp,   &
+     &              pres3c, OptDepth, Eradius, Tarea, Odaer,                &
+     &              relativeHumidity, Daersl, Waersl, RAA_b, QAA_b,         &
+     &              do_synoz, isynoz_num, synoz_threshold,                  &
+     &              AerDust_Effect_opt, i1, i2, ju1, j2, k1, k2, ilo, ihi,  &
+     &              julo, jhi, num_species, num_AerDust)
 
-              call Dust_OptDep_SurfArea(gridBoxHeight, concentration, tropp,   &
-     &                 pres3c, OptDepth, Eradius, Tarea, Odmdust, Dust, RAA_b, &
-     &                 QAA_b, do_synoz, isynoz_num, synoz_threshold,           &
-     &                 AerDust_Effect_opt, i1, i2, ju1, j2, k1, k2,            &
-     &                 num_species, num_AerDust)
-           end if
+           call Dust_OptDep_SurfArea(gridBoxHeight, concentration, tropp,   &
+     &              pres3c, OptDepth, Eradius, Tarea, Odmdust, Dust, RAA_b, &
+     &              QAA_b, do_synoz, isynoz_num, synoz_threshold,           &
+     &              AerDust_Effect_opt, i1, i2, ju1, j2, k1, k2,            &
+     &              num_species, num_AerDust)
         end if
-
+!
         if (pr_qj_opt_depth) qjgmi(num_qjo)%pArray3D(:,:,:) = tau_cloud(:,:,:)
 !
 !... get methane index for CloudJ longwave calc, NOT TESTED (or needed?) yet
@@ -261,37 +252,32 @@
 !... NEED TO SET PROPERLY
             lat_ij    = 0.
 !
-            if ((TRIM(chem_mecha) ==        'troposphere') .OR. &
-     &          (TRIM(chem_mecha) ==         'strat_trop') .OR. &
-     &          (TRIM(chem_mecha) == 'strat_trop_aerosol')) THEN
-!
 !... for CloudJ aerosol OD calc input
-               if (do_AerDust_calc) then
-                  if (fastj_opt .eq. 5) then 
+            if (do_AerDust_calc) then
+               if (fastj_opt .eq. 5) then 
 !... preprocess for CloudJ AOD calc
 !... hydrophobic BC aerosols
-                    ODcAER_ij(:,1) = daersl(il,ij,:,1)
+                 ODcAER_ij(:,1) = daersl(il,ij,:,1)
 !... hydrophobic OC aerosols 
-                    ODcAER_ij(:,2) = daersl(il,ij,:,2)
+                 ODcAER_ij(:,2) = daersl(il,ij,:,2)
 !... dust aerosols
-                    do N=1,NSADdust
-                      ODMDUST_ij(:,N) = DUST(il,ij,:,N)
-                    enddo
+                 do N=1,NSADdust
+                   ODMDUST_ij(:,N) = DUST(il,ij,:,N)
+                 enddo
 !... hydrophilic aerosols
-                    do N=1,NSADaer
-                      ODAER_ij(:,N) = waersl(il,ij,:,N)
-                    enddo
+                 do N=1,NSADaer
+                   ODAER_ij(:,N) = waersl(il,ij,:,N)
+                 enddo
 !... other FastJ calls need AOD calc'd from Aero_OptDep_SurfArea and Dust_OptDep_SurfArea
-                  else
-                    ODAER_ij  (:,:) = ODAER  (il,ij,:,:)
-                    ODMDUST_ij(:,:) = ODMDUST(il,ij,:,:)
-                  endif
                else
-                 ODAER_ij  (:,:) = 0.0d0
-                 ODMDUST_ij(:,:) = 0.0d0
+                 ODAER_ij  (:,:) = ODAER  (il,ij,:,:)
+                 ODMDUST_ij(:,:) = ODMDUST(il,ij,:,:)
                endif
-!
+            else
+              ODAER_ij  (:,:) = 0.0d0
+              ODMDUST_ij(:,:) = 0.0d0
             endif
+!
 !
             ozone_ij(:) = concentration(io3_num)%pArray3D(il,ij,:)
 !... needed for longwave phot calc in CloudJ (SolarJ)

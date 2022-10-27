@@ -79,8 +79,9 @@
 
 !----------------------------------------------------
 
- function getSpeciesIndex(name) result(index)
+ function getSpeciesIndex(name,NOSTOP) result(index)
  character (len=*), intent(in) :: name
+ logical, OPTIONAL :: NOSTOP
  integer                      :: index
  character (len=128)  :: err_msg
 
@@ -98,7 +99,11 @@
        end if
     end do
  end if
-
+!... return if NOSTOP specified and true
+ if (present(NOSTOP)) then
+   if(NOSTOP) return
+ endif
+!
  if (index == UNKNOWN_SPECIES) then
     err_msg = 'The species does not exist: '// name
     call GmiPrintError(err_msg, .true., 1, index, 0, 0, 0.0d0, 0.0d0)

@@ -47,8 +47,8 @@ Species indices:
  41: CH3Cl
  42: CH3CCl3
  43: CCl4
- 44: CFCl3
- 45: CF2Cl2
+ 44: CFC11
+ 45: CFC12
  46: CFC113
  47: CFC114
  48: CFC115
@@ -138,7 +138,7 @@ Thermal reactions:
  11: CH4 + O1D = MO2 + OH
  12: CH4 + O1D = CH2O + H + HO2
  13: CH4 + O1D = CH2O + H2
- 14: CF2Cl2 + O1D = 2 Cl
+ 14: CFC12 + O1D = 2 Cl
  15: CFC113 + O1D = 3 Cl
  16: CFC114 + O1D = 2 Cl
  17: CFC115 + O1D = Cl
@@ -469,8 +469,8 @@ Photolyses:
 340: CH3Cl + hv = Cl + MO2
 341: CCl4 + hv = 4 Cl
 342: CH3CCl3 + hv = 3 Cl
-343: CFCl3 + hv = 3 Cl
-344: CF2Cl2 + hv = 2 Cl
+343: CFC11 + hv = 3 Cl
+344: CFC12 + hv = 2 Cl
 345: CFC113 + hv = 3 Cl
 346: CFC114 + hv = 2 Cl
 347: CFC115 + hv = Cl

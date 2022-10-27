@@ -39,14 +39,14 @@
 ! !INTERFACE:
 !
       subroutine updateSurfEmissionInChemistry (pr_surf_emiss, pr_emiss_3d,    &
-     &                 emiss_isop, emiss_monot, emiss_nox, do_ShipEmission,    &
-     &                 emiss_hno3, emiss_o3, ihno3_num, io3_num, mcor,         &
-     &                 surf_emiss_out, surf_emiss_out2, emiss_3d_out,          &
-     &                 emissionArray, surfEmissForChem,     &
-     &                 gridBoxHeight, emiss_timpyr, num_emiss, emiss_opt,      &
-     &                 emiss_map, tdt, nymd, ico_num, ino_num, ipropene_num,   &
-     &                 iisoprene_num, mw, pr_diag, loc_proc, i1, i2, ju1, j2,  &
-     &                 k1, k2, ilo, ihi, julo, jhi, num_species)
+                      emiss_isop, emiss_monot, emiss_nox, do_ShipEmission,    &
+                      emiss_hno3, emiss_o3, ihno3_num, io3_num, mcor,         &
+                      surf_emiss_out, surf_emiss_out2, emiss_3d_out,          &
+                      emissionArray, surfEmissForChem,     &
+                      gridBoxHeight, emiss_timpyr, num_emiss, emiss_opt,      &
+                      emiss_map, tdt, nymd, ico_num, ino_num, ipropene_num,   &
+                      iisoprene_num, mw, pr_diag, loc_proc, i1, i2, ju1, j2,  &
+                      k1, k2, ilo, ihi, julo, jhi, num_species)
 !
       implicit none
 !
@@ -118,17 +118,17 @@
          imon = 1
       end if
 
-      !---------------------------------------------------------------
-      ! Calculate conversion factor to go from kg/box/s to mol/cm^3/s,
-      ! but leave out the molecular weight term for each species.
-      !---------------------------------------------------------------
+!---------------------------------------------------------------
+! Calculate conversion factor to go from kg/box/s to mol/cm^3/s,
+! but leave out the molecular weight term for each species.
+!---------------------------------------------------------------
 
       conv_emiss(:,:) = (AVOGAD*GPKG) / mcor(:,:) / CMPM3 / gridBoxheight(:,:,k1)
 
-      !--------------------------------------------------------------
-      ! Set surf_emiss; convert units from kg/s to ? for each species
-      ! that is emitted.
-      !--------------------------------------------------------------
+!--------------------------------------------------------------
+! Set surf_emiss; convert units from kg/s to ? for each species
+! that is emitted.
+!--------------------------------------------------------------
 
       inum = 0
 
@@ -136,76 +136,77 @@
       surf_emiss2(:,:,:)   = 0.0d0
       emiss_3d   (:,:,:,:) = 0.0d0
 
-      !===============================
+!===============================
       SPCLOOP: do icx = 1, num_species
-      !===============================
+!===============================
 
-         ic = emiss_map(icx)
-         if (ic > 0) then
-            inum = inum + 1
+        ic = emiss_map(icx)
+        if (ic > 0) then
+          inum = inum + 1
 
-            surfEmissForChem(:,:,ic) = surfEmissForChem(:,:,ic) +  &
+          surfEmissForChem(:,:,ic) = surfEmissForChem(:,:,ic) +  &
      &          emissionArray(inum)%pArray3D(:,:,k1) * conv_emiss(:,:) / mw(ic)
 
-            emiss_3d(:,:,k1,ic) = emiss_3d(:,:,k1,ic) +  &
-     &           emissionArray(inum)%pArray3D(:,:,k1) * conv_emiss(:,:) / mw(ic)
-                                   !============
-            if (inum == num_emiss) exit SPCLOOP
-                                   !============
-         end if
-      !==============
+          emiss_3d(:,:,k1,ic) = emiss_3d(:,:,k1,ic) +  &
+                emissionArray(inum)%pArray3D(:,:,k1) * conv_emiss(:,:) / mw(ic)
+
+          if (inum == num_emiss) exit SPCLOOP
+
+        end if
+!==============
       end do SPCLOOP
-      !==============
+!==============
 
 
       if (emiss_opt == 2) then
-         call addHarvardSurfaceEmission (iisoprene_num, ico_num, ipropene_num, &
-     &                 ino_num, mw, emiss_isop, emiss_monot, emiss_nox,        &
-     &                 do_ShipEmission, emiss_hno3, emiss_o3, ihno3_num,       &
-     &                 io3_num, conv_emiss, surfEmissForChem, surf_emiss2, emiss_3d, &
-     &                 pr_diag, loc_proc, i1, i2, ju1, j2, k1, k2, num_species)
+
+        call addHarvardSurfaceEmission (iisoprene_num, ico_num, ipropene_num, &
+                      ino_num, mw, emiss_isop, emiss_monot, emiss_nox,        &
+                      do_ShipEmission, emiss_hno3, emiss_o3, ihno3_num,       &
+                      io3_num, conv_emiss, surfEmissForChem, surf_emiss2, emiss_3d, &
+                      pr_diag, loc_proc, i1, i2, ju1, j2, k1, k2, num_species)
       end if
 
       if (pr_surf_emiss) then
-         do ic = 1, num_species
-            surf_emiss_out(:,:,ic) = surf_emiss_out(:,:,ic) +  &
-     &                surfEmissForChem(:,:,ic) / conv_emiss(:,:) * mw(ic) *  &
-     &                tdt / mcor(:,:)
-         end do
+        do ic = 1, num_species
+          surf_emiss_out(:,:,ic) = surf_emiss_out(:,:,ic) +  &
+                     surfEmissForChem(:,:,ic) / conv_emiss(:,:) * mw(ic) *  &
+                     tdt / mcor(:,:)
+        end do
 
-         surf_emiss_out2(:,:,1) = surf_emiss_out2(:,:,1) +  &
-     &             surf_emiss2(:,:,1) / conv_emiss(:,:) * mw(ico_num) *  &
-     &             tdt / mcor(:,:)
+        surf_emiss_out2(:,:,1) = surf_emiss_out2(:,:,1) +  &
+                  surf_emiss2(:,:,1) / conv_emiss(:,:) * mw(ico_num) *  &
+                  tdt / mcor(:,:)
 
-         surf_emiss_out2(:,:,2) = surf_emiss_out2(:,:,2) +  &
-     &             surf_emiss2(:,:,2) / conv_emiss(:,:) * mw(ico_num) *  &
-     &             tdt / mcor(:,:)
+        surf_emiss_out2(:,:,2) = surf_emiss_out2(:,:,2) +  &
+                  surf_emiss2(:,:,2) / conv_emiss(:,:) * mw(ico_num) *  &
+                  tdt / mcor(:,:)
 
-         surf_emiss_out2(:,:,3) = surf_emiss_out2(:,:,3) +  &
-     &             surf_emiss2(:,:,3) / conv_emiss(:,:) * mw(ipropene_num) *  &
-     &             tdt / mcor(:,:)
+        surf_emiss_out2(:,:,3) = surf_emiss_out2(:,:,3) +  &
+                  surf_emiss2(:,:,3) / conv_emiss(:,:) * mw(ipropene_num) *  &
+                  tdt / mcor(:,:)
 
-         surf_emiss_out2(:,:,4) = surf_emiss_out2(:,:,4) +  &
-     &             surf_emiss2(:,:,4) / conv_emiss(:,:) * mw(ino_num) *  &
-     &             tdt / mcor(:,:)
+        surf_emiss_out2(:,:,4) = surf_emiss_out2(:,:,4) +  &
+                  surf_emiss2(:,:,4) / conv_emiss(:,:) * mw(ino_num) *  &
+                  tdt / mcor(:,:)
 
-         if (do_ShipEmission) then
-            surf_emiss_out2(:,:,5) = surf_emiss_out2(:,:,5) +  &
-     &                surf_emiss2(:,:,5) / conv_emiss(:,:) * mw(ihno3_num) *  &
-     &                tdt / mcor(:,:)
+        if (do_ShipEmission) then
+          surf_emiss_out2(:,:,5) = surf_emiss_out2(:,:,5) +  &
+                     surf_emiss2(:,:,5) / conv_emiss(:,:) * mw(ihno3_num) *  &
+                     tdt / mcor(:,:)
 
-            surf_emiss_out2(:,:,6) = surf_emiss_out2(:,:,6) +  &
-     &                surf_emiss2(:,:,6) / conv_emiss(:,:) * mw(io3_num) *  &
-     &                tdt / mcor(:,:)
-          end if
+          surf_emiss_out2(:,:,6) = surf_emiss_out2(:,:,6) +  &
+                     surf_emiss2(:,:,6) / conv_emiss(:,:) * mw(io3_num) *  &
+                     tdt / mcor(:,:)
+        end if
       end if
 
       if (pr_emiss_3d) then
-         do ic = 1, num_species
-            emiss_3d_out(:,:,k1,ic) =  emiss_3d_out(:,:,k1,ic) +  &
-     &           emiss_3d(:,:,k1,ic) / conv_emiss(:,:) * mw(ic) *  &
-     &            tdt / mcor(:,:)
-         end do
+        do ic = 1, num_species
+          emiss_3d_out(:,:,k1,ic) =  emiss_3d_out(:,:,k1,ic) +  &
+                emiss_3d(:,:,k1,ic) / conv_emiss(:,:) * mw(ic) *  &
+                 tdt / mcor(:,:)
+        end do
       end if
 
       return
@@ -219,12 +220,12 @@
 ! 
 ! !INTERFACE:
 !
-      subroutine addHarvardSurfaceEmission (iisoprene_num, ico_num,            &
-     &                     ipropene_num, ino_num, mw, emiss_isop, emiss_monot, &
-     &                     emiss_nox, do_ShipEmission, emiss_hno3, emiss_o3,   &
-     &                     ihno3_num, io3_num, conv_emiss, surfEmissForChem,         &
-     &                     surf_emiss2, emiss_3d, pr_diag, loc_proc, i1, i2,   &
-     &                     ju1, j2, k1, k2, num_species)
+      subroutine addHarvardSurfaceEmission (iisoprene_num, ico_num,           &
+                          ipropene_num, ino_num, mw, emiss_isop, emiss_monot, &
+                          emiss_nox, do_ShipEmission, emiss_hno3, emiss_o3,   &
+                          ihno3_num, io3_num, conv_emiss, surfEmissForChem,   &
+                          surf_emiss2, emiss_3d, pr_diag, loc_proc, i1, i2,   &
+                          ju1, j2, k1, k2, num_species)
 !
       implicit none
 !
@@ -255,103 +256,104 @@
 !BOC
       if (pr_diag) Write (6,*) 'Add_Semiss_Harvard_Inchem called by ', loc_proc
       
+!-----------------------------
+! Biogenic source of isoprene.
+!-----------------------------
       if (iisoprene_num > 0) then
-         !-----------------------------
-         ! Biogenic source of isoprene.
-         !-----------------------------
-         surfEmissForChem(:,:,iisoprene_num) =  surfEmissForChem(:,:,iisoprene_num) +  &
-     &                (emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num))
 
-         emiss_3d(:,:,1,iisoprene_num) = emiss_3d(:,:,1,iisoprene_num) +  &
-     &           emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num)
+        surfEmissForChem(:,:,iisoprene_num) =  surfEmissForChem(:,:,iisoprene_num) +  &
+                     (emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num))
+
+        emiss_3d(:,:,1,iisoprene_num) = emiss_3d(:,:,1,iisoprene_num) +  &
+                emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num)
       end if
 
+!-----------------------------------------------
+! Biogenic source of CO from methanol oxidation,
+! scaled from isoprene.
+!-----------------------------------------------
       if (ico_num > 0) then
-         !-----------------------------------------------
-         ! Biogenic source of CO from methanol oxidation,
-         ! scaled from isoprene.
-         !-----------------------------------------------
-
-         surfEmissForChem(:,:,ico_num) = surfEmissForChem(:,:,ico_num) +  &
-     &             (emiss_isop(:,:) * conv_emiss(:,:) / mw(ico_num)) *  &
-     &             ICO_FAC_ISOP
-
-        surf_emiss2(:,:,1) = surf_emiss2(:,:,1) +  &
-     &             (emiss_isop(:,:) * conv_emiss(:,:) / mw(ico_num)) *  &
-     &             ICO_FAC_ISOP
-
-        emiss_3d(:,:,1,ico_num) = emiss_3d(:,:,1,ico_num) +  &
-     &           emiss_isop(:,:) * conv_emiss(:,:) / mw(ico_num) *  &
-     &           ICO_FAC_ISOP
-
-        !--------------------------------------------------
-        ! Biogenic source of CO from monoterpene oxidation.
-        !--------------------------------------------------
 
         surfEmissForChem(:,:,ico_num) = surfEmissForChem(:,:,ico_num) +  &
-     &            (emiss_monot(:,:) *  conv_emiss(:,:) / mw(ico_num)) *  &
-     &            ICO_FAC_MONOT
+                  (emiss_isop(:,:) * conv_emiss(:,:) / mw(ico_num)) *  &
+                  ICO_FAC_ISOP
 
-        surf_emiss2(:,:,2) = surf_emiss2(:,:,2) +  &
-     &            (emiss_monot(:,:) *  conv_emiss(:,:) / mw(ico_num)) *  &
-     &            ICO_FAC_MONOT
+        surf_emiss2(:,:,1) = surf_emiss2(:,:,1) +  &
+                  (emiss_isop(:,:) * conv_emiss(:,:) / mw(ico_num)) *  &
+                  ICO_FAC_ISOP
 
         emiss_3d(:,:,1,ico_num) = emiss_3d(:,:,1,ico_num) +  &
-     &           emiss_monot(:,:) * conv_emiss(:,:) / mw(ico_num) *  &
-     &           ICO_FAC_MONOT
+                emiss_isop(:,:) * conv_emiss(:,:) / mw(ico_num) *  &
+                ICO_FAC_ISOP
+
+!--------------------------------------------------
+! Biogenic source of CO from monoterpene oxidation.
+!--------------------------------------------------
+
+        surfEmissForChem(:,:,ico_num) = surfEmissForChem(:,:,ico_num) +  &
+                 (emiss_monot(:,:) *  conv_emiss(:,:) / mw(ico_num)) *  &
+                 ICO_FAC_MONOT
+
+        surf_emiss2(:,:,2) = surf_emiss2(:,:,2) +  &
+                 (emiss_monot(:,:) *  conv_emiss(:,:) / mw(ico_num)) *  &
+                 ICO_FAC_MONOT
+
+        emiss_3d(:,:,1,ico_num) = emiss_3d(:,:,1,ico_num) +  &
+                emiss_monot(:,:) * conv_emiss(:,:) / mw(ico_num) *  &
+                ICO_FAC_MONOT
 
       end if
 
+!--------------------------------------------------
+! Biogenic source of propene, scaled from isoprene.
+!--------------------------------------------------
       if (ipropene_num > 0) then
-         !--------------------------------------------------
-         ! Biogenic source of propene, scaled from isoprene.
-         !--------------------------------------------------
 
-         surfEmissForChem(:,:,ipropene_num) = surfEmissForChem(:,:,ipropene_num)  +  &
-     &           (emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num)) *  &
-     &           BIOSCAL * (ATOMSC_PER_MOLECISOP / ATOMSC_PER_MOLECPRPE)
+        surfEmissForChem(:,:,ipropene_num) = surfEmissForChem(:,:,ipropene_num)  +  &
+                (emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num)) *  &
+                BIOSCAL * (ATOMSC_PER_MOLECISOP / ATOMSC_PER_MOLECPRPE)
 
-         surf_emiss2(:,:,3) =  surf_emiss2(:,:,3)  +  &
-     &           (emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num)) *  &
-     &           BIOSCAL * (ATOMSC_PER_MOLECISOP / ATOMSC_PER_MOLECPRPE)
+        surf_emiss2(:,:,3) =  surf_emiss2(:,:,3)  +  &
+                (emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num)) *  &
+                BIOSCAL * (ATOMSC_PER_MOLECISOP / ATOMSC_PER_MOLECPRPE)
 
-         emiss_3d(:,:,1,ipropene_num) = emiss_3d(:,:,1,ipropene_num) +  &
-     &           emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num) *  &
-     &           BIOSCAL * (ATOMSC_PER_MOLECISOP / ATOMSC_PER_MOLECPRPE)
+        emiss_3d(:,:,1,ipropene_num) = emiss_3d(:,:,1,ipropene_num) +  &
+                emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num) *  &
+                BIOSCAL * (ATOMSC_PER_MOLECISOP / ATOMSC_PER_MOLECPRPE)
 
       endif
 
+!--------------------
+! Soil source of NOx.
+!--------------------
       if (ino_num > 0) then
-         !--------------------
-         ! Soil source of NOx.
-         !--------------------
-         surfEmissForChem(:,:,ino_num) = surfEmissForChem(:,:,ino_num) +  &
-     &          (emiss_nox(:,:) * conv_emiss(:,:) / mw(ino_num))
+        surfEmissForChem(:,:,ino_num) = surfEmissForChem(:,:,ino_num) +  &
+               (emiss_nox(:,:) * conv_emiss(:,:) / mw(ino_num))
 
-         surf_emiss2(:,:,4) = surf_emiss2(:,:,4) +  &
-     &          (emiss_nox(:,:) * conv_emiss(:,:) / mw(ino_num))
+        surf_emiss2(:,:,4) = surf_emiss2(:,:,4) +  &
+               (emiss_nox(:,:) * conv_emiss(:,:) / mw(ino_num))
 
-         emiss_3d(:,:,1,ino_num) = emiss_3d(:,:,1,ino_num) +  &
-     &           emiss_nox(:,:) * conv_emiss(:,:) / mw(ino_num)
+        emiss_3d(:,:,1,ino_num) = emiss_3d(:,:,1,ino_num) +  &
+                emiss_nox(:,:) * conv_emiss(:,:) / mw(ino_num)
       end if
 
       if (do_ShipEmission) then
 
-         if (ihno3_num > 0) then
-            ! --------------
-            ! Source of HNO3
-            ! --------------
-            surf_emiss2(:,:,5) =  surf_emiss2(:,:,5) +  &
-     &          (emiss_hno3(:,:) * conv_emiss(:,:) / mw(ihno3_num))
-         end if
+! --------------
+! Source of HNO3
+! --------------
+        if (ihno3_num > 0) then
+           surf_emiss2(:,:,5) =  surf_emiss2(:,:,5) +  &
+               (emiss_hno3(:,:) * conv_emiss(:,:) / mw(ihno3_num))
+        end if
 
-         if (io3_num > 0) then
-            ! ------------
-            ! Source of O3
-            ! ------------
-            surf_emiss2(:,:,6) =  surf_emiss2(:,:,6) +  &
-     &          (emiss_o3(:,:) * conv_emiss(:,:) / mw(io3_num))
-         end if
+! ------------
+! Source of O3
+! ------------
+        if (io3_num > 0) then
+           surf_emiss2(:,:,6) =  surf_emiss2(:,:,6) +  &
+               (emiss_o3(:,:) * conv_emiss(:,:) / mw(io3_num))
+        end if
 
       end if
 

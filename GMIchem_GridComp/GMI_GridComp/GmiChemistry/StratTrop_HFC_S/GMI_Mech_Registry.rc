@@ -109,8 +109,19 @@ PRPE       'mol mol-1'  Propene (C3H6)
 R4N2       'mol mol-1'  C4-C5 alkylnitrates (C4H9O3N)
 RCHO       'mol mol-1'  C2 aldehydes (C3H6O)
 RCOOH      'mol mol-1'  C2 organic acids
-N2          cm-3        Molecular nitrogen
 HNO3COND   'mol mol-1'  Condensed nitric acid
+OCSg       'mol mol-1'  Carbonyl sulfide in GMI
+HFC23      'mol mol-1'  CHF3  
+HFC32      'mol mol-1'  CH2F2
+HFC125     'mol mol-1'  CHF2CF3
+HFC134a    'mol mol-1'  CH2FCF3
+HFC143a    'mol mol-1'  CF3CH3
+HFC152a    'mol mol-1'  CH2CHF2
+CHBr3      'mol mol-1'  Bromoform
+CH2Br2     'mol mol-1'  Dibromomethane
+DMS        'mol mol-1'  Dimethylsulphide
+H2SO4      'mol mol-1'  Sulfuric Acid
+SO2        'mol mol-1'  Sulfur Dioxide
 ::
 
 XX_table::
@@ -160,9 +171,9 @@ ROH        'mol mol-1'  C2 alcohols
 RP         'mol mol-1'  Methacrolein peroxy acid (C4H6O3)
 VRO2       'mol mol-1'  RO2 (C4H7O4) from MVK+OH
 VRP        'mol mol-1'  Peroxide (C4H8O4) from VRO2
-OCSg       'mol mol-1'  Carbonyl sulfide in GMI
 ACET       'mol mol-1'  Acetone
 O2          cm-3        Molecular oxygen
+N2          cm-3        Molecular nitrogen
 NUMDENS     cm-3        Total number density
 T2M15d      K           Daily T2M time average
 ::

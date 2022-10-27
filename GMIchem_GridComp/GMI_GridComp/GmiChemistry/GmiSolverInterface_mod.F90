@@ -32,7 +32,7 @@
 !
 ! !INTERFACE:
 !
-      subroutine Update_Smv2chem (savedVars, chemintv, chem_mecha, surfEmissForChem,      &
+      subroutine Update_Smv2chem (savedVars, chemintv, surfEmissForChem,      &
      &                 humidity, qjgmi, qkgmi, press3e, pctm2, kel,  &
      &                 concentration, pr_diag, pr_qqjk, pr_smv2, &
      &                 do_smv_reord, do_synoz, do_qqjk_inchem,    &
@@ -73,7 +73,6 @@
       real*8 , intent(in) :: press3e(ilo:ihi, julo:jhi, k1-1:k2)
                              ! temperature (degK)
       real*8 , intent(in) :: kel  (ilo:ihi, julo:jhi, k1:k2)
-      CHARACTER(LEN=*), INTENT(IN) :: chem_mecha
                              ! photolysis rate constants (s^-1)
       type (t_GmiArrayBundle), intent(in) :: qjgmi(num_qjo)
                              ! thermal rate constants (units vary)
@@ -155,14 +154,10 @@
 
       do_cell_chem(:,:,chem_mask_klo:chem_mask_khi) = .true.
 
-      ic = INDEX(TRIM(chem_mecha), 'strat_trop')
-
-      IF (ic == 0 .AND. do_synoz) THEN
-
+      IF (do_synoz) THEN
         where (concentration(isynoz_num)%pArray3D(:,:,:) > synoz_threshold)
           do_cell_chem(:,:,:) = .false.
         end where
-
       END IF
 
        allocate(speciesConc(i1:i2, ju1:j2, k1:k2, num_species))
