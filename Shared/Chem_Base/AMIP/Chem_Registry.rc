@@ -21,8 +21,7 @@
 #         When running Reduced, the string SC_r should be changed to SC.
 #         This will be automatically done by stratchem_setup script.
 #
-#         XX lists contain non-transported species for GMI and StratChem.
-#         When running GMI, the string XX_GMI should be changed to XX.
+#         XX lists contain non-transported species for StratChem.
 #         When running StratChem, the string XX_SC should be changed to XX.
 #         This will be automatically done by the setup scripts.
 #

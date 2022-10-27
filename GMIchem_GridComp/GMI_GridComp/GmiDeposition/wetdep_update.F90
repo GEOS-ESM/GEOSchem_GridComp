@@ -53,7 +53,7 @@
 !   grid_height  : grid box height  (m)
 !   mass         : total mass of the atmosphere within each grid box   (kg)
 !   moistq       : moisture changes due to wet processes (g/kg/day)
-!   rain         : rainfall across cell edges (mm/day)
+!   rain_[ls,cn] : rainfall across cell edges (large-scale,convective) (mm/day)
 !   kel          : temperature (degK)
 !   press3c      : atmospheric pressure at the center of each grid box (mb)
 !   press3e      : atmospheric pressure at the edge   of each grid box (mb)

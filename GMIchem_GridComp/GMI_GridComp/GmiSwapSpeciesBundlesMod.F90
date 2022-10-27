@@ -205,8 +205,6 @@ module GmiSwapSpeciesBundlesMod
 ! Substitute the GEOS-5 where it differs
 ! --------------------------------------
          IF(TRIM(speciesName) ==     "O3") speciesName = "OX"
-         IF(TRIM(speciesName) ==  "CFCl3") speciesName = "CFC11"
-         IF(TRIM(speciesName) == "CF2Cl2") speciesName = "CFC12"
 
          found = .FALSE.
 

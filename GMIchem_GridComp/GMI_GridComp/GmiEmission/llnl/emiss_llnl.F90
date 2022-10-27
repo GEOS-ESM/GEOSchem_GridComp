@@ -215,7 +215,7 @@
       inum = 0
       
 !     ================================
-      SPCLOOP: do icx = 1, num_species
+      SPCLOOP: do icx = 1, num_emiss
 !     ================================
 
         ic = emiss_map(icx)
@@ -228,8 +228,7 @@
 !         For sulfur chemistry, do emissions in chemistry.
 !         ------------------------------------------------
           if ((chem_opt == 8) .and.  &
-     &        ((ic == IFSO2) .or. (ic == INSO2) .or.  &
-     &         (ic == INDMS))) then
+             ((ic == IFSO2) .or. (ic == INSO2) .or. (ic == INDMS))) then
 
 !           =============
             cycle SPCLOOP
@@ -262,7 +261,7 @@
                emass(:,:,k1) = emissionArray(inum)%pArray3D(:,:,k1) * tdt
             END IF
           ELSE
-               emass(:,:, :) = emissionArray(inum)%pArray3D(:,:, :) * tdt
+            emass(:,:,:) = emissionArray(inum)%pArray3D(:,:,:) * tdt
           END IF
 
 !         ---------------------------------

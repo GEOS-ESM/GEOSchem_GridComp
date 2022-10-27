@@ -3,12 +3,26 @@ Collections:
     template: ExtData/CMIP6/sfc/biomass_burning/CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
   GMI_CMIP6_CEDS.airNOemis.x720_y360_z72_t12.%y4.nc4:
     template: ExtData/CMIP6/L72/aircraft/CMIP6_CEDS.airNOemis.x720_y360_z72_t12.%y4.nc4
+  GMI_CMIP6_CEDS.airSO2emis.x720_y360_z72_t12.%y4.nc4:
+    template: ExtData/CMIP6/L72/CMIP6_CEDS.airSO2emis.x720_y360_z72_t12.%y4.nc4
   GMI_CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4:
     template: ExtData/CMIP6/sfc/fossil_fuels/CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+  GMI_DMS_lana.geos.1x1.esmf.nc:
+    template: /discover/nobackup/cakelle2/data/OCEAN/DMS_lana.geos.1x1.esmf.nc
   GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc:
     template: ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
   GMI_OCS_vmr.x360_y181_z72.t12.2016.nc4:
     template: ExtData/g5chem/L72/OCS_vmr.x360_y181_z72.t12.2016.nc4
+  GMI_SC.ODS.Emission.x360_y181.%y4.V1.nc:
+    template: /discover/nobackup/ssteenro/qing/SC.ODS.Emission.x360_y181.%y4.V1.nc
+  GMI_SO2-em-anthro_input4MIPs_emissions_CMIP_CEDS-2017-05-18_gn__energy_elevated.x720_y360_t12.%y4.nc:
+    template: ExtData/CMIP6/sfc/SU/SO2-em-anthro_input4MIPs_emissions_CMIP_CEDS-2017-05-18_gn__energy_elevated.x720_y360_t12.%y4.nc
+  GMI_SO2-em-anthro_input4MIPs_emissions_CMIP_CEDS-2017-05-18_gn__nonenergy_surface.x720_y360_t12.%y4.nc:
+    template: ExtData/CMIP6/sfc/SU/SO2-em-anthro_input4MIPs_emissions_CMIP_CEDS-2017-05-18_gn__nonenergy_surface.x720_y360_t12.%y4.nc
+  GMI_SO2-em-anthro_input4MIPs_emissions_CMIP_CEDS-2017-05-18_gn__shipping_surface.x720_y360_t12.%y4.nc:
+    template: ExtData/CMIP6/sfc/SU/SO2-em-anthro_input4MIPs_emissions_CMIP_CEDS-2017-05-18_gn__shipping_surface.x720_y360_t12.%y4.nc
+  GMI_SO2-em-biomassburning_input4MIPs_emissions_CMIP_VUA-CMIP-BB4CMIP6-1-2_gn__surface.x1440_y720_t12.%y4.nc:
+    template: ExtData/CMIP6/sfc/SU/SO2-em-biomassburning_input4MIPs_emissions_CMIP_VUA-CMIP-BB4CMIP6-1-2_gn__surface.x1440_y720_t12.%y4.nc
   GMI_acetone_fixed_GMI.x288_y181_z72_t12.2001.nc:
     template: ExtData/g5chem/L72/acetone_fixed_GMI.x288_y181_z72_t12.2001.nc
   GMI_fertilizer_GMI.x288_y181_t12.2006.nc:
@@ -33,6 +47,10 @@ Samplings:
     update_offset: PT12H
     update_reference_time: '0'
   GMI_sample_2:
+    extrapolation: clim
+    update_frequency: P1M
+    update_reference_time: '0'
+  GMI_sample_3:
     extrapolation: clim
 
 Exports:
@@ -87,6 +105,31 @@ Exports:
     regrid: CONSERVE
     sample: GMI_sample_1
     variable: C3H8_ff
+  CCL4_FLUX:
+    collection: GMI_SC.ODS.Emission.x360_y181.%y4.V1.nc
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: CCL4_emission
+  CFC113_FLUX:
+    collection: GMI_SC.ODS.Emission.x360_y181.%y4.V1.nc
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: CFC113_emission
+  CFC11_FLUX:
+    collection: GMI_SC.ODS.Emission.x360_y181.%y4.V1.nc
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: CFC11_emission
+  CFC12_FLUX:
+    collection: GMI_SC.ODS.Emission.x360_y181.%y4.V1.nc
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: CFC12_emission
+  CH2BR2_FLUX:
+    collection: GMI_SC.ODS.Emission.x360_y181.%y4.V1.nc
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: CH2BR2_emission
   CH2O_biof:
     collection: /dev/null
   CH2O_biom:
@@ -94,10 +137,20 @@ Exports:
     regrid: CONSERVE
     sample: GMI_sample_1
     variable: CH2O_bb
+  CH3CCL3_FLUX:
+    collection: GMI_SC.ODS.Emission.x360_y181.%y4.V1.nc
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: CH3CCL3_emission
   CH4_aggr:
     collection: /dev/null
   CH4_biom:
     collection: /dev/null
+  CHBR3_FLUX:
+    collection: GMI_SC.ODS.Emission.x360_y181.%y4.V1.nc
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: CHBR3_emission
   CO_biof:
     collection: /dev/null
   CO_biom:
@@ -110,6 +163,16 @@ Exports:
     regrid: CONSERVE
     sample: GMI_sample_1
     variable: CO_ff
+  DMS_OCEAN:
+    collection: GMI_DMS_lana.geos.1x1.esmf.nc
+    regrid: CONSERVE
+    sample: GMI_sample_2
+    variable: DMS_OCEAN
+  HCFC22_FLUX:
+    collection: GMI_SC.ODS.Emission.x360_y181.%y4.V1.nc
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: HCFC22_emission
   LAI_FRAC:
     collection: GMI_lai_x720_y360_v72_t12_2008.nc
     sample: GMI_sample_0
@@ -131,70 +194,70 @@ Exports:
   MEGAN_ISOP:
     collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
     regrid: CONSERVE
-    sample: GMI_sample_2
+    sample: GMI_sample_3
     variable: BIOGSRCE_AEF_ISOP
   MEGAN_LAI_001:
     collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
-    sample: GMI_sample_2
+    sample: GMI_sample_3
     variable: AVHRR_LAI_001
   MEGAN_LAI_002:
     collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
-    sample: GMI_sample_2
+    sample: GMI_sample_3
     variable: AVHRR_LAI_002
   MEGAN_LAI_003:
     collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
-    sample: GMI_sample_2
+    sample: GMI_sample_3
     variable: AVHRR_LAI_003
   MEGAN_LAI_004:
     collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
-    sample: GMI_sample_2
+    sample: GMI_sample_3
     variable: AVHRR_LAI_004
   MEGAN_LAI_005:
     collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
-    sample: GMI_sample_2
+    sample: GMI_sample_3
     variable: AVHRR_LAI_005
   MEGAN_LAI_006:
     collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
-    sample: GMI_sample_2
+    sample: GMI_sample_3
     variable: AVHRR_LAI_006
   MEGAN_LAI_007:
     collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
-    sample: GMI_sample_2
+    sample: GMI_sample_3
     variable: AVHRR_LAI_007
   MEGAN_LAI_008:
     collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
-    sample: GMI_sample_2
+    sample: GMI_sample_3
     variable: AVHRR_LAI_008
   MEGAN_LAI_009:
     collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
-    sample: GMI_sample_2
+    sample: GMI_sample_3
     variable: AVHRR_LAI_009
   MEGAN_LAI_010:
     collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
-    sample: GMI_sample_2
+    sample: GMI_sample_3
     variable: AVHRR_LAI_010
   MEGAN_LAI_011:
     collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
-    sample: GMI_sample_2
+    sample: GMI_sample_3
     variable: AVHRR_LAI_011
   MEGAN_LAI_012:
     collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
-    sample: GMI_sample_2
+    sample: GMI_sample_3
     variable: AVHRR_LAI_012
   MEGAN_MBO:
     collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
     regrid: CONSERVE
-    sample: GMI_sample_2
+    sample: GMI_sample_3
     variable: BIOGSRCE_AEF_MBO
   MEGAN_MPE:
     collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
     regrid: CONSERVE
-    sample: GMI_sample_2
+    sample: GMI_sample_3
     variable: BIOGSRCE_AEF_MPE
   MEGAN_OVOC:
     collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
     regrid: CONSERVE
-    sample: GMI_sample_2
+    sample: GMI_sample_3
     variable: BIOGSRCE_AEF_OVC
   MEK_biof:
     collection: /dev/null
@@ -208,6 +271,21 @@ Exports:
     regrid: CONSERVE
     sample: GMI_sample_1
     variable: MEK_ff
+  N2O_ANTHRO-FLUX:
+    collection: GMI_SC.ODS.Emission.x360_y181.%y4.V1.nc
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: N2OANTHRO_emission
+  N2O_LAND-FLUX:
+    collection: GMI_SC.ODS.Emission.x360_y181.%y4.V1.nc
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: N2OLAND_emission
+  N2O_OCEAN-FLUX:
+    collection: GMI_SC.ODS.Emission.x360_y181.%y4.V1.nc
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: N2OOCEAN_emission
   NO_air:
     collection: GMI_CMIP6_CEDS.airNOemis.x720_y360_z72_t12.%y4.nc4
     regrid: CONSERVE
@@ -260,6 +338,31 @@ Exports:
     regrid: CONSERVE
     sample: GMI_sample_1
     variable: NO_shp
+  SO2_AIRCRAFT-FLUX:
+    collection: GMI_CMIP6_CEDS.airSO2emis.x720_y360_z72_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: SO2_aviation
+  SO2_ENERGY-FLUX:
+    collection: GMI_SO2-em-anthro_input4MIPs_emissions_CMIP_CEDS-2017-05-18_gn__energy_elevated.x720_y360_t12.%y4.nc
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: SO2_energy
+  SO2_FIRES-FLUX:
+    collection: GMI_SO2-em-biomassburning_input4MIPs_emissions_CMIP_VUA-CMIP-BB4CMIP6-1-2_gn__surface.x1440_y720_t12.%y4.nc
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: SO2
+  SO2_NONENERGY-FLUX:
+    collection: GMI_SO2-em-anthro_input4MIPs_emissions_CMIP_CEDS-2017-05-18_gn__nonenergy_surface.x720_y360_t12.%y4.nc
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: SO2_nonenergy
+  SO2_SHIPPING-FLUX:
+    collection: GMI_SO2-em-anthro_input4MIPs_emissions_CMIP_CEDS-2017-05-18_gn__shipping_surface.x720_y360_t12.%y4.nc
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: SO2_shipping
   SO4:
     collection: /dev/null
   SO4v:

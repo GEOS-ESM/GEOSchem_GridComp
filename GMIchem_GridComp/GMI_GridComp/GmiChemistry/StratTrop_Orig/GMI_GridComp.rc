@@ -10,12 +10,6 @@
 #kineticsTextFile: setkin_chem_mech.txt___.rc
 
         #############################
-        # GMI Chemical Mechanism Name
-        #############################
-
-chem_mecha: strat_trop
-
-        #############################
         # MetFields Related Variables
         #############################
 
@@ -254,8 +248,8 @@ forc_bc_kmax: 2
 forc_bc_infile_name:               ExtData/g5chem/x/GMI/ccmiRefD1_GMIbc_1950_2018.asc
 
 forcedBcSpeciesNames:: 
-CFCl3
-CF2Cl2
+CFC11
+CFC12
 CFC113
 CFC114
 CFC115
@@ -318,12 +312,6 @@ lbssad_opt: 4
 #       2:  read in qj values 
 #       3:  use fastj routine (for fastJ, fastJx, fastJx53b)
 #           This option should be combined with fastj_opt.
-#       4:  lookup table for qj (Kawa style)
-#       5:  lookup table for qj (Kawa style) +
-#           use ozone climatology for column ozone calc.
-#       6:  calculate from table and Gmimod data (Quadchem)
-#       7:  read in qj values (2-D, 12 months)
-#       8:  use fast-JX routine (troposphere/stratosphere)
 #     -----------------------------------------------------
 #     (as listed in GmiChemistryMethod_mod.F90)
 
@@ -377,7 +365,8 @@ do_ozone_inFastJX: F
 
 ## For FastJX 6.5 & JPL10
  fastj_opt: 4
- cross_section_file: ExtData/g5chem/x/photolysis/FastJX_6.5/xsec_jx65_jpl10update2_JNOx1_0.dat
+# cross_section_file: ExtData/g5chem/x/photolysis/FastJX_6.5/xsec_jx65_jpl10update2_JNOx1_0.dat
+ cross_section_file: ExtData/g5chem/x/photolysis/FastJX_6.5/xsec_jx65wSO4_jpl10update2_JNOx1_0.dat
 # rate_file not needed for FastJX6.5; new approach only differs by roundoff
 # rate_file: ExtData/g5chem/x/photolysis/FastJX/ratec_124spc_jx_gmiv2.dat
 # rate_file: ExtData/g5chem/x/photolysis/FastJX/ratec_119spc_jx_gmiv3.dat

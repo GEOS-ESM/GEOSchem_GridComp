@@ -293,8 +293,8 @@
 
        IF (rootProc .AND. self%num_fixed_const > 0) THEN
          PRINT *," "
-         PRINT *,"Found ",self%num_fixed_const," fixed-concentration specie(s)"
-         PRINT *," Specie names:"
+         PRINT *,"Found ",self%num_fixed_const," fixed-concentration species"
+         PRINT *," Species name(s):"
          DO ic = 1,self%num_fixed_const
             PRINT *,"  ",ic,"  ",TRIM(tempListNames(ic))
          END DO

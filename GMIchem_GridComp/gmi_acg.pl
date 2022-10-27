@@ -93,8 +93,6 @@ while ( <FILE> ) {
 # Make species names conformal with GEOS-5
 # ----------------------------------------
   if ( $species[$m] eq "O3"     ) { $species[$m] = "OX" ;      }
-  if ( $species[$m] eq "CFCL3"  ) { $species[$m] = "CFC11" ;   }
-  if ( $species[$m] eq "CF2CL2" ) { $species[$m] = "CFC12" ;   }
 
  }
  $i++;

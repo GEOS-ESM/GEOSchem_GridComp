@@ -114,7 +114,6 @@
 
 ! Useful character strings
 ! ------------------------
-   CHARACTER(LEN=255) :: chem_mecha
    character (len=MAX_LENGTH_MET_NAME) :: metdata_name_model
 
 ! Longitudes and latitudes (radians)
@@ -300,11 +299,6 @@ CONTAINS
      &                default = ' ', rc=STATUS )
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%chem_mecha, &
-     &                label   = "chem_mecha:", &
-     &                default = 'strat_trop', rc=STATUS )
-      VERIFY_(STATUS)
-
       call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%metdata_name_model, &
      &                label   = "metdata_name_model:", &
      &                default = 'GEOS-5', rc=STATUS )
@@ -488,13 +482,6 @@ CONTAINS
             call GmiPrintError  &
      &        (err_msg, .true., 2, self%chem_opt, self%ich4_num, 0, 0.0d0, 0.0d0)
          end if
-
-!.sds.. unnecessary test
-!.sds..         if ((self%idehyd_num == 0) .or. (self%idehyd_num /= IDEHYD)) then
-!.sds..            err_msg = 'chem_opt/idehyd_num problem in the rc File.'
-!.sds..            call GmiPrintError  &
-!.sds..     &       (err_msg, .true., 2, self%chem_opt, self%idehyd_num, 0, 0.0d0, 0.0d0)
-!.sds..         end if
 
          if ((self%ih2o_num == 0) .or. (self%ih2o_num /= IH2O)) then
             err_msg = 'chem_opt/ih2o_num problem in the rc File.'
@@ -950,16 +937,16 @@ CONTAINS
     self%dehydmin = 0.00
 
     CALL updateSurfaceAreaDensities (tdt8, tropopausePress, press3c,      &
-               press3e, kel, self%SpeciesConcentration%concentration,     &
-               self%ch4clim, self%h2oclim, self%hno3cond, self%hno3gas,   &
-               self%lbssad, self%sadgmi, self%h2oback, self%h2ocond,      &
-               self%reffice, self%reffsts, self%vfall, self%dehydmin,     &
-               self%dehyd_opt, self%h2oclim_opt, self%lbssad_opt,         &
-               self%sad_opt, IHNO3COND, self%idehyd_num, ICH4,            &
-               IHNO3, IH2O, nymd, self%pr_diag, loc_proc, NSP,            &
-               NSAD, self%lbssad_timpyr, self%h2oclim_timpyr,             &
-               ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1, k2, londeg,      &
-               latdeg, self%NoPSCZone, self%PSCMaxP, self%chem_mecha)
+    	       press3e, kel, self%SpeciesConcentration%concentration,	  &
+    	       self%ch4clim, self%h2oclim, self%hno3cond, self%hno3gas,   &
+    	       self%lbssad, self%sadgmi, self%h2oback, self%h2ocond,	  &
+    	       self%reffice, self%reffsts, self%vfall, self%dehydmin,	  &
+    	       self%dehyd_opt, self%h2oclim_opt, self%lbssad_opt,	  &
+    	       self%sad_opt, IHNO3COND, self%idehyd_num, ICH4,  	  &
+    	       IHNO3, IH2O, nymd, self%pr_diag, loc_proc, NSP,  	  &
+    	       NSAD, self%lbssad_timpyr, self%h2oclim_timpyr,		  &
+    	       ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1, k2, londeg,	  &
+    	       latdeg, self%NoPSCZone, self%PSCMaxP)
 
 ! Return species concentrations to the chemistry bundle
 ! -----------------------------------------------------
@@ -1196,7 +1183,7 @@ CONTAINS
       ! Verify that the number of fields in the bundle is equal to the number
       ! of SAD variables.
 
-      _ASSERT(numVars == NSAD,'needs informative message')
+      _ASSERT(numVars == NSAD,'in populateBundleSAD get gmiSAD')
 
       allocate(ptr3Dreal(i1:i2, j1:j2, 1:km))
 

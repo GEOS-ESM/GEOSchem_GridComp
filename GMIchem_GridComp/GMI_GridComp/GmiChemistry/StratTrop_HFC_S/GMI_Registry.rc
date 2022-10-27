@@ -38,6 +38,8 @@
   TAUCLI 	     |  1              | xyz | C |    |   |   |     |      |    | optical_thickness_for_ice_clouds
   QL    	     |	kg kg-1	       | xyz | C |    |   |   |     |      |    | cloud_liquid_for_radiation
   QI    	     |	kg kg-1	       | xyz | C |    |   |   |     |      |    | cloud_ice_for_radiation
+  RI    	     |	m      	       | xyz | C |    |   |   |     |      |    | ice_phase_cloud_particle_effective_radius
+  RL    	     |	m      	       | xyz | C |    |   |   |     |      |    | liquid_cloud_particle_effective_radius
   CNV_MFC	     |	kg m-2 s-1     | xyz | E |    |   |   |     |      |    | cumulative_mass_flux
   CNV_MFD	     |	kg m-2 s-1     | xyz | C |    |   |   |     |      |    | detraining_mass_flux
   RH2   	     |	1              | xyz | C |    |   |   |     |      |    | relative_humidity_after_moist
@@ -54,6 +56,8 @@
   LAI   	     |  1	       | xy  |   |    |   |   |     |	   |    | leaf_area_index
   U10M  	     |  m s-1	       | xy  |   |    |   |   |     |	   |    | 10-meter_eastward_wind
   V10M  	     |  m s-1	       | xy  |   |    |   |   |     |	   |    | 10-meter_northward_wind
+  FROCEAN            |  1              | xy  |   |    |   |   |     |      |    | Fraction of ocean 
+  TS                 |  K              | xy  |   |    |   |   |     |      |    | Surface skin temperature
   USTAR 	     |  m s-1	       | xy  |   |    |   |   |     |	   |    | surface_velocity_scale
   Z0H   	     |  m	       | xy  |   |    |   |   |     |	   |    | surface_roughness_for_heat
   SWNDSRF	     |  W m-2	       | xy  |   |    |   |   |     |	   |    | surface_net_downward_shortwave_flux
@@ -103,6 +107,23 @@
   NO_biom 	     |  kg NO m-2 s-1  | xy  |   |    |   |   |     |	   |  x | NO_biomass_burning_emissions
   NO_pwrp 	     |  kg NO m-2 s-1  | xy  |   |    |   |   |     |	   |  x | NO_power_plant_emissions
   NO_ship   	     |  kg NO m-2 s-1  | xy  |   |    |   |   |     |	   |  x | NO_shipping_emissions
+  CFC11_FLUX         |  kg m-2 s-1     | xy  |   |    |   |   |     |	   |  x | CFC11_emissions
+  CFC12_FLUX         |  kg m-2 s-1     | xy  |   |    |   |   |     |	   |  x | CFC12_emissions
+  CFC113_FLUX        |  kg m-2 s-1     | xy  |   |    |   |   |     |	   |  x | CFC113_emissions
+  HCFC22_FLUX        |  kg m-2 s-1     | xy  |   |    |   |   |     |	   |  x | HCFC22_emissions
+  CH3CCL3_FLUX       |  kg m-2 s-1     | xy  |   |    |   |   |     |	   |  x | CH3CCL3_emissions
+  CCL4_FLUX          |  kg m-2 s-1     | xy  |   |    |   |   |     |	   |  x | CCL4_emissions
+  CHBR3_FLUX         |  kg m-2 s-1     | xy  |   |    |   |   |     |	   |  x | CHBR3_emissions
+  CH2BR2_FLUX        |  kg m-2 s-1     | xy  |   |    |   |   |     |	   |  x | CH2BR2_emissions
+  N2O_OCEAN-FLUX     |  kg m-2 s-1     | xy  |   |    |   |   |     |	   |  x | N2OOCEAN_emissions
+  N2O_LAND-FLUX      |  kg m-2 s-1     | xy  |   |    |   |   |     |	   |  x | N2OLAND_emissions
+  N2O_ANTHRO-FLUX    |  kg m-2 s-1     | xy  |   |    |   |   |     |	   |  x | N2OANTHRO_emissions
+  SO2_FIRES-FLUX     |  kg m-2 s-1     | xy  |   |    |   |   |     |	   |  x | SO2FIRES_emissions
+  SO2_NONENERGY-FLUX |  kg m-2 s-1     | xy  |   |    |   |   |     |	   |  x | SO2NONENERGY_emissions
+  SO2_ENERGY-FLUX    |  kg m-2 s-1     | xy  |   |    |   |   |     |	   |  x | SO2ENERGY_emissions
+  SO2_SHIPPING-FLUX  |  kg m-2 s-1     | xy  |   |    |   |   |     |	   |  x | SO2SHIPPING_emissions
+  SO2_AIRCRAFT-FLUX  |  kg m-2 s-1     | xyz | C |    |   |   |     |	   |  x | SO2AIRCRAFT_emissions
+  DMS_OCEAN          |  kg / m3        | xy  |   |    |   |   |     |	   |  x | DMSOCEAN
   MEGAN_ISOP   	     |  mg C m-2 h-1   | xy  |   |    |   |   |     |	   |  x | biogenic_source_isoprene
   MEGAN_MBO   	     |  mg C m-2 h-1   | xy  |   |    |   |   |     |	   |  x | biogenic_source_mbo
   MEGAN_MPE   	     |  mg C m-2 h-1   | xy  |   |    |   |   |     |	   |  x | biogenic_source_monoterpene
@@ -179,6 +200,8 @@
   EM_NO   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | nitric_oxide_emissions
   EM_CO   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | carbon_monoxide_emissions
   EM_MEK   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | methyl_ethyl_ketone_(C4H8O)_emissions
+  EM_MOH   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | methynol_(CH3OH)_emissions
+  EM_H2O   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | water_emissions
   EM_PRPE   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | propene_(C3H6)_emissions
   EM_C2H6   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | ethane_emissions
   EM_C3H8   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | propane_emissions
@@ -187,6 +210,25 @@
   EM_CH2O   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | formaldehyde_emissions
   EM_ACET   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | acetone_emissions
   EM_CH4   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | methane_emissions
+  EM_CFC11          | mol mol-1 s-1  | xyz | C |    |   |   |     | CFC11_emissions
+  EM_CFC12          | mol mol-1 s-1  | xyz | C |    |   |   |     | CFC12_emissions
+  EM_CFC113         | mol mol-1 s-1  | xyz | C |    |   |   |     | CFC113_emissions
+  EM_HCFC22         | mol mol-1 s-1  | xyz | C |    |   |   |     | HCFC22_emissions
+  EM_HFC125         | mol mol-1 s-1  | xyz | C |    |   |   |     | HFC125_emissions
+  EM_HFC134a        | mol mol-1 s-1  | xyz | C |    |   |   |     | HFC134a_emissions
+  EM_HFC143a        | mol mol-1 s-1  | xyz | C |    |   |   |     | HFC143a_emissions
+  EM_HFC152a        | mol mol-1 s-1  | xyz | C |    |   |   |     | HFC152a_emissions
+  EM_HFC23          | mol mol-1 s-1  | xyz | C |    |   |   |     | HFC23_emissions
+  EM_HFC32          | mol mol-1 s-1  | xyz | C |    |   |   |     | HFC32_emissions
+  EM_CH3CCL3        | mol mol-1 s-1  | xyz | C |    |   |   |     | CH3CCL3_emissions
+  EM_CCL4           | mol mol-1 s-1  | xyz | C |    |   |   |     | CCL4_emissions
+  EM_CHBR3          | mol mol-1 s-1  | xyz | C |    |   |   |     | methylbromoform_emissions
+  EM_CH2BR2         | mol mol-1 s-1  | xyz | C |    |   |   |     | dibromomethane_emissions
+  EM_N2O            | mol mol-1 s-1  | xyz | C |    |   |   |     | N2O_emissions
+  EM_DMS            | mol mol-1 s-1  | xyz | C |    |   |   |     | DMS_emissions
+  EM_SO2            | mol mol-1 s-1  | xyz | C |    |   |   |     | SO2_emissions
+  EM_H2SO4          | mol mol-1 s-1  | xyz | C |    |   |   |     | H2SO4_emissions
+  EM_OCSg           | mol mol-1 s-1  | xyz | C |    |   |   |     | OCSg_emissions
   EM_LGTNO          | mol mol-1 s-1  | xyz | C |    |	|   |	  | NO_emissions_from_lightning
   EM_GCR_NO         | molec cm-3 s-1 | xyz | C |    |	|   |	  | NO_emissions_from_galactic_cosmic_rays
   SZAPHOT  	    | deg            | xy  |   |    |	|   |	  | solar_zenith_angle_for_GMIchem_photolysis
@@ -286,9 +328,17 @@
   HCFC22        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | HCFC22 (CClF2H)
   HCFC141b      | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | HCFC141b (C2Cl2FH3)
   HCFC142b      | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | HCFC142b (C2ClF2H3)
-  CF2Br2        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Halon 1202 
-  CF2ClBr       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Halon 1211
-  CF3Br         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Halon 1301
+  HFC23         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Fluoroform (CHF3)
+  HFC32         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Difluoromethane (CH2F2)
+  HFC125        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Pentafluoroethane (C2HF5)
+  HFC134a       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | 1,1,1,2-Tetrafluoroethane (C2H2F4)
+  HFC143a       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | 1,1,1-Trifluoroethane (C2H3F3)
+  HFC152a       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | 1,1-Difluoroethane (C2H4F2) 
+  CF2Br2        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Dibromodifluoromethane (CBr2F2) - Halon 1202
+  CF2ClBr       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Bromochlorodifluoromethane (CBrClF2) - Halon 1211
+  CF3Br         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | bromotrifluoromethane (CBrF3) - Halon 1301
+  CHBr3         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Bromoform
+  CH2Br2        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Dibromomethane
   H2402         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Halon 24O2 (C2Br2F4)
   ACTA          | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Acetic acid (C2H4O2)
   ALD2          | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Acetaldehyde (C2H4O)
@@ -310,7 +360,10 @@
   R4N2          | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | C4-C5 alkylnitrates (C4H9O3N)
   RCHO          | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | C2 aldehydes (C3H6O)
   RCOOH         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | C2 organic acids
-  N2            | cm^-3      | xyz | C |    |   |   |     |      |    |    | D,T,C   | Molecular nitrogen
+  DMS           | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Dimethylsulfide
+  SO2           | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Sulfur dioxide
+  H2SO4         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Sulfate
+  OCSg          | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Carbonyl sulfide
   HNO3COND      | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Condensed nitric acid
   H             | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | Ground state atomic hydrogen (2S)
   MO2           | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | Methylperoxy radical (CH3O2)
@@ -355,8 +408,8 @@
   RP            | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | Methacrolein peroxy acid (C4H6O3)
   VRO2          | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | RO2 (C4H7O4) from MVK+OH
   VRP           | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | Peroxide (C4H8O4) from VRO2
-  OCSg          | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | Carbonyl sulfide
   ACET          | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | Acetone
+  N2            | cm^-3      | xyz | C |    |   |   |     |      |    |    |         | Molecular nitrogen
   O2            | cm^-3      | xyz | C |    |   |   |     |      |    |    |         | Molecular oxygen
   NUMDENS       | cm^-3      | xyz | C |    |   |   |     |      |    |    |         | Total number density
   T2M15d        | K          | xyz | C |    |   |   |     |      |    |    |         | Daily averages of T2M

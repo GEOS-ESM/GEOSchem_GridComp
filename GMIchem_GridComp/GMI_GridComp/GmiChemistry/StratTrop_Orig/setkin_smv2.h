@@ -37,8 +37,8 @@
      & "           Cl2", "           ClO", "         Cl2O2",  & 
      & "        ClONO2", "           HCl", "          HOCl",  & 
      & "          OClO", "         CH3Br", "         CH3Cl",  & 
-     & "       CH3CCl3", "          CCl4", "         CFCl3",  & 
-     & "        CF2Cl2", "        CFC113", "        CFC114",  & 
+     & "       CH3CCl3", "          CCl4", "         CFC11",  & 
+     & "         CFC12", "        CFC113", "        CFC114",  & 
      & "        CFC115", "        HCFC22", "      HCFC141b" /
 
       data (NAMESP2(JGAS,1), JGAS = 51, 101) / &

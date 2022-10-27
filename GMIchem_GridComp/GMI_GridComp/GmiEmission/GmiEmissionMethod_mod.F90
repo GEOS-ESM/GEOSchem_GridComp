@@ -26,9 +26,8 @@
       use GmiSpcConcentrationMethod_mod, only : Get_concentration, Set_concentration
       use GmiSpcConcentrationMethod_mod, only : Get_tracer_opt, Get_tr_source_land
       use GmiSpcConcentrationMethod_mod, only : Get_tr_source_ocean
-
-   use, intrinsic :: iso_fortran_env, only: REAL64
-
+!
+      use, intrinsic :: iso_fortran_env, only: REAL64
 !
       implicit none
 !
@@ -122,7 +121,13 @@
     logical          :: do_ShipEmission           ! do ship emissions?
     logical          :: doMEGANemission           ! do MEGAN emissions?
     logical          :: doMEGANviaHEMCO           ! use HEMCO for MEGAN? 
-
+!.sds
+    integer          :: GmiDMSEmissIndex          ! GMI DMS index in emissionArray
+    CHARACTER(LEN=MAX_LENGTH_FILE_NAME):: emissionPointFilenames(MAX_NUM_CONST) ! Names of files of point emissions
+    integer          :: num_point_emiss           ! number of point emissions species
+    integer          :: num_point_start           ! number in emissions list that point sources start
+    CHARACTER(LEN=32):: num_point_type(MAX_NUM_CONST)! number in emissions list that point sources start
+!.sds.end
     character (len=MAX_LENGTH_FILE_NAME) ::      laiMEGAN_InfileName ! Inpuf file name for AVHRR leaf-area-indices
     character (len=MAX_LENGTH_FILE_NAME) ::   aefMboMEGAN_InfileName ! Annual emission factor for methyl butenol input file name
     character (len=MAX_LENGTH_FILE_NAME) ::  aefIsopMEGAN_InfileName ! Annual emission factor for isoprene input file name
@@ -211,7 +216,7 @@
 !
 ! !INTERFACE:
 !
-      subroutine readEmissionResourceFile(self, config, procID, numSpecies, &
+      subroutine readEmissionResourceFile(self, config, procID, numSpecies, k2, &
                      pr_diag, chem_opt)
 !
 ! !USES:
@@ -221,7 +226,7 @@
 !
 ! !INPUT PARAMETERS:
       logical, intent(in) :: pr_diag
-      integer, intent(in) :: numSpecies, procID, chem_opt
+      integer, intent(in) :: numSpecies, procID, chem_opt, k2
 !
 ! !INPUT/OUTPUT PARAMETERS:
       type (t_Emission), intent(inOut) :: self
@@ -231,13 +236,16 @@
 ! Reads in Emission related variables from the resource file.
 !
 ! !LOCAL VARIABLES:
-      integer ::  STATUS, RC, ic, ios
+      integer ::  STATUS, RC, ic, ios, n
       character (len=MAX_LENGTH_SPECIES_NAME) :: tempListNames(MAX_NUM_CONST)
       character (len=MAX_STRING_LENGTH      ) :: emissionSpeciesNames
       character (len=MAX_STRING_LENGTH      ) :: emissionDustSpeciesNames
       character (len=MAX_STRING_LENGTH      ) :: emissionAeroSpeciesNames
       character(len=ESMF_MAXSTR) :: IAm, err_msg, sp_name
-
+!.sds.. point emissions variables
+      character (len=MAX_STRING_LENGTH      ) :: emissionPointTemp(MAX_NUM_CONST)
+      character (len=MAX_STRING_LENGTH      ) :: emissionPointFilenames
+!.sds.end
 !EOP
 !--------------------------------------------------------------------
 !BOC
@@ -245,164 +253,164 @@
 
       if (pr_diag) Write(6,*) IAm, 'called by ', procID
 
-      !################################
-      ! Begin reading the resource file
-      !################################
+!################################
+! Begin reading the resource file
+!################################
 
-    ! ---------------------------------     
-    ! emiss_opt 
-    !   (set up with bit switches, can turn on more than one option by adding
-    !    the numbers togeether, ie 3 will turn on llnl and harvard emissions)
-    !   0:  no emissions
-    !   1:  do LLNL emissions
-    !   2:  do Harvard emissions
-    !   3:  do LLNL and Harvard emissions
-    !   4:  do GSFC emissions (Galactic Cosmic Rays only right now)
-    !   5:  do LLNL and GSFC emissions
-    !   6:  do Harvard and GSFC emissions
-    !   7:  do LLNL and Harvard and GSFC emissions
-    ! ---------------------------------
+! ---------------------------------     
+! emiss_opt 
+!   (set up with bit switches, can turn on more than one option by adding
+!    the numbers togeether, ie 3 will turn on llnl and harvard emissions)
+!   0:  no emissions
+!   1:  do LLNL emissions
+!   2:  do Harvard emissions
+!   3:  do LLNL and Harvard emissions
+!   4:  do GSFC emissions (Galactic Cosmic Rays only right now)
+!   5:  do LLNL and GSFC emissions
+!   6:  do Harvard and GSFC emissions
+!   7:  do LLNL and Harvard and GSFC emissions
+! ---------------------------------
 
       call ESMF_ConfigGetAttribute(config, self%emiss_opt, &
-     &                label   = "emiss_opt:", &
-     &                default = 0, rc=STATUS )
+                     label   = "emiss_opt:", &
+                     default = 0, rc=STATUS )
       VERIFY_(STATUS)
       
-    ! --------------------------------------------
-    ! emiss_in_opt
-    !   0:  no emissions data
-    !   1:  set all emiss values to emiss_init_val
-    !   2:  read in emiss values
-    !   3:  set in emiss values using constant source terms
-    ! --------------------------------------------
+! --------------------------------------------
+! emiss_in_opt
+!   0:  no emissions data
+!   1:  set all emiss values to emiss_init_val
+!   2:  read in emiss values
+!   3:  set in emiss values using constant source terms
+! --------------------------------------------
 
       call ESMF_ConfigGetAttribute(config, self%emiss_in_opt, &
-     &                label   = "emiss_in_opt:", &
-     &                default = 0, rc=STATUS )
+                     label   = "emiss_in_opt:", &
+                     default = 0, rc=STATUS )
       VERIFY_(STATUS)
 
-    ! ------------------------------------
-    ! emiss_conv_flag
-    !   0:  no conversion performed
-    !   1:  use emiss_conv_fac
-    !   2:  convert from kg/km2-hr to kg/s
-    ! ------------------------------------
+! ------------------------------------
+! emiss_conv_flag
+!   0:  no conversion performed
+!   1:  use emiss_conv_fac
+!   2:  convert from kg/km2-hr to kg/s
+! ------------------------------------
 
       call ESMF_ConfigGetAttribute(config, self%emiss_conv_flag, &
-     &                label   = "emiss_conv_flag:", &
-     &                default = 0, rc=STATUS )
+                     label   = "emiss_conv_flag:", &
+                     default = 0, rc=STATUS )
       VERIFY_(STATUS)
 
-    ! ------------------------------------------------------------------
-    ! semiss_inchem_flag
-    !   <0:  if emissions are on, surface emissions will be done in
-    !        Smvgear chemistry if it is on; outside of chemistry if
-    !        Smvgear chemistry is off (i.e., "auto set")
-    !    0:  if emissions are on, surface emissions will be done outside
-    !        of chemistry
-    !   >0:  if emissions are on, surface emissions will be done in
-    !        Smvgear chemistry
-    ! ------------------------------------------------------------------
-      
+! ------------------------------------------------------------------
+! semiss_inchem_flag
+!   <0:  if emissions are on, surface emissions will be done in
+!        Smvgear chemistry if it is on; outside of chemistry if
+!        Smvgear chemistry is off (i.e., "auto set")
+!    0:  if emissions are on, surface emissions will be done outside
+!        of chemistry
+!   >0:  if emissions are on, surface emissions will be done in
+!        Smvgear chemistry
+! ------------------------------------------------------------------
+  
       call ESMF_ConfigGetAttribute(config, self%semiss_inchem_flag, &
-     &                label   = "semiss_inchem_flag:", &
-     &                default = -1, rc=STATUS )
+                     label   = "semiss_inchem_flag:", &
+                     default = -1, rc=STATUS )
       VERIFY_(STATUS)
       
-      ! sets of emissons per year (1 => yearly, 12 => monthly)
+! sets of emissons per year (1 => yearly, 12 => monthly)
     
       call ESMF_ConfigGetAttribute(config, self%emiss_timpyr, &
-     &                label   = "emiss_timpyr:", &
-     &                default = 1, rc=STATUS )
+                     label   = "emiss_timpyr:", &
+                     default = 1, rc=STATUS )
       VERIFY_(STATUS)
       
       self%emiss_map(:) =  0  
      
       call rcEsmfReadTable(config, emissionSpeciesNames, &
-     &                     "emissionSpeciesNames::", rc=STATUS)
-    
+                          "emissionSpeciesNames::", rc=STATUS)
+
       call ESMF_ConfigGetAttribute(config, self%emiss_conv_fac, &
-     &                label   = "emiss_conv_fac:", &
-     &                default = 1.0d0, rc=STATUS )
+                     label   = "emiss_conv_fac:", &
+                     default = 1.0d0, rc=STATUS )
       VERIFY_(STATUS)
     
       call ESMF_ConfigGetAttribute(config, self%emiss_init_val, &
-     &                label   = "emiss_init_val:", &
-     &                default = 1.0d0, rc=STATUS )
+                     label   = "emiss_init_val:", &
+                     default = 1.0d0, rc=STATUS )
       VERIFY_(STATUS)
 
       CALL ESMF_ConfigGetAttribute(config, value=self%clim_emiss_by_area, &
-     &           label="clim_emiss_by_area:", DEFAULT=.TRUE., RC=STATUS)
+                label="clim_emiss_by_area:", DEFAULT=.TRUE., RC=STATUS)
       VERIFY_(STATUS)
 
-     ! Save the number of emitting layers for each emissionSpeciesName
-     ! ---------------------------------------------------------------
+! Save the number of emitting layers for each emissionSpeciesName
+! ---------------------------------------------------------------
 
       self%emissionSpeciesLayers(:) = 0
 
       call rcEsmfReadTable(config, self%emissionSpeciesLayers, &
-     &                     "emissionSpeciesLayers::", rc=STATUS)
+                          "emissionSpeciesLayers::", rc=STATUS)
 
-    ! --------------------------------------
-    ! Aerosols and Sulfur from Penner et al.
-    ! --------------------------------------
+! --------------------------------------
+! Aerosols and Sulfur from Penner et al.
+! --------------------------------------
 
-     ! emiss_aero_opt   0: for no     aerosol emissions
-     !                  1: for GMI    aerosol emissions
-     !                  2: for GOCART aerosol emissions
-      
+! emiss_aero_opt   0: for no     aerosol emissions
+!                  1: for GMI    aerosol emissions
+!                  2: for GOCART aerosol emissions
+  
       call ESMF_ConfigGetAttribute(config, self%emiss_aero_opt, &
-     &                label   = "emiss_aero_opt:", &
-     &                default = 0, rc=STATUS )
+                     label   = "emiss_aero_opt:", &
+                     default = 0, rc=STATUS )
       VERIFY_(STATUS)
 
-      ! number of aerosol emissions
+! number of aerosol emissions
      
       call ESMF_ConfigGetAttribute(config, self%naero, &
-     &                label   = "naero:", &
-     &                default = 1, rc=STATUS )
+                     label   = "naero:", &
+                     default = 1, rc=STATUS )
       VERIFY_(STATUS) 
      
       self%emiss_map_aero(:) = 0    ! map emissions to species #
 
       call rcEsmfReadTable(config, emissionAeroSpeciesNames, &
-     &                     "emissionAeroSpeciesNames::", rc=STATUS)
+                          "emissionAeroSpeciesNames::", rc=STATUS)
 
-      ! aerosol emission input file
+! aerosol emission input file
 
       call ESMF_ConfigGetAttribute(config, self%emiss_aero_infile_name, &
-     &                label   = "emiss_aero_infile_name:", &
-     &                default = ' ', rc=STATUS )
+                     label   = "emiss_aero_infile_name:", &
+                     default = ' ', rc=STATUS )
       VERIFY_(STATUS)
 
-     ! emiss_dust_opt   0: for no     dust emissions
-     !                  1: for GMI    dust emissions
-     !                  2: for GOCART dust emissions
+! emiss_dust_opt   0: for no     dust emissions
+!                  1: for GMI    dust emissions
+!                  2: for GOCART dust emissions
 
       call ESMF_ConfigGetAttribute(config, self%emiss_dust_opt, &
-     &                label   = "emiss_dust_opt:", &
-     &                default = 0, rc=STATUS )
+                     label   = "emiss_dust_opt:", &
+                     default = 0, rc=STATUS )
       VERIFY_(STATUS)
 
-      ! number of dust bins
+! number of dust bins
 
       call ESMF_ConfigGetAttribute(config, self%ndust, &
-     &                label   = "ndust:", &
-     &                default = 1, rc=STATUS )
+                     label   = "ndust:", &
+                     default = 1, rc=STATUS )
       VERIFY_(STATUS)
 
-     ! number of starting point for new dust emiss.
+! number of starting point for new dust emiss.
       
       call ESMF_ConfigGetAttribute(config, self%nst_dust, &
-     &                label   = "nst_dust:", &
-     &                default = 1, rc=STATUS )
+                     label   = "nst_dust:", &
+                     default = 1, rc=STATUS )
       VERIFY_(STATUS)
       
-      ! number of dust emissions per emiss. file
+! number of dust emissions per emiss. file
      
       call ESMF_ConfigGetAttribute(config, self%nt_dust, &
-     &                label   = "nt_dust:", &
-     &                default = 1, rc=STATUS )
+                     label   = "nt_dust:", &
+                     default = 1, rc=STATUS )
       VERIFY_(STATUS)   
      
       self%emiss_map_dust(:) = 0    ! map emissions to species #
@@ -410,106 +418,118 @@
       emissionDustSpeciesNames = ""
      
       call rcEsmfReadTable(config, emissionDustSpeciesNames, &
-     &                     "emissionDustSpeciesNames::", rc=STATUS)
+                          "emissionDustSpeciesNames::", rc=STATUS)
       
-      ! dust emission input file
+! dust emission input file
       
       call ESMF_ConfigGetAttribute(config, self%emiss_dust_infile_name, &
-     &                label   = "emiss_dust_infile_name:", &
-     &                default = ' ', rc=STATUS )
+                     label   = "emiss_dust_infile_name:", &
+                     default = ' ', rc=STATUS )
       VERIFY_(STATUS)
      
-     ! -----------------------------------------------------
-     ! Information on scale factors for various NO emissions
-     ! -----------------------------------------------------
+! -----------------------------------------------------
+! Information on scale factors for various NO emissions
+! -----------------------------------------------------
 
-     ! Fossil fuel
+! Fossil fuel
       call ESMF_ConfigGetAttribute(config, value=self%doScaleNOffEmiss, &
-     &           label="doScaleNOffEmiss:", default=.false., rc=STATUS)
+                label="doScaleNOffEmiss:", default=.false., rc=STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%scFactorNOff_infile_name, &
-     &                label   = "scFactorNOff_infile_name:", &
-     &                default = ' ', rc=STATUS )
+                     label   = "scFactorNOff_infile_name:", &
+                     default = ' ', rc=STATUS )
       VERIFY_(STATUS)
 
-     ! Biomass burning
+! Biomass burning
       call ESMF_ConfigGetAttribute(config, value=self%doScaleNObbEmiss, &
-     &           label="doScaleNObbEmiss:", default=.false., rc=STATUS)
+                label="doScaleNObbEmiss:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
       call ESMF_ConfigGetAttribute(config, self%scFactorNObb_infile_name, &
-     &                label   = "scFactorNObb_infile_name:", &
-     &                default = ' ', rc=STATUS )
+                     label   = "scFactorNObb_infile_name:", &
+                     default = ' ', rc=STATUS )
       VERIFY_(STATUS)
 
-    ! ---------------------------------------------------
-    ! Harvard emissions:  acetone, isoprene, propene, NO.
-    ! ---------------------------------------------------
+! ---------------------------------------------------
+! Harvard emissions:  acetone, isoprene, propene, NO.
+! ---------------------------------------------------
 
       self%isop_scale(:) = 1.0d0
      
       call rcEsmfReadTable(config, self%isop_scale, &
-     &                     "isop_scale::", rc=STATUS)
+                          "isop_scale::", rc=STATUS)
      
-    !... do Galactic Cosmic Rays source of NOx?
+!... do Galactic Cosmic Rays source of NOx?
     
-      ! turn on Galactic Cosmic ray emmission of N and NO
+!... turn on Galactic Cosmic ray emmission of N and NO
 
       call ESMF_ConfigGetAttribute(config, value=self%do_gcr, &
-     &           label="do_gcr:", default=.false., __RC__ )
+                label="do_gcr:", default=.false., __RC__ )
 
       call ESMF_ConfigGetAttribute(config, self%gcr_infile_name, &
-     &                label   = "gcr_infile_name:", &
-     &                default = ' ', __RC__ )
+                     label   = "gcr_infile_name:", &
+                     default = ' ', __RC__ )
 
-    !... do Ship Emission Calculations
+!... do Ship Emission Calculations
 
       call ESMF_ConfigGetAttribute(config, value=self%do_ShipEmission, &
-     &           label="do_ShipEmission:", default=.false., __RC__ )
+                label="do_ShipEmission:", default=.false., __RC__ )
 
-    !... do MEGAN emission calculations
+!.sds
+!... Allow Point Emission Calculations
+
+!      call ESMF_ConfigGetAttribute(config, value=self%do_PointEmission, &
+!     &           label="do_PointEmission:", default=.false., __RC__ )
+     
+!... setup point emissions
+      call rcEsmfReadTable(config, emissionPointFilenames &
+                          ,"emissionPointFilenames::", __RC__)
+
+!.sds.end
+!
+!... do MEGAN emission calculations
 
       call ESMF_ConfigGetAttribute(config, value=self%doMEGANemission, &
-     &           label="doMEGANemission:", default=.false., __RC__ )
+                label="doMEGANemission:", default=.false., __RC__ )
 
       call ESMF_ConfigGetAttribute(config, value=self%doMEGANviaHEMCO, &  
-     &           label="doMEGANviaHEMCO:", default=.false., __RC__ )
+                label="doMEGANviaHEMCO:", default=.false., __RC__ )
 
       call ESMF_ConfigGetAttribute(config, self%MEGAN_infile_name, &
-     &                label   = "MEGAN_infile_name:", &
-     &                default = ' ', __RC__ )
+                     label   = "MEGAN_infile_name:", &
+                     default = ' ', __RC__ )
 
       call ESMF_ConfigGetAttribute(config, self%laiMEGAN_InfileName, &
-     &                label   = "laiMEGAN_InfileName:", &
-     &                default = ' ', __RC__ )
+                     label   = "laiMEGAN_InfileName:", &
+                     default = ' ', __RC__ )
 
       call ESMF_ConfigGetAttribute(config, self%aefMboMEGAN_InfileName, &
-     &                label   = "aefMboMEGAN_InfileName:", &
-     &                default = ' ', __RC__ )
+                     label   = "aefMboMEGAN_InfileName:", &
+                     default = ' ', __RC__ )
      
       call ESMF_ConfigGetAttribute(config, self%aefIsopMEGAN_InfileName, &
-     &                label   = "aefIsopMEGAN_InfileName:", &
-     &                default = ' ', __RC__ )
+                     label   = "aefIsopMEGAN_InfileName:", &
+                     default = ' ', __RC__ )
       
       call ESMF_ConfigGetAttribute(config, self%aefOvocMEGAN_InfileName, &
-     &                label   = "aefOvocMEGAN_InfileName:", &
-     &                default = ' ', __RC__ )
+                     label   = "aefOvocMEGAN_InfileName:", &
+                     default = ' ', __RC__ )
      
       call ESMF_ConfigGetAttribute(config, self%aefMonotMEGAN_InfileName, &
-     &                label   = "aefMonotMEGAN_InfileName:", &
-     &                default = ' ', __RC__ )
+                     label   = "aefMonotMEGAN_InfileName:", &
+                     default = ' ', __RC__ )
      
       call ESMF_ConfigGetAttribute(config, self%soil_infile_name, &
-     &                label   = "soil_infile_name:", &
-     &                default = 'soiltype.asc', __RC__ )
+                     label   = "soil_infile_name:", &
+                     default = 'soiltype.asc', __RC__ )
 
       call ESMF_ConfigGetAttribute(config, self%isopconv_infile_name, &
-     &                label   = "isopconv_infile_name:", &
-     &                default = 'isopconvtable.asc', __RC__ )
+                     label   = "isopconv_infile_name:", &
+                     default = 'isopconvtable.asc', __RC__ )
 
       call ESMF_ConfigGetAttribute(config, self%monotconv_infile_name, &
-     &                label   = "monotconv_infile_name:", &
-     &                default = 'monotconvtable.asc', __RC__ )
+                     label   = "monotconv_infile_name:", &
+                     default = 'monotconvtable.asc', __RC__ )
 
     ! ---------------------------------------------------------------------------------------
     ! lightning_opt = 0 --> default lightning
@@ -519,8 +539,8 @@
     ! ---------------------------------------------------------------------------------------
 
       call ESMF_ConfigGetAttribute(config, self%lightning_opt, &
-     &                label   = "lightning_opt:", &
-     &                default = 0, rc=STATUS )
+                     label   = "lightning_opt:", &
+                     default = 0, rc=STATUS )
       VERIFY_(STATUS)
      
       ! ---------------------------------------------------------------
@@ -539,6 +559,10 @@
          self%emiss_conv_flag = 0
          self%emiss_map(:)    = 0
          self%num_emiss = 0
+!.sds
+         self%num_point_emiss = 0
+         self%num_point_start = 1
+!.sds.end
       else
 
          ! Set the initial value of the list
@@ -548,7 +572,20 @@
          call constructListNames(tempListNames, emissionSpeciesNames)
 
          self%num_emiss = Count (tempListNames(:) /= '')
-
+!
+!.sds.. Is DMS in mechanism? If so, need to turn on emissions
+         ic = getSpeciesIndex('DMS',NOSTOP=.true.)
+         if(ic .gt. 0) then
+           self%GMIDMSEmissIndex = self%num_emiss + 1
+           self%num_emiss = self%num_emiss + 1
+           self%emiss_map(self%num_emiss) = ic
+           self%emissionSpeciesLayers(self%num_emiss) = 1
+!... Add another entry to tempListNames
+           tempListNames(self%num_emiss) = 'DMS'
+         else
+           self%GMIDMSEmissIndex = 0
+         endif
+!.sds.end
 ! MEM
          IF ( self%do_ShipEmission ) THEN
            ! Add 2 special entries
@@ -569,29 +606,64 @@
 
                IF      ( TRIM(sp_name) ==        '*shipO3*'   ) THEN
                  self%emiss_map(ic) = getSpeciesIndex('O3')
-               ELSE IF ( TRIM(sp_name) ==        '*shipHNO3*' ) THEN
+                ELSE IF ( TRIM(sp_name) ==       '*shipHNO3*' ) THEN
                  self%emiss_map(ic) = getSpeciesIndex('HNO3')
-               ELSE
+                ELSE
                  self%emiss_map(ic) = getSpeciesIndex(TRIM(sp_name))
-               END IF
+                ENDIF
 
             END DO
          END IF
-
+!.sds
+!... point emissions filenames and species
+         emissionPointTemp(:) = ''
+         call constructListNames(emissionPointTemp, emissionPointFilenames)
+         self%num_point_emiss = Count (emissionPointTemp(:) .ne. '')
+!... get point emission prelim stuff set up
+         self%num_point_start = self%num_emiss + 1
+         if(self%num_point_emiss .gt. 0) then
+           do n = 1, self%num_point_emiss
+             sp_name = emissionPointTemp(n)
+             ios = INDEX(sp_name,':',.true.)
+             if(ios .gt. 0) then
+               self%emissionPointFilenames(n) = sp_name(ios+1:)
+               sp_name = sp_name(1:ios-1)
+               ios = INDEX(sp_name,':',.true.)
+               self%num_point_type(n) = sp_name(ios+1:)
+               sp_name = sp_name(1:ios-1)
+             else
+               err_msg = 'emissionPointFilenames problem in rc File.'
+               call GmiPrintError (err_msg, .true., ios, self%num_point_emiss, &
+                 self%num_emiss, 0, 0.0d0, 0.0d0)
+             endif
+!... get index number of species
+             ic = getSpeciesIndex(sp_name,NOSTOP=.true.)
+!... add to emissionSpeciesNames, etc
+             self%num_emiss = self%num_emiss + 1
+             self%emissionSpeciesNames(self%num_emiss) = TRIM(sp_name)
+             self%emiss_map(self%num_emiss) = ic
+             self%emissionSpeciesLayers(self%num_emiss) = k2
+           enddo
+         endif
+!.sds.end
          self%num_emiss = count( self%emiss_map(:) > 0 )
-
+!
          IF(MAPL_AM_I_ROOT()) THEN
-          PRINT *," "
-          PRINT *,"Num_emiss=",self%num_emiss
-          PRINT *," "
-          PRINT *,"Emiss_map:"
-          PRINT *, self%emiss_map
-          PRINT *," "
-          PRINT *,"Emission species layers:"
-          PRINT *, self%emissionSpeciesLayers
-          PRINT *," "
-         END IF
-
+           print '('' '')'
+           print '(''Num_emiss='',i5)', self%num_emiss
+           print '(''Num_point_emiss='',i5)', self%num_point_emiss
+           print '('' '')'
+           print '(''EmissNo  InputName                  SpeciesNo   NumOfLevels'')'
+            do ic = 1, self%num_point_start-1
+             print '(i7,2x,a24,2x,i10,2x,i12)', ic, self%emissionSpeciesNames(ic) &
+              , self%emiss_map(ic), self%emissionSpeciesLayers(ic)
+           enddo
+            do ic = self%num_point_start,self%num_emiss
+             print '(i7,2x,a10,1x,a18,1x,i6,2x,i12)', ic, self%num_point_type(ic-self%num_point_start+1) &
+              , self%emissionSpeciesNames(ic), self%emiss_map(ic), self%emissionSpeciesLayers(ic)
+           enddo
+         endif
+!
          if (self%emiss_dust_opt > 0) then
             ! Set the initial value of the list
             tempListNames(:) = ''
@@ -635,36 +707,36 @@
       !###############
 
       if ((numSpecies > MAX_NUM_CONST) .or.  &
-     &    (self%num_emiss   > MAX_NUM_CONST)) then
+          (self%num_emiss   > MAX_NUM_CONST)) then
          err_msg = 'MAX_NUM_CONST problem in rc File.'
          call GmiPrintError (err_msg, .true., 2, numSpecies, &
-     &           self%num_emiss, 0, 0.0d0, 0.0d0)
+                self%num_emiss, 0, 0.0d0, 0.0d0)
       end if
 
       if ((self%emiss_opt /= 0) .and. (self%num_emiss == 0)) then
         err_msg = 'emiss_opt/num_emiss problem.'
         call GmiPrintError  &
-     &    (err_msg, .true., 2, self%emiss_opt, self%num_emiss, 0, 0.0d0, 0.0d0)
+         (err_msg, .true., 2, self%emiss_opt, self%num_emiss, 0, 0.0d0, 0.0d0)
       end if
 
       if ((self%emiss_in_opt == 0) .and. (self%emiss_opt /= 0)) then
         err_msg = 'emiss_in_opt/emiss_opt problem.'
         call GmiPrintError  &
-     &    (err_msg, .true., 2, self%emiss_in_opt, self%emiss_opt, 0, 0.0d0, 0.0d0)
+         (err_msg, .true., 2, self%emiss_in_opt, self%emiss_opt, 0, 0.0d0, 0.0d0)
       end if
          
       if ((self%emiss_timpyr /= 1) .and.  &
-     &    (self%emiss_timpyr /= MONTHS_PER_YEAR)) then
+         (self%emiss_timpyr /= MONTHS_PER_YEAR)) then
         err_msg = 'emiss_timpyr range problem.'
         call GmiPrintError  &
-     &    (err_msg, .true., 1, self%emiss_timpyr, 0, 0, 0.0d0, 0.0d0)
+         (err_msg, .true., 1, self%emiss_timpyr, 0, 0, 0.0d0, 0.0d0)
       end if
       
       if ((self%emiss_in_opt /= 2) .and.  &
-     &    (self%emiss_timpyr == MONTHS_PER_YEAR)) then
+         (self%emiss_timpyr == MONTHS_PER_YEAR)) then
         err_msg = 'emiss_in_opt/emiss_timpyr problem.'
         call GmiPrintError (err_msg, .true., 2, self%emiss_in_opt,             &
-     &                      self%emiss_timpyr, 0, 0.0d0, 0.0d0)
+                           self%emiss_timpyr, 0, 0.0d0, 0.0d0)
       end if     
       
   return
@@ -678,22 +750,22 @@
 !
 ! !INTERFACE:
 !
-      subroutine initReadEmission (self, gmiClock, gmiGrid, mcor, loc_proc, &
-                     pr_diag, rc )
+  subroutine initReadEmission (self, gmiClock, gmiGrid, mcor, loc_proc, &
+                               pr_diag, rc )
 !
 ! !USES:
-      use gcr_mod             , only : READ_GCR_FILE
+  use gcr_mod             , only : READ_GCR_FILE
 
 ! !INPUT PARAMETERS:
-      logical,           intent(in) :: pr_diag
-      integer,           intent(in) :: loc_proc
-      real*8,            intent(in) :: mcor(:,:)
-      type (t_gmiGrid),  intent(in) :: gmiGrid
-      type (t_GmiClock), intent(in) :: gmiClock
+  logical,           intent(in) :: pr_diag
+  integer,           intent(in) :: loc_proc
+  real*8,            intent(in) :: mcor(:,:)
+  type (t_gmiGrid),  intent(in) :: gmiGrid
+  type (t_GmiClock), intent(in) :: gmiClock
 !
 ! !INPUT/OUTPUT PARAMETERS:
-      type (t_Emission), intent(inOut) :: self
-      integer,           intent(out)   :: rc
+  type (t_Emission), intent(inOut) :: self
+  integer,           intent(out)   :: rc
 
 !
 ! !DESCRIPTION:
@@ -701,12 +773,12 @@
 !
 ! !LOCAL VARIABLES:
   character (len=75) :: err_msg
-      integer       :: il, ij, num_emiss, ic
-      real*8        :: units_fac
-      integer       :: nymd, ydummy, thisDay, thisMonth, thisDate, ddummy
-      integer       :: i1, i2, ju1, j2, k1, k2
-      integer       :: i1_gl, i2_gl, ju1_gl, j2_gl, ilong, ilat, ivert
-      logical       :: rootProc
+  integer       :: il, ij, num_emiss, ic
+  real*8        :: units_fac
+  integer       :: nymd, ydummy, thisDay, thisMonth, thisDate, ddummy
+  integer       :: i1, i2, ju1, j2, k1, k2
+  integer       :: i1_gl, i2_gl, ju1_gl, j2_gl, ilong, ilat, ivert
+  logical       :: rootProc
 !
 !EOP
 !----------------------------------------------------------------------
@@ -727,12 +799,12 @@
   rc = 0 
 
   if (self%emiss_dust_opt == 1 ) then  ! GMI sulfurous dust emissions
-     call InitEmissDust (self, mcor, loc_proc, rootProc, &
-                         i1, i2, ju1, j2, i1_gl, ju1_gl, ilong, ilat)
+    call InitEmissDust (self, mcor, loc_proc, rootProc, &
+                        i1, i2, ju1, j2, i1_gl, ju1_gl, ilong, ilat)
   end if
 
   if (self%emiss_aero_opt /= 0 ) then
-     call InitEmissAero (self, mcor, loc_proc, rootProc, &
+    call InitEmissAero (self, mcor, loc_proc, rootProc, &
                         i1, i2, ju1, j2, i1_gl, ju1_gl, ilong, ilat)
   end if
 
@@ -814,7 +886,7 @@
   call Get_tr_source_land (SpeciesConcentration, tr_source_land )
   call Get_tr_source_ocean(SpeciesConcentration, tr_source_ocean)
 
-  call readEmissionResourceFile(self, config, loc_proc, numSpecies, pr_diag, chem_opt)
+  call readEmissionResourceFile(self, config, loc_proc, numSpecies, k2, pr_diag, chem_opt)
   self%idaySoilType = badIndex
   self%firstBiogenicBase = .TRUE.
 
@@ -837,22 +909,22 @@
     call Allocate_xlai2      (self, i1, i2, ju1, j2)
 
     IF(self%doMEGANemission) THEN
-     CALL Allocate_isoLaiCurr  (self, i1, i2, ju1, j2)
-     CALL Allocate_isoLaiPrev  (self, i1, i2, ju1, j2)
-     CALL Allocate_isoLaiNext  (self, i1, i2, ju1, j2)
-     CALL Allocate_isoLaiYear  (self, i1, i2, ju1, j2)
-     CALL Allocate_aefMbo      (self, i1, i2, ju1, j2)
-     CALL Allocate_aefIsop     (self, i1, i2, ju1, j2)
-     CALL Allocate_aefOvoc     (self, i1, i2, ju1, j2)
-     CALL Allocate_aefMonot    (self, i1, i2, ju1, j2)
+      CALL Allocate_isoLaiCurr  (self, i1, i2, ju1, j2)
+      CALL Allocate_isoLaiPrev  (self, i1, i2, ju1, j2)
+      CALL Allocate_isoLaiNext  (self, i1, i2, ju1, j2)
+      CALL Allocate_isoLaiYear  (self, i1, i2, ju1, j2)
+      CALL Allocate_aefMbo      (self, i1, i2, ju1, j2)
+      CALL Allocate_aefIsop     (self, i1, i2, ju1, j2)
+      CALL Allocate_aefOvoc     (self, i1, i2, ju1, j2)
+      CALL Allocate_aefMonot    (self, i1, i2, ju1, j2)
     ELSE
-     CALL Allocate_base_isop  (self, i1, i2, ju1, j2)
-     CALL Allocate_base_monot (self, i1, i2, ju1, j2)
+      CALL Allocate_base_isop  (self, i1, i2, ju1, j2)
+      CALL Allocate_base_monot (self, i1, i2, ju1, j2)
 
-     CALL readIsopreneConvertData &
+      CALL readIsopreneConvertData &
      	      (self%isopconv_infile_name, self%convert_isop, pr_diag, rootProc)
 
-     CALL readMonoterpeneConvertData &
+      CALL readMonoterpeneConvertData &
               (self%monotconv_infile_name, self%convert_monot, pr_diag, rootProc)
     END IF
 
@@ -861,19 +933,19 @@
   end if
 
   IF(rootProc) THEN
-   WRITE(6,*) ' '
+    WRITE(6,*) ' '
   END IF
 
   if (self%emiss_in_opt /= 0) then
-     call Allocate_emissionArray (self, i1, i2, ju1, j2, k1, k2)
+    call Allocate_emissionArray (self, i1, i2, ju1, j2, k1, k2)
   endif
 
-  ! Diagnostic variables: surface and 3D emissions
+! Diagnostic variables: surface and 3D emissions
 
   if (pr_const) then
-     if (pr_surf_emiss) then
-        call Allocate_surf_emiss_out (self, i1, i2, ju1, j2, numSpecies)
-        call Allocate_surf_emiss_out2(self, i1, i2, ju1, j2)
+    if (pr_surf_emiss) then
+      call Allocate_surf_emiss_out (self, i1, i2, ju1, j2, numSpecies)
+      call Allocate_surf_emiss_out2(self, i1, i2, ju1, j2)
    
 !        if ((self%emiss_aero_opt > 0) .or. (self%emiss_dust_opt > 0)) then
 !           call Allocate_aerosolSurfEmissMap(self)
@@ -884,47 +956,47 @@
 !                                       self%ndust)
 !           call Allocate_aerosolSurfEmiss(self, i1, i2, ju1, j2)
 !        endif
-     endif
+    endif
    
-     if (pr_emiss_3d) then
-        call Allocate_emiss_3d_out (self, i1, i2, ju1, j2, k1, k2, numSpecies)
-        if ((self%emiss_aero_opt > 0) .or. (self%emiss_dust_opt > 0)) then
-           call Allocate_aerosolEmiss3D(self, i1, i2, ju1, j2, k1, k2)
-        end if
-     end if
+    if (pr_emiss_3d) then
+      call Allocate_emiss_3d_out (self, i1, i2, ju1, j2, k1, k2, numSpecies)
+      if ((self%emiss_aero_opt > 0) .or. (self%emiss_dust_opt > 0)) then
+        call Allocate_aerosolEmiss3D(self, i1, i2, ju1, j2, k1, k2)
+      end if
+    end if
   end if
 
   if (self%emiss_opt == 2) then
-     call Allocate_emiss_monot (self, i1, i2, ju1, j2)
-     call Allocate_emiss_isop  (self, i1, i2, ju1, j2)
-     call Allocate_emiss_nox   (self, i1, i2, ju1, j2)
+    call Allocate_emiss_monot (self, i1, i2, ju1, j2)
+    call Allocate_emiss_isop  (self, i1, i2, ju1, j2)
+    call Allocate_emiss_nox   (self, i1, i2, ju1, j2)
   endif
 
   if (self%do_ShipEmission) then
-     call Allocate_emiss_o3(self, i1, i2, ju1, j2)
-     call Allocate_emiss_hno3 (self, i1, i2, ju1, j2)
+    call Allocate_emiss_o3(self, i1, i2, ju1, j2)
+    call Allocate_emiss_hno3 (self, i1, i2, ju1, j2)
      
-     self%ship_o3_index   = badIndex
-     self%ship_hno3_index = badIndex
+    self%ship_o3_index   = badIndex
+    self%ship_hno3_index = badIndex
      
-     do ix = 1, numSpecies
-        if ( self%emissionSpeciesNames(ix) == '*shipO3*'   )  self%ship_o3_index   = ix
-        if ( self%emissionSpeciesNames(ix) == '*shipHNO3*' )  self%ship_hno3_index = ix
-     end do
+    do ix = 1, numSpecies
+      if ( self%emissionSpeciesNames(ix) == '*shipO3*'   )  self%ship_o3_index   = ix
+      if ( self%emissionSpeciesNames(ix) == '*shipHNO3*' )  self%ship_hno3_index = ix
+    end do
 
-     if (self%ship_o3_index   == badIndex) stop "shipO3   is not in emissionArray"
-     if (self%ship_hno3_index == badIndex) stop "shipHNO3 is not in emissionArray"
+    if (self%ship_o3_index   == badIndex) stop "shipO3   is not in emissionArray"
+    if (self%ship_hno3_index == badIndex) stop "shipHNO3 is not in emissionArray"
 
   endif
 
   if (self%emiss_aero_opt /= 0) then
-     call Allocate_emissAero   (self, i1, i2, ju1, j2)
-     call Allocate_emissAero_t (self, i1, i2, ju1, j2)
+    call Allocate_emissAero   (self, i1, i2, ju1, j2)
+    call Allocate_emissAero_t (self, i1, i2, ju1, j2)
   endif
 
   if (self%emiss_dust_opt /= 0) then
-     call Allocate_emissDust   (self, i1, i2, ju1, j2)
-     call Allocate_emissDust_t (self, i1, i2, ju1, j2)
+    call Allocate_emissDust   (self, i1, i2, ju1, j2)
+    call Allocate_emissDust_t (self, i1, i2, ju1, j2)
   endif
 
   if (self%lightning_opt == 1) then
@@ -932,12 +1004,12 @@
   endif
 
   if ((self%emiss_dust_opt == 2) .or. (self%emiss_aero_opt == 2))  then
-     call AllocateGocartDerivedVars(i1, i2, ju1, j2, k1, k2)
-     if (self%emiss_aero_opt == 2) call InitializationSeaSalt()
-     if (self%emiss_dust_opt == 2) call InitializationDust   ()
+    call AllocateGocartDerivedVars(i1, i2, ju1, j2, k1, k2)
+    if (self%emiss_aero_opt == 2) call InitializationSeaSalt()
+    if (self%emiss_dust_opt == 2) call InitializationDust   ()
   end if
 
-  ! Set the intial emission array
+! Set the intial emission array
 
   call InitEmiss (self, mcor, tr_source_ocean, tr_source_land, &
                         loc_proc, rootProc, pr_diag, trans_opt, &
@@ -955,23 +1027,21 @@
 ! !INTERFACE:
 !
       subroutine RunEmission(self, SpeciesConcentration, gmiClock, gmiGrid,    &
-     &              loc_proc, cosSolarZenithAngle, latdeg, mcor, mass,         &
-     &              lwis_flags, radswg, TwoMeter_air_temp, surf_rough,         &
-     &              con_precip, tot_precip, ustar, fracCloudCover, kel, pbl,   &
-     &              cmf, press3c, press3e, pctm2, u10m, v10m,                  &
-     &              gwet, gridBoxHeight, mw, IBOC, IBBC, INOC, IFOC, IFBC,     &
-     &              ISSLT1, ISSLT2, ISSLT3, ISSLT4, IFSO2, INSO2, INDMS, IAN,  &
-     &              IMGAS, INO, iisoprene_num, ino_num, ico_num, ipropene_num, &
-     &              ihno3_num, io3_num,  numSpecies, pardif, pardir, T_15_AVG, &
-     &              met_opt, chem_opt, trans_opt, do_aerocom, do_drydep,       &
-     &              pr_diag, pr_const, pr_surf_emiss, pr_emiss_3d,             &
-     &              metdata_name_org, metdata_name_model, tdt4, mixPBL,        &
-     &              light_NO_prod )
+                   loc_proc, cosSolarZenithAngle, latdeg, mcor, mass,         &
+                   lwis_flags, radswg, TwoMeter_air_temp, surf_rough,         &
+                   con_precip, tot_precip, ustar, fracCloudCover, kel, pbl,   &
+                   cmf, press3c, press3e, pctm2, u10m, v10m,                  &
+                   gwet, gridBoxHeight, mw, IBOC, IBBC, INOC, IFOC, IFBC,     &
+                   ISSLT1, ISSLT2, ISSLT3, ISSLT4, IFSO2, INSO2, INDMS, IAN,  &
+                   IMGAS, INO, iisoprene_num, ino_num, ico_num, ipropene_num, &
+                   ihno3_num, io3_num,  numSpecies, pardif, pardir, T_15_AVG, &
+                   met_opt, chem_opt, trans_opt, do_aerocom, do_drydep,       &
+                   pr_diag, pr_const, pr_surf_emiss, pr_emiss_3d,             &
+                   metdata_name_org, metdata_name_model, tdt4, mixPBL,        &
+                   light_NO_prod )
 !
 ! !USES:
-      use GmiTimeControl_mod,         only : t_GmiClock
-      use GmiTimeControl_mod,         only : Get_curGmiDate  , Get_numTimeSteps
-      use GmiArrayBundlePointer_mod,  only : t_GmiArrayBundle
+      use GmiTimeControl_mod, only : Get_numTimeSteps
       use GocartDerivedVariables_mod, only : SetGocartDerivedVars
 !
 ! !INPUT PARAMETERS:
@@ -1029,13 +1099,14 @@
       real*8        :: tr_source_ocean, tr_source_land
       integer       :: rc, tracer_opt
 
-   real, parameter :: MWT_NO       = 30.0064     ! molecular weight of NO
+      real, parameter :: MWT_NO       = 30.0064     ! molecular weight of NO
 
 !
 !EOP
 !------------------------------------------------------------------------------
 !BOC
-      ! Get the GMI grid information
+
+!... Get the GMI grid information
       call Get_i1    (gmiGrid, i1   )
       call Get_i2    (gmiGrid, i2   )
       call Get_ju1   (gmiGrid, ju1  )
@@ -1054,8 +1125,7 @@
       call Get_ilat  (gmiGrid, ilat )
       call Get_ivert (gmiGrid, ivert)
 
-      ! Obtain model time information
-
+!... Obtain model time information
       call Get_curGmiDate  (gmiClock, nymd          )
       call Get_numTimeSteps(gmiClock, num_time_steps)
 
@@ -1075,16 +1145,14 @@
         END IF
      end if
 
-! For GOCART emission
-
+!... For GOCART emission
      if ((self%emiss_dust_opt == 2) .or. (self%emiss_aero_opt == 2))  then
         call SetGocartDerivedVars (u10m, v10m, gwet, press3c, &
-     &                    kel, mass, mcor, gridBoxHeight,     &
-     &                    i1, i2, ju1, j2, k1, k2, ilo, ihi, julo, jhi)
+                         kel, mass, mcor, gridBoxHeight,     &
+                         i1, i2, ju1, j2, k1, k2, ilo, ihi, julo, jhi)
      end if
 
-! Emission control routines
-
+!... Emission control routines
       rootProc = MAPL_AM_I_ROOT()
       call Update_Emiss (gmiGrid, self%idaySoilType, self%firstBiogenicBase,   &
                  lwis_flags, cosSolarZenithAngle, latdeg,                      &
@@ -1123,6 +1191,7 @@
         ALLOCATE(productionNO(i1:i2, ju1:j2, k1:k2))
 
 ! Flip from Top-Down to Bottom-Up:
+
         productionNO(:,:,k1:k2) = light_NO_prod(:,:,k2:k1:-1)
 
 !       NOTE: MAPL_AVOGAD is [molec/kmol]
@@ -1139,14 +1208,14 @@
 
 ! Update NO mole fraction and save the nitrogen density tendency for export
 ! -------------------------------------------------------------------------
-        concentration(ino_num)%pArray3D(:,:,:) = &
-        concentration(ino_num)%pArray3D(:,:,:) + productionNO(:,:,:) * tdt8
+     	concentration(ino_num)%pArray3D(:,:,:) = &
+     	 concentration(ino_num)%pArray3D(:,:,:) + productionNO(:,:,:) * tdt8
 
-        DEALLOCATE(productionNO)
+     	DEALLOCATE(productionNO)
 
-      END IF
+     END IF
 
-      CALL Set_concentration(SpeciesConcentration, concentration)
+     CALL Set_concentration(SpeciesConcentration, concentration)
 
      RETURN
 
@@ -1159,7 +1228,6 @@
   type (t_Emission)   , intent(inOut) :: self
 
   PRINT*,'  Finalize Emission'
-
 
   return
 
@@ -1194,16 +1262,16 @@
 ! ----------------
 
   if (rootProc .AND. pr_diag) then
-     Write (6,*) 'InitEmiss called by ', loc_proc
+    Write (6,*) 'InitEmiss called by ', loc_proc
   end if
 
   num_emiss = self%num_emiss
 
   if (self%emiss_in_opt == 1) then
 
-     do ic = 1, num_emiss
-        self%emissionArray(ic)%pArray3D(:,:,:) = self%emiss_init_val
-     end do
+    do ic = 1, num_emiss
+      self%emissionArray(ic)%pArray3D(:,:,:) = self%emiss_init_val
+    end do
 
   end if
 
@@ -1213,41 +1281,41 @@
 
   if (self%emiss_conv_flag /= 0) then
 
-     if (self%emiss_conv_flag == 1) then
+    if (self%emiss_conv_flag == 1) then
 
-        do ic = 1, num_emiss
-           self%emissionArray(ic)%pArray3D(:,:,:) = &
-              self%emissionArray(ic)%pArray3D(:,:,:) * self%emiss_conv_fac
-        end do
+      do ic = 1, num_emiss
+        self%emissionArray(ic)%pArray3D(:,:,:) = &
+          self%emissionArray(ic)%pArray3D(:,:,:) * self%emiss_conv_fac
+      end do
 
-     else if (self%emiss_conv_flag == 2) then
+    else if (self%emiss_conv_flag == 2) then
 
-        if (trans_opt == 2) then
-	 IF(rootProc) THEN
-	  WRITE(6,*) "GMI initEmis: emiss_conv_flag=2 and trans_opt=2 not allowed."
-         END IF
-	 STOP
-        end if
-
-        units_fac = (1.0d0 / SECPHR) * (KMPM * KMPM)
-
-        do ic = 1, num_emiss
-           do ij = ju1, j2
-              do il = i1, i2
-                 self%emissionArray(ic)%pArray3D(il,ij,:) =  &
-     &           self%emissionArray(ic)%pArray3D(il,ij,:) * mcor(il,ij) * units_fac
-              end do
-          end do
-         end do
-
-        end if
-
+      if (trans_opt == 2) then
+        IF(rootProc) THEN
+          WRITE(6,*) "GMI initEmis: emiss_conv_flag=2 and trans_opt=2 not allowed."
+        END IF
+        STOP
       end if
 
+      units_fac = (1.0d0 / SECPHR) * (KMPM * KMPM)
+
+      do ic = 1, num_emiss
+        do ij = ju1, j2
+          do il = i1, i2
+            self%emissionArray(ic)%pArray3D(il,ij,:) =  &
+              self%emissionArray(ic)%pArray3D(il,ij,:) * mcor(il,ij) * units_fac
+          end do
+        end do
+      end do
+
+    end if
+
+  end if
+
   do ic = 1, num_emiss
-     call CheckRange3d  &
-           ('emissionArray', loc_proc, i1, i2, ju1, j2, k1, k2, &
-            self%emissionArray(ic)%pArray3D(:,:,:), -1.0d20, 1.0d20)
+    call CheckRange3d  &
+      ('emissionArray', loc_proc, i1, i2, ju1, j2, k1, k2, &
+        self%emissionArray(ic)%pArray3D(:,:,:), -1.0d20, 1.0d20)
   end do
   
   return
@@ -1293,9 +1361,9 @@
 !       -----------------------------------------------------------------
 
         do ij = ju1, j2
-           do il = i1, i2
-              self%emissAero_t(il,ij,:,:) = self%emissAero_t(il,ij,:,:) * mcor(il,ij)
-           end do
+          do il = i1, i2
+            self%emissAero_t(il,ij,:,:) = self%emissAero_t(il,ij,:,:) * mcor(il,ij)
+          end do
         end do
 
       end if

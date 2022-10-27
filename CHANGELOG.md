@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Species_Bundle and Species_Array modules are simpler versions of the Chemistry counterparts
+- Capability of multiple GMI mechanisms, choose at compile time
+- New GMI mechanism: StratTrop_HFC_S
+- Add point emission capability for GMI chemical species in GMIchem
 
 ### Changed
 
