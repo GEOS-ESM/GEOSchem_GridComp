@@ -824,6 +824,7 @@ CONTAINS
                                       zsubsteps, sath2so4, su_sareav, &
                                       su_sarea, su_numd, su_reff, &
                                       du_sarea, du_numd, du_reff, &
+                                      ash_sarea, ash_numd, ash_reff, &
                                       ss_sarea, ss_numd, ss_reff, &
                                       sm_sarea, sm_numd, sm_reff, &
                                       mx_sarea, mx_numd, mx_reff
@@ -975,6 +976,12 @@ CONTAINS
    call MAPL_GetPointer(expChem, du_numd,   'CARMA_DUNUMD',   __RC__)
    call MAPL_GetPointer(expChem, du_reff,   'CARMA_DUREFF',   __RC__)
    call MAPL_GetPointer(expChem, mxdu_sed,  'CARMA_MXDUSD',   __RC__)
+!  Ash
+   call MAPL_GetPointer(expChem, ash_sed,    'CARMA_ASHSD',   __RC__)
+   call MAPL_GetPointer(expChem, ash_sarea,  'CARMA_ASHSAREA',  __RC__)
+   call MAPL_GetPointer(expChem, ash_numd,   'CARMA_ASHNUMD',   __RC__)
+   call MAPL_GetPointer(expChem, ash_reff,   'CARMA_ASHREFF',   __RC__)
+   call MAPL_GetPointer(expChem, mxash_sed,  'CARMA_MXASHSD',   __RC__)
 !  Sulfate
    call MAPL_GetPointer(expChem, su_sed,    'CARMA_SUSD',   __RC__)
    call MAPL_GetPointer(expChem, su_nuc,    'CARMA_SUNUC',  __RC__)
@@ -997,8 +1004,6 @@ CONTAINS
 !  Other
    call MAPL_GetPointer(expChem, bc_sed,    'CARMA_BCSD',   __RC__)
    call MAPL_GetPointer(expChem, mxbc_sed,  'CARMA_MXBCSD',   __RC__)
-   call MAPL_GetPointer(expChem, ash_sed,   'CARMA_ASHSD',  __RC__)
-   call MAPL_GetPointer(expChem, mxash_sed, 'CARMA_MXASHSD',   __RC__)
    call MAPL_GetPointer(expChem, substeps,  'CARMA_SUBSTEPS',   __RC__)
    call MAPL_GetPointer(expChem, retries,   'CARMA_RETRIES',    __RC__)
    call MAPL_GetPointer(expChem, zsubsteps, 'CARMA_ZSUBSTEPS',  __RC__)
@@ -1325,6 +1330,8 @@ endif
         if(associated(SU_numd)  .and. igroup .eq. reg%igrp_sulfate) SU_numd(i,j,:)  = SU_numd(i,j,:)  + numd_
         if(associated(DU_sarea) .and. igroup .eq. reg%igrp_dust)    DU_sarea(i,j,:) = DU_sarea(i,j,:) + sarea_
         if(associated(DU_numd)  .and. igroup .eq. reg%igrp_dust)    DU_numd(i,j,:)  = DU_numd(i,j,:)  + numd_
+        if(associated(ASH_sarea) .and. igroup .eq. reg%igrp_ash)    ASH_sarea(i,j,:) = ASH_sarea(i,j,:) + sarea_
+        if(associated(ASH_numd)  .and. igroup .eq. reg%igrp_ash)    ASH_numd(i,j,:)  = ASH_numd(i,j,:)  + numd_
         if(associated(SM_sarea) .and. igroup .eq. reg%igrp_smoke)   SM_sarea(i,j,:) = SM_sarea(i,j,:) + sarea_
         if(associated(SM_numd)  .and. igroup .eq. reg%igrp_smoke)   SM_numd(i,j,:)  = SM_numd(i,j,:)  + numd_
         if(associated(SS_sarea) .and. igroup .eq. reg%igrp_seasalt) SS_sarea(i,j,:) = SS_sarea(i,j,:) + sarea_
@@ -1335,19 +1342,22 @@ endif
       if(associated(MX_reff) .and. igroup .eq. reg%igrp_mixed)      where(reff_den > 0) MX_reff(i,j,:) = reff_num / reff_den
       if(associated(SM_reff) .and. igroup .eq. reg%igrp_smoke)      where(reff_den > 0) SM_reff(i,j,:) = reff_num / reff_den
       if(associated(DU_reff) .and. igroup .eq. reg%igrp_dust)       where(reff_den > 0) DU_reff(i,j,:) = reff_num / reff_den
+      if(associated(ASH_reff) .and. igroup .eq. reg%igrp_ash)       where(reff_den > 0) ASH_reff(i,j,:) = reff_num / reff_den
       if(associated(SU_reff) .and. igroup .eq. reg%igrp_sulfate)    where(reff_den > 0) SU_reff(i,j,:) = reff_num / reff_den
       if(associated(SS_reff) .and. igroup .eq. reg%igrp_seasalt)    where(reff_den > 0) SS_reff(i,j,:) = reff_num / reff_den
      enddo
 
 
 !    Get the number of substeps, retries from CARMA state
-     call CARMASTATE_Get(cstate, rc, nsubstep=substep_int, &
-                         nretry=retry_real, zsubsteps=zsubsteps_)
-     if(associated(substeps))  substeps(i,j)    = REAL(substep_int-last_sub, kind=f)
-     if(associated(retries))   retries(i,j)     = retry_real-last_ret
-     if(associated(zsubsteps)) zsubsteps(i,j,:) = zsubsteps_
-     last_sub = substep_int
-     last_ret = retry_real
+     if(reg%do_grow) then
+      call CARMASTATE_Get(cstate, rc, nsubstep=substep_int, &
+                          nretry=retry_real, zsubsteps=zsubsteps_)
+      if(associated(substeps))  substeps(i,j)    = REAL(substep_int-last_sub, kind=f)
+      if(associated(retries))   retries(i,j)     = retry_real-last_ret
+      if(associated(zsubsteps)) zsubsteps(i,j,:) = zsubsteps_
+      last_sub = substep_int
+      last_ret = retry_real
+     endif
 
 !  Hack -- for now don't change temperature
 !   ! Get the updated temperature.

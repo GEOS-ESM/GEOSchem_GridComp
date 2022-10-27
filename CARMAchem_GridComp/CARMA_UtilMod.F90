@@ -486,7 +486,8 @@ CONTAINS
 
 !   Volcanic Ash
 !   ------------------------------------------------------------------------
-    if(groupname == 'ash' .OR. groupname == 'ASH') then
+   if(  groupname == 'ASH' .or. &
+       ( reg%igrp_ash < 1 .AND. groupname == 'MIXEDP' .AND. elemname  == 'ASH'      ) ) then
 
     if(reg%doing_point_emissions_ash) then
      call Chem_UtilPointEmissions( nymd, reg%point_emissions_srcfilen_ash, &

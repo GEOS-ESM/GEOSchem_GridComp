@@ -376,6 +376,16 @@ CONTAINS
 !
 #include "CARMA_ExportSpec___.h"
 
+
+!   Set the profiling timers
+!   ------------------------
+    CALL MAPL_TimerAdd(GC, NAME="INITIALIZE", RC=STATUS)
+    VERIFY_(STATUS)
+    CALL MAPL_TimerAdd(GC, NAME="RUN", RC=STATUS)
+    VERIFY_(STATUS)
+    CALL MAPL_TimerAdd(GC, NAME="FINALIZE", RC=STATUS)
+    VERIFY_(STATUS)
+
 !   Generic Set Services
 !   --------------------
     call MAPL_GenericSetServices ( GC, RC=STATUS )
@@ -487,13 +497,12 @@ CONTAINS
 !  -----------------------------------
    call MAPL_GetObjectFromGC ( GC, ggState, __RC__)
 
+   call MAPL_TimerOn(ggState, 'TOTAL')
    call MAPL_TimerOn(ggState, 'INITIALIZE')
 
 !  Initialize GEOS Generic
 !  ------------------------
    call MAPL_GenericInitialize ( gc, import, export, clock,  __RC__ )
-
-   call MAPL_TimerOn(ggState, 'TOTAL')
 
 !  Get parameters from gc and clock
 !  --------------------------------
@@ -750,6 +759,11 @@ CONTAINS
 
 #endif
 
+!  Stop timers
+!  -----------
+   CALL MAPL_TimerOff(ggState, "INITIALIZE")
+   CALL MAPL_TimerOff(ggState, "TOTAL")
+
 
     RETURN_(ESMF_SUCCESS)
 
@@ -816,6 +830,7 @@ CONTAINS
 
    type(ESMF_State)                :: internal
    type(MAPL_VarSpec), pointer     :: InternalSpec(:)
+   type(MAPL_MetaComp), pointer    :: ggState      ! GEOS Generic State
 
 
    real, pointer, dimension(:,:)   :: LATS
@@ -831,6 +846,15 @@ CONTAINS
 !  ---------------------------------------
    call ESMF_GridCompGet( GC, NAME=COMP_NAME, __RC__)
    Iam = trim(COMP_NAME) // '::Run_'
+
+!  Get my internal MAPL_Generic state
+!  -----------------------------------
+   CALL MAPL_GetObjectFromGC(GC, ggState, __RC__)
+
+!  Start a comprehensive timer
+!  ---------------------------
+   CALL MAPL_TimerOn(ggState, "TOTAL")
+   CALL MAPL_TimerOn(ggState, "RUN")
 
 !  Get pointers to IMPORT/EXPORT/INTERNAL states 
 !  ---------------------------------------------
@@ -866,6 +890,9 @@ CONTAINS
    call CARMA_ComputeDiags  ( gcCARMA, qa, import, export, nymd, nhms, &
                               cdt, STATUS )
    VERIFY_(STATUS)
+
+   CALL MAPL_TimerOff(ggState, "RUN")
+   CALL MAPL_TimerOff(ggState, "TOTAL")
 
    RETURN_(ESMF_SUCCESS)
 
@@ -921,13 +948,24 @@ CONTAINS
    integer                         :: nymd, nhms  ! time
    real                            :: cdt         ! chemistry timestep (secs)
 
-    type(CARMAchem_state), pointer     :: state
+   type(CARMAchem_state), pointer     :: state
+
+   type(MAPL_MetaComp), pointer    :: ggState      ! GEOS Generic State
 
 !  Get my name and set-up traceback handle
 !  ---------------------------------------
    call ESMF_GridCompGet( GC, NAME=COMP_NAME, RC=STATUS )
    VERIFY_(STATUS)
    Iam = trim(COMP_NAME) // 'Finalize_'
+
+!  Get my internal MAPL_Generic state
+!  -----------------------------------
+   CALL MAPL_GetObjectFromGC(GC, ggState, RC=STATUS)
+
+!  Start timers
+!  ------------
+   CALL MAPL_TimerOn(ggState, "TOTAL")
+   CALL MAPL_TimerOn(ggState, "FINALIZE")
 
 !  Get ESMF parameters from gc and clock
 !  -------------------------------------
@@ -939,11 +977,6 @@ CONTAINS
 !  -----------------
    call CARMA_GridCompFinalize ( gcCARMA, import, export, &
                                  nymd, nhms, cdt, STATUS )
-   VERIFY_(STATUS)
-
-!  Finalize MAPL Generic.  Atanas says, "Do not deallocate foreign objects."
-!  -------------------------------------------------------------------------
-   call MAPL_GenericFinalize ( gc, import, export, clock,  RC=STATUS )
    VERIFY_(STATUS)
 
 !  Destroy Mie Tables
@@ -963,6 +996,16 @@ CONTAINS
 !  --------------------
    call registry_destroy_ (state%CARMAreg)
    deallocate ( state%CARMAreg, state%qa, state%gcCARMA, state%chemReg, __STAT__)
+   VERIFY_(STATUS)
+
+!  Stop timers
+!  -----------
+   CALL MAPL_TimerOff(ggState, "FINALIZE")
+   CALL MAPL_TimerOff(ggState, "TOTAL")
+
+!  Finalize MAPL Generic.  Atanas says, "Do not deallocate foreign objects."
+!  -------------------------------------------------------------------------
+   call MAPL_GenericFinalize ( gc, import, export, clock,  RC=STATUS )
    VERIFY_(STATUS)
 
    RETURN_(ESMF_SUCCESS)

@@ -113,7 +113,7 @@ point_emissions_srcfilen_sulfate: /dev/null
   SS_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SS.v3_3.nbin=22.nc
   BC_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SU.v1.nbin=22.nc
   SM_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SM.v1.nbin=22.nc
-  SU_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SU.v6.nbin=22.nc
+  SU_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SU.v1.nbin=22.nc
 
 # The following code is the initial registry
   COMP_NAME: CARMA
@@ -246,6 +246,9 @@ point_emissions_srcfilen_sulfate: /dev/null
   CARMA_ASHFLUXV    | kg m-1 s-1  | xy  |   |    |   |   |     |      | Ash column v-wind mass flux
   CARMA_ASHMASS     | kg kg-1     | xyz | C |    |   |   |     |      | Ash Mass Mixing Ratio 
   CARMA_ASHCONC     | kg m-3      | xyz | C |    |   |   |     |      | Ash Mass Concentration
+  CARMA_ASHSAREA    | m-2 m-3     | xyz | C |    |   |   |     |      | Ash Total Surace Area Density
+  CARMA_ASHNUMD     | m-3         | xyz | C |    |   |   |     |      | Ash Total Number Density
+  CARMA_ASHREFF     | m           | xyz | C |    |   |   |     |      | Ash Particle Effective Radius 
   CARMA_MXASHEM     | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Ash emission flux
   CARMA_MXASHDP     | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Ash deposition flux
   CARMA_MXASHSD     | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Ash sedimentation flux
