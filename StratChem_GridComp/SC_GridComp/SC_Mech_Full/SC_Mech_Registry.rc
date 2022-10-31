@@ -1,0 +1,110 @@
+#------------------------------------------------------------------------
+#BOP
+#
+# !RESOURCE:  SC_Mech_Full/SC_Mech_Registry.rc
+# 
+# !HELP:
+#
+#  This is for the Full mechanism.
+#
+#  The StratChem Mechanism Registry resource file provides names and units
+#  for the species in the StratChem chemical mechanism. There is a different
+#  file for each different mechanism, and the choice of mechanism
+#  occurs at compile time.
+#
+#  This file is read at run-time.  It provides the list of StratChem species
+#  that GEOS will use for the INTERNAL state.
+#
+#  This file has 2 tables:  the SC table holds the chemical species
+#  that are transported; the XX table holds the non-transported species.
+#
+# !REVISION HISTORY:
+#
+#  2022-10-28  manyin   Derived this file from Chem_Registry.rc
+#
+#-----------------------------------------------------------------------
+#EOP
+
+SC_table::
+
+# Name     Units        Long Name
+# -----    ------       --------------------------------
+OX         'mol mol-1'  Stratospheric odd oxygen
+NOX        'mol mol-1'  Odd nitrogen
+HNO3       'mol mol-1'  Nitric acid
+N2O5       'mol mol-1'  Dinitrogen pentoxide
+HO2NO2     'mol mol-1'  Peroxynitric acid
+CLONO2     'mol mol-1'  Chlorine nitrate
+CLX        'mol mol-1'  Odd chlorine
+HCL        'mol mol-1'  Hydrochloric acid
+HOCL       'mol mol-1'  Hypochlorous acid
+H2O2       'mol mol-1'  Hydrogen peroxide
+BRX        'mol mol-1'  Odd bromine
+N2O        'mol mol-1'  Nitrous oxide
+CL2        'mol mol-1'  Molecular chlorine
+OCLO       'mol mol-1'  Chlorine dioxide
+BRCL       'mol mol-1'  Bromine chloride
+HBR        'mol mol-1'  Hydrogen bromide
+BRONO2     'mol mol-1'  Bromine nitrate
+CH4        'mol mol-1'  Methane
+HOBR       'mol mol-1'  Hypobromous acid
+CH3OOH     'mol mol-1'  Methyl hydroperoxide
+CO         'mol mol-1'  Carbon monoxide
+HNO3COND   'mol mol-1'  Condensed nitric acid
+CFC11      'mol mol-1'  CFC-11 (CCl3F)
+CFC12      'mol mol-1'  CFC-12 (CCl2F2)
+CFC113     'mol mol-1'  CFC-113 (CCl2FCClF2)
+CFC114     'mol mol-1'  CFC-114 (C2Cl2F4)
+CFC115     'mol mol-1'  CFC-115 (C2ClF5)
+HCFC22     'mol mol-1'  HCFC-22 (CHClF2)
+HCFC141B   'mol mol-1'  HCFC-141b (CH3CCl2F)
+HCFC142B   'mol mol-1'  HCFC-142b (CH3CClF2)
+CCL4       'mol mol-1'  Carbon tetrachloride
+CH3CCL3    'mol mol-1'  Methyl chloroform
+CH3CL      'mol mol-1'  Methyl chloride
+CH3BR      'mol mol-1'  Methyl bromide
+H1301      'mol mol-1'  Halon 1301 (CBrF3)
+H1211      'mol mol-1'  Halon 1211 (CBrClF2)
+H1202      'mol mol-1'  Halon 1202 (CBrF3)
+H2402      'mol mol-1'  Halon 2402 (C2Br2F4)
+CHBR3      'mol mol-1'  Bromoform
+CH2BR2     'mol mol-1'  Dibromomethane
+CH2BRCL    'mol mol-1'  CH2BRCL
+CHBRCL2    'mol mol-1'  CHBRCL2
+CHBR2CL    'mol mol-1'  CHBR2CL
+HFC23      'mol mol-1'  CHF3
+HFC32      'mol mol-1'  CH2F2
+HFC125     'mol mol-1'  CHF2CF3
+HFC134A    'mol mol-1'  CH2FCF3
+HFC143A    'mol mol-1'  CF3CH3
+HFC152A    'mol mol-1'  CH2CHF2
+CO2        'mol mol-1'  Lat-depedent CO2
+SF6        'mol mol-1'  Sulfur hexafluoride
+AOADAYS     days        Age-of-air
+::
+
+
+XX_table::
+
+# Name     Units        Long Name
+# -----    ------       --------------------------------
+O3CHEM     'mol mol-1'  Ozone from chemistry
+O3P        'mol mol-1'  Atomic oxygen in the ground state
+O1D        'mol mol-1'  Atomic oxygen in the first excited state
+N          'mol mol-1'  Atomic nitrogen
+NO         'mol mol-1'  Nitric oxide
+NO2        'mol mol-1'  Nitrogen dioxide
+NO3        'mol mol-1'  Nitrogen trioxide
+HATOMIC    'mol mol-1'  Atomic hydrogen
+OH         'mol mol-1'  Hydroxyl radical
+HO2        'mol mol-1'  Hydroperoxyl radical
+CL         'mol mol-1'  Atomic chlorine
+CLO        'mol mol-1'  Chlorine monoxide
+BRO        'mol mol-1'  Bromine monoxide
+BR         'mol mol-1'  Atomic bromine
+CL2O2      'mol mol-1'  Dichlorine peroxide
+CH2O       'mol mol-1'  Formaldehyde
+CH3O2      'mol mol-1'  Methyl peroxide
+RO3OX      "none"       Ozone-to-odd oxygen ratio
+::
+

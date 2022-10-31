@@ -1,6 +1,8 @@
 #==================================
 # Resource file for GMI parameters.
 #==================================
+# Mechanism: StratTrop_HFC_S
+#==================================
 
         #############################
         # Where is the GMI mechanism?

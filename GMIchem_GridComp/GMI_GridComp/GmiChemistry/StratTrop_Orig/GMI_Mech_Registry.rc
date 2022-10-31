@@ -5,6 +5,8 @@
 # 
 # !HELP:
 #
+#  For the mechanism   StratTrop_Orig
+#
 #  The GMI Mechanism Registry resource file provides names and units
 #  for the species in the GMI chemical mechanism. There is a different
 #  file for each different mechanism, and the choice of mechanism

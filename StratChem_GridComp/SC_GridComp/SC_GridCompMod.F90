@@ -17,6 +17,8 @@
 
    USE ESMF
    USE MAPL
+   USE Runtime_RegistryMod
+   USE Species_BundleMod
    USE Chem_Mod 	     ! Chemistry Base Class
    USE Chem_StateMod	     ! Chemistry State
    USE Chem_ConstMod, only: undefval => undef         ! Constants !
@@ -77,7 +79,7 @@
 !  Disabling transport is accomplished by running the stratchem_setup script in src/Applications/GEOSgcm_App.
 !  It reconfigures the Chem_Registry.rc in the experiment RC directory by assigning the 19 species to the 
 !  non-transported (XX) variable list when it detects the presence of -DREDUCED in the GNUmakefile. The 
-!  above is necessary since the chemistry GC relies on the registries to order the species in the w_c bundle.
+!  above is necessary since the chemistry GC relies on the registries to order the species in the bsc bundle.
 !  
 !  It is important to note that the import and export states, ExtData, and SC_GridComp.rc are not altered
 !  by -DREDUCED. However, the content of most export states related to the 19 species, tendencies and reaction
@@ -266,7 +268,7 @@
     REAL :: siglbs = 1.6
     REAL :: rlbs = 0.1
 
-! Species placement in w_c%qa(ic)%data3d 
+! Species placement in bsc%qa(ic)%data3d 
 ! --------------------------------------
     INTEGER ::    iAoA,      iCO2,    iSF6
     INTEGER :: 	   iOx,      iNOx,    iHNO3,     iN2O5
@@ -366,7 +368,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE SC_GridCompInitialize ( gcSC, w_c, impChem, expChem, &
+   SUBROUTINE SC_GridCompInitialize ( gcSC, scReg, bsc, impChem, expChem, &
                                       nymd, nhms, tdt, rc )
 
 ! !USES:
@@ -375,7 +377,8 @@ CONTAINS
 
 ! !INPUT PARAMETERS:
 
-   TYPE(Chem_Bundle), INTENT(inout) :: w_c  ! Chemical tracer fields, delp, +
+   TYPE(Runtime_Registry), POINTER :: scReg ! Names  of StratChem Species
+   TYPE(Species_Bundle),   POINTER :: bsc   ! Bundle of StratChem Species
    INTEGER, INTENT(IN) :: nymd, nhms	    ! time
    REAL,    INTENT(IN) :: tdt		    ! chemistry time step (secs)
 
@@ -597,79 +600,79 @@ CONTAINS
 ! ---------------------
    CALL I90_release()
 
-! Obtain species order in w_c%qa(ic)%data3d from the registry
+! Obtain species order in bsc%qa(ic)%data3d from the registry
 ! -----------------------------------------------------------
-   DO i = w_c%reg%i_SC,w_c%reg%j_xx
-    IF(TRIM(w_c%reg%vname(i)) ==      "OX") gcSC%iOx = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "NOX") gcSC%iNOx = i
-    IF(TRIM(w_c%reg%vname(i)) ==    "HNO3") gcSC%iHNO3 = i
-    IF(TRIM(w_c%reg%vname(i)) ==    "N2O5") gcSC%iN2O5 = i
-    IF(TRIM(w_c%reg%vname(i)) ==  "HO2NO2") gcSC%iHO2NO2 = i
-    IF(TRIM(w_c%reg%vname(i)) ==  "CLONO2") gcSC%iClONO2 = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "CLX") gcSC%iClx = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "HCL") gcSC%iHCl = i
-    IF(TRIM(w_c%reg%vname(i)) ==    "HOCL") gcSC%iHOCl = i
-    IF(TRIM(w_c%reg%vname(i)) ==    "H2O2") gcSC%iH2O2 = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "BRX") gcSC%iBrx = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "N2O") gcSC%iN2O = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "CL2") gcSC%iCl2 = i
-    IF(TRIM(w_c%reg%vname(i)) ==    "OCLO") gcSC%iOClO = i
-    IF(TRIM(w_c%reg%vname(i)) ==    "BRCL") gcSC%iBrCl = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "HBR") gcSC%iHBr = i
-    IF(TRIM(w_c%reg%vname(i)) ==  "BRONO2") gcSC%iBrONO2 = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "CH4") gcSC%iCH4 = i
-    IF(TRIM(w_c%reg%vname(i)) ==    "HOBR") gcSC%iHOBr = i
-    IF(TRIM(w_c%reg%vname(i)) ==  "CH3OOH") gcSC%iCH3OOH = i
-    IF(TRIM(w_c%reg%vname(i)) ==      "CO") gcSC%iCO = i
-    IF(TRIM(w_c%reg%vname(i)) =="HNO3COND") gcSC%iHNO3c = i
-    IF(TRIM(w_c%reg%vname(i)) ==   "CFC11") gcSC%iF11 = i
-    IF(TRIM(w_c%reg%vname(i)) ==   "CFC12") gcSC%iF12 = i
-    IF(TRIM(w_c%reg%vname(i)) ==  "CFC113") gcSC%iF113 = i
-    IF(TRIM(w_c%reg%vname(i)) ==  "CFC114") gcSC%iF114 = i
-    IF(TRIM(w_c%reg%vname(i)) ==  "CFC115") gcSC%iF115 = i
-    IF(TRIM(w_c%reg%vname(i)) ==  "HCFC22") gcSC%iHCFC22 = i
-    IF(TRIM(w_c%reg%vname(i)) =="HCFC141B") gcSC%iHCFC141b = i
-    IF(TRIM(w_c%reg%vname(i)) =="HCFC142B") gcSC%iHCFC142b = i
-    IF(TRIM(w_c%reg%vname(i)) ==    "CCL4") gcSC%iCCl4 = i
-    IF(TRIM(w_c%reg%vname(i)) == "CH3CCL3") gcSC%iCH3CCl3 = i
-    IF(TRIM(w_c%reg%vname(i)) ==   "CH3CL") gcSC%iCH3Cl = i
-    IF(TRIM(w_c%reg%vname(i)) ==   "CH3BR") gcSC%iCH3Br = i
-    IF(TRIM(w_c%reg%vname(i)) ==   "H1301") gcSC%iH1301 = i
-    IF(TRIM(w_c%reg%vname(i)) ==   "H1211") gcSC%iH1211 = i
-    IF(TRIM(w_c%reg%vname(i)) ==   "H1202") gcSC%iH1202 = i
-    IF(TRIM(w_c%reg%vname(i)) ==   "H2402") gcSC%iH2402 = i
-    IF(TRIM(w_c%reg%vname(i)) ==   "CHBR3") gcSC%iCHBr3 = i
-    IF(TRIM(w_c%reg%vname(i)) ==  "CH2BR2") gcSC%iCH2Br2 = i
-    IF(TRIM(w_c%reg%vname(i)) == "CH2BRCL") gcSC%iCH2BrCl = i
-    IF(TRIM(w_c%reg%vname(i)) == "CHBR2CL") gcSC%iCHBr2Cl = i
-    IF(TRIM(w_c%reg%vname(i)) == "CHBRCL2") gcSC%iCHBrCl2 = i
-    IF(TRIM(w_c%reg%vname(i)) ==   "HFC23") gcSC%iHFC23 = i
-    IF(TRIM(w_c%reg%vname(i)) ==   "HFC32") gcSC%iHFC32 = i
-    IF(TRIM(w_c%reg%vname(i)) ==  "HFC125") gcSC%iHFC125 = i
-    IF(TRIM(w_c%reg%vname(i)) == "HFC134A") gcSC%iHFC134a = i
-    IF(TRIM(w_c%reg%vname(i)) == "HFC143A") gcSC%iHFC143a = i
-    IF(TRIM(w_c%reg%vname(i)) == "HFC152A") gcSC%iHFC152a = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "CO2") gcSC%iCO2 = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "SF6") gcSC%iSF6 = i
-    IF(TRIM(w_c%reg%vname(i)) == "AOADAYS") gcSC%iAoA = i
-    IF(TRIM(w_c%reg%vname(i)) ==  "O3CHEM") gcSC%iO3 = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "O3P") gcSC%iO3p = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "O1D") gcSC%iO1d = i
-    IF(TRIM(w_c%reg%vname(i)) ==       "N") gcSC%iN = i
-    IF(TRIM(w_c%reg%vname(i)) ==      "NO") gcSC%iNO = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "NO2") gcSC%iNO2 = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "NO3") gcSC%iNO3 = i
-    IF(TRIM(w_c%reg%vname(i)) == "HATOMIC") gcSC%iH = i
-    IF(TRIM(w_c%reg%vname(i)) ==      "OH") gcSC%iOH = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "HO2") gcSC%iHO2 = i
-    IF(TRIM(w_c%reg%vname(i)) ==      "CL") gcSC%iCl = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "CLO") gcSC%iClO = i
-    IF(TRIM(w_c%reg%vname(i)) ==     "BRO") gcSC%iBrO = i
-    IF(TRIM(w_c%reg%vname(i)) ==      "BR") gcSC%iBr = i
-    IF(TRIM(w_c%reg%vname(i)) ==   "CL2O2") gcSC%iCl2O2 = i
-    IF(TRIM(w_c%reg%vname(i)) ==    "CH2O") gcSC%iCH2O = i
-    IF(TRIM(w_c%reg%vname(i)) ==   "CH3O2") gcSC%iCH3O2 = i
-    IF(TRIM(w_c%reg%vname(i)) ==   "RO3OX") gcSC%irO3Ox = i
+   DO i = 1,scReg%nq
+    IF(TRIM(scReg%vname(i)) ==      "OX") gcSC%iOx = i
+    IF(TRIM(scReg%vname(i)) ==     "NOX") gcSC%iNOx = i
+    IF(TRIM(scReg%vname(i)) ==    "HNO3") gcSC%iHNO3 = i
+    IF(TRIM(scReg%vname(i)) ==    "N2O5") gcSC%iN2O5 = i
+    IF(TRIM(scReg%vname(i)) ==  "HO2NO2") gcSC%iHO2NO2 = i
+    IF(TRIM(scReg%vname(i)) ==  "CLONO2") gcSC%iClONO2 = i
+    IF(TRIM(scReg%vname(i)) ==     "CLX") gcSC%iClx = i
+    IF(TRIM(scReg%vname(i)) ==     "HCL") gcSC%iHCl = i
+    IF(TRIM(scReg%vname(i)) ==    "HOCL") gcSC%iHOCl = i
+    IF(TRIM(scReg%vname(i)) ==    "H2O2") gcSC%iH2O2 = i
+    IF(TRIM(scReg%vname(i)) ==     "BRX") gcSC%iBrx = i
+    IF(TRIM(scReg%vname(i)) ==     "N2O") gcSC%iN2O = i
+    IF(TRIM(scReg%vname(i)) ==     "CL2") gcSC%iCl2 = i
+    IF(TRIM(scReg%vname(i)) ==    "OCLO") gcSC%iOClO = i
+    IF(TRIM(scReg%vname(i)) ==    "BRCL") gcSC%iBrCl = i
+    IF(TRIM(scReg%vname(i)) ==     "HBR") gcSC%iHBr = i
+    IF(TRIM(scReg%vname(i)) ==  "BRONO2") gcSC%iBrONO2 = i
+    IF(TRIM(scReg%vname(i)) ==     "CH4") gcSC%iCH4 = i
+    IF(TRIM(scReg%vname(i)) ==    "HOBR") gcSC%iHOBr = i
+    IF(TRIM(scReg%vname(i)) ==  "CH3OOH") gcSC%iCH3OOH = i
+    IF(TRIM(scReg%vname(i)) ==      "CO") gcSC%iCO = i
+    IF(TRIM(scReg%vname(i)) =="HNO3COND") gcSC%iHNO3c = i
+    IF(TRIM(scReg%vname(i)) ==   "CFC11") gcSC%iF11 = i
+    IF(TRIM(scReg%vname(i)) ==   "CFC12") gcSC%iF12 = i
+    IF(TRIM(scReg%vname(i)) ==  "CFC113") gcSC%iF113 = i
+    IF(TRIM(scReg%vname(i)) ==  "CFC114") gcSC%iF114 = i
+    IF(TRIM(scReg%vname(i)) ==  "CFC115") gcSC%iF115 = i
+    IF(TRIM(scReg%vname(i)) ==  "HCFC22") gcSC%iHCFC22 = i
+    IF(TRIM(scReg%vname(i)) =="HCFC141B") gcSC%iHCFC141b = i
+    IF(TRIM(scReg%vname(i)) =="HCFC142B") gcSC%iHCFC142b = i
+    IF(TRIM(scReg%vname(i)) ==    "CCL4") gcSC%iCCl4 = i
+    IF(TRIM(scReg%vname(i)) == "CH3CCL3") gcSC%iCH3CCl3 = i
+    IF(TRIM(scReg%vname(i)) ==   "CH3CL") gcSC%iCH3Cl = i
+    IF(TRIM(scReg%vname(i)) ==   "CH3BR") gcSC%iCH3Br = i
+    IF(TRIM(scReg%vname(i)) ==   "H1301") gcSC%iH1301 = i
+    IF(TRIM(scReg%vname(i)) ==   "H1211") gcSC%iH1211 = i
+    IF(TRIM(scReg%vname(i)) ==   "H1202") gcSC%iH1202 = i
+    IF(TRIM(scReg%vname(i)) ==   "H2402") gcSC%iH2402 = i
+    IF(TRIM(scReg%vname(i)) ==   "CHBR3") gcSC%iCHBr3 = i
+    IF(TRIM(scReg%vname(i)) ==  "CH2BR2") gcSC%iCH2Br2 = i
+    IF(TRIM(scReg%vname(i)) == "CH2BRCL") gcSC%iCH2BrCl = i
+    IF(TRIM(scReg%vname(i)) == "CHBR2CL") gcSC%iCHBr2Cl = i
+    IF(TRIM(scReg%vname(i)) == "CHBRCL2") gcSC%iCHBrCl2 = i
+    IF(TRIM(scReg%vname(i)) ==   "HFC23") gcSC%iHFC23 = i
+    IF(TRIM(scReg%vname(i)) ==   "HFC32") gcSC%iHFC32 = i
+    IF(TRIM(scReg%vname(i)) ==  "HFC125") gcSC%iHFC125 = i
+    IF(TRIM(scReg%vname(i)) == "HFC134A") gcSC%iHFC134a = i
+    IF(TRIM(scReg%vname(i)) == "HFC143A") gcSC%iHFC143a = i
+    IF(TRIM(scReg%vname(i)) == "HFC152A") gcSC%iHFC152a = i
+    IF(TRIM(scReg%vname(i)) ==     "CO2") gcSC%iCO2 = i
+    IF(TRIM(scReg%vname(i)) ==     "SF6") gcSC%iSF6 = i
+    IF(TRIM(scReg%vname(i)) == "AOADAYS") gcSC%iAoA = i
+    IF(TRIM(scReg%vname(i)) ==  "O3CHEM") gcSC%iO3 = i
+    IF(TRIM(scReg%vname(i)) ==     "O3P") gcSC%iO3p = i
+    IF(TRIM(scReg%vname(i)) ==     "O1D") gcSC%iO1d = i
+    IF(TRIM(scReg%vname(i)) ==       "N") gcSC%iN = i
+    IF(TRIM(scReg%vname(i)) ==      "NO") gcSC%iNO = i
+    IF(TRIM(scReg%vname(i)) ==     "NO2") gcSC%iNO2 = i
+    IF(TRIM(scReg%vname(i)) ==     "NO3") gcSC%iNO3 = i
+    IF(TRIM(scReg%vname(i)) == "HATOMIC") gcSC%iH = i
+    IF(TRIM(scReg%vname(i)) ==      "OH") gcSC%iOH = i
+    IF(TRIM(scReg%vname(i)) ==     "HO2") gcSC%iHO2 = i
+    IF(TRIM(scReg%vname(i)) ==      "CL") gcSC%iCl = i
+    IF(TRIM(scReg%vname(i)) ==     "CLO") gcSC%iClO = i
+    IF(TRIM(scReg%vname(i)) ==     "BRO") gcSC%iBrO = i
+    IF(TRIM(scReg%vname(i)) ==      "BR") gcSC%iBr = i
+    IF(TRIM(scReg%vname(i)) ==   "CL2O2") gcSC%iCl2O2 = i
+    IF(TRIM(scReg%vname(i)) ==    "CH2O") gcSC%iCH2O = i
+    IF(TRIM(scReg%vname(i)) ==   "CH3O2") gcSC%iCH3O2 = i
+    IF(TRIM(scReg%vname(i)) ==   "RO3OX") gcSC%irO3Ox = i
    END DO
 
 ! The expanded ODS and GHG reaction set is the default
@@ -1203,7 +1206,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE SC_GridCompRun ( gcSC, w_c, impChem, expChem, nymd, nhms, &
+   SUBROUTINE SC_GridCompRun ( gcSC, scReg, bsc, impChem, expChem, nymd, nhms, &
                                tdt, rc )
 
 ! !USES:
@@ -1213,7 +1216,8 @@ CONTAINS
 ! !INPUT/OUTPUT PARAMETERS:
 
    TYPE(SC_GridComp), INTENT(inout) :: gcSC   ! Grid Component
-   TYPE(Chem_Bundle), INTENT(inout) :: w_c    ! Chemical tracer fields   
+   TYPE(Runtime_Registry), POINTER :: scReg ! Names  of StratChem Species
+   TYPE(Species_Bundle),   POINTER :: bsc   ! Bundle of StratChem Species
 
 ! !INPUT PARAMETERS:
 
@@ -1318,7 +1322,6 @@ CONTAINS
    INTEGER :: examineDt
    INTEGER :: iterCount
    INTEGER :: k1Strat, kRev
-   INTEGER :: nStratBegin, nStratEnd, numSpecies
    INTEGER :: passNumber, requiredPasses
 
    REAL :: dt, qmax, qmin, requiredDt, szan, tropp, tx, rdistsq
@@ -1407,6 +1410,12 @@ CONTAINS
 
 ! Total column density
    REAL(KIND=DBL) ::   mcfColumn, ctcColumn
+
+! For calls to the old GOCART wet removal routine:
+   TYPE(Chem_Array), pointer     :: qa_single(:)
+
+
+
 
 ! Grid specs from Chem_Bundle%grid
 ! --------------------------------
@@ -1507,7 +1516,7 @@ CONTAINS
 
   IF(gcSC%verbose) THEN
    ic = gcSC%irO3Ox
-   CALL pmaxmin('SC:    TROPP ', w_c%qa(ic)%data3d(:,:,km), qmin, qmax, iXj, 1, 0.01 )
+   CALL pmaxmin('SC:    TROPP ', bsc%qa(ic)%data3d(:,:,km), qmin, qmax, iXj, 1, 0.01 )
    CALL pmaxmin('SC:  	    T ', T,	   qmin, qmax, iXj, km,   1. )
    CALL pmaxmin('SC: 	    Q ', specHum,  qmin, qmax, iXj, km,   1. )
    CALL pmaxmin('SC:    QCTOT ', qctot,	   qmin, qmax, iXj, km,   1. )
@@ -1779,7 +1788,7 @@ CONTAINS
 ! Initialize tendency diagnostics
 ! -------------------------------
   IF(ASSOCIATED(dQdt)) dQdt(i1:i2,j1:j2,1:km) = specHum(i1:i2,j1:j2,1:km)
-  IF(ASSOCIATED(dOxdt)) dOxdt(i1:i2,j1:j2,1:km) = w_c%qa(gcSC%iOx)%data3d(i1:i2,j1:j2,1:km)
+  IF(ASSOCIATED(dOxdt)) dOxdt(i1:i2,j1:j2,1:km) = bsc%qa(gcSC%iOx)%data3d(i1:i2,j1:j2,1:km)
 
 ! Periodically update the climatological boundary conditions
 ! ----------------------------------------------------------
@@ -1817,17 +1826,11 @@ CONTAINS
    gcSC%BCnymd = nymd
   END IF BCUpdates
 
-! Location of SC species in w_c%qa
-! --------------------------------
-  nStratBegin =  w_c%reg%i_SC
-  nStratEnd =  w_c%reg%j_XX
-  numSpecies = nStratEnd-nStratBegin+1
-
 ! Except for the ozone-to-odd oxygen ratio, constituents should be non-negative
 ! -----------------------------------------------------------------------------
-  DO i = nStratBegin,nStratEnd-1
-   WHERE(w_c%qa(i)%data3d(i1:i2,j1:j2,1:km) <= MIN_VALUE ) &
-         w_c%qa(i)%data3d(i1:i2,j1:j2,1:km)  = MIN_VALUE
+  DO i = 1,scReg%nq-1
+   WHERE(bsc%qa(i)%data3d(i1:i2,j1:j2,1:km) <= MIN_VALUE ) &
+         bsc%qa(i)%data3d(i1:i2,j1:j2,1:km)  = MIN_VALUE
   END DO
   WHERE(specHum(i1:i2,j1:j2,1:km) <= 1.00E-25) specHum(i1:i2,j1:j2,1:km) = MIN_VALUE
 
@@ -1866,7 +1869,7 @@ CONTAINS
 ! -------------------------------------------------------
     tropo(:) = .FALSE.
     ic = gcSC%irO3Ox
-    tropp = w_c%qa(ic)%data3d(i,j,km)*0.01
+    tropp = bsc%qa(ic)%data3d(i,j,km)*0.01
     WHERE(edgePress(1:km) >= tropp) tropo(1:km) = .TRUE.
 
 ! Find layer number at base of stratosphere, and verify tropo=.TRUE. at each layer below
@@ -1881,8 +1884,8 @@ CONTAINS
 
 ! Ozone and NO number densities
 ! -----------------------------
-    O3profile(1:km) = w_c%qa(gcSC%iO3)%data3d(i,j,km:1:-1)*numDens(1:km)
-    NOprofile(1:km) = w_c%qa(gcSC%iNO)%data3d(i,j,km:1:-1)*numDens(1:km)
+    O3profile(1:km) = bsc%qa(gcSC%iO3)%data3d(i,j,km:1:-1)*numDens(1:km)
+    NOprofile(1:km) = bsc%qa(gcSC%iNO)%data3d(i,j,km:1:-1)*numDens(1:km)
 
 ! Overhead ozone and molecular oxygen
 ! -----------------------------------
@@ -1942,8 +1945,8 @@ CONTAINS
 ! cellDepth is in unit of cm
      mcfColumn=0.0
      ctcColumn=0.0
-     mcfprofile(1:km) = w_c%qa(gcSC%iCH3CCl3)%data3d(i,j,km:1:-1)*numDens(1:km)*cellDepth(1:km)
-     ctcprofile(1:km) = w_c%qa(gcSC%iCCl4)%data3d(i,j,km:1:-1)*numDens(1:km)*cellDepth(1:km)
+     mcfprofile(1:km) = bsc%qa(gcSC%iCH3CCl3)%data3d(i,j,km:1:-1)*numDens(1:km)*cellDepth(1:km)
+     ctcprofile(1:km) = bsc%qa(gcSC%iCCl4)%data3d(i,j,km:1:-1)*numDens(1:km)*cellDepth(1:km)
      DO k=1,km
       mcfColumn=mcfColumn+mcfprofile(k)
       ctcColumn=ctcColumn+ctcprofile(k)
@@ -2009,14 +2012,14 @@ CONTAINS
      VERIFY_(status)
      ratesBase(1:gcSC%numphoto) = aj(1:gcSC%numphoto)
      ratesBase(gcSC%numphoto+1:gcSC%numphoto+gcSC%numreacs) = ak(k,1:gcSC%numreacs)
-     ALLOCATE(speciesBase(numSpecies+1),STAT=status)
+     ALLOCATE(speciesBase(scReg%nq+1),STAT=status)
      VERIFY_(status)
      CALL storeBaseChem(ox,nox,hno3,n2o5,ho2no2,clono2,clx,hcl,hocl,h2o2,brx,n2o,cl2, &
                  oclo,brcl,hbr,brono2,ch4,hobr,ch3ooh,co,h2o,hno3c,h2oc,f11,f12,f113, &
                 f114,f115,ccl4,hcfc22,hcfc141b,hcfc142b,chbr3,ch2br2,ch2brcl,chbrcl2, &
                           chbr2cl,hfc23,hfc32,hfc125,hfc134a,hfc143a,hfc152a,co2,sf6, &
                ch3ccl3,ch3cl,ch3br,h1301,h1211,h1202,h2402,o3,o3p,o1d,n,no,no2,no3,h, & 
-              oh,ho2,cl,clo,bro,br,cl2o2,ch2o,ch3o2,box_ro3ox,speciesBase,numSpecies)
+              oh,ho2,cl,clo,bro,br,cl2o2,ch2o,ch3o2,box_ro3ox,speciesBase,scReg%nq)
 
 ! Variables needed for chemistry time step length analysis.  These are changed
 ! within the while-do loop if the given time step is too long to ensure stability.
@@ -2044,7 +2047,7 @@ CONTAINS
                  f114,f115,ccl4,hcfc22,hcfc141b,hcfc142b,chbr3,ch2br2,ch2brcl,chbrcl2, &
                           chbr2cl,hfc23,hfc32,hfc125,hfc134a,hfc143a,hfc152a,co2,sf6,  &
                 ch3ccl3,ch3cl,ch3br,h1301,h1211,h1202,h2402,o3,o3p,o1d,n,no,no2,no3,h, &           
-               oh,ho2,cl,clo,bro,br,cl2o2,ch2o,ch3o2,box_ro3ox,speciesBase,numSpecies)
+               oh,ho2,cl,clo,bro,br,cl2o2,ch2o,ch3o2,box_ro3ox,speciesBase,scReg%nq)
         passNumber = 1
        END IF
 
@@ -2177,10 +2180,10 @@ CONTAINS
 ! Sedimentation of HNO3c PSC particles. MOIST handles H2O sedimentation.
 ! ----------------------------------------------------------------------
     IF(gcSC%doPSCs .AND. gcSC%doSediment) THEN
-     HNO3cProfile(1:km) = w_c%qa(gcSC%iHNO3c)%data3d(i,j,km:1:-1)
+     HNO3cProfile(1:km) = bsc%qa(gcSC%iHNO3c)%data3d(i,j,km:1:-1)
      CALL sediment(km,tdt,cellDepth,numDens,kel,HNO3CProfile,H2OcProfile, &
                    rmedsts,rmednat,rmedice,denssts,vfall,gcSC)
-     w_c%qa(gcSC%iHNO3c)%data3d(i,j,km:1:-1) = HNO3cProfile(1:km)
+     bsc%qa(gcSC%iHNO3c)%data3d(i,j,km:1:-1) = HNO3cProfile(1:km)
     END IF
 
 ! Move to next cell on this processor
@@ -2191,23 +2194,41 @@ CONTAINS
 !  Large-scale Wet Removal
 !  --------------------------
 
+   allocate(qa_single(1),stat=status)
+   VERIFY_(status)
+   allocate(qa_single(1)%data3d(i1:i2,j1:j2,km),stat=status )
+   VERIFY_(status)
+
+   qa_single(1)%fwet = 0.0
+
+   qa_single(1)%data3d(:,:,:) = bsc%qa(gcSC%iHBr)%data3d(:,:,:)
+
    KIN = .TRUE.
-   call WetRemovalGOCART(i1, i2, j1, j2, km, gcSC%iHBr, gcSC%iHBr, tdt, 'bromine', KIN,  &
-              w_c%qa, ple, t, rhoa, pfllsan, pfilsan, &
+   call WetRemovalGOCART(i1, i2, j1, j2, km, 1, 1, tdt, 'bromine', KIN,  &
+              qa_single, ple, t, rhoa, pfllsan, pfilsan, &
               precc, precl, fluxout, rc )
+
+   qa_single(1)%data3d(:,:,:) = bsc%qa(gcSC%iHOBr)%data3d(:,:,:)
  
    KIN = .TRUE.
-   call WetRemovalGOCART(i1, i2, j1, j2, km, gcSC%iHOBr, gcSC%iHOBr, tdt, 'bromine', KIN,  &
-              w_c%qa, ple, t, rhoa, pfllsan, pfilsan, &
+   call WetRemovalGOCART(i1, i2, j1, j2, km, 1, 1, tdt, 'bromine', KIN,  &
+              qa_single, ple, t, rhoa, pfllsan, pfilsan, &
               precc, precl, fluxout, rc )
+
+   qa_single(1)%data3d(:,:,:) = bsc%qa(gcSC%iBrONO2)%data3d(:,:,:)
 
    KIN = .TRUE.
-   call WetRemovalGOCART(i1, i2, j1, j2, km, gcSC%iBrONO2, gcSC%iBrONO2, tdt, 'bromine', KIN,  &
-              w_c%qa, ple, t, rhoa, pfllsan, pfilsan, &
+   call WetRemovalGOCART(i1, i2, j1, j2, km, 1, 1, tdt, 'bromine', KIN,  &
+              qa_single, ple, t, rhoa, pfllsan, pfilsan, &
               precc, precl, fluxout, rc )
 
-!   call pmaxmin('HBr: q_wet', w_c%qa(iHBr)%data3d(i1:i2,j1:j2,1:km), qmin, qmax, &
+!   call pmaxmin('HBr: q_wet', bsc%qa(iHBr)%data3d(i1:i2,j1:j2,1:km), qmin, qmax, &
 !                    iXj, km, 1. )
+
+   deallocate(qa_single(1)%data3d,stat=status )
+   VERIFY_(status)
+   deallocate(qa_single,stat=status)
+   VERIFY_(status)
 
 ! Convective-scale Wet Removal
    KIN = .TRUE.
@@ -2234,17 +2255,17 @@ CONTAINS
    do k = 1, km
     dtrain_(:,:,k)  = dtrain(:,:,km-k+1)
     qccu_(:,:,k)    = qccu(:,:,km-k+1)
-    delp_(:,:,k)    = w_c%delp(:,:,km-k+1)/100.
-    airmass_(:,:,k) = w_c%delp(:,:,km-k+1)/MAPL_GRAV*area_
+    delp_(:,:,k)    = bsc%delp(:,:,km-k+1)/100.
+    airmass_(:,:,k) = bsc%delp(:,:,km-k+1)/MAPL_GRAV*area_
     airmol_(:,:,k)  = airmass_(:,:,k)*1000./28.966
-    delz_(:,:,k)    = w_c%delp(:,:,km-k+1)/MAPL_GRAV/rhoa(:,:,km-k+1)
+    delz_(:,:,k)    = bsc%delp(:,:,km-k+1)/MAPL_GRAV/rhoa(:,:,km-k+1)
     tmpu_(:,:,k)    = T(:,:,km-k+1)
    enddo
 
    do k = 1, km
-     tc_(:,:,k,1)   = w_c%qa(gcSC%iHBr)%data3d(:,:,km-k+1)
-     tc_(:,:,k,2)   = w_c%qa(gcSC%iHOBr)%data3d(:,:,km-k+1)
-     tc_(:,:,k,3)   = w_c%qa(gcSC%iBrONO2)%data3d(:,:,km-k+1)  
+     tc_(:,:,k,1)   = bsc%qa(gcSC%iHBr)%data3d(:,:,km-k+1)
+     tc_(:,:,k,2)   = bsc%qa(gcSC%iHOBr)%data3d(:,:,km-k+1)
+     tc_(:,:,k,3)   = bsc%qa(gcSC%iBrONO2)%data3d(:,:,km-k+1)  
    enddo
 
    call set_vud(i1, i2, j1, j2, km, frlake_, frocean_, frseaice_, cmfmc_, qccu_, &
@@ -2257,9 +2278,9 @@ CONTAINS
 ! Return adjusted tracer to mixing ratio.
 ! ---------------------------------------
    do k = 1, km
-     w_c%qa(gcSC%iHBr)%data3d(:,:,km-k+1) = tc_(:,:,k,1)
-     w_c%qa(gcSC%iHOBr)%data3d(:,:,km-k+1) = tc_(:,:,k,2)
-     w_c%qa(gcSC%iBrONO2)%data3d(:,:,km-k+1) = tc_(:,:,k,3)
+     bsc%qa(gcSC%iHBr)%data3d(:,:,km-k+1) = tc_(:,:,k,1)
+     bsc%qa(gcSC%iHOBr)%data3d(:,:,km-k+1) = tc_(:,:,k,2)
+     bsc%qa(gcSC%iBrONO2)%data3d(:,:,km-k+1) = tc_(:,:,k,3)
    enddo
 
 
@@ -2286,17 +2307,17 @@ CONTAINS
 !  Ozone mass mixing ratio
 !  -----------------------
    IF(ASSOCIATED(ozone)) &
-    ozone(i1:i2,j1:j2,1:km) = w_c%qa(gcSC%iO3)%data3d(i1:i2,j1:j2,1:km) * MAPL_O3MW/MAPL_AIRMW 
+    ozone(i1:i2,j1:j2,1:km) = bsc%qa(gcSC%iO3)%data3d(i1:i2,j1:j2,1:km) * MAPL_O3MW/MAPL_AIRMW 
 
 !  Ozone mole fraction in ppm
 !  --------------------------
    IF(ASSOCIATED(o3ppmv)) &
-    o3ppmv(i1:i2,j1:j2,1:km) = w_c%qa(gcSC%iO3)%data3d(i1:i2,j1:j2,1:km) * 1.00E+06
+    o3ppmv(i1:i2,j1:j2,1:km) = bsc%qa(gcSC%iO3)%data3d(i1:i2,j1:j2,1:km) * 1.00E+06
 
 !  Odd-oxygen tendency, volume mixing ratio s^{-1}
 !  -----------------------------------------------
    IF(ASSOCIATED(dOxdt)) dOxdt(i1:i2,j1:j2,1:km) = &
-    (w_c%qa(gcSC%iOx)%data3d(i1:i2,j1:j2,1:km) - dOxdt(i1:i2,j1:j2,1:km))/tdt
+    (bsc%qa(gcSC%iOx)%data3d(i1:i2,j1:j2,1:km) - dOxdt(i1:i2,j1:j2,1:km))/tdt
 
 ! Specific humidity tendency due to chemistry
 ! -------------------------------------------
@@ -3091,7 +3112,7 @@ CONTAINS
    IF (lwi == 0) THEN
     cf = mcfcol/dZ/(2.96438e+09*0.6648)
     ch3ccl3 = ch3ccl3 - cf*tdt
-    mcfocnloss(i,j) = (ch3ccl3-w_c%qa(gcSC%iCH3CCl3)%data3d(i,j,km)*m)*cx*mwtCH3CCl3
+    mcfocnloss(i,j) = (ch3ccl3-bsc%qa(gcSC%iCH3CCl3)%data3d(i,j,km)*m)*cx*mwtCH3CCl3
    END IF
 
 ! Implement surface loss at the ocean surface layer for CCl4 for
@@ -3103,7 +3124,7 @@ CONTAINS
    IF (lwi == 0) THEN
     cf = ctccol/dZ/(5.23498e+09*0.6648)
     ccl4 = ccl4 - cf*tdt
-    ctcocnloss(i,j) = (ccl4-w_c%qa(gcSC%iCCl4)%data3d(i,j,km)*m)*cx*mwtCCl4
+    ctcocnloss(i,j) = (ccl4-bsc%qa(gcSC%iCCl4)%data3d(i,j,km)*m)*cx*mwtCCl4
    END IF
 
 ! Implement surface loss at the land surface layer for CCl4 for
@@ -3114,7 +3135,7 @@ CONTAINS
    IF (lwi == 1) THEN
     cf = ctccol/dZ/(2.52287e+10*0.2938)
     ccl4 = ccl4 - cf*tdt
-    ctclndloss(i,j) = (ccl4-w_c%qa(gcSC%iCCl4)%data3d(i,j,km)*m)*cx*mwtCCl4
+    ctclndloss(i,j) = (ccl4-bsc%qa(gcSC%iCCl4)%data3d(i,j,km)*m)*cx*mwtCCl4
    END IF
 
 ! Add surface emissions
@@ -3156,30 +3177,30 @@ CONTAINS
  
 ! Find the flux per unit time
 ! ---------------------------
-      n2oflx(i,j) = (      n2o-w_c%qa(     gcSC%iN2O)%data3d(i,j,km)*m)*cx*mwtN2O
-      ch4flx(i,j) = (      ch4-w_c%qa(     gcSC%iCH4)%data3d(i,j,km)*m)*cx*mwtCH4
-      f11flx(i,j) = (      f11-w_c%qa(     gcSC%iF11)%data3d(i,j,km)*m)*cx*mwtF11
-      f12flx(i,j) = (      f12-w_c%qa(     gcSC%iF12)%data3d(i,j,km)*m)*cx*mwtF12
+      n2oflx(i,j) = (      n2o-bsc%qa(     gcSC%iN2O)%data3d(i,j,km)*m)*cx*mwtN2O
+      ch4flx(i,j) = (      ch4-bsc%qa(     gcSC%iCH4)%data3d(i,j,km)*m)*cx*mwtCH4
+      f11flx(i,j) = (      f11-bsc%qa(     gcSC%iF11)%data3d(i,j,km)*m)*cx*mwtF11
+      f12flx(i,j) = (      f12-bsc%qa(     gcSC%iF12)%data3d(i,j,km)*m)*cx*mwtF12
 
-     f113flx(i,j) = (     f113-w_c%qa(    gcSC%iF113)%data3d(i,j,km)*m)*cx*mwtF113
-   hcfc22flx(i,j) = (   hcfc22-w_c%qa(  gcSC%iHCFC22)%data3d(i,j,km)*m)*cx*mwtHCFC22
+     f113flx(i,j) = (     f113-bsc%qa(    gcSC%iF113)%data3d(i,j,km)*m)*cx*mwtF113
+   hcfc22flx(i,j) = (   hcfc22-bsc%qa(  gcSC%iHCFC22)%data3d(i,j,km)*m)*cx*mwtHCFC22
 
 #ifndef REDUCED
- hcfc141bflx(i,j) = ( hcfc141b-w_c%qa(gcSC%iHCFC141b)%data3d(i,j,km)*m)*cx*mwtHCFC141b
- hcfc142bflx(i,j) = ( hcfc142b-w_c%qa(gcSC%iHCFC142b)%data3d(i,j,km)*m)*cx*mwtHCFC142b
+ hcfc141bflx(i,j) = ( hcfc141b-bsc%qa(gcSC%iHCFC141b)%data3d(i,j,km)*m)*cx*mwtHCFC141b
+ hcfc142bflx(i,j) = ( hcfc142b-bsc%qa(gcSC%iHCFC142b)%data3d(i,j,km)*m)*cx*mwtHCFC142b
 #endif
 
-     ccl4flx(i,j) = (     ccl4-w_c%qa(    gcSC%iCCl4)%data3d(i,j,km)*m)*cx*mwtCCl4
-      mcfflx(i,j) = (  ch3ccl3-w_c%qa( gcSC%iCH3CCl3)%data3d(i,j,km)*m)*cx*mwtCH3CCl3
+     ccl4flx(i,j) = (     ccl4-bsc%qa(    gcSC%iCCl4)%data3d(i,j,km)*m)*cx*mwtCCl4
+      mcfflx(i,j) = (  ch3ccl3-bsc%qa( gcSC%iCH3CCl3)%data3d(i,j,km)*m)*cx*mwtCH3CCl3
 
-    ch3clflx(i,j) = (    ch3cl-w_c%qa(   gcSC%iCH3Cl)%data3d(i,j,km)*m)*cx*mwtCH3Cl
-    ch3brflx(i,j) = (    ch3br-w_c%qa(   gcSC%iCH3Br)%data3d(i,j,km)*m)*cx*mwtCH3Br
-    h1301flx(i,j) = (    h1301-w_c%qa(   gcSC%iH1301)%data3d(i,j,km)*m)*cx*mwtH1301
-    h1211flx(i,j) = (    h1211-w_c%qa(   gcSC%iH1211)%data3d(i,j,km)*m)*cx*mwtH1211
+    ch3clflx(i,j) = (    ch3cl-bsc%qa(   gcSC%iCH3Cl)%data3d(i,j,km)*m)*cx*mwtCH3Cl
+    ch3brflx(i,j) = (    ch3br-bsc%qa(   gcSC%iCH3Br)%data3d(i,j,km)*m)*cx*mwtCH3Br
+    h1301flx(i,j) = (    h1301-bsc%qa(   gcSC%iH1301)%data3d(i,j,km)*m)*cx*mwtH1301
+    h1211flx(i,j) = (    h1211-bsc%qa(   gcSC%iH1211)%data3d(i,j,km)*m)*cx*mwtH1211
 
 #ifndef REDUCED
-    h1202flx(i,j) = (    h1202-w_c%qa(   gcSC%iH1202)%data3d(i,j,km)*m)*cx*mwtH1202
-    h2402flx(i,j) = (    h2402-w_c%qa(   gcSC%iH2402)%data3d(i,j,km)*m)*cx*mwtH2402
+    h1202flx(i,j) = (    h1202-bsc%qa(   gcSC%iH1202)%data3d(i,j,km)*m)*cx*mwtH1202
+    h2402flx(i,j) = (    h2402-bsc%qa(   gcSC%iH2402)%data3d(i,j,km)*m)*cx*mwtH2402
 #endif
   
   RETURN
@@ -3200,147 +3221,147 @@ CONTAINS
   
    CASE(1)
  
-           ox = w_c%qa(      gcSC%iOx)%data3d(i,j,kRev)*m
-          nox = w_c%qa(     gcSC%iNOx)%data3d(i,j,kRev)*m
-         hno3 = w_c%qa(    gcSC%iHNO3)%data3d(i,j,kRev)*m
-         n2o5 = w_c%qa(    gcSC%iN2O5)%data3d(i,j,kRev)*m
-       ho2no2 = w_c%qa(  gcSC%iHO2NO2)%data3d(i,j,kRev)*m
-       clono2 = w_c%qa(  gcSC%iClONO2)%data3d(i,j,kRev)*m
-          clx = w_c%qa(     gcSC%iClx)%data3d(i,j,kRev)*m
-          hcl = w_c%qa(     gcSC%iHCl)%data3d(i,j,kRev)*m
-         hocl = w_c%qa(    gcSC%iHOCl)%data3d(i,j,kRev)*m
-         h2o2 = w_c%qa(    gcSC%iH2O2)%data3d(i,j,kRev)*m
-          brx = w_c%qa(     gcSC%iBrx)%data3d(i,j,kRev)*m
-          n2o = w_c%qa(     gcSC%iN2O)%data3d(i,j,kRev)*m
-          cl2 = w_c%qa(     gcSC%iCl2)%data3d(i,j,kRev)*m
-         oclo = w_c%qa(    gcSC%iOClO)%data3d(i,j,kRev)*m
-         brcl = w_c%qa(    gcSC%iBrCl)%data3d(i,j,kRev)*m
-          hbr = w_c%qa(     gcSC%iHBr)%data3d(i,j,kRev)*m
-       brono2 = w_c%qa(  gcSC%iBrONO2)%data3d(i,j,kRev)*m
-          ch4 = w_c%qa(     gcSC%iCH4)%data3d(i,j,kRev)*m
-         hobr = w_c%qa(    gcSC%iHOBr)%data3d(i,j,kRev)*m
-       ch3ooh = w_c%qa(  gcSC%iCH3OOH)%data3d(i,j,kRev)*m
-           co = w_c%qa(      gcSC%iCO)%data3d(i,j,kRev)*m
-        hno3c = w_c%qa(   gcSC%iHNO3c)%data3d(i,j,kRev)*m
-          f11 = w_c%qa(     gcSC%iF11)%data3d(i,j,kRev)*m
-          f12 = w_c%qa(     gcSC%iF12)%data3d(i,j,kRev)*m
-         f113 = w_c%qa(    gcSC%iF113)%data3d(i,j,kRev)*m
-         f114 = w_c%qa(    gcSC%iF114)%data3d(i,j,kRev)*m
-         f115 = w_c%qa(    gcSC%iF115)%data3d(i,j,kRev)*m
-       hcfc22 = w_c%qa(  gcSC%iHCFC22)%data3d(i,j,kRev)*m
-     hcfc141b = w_c%qa(gcSC%iHCFC141b)%data3d(i,j,kRev)*m
-     hcfc142b = w_c%qa(gcSC%iHCFC142b)%data3d(i,j,kRev)*m
-         ccl4 = w_c%qa(    gcSC%iCCl4)%data3d(i,j,kRev)*m
-      ch3ccl3 = w_c%qa( gcSC%iCH3CCl3)%data3d(i,j,kRev)*m
-        ch3cl = w_c%qa(   gcSC%iCH3Cl)%data3d(i,j,kRev)*m
-        ch3br = w_c%qa(   gcSC%iCH3Br)%data3d(i,j,kRev)*m
-        h1301 = w_c%qa(   gcSC%iH1301)%data3d(i,j,kRev)*m
-        h1211 = w_c%qa(   gcSC%iH1211)%data3d(i,j,kRev)*m
-        h1202 = w_c%qa(   gcSC%iH1202)%data3d(i,j,kRev)*m
-        h2402 = w_c%qa(   gcSC%iH2402)%data3d(i,j,kRev)*m
-        chbr3 = w_c%qa(   gcSC%iCHBr3)%data3d(i,j,kRev)*m
-       ch2br2 = w_c%qa(  gcSC%iCH2Br2)%data3d(i,j,kRev)*m
-      ch2brcl = w_c%qa( gcSC%iCH2BrCl)%data3d(i,j,kRev)*m
-      chbrcl2 = w_c%qa( gcSC%iCHBrCl2)%data3d(i,j,kRev)*m
-      chbr2cl = w_c%qa( gcSC%iCHBr2Cl)%data3d(i,j,kRev)*m
-        hfc23 = w_c%qa(   gcSC%iHFC23)%data3d(i,j,kRev)*m
-        hfc32 = w_c%qa(   gcSC%iHFC32)%data3d(i,j,kRev)*m
-       hfc125 = w_c%qa(  gcSC%iHFC125)%data3d(i,j,kRev)*m
-      hfc134a = w_c%qa( gcSC%iHFC134a)%data3d(i,j,kRev)*m
-      hfc143a = w_c%qa( gcSC%iHFC143a)%data3d(i,j,kRev)*m
-      hfc152a = w_c%qa( gcSC%iHFC152a)%data3d(i,j,kRev)*m
-          co2 = w_c%qa(     gcSC%iCO2)%data3d(i,j,kRev)*m
-          sf6 = w_c%qa(     gcSC%iSF6)%data3d(i,j,kRev)*m
-           o3 = w_c%qa(      gcSC%iO3)%data3d(i,j,kRev)*m
-          o3p = w_c%qa(     gcSC%iO3p)%data3d(i,j,kRev)*m
-          o1d = w_c%qa(     gcSC%iO1d)%data3d(i,j,kRev)*m
-            n = w_c%qa(       gcSC%iN)%data3d(i,j,kRev)*m
-           no = w_c%qa(      gcSC%iNO)%data3d(i,j,kRev)*m
-          no2 = w_c%qa(     gcSC%iNO2)%data3d(i,j,kRev)*m
-          no3 = w_c%qa(     gcSC%iNO3)%data3d(i,j,kRev)*m
-            h = w_c%qa(       gcSC%iH)%data3d(i,j,kRev)*m
-           oh = w_c%qa(      gcSC%iOH)%data3d(i,j,kRev)*m
-          ho2 = w_c%qa(     gcSC%iHO2)%data3d(i,j,kRev)*m
-           cl = w_c%qa(      gcSC%iCl)%data3d(i,j,kRev)*m
-          clo = w_c%qa(     gcSC%iClO)%data3d(i,j,kRev)*m
-          bro = w_c%qa(     gcSC%iBrO)%data3d(i,j,kRev)*m
-           br = w_c%qa(      gcSC%iBr)%data3d(i,j,kRev)*m
-        cl2o2 = w_c%qa(   gcSC%iCl2O2)%data3d(i,j,kRev)*m
-         ch2o = w_c%qa(    gcSC%iCH2O)%data3d(i,j,kRev)*m
-        ch3o2 = w_c%qa(   gcSC%iCH3O2)%data3d(i,j,kRev)*m
-    box_ro3ox = w_c%qa(   gcSC%irO3Ox)%data3d(i,j,kRev)
+           ox = bsc%qa(      gcSC%iOx)%data3d(i,j,kRev)*m
+          nox = bsc%qa(     gcSC%iNOx)%data3d(i,j,kRev)*m
+         hno3 = bsc%qa(    gcSC%iHNO3)%data3d(i,j,kRev)*m
+         n2o5 = bsc%qa(    gcSC%iN2O5)%data3d(i,j,kRev)*m
+       ho2no2 = bsc%qa(  gcSC%iHO2NO2)%data3d(i,j,kRev)*m
+       clono2 = bsc%qa(  gcSC%iClONO2)%data3d(i,j,kRev)*m
+          clx = bsc%qa(     gcSC%iClx)%data3d(i,j,kRev)*m
+          hcl = bsc%qa(     gcSC%iHCl)%data3d(i,j,kRev)*m
+         hocl = bsc%qa(    gcSC%iHOCl)%data3d(i,j,kRev)*m
+         h2o2 = bsc%qa(    gcSC%iH2O2)%data3d(i,j,kRev)*m
+          brx = bsc%qa(     gcSC%iBrx)%data3d(i,j,kRev)*m
+          n2o = bsc%qa(     gcSC%iN2O)%data3d(i,j,kRev)*m
+          cl2 = bsc%qa(     gcSC%iCl2)%data3d(i,j,kRev)*m
+         oclo = bsc%qa(    gcSC%iOClO)%data3d(i,j,kRev)*m
+         brcl = bsc%qa(    gcSC%iBrCl)%data3d(i,j,kRev)*m
+          hbr = bsc%qa(     gcSC%iHBr)%data3d(i,j,kRev)*m
+       brono2 = bsc%qa(  gcSC%iBrONO2)%data3d(i,j,kRev)*m
+          ch4 = bsc%qa(     gcSC%iCH4)%data3d(i,j,kRev)*m
+         hobr = bsc%qa(    gcSC%iHOBr)%data3d(i,j,kRev)*m
+       ch3ooh = bsc%qa(  gcSC%iCH3OOH)%data3d(i,j,kRev)*m
+           co = bsc%qa(      gcSC%iCO)%data3d(i,j,kRev)*m
+        hno3c = bsc%qa(   gcSC%iHNO3c)%data3d(i,j,kRev)*m
+          f11 = bsc%qa(     gcSC%iF11)%data3d(i,j,kRev)*m
+          f12 = bsc%qa(     gcSC%iF12)%data3d(i,j,kRev)*m
+         f113 = bsc%qa(    gcSC%iF113)%data3d(i,j,kRev)*m
+         f114 = bsc%qa(    gcSC%iF114)%data3d(i,j,kRev)*m
+         f115 = bsc%qa(    gcSC%iF115)%data3d(i,j,kRev)*m
+       hcfc22 = bsc%qa(  gcSC%iHCFC22)%data3d(i,j,kRev)*m
+     hcfc141b = bsc%qa(gcSC%iHCFC141b)%data3d(i,j,kRev)*m
+     hcfc142b = bsc%qa(gcSC%iHCFC142b)%data3d(i,j,kRev)*m
+         ccl4 = bsc%qa(    gcSC%iCCl4)%data3d(i,j,kRev)*m
+      ch3ccl3 = bsc%qa( gcSC%iCH3CCl3)%data3d(i,j,kRev)*m
+        ch3cl = bsc%qa(   gcSC%iCH3Cl)%data3d(i,j,kRev)*m
+        ch3br = bsc%qa(   gcSC%iCH3Br)%data3d(i,j,kRev)*m
+        h1301 = bsc%qa(   gcSC%iH1301)%data3d(i,j,kRev)*m
+        h1211 = bsc%qa(   gcSC%iH1211)%data3d(i,j,kRev)*m
+        h1202 = bsc%qa(   gcSC%iH1202)%data3d(i,j,kRev)*m
+        h2402 = bsc%qa(   gcSC%iH2402)%data3d(i,j,kRev)*m
+        chbr3 = bsc%qa(   gcSC%iCHBr3)%data3d(i,j,kRev)*m
+       ch2br2 = bsc%qa(  gcSC%iCH2Br2)%data3d(i,j,kRev)*m
+      ch2brcl = bsc%qa( gcSC%iCH2BrCl)%data3d(i,j,kRev)*m
+      chbrcl2 = bsc%qa( gcSC%iCHBrCl2)%data3d(i,j,kRev)*m
+      chbr2cl = bsc%qa( gcSC%iCHBr2Cl)%data3d(i,j,kRev)*m
+        hfc23 = bsc%qa(   gcSC%iHFC23)%data3d(i,j,kRev)*m
+        hfc32 = bsc%qa(   gcSC%iHFC32)%data3d(i,j,kRev)*m
+       hfc125 = bsc%qa(  gcSC%iHFC125)%data3d(i,j,kRev)*m
+      hfc134a = bsc%qa( gcSC%iHFC134a)%data3d(i,j,kRev)*m
+      hfc143a = bsc%qa( gcSC%iHFC143a)%data3d(i,j,kRev)*m
+      hfc152a = bsc%qa( gcSC%iHFC152a)%data3d(i,j,kRev)*m
+          co2 = bsc%qa(     gcSC%iCO2)%data3d(i,j,kRev)*m
+          sf6 = bsc%qa(     gcSC%iSF6)%data3d(i,j,kRev)*m
+           o3 = bsc%qa(      gcSC%iO3)%data3d(i,j,kRev)*m
+          o3p = bsc%qa(     gcSC%iO3p)%data3d(i,j,kRev)*m
+          o1d = bsc%qa(     gcSC%iO1d)%data3d(i,j,kRev)*m
+            n = bsc%qa(       gcSC%iN)%data3d(i,j,kRev)*m
+           no = bsc%qa(      gcSC%iNO)%data3d(i,j,kRev)*m
+          no2 = bsc%qa(     gcSC%iNO2)%data3d(i,j,kRev)*m
+          no3 = bsc%qa(     gcSC%iNO3)%data3d(i,j,kRev)*m
+            h = bsc%qa(       gcSC%iH)%data3d(i,j,kRev)*m
+           oh = bsc%qa(      gcSC%iOH)%data3d(i,j,kRev)*m
+          ho2 = bsc%qa(     gcSC%iHO2)%data3d(i,j,kRev)*m
+           cl = bsc%qa(      gcSC%iCl)%data3d(i,j,kRev)*m
+          clo = bsc%qa(     gcSC%iClO)%data3d(i,j,kRev)*m
+          bro = bsc%qa(     gcSC%iBrO)%data3d(i,j,kRev)*m
+           br = bsc%qa(      gcSC%iBr)%data3d(i,j,kRev)*m
+        cl2o2 = bsc%qa(   gcSC%iCl2O2)%data3d(i,j,kRev)*m
+         ch2o = bsc%qa(    gcSC%iCH2O)%data3d(i,j,kRev)*m
+        ch3o2 = bsc%qa(   gcSC%iCH3O2)%data3d(i,j,kRev)*m
+    box_ro3ox = bsc%qa(   gcSC%irO3Ox)%data3d(i,j,kRev)
 
    CASE(-1)
 
-     w_c%qa(      gcSC%iOx)%data3d(i,j,kRev) =       ox*rm
-     w_c%qa(     gcSC%iNOx)%data3d(i,j,kRev) =      nox*rm
-     w_c%qa(    gcSC%iHNO3)%data3d(i,j,kRev) =     hno3*rm
-     w_c%qa(    gcSC%iN2O5)%data3d(i,j,kRev) =     n2o5*rm
-     w_c%qa(  gcSC%iHO2NO2)%data3d(i,j,kRev) =   ho2no2*rm
-     w_c%qa(  gcSC%iClONO2)%data3d(i,j,kRev) =   clono2*rm
-     w_c%qa(     gcSC%iClx)%data3d(i,j,kRev) =      clx*rm
-     w_c%qa(     gcSC%iHCl)%data3d(i,j,kRev) =      hcl*rm
-     w_c%qa(    gcSC%iHOCl)%data3d(i,j,kRev) =     hocl*rm
-     w_c%qa(    gcSC%iH2O2)%data3d(i,j,kRev) =     h2o2*rm
-     w_c%qa(     gcSC%iBrx)%data3d(i,j,kRev) =      brx*rm
-     w_c%qa(     gcSC%iN2O)%data3d(i,j,kRev) =      n2o*rm
-     w_c%qa(     gcSC%iCl2)%data3d(i,j,kRev) =      cl2*rm
-     w_c%qa(    gcSC%iOClO)%data3d(i,j,kRev) =     oclo*rm
-     w_c%qa(    gcSC%iBrCl)%data3d(i,j,kRev) =     brcl*rm
-     w_c%qa(     gcSC%iHBr)%data3d(i,j,kRev) =      hbr*rm
-     w_c%qa(  gcSC%iBrONO2)%data3d(i,j,kRev) =   brono2*rm
-     w_c%qa(     gcSC%iCH4)%data3d(i,j,kRev) =      ch4*rm
-     w_c%qa(    gcSC%iHOBr)%data3d(i,j,kRev) =     hobr*rm
-     w_c%qa(  gcSC%iCH3OOH)%data3d(i,j,kRev) =   ch3ooh*rm
-     w_c%qa(      gcSC%iCO)%data3d(i,j,kRev) =       co*rm
-     w_c%qa(   gcSC%iHNO3c)%data3d(i,j,kRev) =    hno3c*rm
-     w_c%qa(     gcSC%iF11)%data3d(i,j,kRev) =      f11*rm
-     w_c%qa(     gcSC%iF12)%data3d(i,j,kRev) =      f12*rm
-     w_c%qa(    gcSC%iF113)%data3d(i,j,kRev) =     f113*rm
-     w_c%qa(    gcSC%iF114)%data3d(i,j,kRev) =     f114*rm
-     w_c%qa(    gcSC%iF115)%data3d(i,j,kRev) =     f115*rm
-     w_c%qa(  gcSC%iHCFC22)%data3d(i,j,kRev) =   hcfc22*rm
-     w_c%qa(gcSC%iHCFC141b)%data3d(i,j,kRev) = hcfc141b*rm
-     w_c%qa(gcSC%iHCFC142b)%data3d(i,j,kRev) = hcfc142b*rm
-     w_c%qa(    gcSC%iCCl4)%data3d(i,j,kRev) =     ccl4*rm
-     w_c%qa( gcSC%iCH3CCl3)%data3d(i,j,kRev) =  ch3ccl3*rm
-     w_c%qa(   gcSC%iCH3Cl)%data3d(i,j,kRev) =    ch3cl*rm
-     w_c%qa(   gcSC%iCH3Br)%data3d(i,j,kRev) =    ch3br*rm
-     w_c%qa(   gcSC%iH1301)%data3d(i,j,kRev) =    h1301*rm
-     w_c%qa(   gcSC%iH1211)%data3d(i,j,kRev) =    h1211*rm
-     w_c%qa(   gcSC%iH1202)%data3d(i,j,kRev) =    h1202*rm
-     w_c%qa(   gcSC%iH2402)%data3d(i,j,kRev) =    h2402*rm
-     w_c%qa(   gcSC%iCHBr3)%data3d(i,j,kRev) =    chbr3*rm
-     w_c%qa(  gcSC%iCH2Br2)%data3d(i,j,kRev) =   ch2br2*rm
-     w_c%qa( gcSC%iCH2BrCl)%data3d(i,j,kRev) =  ch2brcl*rm
-     w_c%qa( gcSC%iCHBrCl2)%data3d(i,j,kRev) =  chbrcl2*rm
-     w_c%qa( gcSC%iCHBr2Cl)%data3d(i,j,kRev) =  chbr2cl*rm
-     w_c%qa(   gcSC%iHFC23)%data3d(i,j,kRev) =    hfc23*rm
-     w_c%qa(   gcSC%iHFC32)%data3d(i,j,kRev) =    hfc32*rm
-     w_c%qa(  gcSC%iHFC125)%data3d(i,j,kRev) =   hfc125*rm
-     w_c%qa( gcSC%iHFC134a)%data3d(i,j,kRev) =  hfc134a*rm
-     w_c%qa( gcSC%iHFC143a)%data3d(i,j,kRev) =  hfc143a*rm
-     w_c%qa( gcSC%iHFC152a)%data3d(i,j,kRev) =  hfc152a*rm
-     w_c%qa(     gcSC%iCO2)%data3d(i,j,kRev) =      co2*rm
-     w_c%qa(     gcSC%iSF6)%data3d(i,j,kRev) =      sf6*rm
-     w_c%qa(      gcSC%iO3)%data3d(i,j,kRev) =       o3*rm
-     w_c%qa(     gcSC%iO3p)%data3d(i,j,kRev) =      o3p*rm
-     w_c%qa(     gcSC%iO1d)%data3d(i,j,kRev) =      o1d*rm
-     w_c%qa(       gcSC%iN)%data3d(i,j,kRev) =        n*rm
-     w_c%qa(      gcSC%iNO)%data3d(i,j,kRev) =       no*rm
-     w_c%qa(     gcSC%iNO2)%data3d(i,j,kRev) =      no2*rm
-     w_c%qa(     gcSC%iNO3)%data3d(i,j,kRev) =      no3*rm
-     w_c%qa(       gcSC%iH)%data3d(i,j,kRev) =        h*rm
-     w_c%qa(      gcSC%iOH)%data3d(i,j,kRev) =       oh*rm
-     w_c%qa(     gcSC%iHO2)%data3d(i,j,kRev) =      ho2*rm
-     w_c%qa(      gcSC%iCl)%data3d(i,j,kRev) =       cl*rm
-     w_c%qa(     gcSC%iClO)%data3d(i,j,kRev) =      clo*rm
-     w_c%qa(     gcSC%iBrO)%data3d(i,j,kRev) =      bro*rm
-     w_c%qa(      gcSC%iBr)%data3d(i,j,kRev) =       br*rm
-     w_c%qa(   gcSC%iCl2O2)%data3d(i,j,kRev) =    cl2o2*rm
-     w_c%qa(    gcSC%iCH2O)%data3d(i,j,kRev) =     ch2o*rm
-     w_c%qa(   gcSC%iCH3O2)%data3d(i,j,kRev) =    ch3o2*rm
-     w_c%qa(   gcSC%irO3Ox)%data3d(i,j,kRev) =   box_ro3ox
+     bsc%qa(      gcSC%iOx)%data3d(i,j,kRev) =       ox*rm
+     bsc%qa(     gcSC%iNOx)%data3d(i,j,kRev) =      nox*rm
+     bsc%qa(    gcSC%iHNO3)%data3d(i,j,kRev) =     hno3*rm
+     bsc%qa(    gcSC%iN2O5)%data3d(i,j,kRev) =     n2o5*rm
+     bsc%qa(  gcSC%iHO2NO2)%data3d(i,j,kRev) =   ho2no2*rm
+     bsc%qa(  gcSC%iClONO2)%data3d(i,j,kRev) =   clono2*rm
+     bsc%qa(     gcSC%iClx)%data3d(i,j,kRev) =      clx*rm
+     bsc%qa(     gcSC%iHCl)%data3d(i,j,kRev) =      hcl*rm
+     bsc%qa(    gcSC%iHOCl)%data3d(i,j,kRev) =     hocl*rm
+     bsc%qa(    gcSC%iH2O2)%data3d(i,j,kRev) =     h2o2*rm
+     bsc%qa(     gcSC%iBrx)%data3d(i,j,kRev) =      brx*rm
+     bsc%qa(     gcSC%iN2O)%data3d(i,j,kRev) =      n2o*rm
+     bsc%qa(     gcSC%iCl2)%data3d(i,j,kRev) =      cl2*rm
+     bsc%qa(    gcSC%iOClO)%data3d(i,j,kRev) =     oclo*rm
+     bsc%qa(    gcSC%iBrCl)%data3d(i,j,kRev) =     brcl*rm
+     bsc%qa(     gcSC%iHBr)%data3d(i,j,kRev) =      hbr*rm
+     bsc%qa(  gcSC%iBrONO2)%data3d(i,j,kRev) =   brono2*rm
+     bsc%qa(     gcSC%iCH4)%data3d(i,j,kRev) =      ch4*rm
+     bsc%qa(    gcSC%iHOBr)%data3d(i,j,kRev) =     hobr*rm
+     bsc%qa(  gcSC%iCH3OOH)%data3d(i,j,kRev) =   ch3ooh*rm
+     bsc%qa(      gcSC%iCO)%data3d(i,j,kRev) =       co*rm
+     bsc%qa(   gcSC%iHNO3c)%data3d(i,j,kRev) =    hno3c*rm
+     bsc%qa(     gcSC%iF11)%data3d(i,j,kRev) =      f11*rm
+     bsc%qa(     gcSC%iF12)%data3d(i,j,kRev) =      f12*rm
+     bsc%qa(    gcSC%iF113)%data3d(i,j,kRev) =     f113*rm
+     bsc%qa(    gcSC%iF114)%data3d(i,j,kRev) =     f114*rm
+     bsc%qa(    gcSC%iF115)%data3d(i,j,kRev) =     f115*rm
+     bsc%qa(  gcSC%iHCFC22)%data3d(i,j,kRev) =   hcfc22*rm
+     bsc%qa(gcSC%iHCFC141b)%data3d(i,j,kRev) = hcfc141b*rm
+     bsc%qa(gcSC%iHCFC142b)%data3d(i,j,kRev) = hcfc142b*rm
+     bsc%qa(    gcSC%iCCl4)%data3d(i,j,kRev) =     ccl4*rm
+     bsc%qa( gcSC%iCH3CCl3)%data3d(i,j,kRev) =  ch3ccl3*rm
+     bsc%qa(   gcSC%iCH3Cl)%data3d(i,j,kRev) =    ch3cl*rm
+     bsc%qa(   gcSC%iCH3Br)%data3d(i,j,kRev) =    ch3br*rm
+     bsc%qa(   gcSC%iH1301)%data3d(i,j,kRev) =    h1301*rm
+     bsc%qa(   gcSC%iH1211)%data3d(i,j,kRev) =    h1211*rm
+     bsc%qa(   gcSC%iH1202)%data3d(i,j,kRev) =    h1202*rm
+     bsc%qa(   gcSC%iH2402)%data3d(i,j,kRev) =    h2402*rm
+     bsc%qa(   gcSC%iCHBr3)%data3d(i,j,kRev) =    chbr3*rm
+     bsc%qa(  gcSC%iCH2Br2)%data3d(i,j,kRev) =   ch2br2*rm
+     bsc%qa( gcSC%iCH2BrCl)%data3d(i,j,kRev) =  ch2brcl*rm
+     bsc%qa( gcSC%iCHBrCl2)%data3d(i,j,kRev) =  chbrcl2*rm
+     bsc%qa( gcSC%iCHBr2Cl)%data3d(i,j,kRev) =  chbr2cl*rm
+     bsc%qa(   gcSC%iHFC23)%data3d(i,j,kRev) =    hfc23*rm
+     bsc%qa(   gcSC%iHFC32)%data3d(i,j,kRev) =    hfc32*rm
+     bsc%qa(  gcSC%iHFC125)%data3d(i,j,kRev) =   hfc125*rm
+     bsc%qa( gcSC%iHFC134a)%data3d(i,j,kRev) =  hfc134a*rm
+     bsc%qa( gcSC%iHFC143a)%data3d(i,j,kRev) =  hfc143a*rm
+     bsc%qa( gcSC%iHFC152a)%data3d(i,j,kRev) =  hfc152a*rm
+     bsc%qa(     gcSC%iCO2)%data3d(i,j,kRev) =      co2*rm
+     bsc%qa(     gcSC%iSF6)%data3d(i,j,kRev) =      sf6*rm
+     bsc%qa(      gcSC%iO3)%data3d(i,j,kRev) =       o3*rm
+     bsc%qa(     gcSC%iO3p)%data3d(i,j,kRev) =      o3p*rm
+     bsc%qa(     gcSC%iO1d)%data3d(i,j,kRev) =      o1d*rm
+     bsc%qa(       gcSC%iN)%data3d(i,j,kRev) =        n*rm
+     bsc%qa(      gcSC%iNO)%data3d(i,j,kRev) =       no*rm
+     bsc%qa(     gcSC%iNO2)%data3d(i,j,kRev) =      no2*rm
+     bsc%qa(     gcSC%iNO3)%data3d(i,j,kRev) =      no3*rm
+     bsc%qa(       gcSC%iH)%data3d(i,j,kRev) =        h*rm
+     bsc%qa(      gcSC%iOH)%data3d(i,j,kRev) =       oh*rm
+     bsc%qa(     gcSC%iHO2)%data3d(i,j,kRev) =      ho2*rm
+     bsc%qa(      gcSC%iCl)%data3d(i,j,kRev) =       cl*rm
+     bsc%qa(     gcSC%iClO)%data3d(i,j,kRev) =      clo*rm
+     bsc%qa(     gcSC%iBrO)%data3d(i,j,kRev) =      bro*rm
+     bsc%qa(      gcSC%iBr)%data3d(i,j,kRev) =       br*rm
+     bsc%qa(   gcSC%iCl2O2)%data3d(i,j,kRev) =    cl2o2*rm
+     bsc%qa(    gcSC%iCH2O)%data3d(i,j,kRev) =     ch2o*rm
+     bsc%qa(   gcSC%iCH3O2)%data3d(i,j,kRev) =    ch3o2*rm
+     bsc%qa(   gcSC%irO3Ox)%data3d(i,j,kRev) =   box_ro3ox
 
    CASE DEFAULT
 
@@ -3376,7 +3397,7 @@ CONTAINS
   DoingPSCs: IF(gcSC%doPSCs) THEN
 
    ic = gcSC%irO3Ox
-   tropp = w_c%qa(ic)%data3d(i,j,km)*0.01
+   tropp = bsc%qa(ic)%data3d(i,j,km)*0.01
 
    CALL pscs(k,km,gcSC%latRad(i,j),tropp,midPress,edgePress, &
   	          kel,climH2OProfile,numDens,SO4saProfile,sanat,saice, &
@@ -3548,7 +3569,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE SC_GridCompFinalize ( gcSC, w_c, impChem, expChem, &
+   SUBROUTINE SC_GridCompFinalize ( gcSC, bsc, impChem, expChem, &
                                     nymd, nhms, cdt, rc )
 
 ! !USES:
@@ -3561,7 +3582,7 @@ CONTAINS
 
 ! !INPUT PARAMETERS:
 
-   TYPE(Chem_Bundle), INTENT(in)  :: w_c      ! Chemical tracer fields   
+   TYPE(Species_Bundle),   POINTER :: bsc     ! Bundle of StratChem Species
    INTEGER, INTENT(in) :: nymd, nhms	      ! time
    REAL,    INTENT(in) :: cdt  	              ! chemical timestep (secs)
 
