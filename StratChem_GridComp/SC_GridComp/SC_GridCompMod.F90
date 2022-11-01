@@ -1413,6 +1413,7 @@ CONTAINS
 
 ! For calls to the old GOCART wet removal routine:
    TYPE(Chem_Array), pointer     :: qa_single(:)
+   INTEGER :: species_index
 
 
 
@@ -1448,10 +1449,6 @@ CONTAINS
   m = (nhms-hh*10000)/100
   s = nhms-hh*10000-m*100
 
-  allocate( fluxout )
-  allocate( fluxout%data2d(i1:i2,j1:j2),stat=STATUS)
-
-  VERIFY_(STATUS)
 
 
 ! Create and set the clock
@@ -2194,6 +2191,13 @@ CONTAINS
 !  Large-scale Wet Removal
 !  --------------------------
 
+   allocate( fluxout, stat=status )
+   VERIFY_(status)
+!  allocate( fluxout%data2d(i1:i2,j1:j2),stat=STATUS)  ALLOC IF WE PLAN TO USE IT
+!  VERIFY_(STATUS)
+   NULLIFY(  fluxout%data2d )
+
+!  It would be nice if WetRemovalGOCART could take a Species_Array instead of Chem_Array
    allocate(qa_single(1),stat=status)
    VERIFY_(status)
    allocate(qa_single(1)%data3d(i1:i2,j1:j2,km),stat=status )
@@ -2201,26 +2205,43 @@ CONTAINS
 
    qa_single(1)%fwet = 0.0
 
-   qa_single(1)%data3d(:,:,:) = bsc%qa(gcSC%iHBr)%data3d(:,:,:)
+!  HBr
+   species_index = gcSC%iHBr
+
+   qa_single(1)%data3d(:,:,:) = bsc%qa(species_index)%data3d(:,:,:)
 
    KIN = .TRUE.
    call WetRemovalGOCART(i1, i2, j1, j2, km, 1, 1, tdt, 'bromine', KIN,  &
               qa_single, ple, t, rhoa, pfllsan, pfilsan, &
               precc, precl, fluxout, rc )
 
-   qa_single(1)%data3d(:,:,:) = bsc%qa(gcSC%iHOBr)%data3d(:,:,:)
+   bsc%qa(species_index)%data3d(:,:,:) = qa_single(1)%data3d(:,:,:)
+
+!  HOBr
+   species_index = gcSC%iHOBr
+   qa_single(1)%data3d(:,:,:) = bsc%qa(species_index)%data3d(:,:,:)
  
    KIN = .TRUE.
    call WetRemovalGOCART(i1, i2, j1, j2, km, 1, 1, tdt, 'bromine', KIN,  &
               qa_single, ple, t, rhoa, pfllsan, pfilsan, &
               precc, precl, fluxout, rc )
 
-   qa_single(1)%data3d(:,:,:) = bsc%qa(gcSC%iBrONO2)%data3d(:,:,:)
+   bsc%qa(species_index)%data3d(:,:,:) = qa_single(1)%data3d(:,:,:)
+
+!  BrONO2
+   species_index = gcSC%iBrONO2
+
+   qa_single(1)%data3d(:,:,:) = bsc%qa(species_index)%data3d(:,:,:)
 
    KIN = .TRUE.
    call WetRemovalGOCART(i1, i2, j1, j2, km, 1, 1, tdt, 'bromine', KIN,  &
               qa_single, ple, t, rhoa, pfllsan, pfilsan, &
               precc, precl, fluxout, rc )
+
+   bsc%qa(species_index)%data3d(:,:,:) = qa_single(1)%data3d(:,:,:)
+
+   deallocate( fluxout, stat=status )
+   VERIFY_(status)
 
 !   call pmaxmin('HBr: q_wet', bsc%qa(iHBr)%data3d(i1:i2,j1:j2,1:km), qmin, qmax, &
 !                    iXj, km, 1. )
