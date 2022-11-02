@@ -18,6 +18,9 @@
 #  This file has 2 tables:  the SC table holds the chemical species
 #  that are transported; the XX table holds the non-transported species.
 #
+#  The following assumptions exist in the code:
+#    - RO3OX  is the last entry in the XX_table
+#
 # !REVISION HISTORY:
 #
 #  2022-10-28  manyin   Derived this file from Chem_Registry.rc
