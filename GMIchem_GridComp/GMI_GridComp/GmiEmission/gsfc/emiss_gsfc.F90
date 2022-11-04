@@ -69,7 +69,7 @@
       real*8 , intent(in   ) :: tdt
       real*8 , intent(in   ) :: mass(i1:i2, ju1:j2, k1:k2)
       type (t_GmiArrayBundle), intent(inout) :: concentration(num_species)
-      real*8 , intent(in   ) :: latdeg   (ju1:j2)
+      real*8 , intent(in   ) :: latdeg   (i1:i2, ju1:j2)
 !     real   , intent(out  ) ::  gcrnox(i1:i2, ju1:j2, k1:k2)
       real*8 , intent(in   ) :: press3c(i1:i2, ju1:j2, k1:k2) ! hPa
       real*8 , intent(in   ) ::     kel(i1:i2, ju1:j2, k1:k2)
