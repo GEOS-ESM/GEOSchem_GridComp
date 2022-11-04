@@ -150,7 +150,7 @@
 !
       rcarr(13,:) = skarr(  8.750D-12 ,0.0D+00 ,temperature)
 !
-!....           CF2Cl2 + O1D = 2 Cl
+!....           CFC12 + O1D = 2 Cl
 !
       rcarr(14,:) = skarr(  1.400D-10 ,-25.0D+00 ,temperature)
 !

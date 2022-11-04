@@ -55,7 +55,7 @@
      &                 loc_proc, num_species, num_sad,  &
      &                 lbssad_timpyr, h2oclim_timpyr, &
      &                 ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1, k2,      &
-     &                 londeg, latdeg, NoPSCZone, PSCMaxP, chem_mecha)
+     &                 londeg, latdeg, NoPSCZone, PSCMaxP)
 
       implicit none
 
@@ -75,7 +75,6 @@
       real*8            , intent(in) :: tropp      (i1:i2, ju1:j2)
       real*8            , intent(in) :: press3c(ilo:ihi, julo:jhi, k1:k2)
       real*8            , intent(in) :: press3e(ilo:ihi, julo:jhi, k1-1:k2)
-      character (len=*) , intent(in) :: chem_mecha
       real*8            , intent(in) :: h2ocond(i1:i2,   ju1:j2,   k1:k2)
 
       integer           , intent(in) :: NoPSCZone
@@ -116,58 +115,45 @@
         call Update_Sad1 (ihno3_num, concentration, hno3cond, hno3gas, sadgmi, &
      &          pr_diag, loc_proc, i1, i2, ju1, j2, k1, k2, num_sad, num_species)
       else if (sad_opt == 2) then
-         IF (TRIM(chem_mecha) ==         'strat_trop' .OR. &
-	     TRIM(chem_mecha) == 'strat_trop_aerosol') THEN
-            allocate(h2ocombo(i1:i2,  ju1:j2,  k1:k2,  h2oclim_timpyr))
-            allocate(sadcombo(i1:i2,  ju1:j2,  k1:k2,  num_sad       ))
+        allocate(h2ocombo(i1:i2,  ju1:j2,  k1:k2,  h2oclim_timpyr))
+        allocate(sadcombo(i1:i2,  ju1:j2,  k1:k2,  num_sad       ))
 
-            ! Note: h2ocombo is not used when dehyd_opt = 0.
-            ! ---------------------------------------------
+        ! Note: h2ocombo is not used when dehyd_opt = 0.
+        ! ---------------------------------------------
 
-            h2ocombo(:,:,:,:) = h2oclim(:,:,:,:)
+        h2ocombo(:,:,:,:) = h2oclim(:,:,:,:)
 
-            call GmiSplitDateTime (nymd, idumyear, month, idumday)
+        call GmiSplitDateTime (nymd, idumyear, month, idumday)
 
-            where (press3c(i1:i2,ju1:j2,:) > Spread (tropp(:,:), 3, k2))
-               h2ocombo(:,:,:,month) = concentration(ih2o_num)%pArray3D(:,:,:)
-            end where
+        where (press3c(i1:i2,ju1:j2,:) > Spread (tropp(:,:), 3, k2))
+           h2ocombo(:,:,:,month) = concentration(ih2o_num)%pArray3D(:,:,:)
+        end where
 
-            call Update_Sad2 (rateintv, tropp, press3c, press3e, kel,          &
-     &                 concentration, ch4clim, h2ocombo, hno3cond, hno3gas,    &
-     &                 lbssad, sadgmi, h2oback, h2ocond, reffice, reffsts,     &
-     &                 vfall, dehydmin, dehyd_opt, h2oclim_opt, lbssad_opt,    &
-     &                 pr_diag, loc_proc, londeg, latdeg, NoPSCZone, PSCMaxP, nymd, &
-     &                 ihno3_num, ihno3cond_num, idehyd_num, ich4_num,         &
-     &                 ih2o_num, ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1,     &
-     &                 k2, lbssad_timpyr, h2oclim_timpyr, num_sad, num_species)
+        call Update_Sad2 (rateintv, tropp, press3c, press3e, kel,          &
+     &             concentration, ch4clim, h2ocombo, hno3cond, hno3gas,    &
+     &             lbssad, sadgmi, h2oback, h2ocond, reffice, reffsts,     &
+     &             vfall, dehydmin, dehyd_opt, h2oclim_opt, lbssad_opt,    &
+     &             pr_diag, loc_proc, londeg, latdeg, NoPSCZone, PSCMaxP, nymd, &
+     &             ihno3_num, ihno3cond_num, idehyd_num, ich4_num,         &
+     &             ih2o_num, ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1,     &
+     &             k2, lbssad_timpyr, h2oclim_timpyr, num_sad, num_species)
 
-            do ic = 1, num_sad
-               sadcombo(:,:,:,ic) = sadgmi(ic)%pArray3D(:,:,:)
-            end do
+        do ic = 1, num_sad
+           sadcombo(:,:,:,ic) = sadgmi(ic)%pArray3D(:,:,:)
+        end do
 
-            call Update_Sad3 (press3c, kel, concentration, lbssad, lbssad_opt, &
-     &                 sadcombo, pr_diag, loc_proc, nymd, ih2o_num, i1, i2,    &
-     &                 ju1, j2, k1, k2, ilo, ihi, julo, jhi, lbssad_timpyr,    &
-     &                 num_sad, num_species)
+        call Update_Sad3 (press3c, kel, concentration, lbssad, lbssad_opt, &
+     &             sadcombo, pr_diag, loc_proc, nymd, ih2o_num, i1, i2,    &
+     &             ju1, j2, k1, k2, ilo, ihi, julo, jhi, lbssad_timpyr,    &
+     &             num_sad, num_species)
 
-            where (press3c(i1:i2,ju1:j2,:) > Spread (tropp(:,:), 3, k2))
-               sadgmi(ILBSSAD)%pArray3D(:,:,:) = sadcombo(:,:,:,ILBSSAD)
-            end where
+        where (press3c(i1:i2,ju1:j2,:) > Spread (tropp(:,:), 3, k2))
+           sadgmi(ILBSSAD)%pArray3D(:,:,:) = sadcombo(:,:,:,ILBSSAD)
+        end where
 
-            deallocate(h2ocombo)
-            deallocate(sadcombo)
-         ELSE
+        deallocate(h2ocombo)
+        deallocate(sadcombo)
 
-            call Update_Sad2 (rateintv, tropp, press3c, press3e, kel,          &
-     &                 concentration, ch4clim, h2oclim, hno3cond, hno3gas,     &
-     &                 lbssad, sadgmi, h2oback, h2ocond, reffice, reffsts,     &
-     &                 vfall, dehydmin, dehyd_opt, h2oclim_opt, lbssad_opt,    &
-     &                 pr_diag, loc_proc, londeg, latdeg, NoPSCZone, PSCMaxP, nymd, &
-     &                 ihno3_num, ihno3cond_num, idehyd_num, ich4_num,         &
-     &                 ih2o_num, ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1,     &
-     &                 k2, lbssad_timpyr, h2oclim_timpyr, num_sad, num_species)
-
-         ENDIF
       else if (sad_opt == 3) then
         allocate(sadcombo(i1:i2,  ju1:j2,  k1:k2,  num_sad       ))
         do ic = 1, num_sad
@@ -175,9 +161,9 @@
         end do
 
         call Update_Sad3 (press3c, kel, concentration, lbssad, lbssad_opt,     &
-     &             sadcombo, pr_diag, loc_proc, nymd, ih2o_num, i1, i2, ju1, j2, &
-     &             k1, k2, ilo, ihi, julo, jhi, lbssad_timpyr, num_sad,        &
-     &             num_species)
+     &             sadcombo, pr_diag, loc_proc, nymd, ih2o_num, i1, i2, &
+     &             ju1, j2, k1, k2, ilo, ihi, julo, jhi, lbssad_timpyr,        &
+     &             num_sad, num_species)
 
         do ic = 1, num_sad
            sadgmi(ic)%pArray3D(:,:,:) = sadcombo(:,:,:,ic)
@@ -359,6 +345,9 @@
       dehydmin = 0.00D+00
       denssts (:,:,:) = 0.0d0
 
+!... do we want to passs in H2SO4gas if the meechanism has it
+!.sds      ih2so4_num = <find this>
+!.sds      h2so4gas(:,:,:) = concentration(ih2so4_num)%pArray3D(:,:,:)
       h2so4gas(:,:,:) = 0.0d0
       reffnat(:,:,:) = 0.0d0
 

@@ -4,7 +4,9 @@ set (srcs
   Chem_RegistryMod.F90
   Runtime_RegistryMod.F90
   Chem_ArrayMod.F90
+  Species_ArrayMod.F90
   Chem_BundleMod.F90
+  Species_BundleMod.F90
   Chem_Mod.F90
   Chem_InitMod.F90
   Chem_MieTableMod.F90

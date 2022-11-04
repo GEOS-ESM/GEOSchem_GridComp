@@ -1,6 +1,6 @@
 esma_set_this ()
 
-option(STRATCHEM_REDUCED_MECHANISM "reduces the number of chem species" OFF)
+option(STRATCHEM_REDUCED_MECHANISM "reduces the number of transported chem species" OFF)
 
 set (subsrcs
   SC_GridCompMod.F90
@@ -99,12 +99,19 @@ new_esma_generate_automatic_code (
   "-N STRATCHEM"
   )
 
+if (STRATCHEM_REDUCED_MECHANISM)
+   set (MECH_DIR "SC_GridComp/SC_Mech_Reduced")
+else ()
+   set (MECH_DIR "SC_GridComp/SC_Mech_Full")
+endif ()
+
 
 set (resource_files
    SC_GridComp/SC_GridComp.rc
    SC_GridComp/SC_Registry.rc
    SC_GridComp/StratChem_ExtData.rc
    SC_GridComp/StratChem_ExtData.yaml
+   ${MECH_DIR}/SC_Mech_Registry.rc
    )
 
 install(

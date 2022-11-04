@@ -104,7 +104,7 @@
 !
       qqk(kloop,13)=qk(kloop,13)*y(kloop,2)*y(kloop,23)
 !
-!....         CF2Cl2 + O1D = 2 Cl
+!....         CFC12 + O1D = 2 Cl
 !
       qqk(kloop,14)=qk(kloop,14)*y(kloop,45)*y(kloop,23)
 !
@@ -1422,11 +1422,11 @@
 !
       qqj(kloop,30)=qj(kloop,30)*y(kloop,42)
 !
-!....  CFCl3 + hv = 3 Cl
+!....  CFC11 + hv = 3 Cl
 !
       qqj(kloop,31)=qj(kloop,31)*y(kloop,44)
 !
-!....  CF2Cl2 + hv = 2 Cl
+!....  CFC12 + hv = 2 Cl
 !
       qqj(kloop,32)=qj(kloop,32)*y(kloop,45)
 !

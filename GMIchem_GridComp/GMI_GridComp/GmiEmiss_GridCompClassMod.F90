@@ -21,6 +21,8 @@
    USE Chem_Mod
    USE Chem_UtilMod
 
+   USE Species_BundleMod
+
    USE GmiChemistryMethod_mod,        ONLY : t_Chemistry
    USE GmiEmissionMethod_mod,         ONLY : t_Emission
    USE GmiDepositionMethod_mod,       ONLY : t_Deposition
@@ -37,7 +39,7 @@
    USE GmiSurfaceEmissionInChemistry_mod, ONLY : updateSurfEmissionInChemistry
    USE GmiSwapSpeciesBundlesMod,      ONLY : SwapSpeciesBundles, speciesReg_for_CCM
    USE VegLaiMod,                     ONLY : Decode_Land_Types, Decode_XLAI
-   USE OVP,                           ONLY:  OVP_init, OVP_end_of_timestep_hms, OVP_mask, OVP_apply_mask
+   USE OVP,                           ONLY : OVP_init, OVP_end_of_timestep_hms, OVP_mask, OVP_apply_mask
 
    IMPLICIT NONE
    INTEGER, PARAMETER :: DBL = KIND(0.00D+00)
@@ -60,8 +62,10 @@
    INTEGER, SAVE              :: OVP_RUN_DT
    INTEGER, SAVE              :: OVP_GC_DT
    INTEGER, SAVE              :: OVP_MASK_DT
+   CHARACTER(LEN=ESMF_MAXSTR), save :: ptfile_save(MAX_NUM_CONST) = '/dev/null'
 
    PUBLIC  GmiEmiss_GridComp       ! The GMI object 
+   PUBLIC  t_GmiPointEmiss         ! GMI point emission data type 
 
 ! !PUBLIC MEMBER FUNCTIONS:
 
@@ -86,108 +90,122 @@
 !
 !EOP
 !-------------------------------------------------------------------------
+!
+!   private :: t_GmiPointEmiss
+   TYPE t_GmiPointEmiss
+     integer :: nPts
+     integer, allocatable :: vStart(:)
+     integer, allocatable :: vEnd(:)
+     integer, allocatable :: iPoint(:)
+     integer, allocatable :: jPoint(:)
+     real, allocatable :: vLat(:)
+     real, allocatable :: vLon(:)
+     real, allocatable :: vBase(:)
+     real, allocatable :: vTop(:)
+     real, allocatable :: vEmis(:)
+   END TYPE t_GmiPointEmiss
 
-  TYPE GmiEmiss_GridComp
-   CHARACTER(LEN=255) :: name = "GMI Stratospheric/Tropospheric Chemistry"
+   TYPE GmiEmiss_GridComp
+     CHARACTER(LEN=255) :: name = "GMI Stratospheric/Tropospheric Chemistry"
 
 ! Heartbeat (seconds)
 ! -------------------
-   INTEGER :: heartBeat
+     INTEGER :: heartBeat
 
 ! Is the GCM executing the predictor step of REPLAY at this moment?
 ! -----------------------------------------------------------------
-   LOGICAL :: doingPredictorNow
+     LOGICAL :: doingPredictorNow
 
 ! Does the gmichem_import_rst file exist?  If not, some import states will be
 ! unfilled, and the species will need to "freewheel" through the first time step.
 ! -------------------------------------------------------------------------------
-   LOGICAL :: gotImportRst
+     LOGICAL :: gotImportRst
 
 ! Set BCRealTime = .TRUE. when boundary conditions 
 ! must be for exact year of current calendar date.
 ! -------------------------------------------------
-   LOGICAL :: BCRealTime
+     LOGICAL :: BCRealTime
 
 ! Daily and monthly emissions
 ! ---------------------------
-   INTEGER :: num_diurnal_emiss
+     INTEGER :: num_diurnal_emiss
 
 ! Various switches
 ! ----------------
-   LOGICAL :: pr_dry_depos
-   LOGICAL :: pr_wet_depos   
-   LOGICAL :: pr_scav
-   LOGICAL :: pr_diag
-   LOGICAL :: do_drydep
-   LOGICAL :: do_wetdep
-   LOGICAL :: do_emission             
-   LOGICAL :: do_aerocom             
-   LOGICAL :: pr_const
-   LOGICAL :: do_synoz
-   LOGICAL :: do_gcr
-   LOGICAL :: pr_surf_emiss
-   LOGICAL :: pr_emiss_3d
-   LOGICAL :: do_qqjk_inchem
-   LOGICAL :: do_qqjk_reset
-   LOGICAL :: pr_qqjk
+     LOGICAL :: pr_dry_depos
+     LOGICAL :: pr_wet_depos   
+     LOGICAL :: pr_scav
+     LOGICAL :: pr_diag
+     LOGICAL :: do_drydep
+     LOGICAL :: do_wetdep
+     LOGICAL :: do_emission             
+     LOGICAL :: do_aerocom             
+     LOGICAL :: pr_const
+     LOGICAL :: do_synoz
+     LOGICAL :: do_gcr
+     LOGICAL :: pr_surf_emiss
+     LOGICAL :: pr_emiss_3d
+     LOGICAL :: do_qqjk_inchem
+     LOGICAL :: do_qqjk_reset
+     LOGICAL :: pr_qqjk
 
-   integer :: met_opt
-   integer :: chem_opt
-   integer :: trans_opt
-   integer :: ic_NO_lgt
+     integer :: met_opt
+     integer :: chem_opt
+     integer :: trans_opt
+     integer :: ic_NO_lgt
 
-   character (len=MAX_LENGTH_MET_NAME) :: metdata_name_org
-   character (len=MAX_LENGTH_MET_NAME) :: metdata_name_model
+     character (len=MAX_LENGTH_MET_NAME) :: metdata_name_org
+     character (len=MAX_LENGTH_MET_NAME) :: metdata_name_model
 
 ! Dimensions
 ! ----------
-   INTEGER :: i1, i2, im, j1, j2, jm, km
-
-! Useful character strings
-! ------------------------
-   CHARACTER(LEN=255) :: chem_mecha
+     INTEGER :: i1, i2, im, j1, j2, jm, km
 
 ! Surface area of grid cells
 ! --------------------------
-   REAL(KIND=DBL), POINTER :: cellArea(:,:)
+     REAL(KIND=DBL), POINTER :: cellArea(:,:)
 
 ! Longitudes and latitudes (radians)
 ! ----------------------------------
-   REAL, POINTER :: lonRad(:,:)
-   REAL, POINTER :: latRad(:,:)
+     REAL, POINTER :: lonRad(:,:)
+     REAL, POINTER :: latRad(:,:)
 
 ! Extra diagnostics
 ! -----------------
-   LOGICAL :: verbose
+     LOGICAL :: verbose
 
 ! Map GMI species indices to CCM indices
 ! --------------------------------------
-   INTEGER, POINTER :: mapSpecies(:)
+     INTEGER, POINTER :: mapSpecies(:)
 
 ! Information for the export states of emissions [EM_NO, for example].
 ! --------------------------------------------------------------------
-   INTEGER :: numEM_Exports
-   CHARACTER(LEN=ESMF_MAXSTR), ALLOCATABLE :: EM_ExportNames(:)
-   CHARACTER(LEN=ESMF_MAXSTR), ALLOCATABLE :: EM_ExportUnits(:)
+     INTEGER :: numEM_Exports
+     CHARACTER(LEN=ESMF_MAXSTR), ALLOCATABLE :: EM_ExportNames(:)
+     CHARACTER(LEN=ESMF_MAXSTR), ALLOCATABLE :: EM_ExportUnits(:)
 
 ! Component derived type declarations
 ! -----------------------------------
-   TYPE(t_Emission  )		:: Emission
-   TYPE(t_Deposition)		:: Deposition
-   TYPE(t_gmiGrid   )		:: gmiGrid
-   TYPE(t_GmiClock  )           :: gmiClock
-   TYPE(t_SpeciesConcentration) :: SpeciesConcentration
+     TYPE(t_Emission  )           :: Emission
+     TYPE(t_Deposition)           :: Deposition
+     TYPE(t_gmiGrid   )           :: gmiGrid
+     TYPE(t_GmiClock  )           :: gmiClock
+     TYPE(t_SpeciesConcentration) :: SpeciesConcentration
 
-   integer :: ship_thisRecord
-   integer :: ship_curRecord
+     integer :: ship_thisRecord
+     integer :: ship_curRecord
 
 ! Veg Fraction does not change, only read once
 ! --------------------------------------------
-   LOGICAL :: veg_fraction_done
+     LOGICAL :: veg_fraction_done
+!
+! Point mission data
+! --------------------------------------------
+     TYPE(t_GmiPointEmiss), pointer :: GmiPointEmiss(:) => null()
  
-  END TYPE GmiEmiss_GridComp
+   END TYPE GmiEmiss_GridComp
 
-CONTAINS
+  CONTAINS
 
 !-------------------------------------------------------------------------
 !NASA/GSFC, Global Modeling and Assimilation Office, Code 610.1, GEOS/DAS!
@@ -199,7 +217,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE GmiEmiss_GridCompInitialize( self, w_c, impChem, expChem, nymd, nhms, &
+   SUBROUTINE GmiEmiss_GridCompInitialize( self, bgg, bxx, impChem, expChem, nymd, nhms, &
                                       tdt, gc, clock, rc )
 
    USE GmiSpcConcentrationMethod_mod, ONLY : InitializeSpcConcentration
@@ -216,9 +234,10 @@ CONTAINS
 
 ! !INPUT PARAMETERS:
 
-   TYPE(Chem_Bundle), INTENT(in) :: w_c                ! Chemical tracer fields, delp, +
-   INTEGER, INTENT(IN) :: nymd, nhms                   ! Time from AGCM
-   REAL,    INTENT(IN) :: tdt                          ! Chemistry time step (secs)
+   TYPE(Species_Bundle), INTENT(IN) :: bgg             ! GMI Species - transported
+   TYPE(Species_Bundle), INTENT(IN) :: bxx             ! GMI Species - not transported
+   INTEGER,              INTENT(IN) :: nymd, nhms      ! Time from AGCM
+   REAL,                 INTENT(IN) :: tdt             ! Chemistry time step (secs)
 
 ! !OUTPUT PARAMETERS:
 
@@ -265,8 +284,9 @@ CONTAINS
    INTEGER :: ilo, ihi, julo, jvlo, jhi
    INTEGER :: ilo_gl, ihi_gl, julo_gl, jvlo_gl, jhi_gl
    INTEGER :: gmi_nborder
+   INTEGER :: NMR      ! number of species from the GMI_Mech_Registry.rc
    INTEGER :: lightning_opt, LogicalUnitNum
-   INTEGER :: num_emiss, numSpecies
+   INTEGER :: num_emiss
 
    INTEGER :: loc_proc, locGlobProc, commu_slaves
    LOGICAL :: one_proc, rootProc
@@ -306,123 +326,111 @@ CONTAINS
    
    km = self%km
 
-     !-------------------
-     ! Load resource file
-     !-------------------
+!-------------------
+! Load resource file
+!-------------------
 
-      IF ( MAPL_AM_I_ROOT() ) THEN
-         PRINT *," "
-         PRINT *,TRIM(IAm)//":"
-         PRINT *,"Starting Reading the GMI Emission Resource File"
-      ENDIF
+   IF ( MAPL_AM_I_ROOT() ) THEN
+     PRINT *," "
+     PRINT *,TRIM(IAm)//":"
+     PRINT *,"Starting Reading the GMI Emission Resource File"
+   ENDIF
 
-      gmiConfigFile = ESMF_ConfigCreate(rc=STATUS )
-      VERIFY_(STATUS)
+   gmiConfigFile = ESMF_ConfigCreate(rc=STATUS )
+   VERIFY_(STATUS)
 
-      call ESMF_ConfigLoadFile(gmiConfigFile, TRIM(rcfilen), rc=STATUS )
-      VERIFY_(STATUS)
+   call ESMF_ConfigLoadFile(gmiConfigFile, TRIM(rcfilen), rc=STATUS )
+   VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, importRestartFile, &
-     &                label   = "importRestartFile:", &
-     &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS)
+   call ESMF_ConfigGetAttribute(gmiConfigFile, importRestartFile, &
+                   label="importRestartFile:", default = ' ', rc=STATUS )
+   VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%chem_mecha, &
-     &                label   = "chem_mecha:", &
-     &                default = 'strat_trop', rc=STATUS )
-      VERIFY_(STATUS)
+!------------------------------
+! Deposition related variables
+!------------------------------
+    
+    call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_drydep, &
+              label="do_drydep:", default=.false., rc=STATUS)
+    VERIFY_(STATUS)
 
-      !------------------------------
-      ! Deposition related variables
-      !------------------------------
-      
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_drydep, &
-     &           label="do_drydep:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+    call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_wetdep, &
+              label="do_wetdep:", default=.false., rc=STATUS)
+    VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_wetdep, &
-     &           label="do_wetdep:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+!------------------------------
+! Emission related variables
+!------------------------------
 
-      !------------------------------
-      ! Emission related variables
-      !------------------------------
+    call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_emission, &
+              label="do_emission:", default=.false., rc=STATUS)
+    VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_emission, &
-     &           label="do_emission:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+    call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_synoz, &
+              label="do_synoz:", default=.false., rc=STATUS)
+    VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_synoz, &
-     &           label="do_synoz:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+    CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%num_diurnal_emiss, &
+              LABEL="Diurnal_Emission_Species:", DEFAULT=0, RC=STATUS)
+    VERIFY_(STATUS)
 
-      CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%num_diurnal_emiss, &
-     &              LABEL="Diurnal_Emission_Species:", DEFAULT=0, RC=STATUS)
-      VERIFY_(STATUS)
+    CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%do_gcr, &
+                  LABEL="do_gcr:", DEFAULT=.FALSE., RC=STATUS)
+    VERIFY_(STATUS)
 
-      CALL ESMF_ConfigGetAttribute(gmiConfigFile, self%do_gcr, &
-     &              LABEL="do_gcr:", DEFAULT=.FALSE., RC=STATUS)
-      VERIFY_(STATUS)
+!------------------------------
+! Diagnostics related variables
+!------------------------------
 
-      !------------------------------
-      ! Diagnostics related variables
-      !------------------------------
+    call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_diag, &
+              label="pr_diag:", default=.false., rc=STATUS)
+    VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_diag, &
-     &           label="pr_diag:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+    call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%verbose, &
+              label="verbose:", default=.false., rc=STATUS)
+    VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%verbose, &
-     &           label="verbose:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+    call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_surf_emiss, &
+              label="pr_surf_emiss:", default=.false., rc=STATUS)
+    VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_surf_emiss, &
-     &           label="pr_surf_emiss:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+    call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_emiss_3d, &
+              label="pr_emiss_3d:", default=.false., rc=STATUS)
+    VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_emiss_3d, &
-     &           label="pr_emiss_3d:", default=.false., rc=STATUS)
-      VERIFY_(STATUS)
+    call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_const, &
+              label="pr_const:", default=.false., rc=STATUS )
+    VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_const, &
-     &               label="pr_const:", default=.false., rc=STATUS )
-      VERIFY_(STATUS)
+    call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_aerocom, &
+              label="do_aerocom:", default=.false., rc=STATUS )
+    VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_aerocom, &
-     &               label="do_aerocom:", default=.false., rc=STATUS )
-      VERIFY_(STATUS)
+    call ESMF_ConfigGetAttribute(gmiConfigFile, self%metdata_name_org, &
+               label="metdata_name_org:", default = 'GMAO', rc=STATUS )
+    VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%metdata_name_org, &
-     &                label   = "metdata_name_org:", &
-     &                default = 'GMAO', rc=STATUS )
-      VERIFY_(STATUS)
+    call ESMF_ConfigGetAttribute(gmiConfigFile, self%metdata_name_model, &
+              label="metdata_name_model:", default = 'GEOS-5', rc=STATUS )
+    VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%metdata_name_model, &
-     &                label   = "metdata_name_model:", &
-     &                default = 'GEOS-5', rc=STATUS )
-      VERIFY_(STATUS)
+    call ESMF_ConfigGetAttribute(gmiConfigFile, self%chem_opt, &
+              label="chem_opt:", default = 2, rc=STATUS )
+    VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%chem_opt, &
-     &                label   = "chem_opt:", &
-     &                default = 2, rc=STATUS )
-      VERIFY_(STATUS)
+    call ESMF_ConfigGetAttribute(gmiConfigFile, self%trans_opt, &
+              label="trans_opt:", default = 0, rc=STATUS )
+    VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%trans_opt, &
-     &                label   = "trans_opt:", &
-     &                default = 0, rc=STATUS )
-      VERIFY_(STATUS)
-
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%met_opt, &
-     &                label   = "met_opt:", &
-     &                default = 3, rc=STATUS )
-      VERIFY_(STATUS)
+    call ESMF_ConfigGetAttribute(gmiConfigFile, self%met_opt, &
+              label="met_opt:", default = 3, rc=STATUS )
+    VERIFY_(STATUS)
 
 
-
-      !-------------------------------------------
-      ! Should BC files have current date and time?
-      ! Useful for mission support and replays.
-      !--------------------------------------------
+!-------------------------------------------
+! Should BC files have current date and time?
+! Useful for mission support and replays.
+!--------------------------------------------
       
       call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%BCRealTime, &
      &           label="BCRealTime:", default=.false., rc=STATUS)
@@ -433,95 +441,98 @@ CONTAINS
 ! Does the GMICHEM import restart file exist?  If not,
 ! the species must "freewheel" through the first time step.
 ! ---------------------------------------------------------
-   INQUIRE(FILE=TRIM(importRestartFile),EXIST=self%gotImportRst)
-   IF( MAPL_AM_I_ROOT() ) THEN
-    PRINT *," ",TRIM(importRestartFile)," exists: ",self%gotImportRst
-    PRINT *," "
-   END IF
+    INQUIRE(FILE=TRIM(importRestartFile),EXIST=self%gotImportRst)
+    IF( MAPL_AM_I_ROOT() ) THEN
+      PRINT *," ",TRIM(importRestartFile)," exists: ",self%gotImportRst
+      PRINT *," "
+    END IF
 
 !  GMI grid specification
 !  ----------------------
-   gmi_nborder = 0
-   i1_gl = 1
-   i2_gl = i2
-   ju1_gl = 1
-   jv1_gl = 1
-   j2_gl = j2
-   ju1 = j1
-   jv1 =j1
-   k1 = 1
-   k2 = km
-   k1_gl = 1
-   k2_gl = km
-   NPIJ = 16     ! These three integers are irrelevant
-   NPI = 4
-   NPJ = 4
-   ilo = i1 - gmi_nborder
-   ihi = i2 + gmi_nborder 
-   julo = ju1 - gmi_nborder
-   jvlo = jv1 - gmi_nborder
-   jhi = j2 + gmi_nborder
-   ilo_gl = i1_gl  - gmi_nborder
-   ihi_gl = i2_gl  + gmi_nborder
-   julo_gl = ju1_gl - gmi_nborder
-   jvlo_gl = jv1_gl - gmi_nborder
-   jhi_gl = j2_gl  + gmi_nborder
-   j1p = 0
-   j2p = j2_gl - j1p + 1
-   ilong = i2 - i1 + 1
-   ilat = j2 - ju1 + 1
-   ivert = k2 - k1 + 1
-   itloop = ilat * ilong * ivert
+    gmi_nborder = 0
+    i1_gl = 1
+    i2_gl = i2
+    ju1_gl = 1
+    jv1_gl = 1
+    j2_gl = j2
+    ju1 = j1
+    jv1 =j1
+    k1 = 1
+    k2 = km
+    k1_gl = 1
+    k2_gl = km
+    NPIJ = 16     ! These three integers are irrelevant
+    NPI = 4
+    NPJ = 4
+    ilo = i1 - gmi_nborder
+    ihi = i2 + gmi_nborder 
+    julo = ju1 - gmi_nborder
+    jvlo = jv1 - gmi_nborder
+    jhi = j2 + gmi_nborder
+    ilo_gl = i1_gl  - gmi_nborder
+    ihi_gl = i2_gl  + gmi_nborder
+    julo_gl = ju1_gl - gmi_nborder
+    jvlo_gl = jv1_gl - gmi_nborder
+    jhi_gl = j2_gl  + gmi_nborder
+    j1p = 0
+    j2p = j2_gl - j1p + 1
+    ilong = i2 - i1 + 1
+    ilat = j2 - ju1 + 1
+    ivert = k2 - k1 + 1
+    itloop = ilat * ilong * ivert
 
-   one_proc = .FALSE.
-   loc_proc = -99
-   locGlobProc = -99
-   commu_slaves = -99
+    one_proc = .FALSE.
+    loc_proc = -99
+    locGlobProc = -99
+    commu_slaves = -99
    
-   rootProc=.FALSE.
-   IF( MAPL_AM_I_ROOT() ) THEN
-    rootProc=.TRUE.
-   END IF
+    rootProc=.FALSE.
+    IF( MAPL_AM_I_ROOT() ) THEN
+      rootProc=.TRUE.
+    END IF
 
 ! Set GMI's clock
 ! ---------------
-   CALL Set_begGmiDate(self%gmiClock, nymd)
-   CALL Set_begGmiTime(self%gmiClock, nhms)
-   CALL Set_curGmiDate(self%gmiClock, nymd)
-   CALL Set_curGmiTime(self%gmiClock, nhms)
-   CALL Set_numTimeSteps(self%gmiClock, 0)
+    CALL Set_begGmiDate(self%gmiClock, nymd)
+    CALL Set_begGmiTime(self%gmiClock, nhms)
+    CALL Set_curGmiDate(self%gmiClock, nymd)
+    CALL Set_curGmiTime(self%gmiClock, nhms)
+    CALL Set_numTimeSteps(self%gmiClock, 0)
 
 ! Grid box surface area, m^{2}
 ! ----------------------------
-   CALL MAPL_GetPointer(impChem, cellArea, 'AREA', rc=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(self%cellArea(i1:i2,j1:j2), STAT=STATUS)
-   VERIFY_(STATUS)
-   self%cellArea(i1:i2,j1:j2)=cellArea(i1:i2,j1:j2)
+    CALL MAPL_GetPointer(impChem, cellArea, 'AREA', rc=STATUS)
+    VERIFY_(STATUS)
+    ALLOCATE(self%cellArea(i1:i2,j1:j2), STAT=STATUS)
+    VERIFY_(STATUS)
+    self%cellArea(i1:i2,j1:j2)=cellArea(i1:i2,j1:j2)
 
 ! Discretization
 ! --------------
-   CALL InitializeGmiGrid(self%gmiGrid, NPIJ, NPI, NPJ, &
+    CALL InitializeGmiGrid(self%gmiGrid, NPIJ, NPI, NPJ, &
                           gmi_nborder, i1, i2, ju1, jv1, j2, k1, k2, &
                           i1_gl, i2_gl, ju1_gl, jv1_gl, j2_gl, k1_gl, k2_gl, &
                           ilo, ihi, julo, jvlo, jhi, &
                           ilo_gl, ihi_gl, julo_gl, jvlo_gl, jhi_gl, &
                           ilong, ilat, ivert, itloop, j1p, j2p)
 
-! Number of species and perform a consistency check with setkin_par.h.
-! NOTES:
-!  1. H2O is specie number 10 in the strat-trop mechanism, but will not be
-!     found in w_c%reg%vname. H2O will be initialized from specific humidity, Q.
-!  2. The GEOS-5 bundle has an Age-Of-Air tracer, which is not carried by GMI.
-!  3. At the end of the XX (non-transported) species is a place holder for T2M15d.
-! So w_c%reg%j_XX-w_c%reg%i_GMI must equal the parameter NSP = NCONST + NDYN.
+! Perform a consistency check with setkin_par.h.
+!   NSP is the number of species in setkins
+!   NMR is the number of species in the Mech Registry
+!
+!   H2O   is in setkins,           but not in GMI_Mech_Registry
+!   AOA   is in GMI_Mech_Registry, but not in setkins
+!   T2M15 is in GMI_Mech_Registry, but not in setkins
+!
+!   The number of species common to both is therefore
+!     NMR - 2     ! number in GMI_Mech_Registry - 2
+!     NSP - 1     ! number in setkins - 1
 ! --------------------------------------------------------------------------------
-   numSpecies = w_c%reg%j_XX-w_c%reg%i_GMI
-   IF(numSpecies /= NSP) THEN
-    PRINT *,TRIM(IAm),': Number of species from Chem_Registry.rc does not match number in setkin_par.h'
+   NMR = bgg%nq + bxx%nq
+   IF( NMR-2 /= NSP-1 ) THEN
+    PRINT *,TRIM(IAm),': Number of species from GMI_Mech_Registry.rc does not match number in setkin_par.h'
     STATUS = 1
     VERIFY_(STATUS)
-    RETURN
    END IF
 
 ! Allocate space, etc., but the initialization of the
@@ -529,14 +540,14 @@ CONTAINS
 ! ----------------------------------------------------------
 
       CALL InitializeSpcConcentration(self%SpeciesConcentration,              &
-     &               self%gmiGrid, gmiConfigFile, numSpecies, NMF, NCHEM,     &
-     &               loc_proc)
+                     self%gmiGrid, gmiConfigFile, NSP, NMF, NCHEM,            &
+                     loc_proc)
 
-      CALL InitializeEmission(self%Emission, self%SpeciesConcentration,      &
-     &               self%gmiGrid, gmiConfigFile, self%cellArea, IHNO3, IO3, &
-     &               NSP, loc_proc, rootProc, self%chem_opt, self%trans_opt, &
-     &               self%pr_diag,   &
-     &               self%pr_const, self%pr_surf_emiss, self%pr_emiss_3d, tdt)
+      CALL InitializeEmission(self%Emission, self%SpeciesConcentration,       &
+                     self%gmiGrid, gmiConfigFile, self%cellArea, IHNO3, IO3,  &
+                     NSP, loc_proc, rootProc, self%chem_opt, self%trans_opt,  &
+                     self%pr_diag,                                            &
+                     self%pr_const, self%pr_surf_emiss, self%pr_emiss_3d, tdt)
 
       IF (BTEST(self%Emission%emiss_opt,1)) THEN
 
@@ -545,6 +556,10 @@ CONTAINS
 
       END IF
 
+
+    if (self%Emission%num_point_emiss .gt. 0) then 
+      allocate(self%GmiPointEmiss(self%Emission%num_point_emiss))
+    endif
 
       CALL initReadEmission(self%Emission, self%gmiClock, self%gmiGrid,     &
      &               self%cellArea, loc_proc, self%pr_diag, RC=STATUS)
@@ -573,13 +588,13 @@ CONTAINS
 !         _ASSERT(NSP == numVars,'needs informative message')
 !     END IF
 
-    !---------------------------------------------------------------
-    ! Create and populate the array that maps GMI species indices to
-    ! GEOS-5 species indices
-    !---------------------------------------------------------------
+!---------------------------------------------------------------
+! Create and populate the array that maps GMI species indices to
+! GEOS-5 species indices
+!---------------------------------------------------------------
 
     allocate(self%mapSpecies(NSP))
-    self%mapSpecies(:) = speciesReg_for_CCM(lchemvar, w_c%reg%vname, NSP, w_c%reg%i_GMI, w_c%reg%j_XX)
+    self%mapSpecies(:) = speciesReg_for_CCM(lchemvar, NSP, bgg%reg%vname, bxx%reg%vname )
 
 ! Which (used) emission field is for lightning NO?
 ! ------------------------------------------------
@@ -587,82 +602,82 @@ CONTAINS
     self%ic_NO_lgt = -1
     CALL Get_num_emiss (self%Emission, num_emiss)
     DO i = 1,num_emiss
-     speciesName = TRIM(self%Emission%emissionSpeciesNames(i))
-     IF(self%Emission%emiss_map(i) >= 1) ic = ic+1
-     IF(TRIM(speciesName) == 'NO_lgt') self%ic_NO_lgt = ic
+      speciesName = TRIM(self%Emission%emissionSpeciesNames(i))
+      IF(self%Emission%emiss_map(i) >= 1) ic = ic+1
+      IF(TRIM(speciesName) == 'NO_lgt') self%ic_NO_lgt = ic
     END DO
 
 ! Expose ambiguity in lightning emissions specification
 ! -----------------------------------------------------
     CALL Get_lightning_opt(self%Emission, lightning_opt)
     IF(lightning_opt == 0 .AND. self%ic_NO_lgt < 0) THEN
-     IF( MAPL_AM_I_ROOT() ) THEN
-      PRINT *,TRIM(Iam)//": Could not find emission specie name NO_lgt with lightning_opt = 0."
-     END IF
-     STATUS = 1
-     VERIFY_(STATUS)
+      IF( MAPL_AM_I_ROOT() ) THEN
+        PRINT *,TRIM(Iam)//": Could not find emission specie name NO_lgt with lightning_opt = 0."
+      END IF
+      STATUS = 1
+      VERIFY_(STATUS)
     END IF
 
 ! Grab the units for the export states of the EM_ emission species.  The
 ! first scan determines size of allocatable arrays.  Second scan fills them.
 ! --------------------------------------------------------------------------
-   CALL ESMF_StateGet(expChem, ITEMCOUNT=n, RC=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(itemNames(n), STAT=STATUS)
-   VERIFY_(STATUS)
-   ALLOCATE(itemTypes(n), STAT=STATUS)
-   VERIFY_(STATUS)
-   CALL ESMF_StateGet(expChem, ITEMNAMELIST=itemNames, ITEMTYPELIST=itemTypes, RC=STATUS)
-   VERIFY_(STATUS)
+    CALL ESMF_StateGet(expChem, ITEMCOUNT=n, RC=STATUS)
+    VERIFY_(STATUS)
+    ALLOCATE(itemNames(n), STAT=STATUS)
+    VERIFY_(STATUS)
+    ALLOCATE(itemTypes(n), STAT=STATUS)
+    VERIFY_(STATUS)
+    CALL ESMF_StateGet(expChem, ITEMNAMELIST=itemNames, ITEMTYPELIST=itemTypes, RC=STATUS)
+    VERIFY_(STATUS)
    
-   self%numEM_Exports = 0
+    self%numEM_Exports = 0
 
-   Scan: DO scanNumber = 1,2
-    ic = 0
+    Scan: DO scanNumber = 1,2
+      ic = 0
 
-    Searching: DO m = 1,n
+      Searching: DO m = 1,n
 
-     TypeIsField: IF(itemTypes(m) == ESMF_StateItem_Field) THEN
-      i = INDEX(TRIM(itemNames(m)), "EM_")
+        TypeIsField: IF(itemTypes(m) == ESMF_StateItem_Field) THEN
+          i = INDEX(TRIM(itemNames(m)), "EM_")
 
-      Match: IF(i == 1) THEN
-       CALL ESMF_StateGet(expChem, itemNames(m), FIELD, RC=STATUS)
-       VERIFY_(STATUS)
-       ic = ic+1
+          Match: IF(i == 1) THEN
+            CALL ESMF_StateGet(expChem, itemNames(m), FIELD, RC=STATUS)
+            VERIFY_(STATUS)
+            ic = ic+1
        
-       IF(scanNumber == 2) THEN
-        CALL ESMF_AttributeGet(FIELD, NAME='UNITS', VALUE=string, RC=status)
-        VERIFY_(STATUS)
-        self%EM_ExportNames(ic) = TRIM(itemNames(m))
-        self%EM_ExportUnits(ic) = TRIM(string)
-       END IF
+            IF(scanNumber == 2) THEN
+              CALL ESMF_AttributeGet(FIELD, NAME='UNITS', VALUE=string, RC=status)
+              VERIFY_(STATUS)
+              self%EM_ExportNames(ic) = TRIM(itemNames(m))
+              self%EM_ExportUnits(ic) = TRIM(string)
+            END IF
 
-      END IF Match
+          END IF Match
 
-     END IF TypeIsField
+        END IF TypeIsField
 
-    END DO Searching
+      END DO Searching
     
-    IF(scanNumber == 1) THEN
-     self%numEM_Exports = ic
-     ALLOCATE(self%EM_ExportNames(ic), STAT=STATUS)
-     VERIFY_(STATUS)
-     ALLOCATE(self%EM_ExportUnits(ic), STAT=STATUS)
-     VERIFY_(STATUS)
-    ELSE
-     DEALLOCATE(itemNames, STAT=STATUS)
-     VERIFY_(STATUS)
-     DEALLOCATE(itemTypes, STAT=STATUS)
-     VERIFY_(STATUS)
-    END IF
+      IF(scanNumber == 1) THEN
+        self%numEM_Exports = ic
+        ALLOCATE(self%EM_ExportNames(ic), STAT=STATUS)
+        VERIFY_(STATUS)
+        ALLOCATE(self%EM_ExportUnits(ic), STAT=STATUS)
+        VERIFY_(STATUS)
+      ELSE
+        DEALLOCATE(itemNames, STAT=STATUS)
+        VERIFY_(STATUS)
+        DEALLOCATE(itemTypes, STAT=STATUS)
+        VERIFY_(STATUS)
+      END IF
 
-   END DO Scan
+    END DO Scan
 
 ! Use this space to hold the daily biomass burning emissions between
 ! Chem_UtilMPRead updates. The emissions are assumed to be singly layered.
 ! -----------------------------------------------------------------------
 
-   self%veg_fraction_done = .FALSE.
+    self%veg_fraction_done = .FALSE.
 
 !   Set up Overpass Masks
 !   --------------------
@@ -679,9 +694,9 @@ CONTAINS
     CALL OVP_mask ( LONS=LONS, DELTA_TIME=OVP_MASK_DT, OVERPASS_HOUR=10, MASK=MASK_10AM )
     CALL OVP_mask ( LONS=LONS, DELTA_TIME=OVP_MASK_DT, OVERPASS_HOUR=14, MASK=MASK_2PM  )
 
-  RETURN
+    RETURN
    
-  END SUBROUTINE GmiEmiss_GridCompInitialize
+    END SUBROUTINE GmiEmiss_GridCompInitialize
 
 !-------------------------------------------------------------------------
 !BOP
@@ -690,13 +705,13 @@ CONTAINS
 !
 ! !INTERFACE:
 !
-            SUBROUTINE GmiEmiss_initSurfEmissBundle (self, w_c, expChem, rc)
+            SUBROUTINE GmiEmiss_initSurfEmissBundle (self, bgg, expChem, rc)
 !
 ! !INPUT PARAMETERS:
-   TYPE(Chem_Bundle), INTENT(in) :: w_c                ! Chemical tracer fields, delp
+   TYPE(Species_Bundle), INTENT(in) :: bgg      ! GMI Species - transported
 
 ! !OUTPUT PARAMETERS:
-      INTEGER, INTENT(out) ::  rc                  ! Error return code:
+      INTEGER, INTENT(out) ::  rc               ! Error return code:
                                                 !  0 - all is well
                                                 !  1 - 
 !
@@ -736,7 +751,7 @@ CONTAINS
             write (binName ,'(i4.4)') ib
             varName = 'surfEmiss'//binName
 
-            call addTracerToBundle (surfEmissBundle, var, w_c%grid_esmf, varName)
+            call addTracerToBundle (surfEmissBundle, var, bgg%grid_esmf, varName)
          end do
 
          call ESMF_FieldBundleGet(surfEmissBundle, fieldCount=numVars , RC=STATUS)
@@ -760,8 +775,8 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE GmiEmiss_GridCompRun ( self, w_c, impChem, expChem, nymd, nhms, &
-                                     tdt, clock, mixPBL, rc )
+   SUBROUTINE GmiEmiss_GridCompRun ( self, bgg, bxx, impChem, expChem, nymd, nhms, &
+                                     tdt, gc, clock, mixPBL, rc )
 
 ! !USES:
 
@@ -772,17 +787,30 @@ CONTAINS
    USE GmiSolar_mod,                  ONLY : CalcCosSolarZenithAngle
    USE GmiEmissionMethod_mod,         ONLY : RunEmission
    USE GmiEmissionMethod_mod,         ONLY : Get_lightning_opt
-
+!.sds
+   USE Gmi_SEmissMethod_Mod
+   use GmiSpeciesRegistry_mod, only : getSpeciesIndex
+!... for point sources
+   use m_StrTemplate,                 only : StrTemplate
+   use GOCART2G_Process,              only : ReadPointEmissions
+   use MAPL_BaseMod,                  only : MAPL_GetHorzIJIndex
+!.sds.end
    IMPLICIT none
 
 ! !INPUT/OUTPUT PARAMETERS:
 
    TYPE(GmiEmiss_GridComp), INTENT(INOUT) :: self        ! Grid Component
-   TYPE(Chem_Bundle),       INTENT(INOUT) :: w_c         ! Chemical tracer fields   
+   TYPE(Species_Bundle),    INTENT(INOUT) :: bgg         ! GMI Species - transported
+   TYPE(Species_Bundle),    INTENT(INOUT) :: bxx         ! GMI Species - not transported
    TYPE(ESMF_State),        INTENT(INOUT) :: impChem     ! Import State
    TYPE(ESMF_State),        INTENT(INOUT) :: expChem     ! Export State
    TYPE(ESMF_Clock),        INTENT(INOUT) :: clock       ! The clock
 
+!.sds
+   type(ESMF_GridComp), intent(inout) :: gc     ! Gridded component 
+   character (len=ESMF_MAXSTR)        :: COMP_NAME
+   type(ESMF_Grid)                    :: grid
+!.sds
 ! !INPUT PARAMETERS:
 
    INTEGER,                 INTENT(IN)    :: nymd, nhms  ! time
@@ -822,6 +850,13 @@ CONTAINS
 
    REAL, POINTER, DIMENSION(:,:,:) :: airdens, ple, Q, T, zle
    REAL, POINTER, DIMENSION(:,:,:) :: cnv_mfc
+!.sds
+!... for DMS emissions
+   real, pointer, dimension(:,:,:) :: delp
+   real, pointer, dimension(:,:)   :: tskin
+   real, pointer, dimension(:,:)   :: fr_ocean
+   real, pointer, dimension(:,:)   :: DMS_ocean
+!.sds.end
 
 !  Exports not part of internal state
 !  ----------------------------------
@@ -901,10 +936,18 @@ CONTAINS
    REAL(KIND=DBL), ALLOCATABLE :: mass(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: press3c(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: press3e(:,:,:)
+   REAL(KIND=DBL), ALLOCATABLE :: height3e(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: gridBoxThickness(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: kel(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: cmf(:,:,:)
 
+!.sds
+!... Workspace for point emissions
+!   character(len=255)     :: point_emissions_srcfilen   ! filename for pointwise emissions
+   integer :: nPts, l, irc
+   real    :: ebot, etop, demissdz, z0, z1, dz, dPE    
+   logical :: fileExists
+!.sds.end
    REAL(KIND=DBL), ALLOCATABLE :: surfEmissForChem(:,:,:)
    INTEGER :: curRecord
 
@@ -929,10 +972,11 @@ CONTAINS
    jm = self%jm
    
    km = self%km
-   
+
 !  Some real constants
 !  -------------------
-   pi = 4.00*ATAN(1.00)
+!   pi = 4.00*ATAN(1.00)
+   pi = MAPL_PI
    degToRad = pi/180.00
    radToDeg = 180.00/pi
    chemDt = tdt
@@ -940,14 +984,14 @@ CONTAINS
 
    rootProc=.FALSE.
    IF( MAPL_AM_I_ROOT() ) THEN
-    rootProc=.TRUE.
+     rootProc=.TRUE.
    END IF
 
 !  We need lots of pointers!
 !  -------------------------
    if (self%Emission%do_ShipEmission) then
-      ALLOCATE(jNO2val_phot(i1:i2,j1:j2),STAT=STATUS)
-      VERIFY_(STATUS)
+     ALLOCATE(jNO2val_phot(i1:i2,j1:j2),STAT=STATUS)
+     VERIFY_(STATUS)
    endif
 
    CALL FindPointers(rc)
@@ -1006,6 +1050,8 @@ CONTAINS
    VERIFY_(STATUS)
    ALLOCATE(           press3e(i1:i2,j1:j2,0:km),STAT=STATUS)
    VERIFY_(STATUS)
+   ALLOCATE(          height3e(i1:i2,j1:j2,0:km),STAT=STATUS)
+   VERIFY_(STATUS)
    ALLOCATE(  gridBoxThickness(i1:i2,j1:j2,1:km),STAT=STATUS)
    VERIFY_(STATUS)
    ALLOCATE(               kel(i1:i2,j1:j2,1:km),STAT=STATUS)
@@ -1014,8 +1060,8 @@ CONTAINS
    VERIFY_(STATUS)
 
    IF (self%Emission%do_semiss_inchem) THEN
-      ALLOCATE(surfEmissForChem(i1:i2,j1:j2,1:NSP),STAT=STATUS)
-      VERIFY_(STATUS)
+     ALLOCATE(surfEmissForChem(i1:i2,j1:j2,1:NSP),STAT=STATUS)
+     VERIFY_(STATUS)
    END IF
 
 ! Geolocation
@@ -1026,7 +1072,7 @@ CONTAINS
 !  Layer mean pressures. NOTE: ple(:,:,0:km)
 !  -----------------------------------------
    DO k=1,km
-    pl(i1:i2,j1:j2,k)=(ple(i1:i2,j1:j2,k-1)+ple(i1:i2,j1:j2,k))*0.50
+     pl(i1:i2,j1:j2,k) = (ple(i1:i2,j1:j2,k-1)+ple(i1:i2,j1:j2,k))*0.50
    END DO
    
 ! Set GMI's clock
@@ -1045,6 +1091,11 @@ CONTAINS
    CALL Acquire_Clims(STATUS)
    VERIFY_(STATUS)
 
+! Grab imports and do units conversions
+! -------------------------------------
+   CALL SatisfyImports(STATUS)
+   VERIFY_(STATUS)
+
 ! Daily or monthly emissions inventories
 ! -----------------------------------------
    CALL Refresh_Daily(STATUS)
@@ -1053,23 +1104,17 @@ CONTAINS
 ! Keep running average of T2M for the previous 15 days
 ! ----------------------------------------------------
    IF(.NOT. self%doingPredictorNow) THEN
-    CALL MonitorT2M(STATUS)
-    VERIFY_(STATUS)
+     CALL MonitorT2M(STATUS)
+     VERIFY_(STATUS)
    END IF
-   T_15_AVG(i1:i2,j1:j2) = w_c%qa(w_c%reg%j_XX)%data3d(i1:i2,j1:j2,1)
-
-! Grab imports and do units conversions
-! -------------------------------------
-   CALL SatisfyImports(STATUS)
-   VERIFY_(STATUS)
+   T_15_AVG(i1:i2,j1:j2) = bxx%qa(bxx%reg%nq)%data3d(i1:i2,j1:j2,1)
 
 ! Hand the species concentrations to GMI's bundle
 ! -----------------------------------------------
    IF (self%gotImportRst) THEN
-      CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration, &
-               w_c%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, &
-               STATUS)
-   VERIFY_(STATUS)
+      CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration,          &
+               bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, STATUS)
+      VERIFY_(STATUS)
    END IF
 
    DEALLOCATE(var3D, STAT=STATUS)
@@ -1078,7 +1123,7 @@ CONTAINS
 ! Impose fixed concentrations
 ! ---------------------------
    IF(self%SpeciesConcentration%num_fixed_const > 0) THEN
-    CALL resetFixedConcentration(self%SpeciesConcentration, self%gmiClock, self%gmiGrid, NSP)
+     CALL resetFixedConcentration(self%SpeciesConcentration, self%gmiClock, self%gmiGrid, NSP)
    END IF
 
 ! ------------------------------------------------------------------------
@@ -1090,18 +1135,18 @@ CONTAINS
 ! ------------------------------------------------------------------------
    IF(self%do_emission .AND. self%gotImportRst) THEN
 
-    IF(self%pr_emiss_3d)   self%Emission%emiss_3d_out    = 0.00D+00
+     IF(self%pr_emiss_3d)   self%Emission%emiss_3d_out    = 0.00D+00
 
-    IF(self%pr_surf_emiss) self%Emission%surf_emiss_out2 = 0.00D+00
+     IF(self%pr_surf_emiss) self%Emission%surf_emiss_out2 = 0.00D+00
 
 ! Grab lightning option, and pass flash rates to Emission
 !  0: Prescribed emission, NO_lgt
 !  1: Parameterized emission, GmiEmissionLightning_mod.F90
 !  2: None
 ! --------------------------------------------------------
-    CALL Get_lightning_opt(self%Emission, lightning_opt)
+     CALL Get_lightning_opt(self%Emission, lightning_opt)
 
-    IF (self%Emission%do_ShipEmission) THEN
+     IF (self%Emission%do_ShipEmission) THEN
 
        CALL MAPL_GetPointer(impChem, ship_no, 'SHIP_NO', __RC__)
 
@@ -1116,9 +1161,9 @@ CONTAINS
                 self%gmiGrid%j2, self%Emission%num_emiss)
        DEALLOCATE(jNO2val_phot)
 
-    END IF
+     ENDIF
 
-    CALL MAPL_GetPointer(impChem, light_NO_prod, 'LIGHT_NO_PROD', __RC__)
+     CALL MAPL_GetPointer(impChem, light_NO_prod, 'LIGHT_NO_PROD', __RC__)
 
 
 !--------------------------------------------------------
@@ -1136,7 +1181,7 @@ CONTAINS
                      con_precip, tot_precip, frictionVelocity, fracCloudCover, &
                      kel, pbl, cmf, press3c, press3e, pctm2,                   &
                      tenMeterU, tenMeterV, soilWetness, gridBoxThickness,      &
-		     mw_data, IBOC, IBBC, INOC, IFOC, IFBC, ISSLT1, ISSLT2,    &
+                     mw_data, IBOC, IBBC, INOC, IFOC, IFBC, ISSLT1, ISSLT2,    &
                      ISSLT3, ISSLT4, IFSO2, INSO2, INDMS, IAN, IMGAS, INO,     &
                      IC5H8, INO, ICO, IC3H6, IHNO3, IO3, NSP, diffusePAR,      &
                      directPAR, T_15_AVG, self%met_opt, self%chem_opt,         &
@@ -1145,8 +1190,9 @@ CONTAINS
                      self%pr_emiss_3d, self%metdata_name_org,                  &
                      self%metdata_name_model, tdt, mixPBL, light_NO_prod)
 
-      if (self%Emission%do_semiss_inchem) then
-        call updateSurfEmissionInChemistry (self%pr_surf_emiss, self%pr_emiss_3d, &
+!... inchem emissions aren't working
+     if (self%Emission%do_semiss_inchem) then
+       call updateSurfEmissionInChemistry (self%pr_surf_emiss, self%pr_emiss_3d, &
                    self%Emission%emiss_isop, self%Emission%emiss_monot,           &
                    self%Emission%emiss_nox, self%Emission%do_ShipEmission,        &
                    self%Emission%emiss_hno3, self%Emission%emiss_o3, IHNO3, IO3,  &
@@ -1161,15 +1207,15 @@ CONTAINS
                    self%gmiGrid%k1, self%gmiGrid%k2, self%gmiGrid%ilo,            &
                    self%gmiGrid%ihi, self%gmiGrid%julo, self%gmiGrid%jhi, NSP)
 
-         call populateBundle()
-      end if
-   END IF
-
+        call populateBundle()
+     endif
+   ENDIF
+ 
 ! Return species concentrations to the chemistry bundle
 ! -----------------------------------------------------
    IF (self%gotImportRst) THEN
-      CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration, &
-               w_c%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
+      CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration,   &
+               bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
                STATUS)
       VERIFY_(STATUS)
    END IF
@@ -1190,13 +1236,13 @@ CONTAINS
 	      tot_precip, pbl, soilWetness, diffusePAR, directPAR, T_15_AVG, STAT=STATUS)
    VERIFY_(STATUS)
 
-   DEALLOCATE(pl, mass, press3c, press3e, gridBoxThickness, kel, cmf, &
+   DEALLOCATE(pl, mass, press3c, press3e, height3e, gridBoxThickness, kel, cmf, &
               STAT=STATUS)
    VERIFY_(STATUS)
 
    IF (self%Emission%do_semiss_inchem) THEN
-      DEALLOCATE(surfEmissForChem, STAT=STATUS)
-      VERIFY_(STATUS)
+     DEALLOCATE(surfEmissForChem, STAT=STATUS)
+     VERIFY_(STATUS)
    END IF
 
 ! IMPORTANT: Reset this switch to .TRUE. after first pass.
@@ -1259,77 +1305,77 @@ CONTAINS
 ! Update fixed concentration species
 ! ----------------------------------
   IF(self%SpeciesConcentration%num_fixed_const > 0) THEN
-   DO ic = 1,self%SpeciesConcentration%num_fixed_const
-    i = self%SpeciesConcentration%fixed_const_map(ic)
+    DO ic = 1,self%SpeciesConcentration%num_fixed_const
+      i = self%SpeciesConcentration%fixed_const_map(ic)
 
-    speciesName = TRIM(lchemvar(i))
-    importName = TRIM(speciesName)//'_FIXED'
-    CALL MAPL_GetPointer(impChem, PTR3D, TRIM(importName), RC=STATUS)
-    VERIFY_(STATUS)
-    self%SpeciesConcentration%fixed_const(i1:i2,j1:j2,1:km,ic) = PTR3D(i1:i2,j1:j2,km:1:-1)
-    NULLIFY(PTR3D)
+      speciesName = TRIM(lchemvar(i))
+      importName = TRIM(speciesName)//'_FIXED'
+      CALL MAPL_GetPointer(impChem, PTR3D, TRIM(importName), RC=STATUS)
+      VERIFY_(STATUS)
+      self%SpeciesConcentration%fixed_const(i1:i2,j1:j2,1:km,ic) = PTR3D(i1:i2,j1:j2,km:1:-1)
+      NULLIFY(PTR3D)
 
-   END DO
+    END DO
   END IF
 
 ! Update the vegetation boundary condition
 ! ----------------------------------------
   IF(BTEST(self%Emission%emiss_opt,1)) THEN
 
-   IF ( .NOT. self%veg_fraction_done ) THEN
+    IF ( .NOT. self%veg_fraction_done ) THEN
 
-     importName = 'VEG_FRAC'
-     CALL MAPL_GetPointer(impChem, PTR3D, TRIM(importName), RC=STATUS)
-     VERIFY_(STATUS)
+      importName = 'VEG_FRAC'
+      CALL MAPL_GetPointer(impChem, PTR3D, TRIM(importName), RC=STATUS)
+      VERIFY_(STATUS)
 
-     CALL Decode_Land_Types(PTR3D, NTYPE,              &
+      CALL Decode_Land_Types(PTR3D, NTYPE,              &
                             i1, i2, j1, j2, NVEGTYPE-2,&
                             self%Emission%ireg,        &
                             self%Emission%iuse,        &
                             self%Emission%iland,       &
                             RC=STATUS)
-     VERIFY_(STATUS)
+      VERIFY_(STATUS)
 
-     NULLIFY(PTR3D)
+      NULLIFY(PTR3D)
 
-     self%veg_fraction_done = .TRUE.
+      self%veg_fraction_done = .TRUE.
 
-   ENDIF
+    ENDIF
 
-   importName = 'LAI_FRAC'
-   CALL MAPL_GetPointer(impChem, PTR3D, importName, RC=STATUS)
-   VERIFY_(STATUS)
+    importName = 'LAI_FRAC'
+    CALL MAPL_GetPointer(impChem, PTR3D, importName, RC=STATUS)
+    VERIFY_(STATUS)
 
-   CALL Decode_XLAI(PTR3D, NTYPE,              &
+    CALL Decode_XLAI(PTR3D, NTYPE,              &
                     i1, i2, j1, j2, NVEGTYPE-2,&
                     self%Emission%ireg,        &
                     self%Emission%iuse,        &
                     self%Emission%iland,       &
                     self%Emission%xlai,        &
                     RC=STATUS)
-   VERIFY_(STATUS)
+    VERIFY_(STATUS)
 
-   NULLIFY(PTR3D)
+    NULLIFY(PTR3D)
 
      !------------------------------
      ! Read the Fertilizer File
      !------------------------------
 
-   importName = 'SOILFERT'
-   CALL MAPL_GetPointer(impChem, PTR2D, TRIM(importName), RC=STATUS)
-   VERIFY_(STATUS)
-   self%Emission%soil_fert(:,:) = PTR2D(:,:)
-   NULLIFY(PTR2D)
+    importName = 'SOILFERT'
+    CALL MAPL_GetPointer(impChem, PTR2D, TRIM(importName), RC=STATUS)
+    VERIFY_(STATUS)
+    self%Emission%soil_fert(:,:) = PTR2D(:,:)
+    NULLIFY(PTR2D)
 
      !------------------------------
      ! Read the Precipitation File
      !------------------------------
 
-   importName = 'SOILPRECIP'
-   CALL MAPL_GetPointer(impChem, PTR2D, TRIM(importName), RC=STATUS)
-   VERIFY_(STATUS)
-   self%Emission%soil_precip(:,:) = PTR2D(:,:)
-   NULLIFY(PTR2D)
+    importName = 'SOILPRECIP'
+    CALL MAPL_GetPointer(impChem, PTR2D, TRIM(importName), RC=STATUS)
+    VERIFY_(STATUS)
+    self%Emission%soil_precip(:,:) = PTR2D(:,:)
+    NULLIFY(PTR2D)
 
   END IF
 
@@ -1339,77 +1385,77 @@ CONTAINS
 
 ! Read emission factors and convert from [micrograms C m^{-2} hr^{-1}] to [kg C box^{-1} dt^{-1}]
 ! -----------------------------------------------------------------------------------------------
-   tokgCPerBox = tdt*1.00E-09/3600.00
+    tokgCPerBox = tdt*1.00E-09/3600.00
 
-   IF(self%Emission%doMEGANviaHEMCO) THEN 
+    IF(self%Emission%doMEGANviaHEMCO) THEN 
    ! get MEGAN emissions pointers from HEMCO  (already kgC/m2/s)
-      CALL MAPL_GetPointer(impChem,   PTR2D, 'GMI_ISOPRENE', RC=STATUS)
-      VERIFY_(STATUS)
+       CALL MAPL_GetPointer(impChem,   PTR2D, 'GMI_ISOPRENE', RC=STATUS)
+       VERIFY_(STATUS)
 !     CALL MAPL_MaxMin('emiss_isop ptr in gmiEmiss:', PTR2D)
-      self%Emission%emiss_isop(:,:) = PTR2D(:,:)
-      NULLIFY(PTR2D)
-   END IF
+       self%Emission%emiss_isop(:,:) = PTR2D(:,:)
+       NULLIFY(PTR2D)
+    END IF
 
-   importName = 'MEGAN_ISOP'
-   CALL MAPL_GetPointer(impChem, PTR2D, TRIM(importName), RC=STATUS)
-   VERIFY_(STATUS)
-   self%Emission%aefIsop(:,:) = PTR2D(:,:)*self%cellArea(:,:)*tokgCPerBox
-   NULLIFY(PTR2D)
+    importName = 'MEGAN_ISOP'
+    CALL MAPL_GetPointer(impChem, PTR2D, TRIM(importName), RC=STATUS)
+    VERIFY_(STATUS)
+    self%Emission%aefIsop(:,:) = PTR2D(:,:)*self%cellArea(:,:)*tokgCPerBox
+    NULLIFY(PTR2D)
 
-   importName = 'MEGAN_MBO'
-   CALL MAPL_GetPointer(impChem, PTR2D, TRIM(importName), RC=STATUS)
-   VERIFY_(STATUS)
-   self%Emission%aefMbo(:,:) = PTR2D(:,:)*self%cellArea(:,:)*tokgCPerBox
-   NULLIFY(PTR2D)
+    importName = 'MEGAN_MBO'
+    CALL MAPL_GetPointer(impChem, PTR2D, TRIM(importName), RC=STATUS)
+    VERIFY_(STATUS)
+    self%Emission%aefMbo(:,:) = PTR2D(:,:)*self%cellArea(:,:)*tokgCPerBox
+    NULLIFY(PTR2D)
 
-   importName = 'MEGAN_MPE'
-   CALL MAPL_GetPointer(impChem, PTR2D, TRIM(importName), RC=STATUS)
-   VERIFY_(STATUS)
-   self%Emission%aefMonot(:,:) = PTR2D(:,:)*self%cellArea(:,:)*tokgCPerBox
-   NULLIFY(PTR2D)
+    importName = 'MEGAN_MPE'
+    CALL MAPL_GetPointer(impChem, PTR2D, TRIM(importName), RC=STATUS)
+    VERIFY_(STATUS)
+    self%Emission%aefMonot(:,:) = PTR2D(:,:)*self%cellArea(:,:)*tokgCPerBox
+    NULLIFY(PTR2D)
 
-   importName = 'MEGAN_OVOC'
-   CALL MAPL_GetPointer(impChem, PTR2D, TRIM(importName), RC=STATUS)
-   VERIFY_(STATUS)
-   self%Emission%aefOvoc(:,:) = PTR2D(:,:)*self%cellArea(:,:)*tokgCPerBox
-   NULLIFY(PTR2D)
+    importName = 'MEGAN_OVOC'
+    CALL MAPL_GetPointer(impChem, PTR2D, TRIM(importName), RC=STATUS)
+    VERIFY_(STATUS)
+    self%Emission%aefOvoc(:,:) = PTR2D(:,:)*self%cellArea(:,:)*tokgCPerBox
+    NULLIFY(PTR2D)
 
 ! Leaf area index: The MEGAN code requires the previous, current, and next months'
 ! LAI values without temporal interpolation. Given the correct refresh template in
 ! ExtData.rc ("-"), the following construct assures that ExtData initializes all twelve
 ! monthly values of isoLaiYear only on the first pass through the GmiEmission run method.
 ! ---------------------------------------------------------------------------------------
-   DO i = 1,12
-    WRITE(numID,'(I3.3)') i
-    importName = 'MEGAN_LAI_'//numID
-    CALL MAPL_GetPointer(impChem, PTR2D, TRIM(importName), RC=STATUS)
-    VERIFY_(STATUS)
-    self%Emission%isoLaiYear(:,:,i) = PTR2D(:,:)
-    NULLIFY(PTR2D)
-   END DO
+    DO i = 1,12
+      WRITE(numID,'(I3.3)') i
+      importName = 'MEGAN_LAI_'//numID
+      CALL MAPL_GetPointer(impChem, PTR2D, TRIM(importName), RC=STATUS)
+      VERIFY_(STATUS)
+      self%Emission%isoLaiYear(:,:,i) = PTR2D(:,:)
+      NULLIFY(PTR2D)
+    END DO
 
-   m = MOD(nymd,10000)/100
+    m = MOD(nymd,10000)/100
 
-   IF(m == 1) THEN
-    p = 12
-   ELSE
-    p = m-1
-   END IF
+    IF(m == 1) THEN
+      p = 12
+    ELSE
+      p = m-1
+    END IF
 
-   IF(m == 12) THEN
-    n = 1
-   ELSE
-    n = m+1
-   END IF
+    IF(m == 12) THEN
+      n = 1
+    ELSE
+      n = m+1
+    END IF
 
-   self%Emission%isoLaiPrev(:,:) = self%Emission%isoLaiYear(:,:,p)
-   self%Emission%isoLaiCurr(:,:) = self%Emission%isoLaiYear(:,:,m)
-   self%Emission%isoLaiNext(:,:) = self%Emission%isoLaiYear(:,:,n)
+    self%Emission%isoLaiPrev(:,:) = self%Emission%isoLaiYear(:,:,p)
+    self%Emission%isoLaiCurr(:,:) = self%Emission%isoLaiYear(:,:,m)
+    self%Emission%isoLaiNext(:,:) = self%Emission%isoLaiYear(:,:,n)
 
   END IF MEGAN
 
   RETURN
- END SUBROUTINE Acquire_Clims
+  END SUBROUTINE Acquire_Clims
 
 !---------------------------------------------------------------------------
 ! NASA/GSFC, Global Modeling and Assimilation Office, Code 610.1, GEOS/DAS !
@@ -1420,7 +1466,7 @@ CONTAINS
 !
 ! !INTERFACE:
 
- SUBROUTINE Refresh_Daily(rc)
+  SUBROUTINE Refresh_Daily(rc)
   
   IMPLICIT NONE
 
@@ -1458,13 +1504,28 @@ CONTAINS
   INTEGER :: STATUS
   INTEGER :: i, k, kReverse
   INTEGER :: lightning_opt
-  INTEGER :: num_emiss
+!  INTEGER :: num_emiss
   REAL, ALLOCATABLE :: cellWeighting(:,:)
   REAL, ALLOCATABLE :: weightedField2D(:,:)
-  
+
   REAL, POINTER, DIMENSION(:,:) :: PTR2D
   REAL, POINTER, DIMENSION(:,:,:) :: PTR3D
-  
+!.sds.. DMS emissions
+  integer :: indDMS
+  real, allocatable :: tbot(:,:)
+  real, allocatable :: flux_DMS(:,:)
+  real, allocatable :: DMS_atm(:,:,:)
+  logical :: do_achem_dms_emiss
+  character (len=ESMF_MAXSTR)  :: fname ! file name for point source emissions
+!.sds.. point emissions
+  integer :: num_point_emiss
+!... local point source vrbls
+  integer           :: nCols, itmp, sslen, selen
+  type(ESMF_Config) :: cf
+  CHARACTER(LEN=ESMF_MAXSTR) :: tmpstr
+  real :: scale
+!.sds.end point emissions
+
   rc = 0
   IAm = "Refresh_Daily"
 
@@ -1477,36 +1538,37 @@ CONTAINS
 ! .TRUE., the units on the emission files are assumed kg m^{-2} s^{-1}, and 
 ! multiplication by cellArea follows data acquisition by MAPL_ExtData.
 ! ----------------------------------------------------------------------------------
-   ALLOCATE(cellWeighting(i1:i2,j1:j2),weightedField2D(i1:i2,j1:j2),__STAT__)
+  ALLOCATE(cellWeighting(i1:i2,j1:j2),weightedField2D(i1:i2,j1:j2),__STAT__)
 
-   IF(self%Emission%clim_emiss_by_area) THEN
+  IF(self%Emission%clim_emiss_by_area) THEN
     cellWeighting(i1:i2,j1:j2) = self%cellArea(i1:i2,j1:j2)
     IF(MAPL_AM_I_ROOT()) PRINT *, TRIM(IAm)//": Emissions are per unit area."
-   ELSE
+  ELSE
     cellWeighting(i1:i2,j1:j2) = 1.00
     IF(MAPL_AM_I_ROOT()) PRINT *, TRIM(IAm)//": Emissions are NOT per unit area."
-   END IF
+  END IF
 
   CALL Get_lightning_opt(self%Emission,lightning_opt)
 
 
 ! For each available inventory ...
 ! --------------------------------
-  num_emiss = count( self%Emission%emiss_map(:) > 0 )
-  DO i = 1,num_emiss
+!  num_emiss = count( self%Emission%emiss_map(:) > 0 )
+  DO i = 1,self%Emission%num_point_start-1
 
     speciesName = TRIM(self%Emission%emissionSpeciesNames(i))
 
-!   IF(MAPL_AM_I_ROOT()) PRINT *, 'Handling emissions for '//TRIM(speciesName)
-
-    ! Parameterized ship emissions are handled elsewhere (calcShipEmission)
-    IF ( TRIM(speciesName) == '*shipO3*' .OR. TRIM(speciesName) == '*shipHNO3*' )  CYCLE
+!... Special cases: 
+! Parameterized ship emissions are handled elsewhere (calcShipEmission)
+    IF ( TRIM(speciesName) == '*shipO3*'.OR. TRIM(speciesName) == '*shipHNO3*' ) CYCLE
+!.sds.. DMS emission is special case, emissions handled elsewhere
+    if(TRIM(speciesName) == 'DMS' ) cycle
 
     IF ( self%Emission%emiss_map(i) < 1 ) THEN
-     PRINT *, ' '
-     PRINT *,'GmiEmiss::'//TRIM(IAm)//' Species '//TRIM(speciesName)//' does not map to GMI species.'
-     STATUS = 1
-     VERIFY_(STATUS)
+      PRINT *, ' '
+      PRINT *,'GmiEmiss::'//TRIM(IAm)//' Species '//TRIM(speciesName)//' does not map to GMI species.'
+      STATUS = 1
+      VERIFY_(STATUS)
     END IF
 
 ! Select single- or multi-layered based on emissionSpeciesLayers
@@ -1517,11 +1579,11 @@ CONTAINS
 
       IF(i <= self%num_diurnal_emiss) THEN
         weightedField2D(:,:) = PTR2D(:,:)*cellWeighting(:,:)
-        CALL Chem_BiomassDiurnal(var2D,                        &
-                                 weightedField2D(:,:),         &
-                                 self%lonRad(:,:)*radToDeg,    &
-                                 self%latRad(:,:)*radToDeg,    &
-                                 nhms, tdt)
+        CALL Chem_BiomassDiurnal(var2D,                      &
+                               weightedField2D(:,:),         &
+                               self%lonRad(:,:)*radToDeg,    &
+                               self%latRad(:,:)*radToDeg,    &
+                               nhms, tdt)
         self%Emission%emissionArray(i)%pArray3D(:,:,1) = var2D(:,:)
       ELSE
         self%Emission%emissionArray(i)%pArray3D(:,:,1) = PTR2D(:,:)*cellWeighting(:,:)
@@ -1532,7 +1594,7 @@ CONTAINS
       NULLIFY(PTR2D)
 
     ELSE
-
+  
       CALL MAPL_GetPointer(impChem, PTR3D, TRIM(speciesName), __RC__)
 
       IF(i <= self%num_diurnal_emiss) THEN
@@ -1542,8 +1604,8 @@ CONTAINS
         VERIFY_(STATUS)
       ELSE
         DO k = 1,km
-         kReverse = km-k+1
-         self%Emission%emissionArray(i)%pArray3D(:,:,kReverse) = PTR3D(:,:,k)*cellWeighting(:,:)
+          kReverse = km-k+1
+          self%Emission%emissionArray(i)%pArray3D(:,:,kReverse) = PTR3D(:,:,k)*cellWeighting(:,:)
         END DO
       END IF
 
@@ -1555,27 +1617,230 @@ CONTAINS
 ! lightning_opt = 2  -> none
 ! --------------------------------------------------------------
       IF (TRIM(speciesName) == 'NO_lgt' .AND. lightning_opt >= 1) THEN
-       self%Emission%emissionArray(i)%pArray3D(:,:,:) = 0.00
+        self%Emission%emissionArray(i)%pArray3D(:,:,:) = 0.00
       END IF
 
-     END IF
+    END IF
 
   END DO
+!.sds
+!... do point emissions
+  if(self%Emission%num_point_emiss .gt. 0) then
+!
+    DO k=1,self%Emission%num_point_emiss
+!... put point emissions into correct GMI Emission%emissionArray(ic)%pArray3D() slot
+      ic = self%Emission%num_point_start + k-1
+!... zero out initial pass
+      self%Emission%emissionArray(ic)%pArray3D(:,:,:) = 0.0d0
+!
+      tmpstr = TRIM(self%Emission%emissionPointFilenames(k))
+      call StrTemplate(fname, TRIM(tmpstr), xid='unknown', nymd=nymd, nhms=120000 )
+      inquire(file=fname, exist=fileExists)
+!
+!... is it a new filename this time step?
+!... read point emission data
+      if ( fileExists .and. trim(ptfile_save(k)) .ne. trim(fname) ) then
+        ptfile_save(k) = fname
+!... get no. of emission records and allocate
+        tmpstr = TRIM(self%Emission%num_point_type(k))
+        cf = ESMF_ConfigCreate()
+        call ESMF_ConfigLoadFile(cf, fileName=trim(fname), rc=STATUS )
+        call ESMF_ConfigGetDim(cf, nPts, nCols, LABEL=TRIM(tmpstr)//'::', rc=STATUS)
+        self%GmiPointEmiss(k)%nPts = nPts
 
+        if(allocated(self%GmiPointEmiss(k)%iPoint)) then
+          deallocate(self%GmiPointEmiss(k)%iPoint,__STAT__)
+          deallocate(self%GmiPointEmiss(k)%jPoint,__STAT__)
+          deallocate(self%GmiPointEmiss(k)%vLat,  __STAT__)
+          deallocate(self%GmiPointEmiss(k)%vLon,  __STAT__)
+          deallocate(self%GmiPointEmiss(k)%vBase, __STAT__)
+          deallocate(self%GmiPointEmiss(k)%vTop,  __STAT__)
+          deallocate(self%GmiPointEmiss(k)%vEmis, __STAT__)
+          deallocate(self%GmiPointEmiss(k)%vStart,__STAT__)
+          deallocate(self%GmiPointEmiss(k)%vEnd,  __STAT__)
+        endif
+!
+        allocate(self%GmiPointEmiss(k)%iPoint(nPts),__STAT__)
+        allocate(self%GmiPointEmiss(k)%jPoint(nPts),__STAT__)
+        allocate(self%GmiPointEmiss(k)%vLat(nPts),  __STAT__)
+        allocate(self%GmiPointEmiss(k)%vLon(nPts),  __STAT__)
+        allocate(self%GmiPointEmiss(k)%vBase(nPts), __STAT__)
+        allocate(self%GmiPointEmiss(k)%vTop(nPts),  __STAT__)
+        allocate(self%GmiPointEmiss(k)%vEmis(nPts), __STAT__)
+        allocate(self%GmiPointEmiss(k)%vStart(nPts),__STAT__)
+        allocate(self%GmiPointEmiss(k)%vEnd(nPts),  __STAT__)
+        self%GmiPointEmiss(k)%vStart(:) = 0
+        self%GmiPointEmiss(k)%vEnd(:)   = 240000
+!... read point emissions
+        call ReadPointEmissions (nymd, fname, nPts, self%GmiPointEmiss(k)%vLat &
+          , self%GmiPointEmiss(k)%vLon, self%GmiPointEmiss(k)%vBase, self%GmiPointEmiss(k)%vTop &
+          , self%GmiPointEmiss(k)%vEmis, self%GmiPointEmiss(k)%vStart, self%GmiPointEmiss(k)%vEnd &
+          , label=tmpstr, __RC__)
+!... specified variable not in .rc point emission file
+        if(nPts .le. 0) then
+          if(mapl_am_i_root()) print *, 'Point Emission Variable ', trim(tmpstr) &
+            ,' not found in ', trim(fname)
+          nPts = -1
+!... data read in .rc point emission file
+        else
+          self%GmiPointEmiss(k)%vLon(:) = self%GmiPointEmiss(k)%vLon(:)*real(MAPL_DEGREES_TO_RADIANS)
+          self%GmiPointEmiss(k)%vLat(:) = self%GmiPointEmiss(k)%vLat(:)*real(MAPL_DEGREES_TO_RADIANS)
+          if(mapl_am_i_root()) then
+            selen = len_trim(fname)
+            sslen = max(1,selen-70)
+            print '(i8,'' emission points in: ...'',a72)', nPts, trim(fname(sslen:selen))
+            print '('' '')'
+          endif
+        endif
+!... no file...
+      else if ( .not.fileExists .and. trim(ptfile_save(k)) .ne. trim(fname) ) then
+        if(mapl_am_i_root()) print *,'GMI point emiss fn: ', trim(fname), ' not found; proceeding...'
+        nPts = -1 ! set this back to -1 so the "if (self%nPts > 0)" conditional is not exercised.
+!... retrieve number of point source points...
+      else
+        nPts = self%GmiPointEmiss(k)%nPts
+      endif
+!
+!... Get indices for point emission locations
+      if(nPts .gt. 0) then
+        self%GmiPointEmiss(k)%iPoint(:) = -1
+        self%GmiPointEmiss(k)%jPoint(:) = -1
+        call ESMF_GridCompGet (gc, grid=grid, NAME=COMP_NAME, __RC__)
+        call MAPL_GetHorzIJIndex(nPts, self%GmiPointEmiss(k)%iPoint &
+          , self%GmiPointEmiss(k)%jPoint, grid=grid, lon=self%GmiPointEmiss(k)%vLon &
+          , lat=self%GmiPointEmiss(k)%vLat, rc=status)
+        if(status /= 0) then
+          if(mapl_am_i_root()) print*, trim(Iam), ' - cannot get indices for point emissions'
+          VERIFY_(status)
+        endif
+!... loop over all points in file
+        do n = 1,nPts 
+          i = self%GmiPointEmiss(k)%iPoint(n)
+          j = self%GmiPointEmiss(k)%jPoint(n)
+!... emission in sub-domain?
+          if (i.lt.1 .or. j.lt.1) cycle
+!... during emission period?
+!    print '(''sds01: '',6i8,2f12.2)',k , n, i, j, vStart(n), vEnd(n), vBase(n), vTop(n)
+          if(nhms .ge. self%GmiPointEmiss(k)%vStart(n) &
+            .and. nhms .lt. self%GmiPointEmiss(k)%vEnd(n)) then
+!... distribute in the vertical (m)
+            ebot = self%GmiPointEmiss(k)%vBase(n)
+            etop = self%GmiPointEmiss(k)%vTop(n)
+!
+!.sds.. can this be handled better from file input?
+!
+!... scale needed for emissions, volcano files are in kg(S) emitted into SO2 so scale .ne. 1.0
+            scale = 1.0
+!... volcanic point emissions are only in the top 1/3 of emission column, move ebot
+            if (TRIM(tmpstr) .eq. 'volcano' .and. etop .ne. ebot) then
+              ebot = etop - (etop-ebot)/3.
+!... volcanic emissions are in kg(S), need kg(SO2)
+              CALL getMW(TRIM('EM_SO2'), itmp, mw, rc)
+              scale = mw/32.06
+            endif
+!
+!... distribute into column (z1 is gridbox top, z0 is gridbox bottom, arrays are bottom-up)
+            do l = 1, km
+              z0 = height3e(i,j,l-1)
+              z1 = height3e(i,j,l)
+              dz = z1 - z0
+              dPE = 0.0
+!... emission (kg/s)/m if (ebot .ne. etop) 
+              if (etop .ne. ebot) demissdz = self%GmiPointEmiss(k)%vEmis(n)/(etop-ebot)
+!... emission is above this level "cycle"
+              if (ebot .gt. z1) cycle
+!... emission is below this level (except if below model surface) "cycle"
+              if (z0 .gt. etop .and. l .ne. km) cycle
+!... emiss all below model bottom, putting all in bottom level
+              if ( l .eq. 1 .and. z1 .ge. etop ) then
+                dPE = self%GmiPointEmiss(k)%vEmis(n)
+!... emiss all in this single level
+              elseif ( etop .le. z1 .and. ebot .ge. z0 ) then   ! completely in single layer
+                dPE = self%GmiPointEmiss(k)%vEmis(n)
+!... bottom of emiss cloud only in this level
+              elseif ( (ebot .lt. z1 .and. ebot .ge. z0) .and. etop .gt. z1) then
+                dPE = (z1-ebot) * demissdz
+!... layer is filled with cloud which goes above and below
+              elseif ( etop .gt. z1 .and. ebot .lt. z0) then
+                dPE = (z1-z0) * demissdz
+!... top of emiss cloud only in this level
+              elseif ( (etop .le. z1 .and. etop .ge. z0) .and. ebot .lt. z0) then
+                dPE = (etop-z0) * demissdz
+              endif
+!... add to GMI emission array (kg/gridbox/s)*timestep 
+              self%Emission%emissionArray(ic)%pArray3D(i,j,l) = &
+                self%Emission%emissionArray(ic)%pArray3D(i,j,l) + dPE * scale
+            enddo
+          endif
+        enddo
+!
+      endif
+    enddo
+  endif
+!
+!.sds
+!... do DMS emission if DMS is a carried species
+!... get   constituent number
+!  indDMS = getSpeciesIndex('DMS',.true.)
+  if(self%Emission%GmiDMSEmissIndex .gt. 0) then
+!
+    allocate(tbot(i1:i2,j1:j2),  __STAT__)
+    allocate(flux_DMS(i1:i2,j1:j2),  __STAT__)
+    allocate(DMS_atm(i1:i2,j1:j2,1:km),  __STAT__)
+!
+!... moved to Refresh_Daily
+    call MAPL_GetPointer(impChem, tskin,     'TS',        __RC__)
+    call MAPL_GetPointer(impChem, fr_ocean,  'FROCEAN',   __RC__)
+    call MAPL_GetPointer(impChem, DMS_ocean, 'DMS_OCEAN', __RC__)
+!... sds end
+!
+!... do ACHEM like DMS flux calculation?
+    do_achem_dms_emiss = .false.
+!
+    if(do_achem_dms_emiss) then
+      tbot(:,:) = tskin(:,:)
+    else
+      tbot(:,:) = kel(:,:,1)
+    endif
+!... copy in DMS to temp array and flip in vertical
+    DMS_atm(:,:,:) = self%SpeciesConcentration%concentration(self%Emission%GmiDMSEmissIndex)%pArray3D(:,:,km:1:-1)
+!
+!... calculate DMS flux emissions from the ocean
+    call GmiDMS_emissions(do_achem_dms_emiss &
+                     ,tbot        &
+                     ,u10m        &
+                     ,v10m        &
+                     ,fr_ocean    &
+                     ,DMS_ocean   &
+                     ,DMS_atm     &
+                     ,flux_DMS    &
+                     ,irc)
+!
+!... flux_DMS in is kg m-2 s-1, emissionArray is kg box-1 s-1
+!... Emissions diagnostic and Emissions Array are in units kg box-1 s-1, convert and assign
+    self%Emission%emissionArray(self%Emission%GmiDMSEmissIndex)%pArray3D(i1:i2,j1:j2,1) &
+      = flux_DMS(:,:) * self%cellArea(:,:)
+!
+    deallocate(flux_DMS)
+    deallocate(DMS_atm)
+    deallocate(tbot)
+  endif
+!
+!.sds.end
   DEALLOCATE(cellWeighting, weightedField2D, __STAT__)
 
 ! LLNL emissions units conversion
 ! -------------------------------
   IF(self%Emission%emiss_conv_flag /= 0) THEN
     IF( MAPL_AM_I_ROOT() ) THEN
-     PRINT *,TRIM(IAm),': Code not ready for emiss_conv_flag =',self%Emission%emiss_conv_flag
+      PRINT *,TRIM(IAm),': Code not ready for emiss_conv_flag =',self%Emission%emiss_conv_flag
     END IF
     STATUS = 1
     VERIFY_(STATUS)
   END IF
 
   RETURN
- END SUBROUTINE Refresh_Daily
+  END SUBROUTINE Refresh_Daily
 
 !---------------------------------------------------------------------------
 ! NASA/GSFC, Global Modeling and Assimilation Office, Code 610.1, GEOS/DAS !
@@ -1592,7 +1857,7 @@ CONTAINS
     
   IMPLICIT NONE
 
-  INTEGER, INTENT(OUT) :: rc
+   INTEGER, INTENT(OUT) :: rc
 !
 ! !DESCRIPTION:
 !
@@ -1600,13 +1865,13 @@ CONTAINS
 !
 !EOP
 !---------------------------------------------------------------------------
-  type(ESMF_FieldBundle)      :: sadBundle
-  real(rPrec), pointer        :: ptr3D(:,:,:)
-  real*4                      :: tmpisop(i1:i2,j1:j2) ! for pmaxmin
+   type(ESMF_FieldBundle)      :: sadBundle
+   real(rPrec), pointer        :: ptr3D(:,:,:)
+   real*4                      :: tmpisop(i1:i2,j1:j2) ! for pmaxmin
 
-  CHARACTER(LEN=255) :: IAm
-  rc = 0
-  IAm = "FillExports"
+   CHARACTER(LEN=255) :: IAm
+   rc = 0
+   IAm = "FillExports"
 
 ! ------------------------------------------------------------------------
 ! Emissions
@@ -1630,14 +1895,14 @@ CONTAINS
 ! that these are kg m^{-2} per time step.  Convert to kg m^{-2} s^{-1}.
 ! ---------------------------------------------------------------------
    IF(self%do_emission .AND. self%pr_surf_emiss) THEN
-    IF(ASSOCIATED( emBioCOMeth))   emBioCOMeth(:,:) = self%Emission%surf_emiss_out2(:,:,1)*OneOverDt
-    IF(ASSOCIATED(emBioCOMonot))  emBioCOMonot(:,:) = self%Emission%surf_emiss_out2(:,:,2)*OneOverDt
-    IF(ASSOCIATED(emBioPropene))  emBioPropene(:,:) = self%Emission%surf_emiss_out2(:,:,3)*OneOverDt
-    IF(ASSOCIATED(   emSoilNOx))     emSoilNOx(:,:) = self%Emission%surf_emiss_out2(:,:,4)*OneOverDt
-    IF(self%Emission%do_ShipEmission) THEN
-     IF(ASSOCIATED(  emShipHNO3))   emShipHNO3(:,:) = self%Emission%surf_emiss_out2(:,:,5)*OneOverDt
-     IF(ASSOCIATED(    emShipO3))     emShipO3(:,:) = self%Emission%surf_emiss_out2(:,:,6)*OneOverDt
-    END IF
+     IF(ASSOCIATED( emBioCOMeth))   emBioCOMeth(:,:) = self%Emission%surf_emiss_out2(:,:,1)*OneOverDt
+     IF(ASSOCIATED(emBioCOMonot))  emBioCOMonot(:,:) = self%Emission%surf_emiss_out2(:,:,2)*OneOverDt
+     IF(ASSOCIATED(emBioPropene))  emBioPropene(:,:) = self%Emission%surf_emiss_out2(:,:,3)*OneOverDt
+     IF(ASSOCIATED(   emSoilNOx))     emSoilNOx(:,:) = self%Emission%surf_emiss_out2(:,:,4)*OneOverDt
+     IF(self%Emission%do_ShipEmission) THEN
+       IF(ASSOCIATED(  emShipHNO3))   emShipHNO3(:,:) = self%Emission%surf_emiss_out2(:,:,5)*OneOverDt
+       IF(ASSOCIATED(    emShipO3))     emShipO3(:,:) = self%Emission%surf_emiss_out2(:,:,6)*OneOverDt
+     END IF
    END IF
 
 ! EM_ emissions. Reverse in vertical and convert units if necessary.
@@ -1645,12 +1910,12 @@ CONTAINS
 ! ----------------------------------------------------------------------
    IF(self%do_emission .AND. self%pr_emiss_3d .AND. self%numEM_Exports > 0) THEN
 
-    ALLOCATE(var2dDBL(i1:i2,j1:j2), STAT=STATUS)
-    VERIFY_(STATUS)
+     ALLOCATE(var2dDBL(i1:i2,j1:j2), STAT=STATUS)
+     VERIFY_(STATUS)
 
 ! For each EM_ export ...
 ! -----------------------
-    Scan: DO n = 1, self%numEM_Exports
+     Scan: DO n = 1, self%numEM_Exports
 
 ! Grab the molecular weight and find the pointer
 ! ----------------------------------------------
@@ -1700,57 +1965,57 @@ CONTAINS
 
 ! Force kg m^{-3} s^{-1} for both prescribed and parameterized lightning NO
 ! -------------------------------------------------------------------------
-        SELECT CASE (lightning_opt)
-	CASE (0)
-	 EM_pointer(i1:i2,j1:j2,kReverse) = self%Emission%emissionArray(self%ic_NO_lgt)%pArray3D(i1:i2,j1:j2,k)/ &
-	                                    (gridBoxThickness(:,:,k)*self%cellArea(:,:))
-	CASE (1)
-         EM_pointer(i1:i2,j1:j2,kReverse) = self%Emission%lightning_NO(i1:i2,j1:j2,k)
-        CASE DEFAULT
-	 EM_pointer(i1:i2,j1:j2,k) = 0.00
-        END SELECT
+             SELECT CASE (lightning_opt)
+ 	      CASE (0)
+  	       EM_pointer(i1:i2,j1:j2,kReverse) = self%Emission%emissionArray(self%ic_NO_lgt)%pArray3D(i1:i2,j1:j2,k)/ &
+	                                          (gridBoxThickness(:,:,k)*self%cellArea(:,:))
+              CASE (1)
+                EM_pointer(i1:i2,j1:j2,kReverse) = self%Emission%lightning_NO(i1:i2,j1:j2,k)
+              CASE DEFAULT
+	        EM_pointer(i1:i2,j1:j2,k) = 0.00
+             END SELECT
 
 ! Convert units, if necessary
 ! ---------------------------
-        SELECT CASE (unitsName)
-        CASE ("kg m-2 s-1")
-         EM_pointer(i1:i2,j1:j2,kReverse) = EM_pointer(i1:i2,j1:j2,kReverse)*gridBoxThickness(:,:,k)
-        CASE ("kg m-3 s-1")
-	 STATUS = 0
-        CASE ("mol mol-1 s-1")
-         var2dDBL(i1:i2,j1:j2) = MAPL_AIRMW/(AIRDENS(:,:,kReverse)*mw)
-         EM_pointer(i1:i2,j1:j2,kReverse) = EM_pointer(i1:i2,j1:j2,kReverse)*var2dDBL(i1:i2,j1:j2)
-        CASE DEFAULT
-         PRINT *,TRIM(Iam)//": Modifications needed to export  "//TRIM(unitsName)//" for "//TRIM(fieldName)
-         STATUS = -1 
-         VERIFY_(STATUS)
-        END SELECT
+             SELECT CASE (unitsName)
+              CASE ("kg m-2 s-1")
+               EM_pointer(i1:i2,j1:j2,kReverse) = EM_pointer(i1:i2,j1:j2,kReverse)*gridBoxThickness(:,:,k)
+              CASE ("kg m-3 s-1")
+	        STATUS = 0
+              CASE ("mol mol-1 s-1")
+                var2dDBL(i1:i2,j1:j2) = MAPL_AIRMW/(AIRDENS(:,:,kReverse)*mw)
+                EM_pointer(i1:i2,j1:j2,kReverse) = EM_pointer(i1:i2,j1:j2,kReverse)*var2dDBL(i1:i2,j1:j2)
+              CASE DEFAULT
+                PRINT *,TRIM(Iam)//": Modifications needed to export  "//TRIM(unitsName)//" for "//TRIM(fieldName)
+                STATUS = -1 
+                VERIFY_(STATUS)
+             END SELECT
 
-       END DO
+           END DO
       
 !      Record the Overpass values   (note: AddExport done in GMIchem_GridCompMod.F90)
 !      ------------------------------------------------------------------------------
 
-       CURRENT_HMS = OVP_end_of_timestep_hms( CLOCK, OVP_RUN_DT )
-!      IF(MAPL_AM_I_ROOT()) PRINT*,'GMI Emiss CURRENT_HMS =',CURRENT_HMS
+           CURRENT_HMS = OVP_end_of_timestep_hms( CLOCK, OVP_RUN_DT )
+!           IF(MAPL_AM_I_ROOT()) PRINT*,'GMI Emiss CURRENT_HMS =',CURRENT_HMS
 
-!      EM_LGTNO overpass
+!           EM_LGTNO overpass
 
-       DATA_FOR_OVP_3D => EM_pointer
+           DATA_FOR_OVP_3D => EM_pointer
 
-       CALL MAPL_GetPointer(expChem, OVP10_OUTPUT_3D, 'OVP10_EM_LGTNO', __RC__)
-       CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_EM_LGTNO', __RC__)
+           CALL MAPL_GetPointer(expChem, OVP10_OUTPUT_3D, 'OVP10_EM_LGTNO', __RC__)
+           CALL MAPL_GetPointer(expChem, OVP14_OUTPUT_3D, 'OVP14_EM_LGTNO', __RC__)
 
-       CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP10_OUTPUT_3D, MASK_10AM, OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
-       CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+           CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP10_OUTPUT_3D, MASK_10AM, OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
+           CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
 
 
 ! Emission exports other than lightning NO
 ! ----------------------------------------
-      ELSE
+         ELSE
       
-       DO k = 1,km
-        kReverse = km-k+1
+           DO k = 1,km
+             kReverse = km-k+1
 
 ! Convert units from kg m^{-2} per time step to specification
 ! -----------------------------------------------------------
@@ -1778,8 +2043,8 @@ CONTAINS
 !!!!!
 ! For CCMI
 
-    CALL MAPL_GetPointer(expChem, EM_pointer, "BOX_HEIGHT", __RC__)
-    IF(ASSOCIATED(EM_pointer)) EM_pointer(i1:i2,j1:j2,km:1:-1) = gridBoxThickness(i1:i2,j1:j2,1:km)
+     CALL MAPL_GetPointer(expChem, EM_pointer, "BOX_HEIGHT", __RC__)
+     IF(ASSOCIATED(EM_pointer)) EM_pointer(i1:i2,j1:j2,km:1:-1) = gridBoxThickness(i1:i2,j1:j2,1:km)
 
     ! To do units conversion for CCMI:  EM_species to EM_species_V
     ! Use this term to convert mol/mol/s to kg/m2/s in HISTORY:  EM_FIELD * AIRMASS * MW_species/MAPL_AIRMW
@@ -1789,34 +2054,34 @@ CONTAINS
 !!  IF(ASSOCIATED(EM_pointer)) EM_pointer(i1:i2,j1:j2,km:1:-1) = &
 !!                               (AIRDENS(i1:i2,j1:j2,km:1:-1) * gridBoxThickness(i1:i2,j1:j2,1:km)) / MAPL_AIRMW
 
- !! NATSAD and ICESAD
-    call ESMF_StateGet (expChem, "gmiSAD", sadBundle, RC=STATUS )
-    VERIFY_(STATUS)
+!! NATSAD and ICESAD
+     call ESMF_StateGet (expChem, "gmiSAD", sadBundle, RC=STATUS )
+     VERIFY_(STATUS)
 
-    CALL MAPL_GetPointer(expChem, EM_pointer, "NATSAD", __RC__)
-    IF(ASSOCIATED(EM_pointer)) THEN
-      CALL obtainTracerFromBundle(sadBundle, ptr3D, INATSAD)
-      EM_pointer(i1:i2,j1:j2,1:km) = ptr3D(i1:i2,j1:j2,1:km)
-    END IF
+     CALL MAPL_GetPointer(expChem, EM_pointer, "NATSAD", __RC__)
+     IF(ASSOCIATED(EM_pointer)) THEN
+       CALL obtainTracerFromBundle(sadBundle, ptr3D, INATSAD)
+       EM_pointer(i1:i2,j1:j2,1:km) = ptr3D(i1:i2,j1:j2,1:km)
+     END IF
 
-    CALL MAPL_GetPointer(expChem, EM_pointer, "ICESAD", __RC__)
-    IF(ASSOCIATED(EM_pointer)) THEN
-      CALL obtainTracerFromBundle(sadBundle, ptr3D, IICESAD)
-      EM_pointer(i1:i2,j1:j2,1:km) = ptr3D(i1:i2,j1:j2,1:km)
-    END IF
+     CALL MAPL_GetPointer(expChem, EM_pointer, "ICESAD", __RC__)
+     IF(ASSOCIATED(EM_pointer)) THEN
+       CALL obtainTracerFromBundle(sadBundle, ptr3D, IICESAD)
+       EM_pointer(i1:i2,j1:j2,1:km) = ptr3D(i1:i2,j1:j2,1:km)
+     END IF
 
-    CALL MAPL_GetPointer(expChem, EM_pointer, "LBSSAD", __RC__)
-    IF(ASSOCIATED(EM_pointer)) THEN
-      CALL obtainTracerFromBundle(sadBundle, ptr3D, ILBSSAD)
-      EM_pointer(i1:i2,j1:j2,1:km) = ptr3D(i1:i2,j1:j2,1:km)
-    END IF
+     CALL MAPL_GetPointer(expChem, EM_pointer, "LBSSAD", __RC__)
+     IF(ASSOCIATED(EM_pointer)) THEN
+       CALL obtainTracerFromBundle(sadBundle, ptr3D, ILBSSAD)
+       EM_pointer(i1:i2,j1:j2,1:km) = ptr3D(i1:i2,j1:j2,1:km)
+     END IF
 
- !! AIRMASS
-    CALL MAPL_GetPointer(expChem, EM_pointer, "AIRMASS", __RC__)
-    IF(ASSOCIATED(EM_pointer))   EM_pointer(i1:i2, j1:j2, 1:km) = AIRDENS(i1:i2, j1:j2, 1:km) * gridBoxThickness(i1:i2, j1:j2, km:1:-1)
+!! AIRMASS
+     CALL MAPL_GetPointer(expChem, EM_pointer, "AIRMASS", __RC__)
+     IF(ASSOCIATED(EM_pointer))   EM_pointer(i1:i2, j1:j2, 1:km) = AIRDENS(i1:i2, j1:j2, 1:km) * gridBoxThickness(i1:i2, j1:j2, km:1:-1)
 
 !!!! >>>>>>>>>>>>>>>>  OVP
-    IF(ASSOCIATED(EM_pointer)) THEN
+     IF(ASSOCIATED(EM_pointer)) THEN
        DATA_FOR_OVP_3D => EM_pointer
 
        CALL MAPL_GetPointer(expChem, OVP10_OUTPUT_3D, 'OVP10_AIRMASS', __RC__)
@@ -1824,26 +2089,27 @@ CONTAINS
 
        CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP10_OUTPUT_3D, MASK_10AM, OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
        CALL OVP_apply_mask( DATA_FOR_OVP_3D, OVP14_OUTPUT_3D, MASK_2PM,  OVP_FIRST_HMS, CURRENT_HMS, K_EDGES=.FALSE., __RC__ )
-    END IF
+     END IF
 !!!! <<<<<<<<<<<<<<<<  OVP
 !!!!!
 
 
 ! Clean up
 ! --------
-    DEALLOCATE(var2dDBL, STAT=STATUS)
-    VERIFY_(STATUS)
+     DEALLOCATE(var2dDBL, STAT=STATUS)
+     VERIFY_(STATUS)
 
    END IF
 
-  RETURN
- END SUBROUTINE FillExports
+   RETURN
+   END SUBROUTINE FillExports
 
- SUBROUTINE getMW(name, i, mw, rc)
+  SUBROUTINE getMW(name, i, mw, rc)
   CHARACTER(LEN=ESMF_MAXSTR) :: Iam = "getMW"
   CHARACTER(LEN=*), INTENT(IN) :: name
   INTEGER, INTENT(OUT) :: i, rc
   REAL, INTENT(OUT) :: mw
+  INTEGER :: iii
   rc = 0
   SELECT CASE (TRIM(name))
    CASE ("EM_NO")
@@ -1886,12 +2152,20 @@ CONTAINS
     mw = mw_data(  INO)
     i =  -1
    CASE DEFAULT
+!... Find species in setkin_lchem.h list
+    do iii=1,NSP
+      if ( ESMF_UtilStringUpperCase(TRIM(name(4:))).eq.ESMF_UtilStringUpperCase(TRIM(lchemvar(iii))) ) then
+        i = iii
+        mw = mw_data(iii)
+        RETURN
+      endif
+    enddo
     PRINT *,TRIM(Iam)//": Add "//TRIM(name)//" to molecular weight search list"
     STATUS = -1 
     VERIFY_(STATUS)
   END SELECT
   RETURN
- END SUBROUTINE getMW
+  END SUBROUTINE getMW
 
 !---------------------------------------------------------------------------
 ! NASA/GSFC, Global Modeling and Assimilation Office, Code 610.1, GEOS/DAS !
@@ -1952,9 +2226,9 @@ CONTAINS
 
   SUBROUTINE FindPointers(rc)
   
-  IMPLICIT NONE
+   IMPLICIT NONE
 
-  INTEGER, INTENT(OUT) :: rc
+   INTEGER, INTENT(OUT) :: rc
 !
 ! !DESCRIPTION:
 !
@@ -1963,10 +2237,10 @@ CONTAINS
 !EOP
 !---------------------------------------------------------------------------
 
-  CHARACTER(LEN=255) :: IAm
+   CHARACTER(LEN=255) :: IAm
   
-  rc=0
-  IAm="FindPointers"
+   rc=0
+   IAm="FindPointers"
 
 !  Pointers to imports
 !  -------------------
@@ -2070,11 +2344,11 @@ CONTAINS
 ! Ship Emisssions
 ! ---------------
    if (self%Emission%do_ShipEmission) then
-      jNO2val_phot(i1:i2,j1:j2) = w_c%qa(w_c%reg%j_XX)%data3d(i1:i2,j1:j2,km-1)
+      jNO2val_phot(i1:i2,j1:j2) = bxx%qa(bxx%reg%nq)%data3d(i1:i2,j1:j2,km-1)
    end if
 
-  RETURN
- END SUBROUTINE FindPointers
+   RETURN
+  END SUBROUTINE FindPointers
 
 !---------------------------------------------------------------------------
 ! NASA/GSFC, Global Modeling and Assimilation Office, Code 610.1, GEOS/DAS !
@@ -2130,21 +2404,22 @@ CONTAINS
 ! Layer means                                                               GEOS-5 Units       GMI Units
 ! -----------                                                               ------------       -------------
   DO k=1,km
-   kReverse = km-k+1                                                        ! Lid-to-surf      Surf-to-lid
-   press3c(i1:i2,j1:j2,kReverse) = pl(i1:i2,j1:j2,k)*Pa2hPa                 ! Pa               hPa
-   kel(i1:i2,j1:j2,kReverse) = T(i1:i2,j1:j2,k)                             ! K
+    kReverse = km-k+1                                                        ! Lid-to-surf      Surf-to-lid
+    press3c(i1:i2,j1:j2,kReverse) = pl(i1:i2,j1:j2,k)*Pa2hPa                 ! Pa               hPa
+    kel(i1:i2,j1:j2,kReverse) = T(i1:i2,j1:j2,k)                             ! K
   END DO
 
 ! Layer edges                                                               GEOS-5 Units       GMI Units
 ! -----------                                                               ------------       -------------
   DO k=0,km
-   kReverse = km-k
-   press3e(i1:i2,j1:j2,kReverse) = ple(i1:i2,j1:j2,k)*Pa2hPa                ! Pa               hPa
+    kReverse = km-k
+    press3e(i1:i2,j1:j2,kReverse) = ple(i1:i2,j1:j2,k)*Pa2hPa                ! Pa               hPa
+    height3e(i1:i2,j1:j2,kReverse) = zle(i1:i2,j1:j2,k)                      ! m                m
   END DO
 
   DO k=0,km-1
-   kReverse = km-k
-   cmf(i1:i2,j1:j2,kReverse) = cnv_mfc(i1:i2,j1:j2,k)                       ! kg m^{-2}s^{-1}
+    kReverse = km-k
+    cmf(i1:i2,j1:j2,kReverse) = cnv_mfc(i1:i2,j1:j2,k)                       ! kg m^{-2}s^{-1}
   END DO
 
 ! Incoming land-water-ice flag in GEOS original format:
@@ -2152,27 +2427,27 @@ CONTAINS
 ! Add snow flag (3) for Dry deposition
 ! specification: 0=water 1=land 2=ice 3=snow/glaciated
 ! ----------------------------------------------------
-   lwis_flags(i1:i2,j1:j2)=FLOOR(lwi(i1:i2,j1:j2)+0.1)
+  lwis_flags(i1:i2,j1:j2)=FLOOR(lwi(i1:i2,j1:j2)+0.1)
 !  Note - SNOWDP can be undefined (BIG)
-   WHERE( (frlandice(i1:i2,j1:j2) > 0.5 .OR. (snowdp(i1:i2,j1:j2) >= 0.35 .AND.     &
-                                              snowdp(i1:i2,j1:j2) <  1000.0)    ) ) &
-          lwis_flags(i1:i2,j1:j2) = 3
+  WHERE( (frlandice(i1:i2,j1:j2) > 0.5 .OR. (snowdp(i1:i2,j1:j2) >= 0.35 .AND.     &
+                                             snowdp(i1:i2,j1:j2) <  1000.0)    ) ) &
+    lwis_flags(i1:i2,j1:j2) = 3
 
 
 ! Cell mass and thickness                                                   GEOS-5 Units       GMI Units
 ! -----------------------                                                   ------------       -------------
-   DO k=1,km
+  DO k=1,km
     kReverse = km-k+1
     mass(:,:,kReverse)=airdens(:,:,k)*self%cellArea(:,:)* &                 ! kg
                        (zle(:,:,k-1)-zle(:,:,k))
     gridBoxThickness(:,:,kReverse) = zle(:,:,k-1)-zle(:,:,k)                ! m
-   END DO
+  END DO
 
 ! Obtain instantaneous apparent sun
 ! ---------------------------------
-   CALL GetSecondsFromJanuary1(ic, nymd, nhms)
-   dayOfYear = (1.00*ic)/secPerDay
-   CALL CalcCosSolarZenithAngle(dayOfYear, latDeg, lonDeg, cosSolarZenithAngle, &
+  CALL GetSecondsFromJanuary1(ic, nymd, nhms)
+  dayOfYear = (1.00*ic)/secPerDay
+  CALL CalcCosSolarZenithAngle(dayOfYear, latDeg, lonDeg, cosSolarZenithAngle, &
                                 i1, i2, j1, j2)
 
   RETURN
@@ -2253,51 +2528,51 @@ CONTAINS
 
 ! Index of T2M15d in the non-transported species bundle
 ! -----------------------------------------------------
-  i = w_c%reg%j_XX
+  i = bxx%reg%nq
 
 ! Sanity check
 ! ------------
   IF(km < 18) THEN
    ! Unable to do 15 day avg and store the other items we need
-   IF( MAPL_AM_I_ROOT() ) THEN
-    PRINT *,"GMICHEM::"//TRIM(IAm)//": Unable to perform 15 days average of T2M."
-    PRINT *," "
-   END IF
-   rc = 51
+    IF( MAPL_AM_I_ROOT() ) THEN
+      PRINT *,"GMICHEM::"//TRIM(IAm)//": Unable to perform 15 days average of T2M."
+      PRINT *," "
+    END IF
+    rc = 51
   END IF
 
 ! Functions for startup and at change of day
 ! ------------------------------------------
   IF(nhms < hms) THEN
 
-   IF( MAPL_AM_I_ROOT() ) THEN
-    PRINT *," "
-    PRINT *,"GMICHEM::"//TRIM(IAm)//": Doing T2M15d age-off and recalculation"  
-    PRINT *," "
-   END IF
+    IF( MAPL_AM_I_ROOT() ) THEN
+      PRINT *," "
+      PRINT *,"GMICHEM::"//TRIM(IAm)//": Doing T2M15d age-off and recalculation"  
+      PRINT *," "
+    END IF
 
 ! Age-off
 ! -------
    DO k = 1,15
-    w_c%qa(i)%data3d(i1:i2,j1:j2,k) = w_c%qa(i)%data3d(i1:i2,j1:j2,k+1)
+    bxx%qa(i)%data3d(i1:i2,j1:j2,k) = bxx%qa(i)%data3d(i1:i2,j1:j2,k+1)
    END DO
 
 ! Calculate average T2M for previous 15 whole days
 ! ------------------------------------------------
    DO k = 2,15
-    w_c%qa(i)%data3d(i1:i2,j1:j2,1) = w_c%qa(i)%data3d(i1:i2,j1:j2,1) + w_c%qa(i)%data3d(i1:i2,j1:j2,k)
+    bxx%qa(i)%data3d(i1:i2,j1:j2,1) = bxx%qa(i)%data3d(i1:i2,j1:j2,1) + bxx%qa(i)%data3d(i1:i2,j1:j2,k)
    END DO
-   w_c%qa(i)%data3d(i1:i2,j1:j2,1) = w_c%qa(i)%data3d(i1:i2,j1:j2,1)/15.00
+   bxx%qa(i)%data3d(i1:i2,j1:j2,1) = bxx%qa(i)%data3d(i1:i2,j1:j2,1)/15.00
 
 ! Initialize to zero for day that is just starting
 ! ------------------------------------------------
-   w_c%qa(i)%data3d(:,:,16) = 0.00
+   bxx%qa(i)%data3d(:,:,16) = 0.00
 
   END IF
 
 ! Otherwise, keep running average for current day
 ! -----------------------------------------------
-  w_c%qa(i)%data3d(i1:i2,j1:j2,16) = w_c%qa(i)%data3d(i1:i2,j1:j2,16) + T2m(i1:i2,j1:j2)*avgFactor
+  bxx%qa(i)%data3d(i1:i2,j1:j2,16) = bxx%qa(i)%data3d(i1:i2,j1:j2,16) + T2m(i1:i2,j1:j2)*avgFactor
     
   RETURN
  END SUBROUTINE MonitorT2M
@@ -2314,7 +2589,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE GmiEmiss_GridCompFinalize ( self, w_c, impChem, expChem, &
+   SUBROUTINE GmiEmiss_GridCompFinalize ( self, impChem, expChem, &
                                      nymd, nhms, cdt, rc )
 
   USE gcr_mod,                       ONLY : Finalize_GCR
@@ -2326,7 +2601,6 @@ CONTAINS
 
 ! !INPUT PARAMETERS:
 
-   TYPE(Chem_Bundle), INTENT(in)  :: w_c      ! Chemical tracer fields   
    INTEGER, INTENT(in) :: nymd, nhms	      ! time
    REAL,    INTENT(in) :: cdt  	              ! chemical timestep (secs)
 

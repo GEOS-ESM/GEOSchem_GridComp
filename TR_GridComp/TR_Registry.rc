@@ -10,21 +10,28 @@
 #  This is sufficient information for calling MAPL_AddInternalSpec.
 #  It is read by routines in Runtime_RegistryMod.F90.
 #  
-#  Only the first 'tracer_count' species from the table will be run.
-#  
 #  Each species has an additional list of parameters in its
 #  own specific resource file TR_GridComp---<species_name>.rc
 #
 # !REVISION HISTORY:
 #
 #  2022.08.26  Manyin   First crack
+#  2022.09.12  Manyin   tracer_count is no longer needed;
+#                       all entries in TR_table will be run
 #
 #-----------------------------------------------------------------------
 #EOP
 
-tracer_count: 4
-
 TR_table::
+# Name     Units        Long Name
+# -----    ------       --------------------------------
+aoa          days       'Age of air (uniform source) tracer'
+e90       'mol mol-1'   'Constant burden 90 day tracer'
+Rn222     'kg kg-1'     'Radon-222'
+CH3I      'mol mol-1'   'Methyl iodide'
+::
+
+pre_configured::
 # Name     Units        Long Name
 # -----    ------       --------------------------------
 aoa          days       'Age of air (uniform source) tracer'

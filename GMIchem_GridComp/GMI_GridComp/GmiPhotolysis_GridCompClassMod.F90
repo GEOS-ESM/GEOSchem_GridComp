@@ -19,6 +19,8 @@
    USE Chem_Mod         ! Chemistry Base Class
    USE Chem_UtilMod
 
+   USE Species_BundleMod
+
    USE GmiSpcConcentrationMethod_mod, ONLY : t_SpeciesConcentration
    USE GmiGrid_mod,                   ONLY : t_gmiGrid
    USE GmiTimeControl_mod,            ONLY : t_GmiClock
@@ -110,7 +112,6 @@
 
 ! Useful character strings
 ! ------------------------
-   CHARACTER(LEN=255) :: chem_mecha
 
 ! Variables for Ship Emissions
 ! ----------------------------
@@ -240,7 +241,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE GmiPhotolysis_GridCompInitialize( self, w_c, impChem, expChem, nymd, nhms, &
+   SUBROUTINE GmiPhotolysis_GridCompInitialize( self, bgg, bxx, impChem, expChem, nymd, nhms, &
                                       tdt, rc )
 
    USE GmiSpcConcentrationMethod_mod, ONLY : InitializeSpcConcentration
@@ -260,9 +261,10 @@ CONTAINS
 !
 ! !INPUT PARAMETERS:
 !
-   TYPE(Chem_Bundle), INTENT(in) :: w_c                ! Chemical tracer fields, delp, +
-   INTEGER, INTENT(IN) :: nymd, nhms                   ! Time from AGCM
-   REAL,    INTENT(IN) :: tdt                          ! Chemistry time step (secs)
+   TYPE(Species_Bundle), INTENT(IN) :: bgg                ! GMI Species - transported
+   TYPE(Species_Bundle), INTENT(IN) :: bxx                ! GMI Species - not transported
+   INTEGER,              INTENT(IN) :: nymd, nhms         ! Time from AGCM
+   REAL,                 INTENT(IN) :: tdt                ! Chemistry time step (secs)
 !
 ! !OUTPUT PARAMETERS:
 !
@@ -303,7 +305,7 @@ CONTAINS
    INTEGER :: ilo, ihi, julo, jvlo, jhi
    INTEGER :: ilo_gl, ihi_gl, julo_gl, jvlo_gl, jhi_gl
    INTEGER :: gmi_nborder
-   INTEGER :: numSpecies
+   INTEGER :: NMR      ! number of species from the GMI_Mech_Registry.rc
    INTEGER :: inyr,inmon,iscyr
 !
    REAL, dimension(2628)     :: s_cycle_dates    ! 2628 months : 1882 - 2100
@@ -371,11 +373,6 @@ CONTAINS
       call ESMF_ConfigGetAttribute(gmiConfigFile, importRestartFile, &
      &                label   = "importRestartFile:", &
      &                default = ' ', rc=STATUS )
-      VERIFY_(STATUS)
-
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%chem_mecha, &
-     &                label   = "chem_mecha:", &
-     &                default = 'strat_trop', rc=STATUS )
       VERIFY_(STATUS)
 
       !------------------------------
@@ -678,7 +675,7 @@ CONTAINS
      &                default = '', rc=STATUS )
       VERIFY_(STATUS)
 
-      call CheckNamelistOptionRange ('phot_opt', self%phot_opt, 0, 7)
+      call CheckNamelistOptionRange ('phot_opt', self%phot_opt, 0, 3)
       call CheckNamelistOptionRange ('fastj_opt', self%fastj_opt, 4, 5)
       call CheckNamelistOptionRange ('AerDust_Effect_opt', self%AerDust_Effect_opt, 0, 3)
 
@@ -878,17 +875,21 @@ CONTAINS
                           ilo_gl, ihi_gl, julo_gl, jvlo_gl, jhi_gl, &
                           ilong, ilat, ivert, itloop, j1p, j2p)  
 
-! Number of species and perform a consistency check with setkin_par.h.
-! NOTES:
-!  1. H2O is specie number 10 in the strat-trop mechanism, but will not be
-!     found in w_c%reg%vname. H2O will be initialized from specific humidity, Q.
-!  2. The GEOS-5 bundle has an Age-Of-Air tracer, which is not carried by GMI.
-!  3. At the end of the XX (non-transported) species is a place holder for T2M15d.
-! So w_c%reg%j_XX-w_c%reg%i_GMI must equal the parameter NSP = NCONST + NDYN.
+! Perform a consistency check with setkin_par.h.
+!   NSP is the number of species in setkins
+!   NMR is the number of species in the Mech Registry
+!
+!   H2O   is in setkins,           but not in GMI_Mech_Registry
+!   AOA   is in GMI_Mech_Registry, but not in setkins
+!   T2M15 is in GMI_Mech_Registry, but not in setkins
+!
+!   The number of species common to both is therefore
+!     NMR - 2     ! number in GMI_Mech_Registry - 2
+!     NSP - 1     ! number in setkins - 1
 ! --------------------------------------------------------------------------------
-   numSpecies = w_c%reg%j_XX-w_c%reg%i_GMI
-   IF(numSpecies /= NSP) THEN
-    PRINT *,TRIM(IAm),': Number of species from Chem_Registry.rc does not match number in setkin_par.h'
+   NMR = bgg%nq + bxx%nq
+   IF( NMR-2 /= NSP-1 ) THEN
+    PRINT *,TRIM(IAm),': Number of species from GMI_Mech_Registry.rc does not match number in setkin_par.h'
     STATUS = 1
     VERIFY_(STATUS)
    END IF
@@ -939,8 +940,8 @@ CONTAINS
 ! ----------------------------------------------------------
 
       CALL InitializeSpcConcentration(self%SpeciesConcentration,              &
-     &               self%gmiGrid, gmiConfigFile, numSpecies, NMF, NCHEM,     &
-     &               loc_proc)
+                     self%gmiGrid, gmiConfigFile, NSP, NMF, NCHEM,            &
+                     loc_proc)
 
       if (self%phot_opt /= 0) then
          Allocate(self%qjgmi(self%num_qjo))
@@ -966,7 +967,7 @@ CONTAINS
             !=======
                 call initializeFastJX65 (k1, k2, self%chem_mask_khi, NUM_J,    &
      &                         self%cross_section_file,                        &
-     &                         self%T_O3_climatology_file, rootproc)
+     &                         self%T_O3_climatology_file, rootProc)
             !=======
             case (5)
             !=======
@@ -982,36 +983,32 @@ CONTAINS
          !=========
       end if
 
-      if ((TRIM(self%chem_mecha) ==        'troposphere') .OR. &
-     &    (TRIM(self%chem_mecha) ==         'strat_trop') .OR. &
-     &    (TRIM(self%chem_mecha) == 'strat_trop_aerosol')) THEN
-         if ((self%phot_opt == 3)) then
-            Allocate(self%dust(i1:i2, ju1:j2, k1:k2, nSADdust))
-            self%dust = 0.0d0
+      if ((self%phot_opt == 3)) then
+         Allocate(self%dust(i1:i2, ju1:j2, k1:k2, nSADdust))
+         self%dust = 0.0d0
 
-            Allocate(self%dAersl(i1:i2, ju1:j2, k1:k2, 2))
-            self%dAersl = 0.0d0
+         Allocate(self%dAersl(i1:i2, ju1:j2, k1:k2, 2))
+         self%dAersl = 0.0d0
 
-            Allocate(self%wAersl(i1:i2, ju1:j2, k1:k2, nSADaer))
-            self%wAersl = 0.0d0
+         Allocate(self%wAersl(i1:i2, ju1:j2, k1:k2, nSADaer))
+         self%wAersl = 0.0d0
 
-            Allocate(self%odAer(i1:i2, ju1:j2, k1:k2, nSADaer*NRH_b))
-            self%odAer = 0.0d0
+         Allocate(self%odAer(i1:i2, ju1:j2, k1:k2, nSADaer*NRH_b))
+         self%odAer = 0.0d0
 
-            Allocate(self%odMdust(i1:i2, ju1:j2, k1:k2, nSADdust))
-            self%odMdust = 0.0d0
+         Allocate(self%odMdust(i1:i2, ju1:j2, k1:k2, nSADdust))
+         self%odMdust = 0.0d0
 
-            Allocate(self%eRadius(i1:i2, ju1:j2, k1:k2, nSADdust+nSADaer))
-            self%eRadius = 0.0d0
+         Allocate(self%eRadius(i1:i2, ju1:j2, k1:k2, nSADdust+nSADaer))
+         self%eRadius = 0.0d0
 
-            Allocate(self%tArea(i1:i2, ju1:j2, k1:k2, nSADdust+nSADaer))
-            self%tArea = 0.0d0
+         Allocate(self%tArea(i1:i2, ju1:j2, k1:k2, nSADdust+nSADaer))
+         self%tArea = 0.0d0
 
-            Allocate(self%optDepth(i1:i2, ju1:j2, k1:k2, num_AerDust))
-            self%optDepth = 0.0d0
+         Allocate(self%optDepth(i1:i2, ju1:j2, k1:k2, num_AerDust))
+         self%optDepth = 0.0d0
 
-            if(rootProc) PRINT *,"Chemistry initialize: allocated self%optDepth"
-         end if
+         if(rootProc) PRINT *,"Chemistry initialize: allocated self%optDepth"
       end if
 
       if ((self%sfalbedo_opt == 1) .or. (self%sfalbedo_opt == 2)) then
@@ -1051,14 +1048,14 @@ CONTAINS
       VERIFY_(STATUS)
       var(:,:,:)  = 0.0d0
 
-      call addTracerToBundle (qjBundle, var, w_c%grid_esmf, lqjchem(ib))
+      call addTracerToBundle (qjBundle, var, bgg%grid_esmf, lqjchem(ib))
    end do
 
    ! Sanity check
 
    call ESMF_FieldBundleGet(qjBundle, fieldCount=numVars , rc=STATUS)
    VERIFY_(STATUS)
-   _ASSERT(self%num_qjo == numVars,'needs informative message')
+   _ASSERT(self%num_qjo == numVars,'GMI qj bundle alloc')
 
    ! eRadius Bundle
 
@@ -1074,14 +1071,14 @@ CONTAINS
       write (binName ,'(i4.4)') ib
       varName = 'eRadius'//binName
 
-      call addTracerToBundle (eRadiusBundle, var, w_c%grid_esmf, varName)
+      call addTracerToBundle (eRadiusBundle, var, bgg%grid_esmf, varName)
    end do
 
    ! Sanity check
 
    call ESMF_FieldBundleGet(eRadiusBundle, fieldCount=numVars , rc=STATUS)
    VERIFY_(STATUS)
-   _ASSERT(nSADdust+nSADaer == numVars,'needs informative message')
+   _ASSERT(nSADdust+nSADaer == numVars,'GMI aerosol eRadius bundle alloc')
 
    ! for tArea Bundle
 
@@ -1097,14 +1094,14 @@ CONTAINS
       write (binName ,'(i4.4)') ib
       varName = 'tArea'//binName
 
-      call addTracerToBundle (tAreaBundle, var, w_c%grid_esmf, varName)
+      call addTracerToBundle (tAreaBundle, var, bgg%grid_esmf, varName)
    end do
 
    ! Sanity check
 
    call ESMF_FieldBundleGet(tAreaBundle, fieldCount=numVars , rc=STATUS)
    VERIFY_(STATUS)
-   _ASSERT(nSADdust+nSADaer == numVars,'needs informative message')
+   _ASSERT(nSADdust+nSADaer == numVars,'GMI aerosol tArea bundle alloc')
 
       !------------------------------------
       ! Initial Settings for Ship Emissions
@@ -1114,12 +1111,7 @@ CONTAINS
 
       if (self%do_ShipEmission) then
          do ic=1, NUM_J
-            if (TRIM(self%chem_mecha) ==         'strat_trop' .OR. &
-                TRIM(self%chem_mecha) == 'strat_trop_aerosol') THEN
-               if (Trim(lqjchem(ic)) =='NO2 + hv = NO + O') self%jno2num = ic
-            else if (TRIM(self%chem_mecha) == 'troposphere') then
-               if (Trim(lqjchem(ic)) =='NO2 + hv = NO + O3') self%jno2num = ic
-            endif
+            if (Trim(lqjchem(ic)) =='NO2 + hv = NO + O') self%jno2num = ic
          end do
          if (self%jno2num .eq. badIndex) then
             print*,'jno2num not found in GmiPhotolysis_GridCompInitialize'
@@ -1128,7 +1120,7 @@ CONTAINS
 
          ALLOCATE (jNO2val_phot(i1:i2,j1:j2))
          jNO2val_phot(i1:i2,j1:j2) = 0.0
-         CALL initDataInStateField(expChem, w_c%grid_esmf, jNO2val_phot,  'jNO2val')
+         CALL initDataInStateField(expChem, bgg%grid_esmf, jNO2val_phot,  'jNO2val')
       endif
 
     !---------------------------------------------------------------
@@ -1137,7 +1129,7 @@ CONTAINS
     !---------------------------------------------------------------
 
     allocate(self%mapSpecies(NSP))
-    self%mapSpecies(:) = speciesReg_for_CCM(lchemvar, w_c%reg%vname, NSP, w_c%reg%i_GMI, w_c%reg%j_XX)
+    self%mapSpecies(:) = speciesReg_for_CCM(lchemvar, NSP, bgg%reg%vname, bxx%reg%vname )
 
   RETURN
    
@@ -1153,7 +1145,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE GmiPhotolysis_GridCompRun ( self, w_c, impChem, expChem, nymd, nhms, &
+   SUBROUTINE GmiPhotolysis_GridCompRun ( self, bgg, bxx, impChem, expChem, nymd, nhms, &
                                 tdt, rc )
 
 ! !USES:
@@ -1170,8 +1162,9 @@ CONTAINS
 
 ! !INPUT/OUTPUT PARAMETERS:
 
-   TYPE(GmiPhotolysis_GridComp), INTENT(INOUT) :: self ! Grid Component
-   TYPE(Chem_Bundle), INTENT(INOUT) :: w_c    ! Chemical tracer fields   
+   TYPE(GmiPhotolysis_GridComp), INTENT(INOUT) :: self   ! Grid Component
+   TYPE(Species_Bundle),         INTENT(INOUT) :: bgg    ! GMI Species - transported
+   TYPE(Species_Bundle),         INTENT(INOUT) :: bxx    ! GMI Species - not transported
 
 ! !INPUT PARAMETERS:
 
@@ -1210,7 +1203,7 @@ CONTAINS
    REAL, POINTER, DIMENSION(:,:) :: cldtt, albvf
 
    REAL, POINTER, DIMENSION(:,:,:) :: airdens, ple, Q, T, zle
-   REAL, POINTER, DIMENSION(:,:,:) :: fcld, taucli, tauclw, ql, cnv_mfc
+   REAL, POINTER, DIMENSION(:,:,:) :: fcld, taucli, tauclw, ql
    REAL, POINTER, DIMENSION(:,:,:) :: qi
    REAL, POINTER, DIMENSION(:,:,:) :: ri => NULL()
    REAL, POINTER, DIMENSION(:,:,:) :: rl => NULL()
@@ -1455,8 +1448,8 @@ CONTAINS
 ! Hand the species concentrations to GMI's bundle
 ! -----------------------------------------------
    IF (self%gotImportRst) then
-      CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration, &
-               w_c%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, &
+      CALL SwapSpeciesBundles(ToGMI, self%SpeciesConcentration%concentration,    &
+               bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP, &
                STATUS)
       VERIFY_(STATUS)
    END IF
@@ -1555,9 +1548,9 @@ CONTAINS
                   __RC__ )
 
           solarZenithAngle(i1:i2,j1:j2) = ACOS( ZTHP ) * radToDeg
-         
-            call calcPhotolysisRateConstants (self%JXbundle,                   &
-                     self%chem_mecha, tropopausePress,                         &
+
+          call calcPhotolysisRateConstants (self%JXbundle,                     &
+                     tropopausePress,                         &
      &               self%pr_qj_o3_o1d, self%pr_qj_opt_depth,                  & ! VV
      &               pctm2, mass, press3e, press3c, kel,                       &
      &               self%SpeciesConcentration%concentration, solarZenithAngle,&
@@ -1582,8 +1575,8 @@ CONTAINS
 ! Return species concentrations to the chemistry bundle
 ! -----------------------------------------------------
    IF (self%gotImportRst) then
-      CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration, &
-               w_c%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
+      CALL SwapSpeciesBundles(FromGMI, self%SpeciesConcentration%concentration,   &
+               bgg%qa, bxx%qa, Q, self%mapSpecies, lchemvar, self%do_synoz, NSP,  &
                STATUS)
       VERIFY_(STATUS)
    END IF
@@ -2380,7 +2373,7 @@ CONTAINS
 ! ---------------
   if (self%do_ShipEmission)  then
 
-     w_c%qa(w_c%reg%j_XX)%data3d(i1:i2,j1:j2,km-1) = self%qjgmi(self%jno2num)%pArray3D(:,:,1)
+     bxx%qa(bxx%reg%nq)%data3d(i1:i2,j1:j2,km-1) = self%qjgmi(self%jno2num)%pArray3D(:,:,1)
 
      ALLOCATE (jNO2val_phot(i1:i2,j1:j2),STAT=STATUS)
      VERIFY_(STATUS)
@@ -2461,7 +2454,7 @@ CONTAINS
 
       call ESMF_FieldBundleGet(qjBundle, fieldCount=numVars, rc=STATUS)
       VERIFY_(STATUS)
-      _ASSERT(numVars == self%num_qjo,'needs informative message')
+      _ASSERT(numVars == self%num_qjo,'GMI qjo bundle populate')
 
       do ib = 1, numVars
          ptr3D(:,:,:) = self%qjgmi(ib)%pArray3D(:,:,km:1:-1)
@@ -2477,7 +2470,7 @@ CONTAINS
 
       call ESMF_FieldBundleGet(tAreaBundle, fieldCount=numVars, rc=STATUS)
       VERIFY_(STATUS)
-      _ASSERT(numVars == nSADdust+nSADaer,'needs informative message')
+      _ASSERT(numVars == nSADdust+nSADaer,'GMI tArea bundle populate')
 
       do ib = 1, numVars
          ptr3D(:,:,:) = self%tArea(:,:,km:1:-1,ib)
@@ -2493,7 +2486,7 @@ CONTAINS
 
       call ESMF_FieldBundleGet(eRadiusBundle, fieldCount=numVars, rc=STATUS)
       VERIFY_(STATUS)
-      _ASSERT(numVars == nSADdust+nSADaer,'needs informative message')
+      _ASSERT(numVars == nSADdust+nSADaer,'GMI eRadius bundle populate')
 
       do ib = 1, numVars
          ptr3D(:,:,:) = self%eRadius(:,:,km:1:-1,ib)
@@ -2561,8 +2554,6 @@ CONTAINS
    CALL MAPL_GetPointer(impChem,    tauclw,  'TAUCLW', RC=STATUS)
    VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,        ql,      'QL', RC=STATUS)
-   VERIFY_(STATUS)
-   CALL MAPL_GetPointer(impChem,   cnv_mfc, 'CNV_MFC', RC=STATUS)
    VERIFY_(STATUS)
    CALL MAPL_GetPointer(impChem,       rh2,     'RH2', RC=STATUS)
    VERIFY_(STATUS)
@@ -2633,7 +2624,6 @@ CONTAINS
     CALL pmaxmin('TAUCLI:', taucli, qmin, qmax, iXj, km, 1. )
     CALL pmaxmin('TAUCLW:', tauclw, qmin, qmax, iXj, km, 1. )
     CALL pmaxmin('QL:', ql, qmin, qmax, iXj, km, 1. )
-    CALL pmaxmin('CNV_MFC:', cnv_mfc, qmin, qmax, iXj, km+1, 1. )
     CALL pmaxmin('RH2:', rh2, qmin, qmax, iXj, km, 1. )
     CALL pmaxmin('DQ/DT:', dqdt, qmin, qmax, iXj, km, 1. )
     CALL pmaxmin('QI:', qi, qmin, qmax, iXj, km, 1. )
@@ -2642,8 +2632,8 @@ CONTAINS
     CALL pmaxmin('RL:', rl, qmin, qmax, iXj, km, 1. )
    ENDIF
 
-    i = w_c%reg%j_XX
-    CALL pmaxmin('TROPP:', w_c%qa(i)%data3d(:,:,km), qmin, qmax, iXj, 1, 0.01 )
+    i = bxx%reg%nq
+    CALL pmaxmin('TROPP:', bxx%qa(i)%data3d(:,:,km), qmin, qmax, iXj, 1, 0.01 )
     CALL pmaxmin('CLDTT:', cldtt, qmin, qmax, iXj, 1, 1. )
     CALL pmaxmin('ALBEDO:', albvf, qmin, qmax, iXj, 1, 1. )
    END IF Validate
@@ -2719,8 +2709,8 @@ CONTAINS
 ! Singly-layered                                                            GEOS-5 Units       GMI Units
 ! The most recent valid tropopause pressures are stored in T2M15D(:,:,km)
 ! -----------------------------------------------------------------------   ------------       -------------
-  i = w_c%reg%j_XX
-  tropopausePress(:,:) = w_c%qa(i)%data3d(:,:,km)*Pa2hPa                    ! Pa               hPa
+  i = bxx%reg%nq
+  tropopausePress(:,:) = bxx%qa(i)%data3d(:,:,km)*Pa2hPa                    ! Pa               hPa
             pctm2(:,:) =              ple(:,:,km)*Pa2hPa                    ! Pa               hPa
    fracCloudCover(:,:) =            cldtt(:,:)                              ! fraction
 
@@ -2783,13 +2773,9 @@ CONTAINS
 
 ! Set the dust and aerosol diagnostic to zero
 ! -------------------------------------------
-   IF(TRIM(self%chem_mecha) ==        'troposphere' .OR. &
-      TRIM(self%chem_mecha) ==         'strat_trop' .OR. &
-      TRIM(self%chem_mecha) == 'strat_trop_aerosol') THEN
-    IF(self%phot_opt == 3 .AND. self%do_AerDust_Calc) THEN
-     self%optDepth(:,:,:,:) = 0.00D+00
-    END IF
-   END IF
+  IF(self%phot_opt == 3 .AND. self%do_AerDust_Calc) THEN
+    self%optDepth(:,:,:,:) = 0.00D+00
+  END IF
 
   RETURN
  END SUBROUTINE SatisfyImports
@@ -2806,7 +2792,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE GmiPhotolysis_GridCompFinalize ( self, w_c, impChem, expChem, &
+   SUBROUTINE GmiPhotolysis_GridCompFinalize ( self, impChem, expChem, &
                                      nymd, nhms, cdt, rc )
 
   IMPLICIT none
@@ -2817,7 +2803,6 @@ CONTAINS
 
 ! !INPUT PARAMETERS:
 
-   TYPE(Chem_Bundle), INTENT(in)  :: w_c      ! Chemical tracer fields   
    INTEGER, INTENT(in) :: nymd, nhms          ! time
    REAL,    INTENT(in) :: cdt                 ! chemical timestep (secs)
 

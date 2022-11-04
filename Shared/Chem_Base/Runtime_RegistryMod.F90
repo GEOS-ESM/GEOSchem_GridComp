@@ -28,6 +28,7 @@
 ! !PUBLIIC MEMBER FUNCTIONS:
 !
    PUBLIC  Runtime_RegistryCreate   ! Constructor from RC file
+   PUBLIC  Runtime_RegistryCombine  ! Constructor using 2 other registries
    PUBLIC  Runtime_RegistryDestroy  ! Destructor
    PUBLIC  Runtime_RegistryPrint    ! Prints a summary of the registry
 
@@ -56,7 +57,8 @@
 ! --------
   type Runtime_Registry
 
-     integer :: nq    ! Total number of tracers 
+     integer :: nq               ! Total number of tracers 
+     integer :: primary_count    ! When Registry is derived from two others, primary_count = reg1%nq
 
      character(len=REGISTER_NAME_LENGTH),     pointer :: vname(:)   ! (nq), variable short name
      character(len=REGISTER_UNITS_LENGTH),    pointer :: vunits(:)  ! (nq), variable units
@@ -121,7 +123,7 @@ CONTAINS
    type(ESMF_Config)  ::  cf
 
    type(Runtime_Registry) :: this
-   integer :: nq, item_count, retcode
+   integer :: nq, nx, item_count, retcode
    integer :: i
 
    rc = 0
@@ -132,8 +134,10 @@ CONTAINS
    call ESMF_ConfigLoadFile(cf, rcfile, rc=rc)
    _ASSERT(rc==0, TRIM(Iam)//': Cannot load RC file '//TRIM(rcfile))
 
-   call ESMF_ConfigGetAttribute(cf, nq, label='tracer_count:', rc=rc)
-   _ASSERT(rc==0, TRIM(Iam)//': Cannot find tracer_count in file '//TRIM(rcfile))
+   call ESMF_ConfigGetDim(cf, nq, nx, label=table_name, rc=rc)
+   _ASSERT(rc==0, TRIM(Iam)//': Cannot get dims for table '//TRIM(table_name)//' in '//TRIM(rcfile))
+
+   this%primary_count = 0
 
 !  Allocate memory in registry
 !  ---------------------------
@@ -147,9 +151,9 @@ CONTAINS
       call get_line ( cf, 3, str_arr, item_count, retcode )
       select case( retcode )
         case( RC_END_OF_FILE  )
-          _ASSERT(.FALSE., TRIM(Iam)//': early EOF in file '//TRIM(rcfile))
+          _FAIL(TRIM(Iam)//': early EOF in file '//TRIM(rcfile))
         case( RC_END_OF_TABLE )
-          _ASSERT(.FALSE., TRIM(Iam)//': table too short '//TRIM(table_name)//' in file '//TRIM(rcfile))
+          _FAIL(TRIM(Iam)//': table too short '//TRIM(table_name)//' in file '//TRIM(rcfile))
         case( RC_DATA_LINE    )
           _ASSERT(item_count==3, TRIM(Iam)//': fewer than 3 entries in '//TRIM(table_name)//' in file '//TRIM(rcfile))
           this%vname(i)  = str_arr(1)
@@ -226,6 +230,81 @@ CONTAINS
 !------------------------------------------------------------------------
 !BOP
 !
+! !IROUTINE:  Runtime_RegistryCombine --- Construct Chemistry Registry
+!
+! !INTERFACE:
+!
+
+  Function Runtime_RegistryCombine ( reg1, reg2, rc )
+
+  implicit none
+  type(Runtime_Registry) Runtime_RegistryCombine 
+
+! !USES:
+
+! !INPUT PARAMETERS:
+
+   type(Runtime_Registry), intent(in) :: reg1
+   type(Runtime_Registry), intent(in) :: reg2
+
+! !OUTPUT PARAMETERS:
+
+   integer, intent(out) ::  rc            ! Error return code:
+                                          !  0 - all is well
+
+! !DESCRIPTION:
+!
+!
+! !REVISION HISTORY:
+!
+!  2022.10.31  Manyin  First crack
+!
+!EOP
+!-------------------------------------------------------------------------
+
+    __Iam__('Runtime_RegistryCombine')  ! NOTE: this macro declares STATUS
+                                        ! ALSO: Never set Iam = TRIM(Iam) // suffix
+                                        !       because Iam is a SAVED varaible
+
+   character(len=*), parameter ::  myname = 'Runtime_RegistryCombine'
+
+   type(Runtime_Registry) :: this
+   integer :: i
+
+   rc = 0
+
+!  Allocate memory in registry
+!  ---------------------------
+   this%nq = reg1%nq + reg2%nq
+   allocate ( this%vname(this%nq), this%vunits(this%nq), this%vtitle(this%nq), __STAT__ )
+
+   do i=1,reg1%nq
+     this%vname(i)  = reg1%vname(i)
+     this%vunits(i) = reg1%vunits(i)
+     this%vtitle(i) = reg1%vtitle(i)
+   end do
+
+   do i=1,reg2%nq
+     this%vname( reg1%nq + i) = reg2%vname(i)
+     this%vunits(reg1%nq + i) = reg2%vunits(i)
+     this%vtitle(reg1%nq + i) = reg2%vtitle(i)
+   end do
+
+   this%primary_count = reg1%nq
+
+!  All done
+!  --------
+   Runtime_RegistryCombine = this
+   
+   return 
+
+ end Function Runtime_RegistryCombine
+
+!------------------------------------------------------------------------
+!     NASA/GSFC, Atmospheric Chemistry and Dynamics Lab, Code 614       !
+!------------------------------------------------------------------------
+!BOP
+!
 ! !IROUTINE:  Runtime_RegistryDestroy --- Destruct Chemisty Registry
 !
 ! !INTERFACE:
@@ -259,6 +338,7 @@ CONTAINS
 
    rc = 0
    this%nq = -1 
+   this%primary_count = -1 
    deallocate ( this%vname, this%vunits, this%vtitle, __STAT__ )
 
 end subroutine Runtime_RegistryDestroy 
@@ -300,7 +380,7 @@ end subroutine Runtime_RegistryDestroy
    PRINT *
    PRINT *,'****'
    PRINT *,'****       Summary of the '//mod_name//' Registry'
-   PRINT *,'****            from Runtime_RegistryPrint'
+   PRINT *,'****       from Runtime_RegistryPrint'
    PRINT *,'****'
    WRITE(*,FMT="(' ','       Number of species: ',I3)") reg%nq
 

@@ -229,7 +229,11 @@
 !    ------------
      rc = 0
      nq = reg%nq
-     if ( im<1 .or. jm<1 .or. km<1 .or. nq<1) then
+
+!    9.15.22 manyin: As we move away from Chem_Registry, there may be
+!                    cases where NO tracers are active
+!    if ( im<1 .or. jm<1 .or. km<1 .or. nq<1) then
+     if ( im<1 .or. jm<1 .or. km<1          ) then
           rc = -3
           return
      endif
@@ -362,14 +366,12 @@
            if ( ios4 == 0 ) w_c%airdens = 0.0
         endif
 
-         
      end if
 
 !    Set array of pointers: may be null() if no allocation took place
 !    ----------------------------------------------------------------
      call Chem_BundleSetPtr ( w_c, rc ) 
 
-  
    end subroutine Chem_BundleCreate_
 
 !-------------------------------------------------------------------------
