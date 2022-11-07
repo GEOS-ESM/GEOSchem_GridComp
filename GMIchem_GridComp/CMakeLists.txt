@@ -185,21 +185,3 @@ foreach (file ${first_stage_files})
       )
 endforeach ()
 
-set ( ccmi1_rc_files
-   GMI_GridComp/CCMI_REF-C1/GMI_ExtData.rc
-   GMI_GridComp/CCMI_REF-C1/GMI_GridComp.rc
-)
-install (
-   FILES ${ccmi1_rc_files}
-   DESTINATION etc/CCMI_REF-C1/chemistry_files
-   )
-
-set ( ccmi2_rc_files
-   GMI_GridComp/CCMI_REF-C2/GMI_ExtData.rc
-   GMI_GridComp/CCMI_REF-C2/GMI_GridComp.rc
-)
-install (
-   FILES ${ccmi2_rc_files}
-   DESTINATION etc/CCMI_REF-C2/chemistry_files
-   )
-

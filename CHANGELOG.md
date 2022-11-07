@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 ### Removed
+
+- Deleted the old CCMI resource files under GMI.
+
 ### Changed
 
 - StratChem is no longer part of Chem_Registry.rc; instead the entries are in SC_Mech_Registry.rc, and there are two versions of the resource file - one for the Full mechanism and one for the Reduced mechanism.  Choice between the two mechanisms remains a compile time option.
