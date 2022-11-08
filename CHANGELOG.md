@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 ### Removed
+### Changed
+### Fixed
+
+## [1.10.4] - 2022-11-08
+### Added
+### Removed
 
 - Deleted the old CCMI resource files under GMI.
 
