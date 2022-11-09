@@ -149,7 +149,7 @@
 
       INTEGER, INTENT(IN)  :: year
       REAL*8,  INTENT(IN)  :: pressure(i1:i2, ju1:j2, k1:k2) ! hPa
-      REAL*8 , INTENT(IN)  :: latdeg (ju1:j2)
+      REAL*8 , INTENT(IN)  :: latdeg (i1:i2, ju1:j2)
       REAL*8,  INTENT(OUT) :: sunspot
       REAL*8,  INTENT(OUT) ::    slope(i1:i2, ju1:j2, k1:k2)
       REAL*8,  INTENT(OUT) ::   aintcp(i1:i2, ju1:j2, k1:k2)
@@ -189,11 +189,11 @@
         logp = LOG( PRESSURE(i,j,k) ) ! hPa
 
 !... interpolate gcr_slope to current grid
-        call bi_linear_interp(latdeg(j), logp, slope(i,j,k),  &
+        call bi_linear_interp(latdeg(i,j), logp, slope(i,j,k),  &
                  GCR_LATS, GCR_LOGPLEVS, GCR_LAT_COUNT , GCR_LEV_COUNT , GCR_SLOPE_COEFFS)
 
 !... interpolate gcr_aintcp to current grid
-        call bi_linear_interp(latdeg(j), logp, aintcp(i,j,k),  &
+        call bi_linear_interp(latdeg(i,j), logp, aintcp(i,j,k),  &
                  GCR_LATS, GCR_LOGPLEVS, GCR_LAT_COUNT , GCR_LEV_COUNT , GCR_AINTCP_COEFFS)
       enddo
     enddo

@@ -12,6 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Fixed
 
+## [1.10.4] - 2022-11-08
+### Added
+### Removed
+
+- Deleted the old CCMI resource files under GMI.
+
+### Changed
+
+- StratChem is no longer part of Chem_Registry.rc; instead the entries are in SC_Mech_Registry.rc, and there are two versions of the resource file - one for the Full mechanism and one for the Reduced mechanism.  Choice between the two mechanisms remains a compile time option.
+
+### Fixed
+- Fix 1d vector of latitudes in GCR emissions, pre-cubesphere leftover
+
 ## [1.10.3] - 2022-10-27
 
 ### Added
