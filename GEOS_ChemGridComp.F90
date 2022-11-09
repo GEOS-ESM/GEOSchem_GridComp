@@ -42,7 +42,7 @@ module GEOS_ChemGridCompMod
   public SetServices
 
 !                                             -----------
- 
+
 ! Private state
 ! -------------
   TYPE GEOS_ChemGridComp
@@ -65,7 +65,7 @@ module GEOS_ChemGridCompMod
      LOGICAL :: enable_DNA
      LOGICAL :: enable_HEMCO
      INTEGER :: AERO_PROVIDER
-     INTEGER :: RATS_PROVIDER          ! WARNING: May be multiple RATS_PROVIDERs 
+     INTEGER :: RATS_PROVIDER          ! WARNING: May be multiple RATS_PROVIDERs
   END TYPE GEOS_ChemGridComp
 
 ! Hook for the ESMF
@@ -76,8 +76,8 @@ module GEOS_ChemGridCompMod
 
 !=============================================================================
 
-! !DESCRIPTION: This gridded component (GC) combines 
- 
+! !DESCRIPTION: This gridded component (GC) combines
+
 !EOP
 
 ! IMPORTANT: If adding a new component, make sure to update private function GetProvider_()
@@ -116,8 +116,8 @@ contains
     integer,             intent(  OUT) :: RC  ! return code
 
 ! !DESCRIPTION:  The SetServices for the Chemistry GC needs to register its
-!   Initialize and Run.  It uses the MAPL\_Generic construct for defining 
-!   state specs and couplings among its children.  In addition, it creates the   
+!   Initialize and Run.  It uses the MAPL\_Generic construct for defining
+!   state specs and couplings among its children.  In addition, it creates the
 !   children GCs and runs their respective SetServices.
 
 !EOP
@@ -139,7 +139,7 @@ contains
     type (ESMF_Config), target :: CF, myCF
 
     integer                    :: n, id
-    
+
     INTEGER, PARAMETER         :: numRATs = 8
     INTEGER                    :: RATsProviderNumber(numRATs)
     CHARACTER(LEN=ESMF_MAXSTR) :: RATsProviderName(numRATs)
@@ -149,7 +149,7 @@ contains
     CHARACTER(LEN=ESMF_MAXSTR) :: shortName
     CHARACTER(LEN=ESMF_MAXSTR) :: str
 
-    !GMI MEGAN isoprene related 
+    !GMI MEGAN isoprene related
     CHARACTER(LEN=255) :: gmi_rcfilen = 'GMI_GridComp.rc'
     TYPE(ESMF_Config)  :: gmi_config
     LOGICAL  doMEGANemission,  doMEGANviaHEMCO
@@ -202,7 +202,7 @@ contains
 
     call ESMF_ConfigGetAttribute(cf, chem_gridcomp_rc_file, label = "GEOS_ChemGridComp_RC_File:", &
          default = "GEOS_ChemGridComp.rc", __RC__)
-  
+
 ! Identify which children to run
 ! ------------------------------
     myCF = ESMF_ConfigCreate(__RC__)
@@ -301,10 +301,18 @@ contains
 
 ! Priority for first three RATs, OX, O3 and O3PPMV, goes to the ANALYSIS_OX_PROVIDER.
 ! -----------------------------------------------------------------------------------
-  call GetProvider_(CF, Label='ANALYSIS_OX_PROVIDER:', ID=i, Name=providerName, Default='PCHEM', __RC__)
+  call GetProvider_(CF, Label='ANALYSIS_OX_PROVIDER:', ID=i, Name=providerName, Default=TRIM(RATsProviderName(1)), __RC__)
 
   RATsProviderNumber(1:3) = i
   RATsProviderName(1:3)   = trim(providerName)
+
+!! Sourish Basu
+!! Option to set RAT CH4 distinct from others (e.g. GOCART) -  RAT_CH4_PROVIDER
+!! -----------------------------------------------------------------------------------
+  !call GetProvider_(CF, Label='RATS_PROVIDER_CH4:', ID=i, Name=providerName, Default=TRIM(RATsProviderName(4)), __RC__)
+
+  !RATsProviderNumber(4) = i
+  !RATsProviderName(4)   = trim(providerName)
 
 ! Add export specs for the RATs ...
 ! ---------------------------------
@@ -315,7 +323,7 @@ contains
 
   IF(MAPL_AM_I_ROOT()) THEN
    PRINT *," "
-   PRINT *, TRIM(Iam)//": RATs Provider List" 
+   PRINT *, TRIM(Iam)//": RATs Provider List"
     DO i = 1, numRATs
      PRINT *,"  "//TRIM(speciesName(i))//": "//TRIM(RATsProviderName(i))
     END DO
@@ -360,7 +368,7 @@ contains
                               LONG_NAME  = 'aerosol_deposition', &
                               UNITS      = 'kg m-2 s-1',         &
                               DIMS       = MAPL_DimsHorzOnly,    &
-                              DATATYPE   = MAPL_BundleItem, __RC__) 
+                              DATATYPE   = MAPL_BundleItem, __RC__)
   else
       call GetProvider_(CF, Label='AERO_PROVIDER:', ID=AERO_PROVIDER, Name=providerName, Default='GOCART.data', __RC__)
 
@@ -381,7 +389,7 @@ contains
                                 CHILD_ID = GOCART, __RC__ )
   end if
 
-! Save this information in private state for later use. 
+! Save this information in private state for later use.
 ! WARNING: Dangerous if there is more than one RATS_PROVIDER
 ! ----------------------------------------------------------
   myState%RATS_PROVIDER = RATS_PROVIDER
@@ -400,8 +408,9 @@ contains
   IF(myState%enable_GOCART) then
      CALL MAPL_AddConnectivity ( GC, &
           SHORT_NAME  = (/'AIRDENS     ','AIRDENS_DRYP', 'DELP        ', 'TPREC       ', 'CN_PRCP     ', 'NCN_PRCP    '/), &
+          !SHORT_NAME  = (/'AIRDENS     ','AIRDENS_DRYP', 'QTOT        ', 'DELP        ', 'TPREC       ', 'CN_PRCP     ', 'NCN_PRCP    '/), & ! Sourish
           DST_ID = GOCART, SRC_ID = CHEMENV, __RC__  )
-  ENDIF
+  END IF
 
   IF(myState%enable_GOCARTdata) then
      CALL MAPL_AddConnectivity ( GC, &
@@ -421,7 +430,7 @@ contains
 !                                 'GOCART::BRCphobic', 'GOCART::BRCphilic', &
                                   'GOCART::OCphobic ', 'GOCART::OCphilic ', &
                                   'GOCART::BCphobic ', 'GOCART::BCphilic ', &
-                                  'GOCART::SO4      ' /), & 
+                                  'GOCART::SO4      ' /), &
                    DST_NAME  = (/ 'du001    ', 'du002    ', 'du003    ', 'du004    ', 'du005    ', &
                                   'ss001    ', 'ss002    ', 'ss003    ', 'ss004    ', 'ss005    ', &
                                   'NO3an1   ', 'NO3an2   ', 'NO3an3   ', &
@@ -439,14 +448,14 @@ contains
       CALL MAPL_AddConnectivity ( GC, &
            SHORT_NAME  = (/'AIRDENS ', 'TPREC   ', 'CN_PRCP ', 'NCN_PRCP'/), &
            DST_ID = CARMA, SRC_ID = CHEMENV, __RC__  )
-           
+
       if(myState%enable_GOCART) then
        if(chemReg%doing_SU) then
          CALL MAPL_AddConnectivity ( GC, &
               SHORT_NAME  = (/'PSO4TOT'/), &
               DST_ID=CARMA, SRC_ID=GOCART, __RC__)
        endif
-      endif 
+      endif
   ENDIF
 
   IF(myState%enable_STRATCHEM) then
@@ -494,6 +503,13 @@ contains
                           'QQK235', 'QQK170', 'QQK216', 'QQK179', 'QQK150'/), &
           DST_ID = TR, SRC_ID = GMICHEM, __RC__  )
   ENDIF
+
+!! Sourish Basu
+  !IF(myState%enable_TR) then
+     !CALL MAPL_AddConnectivity ( GC, &
+          !SHORT_NAME  = (/'AIRDENS', 'QTOT   ', 'DELP   '/), &
+          !DST_ID = TR, SRC_ID = CHEMENV, __RC__  )
+  !ENDIF
 
   IF(myState%enable_GEOSCHEM) then
      CALL MAPL_AddConnectivity ( GC, &
@@ -553,7 +569,7 @@ contains
         DST_NAME  = (/'O3P      ', 'OHSTRAT  ', 'O3       ', 'OCS_JRATE'/), &
         DST_ID = ACHEM, SRC_ID = STRATCHEM, __RC__  )
   ENDIF
- 
+
 
 ! GOCART <=> ACHEM (OCS CHEMISTRY)
 ! ---------------------------------
@@ -676,7 +692,7 @@ contains
     SRC_NAME  = (/"OX"/), &
     DST_NAME  = (/"O3"/), &
     DST_ID=GOCART, SRC_ID=GMICHEM, __RC__)
-  
+
   END IF
 
 ! GMICHEM connections to MAM
@@ -742,7 +758,7 @@ contains
     CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/ 'AIRDENS' /), DST_ID=HEMCO, SRC_ID=CHEMENV, __RC__)
 
     !!!!!!!!!!!!!!!!!!
-    ! Determine if GOCART or GMI expect data from HEMCO:  
+    ! Determine if GOCART or GMI expect data from HEMCO:
     ! (adapted from HEMCO_GridCompMod.F90)
     !!!!!!!!!!!!!!!!!!
 
@@ -795,7 +811,7 @@ contains
     SRC_ID=HEMCO, DST_ID=GOCART, __RC__)
   END IF
 
-! HEMCO -> GMI 
+! HEMCO -> GMI
 ! ------------
   IF( myState%enable_HEMCO .AND. myState%enable_GMICHEM ) THEN
 
@@ -816,7 +832,7 @@ contains
 
      call ESMF_ConfigGetAttribute(gmi_config, value=doMEGANviaHEMCO, &
                                              label="doMEGANviaHEMCO:", default=.FALSE., __RC__ )
-       
+
      ! make sure we don't have inconsistent HEMCO flags
      IF ( GMI_instance_of_HEMCO .neqv. doMEGANviaHEMCO ) THEN
         PRINT*,'Inconsistency --- HEMCO GMI instance  = ', GMI_instance_of_HEMCO
@@ -847,7 +863,7 @@ contains
   call MAPL_GenericSetServices ( GC, __RC__ )
 
   RETURN_(ESMF_SUCCESS)
-  
+
   end subroutine SetServices
 
 
@@ -861,13 +877,13 @@ contains
 
 ! !ARGUMENTS:
 
-  type(ESMF_GridComp), intent(inout) :: GC     ! Gridded component 
+  type(ESMF_GridComp), intent(inout) :: GC     ! Gridded component
   type(ESMF_State),    intent(inout) :: IMPORT ! Import state
   type(ESMF_State),    intent(inout) :: EXPORT ! Export state
   type(ESMF_Clock),    intent(inout) :: CLOCK  ! The clock
   integer, optional,   intent(  out) :: RC     ! Error code
 
-! !DESCRIPTION: The Initialize method of the Chemistry Composite Gridded 
+! !DESCRIPTION: The Initialize method of the Chemistry Composite Gridded
 !  Component. It acts as a driver for the initializtion of the children.
 
 !EOP
@@ -894,8 +910,8 @@ contains
     type (GEOS_ChemGridComp_Wrap)      :: wrap
 
 !=============================================================================
- 
-! Begin... 
+
+! Begin...
 
 !   Get the target components name and set-up traceback handle.
 !   -----------------------------------------------------------
@@ -948,12 +964,12 @@ contains
 !   AERO State for AERO_PROVIDER set to NONE
 !   ----------------------------------------
     if (myState%AERO_PROVIDER < 0) then
-        ! Radiation will not call the aerosol optics method 
+        ! Radiation will not call the aerosol optics method
         ! unless this attribute is explicitly set to true.
         call ESMF_StateGet(EXPORT, 'AERO', AERO, __RC__)
         call ESMF_AttributeSet(AERO, name='implements_aerosol_optics_method', value=.false., __RC__)
 
-        ! Moist will not call the aerosol activation method 
+        ! Moist will not call the aerosol activation method
         ! unless this attribute is explicitly set to true.
         call ESMF_StateGet(EXPORT, 'AERO_ACI', AERO_ACI, __RC__)
         call ESMF_AttributeSet(AERO_ACI, name='implements_aerosol_activation_properties_method', value=.false., __RC__)
@@ -965,15 +981,15 @@ contains
 !   ------------------------
     if ( MAPL_am_I_root() ) then
 
-       print *,  trim(Iam)//": IMPORT State" 
+       print *,  trim(Iam)//": IMPORT State"
                                              call ESMF_StatePrint ( IMPORT )
-       print *,  trim(Iam)//": INTERNAL State" 
+       print *,  trim(Iam)//": INTERNAL State"
                                              call ESMF_StatePrint ( INTERNAL )
-       print *,  trim(Iam)//": EXPORT State" 
+       print *,  trim(Iam)//": EXPORT State"
                                              call ESMF_StatePrint ( EXPORT )
 
        print *,  trim(Iam)//": AERO State (EXPORT)"
-                                             call ESMF_StateGet   ( EXPORT, 'AERO', AERO, __RC__ ) 
+                                             call ESMF_StateGet   ( EXPORT, 'AERO', AERO, __RC__ )
                                              call ESMF_StatePrint ( AERO, nestedFlag=.false., __RC__ )
        print *,  trim(Iam)//": AERO State (PROVIDER)",  myState%AERO_PROVIDER
                                          if (myState%AERO_PROVIDER > 0) then
@@ -982,7 +998,7 @@ contains
                                          end if
 
        print *,  trim(Iam)//": AERO_ACI State (EXPORT)"
-                                             call ESMF_StateGet   ( EXPORT, 'AERO_ACI', AERO_ACI, __RC__ ) 
+                                             call ESMF_StateGet   ( EXPORT, 'AERO_ACI', AERO_ACI, __RC__ )
                                              call ESMF_StatePrint ( AERO_ACI, nestedFlag=.false., __RC__ )
        print *,  trim(Iam)//": AERO State (PROVIDER)",  myState%AERO_PROVIDER
                                          if (myState%AERO_PROVIDER > 0) then
@@ -1011,7 +1027,7 @@ contains
 
 ! !ARGUMENTS:
 
-  type(ESMF_GridComp), intent(inout) :: GC     ! Gridded component 
+  type(ESMF_GridComp), intent(inout) :: GC     ! Gridded component
   type(ESMF_State),    intent(inout) :: IMPORT ! Import state
   type(ESMF_State),    intent(inout) :: EXPORT ! Export state
   type(ESMF_Clock),    intent(inout) :: CLOCK  ! The clock
@@ -1047,7 +1063,7 @@ contains
 
 !=============================================================================
 
-! Begin... 
+! Begin...
 
 ! Get parameters from generic state. The RUNALARM is used to control
 !  the calling of the full chemistry
@@ -1064,7 +1080,7 @@ contains
 
    if ( ESMF_AlarmIsRinging (ALARM, RC=STATUS) ) then
 
-      ! Don't turn alarm off in phase 1, otherwise phase 2 will not be 
+      ! Don't turn alarm off in phase 1, otherwise phase 2 will not be
       ! executed!
 !      call ESMF_AlarmRingerOff(ALARM, RC=STATUS)
 !      VERIFY_(STATUS)
@@ -1102,9 +1118,9 @@ contains
       if(associated(GCS)) then
         NCHLD  = SIZE(GCS)  ! # of children
         IPHASE = 1          ! phase to be called
-        ! do for every child: get child state, determine number of 
+        ! do for every child: get child state, determine number of
         ! of run phases and call phase one if more than one phase
-        ! exists. Also updated MAPL_Get to accept the output 
+        ! exists. Also updated MAPL_Get to accept the output
         ! argument NumRunPhases (ckeller, 09/10/2014)
         ! --------------------------------------------------------
         do I=1,NCHLD
@@ -1151,7 +1167,7 @@ contains
 
 ! !ARGUMENTS:
 
-  type(ESMF_GridComp), intent(inout) :: GC     ! Gridded component 
+  type(ESMF_GridComp), intent(inout) :: GC     ! Gridded component
   type(ESMF_State),    intent(inout) :: IMPORT ! Import state
   type(ESMF_State),    intent(inout) :: EXPORT ! Export state
   type(ESMF_Clock),    intent(inout) :: CLOCK  ! The clock
@@ -1193,7 +1209,7 @@ contains
     integer                               :: userRC
     character(len=ESMF_MAXSTR)            :: CHILD_NAME
 !-------------------------------------------------------------------
-! Begin... 
+! Begin...
 
 ! Get parameters from generic state. The RUNALARM is used to control
 !  the calling of the full chemistry
@@ -1201,7 +1217,7 @@ contains
 
    call MAPL_GetObjectFromGC ( GC, MAPL, RC=STATUS)
    VERIFY_(STATUS)
-   call MAPL_Get(MAPL, RUNALARM = ALARM, __RC__ ) 
+   call MAPL_Get(MAPL, RUNALARM = ALARM, __RC__ )
 
 !  Start timers
 !  ------------
@@ -1216,7 +1232,7 @@ contains
       ! Get the target components name and set-up traceback handle.
       ! -----------------------------------------------------------
       call ESMF_GridCompGet ( GC, name=COMP_NAME, __RC__ )
-      Iam = trim(COMP_NAME) // "::Run2" 
+      Iam = trim(COMP_NAME) // "::Run2"
 
       ! Call Run for every Child. This is either phase 1 (for components
       ! with only one phase) or phase 2 (for components with two phases).
@@ -1235,7 +1251,7 @@ contains
 
       if(associated(GCS)) then
         NCHLD  = SIZE(GCS)  ! # of children
-        ! do for every child: get child state, determine number of 
+        ! do for every child: get child state, determine number of
         ! run phases and phase to call, execute.
         ! --------------------------------------------------------
         do I=1,NCHLD
@@ -1261,7 +1277,7 @@ contains
         enddo !I
       endif
 
-      !Compute chemistry tracer increments 
+      !Compute chemistry tracer increments
       !---------------------------------------
       call Compute_IncBundle(INTERNAL, EXPORT, CHMincR2, MAPL, __RC__)
 
@@ -1323,7 +1339,7 @@ contains
      call ESMF_ConfigGetAttribute(CF, providerName, Default=trim(default), &
                                   Label=Label, __RC__)
 
-     ID   = -1 
+     ID   = -1
      name = trim(providerName)
 
      select case ( trim(name) )
@@ -1362,7 +1378,7 @@ contains
               __raise__(MAPL_RC_ERROR, message)
 
      end select
-     
+
      if ( ID < 0 ) then
         message = "Component "//trim(name)//" is NOT enabled; cannot specify it for "//trim(label)
         __raise__(MAPL_RC_ERROR, message)

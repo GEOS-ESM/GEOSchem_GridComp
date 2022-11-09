@@ -1399,7 +1399,9 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
              start(3) = INDX2
              STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNCV(:,:,K,2), start, cnt)
              if(status /= NF90_NOERR) then
-                print*,'Error reading upper bracket month ',status
+                write(*,'("Code line ", i5, " in file ", a)') __LINE__, trim(__FILE__)
+                write(*,'("Error reading upper bracket month for variable ", a, " from file ", a)') trim(FieldName), trim(PCHEMFILE)
+                !print*,'Error reading upper bracket month ',status
                 print*, NF90_STRERROR(status)
                 stop
              endif
@@ -1482,7 +1484,9 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
              start(3) = INDX2
              STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%H2OprRate(:,:,2), start, cnt)
              if(status /= nf90_noerr) then
-                print*,'Error reading upper bracket month ',status
+                write(*,'("Code line ", i5, " in file ", a)') __LINE__, trim(__FILE__)
+                write(*,'("Error reading upper bracket month for variable H2OprRate from file ", a)') trim(PCHEMFILE)
+                !print*,'Error reading upper bracket month ',status
                 print*, NF90_STRERROR(status)
                 stop
              endif
@@ -1503,7 +1507,9 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
              start(3) = INDX2
              STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%H2OlsRate(:,:,2), start, cnt)
              if(status /= nf90_noerr) then
-                print*,'Error reading upper bracket month ',status
+                write(*,'("Code line ", i5, " in file ", a)') __LINE__, trim(__FILE__)
+                write(*,'("Error reading upper bracket month for variable H2OlsRate from file ", a)') trim(PCHEMFILE)
+                !print*,'Error reading upper bracket month ',status
                 print*, NF90_STRERROR(status)
                 stop
              endif

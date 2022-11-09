@@ -31,7 +31,7 @@ module GEOS_ChemEnvGridCompMod
 
   public SetServices
 
-! !DESCRIPTION: This is a Cinderella gridded component (GC) 
+! !DESCRIPTION: This is a Cinderella gridded component (GC)
 !EOP
 
 contains
@@ -50,8 +50,8 @@ contains
     integer, intent(OUT)               :: RC  ! return code
 
 ! !DESCRIPTION:  The SetServices for the Chemistry Env GC needs to register its
-!   Initialize and Run.  It uses the MAPL\_Generic construct for defining 
-!   state specs and couplings among its children.  In addition, it creates the   
+!   Initialize and Run.  It uses the MAPL\_Generic construct for defining
+!   state specs and couplings among its children.  In addition, it creates the
 !   children GCs and runs their respective SetServices.
 
 !EOP
@@ -84,8 +84,8 @@ contains
 
 ! Register services for this component
 ! ------------------------------------
-    call MAPL_GridCompSetEntryPoint ( GC, ESMF_METHOD_RUN, Run1, __RC__ ) 
-    call MAPL_GridCompSetEntryPoint ( GC, ESMF_METHOD_RUN, Run2, __RC__ ) 
+    call MAPL_GridCompSetEntryPoint ( GC, ESMF_METHOD_RUN, Run1, __RC__ )
+    call MAPL_GridCompSetEntryPoint ( GC, ESMF_METHOD_RUN, Run2, __RC__ )
 
 !BOS
 
@@ -118,6 +118,16 @@ contains
                                                        RC=STATUS  )
      VERIFY_(STATUS)
 
+     !! Sourish Basu : Needed to compute QTOT later
+     !call MAPL_AddImportSpec(GC,                             &
+        !SHORT_NAME = 'QCTOT',                                     &
+        !LONG_NAME  = 'mass_fraction_of_total_water',              &
+        !UNITS      = 'kg kg-1',                                   &
+        !DIMS       = MAPL_DimsHorzVert,                           &
+        !VLOCATION  = MAPL_VLocationCenter,                        &
+                                                       !RC=STATUS  )
+     !VERIFY_(STATUS)
+
 !   Convective precip
 !   -----------------
     call MAPL_AddImportSpec(GC,                               &
@@ -140,40 +150,40 @@ contains
          VLOCATION = MAPL_VLocationNone,                RC=STATUS  )
     VERIFY_(STATUS)
 
-    call MAPL_AddImportSpec(GC,				 &
-       SHORT_NAME	  = 'FRLAND',				 &
-       LONG_NAME	  = 'fraction_of_land', 		 &
-       UNITS		  = '1',				 &
-       DIMS		  = MAPL_DimsHorzOnly,		     &
-       VLOCATION	  = MAPL_VLocationNone,		     &
-    						      RC=STATUS  )
+    call MAPL_AddImportSpec(GC,            &
+       SHORT_NAME   = 'FRLAND',            &
+       LONG_NAME    = 'fraction_of_land',        &
+       UNITS        = '1',           &
+       DIMS      = MAPL_DimsHorzOnly,          &
+       VLOCATION    = MAPL_VLocationNone,         &
+                           RC=STATUS  )
     VERIFY_(STATUS)
 
-    call MAPL_AddImportSpec(GC,				 &
-       SHORT_NAME	  = 'FRLANDICE',			 &
-       LONG_NAME	  = 'fraction_of_land_ice',		 &
-       UNITS		  = '1',				 &
-       DIMS		  = MAPL_DimsHorzOnly,		     &
-       VLOCATION	  = MAPL_VLocationNone,		     &
-    						      RC=STATUS  )
+    call MAPL_AddImportSpec(GC,            &
+       SHORT_NAME   = 'FRLANDICE',         &
+       LONG_NAME    = 'fraction_of_land_ice',       &
+       UNITS        = '1',           &
+       DIMS      = MAPL_DimsHorzOnly,          &
+       VLOCATION    = MAPL_VLocationNone,         &
+                           RC=STATUS  )
     VERIFY_(STATUS)
 
-    call MAPL_AddImportSpec(GC,				 &
-       SHORT_NAME	  = 'FROCEAN',  			 &
-       LONG_NAME	  = 'fraction_of_ocean',		 &
-       UNITS		  = '1',				 &
-       DIMS		  = MAPL_DimsHorzOnly,		     &
-       VLOCATION	  = MAPL_VLocationNone,		     &
-    						      RC=STATUS  )
+    call MAPL_AddImportSpec(GC,            &
+       SHORT_NAME   = 'FROCEAN',           &
+       LONG_NAME    = 'fraction_of_ocean',       &
+       UNITS        = '1',           &
+       DIMS      = MAPL_DimsHorzOnly,          &
+       VLOCATION    = MAPL_VLocationNone,         &
+                           RC=STATUS  )
     VERIFY_(STATUS)
 
-    call MAPL_AddImportSpec(GC,				 &
-       SHORT_NAME	  = 'FRACI',  			 &
+    call MAPL_AddImportSpec(GC,            &
+       SHORT_NAME   = 'FRACI',          &
        LONG_NAME          = 'ice_covered_fraction_of_tile',      &
        UNITS              = '1',                                 &
        DIMS               = MAPL_DimsHorzOnly,                   &
        VLOCATION          = MAPL_VLocationNone,                  &
-    						      RC=STATUS  )
+                           RC=STATUS  )
     VERIFY_(STATUS)
 
 
@@ -206,6 +216,17 @@ contains
         DIMS               = MAPL_DimsHorzVert,              &
         VLOCATION          = MAPL_VLocationCenter,  RC=STATUS)
      VERIFY_(STATUS)
+
+!! Sourish Basu
+!!    Mass mixing ratio of water (all phases)
+!!    ----------------------------------
+     !call MAPL_AddExportSpec(GC,                             &
+        !SHORT_NAME         = 'QTOT',                         &
+        !LONG_NAME          = 'mass_fraction_of_all_water',   &
+        !UNITS              = 'kg kg-1',                      &
+        !DIMS               = MAPL_DimsHorzVert,              &
+        !VLOCATION          = MAPL_VLocationCenter,  RC=STATUS)
+     !VERIFY_(STATUS)
 
 !    DELP (This should be wired from DYN)
 !    ------------------------------------
@@ -276,7 +297,7 @@ contains
     VERIFY_(STATUS)
 
     RETURN_(ESMF_SUCCESS)
-  
+
   end subroutine SetServices
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -288,13 +309,13 @@ contains
 
 ! !ARGUMENTS:
 
-  type(ESMF_GridComp), intent(inout) :: GC     ! Gridded component 
+  type(ESMF_GridComp), intent(inout) :: GC     ! Gridded component
   type(ESMF_State),    intent(inout) :: IMPORT ! Import state
   type(ESMF_State),    intent(inout) :: EXPORT ! Export state
   type(ESMF_Clock),    intent(inout) :: CLOCK  ! The clock
   integer, optional,   intent(  out) :: RC     ! Error code
 
-! !DESCRIPTION: The Run1 method of the Chemistry Environment Gridded 
+! !DESCRIPTION: The Run1 method of the Chemistry Environment Gridded
 ! Component. It calculates air density used by chemistry and emissions.
 
 !EOP
@@ -311,10 +332,10 @@ contains
   real, pointer, dimension(:,:,:)      :: delp => null()
 
 !=============================================================================
- 
+
     integer                            :: k, k0
 
-! Begin... 
+! Begin...
 
 !   Get the target components name and set-up traceback handle.
 !   -----------------------------------------------------------
@@ -357,7 +378,7 @@ contains
 
 ! !ARGUMENTS:
 
-  type(ESMF_GridComp), intent(inout) :: GC     ! Gridded component 
+  type(ESMF_GridComp), intent(inout) :: GC     ! Gridded component
   type(ESMF_State),    intent(inout) :: IMPORT ! Import state
   type(ESMF_State),    intent(inout) :: EXPORT ! Export state
   type(ESMF_Clock),    intent(inout) :: CLOCK  ! The clock
@@ -370,7 +391,7 @@ contains
 
 ! ErrLog Variables
 
-  character(len=ESMF_MAXSTR)           :: IAm 
+  character(len=ESMF_MAXSTR)           :: IAm
   integer                              :: STATUS
   character(len=ESMF_MAXSTR)           :: COMP_NAME
 
@@ -384,14 +405,14 @@ contains
   real, pointer, dimension(:,:)        :: ncn_prcp => null()
 
 !=============================================================================
- 
+
     type (MAPL_MetaComp), pointer      :: MAPL
     type (ESMF_FieldBundle)            :: Bundle
     type (ESMF_Grid)                   :: GRID
     type (ESMF_Time)                   :: CurrentTime
     character(len=ESMF_MAXSTR)         :: PRECIP_FILE
     integer                            :: year, month, day, hr, mn, se
-  
+
     real, pointer, dimension(:,:)      :: pr_total
     real, pointer, dimension(:,:)      :: pr_conv
     real, pointer, dimension(:,:)      :: pr_snow
@@ -409,7 +430,7 @@ contains
     real(ESMF_KIND_R4), pointer, dimension(:,:) :: LONS
 
 
-! Begin... 
+! Begin...
 
 !   Get the target components name and set-up traceback handle.
 !   -----------------------------------------------------------
@@ -442,7 +463,7 @@ contains
        end do
     end if
 
-! Import precip from MOIST or read observed precip from a file. 
+! Import precip from MOIST or read observed precip from a file.
 ! Export total, convective and non-convective precipitation.
 !--------------------------------------------------------------
     call MAPL_GetPointer ( EXPORT, tprec,    'TPREC',     __RC__ )
@@ -486,7 +507,7 @@ contains
 
 
     if (observed_precip) then
-       call ESMF_FieldBundleDestroy(bundle, __RC__) 
+       call ESMF_FieldBundleDestroy(bundle, __RC__)
 
        if (associated(pr_total)) deallocate(pr_total)
        if (associated(pr_conv))  deallocate(pr_conv)
@@ -549,37 +570,39 @@ contains
 
 ! !ARGUMENTS:
 
-  type(ESMF_GridComp), intent(inout) :: GC     ! Gridded component 
+  type(ESMF_GridComp), intent(inout) :: GC     ! Gridded component
   type(ESMF_State),    intent(inout) :: IMPORT ! Import state
   type(ESMF_State),    intent(inout) :: EXPORT ! Export state
   integer, optional,   intent(  out) :: RC     ! Error code
 
-! !DESCRIPTION: 
+! !DESCRIPTION:
 ! Calculates air density used by chemistry and emissions.
 
 !EOP
 
-! Imports 
+! Imports
   real, pointer, dimension(:,:,:)      :: pe => null()
   real, pointer, dimension(:,:,:)      :: th => null()
   real, pointer, dimension(:,:,:)      :: q  => null()
+  !real, pointer, dimension(:,:,:)      :: qc => null() ! Sourish
 
 ! Exports
   real, pointer, dimension(:,:,:)      :: rho => null()
   real, pointer, dimension(:,:,:)      :: rhoDry => null()
+  !real, pointer, dimension(:,:,:)      ::   qtot => null() ! Sourish
 
 ! Error handling
   character(len=ESMF_MAXSTR)           :: IAm = 'Airdens'
   integer                              :: STATUS
   character(len=ESMF_MAXSTR)           :: COMP_NAME
 
-! Local variables 
+! Local variables
   integer           :: k, k0, iml, jml, nl  ! dimensions
   real              :: eps
   real, allocatable :: npk(:,:,:)           ! normalized pk = (pe/p0)^kappa
 
 !=============================================================================
-! Begin... 
+! Begin...
 
 !   Get the target components name and set-up traceback handle.
 !   -----------------------------------------------------------
@@ -588,14 +611,16 @@ contains
 
 !   Get to the imports...
 !   ---------------------
-    call MAPL_GetPointer ( IMPORT,  pe,  'PLE', __RC__ )
-    call MAPL_GetPointer ( IMPORT,  th,  'TH',  __RC__ )
-    call MAPL_GetPointer ( IMPORT,   q,  'Q',   __RC__ )
+    call MAPL_GetPointer ( IMPORT,  pe,  'PLE',   __RC__ )
+    call MAPL_GetPointer ( IMPORT,  th,  'TH',    __RC__ )
+    call MAPL_GetPointer ( IMPORT,   q,  'Q',     __RC__ )
+    !call MAPL_GetPointer ( IMPORT,  qc,  'QCTOT', __RC__ ) ! Sourish
 
 !   Get to the exports...
 !   ---------------------
     call MAPL_GetPointer ( EXPORT, rho,    'AIRDENS',      __RC__ )
     call MAPL_GetPointer ( EXPORT, rhoDry, 'AIRDENS_DRYP', __RC__ )
+    !call MAPL_GetPointer ( EXPORT,   qtot, 'QTOT',         __RC__ ) ! Sourish
 
 !   Compute air density
 !   -------------------
@@ -637,6 +662,11 @@ contains
     END DO
 
     deallocate(npk)
+
+!! Sourish Basu
+!!   Compute qtot from q and qctot
+!!   -----------------------------
+    !IF(ASSOCIATED(qtot)) qtot = q + qc
 
 !   All Done
 !   --------
