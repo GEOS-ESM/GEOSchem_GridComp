@@ -301,7 +301,7 @@ contains
 
 ! Priority for first three RATs, OX, O3 and O3PPMV, goes to the ANALYSIS_OX_PROVIDER.
 ! -----------------------------------------------------------------------------------
-  call GetProvider_(CF, Label='ANALYSIS_OX_PROVIDER:', ID=i, Name=providerName, Default=TRIM(RATsProviderName(1)), __RC__)
+  call GetProvider_(CF, Label='ANALYSIS_OX_PROVIDER:', ID=i, Name=providerName, Default='PCHEM', __RC__)
 
   RATsProviderNumber(1:3) = i
   RATsProviderName(1:3)   = trim(providerName)
