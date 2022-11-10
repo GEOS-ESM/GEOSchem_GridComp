@@ -407,15 +407,14 @@ contains
 ! -------------------------------
   IF(myState%enable_GOCART) then
      CALL MAPL_AddConnectivity ( GC, &
-          !SHORT_NAME  = (/'AIRDENS     ','AIRDENS_DRYP', 'DELP        ', 'TPREC       ', 'CN_PRCP     ', 'NCN_PRCP    '/), &
           SHORT_NAME  = (/ &
             'AIRDENS     ', &
             'AIRDENS_DRYP', &
-            !'QTOT        ', & ! Sourish
+            'QTOT        ', & ! Sourish
             'DELP        ', &
             'TPREC       ', &
             'CN_PRCP     ', &
-            'NCN_PRCP    '/), & ! Sourish (broken over multiple lines so that it's easy to check equal width)
+            'NCN_PRCP    '/), & ! broken over multiple lines so that it's easy to check equal width
             DST_ID = GOCART, SRC_ID = CHEMENV, __RC__  )
   END IF
 
