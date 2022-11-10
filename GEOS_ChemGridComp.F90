@@ -306,13 +306,13 @@ contains
   RATsProviderNumber(1:3) = i
   RATsProviderName(1:3)   = trim(providerName)
 
-!! Sourish Basu
-!! Option to set RAT CH4 distinct from others (e.g. GOCART) -  RAT_CH4_PROVIDER
-!! -----------------------------------------------------------------------------------
-  !call GetProvider_(CF, Label='RATS_PROVIDER_CH4:', ID=i, Name=providerName, Default=TRIM(RATsProviderName(4)), __RC__)
+! Sourish Basu
+! Option to set RAT CH4 distinct from others (e.g. GOCART) -  RAT_CH4_PROVIDER
+! -----------------------------------------------------------------------------------
+  call GetProvider_(CF, Label='RATS_PROVIDER_CH4:', ID=i, Name=providerName, Default=TRIM(RATsProviderName(4)), __RC__)
 
-  !RATsProviderNumber(4) = i
-  !RATsProviderName(4)   = trim(providerName)
+  RATsProviderNumber(4) = i
+  RATsProviderName(4)   = trim(providerName)
 
 ! Add export specs for the RATs ...
 ! ---------------------------------
@@ -407,9 +407,16 @@ contains
 ! -------------------------------
   IF(myState%enable_GOCART) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'AIRDENS     ','AIRDENS_DRYP', 'DELP        ', 'TPREC       ', 'CN_PRCP     ', 'NCN_PRCP    '/), &
-          !SHORT_NAME  = (/'AIRDENS     ','AIRDENS_DRYP', 'QTOT        ', 'DELP        ', 'TPREC       ', 'CN_PRCP     ', 'NCN_PRCP    '/), & ! Sourish
-          DST_ID = GOCART, SRC_ID = CHEMENV, __RC__  )
+          !SHORT_NAME  = (/'AIRDENS     ','AIRDENS_DRYP', 'DELP        ', 'TPREC       ', 'CN_PRCP     ', 'NCN_PRCP    '/), &
+          SHORT_NAME  = (/ &
+            'AIRDENS     ', &
+            'AIRDENS_DRYP', &
+            !'QTOT        ', & ! Sourish
+            'DELP        ', &
+            'TPREC       ', &
+            'CN_PRCP     ', &
+            'NCN_PRCP    '/), & ! Sourish (broken over multiple lines so that it's easy to check equal width)
+            DST_ID = GOCART, SRC_ID = CHEMENV, __RC__  )
   END IF
 
   IF(myState%enable_GOCARTdata) then
