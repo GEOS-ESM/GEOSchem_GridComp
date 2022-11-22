@@ -1,10 +1,14 @@
 Collections:
-  GAAS_d5124_m2_jan10.aod_a.sfc.%y4%m2%d2_%h2%n2z.nc4:
-    template: /discover/nobackup/projects/gmao/merra2/data/chem/d5124_m2_jan10/Y%y4/M%m2/d5124_m2_jan10.aod_a.sfc.%y4%m2%d2_%h2%n2z.nc4
-  GAAS_d5124_m2_jan10.aod_f.sfc.%y4%m2%d2_%h2%n2z.nc4:
-    template: /discover/nobackup/projects/gmao/merra2/data/chem/d5124_m2_jan10/Y%y4/M%m2/d5124_m2_jan10.aod_f.sfc.%y4%m2%d2_%h2%n2z.nc4
-  GAAS_d5124_m2_jan10.aod_k.sfc.%y4%m2%d2_%h2%n2z.nc4:
-    template: /discover/nobackup/projects/gmao/merra2/data/chem/d5124_m2_jan10/Y%y4/M%m2/d5124_m2_jan10.aod_k.sfc.%y4%m2%d2_%h2%n2z.nc4
+  aod_a.sfc.%y4%m2%d2_%h2%n2z.nc4:
+    template: aod_a.sfc.%y4%m2%d2_%h2%n2z.nc4
+    freq: PT3H
+  aod_f.sfc.%y4%m2%d2_%h2%n2z.nc4:
+    template: aod_f.sfc.%y4%m2%d2_%h2%n2z.nc4
+    freq: PT3H
+  aod_k.sfc.%y4%m2%d2_%h2%n2z.nc4:
+    template: aod_k.sfc.%y4%m2%d2_%h2%n2z.nc4
+    freq: PT3H
+    
 
 Samplings:
   GAAS_sample_0:
@@ -12,15 +16,18 @@ Samplings:
 
 Exports:
   aod_a:
-    collection: GAAS_d5124_m2_jan10.aod_a.sfc.%y4%m2%d2_%h2%n2z.nc4
+    collection: aod_a.sfc.%y4%m2%d2_%h2%n2z.nc4
     sample: GAAS_sample_0
     variable: AOD
+    fail_on_missing_file: false
   aod_f:
-    collection: GAAS_d5124_m2_jan10.aod_f.sfc.%y4%m2%d2_%h2%n2z.nc4
+    collection: aod_f.sfc.%y4%m2%d2_%h2%n2z.nc4
     sample: GAAS_sample_0
     variable: AOD
+    fail_on_missing_file: false
   aod_k:
-    collection: GAAS_d5124_m2_jan10.aod_k.sfc.%y4%m2%d2_%h2%n2z.nc4
+    collection: aod_k.sfc.%y4%m2%d2_%h2%n2z.nc4
     sample: GAAS_sample_0
     variable: AOD
+    fail_on_missing_file: false
 
