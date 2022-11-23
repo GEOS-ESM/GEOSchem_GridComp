@@ -78,24 +78,6 @@ Exports:
     variable: region_map
   OX_TR:
     collection: /dev/null
-  QQK005:
-    collection: /dev/null
-  QQK007:
-    collection: /dev/null
-  QQK027:
-    collection: /dev/null
-  QQK028:
-    collection: /dev/null
-  QQK150:
-    collection: /dev/null
-  QQK170:
-    collection: /dev/null
-  QQK179:
-    collection: /dev/null
-  QQK216:
-    collection: /dev/null
-  QQK235:
-    collection: /dev/null
   SRC_2D_CH3I:
     collection: TR_unity.x144_y91.nc
     linear_transformation:
@@ -180,6 +162,8 @@ Exports:
     regrid: VOTE
     sample: TR_sample_1
     variable: REGION_MASK
+  stOX_loss:
+    collection: /dev/null
 
 Derived:
   SRC_2D_CO_ANZ:

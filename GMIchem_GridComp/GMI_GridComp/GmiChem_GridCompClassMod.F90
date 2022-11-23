@@ -73,6 +73,10 @@
 !EOP
 !-------------------------------------------------------------------------
 
+  INTEGER, PARAMETER :: RXN_NAME_LENGTH     = 16
+  INTEGER, PARAMETER :: RXN_LONGNAME_LENGTH = 256
+  INTEGER, PARAMETER :: TOKEN_LENGTH  = 256
+
   TYPE GmiChemistry_GridComp
    CHARACTER(LEN=255) :: name = "GMI Stratospheric/Tropospheric Chemistry"
 
@@ -109,6 +113,13 @@
 ! Surface area of grid cells
 ! --------------------------
    REAL(KIND=DBL), POINTER :: cellArea(:,:)
+
+! for computing tropospheric OX loss
+! ----------------------------------
+   INTEGER :: stOX_rxn_count
+   CHARACTER(LEN=RXN_NAME_LENGTH),     pointer :: rname(:)  ! vector of reaction short names
+   REAL(KIND=DBL), allocatable                 :: rmult(:)  ! vector of multipliers
+   CHARACTER(LEN=RXN_LONGNAME_LENGTH), pointer :: rdesc(:)  ! vector of reaction long  names
 
 ! Extra diagnostics
 ! -----------------
@@ -183,13 +194,17 @@ CONTAINS
 !EOP
 !-------------------------------------------------------------------------
 
+   INTEGER, PARAMETER :: RC_DATA_LINE    = 1
+   INTEGER, PARAMETER :: RC_END_OF_TABLE = 2
+   INTEGER, PARAMETER :: RC_END_OF_FILE  = 3
+
    CHARACTER(LEN=*), PARAMETER :: IAm    = 'GmiChem_GridCompClassInitialize'
-   CHARACTER(LEN=255) :: rcfilen = 'GMI_GridComp.rc'
+   CHARACTER(LEN=255) :: rcfile = 'GMI_GridComp.rc'
    CHARACTER(LEN=255) :: namelistFile
    CHARACTER(LEN=255) :: importRestartFile
    CHARACTER(LEN=255) :: string
    
-   type (ESMF_Config) :: gmiConfigFile
+   type (ESMF_Config) :: gmiConfig
 
    INTEGER :: ios, m, n, STATUS
    INTEGER :: i, i1, i2, ic, im, j, j1, j2, jm, k, km, kReverse
@@ -217,6 +232,10 @@ CONTAINS
    INTEGER                :: numVars, ib
    CHARACTER(LEN=4)       :: binName
    CHARACTER(LEN=ESMF_MAXSTR) :: varName
+
+   CHARACTER(LEN=TOKEN_LENGTH) ::  str_arr(3)   ! strings for rxn_name, multiplier and rxn_longname
+   INTEGER                     :: nrxn, nx, item_count, retcode
+   CHARACTER(LEN=32)           :: table_name
 
 ! Grid cell area can be set by initialize
 ! ---------------------------------------
@@ -247,14 +266,55 @@ CONTAINS
          PRINT *,"Starting Reading the GMI Resource File for Chemistry"
       ENDIF
 
-      gmiConfigFile = ESMF_ConfigCreate(rc=STATUS )
-      VERIFY_(STATUS)
+      gmiConfig = ESMF_ConfigCreate( __RC__ )
 
-      call ESMF_ConfigLoadFile(gmiConfigFile, TRIM(rcfilen), rc=STATUS )
-      VERIFY_(STATUS)
+      call ESMF_ConfigLoadFile(gmiConfig, TRIM(rcfile), __RC__ )
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, importRestartFile, &
-     &                label   = "importRestartFile:", &
+!     stOX Reactions
+!     --------------
+      table_name = 'stOX_loss_reactions::'
+
+      call ESMF_ConfigGetDim(gmiConfig, nrxn, nx, label=TRIM(table_name), rc=rc)
+      _ASSERT(rc==0, TRIM(Iam)//': Cannot get dims for table '//TRIM(table_name)//' in '//TRIM(rcfile))
+
+      call ESMF_ConfigFindLabel(gmiConfig, TRIM(table_name), rc=rc)
+      _ASSERT(rc==0, TRIM(Iam)//': Cannot find '//TRIM(table_name)//' in file '//TRIM(rcfile))
+
+!     Allocate memory
+!     ---------------
+      self%stOX_rxn_count = nrxn
+      allocate ( self%rname(nrxn), self%rmult(nrxn), self%rdesc(nrxn), __STAT__ )
+
+!     Read the reactions
+!     ------------------
+      do i=1,nrxn
+         call get_line ( gmiConfig, 3, str_arr, item_count, retcode )
+         select case( retcode )
+           case( RC_END_OF_FILE  )
+             _FAIL(TRIM(Iam)//': early EOF in file '//TRIM(rcfile))
+           case( RC_END_OF_TABLE )
+             _FAIL(TRIM(Iam)//': table too short '//TRIM(table_name)//' in file '//TRIM(rcfile))
+           case( RC_DATA_LINE    )
+             _ASSERT(item_count==3, TRIM(Iam)//': fewer than 3 entries in '//TRIM(table_name)//' in file '//TRIM(rcfile))
+             self%rname(i) = str_arr(1)
+             READ(           str_arr(2),*,IOSTAT=rc) self%rmult(i)
+             _ASSERT(rc==0, TRIM(Iam)//': Bad scaling factor for rxn '//TRIM(str_arr(1))//' in file '//TRIM(rcfile)//': '//TRIM(str_arr(2)))
+             self%rdesc(i) = str_arr(3)
+         end select
+      end do
+
+      IF( MAPL_AM_I_ROOT() ) THEN
+        PRINT*,'stOX reactions>>>'
+        do i=1,self%stOX_rxn_count
+          PRINT*,i,TRIM(self%rname(i)), self%rmult(i), TRIM(self%rdesc(i))
+        end do
+        PRINT*,'stOX reactions<<<'
+      END IF
+
+
+
+      call ESMF_ConfigGetAttribute(gmiConfig, importRestartFile, &
+     &                label   = "importRestartFile:",            &
      &                default = ' ', rc=STATUS )
       VERIFY_(STATUS)
 
@@ -262,7 +322,7 @@ CONTAINS
       ! Advection related variables
       !------------------------------
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_grav_set, &
+      call ESMF_ConfigGetAttribute(gmiConfig, value=self%do_grav_set, &
      &           label="do_grav_set:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
@@ -270,11 +330,11 @@ CONTAINS
       ! Emission related variables
       !------------------------------
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_synoz, &
+      call ESMF_ConfigGetAttribute(gmiConfig, value=self%do_synoz, &
      &           label="do_synoz:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_semiss_inchem, &
+      call ESMF_ConfigGetAttribute(gmiConfig, value=self%do_semiss_inchem, &
      &           label="do_semiss_inchem:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
@@ -282,65 +342,65 @@ CONTAINS
       ! Diagnostics related variables
       !------------------------------
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_diag, &
+      call ESMF_ConfigGetAttribute(gmiConfig, value=self%pr_diag, &
      &           label="pr_diag:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%verbose, &
+      call ESMF_ConfigGetAttribute(gmiConfig, value=self%verbose, &
      &           label="verbose:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_surf_emiss, &
+      call ESMF_ConfigGetAttribute(gmiConfig, value=self%pr_surf_emiss, &
      &           label="pr_surf_emiss:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_emiss_3d, &
+      call ESMF_ConfigGetAttribute(gmiConfig, value=self%pr_emiss_3d, &
      &           label="pr_emiss_3d:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_qqjk, &
+      call ESMF_ConfigGetAttribute(gmiConfig, value=self%pr_qqjk, &
      &           label="pr_qqjk:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_qqjk_reset, &
+      call ESMF_ConfigGetAttribute(gmiConfig, value=self%do_qqjk_reset, &
      &           label="do_qqjk_reset:", default=.true., rc=STATUS)
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%pr_nc_period, &
+      call ESMF_ConfigGetAttribute(gmiConfig, self%pr_nc_period, &
      &                label   = "pr_nc_period:", &
      &                default = -1.0d0, rc=STATUS )
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_ftiming, &
+      call ESMF_ConfigGetAttribute(gmiConfig, value=self%do_ftiming, &
      &               label="do_ftiming:", default=.false., rc=STATUS )
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%rd_restart, &
+      call ESMF_ConfigGetAttribute(gmiConfig, value=self%rd_restart, &
      &               label="rd_restart:", default=.false., rc=STATUS )
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_qj_o3_o1d, &
+      call ESMF_ConfigGetAttribute(gmiConfig, value=self%pr_qj_o3_o1d, &
      &               label="pr_qj_o3_o1d:", default=.false., rc=STATUS )
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_qj_opt_depth, &
+      call ESMF_ConfigGetAttribute(gmiConfig, value=self%pr_qj_opt_depth, &
      &               label="pr_qj_opt_depth:", default=.false., rc=STATUS )
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_smv2, &
+      call ESMF_ConfigGetAttribute(gmiConfig, value=self%pr_smv2, &
      &               label="pr_smv2:", default=.false., rc=STATUS )
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_const, &
+      call ESMF_ConfigGetAttribute(gmiConfig, value=self%pr_const, &
      &               label="pr_const:", default=.false., rc=STATUS )
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%metdata_name_org, &
+      call ESMF_ConfigGetAttribute(gmiConfig, self%metdata_name_org, &
      &                label   = "metdata_name_org:", &
      &                default = 'GMAO', rc=STATUS )
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%metdata_name_model, &
+      call ESMF_ConfigGetAttribute(gmiConfig, self%metdata_name_model, &
      &                label   = "metdata_name_model:", &
      &                default = 'GEOS-5', rc=STATUS )
 
@@ -349,7 +409,7 @@ CONTAINS
       ! Chemistry Related Variables
       !----------------------------
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%do_qqjk_inchem, &
+      call ESMF_ConfigGetAttribute(gmiConfig, value=self%do_qqjk_inchem, &
      &           label="do_qqjk_inchem:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
 
@@ -469,14 +529,15 @@ CONTAINS
 ! ----------------------------------------------------------
 
       CALL InitializeSpcConcentration(self%SpeciesConcentration,              &
-                     self%gmiGrid, gmiConfigFile, NSP, NMF, NCHEM,            &
+                     self%gmiGrid, gmiConfig, NSP, NMF, NCHEM,                &
                      loc_proc)
 
       CALL InitializeChemistry(self%Chemistry, self%gmiGrid,                  &
-                     gmiConfigFile, loc_proc, NSP, self%pr_diag,              &
+                     gmiConfig, loc_proc, NSP, self%pr_diag,                  &
                      self%pr_qqjk, self%do_qqjk_inchem, self%pr_smv2,         &
                      rootProc, tdt)
 
+  CALL ESMF_ConfigDestroy(gmiConfig, __RC__ )
   IF(self%pr_qqjk .AND. .NOT. self%do_qqjk_inchem) THEN
    IF(MAPL_AM_I_ROOT()) THEN
     PRINT *,TRIM(IAm)//": Initializing reaction rate bundles"
@@ -540,6 +601,56 @@ CONTAINS
     self%mapSpecies(:) = speciesReg_for_CCM(lchemvar, NSP, bgg%reg%vname, bxx%reg%vname )
 
   RETURN
+
+   CONTAINS
+
+!     -------------------
+!     GET_LINE
+!     Advance one line and then try to read <expected_entries> items
+!     Retcode will be set to one of these values:
+!       RC_END_OF_FILE    - cannot advance a line
+!       RC_END_OF_TABLE   - first item is '::'
+!       RC_DATA_LINE      - at least one entry has been put into str_arr
+!     Note that ESMF automatically skips over blank lines and comment lines
+!     -------------------
+      subroutine get_line ( cf, expected_entries, str_arr, item_count, retcode )
+!     -------------------
+      type(ESMF_Config),           intent(inout)  :: cf
+      integer,                     intent(in)     :: expected_entries  ! read this many items
+      character(len=TOKEN_LENGTH), intent(inout)  :: str_arr(*)   ! space for one or more items
+      integer,                     intent(out)    :: item_count   ! how many were successfully read
+      integer,                     intent(out)    :: retcode      ! see possible values above
+
+      integer :: i
+
+      call ESMF_ConfigNextLine(cf, rc=rc)
+      if ( rc/=0 ) then
+        retcode = RC_END_OF_FILE
+        return
+      end if
+
+      ! Because ESMF skips over blank lines, rc should always be 0:
+      call ESMF_ConfigGetAttribute(cf, str_arr(1), rc=rc)
+      if ( rc/=0 ) then
+        retcode = RC_END_OF_FILE
+        return
+      end if
+      if ( INDEX(str_arr(1), '::' ) == 1 ) then
+        retcode = RC_END_OF_TABLE
+        return
+      end if
+
+      retcode = RC_DATA_LINE
+      item_count = 1
+      do i=2,expected_entries
+        call ESMF_ConfigGetAttribute(cf, str_arr(i), rc=rc)
+        if (rc==0) item_count = item_count + 1
+      end do
+
+      return
+
+      end subroutine get_line
+
 
   END SUBROUTINE GmiChemistry_GridCompInitialize
 
@@ -613,7 +724,7 @@ CONTAINS
 
 !  Exports not part of internal state
 !  ----------------------------------
-   REAL, POINTER, DIMENSION(:,:,:) :: O3ppmv, O3
+   REAL, POINTER, DIMENSION(:,:,:) :: O3ppmv, O3, stOX_loss
 
 !  Exports for reactions diagnostics
 !  ---------------------------------
@@ -948,6 +1059,10 @@ CONTAINS
 !EOP
 !---------------------------------------------------------------------------
 
+  INTEGER :: rxn_index
+  CHARACTER(LEN=RXN_NAME_LENGTH) :: one_name
+  REAL(KIND=DBL), allocatable :: stOX_loss_dbl(:,:,:)
+
   CHARACTER(LEN=255) :: IAm
   
   rc=0
@@ -989,7 +1104,43 @@ CONTAINS
 #include "QQK_FillExports___.h"
 #include "QQJ_FillExports___.h"
 
-   END IF
+     IF(ASSOCIATED(stOX_loss)) THEN
+       ALLOCATE(stOX_loss_dbl(i1:i2,j1:j2,1:km),__STAT__)
+
+       stOX_loss_dbl(:,:,:) = 0.0
+       do i=1,self%stOX_rxn_count
+
+         one_name = self%rname(i)
+
+         ! Assume each name is QQKnnn or QQJnnn
+         READ( one_name(4:6),*,IOSTAT=rc) rxn_index
+         _ASSERT(rc==0, TRIM(Iam)//': trouble extracting index from '//TRIM(self%rname(i)))
+
+         IF(MAPL_AM_I_ROOT( ))PRINT *,TRIM(IAm),': Add to stOX_loss from '//TRIM(one_name)//' index ',rxn_index
+
+         SELECT CASE (one_name(1:3))
+
+           CASE("QQK")
+             stOX_loss_dbl(i1:i2,j1:j2,1:km) = &
+             stOX_loss_dbl(i1:i2,j1:j2,1:km) + self%rmult(i) * gmiQQK(rxn_index)%pArray3D(i1:i2,j1:j2,km:1:-1)
+!                                                                 ^^^
+           CASE("QQJ")
+             stOX_loss_dbl(i1:i2,j1:j2,1:km) = &
+             stOX_loss_dbl(i1:i2,j1:j2,1:km) + self%rmult(i) * gmiQQJ(rxn_index)%pArray3D(i1:i2,j1:j2,km:1:-1)
+!                                                                 ^^^
+           CASE DEFAULT
+             _ASSERT(.FALSE., TRIM(Iam)//': reaction must be QQK or QQJ : '//TRIM(one_name))
+
+         END SELECT
+
+       end do
+
+       stOX_loss = stOX_loss_dbl
+       DEALLOCATE( stOX_loss_dbl, __STAT__ )
+
+     END IF  ! stOX_loss is needed
+
+   END IF  ! QQJ and QQK
 
   RETURN
  END SUBROUTINE FillExports
@@ -1184,6 +1335,8 @@ CONTAINS
    CALL MAPL_GetPointer(expChem,    O3ppmv,     'O3PPMV', RC=STATUS)
    VERIFY_(STATUS)
    CALL MAPL_GetPointer(expChem,        O3,         'O3', RC=STATUS)
+   VERIFY_(STATUS)
+   CALL MAPL_GetPointer(expChem, stOX_loss,  'stOX_loss', RC=STATUS)
    VERIFY_(STATUS)
 
 #include "Reactions_GetPointer___.h"
