@@ -1099,6 +1099,10 @@ CONTAINS
 #include "QJ_FillExports___.h"
 #include "QK_FillExports___.h"
 
+   IF(ASSOCIATED(stOX_loss)) THEN
+     _ASSERT(self%pr_qqjk, TRIM(Iam)//': to compute stOX_loss, set GMI pr_qqjk = TRUE')
+   END IF
+
    IF(self%pr_qqjk) THEN
 
 #include "QQK_FillExports___.h"
