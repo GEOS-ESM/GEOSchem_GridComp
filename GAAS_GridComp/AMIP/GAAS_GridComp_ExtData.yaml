@@ -8,7 +8,6 @@ Collections:
   GAAS_d5124_m2_jan10.aod_k.sfc.%y4%m2%d2_%h2%n2z.nc4:
     template: /discover/nobackup/projects/gmao/merra2/data/chem/d5124_m2_jan10/Y%y4/M%m2/d5124_m2_jan10.aod_k.sfc.%y4%m2%d2_%h2%n2z.nc4
     freq: PT3H
-    
 
 Samplings:
   GAAS_sample_0:

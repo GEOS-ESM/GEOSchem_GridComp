@@ -8,12 +8,11 @@ Collections:
   aod_k.sfc.%y4%m2%d2_%h2%n2z.nc4:
     template: aod_k.sfc.%y4%m2%d2_%h2%n2z.nc4
     freq: PT3H
-    
 
 Samplings:
   GAAS_sample_0:
     update_offset: PT450S
-    exact: True 
+    exact: True
 
 Exports:
   aod_a:
