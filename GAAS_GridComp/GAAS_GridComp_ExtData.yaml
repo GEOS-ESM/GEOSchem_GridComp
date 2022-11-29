@@ -12,7 +12,8 @@ Collections:
 
 Samplings:
   GAAS_sample_0:
-    time_interpolation: False
+    update_offset: PT450S
+    exact: True 
 
 Exports:
   aod_a:
