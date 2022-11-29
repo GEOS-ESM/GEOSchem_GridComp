@@ -8,8 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+
+- GMI now exports stOX_loss (stratospheric OX tracer loss), customized for the specific chemical mechanism being run.
+
 ### Removed
 ### Changed
+
+- Instead of importing a set of QQK diagnostic fields for chemical loss of stOX, TR now imports a single field: stOX_loss
+
 ### Fixed
 
 ## [1.10.4] - 2022-11-08

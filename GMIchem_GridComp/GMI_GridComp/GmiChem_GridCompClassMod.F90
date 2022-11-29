@@ -1120,7 +1120,7 @@ CONTAINS
          READ( one_name(4:6),*,IOSTAT=rc) rxn_index
          _ASSERT(rc==0, TRIM(Iam)//': trouble extracting index from '//TRIM(self%rname(i)))
 
-         IF(MAPL_AM_I_ROOT( ))PRINT *,TRIM(IAm),': Add to stOX_loss from '//TRIM(one_name)//' index ',rxn_index
+!        IF(MAPL_AM_I_ROOT( ))PRINT *,TRIM(IAm),': Add to stOX_loss from '//TRIM(one_name)//' index ',rxn_index
 
          SELECT CASE (one_name(1:3))
 
