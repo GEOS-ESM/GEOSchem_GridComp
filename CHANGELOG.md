@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Fixed
 
+- Updated GAAS to now work again after it was changed to use ExtData, only works with ExtData2G
+
 ## [1.10.4] - 2022-11-08
 ### Added
 ### Removed
