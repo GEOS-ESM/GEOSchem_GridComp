@@ -460,7 +460,7 @@ CONTAINS
     real, pointer, dimension(:,:,:)  :: DUsum, SSsum, SUsum, NIsum, CAOCsum, CABCsum, CABRsum
     type(ESMF_Field)              :: aod_field
     logical :: skip_analysis 
-    integer :: hour,minute,second,non_shift_nhms
+    integer :: hour,minute,second,year,month,day
     type(ESMF_Time) :: current_time
     type(ESMF_Field) :: aod_a_field
 
@@ -493,40 +493,21 @@ CONTAINS
    call extract_ ( GC, CLOCK, self, GRID, CF, time, nymd, nhms, __RC__)
 !
    call ESMF_StateGet(import,"aod_a",aod_a_field,_RC)
+!  Is it time for analysis?
+!  ------------------------
    skip_analysis = ESMFL_field_is_undefined(aod_a_field,_RC)
    analysis_time = .not.skip_analysis
 
 !  Is it time for analysis?
 !  ------------------------
-   call MAPL_Get (MAPL, RUNALARM=Alarm, __RC__)
-#if 0
-   analysis_time = ESMF_AlarmIsRinging(Alarm,__RC__)
-#endif
-
    call ESMF_ClockGetAlarm(Clock,'PredictorActive',Predictor_Alarm,__RC__)
    PREDICTOR_STEP = ESMF_AlarmIsRinging( Predictor_Alarm,__RC__)
 
    call ESMF_ClockGetAlarm(Clock,'ReplayShutOff',ReplayShutOff_Alarm,__RC__)
    ReplayShutOff  = ESMF_AlarmIsRinging( ReplayShutOff_Alarm,__RC__)
 
-!  For some reason the alarm above is not working.
-!  For now, hardwire this...
-!  -----------------------------------------------
-   !analysis_time =  nhms ==      0 .OR. &
-                    !nhms ==  30000 .OR. &
-                    !nhms ==  60000 .OR. &
-                    !nhms ==  90000 .OR. &
-                    !nhms == 120000 .OR. &
-                    !nhms == 150000 .OR. &
-                    !nhms == 180000 .OR. &
-                    !nhms == 210000
-
 !  Stop here if it is NOT analysis time
 !  -------------------------------------
-   call ESMF_ClockGet(clock,currTime=current_time,_RC)
-   call ESMF_TimeGet(current_time,h=hour,m=minute,s=second,_RC)
-   non_shift_nhms = 10000*hour+100*minute+second
-   if (mapl_am_I_root()) write(*,*)"bmaa poss return ", predictor_step,replayShutoff,analysis_time,PREDICTOR_STEP .or. ReplayShutOff .or. (.not. analysis_time),nhms,non_shift_nhms
    if ( PREDICTOR_STEP .or. ReplayShutOff .or. (.not. analysis_time) ) then
       RETURN_(ESMF_SUCCESS)
    end if
