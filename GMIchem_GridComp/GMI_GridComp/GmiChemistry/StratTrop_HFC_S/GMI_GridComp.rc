@@ -428,3 +428,33 @@ PSC_Max_P_hPa: 175
 Condensed_HNO3_limit: 25
 # Upper limit for HCl [real, ppbv]
 HCl_limit: 5.0
+
+stOX_loss_reactions::
+# loss of O3, O1D or NO2
+  QQJ002  1.0   'O3 + hv = O + O2'
+  QQJ006  1.0   'NO2 + hv = NO + O'
+  QQK002  1.0   'O + O3 = 2 O2'
+  QQK004  1.0   'O1D + O2 = O + O2'
+  QQK005  2.0   'O1D + O3 = 2 O2'
+  QQK006  2.0   'O1D + O3 = 2 O + O2'
+  QQK007  1.0   'H2O + O1D = 2 OH'
+  QQK008  1.0   'H2 + O1D = H + OH'
+  QQK027  1.0   'O3 + OH = HO2 + O2'
+  QQK028  1.0   'HO2 + O3 = 2 O2 + OH'
+  QQK029  2.0   'NO2 + O3 = NO3 + O2'
+  QQK050  1.0   'N + NO2 = N2O + O'
+  QQK051  1.0   'NO2 + O = NO + O2'
+  QQK053  1.0   'NO2 + OH = HNO3'
+  QQK057  1.0   'HO2 + NO2 = HNO4'
+  QQK063  1.0   'NO2 + NO3 = N2O5'
+  QQK164  0.7   'IALD + O3 =  0.12 CH2O +  0.28 GLYC +  0.20 GLYX +  0.20 HAC +  0.20 HCOOH +  0.60 MGLY +  0.30 O3 +  0.10 OH'
+  QQK184  0.9   'ISOP + O3 =  0.90 CH2O +  0.05 CO +  0.06 HO2 +  0.39 MACR +  0.16 MVK +  0.10 O3 +  0.27 OH +  0.07 PRPE'
+  QQK193  0.8   'MACR + O3 =  0.70 CH2O +  0.20 CO +  0.28 HO2 +  0.80 MGLY +  0.20 O3 +  0.22 OH'
+  QQK204  1.0   'MAO3 + NO2 = PMN'
+  QQK214  1.0   'MCO3 + NO2 = PAN'
+  QQK230  0.8   'MVK + O3 =  0.04 ALD2 +  0.80 CH2O +  0.05 CO +  0.06 HO2 +  0.82 MGLY +  0.20 O3 +  0.08 OH'
+  QQK250  1.0   'O3 + PRPE =  0.50 ALD2 +  0.54 CH2O +  0.42 CO +  0.06 H2 +  0.30 HO2 +  0.31 MO2 +  0.14 OH'
+  QQK273  1.0   'NO2 + RCO3 = PPN'
+  QQK324  1.0   'NO2 =  0.50 HNO2 +  0.50 HNO3'
+  QQK331  1.0   'O3 + SO2 = H2SO4'
+::

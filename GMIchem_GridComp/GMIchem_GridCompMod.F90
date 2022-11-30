@@ -987,6 +987,15 @@ CONTAINS
                                                        RC=STATUS  )
     VERIFY_(STATUS)
 
+    CALL MAPL_AddExportSpec(GC,                                         &
+        SHORT_NAME         = 'stOX_loss',                               &
+        LONG_NAME          = 'loss to apply to strat OX tracer',        &
+        UNITS              = 'mole m-3 s-1',                            &
+        DIMS               = MAPL_DimsHorzVert,                         &
+        VLOCATION          = MAPL_VLocationCenter,                      &
+                                                       RC=STATUS  )
+    VERIFY_(STATUS)
+
 #include "GMICHEM_ExportSpec___.h"
 #include "Deposition_ExportSpec___.h"
 #include "Reactions_ExportSpec___.h"
