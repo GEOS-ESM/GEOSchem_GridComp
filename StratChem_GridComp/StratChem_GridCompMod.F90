@@ -15,6 +15,8 @@
 !
    USE ESMF
    USE MAPL
+   USE Runtime_RegistryMod
+   USE Species_BundleMod
    USE Chem_Mod 	                        ! Chemistry Base Class
    USE SC_GridCompMod                           ! ESMF parent component
 
@@ -47,9 +49,9 @@
 
   type StratChem_State
      private
-     type(Chem_Registry), pointer :: chemReg => null()
-     type(SC_GridComp), pointer :: gcChem => null()
-     type(Chem_Bundle), pointer   :: w_c    => null()
+     type(Runtime_Registry), pointer :: scReg  => null()    ! Names, units of StratChem Species
+     type(SC_GridComp),      pointer :: gcChem => null()
+     type(Species_Bundle),   pointer :: bsc    => null()    ! Bundle of StratChem Species
    end type StratChem_State
 
   type StratChem_WRAP
@@ -97,7 +99,10 @@ CONTAINS
     type (StratChem_State), pointer  :: state   ! internal, that is
     type (StratChem_wrap)            :: wrap
 
-    integer                          :: n, nq, i_XX, j_XX
+    type(Runtime_Registry), pointer  :: ssReg   ! Names of StratChem Species - transported
+    type(Runtime_Registry), pointer  :: xxReg   ! Names of StratChem Species - not transported
+
+    integer                          :: n, i_XX, j_XX
     CHARACTER(LEN=ESMF_MAXSTR)       :: FRIENDLIES, providerName
 
 !                              ------------
@@ -117,24 +122,23 @@ CONTAINS
 
 !   Start by loading the Chem Registry
 !   ----------------------------------
-    allocate ( state%chemReg )
-    state%chemReg = Chem_RegistryCreate ( STATUS )
+    allocate ( ssReg, __STAT__ )
+    ssReg = Runtime_RegistryCreate ( 'SC_Mech_Registry.rc', 'SC_table::', STATUS )
     VERIFY_(STATUS)
 
-    nq = state%chemReg%nq     ! total number of chemical tracers
-    
-
+    allocate ( xxReg, __STAT__ )
+    xxReg = Runtime_RegistryCreate ( 'SC_Mech_Registry.rc', 'XX_table::', STATUS )
+    VERIFY_(STATUS)
 
 !                       ------------------------
 !                       ESMF Functional Services
 !                       ------------------------
 
-
- if ( state%chemReg%doing_SC ) then
-
     IF(MAPL_AM_I_ROOT()) THEN
-     PRINT *, TRIM(Iam)//': ACTIVE'
-     CALL Chem_RegistryPrint ( state%chemReg )
+     PRINT *, TRIM(Iam)//': SS'
+     CALL Runtime_RegistryPrint ( ssReg, 'SS' )
+     PRINT *, TRIM(Iam)//': XX'
+     CALL Runtime_RegistryPrint ( xxReg, 'XX' )
     END IF
 
 
@@ -159,13 +163,6 @@ CONTAINS
     call ESMF_UserCompSetInternalState ( GC, 'StratChem_state', wrap, STATUS )
     VERIFY_(STATUS)
 
-
- else
-
-        if (MAPL_AM_I_ROOT()) &
-        print *, trim(Iam)//': NOT ACTIVE.  Defaulting to generic no-op stubs.'
-
- endif
 
 ! ======================== IMPORT STATE ===========================
 
@@ -205,13 +202,13 @@ CONTAINS
 
 !   Species to be transported
 !   -------------------------
-    do n = state%chemReg%i_SC, state%chemReg%j_SC 
+    do n = 1, ssReg%nq
 
-	  IF(TRIM(state%chemReg%vname(n)) == "OX" .AND. TRIM(providerName) == "STRATCHEM") THEN
+	  IF(TRIM(ssReg%vname(n)) == "OX" .AND. TRIM(providerName) == "STRATCHEM") THEN
            FRIENDLIES="ANALYSIS:DYNAMICS:TURBULENCE:MOIST"
-          ELSE IF(TRIM(ESMF_UtilStringUpperCase(state%chemReg%vname(n))) == "HBR"  .OR. &
-                  TRIM(ESMF_UtilStringUpperCase(state%chemReg%vname(n))) == "HOBR" .OR. &
-                  TRIM(ESMF_UtilStringUpperCase(state%chemReg%vname(n))) == "BRONO2" ) THEN
+          ELSE IF(TRIM(ESMF_UtilStringUpperCase(ssReg%vname(n))) == "HBR"  .OR. &
+                  TRIM(ESMF_UtilStringUpperCase(ssReg%vname(n))) == "HOBR" .OR. &
+                  TRIM(ESMF_UtilStringUpperCase(ssReg%vname(n))) == "BRONO2" ) THEN
            FRIENDLIES="DYNAMICS:TURBULENCE"
           ELSE
            FRIENDLIES="DYNAMICS:TURBULENCE:MOIST"
@@ -220,9 +217,9 @@ CONTAINS
           FRIENDLIES = FRIENDLIES//':'//TRIM(COMP_NAME)
 	 
           call MAPL_AddInternalSpec(GC,                          &
-               SHORT_NAME = TRIM(state%chemReg%vname(n)),        &
-               LONG_NAME  = TRIM(state%chemReg%vtitle(n)),       &
-               UNITS      = TRIM(state%chemReg%vunits(n)),       &
+               SHORT_NAME = TRIM(ssReg%vname(n)),          &
+               LONG_NAME  = TRIM(ssReg%vtitle(n)),         &
+               UNITS      = TRIM(ssReg%vunits(n)),         &
                FRIENDLYTO = FRIENDLIES,                          &
                DIMS       = MAPL_DimsHorzVert,                   &
                VLOCATION  = MAPL_VLocationCenter,     RC=STATUS  )
@@ -232,19 +229,35 @@ CONTAINS
 
 !   Non-transported species
 !   -----------------------
-    do n = state%chemReg%i_XX, state%chemReg%j_XX 
+    do n = 1, xxReg%nq
 
           call MAPL_AddInternalSpec(GC,                          &
-               SHORT_NAME = TRIM(state%chemReg%vname(n)),	 &
-               LONG_NAME  = TRIM(state%chemReg%vtitle(n)),	 &
-               UNITS      = TRIM(state%chemReg%vunits(n)),	 &
+               SHORT_NAME = TRIM(xxReg%vname(n)),          &
+               LONG_NAME  = TRIM(xxReg%vtitle(n)),         &
+               UNITS      = TRIM(xxReg%vunits(n)),         &
                FRIENDLYTO = TRIM(COMP_NAME),                     &
-               ADD2EXPORT = .TRUE.,				 &
-               DIMS       = MAPL_DimsHorzVert,  		 &
+               ADD2EXPORT = .TRUE.,                              &
+               DIMS       = MAPL_DimsHorzVert,                   &
                VLOCATION  = MAPL_VLocationCenter,     RC=STATUS  )
           VERIFY_(STATUS)
 
     end do
+
+!   Store the combined registry:  SC reg = SS reg // XX reg
+!   -------------------------------------------------------
+    allocate ( state%scReg, __STAT__ )
+    state%scReg = Runtime_RegistryCombine ( ssReg, xxReg, STATUS )
+    VERIFY_(STATUS)
+
+!   Get rid of ssReg and xxReg
+!   --------------------------
+    call Runtime_RegistryDestroy ( ssReg, STATUS ) 
+    VERIFY_(STATUS)
+    call Runtime_RegistryDestroy ( xxReg, STATUS ) 
+    VERIFY_(STATUS)
+
+    deallocate ( ssReg, xxReg, stat = STATUS )
+    VERIFY_(STATUS)
 
 ! ======================== EXPORT STATE ===========================
 
@@ -360,9 +373,9 @@ CONTAINS
    integer                         :: STATUS
    character(len=ESMF_MAXSTR)      :: COMP_NAME
 
-   type(Chem_Registry), pointer    :: chemReg
+   type(Runtime_Registry), pointer :: scReg       ! Names of StratChem Species
    type(SC_GridComp), pointer      :: gcChem      ! Grid Component
-   type(Chem_Bundle), pointer      :: w_c         ! Chemical tracer fields     
+   type(Species_Bundle),   pointer :: bsc         ! Bundle of StratChem Species
    integer                         :: nymd, nhms  ! time
    real                            :: cdt         ! chemistry timestep (secs)
    real                            :: rdt         ! run (heartbeat) timestep (secs)
@@ -371,8 +384,8 @@ CONTAINS
  
    integer                         :: i1=1, i2, ig=0, im  ! dist grid indices
    integer                         :: j1=1, j2, jg=0, jm  ! dist grid indices
-   integer                         :: km, nq              ! dist grid indices
-   integer                         :: k, n, dims(3), l, split
+   integer                         :: km                  ! dist grid indices
+   integer                         :: k, dims(3), l, split
 
    type(Chem_Array), pointer       :: q(:)         ! array of pointers
    type(MAPL_MetaComp), pointer    :: ggState	   ! GEOS Generic State
@@ -414,7 +427,7 @@ CONTAINS
 
 !  Get pre-ESMF parameters from gc and clock
 !  -----------------------------------------
-   call extract_ ( gc, clock, chemReg, gcChem, w_c, nymd, nhms, rdt, split, STATUS )
+   call extract_ ( gc, clock, scReg, gcChem, bsc, nymd, nhms, rdt, split, STATUS )
    VERIFY_(STATUS)
 
 !  Chemistry time step length (seconds)
@@ -437,7 +450,6 @@ CONTAINS
 
    im = dims(1)
    jm = dims(2)
-   nq = chemReg%nq
 
    call ESMF_GridGet(GRID, localDE=0, &
         staggerloc=ESMF_STAGGERLOC_CENTER, &
@@ -489,33 +501,25 @@ CONTAINS
 
 !  Initalize the legacy state but do not allocate memory for arrays
 !  ----------------------------------------------------------------
-   call Chem_BundleCreate_ ( chemReg, i1, i2, ig, im, j1, j2, jg, jm, km,  &
-                             w_c, lon=lons(:,:), lat=lats(:,:), &
+   call Species_BundleCreate (   scReg, i1, i2, ig, im, j1, j2, jg, jm, km,  &
+                             bsc, lon=lons(:,:), lat=lats(:,:), &
                              skipAlloc=.true., rc=STATUS )
    VERIFY_(STATUS)
 
-   w_c%grid_esmf = grid  ! Will need this for I/O later
+   bsc%grid_esmf = grid  ! Will need this for I/O later
 
-   allocate(w_c%delp(1:i2,1:j2,km),stat=STATUS)
+   allocate(bsc%delp(1:i2,1:j2,km),stat=STATUS)
    VERIFY_(STATUS)
 
 !  Consistency Checks
 !  ------------------
-   _ASSERT( chemReg%i_XX == (chemReg%j_SC+1), 'needs informative message' )
-   _ASSERT( size(InternalSpec) == (chemReg%n_SC+chemReg%n_XX), 'needs informative message' )
+   _ASSERT( size(InternalSpec) == scReg%nq, 'StratChem INTERNAL count is incorrect' )
 
-   do L = 1, size(InternalSpec)
+   do L = 1, scReg%nq
 
-      call MAPL_VarSpecGet ( InternalSpec(L),          &
-                             SHORT_NAME = short_name,  &
-                             RC=STATUS )
-      VERIFY_(STATUS)
+      call MAPL_VarSpecGet ( InternalSpec(L), SHORT_NAME=short_name,          __RC__ )
 
-      N = chemReg%i_SC + L - 1 !  Assumption: SC and XX bins are contiguous
-
-      call MAPL_GetPointer ( internal, NAME=short_name, ptr=w_c%qa(N)%data3d, &
-                             rc = STATUS )
-      VERIFY_(STATUS)
+      call MAPL_GetPointer ( internal, NAME=short_name, ptr=bsc%qa(L)%data3d, __RC__ )
 
    end do
 
@@ -530,7 +534,7 @@ CONTAINS
 
 !  Call Legacy Initialize
 !  ----------------------
-   CALL SC_GridCompInitialize(gcChem, w_c, impChem, expChem, nymd, nhms, cdt, STATUS)
+   CALL SC_GridCompInitialize(gcChem, scReg, bsc, impChem, expChem, nymd, nhms, cdt, STATUS)
    VERIFY_(STATUS)
 
 !  Stop timers
@@ -588,14 +592,14 @@ CONTAINS
    integer                         :: STATUS
    character(len=ESMF_MAXSTR)      :: COMP_NAME
 
-   type(Chem_Registry), pointer    :: chemReg
+   type(Runtime_Registry), pointer :: scReg       ! Names of StratChem Species
    type(SC_GridComp), pointer      :: gcChem      ! Grid Component
-   type(Chem_Bundle), pointer      :: w_c         ! Chemical tracer fields     
+   type(Species_Bundle),   pointer :: bsc         ! Bundle of StratChem Species
    integer                         :: nymd, nhms  ! time
    real                            :: cdt         ! chemistry timestep (secs)
    real                            :: rdt         ! run (heatbeat) timestep (secs)
    real                            :: dtInverse   ! inverse chemistry timestep (1/s)
-   integer                         :: i, iOX, irO3Ox, k, m, n, split
+   integer                         :: i, iOX, irO3Ox, k, split
 
    type(ESMF_Config)               :: CF
    type(ESMF_Grid)                 :: grid
@@ -619,7 +623,7 @@ CONTAINS
    REAL, ALLOCATABLE               :: wrk(:,:)
    REAL, ALLOCATABLE               :: wgt(:,:)
 
-   INTEGER :: i1, i2, j1, j2, km
+   INTEGER :: i1, i2, j1, j2, km, n
    LOGICAL :: isLeapYear
    REAL :: dayOfYear, SCBaseP
    REAL(ESMF_KIND_R8) :: dayOfYear_r8
@@ -668,7 +672,7 @@ CONTAINS
 
 !  Get pre-ESMF parameters from gc and clock
 !  -----------------------------------------
-   call extract_ ( gc, clock, chemReg, gcChem, w_c, nymd, nhms, rdt, split, STATUS )
+   call extract_ ( gc, clock, scReg, gcChem, bsc, nymd, nhms, rdt, split, STATUS )
    VERIFY_(STATUS)
 
 !  Obtain day of year. ESMF returns 1.00-366.x, which is what we want.
@@ -689,7 +693,7 @@ CONTAINS
 
 !  Set pointers for cosine zenith angle
 !  ------------------------------------
-   w_c%cosz => zth
+   bsc%cosz => zth
 
 !  Layer interface pressures
 !  -------------------------
@@ -700,7 +704,7 @@ CONTAINS
 !  ------------------------
    CALL MAPL_GetPointer(impChem, DELP, 'DELP', RC=STATUS)
    VERIFY_(STATUS)
-   w_c%delp = DELP
+   bsc%delp = DELP
 
    i1 = gcChem%i1
    i2 = gcChem%i2
@@ -711,21 +715,21 @@ CONTAINS
 !  The objective is to operate stratospheric chemistry "down" to the tropopause. However,
 !  MAPL_UNDEFs occasionally appear in the imported tropopause pressures, TROPP.  Where
 !  they are present, replace them with the most recent valid tropopause pressures, and
-!  save the updated values in the surface layer of RO3OX, i.e. w_c%qa(irO3Ox)%data3d(:,:,km). 
+!  save the updated values in the surface layer of RO3OX, i.e. bsc%qa(irO3Ox)%data3d(:,:,km). 
 !  ------------------------------------------------------------------------------------------
    irO3Ox = gcChem%irO3Ox
    CALL MAPL_GetPointer(impChem, TROPP, 'TROPP', RC=STATUS)
    VERIFY_(STATUS)
-   WHERE(TROPP /= MAPL_UNDEF) w_c%qa(irO3Ox)%data3d(:,:,km) = TROPP
+   WHERE(TROPP /= MAPL_UNDEF) bsc%qa(irO3Ox)%data3d(:,:,km) = TROPP
    
 !  It appears that other anomalously high TROPP can be generated that SC cannot accommodate.
 !  So impose an upper limit (Pa) to the pressure range through which SC is to be applied.
 !  -----------------------------------------------------------------------------------------
    CALL ESMF_ConfigGetAttribute(CF, SCBaseP, LABEL="SC_BASE_PRESSURE:", DEFAULT=40000.00, RC=STATUS)
    VERIFY_(STATUS)
-   WHERE(TROPP > SCBaseP) w_c%qa(irO3Ox)%data3d(:,:,km) = SCBaseP
+   WHERE(TROPP > SCBaseP) bsc%qa(irO3Ox)%data3d(:,:,km) = SCBaseP
 
-   IF( ANY(w_c%qa(irO3Ox)%data3d(:,:,km) == MAPL_UNDEF) ) THEN
+   IF( ANY(bsc%qa(irO3Ox)%data3d(:,:,km) == MAPL_UNDEF) ) THEN
     PRINT *,TRIM(Iam)//": At least one invalid tropopause pressure."
     STATUS = 1
     VERIFY_(STATUS)
@@ -736,23 +740,21 @@ CONTAINS
 !  -----------------------------------------------------------------------
    CALL MAPL_GetPointer(expChem, SCTROPP, 'SCTROPP', RC=STATUS)
    VERIFY_(STATUS)
-   IF(ASSOCIATED(SCTROPP)) SCTROPP = w_c%qa(irO3Ox)%data3d(:,:,km)
+   IF(ASSOCIATED(SCTROPP)) SCTROPP = bsc%qa(irO3Ox)%data3d(:,:,km)
    CALL MAPL_GetPointer(expChem, AGCMTROPP, 'AGCMTROPP', RC=STATUS)
    VERIFY_(STATUS)
    IF(ASSOCIATED(AGCMTROPP)) AGCMTROPP = TROPP
 
 ! Are species tendencies requested?
 ! ---------------------------------
-   m = ChemReg%i_SC
-   n = ChemReg%j_SC
-   ALLOCATE(doMyTendency(m:n), STAT=STATUS)
+   ALLOCATE(doMyTendency(scReg%primary_count), STAT=STATUS)
    VERIFY_(STATUS)
    doMyTendency(:) = .FALSE.
 
    nAlloc = 0
-   DO i = m,n
+   DO i = 1,scReg%primary_count
 
-    fieldName = TRIM(chemReg%vname(i))
+    fieldName = TRIM(scReg%vname(i))
     incFieldName = TRIM(fieldName)//"_SCTEND"
 
     CALL MAPL_GetPointer(expChem, sIncrement, TRIM(incFieldName), RC=STATUS)
@@ -780,12 +782,10 @@ CONTAINS
     VERIFY_(STATUS)
 
     k = 1
-    m = ChemReg%i_SC
-    n = ChemReg%j_SC
   
-    DO i = m,n
+    DO i = 1,scReg%primary_count
      IF(doMyTendency(i)) THEN
-      sInitial(:,:,:,k) = w_c%qa(i)%data3d
+      sInitial(:,:,:,k) = bsc%qa(i)%data3d
       k = k+1
      END IF
     END DO
@@ -799,15 +799,15 @@ CONTAINS
 !  Run the chemistry
 !  -----------------
    DO i = 1,split
-    CALL SC_GridCompRun(gcChem, w_c, impChem, expChem, nymd, nhms, cdt, STATUS)
+    CALL SC_GridCompRun(gcChem, scReg, bsc, impChem, expChem, nymd, nhms, cdt, STATUS)
     VERIFY_(STATUS)
    END DO
 
 !  Update age-of-air (days)
 !  ------------------------
    n = gcChem%iAOA
-   w_c%qa(n)%data3d(:,:,:) = w_c%qa(n)%data3d(:,:,:)+rdt/86400.00
-   w_c%qa(n)%data3d(:,:,km) = 0.00
+   bsc%qa(n)%data3d(:,:,:) = bsc%qa(n)%data3d(:,:,:)+rdt/86400.00
+   bsc%qa(n)%data3d(:,:,km) = 0.00
 
    DEALLOCATE(SLR)
    DEALLOCATE(ZTH)
@@ -836,11 +836,11 @@ CONTAINS
     VERIFY_(STATUS)
 
     DO k = 1,km
-     wrk = w_c%qa(iOX)%data3d(:,:,k)*(PLE(:,:,k)-PLE(:,:,k-1))*(MAPL_AVOGAD/2.69E+20)/(MAPL_AIRMW*MAPL_GRAV)
+     wrk = bsc%qa(iOX)%data3d(:,:,k)*(PLE(:,:,k)-PLE(:,:,k-1))*(MAPL_AVOGAD/2.69E+20)/(MAPL_AIRMW*MAPL_GRAV)
      IF(ASSOCIATED( TO3)) TO3 = TO3+wrk
 
      IF(ASSOCIATED(TTO3)) THEN
-      wgt  = MAX(0.0,MIN(1.0,(PLE(:,:,k)-w_c%qa(irO3Ox)%data3d(:,:,km))/(PLE(:,:,k)-PLE(:,:,k-1))))
+      wgt  = MAX(0.0,MIN(1.0,(PLE(:,:,k)-bsc%qa(irO3Ox)%data3d(:,:,km))/(PLE(:,:,k)-PLE(:,:,k-1))))
       TTO3 = TTO3+wrk*wgt  
      END IF
 
@@ -856,20 +856,18 @@ CONTAINS
    StoreTendencies: IF(doingTendencies) THEN
 
     k = 1
-    m = ChemReg%i_SC
-    n = ChemReg%j_SC
     dtInverse = 1.00/rdt
 
-    DO i = m,n
+    DO i = 1,scReg%primary_count
 
      IF(doMyTendency(i)) THEN
 
-      fieldName = TRIM(chemReg%vname(i))
+      fieldName = TRIM(scReg%vname(i))
       incFieldName = TRIM(fieldName)//"_SCTEND"
 
       CALL MAPL_GetPointer(expChem, sIncrement, TRIM(incFieldName), RC=STATUS)
       VERIFY_(STATUS)
-      IF(ASSOCIATED(sIncrement)) sIncrement = (w_c%qa(i)%data3d - sInitial(:,:,:,k))*dtInverse
+      IF(ASSOCIATED(sIncrement)) sIncrement = (bsc%qa(i)%data3d - sInitial(:,:,:,k))*dtInverse
 
       NULLIFY(sIncrement)
       k = k+1
@@ -942,9 +940,9 @@ CONTAINS
    integer                         :: STATUS
    character(len=ESMF_MAXSTR)      :: COMP_NAME
 
-   type(Chem_Registry), pointer    :: chemReg
+   type(Runtime_Registry), pointer :: scReg       ! Names of StratChem Species
    type(SC_GridComp), pointer      :: gcChem      ! Grid Component
-   type(Chem_Bundle), pointer      :: w_c         ! Chemical tracer fields     
+   type(Species_Bundle),   pointer :: bsc         ! Bundle of StratChem Species
    type(MAPL_MetaComp), pointer    :: ggState     ! GEOS Generic State
    integer                         :: nymd, nhms  ! time
    integer                         :: split
@@ -969,28 +967,28 @@ CONTAINS
 
 !  Get parameters from gc and clock
 !  --------------------------------
-   call extract_ ( gc, clock, chemReg, gcChem, w_c, nymd, nhms, rdt, split, STATUS, &
+   call extract_ ( gc, clock, scReg, gcChem, bsc, nymd, nhms, rdt, split, STATUS, &
                    state = state )
    VERIFY_(STATUS)
 
 !  Finalize
 !  --------
-   call SC_GridCompFinalize ( gcChem, w_c, impChem, expChem, nymd, nhms, rdt, STATUS )
+   call SC_GridCompFinalize ( gcChem, bsc, impChem, expChem, nymd, nhms, rdt, STATUS )
    VERIFY_(STATUS)
 
-!  Destroy Chem_Bundle
-!  -------------------
-   call Chem_BundleDestroy ( w_c, STATUS )
+!  Destroy Species_Bundle
+!  ----------------------
+   call Species_BundleDestroy ( bsc, STATUS )
    VERIFY_(STATUS)
 
 !  Destroy Chem_Registry
 !  ---------------------
-   call Chem_RegistryDestroy ( chemReg, STATUS ) 
+   call Runtime_RegistryDestroy ( scReg, STATUS ) 
    VERIFY_(STATUS)
 
 !  Destroy Legacy state
 !  --------------------
-   deallocate ( state%chemReg, state%gcChem, state%w_c, stat = STATUS )
+   deallocate ( state%scReg, state%gcChem, state%bsc, stat = STATUS )
    VERIFY_(STATUS)
 
 !  Stop timers
@@ -1011,16 +1009,16 @@ CONTAINS
 !     NASA/GSFC, Global Modeling and Assimilation Office, Code 610.1     !
 !-------------------------------------------------------------------------
 
-    SUBROUTINE extract_ ( gc, clock, chemReg, gcChem, w_c, nymd, nhms, rdt, split, rc, state )
+    SUBROUTINE extract_ ( gc, clock, scReg, gcChem, bsc, nymd, nhms, rdt, split, rc, state )
 
     type(ESMF_GridComp), intent(INOUT) :: gc
-    type(ESMF_Clock), intent(in)     :: clock
-    type(Chem_Registry), pointer     :: chemReg
-    type(SC_GridComp), pointer       :: gcChem
-    type(Chem_Bundle), pointer       :: w_c
-    integer, intent(out)             :: nymd, nhms
-    real, intent(out)                :: rdt
-    integer, intent(out)             :: split, rc
+    type(ESMF_Clock), intent(in)       :: clock
+    type(Runtime_Registry),  pointer   :: scReg         ! Names  of StratChem Species
+    type(SC_GridComp), pointer         :: gcChem
+    type(Species_Bundle),    pointer   :: bsc           ! Bundle of StratChem Species
+    integer, intent(out)               :: nymd, nhms
+    real, intent(out)                  :: rdt
+    integer, intent(out)               :: split, rc
     type(StratChem_state), pointer, optional   :: state
 
 
@@ -1057,22 +1055,22 @@ CONTAINS
 
 !   This is likely to be allocated during initialize only
 !   -----------------------------------------------------
-    if ( .not. associated(myState%chemReg) ) then
-         allocate ( myState%chemReg, stat=STATUS )
+    if ( .not. associated(myState%scReg) ) then
+         allocate ( myState%scReg, stat=STATUS )
          VERIFY_(STATUS)
     end if
     if ( .not. associated(myState%gcChem) ) then
          allocate ( myState%gcChem, stat=STATUS )
          VERIFY_(STATUS)
     end if
-    if ( .not. associated(myState%w_c) ) then
-         allocate ( myState%w_c, stat=STATUS )
+    if ( .not. associated(myState%bsc) ) then
+         allocate ( myState%bsc, stat=STATUS )
          VERIFY_(STATUS)
     end if
 
-    chemReg => myState%chemReg
+    scReg   => myState%scReg
     gcChem  => myState%gcChem
-    w_c     => myState%w_c
+    bsc     => myState%bsc
 
 !   Get the configuration
 !   ---------------------

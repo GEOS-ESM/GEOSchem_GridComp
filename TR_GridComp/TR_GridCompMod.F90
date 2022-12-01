@@ -832,29 +832,9 @@ CONTAINS
         RESTART            = MAPL_RestartSkip,                             &
                                                        __RC__  )
 
-! Adapted these from Reactions_ExportSpec___.h
-
-     call MAPL_AddImportSpec(GC,                                           &
-        SHORT_NAME         = 'QQK007',                                     &
-        LONG_NAME          = 'reaction_rate: H2O + O1D = 2 OH',            &
-        UNITS              = 'mole m-3 s-1',                               &
-        DIMS               = MAPL_DimsHorzVert,                            &
-        VLOCATION          = MAPL_VLocationCenter,                         &
-        RESTART            = MAPL_RestartSkip,                             &
-                                                       __RC__  )
-
-     call MAPL_AddImportSpec(GC,                                           &
-        SHORT_NAME         = 'QQK027',                                     &
-        LONG_NAME          = 'reaction_rate: O3 + OH = HO2 + O2',          &
-        UNITS              = 'mole m-3 s-1',                               &
-        DIMS               = MAPL_DimsHorzVert,                            &
-        VLOCATION          = MAPL_VLocationCenter,                         &
-        RESTART            = MAPL_RestartSkip,                             &
-                                                       __RC__  )
-
-     call MAPL_AddImportSpec(GC,                                           &
-        SHORT_NAME         = 'QQK028',                                     &
-        LONG_NAME          = 'reaction_rate: HO2 + O3 = 2 O2 + OH',        &
+    call MAPL_AddImportSpec(GC,                                            &
+        SHORT_NAME         = 'stOX_loss',                                  &
+        LONG_NAME          = 'loss to apply to strat OX tracer',           &
         UNITS              = 'mole m-3 s-1',                               &
         DIMS               = MAPL_DimsHorzVert,                            &
         VLOCATION          = MAPL_VLocationCenter,                         &
@@ -870,59 +850,6 @@ CONTAINS
         RESTART            = MAPL_RestartSkip,                             &
                                                        __RC__  )
 
-     call MAPL_AddImportSpec(GC,                                           &
-        SHORT_NAME         = 'QQK005',                                     &
-        LONG_NAME          = 'reaction_rate: O1D + O3 = 2 O2',             &
-        UNITS              = 'mole m-3 s-1',                               &
-        DIMS               = MAPL_DimsHorzVert,                            &
-        VLOCATION          = MAPL_VLocationCenter,                         &
-        RESTART            = MAPL_RestartSkip,                             &
-                                                       __RC__  )
-
-     call MAPL_AddImportSpec(GC,                                                                                                                      &
-        SHORT_NAME         = 'QQK235',                                                                                                                &
-        LONG_NAME          = 'reaction_rate: O3 + PRPE = 0.50 ALD2 + 0.54 CH2O + 0.42 CO + 0.06 H2 + 0.30 HO2 + 0.31 MO2 + 0.14 OH',                  &
-        UNITS              = 'mole m-3 s-1',                                                                                                          &
-        DIMS               = MAPL_DimsHorzVert,                                                                                                       &
-        VLOCATION          = MAPL_VLocationCenter,                                                                                                    &
-        RESTART            = MAPL_RestartSkip,                                                                                                        &
-                                                       __RC__  )
-
-     call MAPL_AddImportSpec(GC,                                                                                                                      &
-        SHORT_NAME         = 'QQK170',                                                                                                                &
-        LONG_NAME          = 'reaction_rate: ISOP + O3 = 0.90 CH2O + 0.05 CO + 0.06 HO2 + 0.39 MACR + 0.16 MVK + 0.10 O3 + 0.27 OH + 0.07 PRPE',      &
-        UNITS              = 'mole m-3 s-1',                                                                                                          &
-        DIMS               = MAPL_DimsHorzVert,                                                                                                       &
-        VLOCATION          = MAPL_VLocationCenter,                                                                                                    &
-        RESTART            = MAPL_RestartSkip,                                                                                                        &
-                                                       __RC__  )
-
-     call MAPL_AddImportSpec(GC,                                                                                                                      &
-        SHORT_NAME         = 'QQK216',                                                                                                                &
-        LONG_NAME          = 'reaction_rate: MVK + O3 = 0.04 ALD2 + 0.80 CH2O + 0.05 CO + 0.06 HO2 + 0.82 MGLY + 0.20 O3 + 0.08 OH',                  &
-        UNITS              = 'mole m-3 s-1',                                                                                                          &
-        DIMS               = MAPL_DimsHorzVert,                                                                                                       &
-        VLOCATION          = MAPL_VLocationCenter,                                                                                                    &
-        RESTART            = MAPL_RestartSkip,                                                                                                        &
-                                                       __RC__  )
-
-     call MAPL_AddImportSpec(GC,                                                                                                                      &
-        SHORT_NAME         = 'QQK179',                                                                                                                &
-        LONG_NAME          = 'reaction_rate: MACR + O3 = 0.70 CH2O + 0.20 CO + 0.28 HO2 + 0.80 MGLY + 0.20 O3 + 0.22 OH',                             &
-        UNITS              = 'mole m-3 s-1',                                                                                                          &
-        DIMS               = MAPL_DimsHorzVert,                                                                                                       &
-        VLOCATION          = MAPL_VLocationCenter,                                                                                                    &
-        RESTART            = MAPL_RestartSkip,                                                                                                        &
-                                                       __RC__  )
-
-     call MAPL_AddImportSpec(GC,                                                                                                                      &
-        SHORT_NAME         = 'QQK150',                                                                                                                &
-        LONG_NAME          = 'reaction_rate: IALD + O3 = 0.12 CH2O + 0.28 GLYC + 0.20 GLYX + 0.20 HAC + 0.20 HCOOH + 0.60 MGLY + 0.30 O3 + 0.10 OH',  &
-        UNITS              = 'mole m-3 s-1',                                                                                                          &
-        DIMS               = MAPL_DimsHorzVert,                                                                                                       &
-        VLOCATION          = MAPL_VLocationCenter,                                                                                                    &
-        RESTART            = MAPL_RestartSkip,                                                                                                        &
-                                                       __RC__  )
 ! END IF
 
 !! --------------------------------------
@@ -3395,16 +3322,8 @@ CONTAINS
    real, pointer, dimension(:,:,:) ::  src_field
    real, pointer, dimension(:,:)   ::  src_ext_2d  ! For getting ExtData pointer
    real, pointer, dimension(:,:,:) ::  src_ext_3d  ! For getting ExtData pointer
-   real, pointer, dimension(:,:,:) ::  imp_3d_A    ! For getting ExtData pointer
-   real, pointer, dimension(:,:,:) ::  imp_3d_B    ! For getting ExtData pointer
-   real, pointer, dimension(:,:,:) ::  imp_3d_C    ! For getting ExtData pointer
-   real, pointer, dimension(:,:,:) ::  imp_3d_D    ! For getting ExtData pointer
-   real, pointer, dimension(:,:,:) ::  imp_3d_E    ! For getting ExtData pointer
-   real, pointer, dimension(:,:,:) ::  imp_3d_F    ! For getting ExtData pointer
-   real, pointer, dimension(:,:,:) ::  imp_3d_G    ! For getting ExtData pointer
-   real, pointer, dimension(:,:,:) ::  imp_3d_H    ! For getting ExtData pointer
-   real, pointer, dimension(:,:,:) ::  imp_3d_I    ! For getting ExtData pointer
-   real, pointer, dimension(:,:)   ::  imp_2d_A    ! For getting ExtData pointer
+   real, pointer, dimension(:,:,:) ::  stOX_loss   ! For getting ExtData pointer
+   real, pointer, dimension(:,:)   ::  dd_OX       ! For getting ExtData pointer
 
    real, pointer, dimension(:,:,:) ::  st_export_3d   ! For settling diagnostic
    real, pointer, dimension(:,:)   ::  st_export_2d   ! For settling diagnostic (col total)
@@ -4263,18 +4182,10 @@ CONTAINS
 !            We trust that the fields have been exported from the source GC, connected to TR,
 !            and imported by TR.  Otherwise these calls will fail:
 
-!            These should all be in terms of mole/m3/s
-             call MAPL_GetPointer( impChem,  imp_3d_A, 'QQK007', __RC__ )
-             call MAPL_GetPointer( impChem,  imp_3d_B, 'QQK027', __RC__ )
-             call MAPL_GetPointer( impChem,  imp_3d_C, 'QQK028', __RC__ )
-             call MAPL_GetPointer( impChem,  imp_3d_D, 'QQK005', __RC__ )
-             call MAPL_GetPointer( impChem,  imp_3d_E, 'QQK235', __RC__ )
-             call MAPL_GetPointer( impChem,  imp_3d_F, 'QQK170', __RC__ )
-             call MAPL_GetPointer( impChem,  imp_3d_G, 'QQK216', __RC__ )
-             call MAPL_GetPointer( impChem,  imp_3d_H, 'QQK179', __RC__ )
-             call MAPL_GetPointer( impChem,  imp_3d_I, 'QQK150', __RC__ )
+!            This should be in terms of mole/m3/s
+             call MAPL_GetPointer( impChem,  stOX_loss,   'stOX_loss',    __RC__ )
 !            This is in terms of kg/m2/s
-             call MAPL_GetPointer( impChem,  imp_2d_A, 'DD_OX' , __RC__ )
+             call MAPL_GetPointer( impChem,  dd_OX,       'DD_OX',        __RC__ )
 !            This is in terms of kg/m3
              call MAPL_GetPointer ( impChem, airdens,     'AIRDENS',      __RC__ )
              call MAPL_GetPointer ( impChem, airdens_dry, 'AIRDENS_DRYP', __RC__ )
@@ -4284,7 +4195,7 @@ CONTAINS
 !             call MAPL_GetPointer( expChem,  exp_3d_B, 'TR_DIAG_B', __RC__ )
   
 !            Convert kg m-2 s-1 to mole/mole/s  where denominator is moles of moist air
-             dep_term = ((imp_2d_A/MAPL_O3MW)/ dZ(:,:,km)) / (             &
+             dep_term = ((dd_OX/MAPL_O3MW)/ dZ(:,:,km)) / (                &
                             (one - Q(:,:,km))*airdens(:,:,km)/MAPL_AIRMW + &
                                    Q(:,:,km) *airdens(:,:,km)/MAPL_H2OMW   &
                                                              )
@@ -4307,10 +4218,8 @@ CONTAINS
 
 !            force computation to be done in double-precision
 !            and guard against division by zero and convert from mole/m3/s to mole/mole/s  where denominator is moles of moist air
-             sum_term = ( DBLE(imp_3d_A) + DBLE(imp_3d_B) + DBLE(imp_3d_C) + DBLE(imp_3d_D) + DBLE(imp_3d_E) &
-                        + DBLE(imp_3d_F) + DBLE(imp_3d_G) + DBLE(imp_3d_H) + DBLE(imp_3d_I) ) / ( &
-                              1.0D3 * ( (one-Q)*airdens/MAPL_AIRMW +                              &
-                                             Q *airdens/MAPL_H2OMW   )                          )
+             sum_term = DBLE(stOX_loss) / ( 1.0D3 * ( (one-Q)*airdens/MAPL_AIRMW +   &
+                                                           Q *airdens/MAPL_H2OMW   ) )
 
 !            Compute chemical loss tendency if needed
              call MAPL_GetPointer( expChem, cl_export_3d,     'CLtend_'//TRIM(spec%name), __RC__ )

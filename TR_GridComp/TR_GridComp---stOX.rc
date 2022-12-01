@@ -10,7 +10,7 @@
 # ---------------------------
 
   src_mode: model_field
-  src_field_name: OX
+  src_field_name: OX_TR
   src_add: FALSE
 
 # SOURCE - Horizontal coverage: all  |  lat_zone  |  latlon_box

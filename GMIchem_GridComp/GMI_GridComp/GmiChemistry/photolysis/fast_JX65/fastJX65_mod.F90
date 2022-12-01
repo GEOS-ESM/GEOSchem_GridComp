@@ -861,18 +861,18 @@ end subroutine INPHOT
 !     endif
       do J = 1, NJVAL
          T_JX = TITLEJ (J)
-         ! Note: C3H6Ot renamed as Acet-a already
-         !if (TITLEJ(J) .eq. 'Acet-a' .or. TITLEJ(J) .eq. 'Acet-b') T_JX = 'C3H6O'
 
 !... FastJ7+ names mapped to these FastJ6.5 names
-         if (TITLEJ(J) .eq. 'Acet-a') T_JX = 'C3H6O'
+         if (trim(TITLEJ(J)) .eq. 'Acet-a') T_JX = 'C3H6O'
 !.sds.. need to map CloudJ cross-section names with Fastjx6.5 cross-section names
-         if (JLABEL(J) .eq. 'PrAld') JLABEL(J) = 'EAld'
-         if (JLABEL(J) .eq. 'MeCCl3') JLABEL(J) = 'CH3CCl3'
-         if (JLABEL(J) .eq. 'Acet-a') JLABEL(J) = 'C3H6O'
-         if (JLABEL(J) .eq. 'Glyxlc') JLABEL(J) = 'Glyxlb' !
-         !!! don't delete comment for following line
-         !if (TITLEJ(J) .eq. 'Acet-b') T_JX = 'C3H6O'
+         if (trim(JLABEL(J)) .eq. 'PrAld') JLABEL(J) = 'EAld'
+         if (trim(JLABEL(J)) .eq. 'MeCCl3') JLABEL(J) = 'CH3CCl3'
+         if (trim(JLABEL(J)) .eq. 'Acet-a') JLABEL(J) = 'C3H6O'
+         if (trim(JLABEL(J)) .eq. 'Glyxlc') JLABEL(J) = 'Glyxlb' !
+!.sds.. need to map CloudJ cross-section names with Fastjx6.5 cross-section names
+         if (trim(JLABEL(J)) .eq. 'CFC11') JLABEL(J) = 'CFCl3'
+         if (trim(JLABEL(J)) .eq. 'CFC12') JLABEL(J) = 'CF2Cl2'
+ 
          do K = 1, NRATJ
             T_CHEM = JLABEL (K)
             if (T_CHEM (1:6) .eq.T_JX (1:6) ) JIND (K) = J
@@ -881,14 +881,14 @@ end subroutine INPHOT
 
       IF (rootProc) THEN
          write (6, '(a,i4,a)') ' FastJX6.5 Photochemistry Scheme with ', NRATJ, &
-                               ' J-reaction'
+                               ' J-reactions'
          do K = 1, NRATJ
             J = JIND (K)
             if (J.eq.0) then
-               write(6,'(i5,a9,f6.2,a,i4,1x,a40)') J, TITLEJ(J), JFACTA(K) &
-                             , ' has no mapping onto onto fast-JX'
+               write(6,'(i5,a9,f6.2,i4,a33,1x,a40)') J, JLABEL(K), JFACTA(K), K &
+                             , ' has no mapping onto onto fast-JX', lqjchem(K)
             else
-               write(6,'(i5,a9,f6.2,a,i4,1x,a80)') J, TITLEJ(J), JFACTA(K) &
+               write(6,'(i5,2a9,f6.2,a22,i4,1x,a80)') J, TITLEJ(J), JLABEL(K), JFACTA(K) &
                      , ' mapped onto fast-JX:', K, lqjchem(K)
             endif
          enddo
@@ -1175,7 +1175,7 @@ endif
 PPJ (L1_ + 1) = 0.d0
 !---calculate spherical weighting functions (AMF: Air Mass Factor)
 do L = 1, L1_
-ZHL (L) = ZH (ILNG, JLAT, L)
+  ZHL (L) = ZH (ILNG, JLAT, L)
 enddo
 
 ZHL (L1_ + 1) = ZHL (L1_) + ZZHT
@@ -1186,16 +1186,15 @@ call SPHERE2 (U0, RAD, ZHL, ZZHT, AMF2, L1_)
 !---calculate the optical properties (opt-depth, single-scat-alb, phase-
 !---  at the 5 std wavelengths 200-300-400-600-999 nm for cloud+aerosols
 do L = 1, L1_
-OD600 (L) = 0.D0
-!do K = 1, 5
-do K = 1, numScat-1
-OD (K, L) = 0.d0
-SSA (K, L) = 0.d0
-do I = 1, 8
-SLEG (I, K, L) = 0.d0
-enddo
-enddo
-
+  OD600 (L) = 0.D0
+ !do K = 1, 5
+  do K = 1, numScat-1
+    OD (K, L) = 0.d0
+    SSA (K, L) = 0.d0
+    do I = 1, 8
+      SLEG (I, K, L) = 0.d0
+    enddo
+  enddo
 enddo
 
 do L = 1, L1_
@@ -2116,7 +2115,7 @@ end subroutine JP_ATM
       read(NJ1,'(10X,14I5)') NJVAL,NWWW,NW1,NW2
       if (NJVAL.gt.X_) then
         write(6,300) NJVAL,X_
-        STOP "Fast_JX 6.5"
+        STOP "Fast_JX 6.5 read x-sect ERROR"
       endif
 !------------NQQQ = no. additional J-values from X-sects (O2,O3P,O3D+NQQQ)
 ! begBian, 1/07/2012
@@ -2154,7 +2153,6 @@ end subroutine JP_ATM
 !      do K=1,3
 !        read(NJ1,103) TITLEJ(K,3),TQQ(K,3), (Q1D(IW,K),IW=1,NWWW)
 !      enddo
-
 !
 !---Read remaining species:  X-sections at 2 T's
       do J=1,NQQQ
@@ -2169,6 +2167,13 @@ end subroutine JP_ATM
         if(TRIM(titlej(j+3)).eq."MeVK")  ncat_met_vinyl_ketone  = J+3  ! Added for GMI to catch  methylvinylketone {AOO, 8/04}
         if(TRIM(titlej(j+3)).eq."MEKeto") ncat_met_ethyl_ketone = J+3  ! Added for GMI to catch methylethylketone {AOO, 8/04}
         if(TRIM(titlej(j+3)).eq."MGlyxl") ncat_methyl_glyoxal   = J+3  ! Added for GMI to catch methy glyoxal  {AOO, 8/04}
+!--------
+!  Reset the titles for Q1A-Ac and Q1B-Ac to be the two acetone J_s
+!   60: C3H6O  = Acet-a     (CH3CO + CH3)
+!   61: Q2-Ac  = Acet-b     (CH3 + CO + CH3)
+        if(TRIM(TITLEJ(J+3)).eq."C3H6Ot") TITLEJ(J+3) = 'Acet-a'
+        if(TRIM(TITLEJ(J+3)).eq."Q2-Ac")  TITLEJ(J+3) = 'Acet-b'
+
       enddo
 
       read(NJ1,'(A)') TITLE0
@@ -2400,12 +2405,12 @@ end subroutine JP_ATM
 !      enddo
 !
 !--------
-!  Reset the titles for NJVAL-1 & NJVAL to be the two acetone J_s
-!   60: C3H6O  = Acet-a     (CH3CO + CH3)
-!   61: Q2-Ac  = Acet-b     (CH3 + CO + CH3)
-      TITLEJ (NJVAL - 1) = 'Acet-a'
-
-      TITLEJ (NJVAL) = 'Acet-b'
+!.sds!  Reset the titles for NJVAL-1 & NJVAL to be the two acetone J_s
+!.sds!   60: C3H6O  = Acet-a     (CH3CO + CH3)
+!.sds!   61: Q2-Ac  = Acet-b     (CH3 + CO + CH3)
+!.sds      TITLEJ (NJVAL - 1) = 'Acet-a'
+!.sds
+!.sds      TITLEJ (NJVAL) = 'Acet-b'
 
   101 FORMAT(8E10.3)
   102 FORMAT((10X,6E10.3)/(10X,6E10.3)/(10X,6E10.3))
@@ -2426,204 +2431,204 @@ end subroutine JP_ATM
       end subroutine RD_TJPL
 
 
-!######################################################################
-!-----------------------------------------------------------------------
-subroutine RD_XXX (NJ1, NAMFIL)
-!-----------------------------------------------------------------------
-!  Read in wavelength bins, solar fluxes, Rayleigh, T-dep X-sections.
+!!######################################################################
+!!-----------------------------------------------------------------------
+!subroutine RD_XXX (NJ1, NAMFIL)
+!!-----------------------------------------------------------------------
+!!  Read in wavelength bins, solar fluxes, Rayleigh, T-dep X-sections.
+!!
+!!>>>>NEW v-6.4  changed to collapse wavelengths & x-sections to Trop-onl
+!!           WX_ = 18 (parm_CTM.f) should match the JX_spec.dat wavelengt
+!!           W_ = 12 (Trop-only) or 18 (std) is set in (parm_MIE.f).
+!!       if W_=12 then drop strat wavels, and drop x-sects (e.g. N2O, ...
+!!           W_ = 8, reverts to quick fix:  fast-J (12-18) plus bin (5) s
+!!
+!!-----------------------------------------------------------------------
+!!     NAMFIL   Name of spectral data file (JX_spec.dat) >> j2 for fast-J
+!!     NJ1      Channel number for reading data file
+!!
+!!     NJVAL    Number of species to calculate J-values for
+!!     NWWW     Number of wavelength bins, from 1:NWWW
+!!     WBIN     Boundaries of wavelength bins
+!!     WL       Centres of wavelength bins - 'effective wavelength'
+!!     FL       Solar flux incident on top of atmosphere (cm-2.s-1)
+!!     QRAYL    Rayleigh parameters (effective cross-section) (cm2)
+!!     QO2      O2 cross-sections
+!!     QO3      O3 cross-sections
+!!     Q1D      O3 => O(1D) quantum yield
+!!     TQQ      Temperature for supplied cross sections
+!!     QQQ      Supplied cross sections in each wavelength bin (cm2)
+!!-----------------------------------------------------------------------
+!implicit none
+!#     include "parm_CTM_fastJX65.h"
+!#     include "parm_MIE_fastJX65.h"
 !
-!>>>>NEW v-6.4  changed to collapse wavelengths & x-sections to Trop-onl
-!           WX_ = 18 (parm_CTM.f) should match the JX_spec.dat wavelengt
-!           W_ = 12 (Trop-only) or 18 (std) is set in (parm_MIE.f).
-!       if W_=12 then drop strat wavels, and drop x-sects (e.g. N2O, ...
-!           W_ = 8, reverts to quick fix:  fast-J (12-18) plus bin (5) s
+!#     include "cmn_JVdat_fastJX65.h"
+!integer , intent (in) ::NJ1
 !
-!-----------------------------------------------------------------------
-!     NAMFIL   Name of spectral data file (JX_spec.dat) >> j2 for fast-J
-!     NJ1      Channel number for reading data file
+!character  ( * ), intent (in) ::NAMFIL
 !
-!     NJVAL    Number of species to calculate J-values for
-!     NWWW     Number of wavelength bins, from 1:NWWW
-!     WBIN     Boundaries of wavelength bins
-!     WL       Centres of wavelength bins - 'effective wavelength'
-!     FL       Solar flux incident on top of atmosphere (cm-2.s-1)
-!     QRAYL    Rayleigh parameters (effective cross-section) (cm2)
-!     QO2      O2 cross-sections
-!     QO3      O3 cross-sections
-!     Q1D      O3 => O(1D) quantum yield
-!     TQQ      Temperature for supplied cross sections
-!     QQQ      Supplied cross sections in each wavelength bin (cm2)
-!-----------------------------------------------------------------------
-implicit none
-#     include "parm_CTM_fastJX65.h"
-#     include "parm_MIE_fastJX65.h"
-
-#     include "cmn_JVdat_fastJX65.h"
-integer , intent (in) ::NJ1
-
-character  ( * ), intent (in) ::NAMFIL
-
-integer :: I, J, JJ, K, IW, NQQQ, NWWW, NQRD
-
-
-
-TQQ (:, :) = 0.d0
-!----------spectral data----set for new format data J-ver8.3------------
-!         note that NJVAL = # J-values, but NQQQ (>NJVAL) = # Xsects rea
-!         for 2005a data, NJVAL = 62 (including a spare XXXX) and
-!              NQQQ = 64 so that 4 wavelength datasets read in for aceto
-!         note NQQQ is not used outside this subroutine!
-! >>>> W_ = 12 <<<< means trop-only, discard WL #1-4 and #9-10, some X-s
-open (NJ1, FILE = NAMFIL, status = 'old', form = 'formatted')
-read (NJ1, 100) TITLE0
-read (NJ1, 101) NJVAL, NQRD, NWWW
-NW1 = 1
-NW2 = NWWW
-if (NJVAL.gt.X_.or.NQRD.gt.X_) then
-     write (6, 201) NJVAL, X_
-     stop
-endif
-write (6, '(1X,A)') TITLE0
-!----J-values:  1=O2, 2=O3P,3=O3D 4=readin Xsects
-read (NJ1, 102) (WL (IW), IW = 1, NWWW)
-read (NJ1, 102) (FL (IW), IW = 1, NWWW)
-
-read (NJ1, 102) (QRAYL (IW), IW = 1, NWWW)
-!---Read O2 X-sects, O3 X-sects, O3=>O(1D) quant yields (each at 3 temps
-read (NJ1, 103) TITLEJ (1), TQQ (1, 1), (QO2 (IW, 1), IW = 1, &
- NWWW)
-read (NJ1, 103) TITLEJ2, TQQ (2, 1), (QO2 (IW, 2), IW = 1, NWWW)
-
-read (NJ1, 103) TITLEJ3, TQQ (3, 1), (QO2 (IW, 3), IW = 1, NWWW)
-read (NJ1, 103) TITLEJ (2), TQQ (1, 2), (QO3 (IW, 1), IW = 1, &
- NWWW)
-read (NJ1, 103) TITLEJ2, TQQ (2, 2), (QO3 (IW, 2), IW = 1, NWWW)
-
-read (NJ1, 103) TITLEJ3, TQQ (3, 2), (QO3 (IW, 3), IW = 1, NWWW)
-read (NJ1, 103) TITLEJ (3), TQQ (1, 3), (Q1D (IW, 1), IW = 1, &
- NWWW)
-read (NJ1, 103) TITLEJ2, TQQ (2, 3), (Q1D (IW, 2), IW = 1, NWWW)
-
-read (NJ1, 103) TITLEJ3, TQQ (3, 3), (Q1D (IW, 3), IW = 1, NWWW)
-do J = 1, 3
-write (6, 200) J, TITLEJ (J), (TQQ (I, J), I = 1, 3)
-
-enddo
-!---Read remaining species:  X-sections at 2 T_s
-JJ = 4
-do J = 4, NQRD
-read (NJ1, 103) TITLEJ (JJ), TQQ (1, JJ), (QQQ (IW, 1, JJ), &
- IW = 1, NWWW)
-
-read (NJ1, 103) TITLEJ2, TQQ (2, JJ), (QQQ (IW, 2, JJ), IW = 1, &
- NWWW)
-if (W_.eq.18.or.TITLEJ2 (7:7) .ne.'x') then
-!---include stratospheric J's (this also includes Cl and Br compounds!)
-     write (6, 200) JJ, TITLEJ (JJ), (TQQ (I, JJ), I = 1, 2)
-     JJ = JJ + 1
-
-endif
-enddo
-NQQQ = JJ - 1
-
-NJVAL = NJVAL + (NQQQ - NQRD)
-!---truncate number of wavelengths to do troposphere-only
-if (W_.ne.WX_) then
-!---TROP-ONLY
-     if (W_.eq.12) then
-write (6, '(a)') ' >>>TROP-ONLY reduce wavelengths to 12, drop str &
-&at X-sects'
-          NW2 = 12
-          do IW = 1, 4
-          WL (IW) = WL (IW + 4)
-          FL (IW) = FL (IW + 4)
-          QRAYL (IW) = QRAYL (IW + 4)
-          do K = 1, 3
-          QO2 (IW, K) = QO2 (IW + 4, K)
-          QO3 (IW, K) = QO3 (IW + 4, K)
-          Q1D (IW, K) = Q1D (IW + 4, K)
-          enddo
-          do J = 4, NQQQ
-          QQQ (IW, 1, J) = QQQ (IW + 4, 1, J)
-          QQQ (IW, 2, J) = QQQ (IW + 4, 2, J)
-          enddo
-          enddo
-          do IW = 5, 12
-          WL (IW) = WL (IW + 6)
-          FL (IW) = FL (IW + 6)
-          QRAYL (IW) = QRAYL (IW + 6)
-          do K = 1, 3
-          QO2 (IW, K) = QO2 (IW + 6, K)
-          QO3 (IW, K) = QO3 (IW + 6, K)
-          Q1D (IW, K) = Q1D (IW + 6, K)
-          enddo
-          do J = 4, NQQQ
-          QQQ (IW, 1, J) = QQQ (IW + 6, 1, J)
-          QQQ (IW, 2, J) = QQQ (IW + 6, 2, J)
-          enddo
-          enddo
-!---TROP-QUICK  (must scale solar flux for W=5)
-     elseif (W_.eq.8) then
-write (6, '(a)') ' >>>TROP-QUICK reduce wavelengths to 8, drop str &
-&at X-sects'
-          NW2 = 8
-          do IW = 1, 1
-          WL (IW) = WL (IW + 4)
-          FL (IW) = FL (IW + 4) * 2.d0
-          QRAYL (IW) = QRAYL (IW + 4)
-          do K = 1, 3
-          QO2 (IW, K) = QO2 (IW + 4, K)
-          QO3 (IW, K) = QO3 (IW + 4, K)
-          Q1D (IW, K) = Q1D (IW + 4, K)
-          enddo
-          do J = 4, NQQQ
-          QQQ (IW, 1, J) = QQQ (IW + 4, 1, J)
-          QQQ (IW, 2, J) = QQQ (IW + 4, 2, J)
-          enddo
-          enddo
-          do IW = 2, 8
-          WL (IW) = WL (IW + 10)
-          FL (IW) = FL (IW + 10)
-          QRAYL (IW) = QRAYL (IW + 10)
-          do K = 1, 3
-          QO2 (IW, K) = QO2 (IW + 10, K)
-          QO3 (IW, K) = QO3 (IW + 10, K)
-          Q1D (IW, K) = Q1D (IW + 10, K)
-          enddo
-          do J = 4, NQQQ
-          QQQ (IW, 1, J) = QQQ (IW + 10, 1, J)
-          QQQ (IW, 2, J) = QQQ (IW + 10, 2, J)
-          enddo
-
-          enddo
-     else
-          write (6, * ) ' number of used wavelengths wrong:', W_
-          stop
-     endif
-
-
-endif
-!  Reset the titles for NJVAL-1 & NJVAL to be the two acetone J_s
-!   61: C3H6O  = Acet-a     (CH3CO + CH3)
-!   62: Q2-Ac  = Acet-b     (CH3 + CO + CH3)
-TITLEJ (NJVAL - 1) = 'Acet-a'
-
-TITLEJ (NJVAL) = 'Acet-b'
-
-close (NJ1)
-  100 format(a)
-  101 format(10x,5i5)
-  102 format(10x,    6e10.3/(10x,6e10.3)/(10x,6e10.3))
-  103 format(a7,f3.0,6e10.3/(10x,6e10.3)/(10x,6e10.3))
-  200 format(1x,' x-sect:',i3,a10,3(3x,f6.2))
-
-  201 format(' Number of x-sections supplied to Fast-J2: ',i3,/, &
-&       ' Maximum number allowed (X_) only set to: ',i3, &
-&       ' - increase in cmn_jv.f')
-return
-
-
-end subroutine RD_XXX
+!integer :: I, J, JJ, K, IW, NQQQ, NWWW, NQRD
+!
+!
+!
+!TQQ (:, :) = 0.d0
+!!----------spectral data----set for new format data J-ver8.3------------
+!!         note that NJVAL = # J-values, but NQQQ (>NJVAL) = # Xsects rea
+!!         for 2005a data, NJVAL = 62 (including a spare XXXX) and
+!!              NQQQ = 64 so that 4 wavelength datasets read in for aceto
+!!         note NQQQ is not used outside this subroutine!
+!! >>>> W_ = 12 <<<< means trop-only, discard WL #1-4 and #9-10, some X-s
+!open (NJ1, FILE = NAMFIL, status = 'old', form = 'formatted')
+!read (NJ1, 100) TITLE0
+!read (NJ1, 101) NJVAL, NQRD, NWWW
+!NW1 = 1
+!NW2 = NWWW
+!if (NJVAL.gt.X_.or.NQRD.gt.X_) then
+!     write (6, 201) NJVAL, X_
+!     stop
+!endif
+!write (6, '(1X,A)') TITLE0
+!!----J-values:  1=O2, 2=O3P,3=O3D 4=readin Xsects
+!read (NJ1, 102) (WL (IW), IW = 1, NWWW)
+!read (NJ1, 102) (FL (IW), IW = 1, NWWW)
+!
+!read (NJ1, 102) (QRAYL (IW), IW = 1, NWWW)
+!!---Read O2 X-sects, O3 X-sects, O3=>O(1D) quant yields (each at 3 temps
+!read (NJ1, 103) TITLEJ (1), TQQ (1, 1), (QO2 (IW, 1), IW = 1, &
+! NWWW)
+!read (NJ1, 103) TITLEJ2, TQQ (2, 1), (QO2 (IW, 2), IW = 1, NWWW)
+!
+!read (NJ1, 103) TITLEJ3, TQQ (3, 1), (QO2 (IW, 3), IW = 1, NWWW)
+!read (NJ1, 103) TITLEJ (2), TQQ (1, 2), (QO3 (IW, 1), IW = 1, &
+! NWWW)
+!read (NJ1, 103) TITLEJ2, TQQ (2, 2), (QO3 (IW, 2), IW = 1, NWWW)
+!
+!read (NJ1, 103) TITLEJ3, TQQ (3, 2), (QO3 (IW, 3), IW = 1, NWWW)
+!read (NJ1, 103) TITLEJ (3), TQQ (1, 3), (Q1D (IW, 1), IW = 1, &
+! NWWW)
+!read (NJ1, 103) TITLEJ2, TQQ (2, 3), (Q1D (IW, 2), IW = 1, NWWW)
+!
+!read (NJ1, 103) TITLEJ3, TQQ (3, 3), (Q1D (IW, 3), IW = 1, NWWW)
+!do J = 1, 3
+!write (6, 200) J, TITLEJ (J), (TQQ (I, J), I = 1, 3)
+!
+!enddo
+!!---Read remaining species:  X-sections at 2 T_s
+!JJ = 4
+!do J = 4, NQRD
+!read (NJ1, 103) TITLEJ (JJ), TQQ (1, JJ), (QQQ (IW, 1, JJ), &
+! IW = 1, NWWW)
+!
+!read (NJ1, 103) TITLEJ2, TQQ (2, JJ), (QQQ (IW, 2, JJ), IW = 1, &
+! NWWW)
+!if (W_.eq.18.or.TITLEJ2 (7:7) .ne.'x') then
+!!---include stratospheric J's (this also includes Cl and Br compounds!)
+!     write (6, 200) JJ, TITLEJ (JJ), (TQQ (I, JJ), I = 1, 2)
+!     JJ = JJ + 1
+!
+!endif
+!enddo
+!NQQQ = JJ - 1
+!
+!NJVAL = NJVAL + (NQQQ - NQRD)
+!!---truncate number of wavelengths to do troposphere-only
+!if (W_.ne.WX_) then
+!!---TROP-ONLY
+!     if (W_.eq.12) then
+!write (6, '(a)') ' >>>TROP-ONLY reduce wavelengths to 12, drop str &
+!&at X-sects'
+!          NW2 = 12
+!          do IW = 1, 4
+!          WL (IW) = WL (IW + 4)
+!          FL (IW) = FL (IW + 4)
+!          QRAYL (IW) = QRAYL (IW + 4)
+!          do K = 1, 3
+!          QO2 (IW, K) = QO2 (IW + 4, K)
+!          QO3 (IW, K) = QO3 (IW + 4, K)
+!          Q1D (IW, K) = Q1D (IW + 4, K)
+!          enddo
+!          do J = 4, NQQQ
+!          QQQ (IW, 1, J) = QQQ (IW + 4, 1, J)
+!          QQQ (IW, 2, J) = QQQ (IW + 4, 2, J)
+!          enddo
+!          enddo
+!          do IW = 5, 12
+!          WL (IW) = WL (IW + 6)
+!          FL (IW) = FL (IW + 6)
+!          QRAYL (IW) = QRAYL (IW + 6)
+!          do K = 1, 3
+!          QO2 (IW, K) = QO2 (IW + 6, K)
+!          QO3 (IW, K) = QO3 (IW + 6, K)
+!          Q1D (IW, K) = Q1D (IW + 6, K)
+!          enddo
+!          do J = 4, NQQQ
+!          QQQ (IW, 1, J) = QQQ (IW + 6, 1, J)
+!          QQQ (IW, 2, J) = QQQ (IW + 6, 2, J)
+!          enddo
+!          enddo
+!!---TROP-QUICK  (must scale solar flux for W=5)
+!     elseif (W_.eq.8) then
+!write (6, '(a)') ' >>>TROP-QUICK reduce wavelengths to 8, drop str &
+!&at X-sects'
+!          NW2 = 8
+!          do IW = 1, 1
+!          WL (IW) = WL (IW + 4)
+!          FL (IW) = FL (IW + 4) * 2.d0
+!          QRAYL (IW) = QRAYL (IW + 4)
+!          do K = 1, 3
+!          QO2 (IW, K) = QO2 (IW + 4, K)
+!          QO3 (IW, K) = QO3 (IW + 4, K)
+!          Q1D (IW, K) = Q1D (IW + 4, K)
+!          enddo
+!          do J = 4, NQQQ
+!          QQQ (IW, 1, J) = QQQ (IW + 4, 1, J)
+!          QQQ (IW, 2, J) = QQQ (IW + 4, 2, J)
+!          enddo
+!          enddo
+!          do IW = 2, 8
+!          WL (IW) = WL (IW + 10)
+!          FL (IW) = FL (IW + 10)
+!          QRAYL (IW) = QRAYL (IW + 10)
+!          do K = 1, 3
+!          QO2 (IW, K) = QO2 (IW + 10, K)
+!          QO3 (IW, K) = QO3 (IW + 10, K)
+!          Q1D (IW, K) = Q1D (IW + 10, K)
+!          enddo
+!          do J = 4, NQQQ
+!          QQQ (IW, 1, J) = QQQ (IW + 10, 1, J)
+!          QQQ (IW, 2, J) = QQQ (IW + 10, 2, J)
+!          enddo
+!
+!          enddo
+!     else
+!          write (6, * ) ' number of used wavelengths wrong:', W_
+!          stop
+!     endif
+!
+!
+!endif
+!!  Reset the titles for NJVAL-1 & NJVAL to be the two acetone J_s
+!!   61: C3H6O  = Acet-a     (CH3CO + CH3)
+!!   62: Q2-Ac  = Acet-b     (CH3 + CO + CH3)
+!TITLEJ (NJVAL - 1) = 'Acet-a'
+!
+!TITLEJ (NJVAL) = 'Acet-b'
+!
+!close (NJ1)
+!  100 format(a)
+!  101 format(10x,5i5)
+!  102 format(10x,    6e10.3/(10x,6e10.3)/(10x,6e10.3))
+!  103 format(a7,f3.0,6e10.3/(10x,6e10.3)/(10x,6e10.3))
+!  200 format(1x,' x-sect:',i3,a10,3(3x,f6.2))
+!
+!  201 format(' Number of x-sections supplied to Fast-J2: ',i3,/, &
+!&       ' Maximum number allowed (X_) only set to: ',i3, &
+!&       ' - increase in cmn_jv.f')
+!return
+!
+!
+!end subroutine RD_XXX
 !######################################################################
 !-----------------------------------------------------------------------
 !subroutine RD_MIE (NJ1, NAMFIL)

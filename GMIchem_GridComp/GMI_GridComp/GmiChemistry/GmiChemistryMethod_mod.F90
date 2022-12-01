@@ -19,7 +19,6 @@
       use GmiGrid_mod             , only : Get_ilo, Get_ihi, Get_julo, Get_jhi
       use GmiGrid_mod             , only : Get_ilong, Get_ilat, Get_ivert, Get_itloop
       use GmiTimeControl_mod,       only : t_GmiClock, Get_curGmiDate, GmiSplitDateTime
-      use GmiSpeciesRegistry_mod,   only : getSpeciesIndex, UNKNOWN_SPECIES
       use GmiPrintError_mod,        only : GmiPrintError
       use GmiESMFrcFileReading_mod, only : rcEsmfReadTable
       use GmiArrayBundlePointer_mod, only : t_GmiArrayBundle
@@ -317,12 +316,6 @@
 !!       2:  read in qj values 
 !!       3:  use fastj routine (for fastJX65 or CloudJ)
 !!           This option should be combined with fastj_opt.
-!!       4:  lookup table for qj (Kawa style)
-!!       5:  lookup table for qj (Kawa style) +
-!!           use ozone climatology for column ozone calc.
-!!       6:  calculate from table and Gmimod data (Quadchem)
-!!       7:  read in qj values (2-D, 12 months)
-!!       8:  use fast-JX routine (troposphere/stratosphere)
 !!     -----------------------------------------------------
 !
       call ESMF_ConfigGetAttribute(config, self%phot_opt, &
@@ -642,7 +635,7 @@
      &              pctm2, loc_proc, num_species, do_qqjk_reset, HNO3CONDsad,   &
      &              HNO3GASsad, gmiQK, gmiQQK, gmiQJ, gmiQQJ, surfEmissForChem, &
      &              pr_diag, do_ftiming, do_qqjk_inchem, pr_qqjk,               &
-     &              do_semiss_inchem, pr_smv2, pr_nc_period, chem_mecha,        &
+     &              do_semiss_inchem, pr_smv2, pr_nc_period,         &
      &              rootProc, metdata_name_org, metdata_name_model, tdt4)
 
 ! !USES:
@@ -676,7 +669,6 @@
       type (t_GmiArrayBundle), intent(in) :: gmiQK(:)
       type (t_GmiArrayBundle), intent(inout) :: gmiQQJ(:)
       type (t_GmiArrayBundle), intent(inout) :: gmiQQK(:)
-      CHARACTER(LEN=255), intent(in) :: chem_mecha
       character (len=MAX_LENGTH_MET_NAME), intent(in) :: metdata_name_org
       character (len=MAX_LENGTH_MET_NAME), intent(in) :: metdata_name_model
       real,             intent(in) :: tdt4
@@ -737,7 +729,7 @@
 
 
       ! Call the Chemistry control routine
-      call updateChemistry (self%savedVars, rootProc, TRIM(chem_mecha), do_ftiming, &
+      call updateChemistry (self%savedVars, rootProc, do_ftiming, &
      &           TRIM(metdata_name_org), TRIM(metdata_name_model),             &
      &           do_qqjk_inchem, do_qqjk_reset, pr_qqjk,  surfEmissForChem,    &
      &           press3c, press3e, pr_smv2, pr_nc_period, mass, concentration, &
@@ -1123,13 +1115,6 @@
             call GmiPrintError  &
      &        (err_msg, .true., 1, self%ihno3_num, 0, 0, 0.0d0, 0.0d0)
           end if
-        end if
-        
-        if (((self%io3_num  == 0) .or. (self%io3_num  /= IO3)) .and.  &
-     &      (self%phot_opt == 4)) then
-          err_msg = 'io3_num/IO3 problem in the rc File.'
-          call GmiPrintError  &
-     &      (err_msg, .true., 2, self%io3_num, IO3, 0, 0.0d0, 0.0d0)
         end if
 
         if ((self%num_chem == 0) .or. (self%num_chem /= NCHEM)) then

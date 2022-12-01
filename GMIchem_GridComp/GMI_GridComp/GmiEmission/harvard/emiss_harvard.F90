@@ -72,7 +72,7 @@
 !-----------------------------------------------------------------------------
 
       SUBROUTINE Update_Emiss_Harvard (gmiGrid, idaySoilType, firstBiogenicBase,  &
-     &   iisoprene_num, ino_num, lwis_flags, tdt, mw, cosSolarZenithAngle, latdeg,&
+     &   iisoprene_num, ino_num, lwis_flags, tdt, mw, cosSolarZenithAngle, latdeg, &
          nymd, mcor, tempk, radswg, surf_rough, con_precip, tot_precip, ustar,    &
          fracCloudCover, emiss_isop, emiss_monot, emiss_nox, index_soil,          &
          ncon_soil, soil_fert, soil_precip, soil_pulse, ireg, iland, iuse,        &
@@ -158,61 +158,61 @@
         Write (6,*) 'Update_Emiss_Harvard called by ', loc_proc
       end if
 
-       if (doMEGANemission) then
+      if (doMEGANemission) then
 
-          days_btw_m = 31
-	  isoLai(i1:i2, ju1:j2) = 0.00
+        days_btw_m = 31
+	isoLai(i1:i2, ju1:j2) = 0.00
 	  
-          PT_15isOK = .TRUE.
+        PT_15isOK = .TRUE.
 
-          call setMEGANisoLAI &
-     &           (isoLai, isoLaiCurr, isoLaiPrev, isoLaiNext, &
-     &            days_btw_m, nymd, i1, i2, ju1, j2, i1_gl, ju1_gl)
+        call setMEGANisoLAI (isoLai, isoLaiCurr, isoLaiPrev, isoLaiNext, &
+                  days_btw_m, nymd, i1, i2, ju1, j2, i1_gl, ju1_gl)
 
-          compute_isop = .NOT.  doMEGANviaHEMCO
+        compute_isop = .NOT.  doMEGANviaHEMCO
 
-!         ======================
-          call calcBiogenicMEGANemission  &
-!         ======================
-     &      (emiss_isop, emiss_monot, days_btw_m, &
-     &       aefIsop, aefMbo, aefMonot, isoLai, isoLaiCurr, isoLaiPrev, &
-     &       tempk, T_15_AVG, pardif, pardir, cosSolarZenithAngle, &
-     &       pr_diag, loc_proc, i1, i2, ju1, j2, PT_15isOK, compute_isop)
+!======================
+        call calcBiogenicMEGANemission  &
+!======================
+            (emiss_isop, emiss_monot, days_btw_m, &
+             aefIsop, aefMbo, aefMonot, isoLai, isoLaiCurr, isoLaiPrev, &
+             tempk, T_15_AVG, pardif, pardir, cosSolarZenithAngle, &
+             pr_diag, loc_proc, i1, i2, ju1, j2, PT_15isOK, compute_isop)
 
-          ! Perform unit conversions
-          tdtinv = 1.0d0 / tdt
+!... Perform unit conversions
+        tdtinv = 1.0d0 / tdt
 
-          if (doMEGANviaHEMCO) then 
-             ! isoprene emissions coming from HEMCO already kgC/m2/s 
-             ! convert to kgIsoprene/box/s
-             emiss_isop = emiss_isop / ( ATOMSC_PER_MOLECISOP * 12.01 )  *  &
-                  &                        mw(iisoprene_num) * mcor
-          else
-             emiss_isop = emiss_isop * tdtinv / ATOMSC_PER_MOLECISOP *  &
-             &                        (mw(iisoprene_num) / (MAPL_AVOGAD*0.001)) * KGPG
-          end if
+!... isoprene emissions coming from HEMCO already kgC/m2/s, convert to kgIsoprene/box/s
+        if (doMEGANviaHEMCO) then 
+           emiss_isop = emiss_isop / ( ATOMSC_PER_MOLECISOP * 12.01 )  *  &
+                                       mw(iisoprene_num) * mcor
+        else
+          emiss_isop = emiss_isop * tdtinv / ATOMSC_PER_MOLECISOP *  &
+                                     (mw(iisoprene_num) / (MAPL_AVOGAD*0.001)) * KGPG
+        end if
 
-          emiss_monot = emiss_monot * tdtinv / ATOMSC_PER_MOLECMONOT *  &
-     &                          (MWTMONOT / (MAPL_AVOGAD*0.001)) * KGPG
+        emiss_monot = emiss_monot * tdtinv / ATOMSC_PER_MOLECMONOT *  &
+                               (MWTMONOT / (MAPL_AVOGAD*0.001)) * KGPG
 
-       else
-!         ======================
-          call Do_Biogenic_Emiss  &
-!         ======================
-     &      (iisoprene_num, ireg, iland, iuse, tdt, mw, cosSolarZenithAngle, mcor,  &
-     &       tempk, fracCloudCover, coeff_isop, convert_isop, convert_monot,  &
-     &       xlai, base_isop, base_monot, emiss_isop, emiss_monot, firstBiogenicBase, &
-     &       pr_diag, loc_proc, rootProc, i1, i2, ju1, j2, num_species)
+      else
+
+!======================
+        call Do_Biogenic_Emiss  &
+!======================
+            (iisoprene_num, ireg, iland, iuse, tdt, mw, cosSolarZenithAngle, mcor,  &
+             tempk, fracCloudCover, coeff_isop, convert_isop, convert_monot,  &
+             xlai, base_isop, base_monot, emiss_isop, emiss_monot, firstBiogenicBase, &
+             pr_diag, loc_proc, rootProc, i1, i2, ju1, j2, num_species)
+
       end if
 
-!     ==================
+!==================
       call Do_Soil_Emiss (gmiGrid, &
-!     ==================
-     &   ino_num, nymd, lwis_flags, ireg, iland, iuse, index_soil,  &
-     &   ncon_soil, tdt, mw, latdeg, cosSolarZenithAngle, mcor, tempk, radswg,  &
-     &   surf_rough, con_precip, tot_precip, ustar, fracCloudCover,  &
-     &   soil_fert, soil_precip, soil_pulse, xlai, emiss_nox, idaySoilType, &
-     &   pr_diag, loc_proc, i1, i2, ju1, j2, ju1_gl, j2_gl, num_species, exp_fac)
+!==================
+         ino_num, nymd, lwis_flags, ireg, iland, iuse, index_soil,  &
+         ncon_soil, tdt, mw, latdeg, cosSolarZenithAngle, mcor, tempk, radswg,  &
+         surf_rough, con_precip, tot_precip, ustar, fracCloudCover,  &
+         soil_fert, soil_precip, soil_pulse, xlai, emiss_nox, idaySoilType, &
+         pr_diag, loc_proc, i1, i2, ju1, j2, ju1_gl, j2_gl, num_species, exp_fac)
 
       return
 
@@ -312,9 +312,9 @@
       real*8  :: xlai1      (NTYPE)
 
 
-!     ----------------
-!     Begin execution.
-!     ----------------
+! ----------------
+! Begin execution.
+! ----------------
 
       if (pr_diag) then
         Write (6,*) 'Do_Biogenic_Emiss called by ', loc_proc
@@ -330,8 +330,8 @@
 !       ==================
         call Biogenic_Base  &
 !       ==================
-     &    (ireg, iland, tdt, convert_isop, convert_monot, mcor,  &
-     &     base_isop, base_monot, pr_diag, loc_proc, i1, i2, ju1, j2)
+          (ireg, iland, tdt, convert_isop, convert_monot, mcor,  &
+           base_isop, base_monot, pr_diag, loc_proc, i1, i2, ju1, j2)
 
       end if
 
@@ -351,26 +351,25 @@
 
           biemiss =  &
 !           =============
-     &      Biogenic_Isop  &
+            Biogenic_Isop  &
 !           =============
-     &        (ireg(il,ij), iuse1(:), fracCloudCover(il,ij), cossza(il,ij),  &
-     &         tempk(il,ij), coeff_isop(:), base_isop1(:), xlai1(:))
+              (ireg(il,ij), iuse1(:), fracCloudCover(il,ij), cossza(il,ij),  &
+               tempk(il,ij), coeff_isop(:), base_isop1(:), xlai1(:))
 
           emiss_isop(il,ij) =  &
-     &      biemiss * tdtinv / ATOMSC_PER_MOLECISOP *  &
-     &      (mw(iisoprene_num) / (MAPL_AVOGAD*0.001)) * KGPG
-
+            biemiss * tdtinv / ATOMSC_PER_MOLECISOP *  &
+            (mw(iisoprene_num) / (MAPL_AVOGAD*0.001)) * KGPG
 
           bmemiss =  &
 !           ==============
-     &      Biogenic_Monot  &
+            Biogenic_Monot  &
 !           ==============
-     &        (ireg(il,ij), iuse1(:), tempk(il,ij), base_monot1(:),  &
-     &         xlai1(:))
+              (ireg(il,ij), iuse1(:), tempk(il,ij), base_monot1(:),  &
+               xlai1(:))
 
           emiss_monot(il,ij) =  &
-     &      bmemiss * tdtinv / ATOMSC_PER_MOLECMONOT *  &
-     &      (MWTMONOT / (MAPL_AVOGAD*0.001)) * KGPG
+            bmemiss * tdtinv / ATOMSC_PER_MOLECMONOT *  &
+            (MWTMONOT / (MAPL_AVOGAD*0.001)) * KGPG
 
         end do
       end do
@@ -671,8 +670,7 @@
 !       Biogenic source of isoprene.
 !       ----------------------------
 
-        emass(:,:) =  &
-     &    emiss_isop(:,:) * tdt
+        emass(:,:) = emiss_isop(:,:) * tdt
 
         iXj = (i2-i1+1)*(j2-ju1+1)
         tempemis = emiss_isop(:,:)/mcor(:,:)
@@ -680,20 +678,20 @@
 !    &   , qmin, qmax, iXj, 1, 1. )
 
         concentration(iisoprene_num)%pArray3D(:,:,1) =  &
-     &    concentration(iisoprene_num)%pArray3D(:,:,1) +  &
-     &    ((emass(:,:) / mass(:,:,1)) *  &
-     &     (MWTAIR / mw(iisoprene_num)))
+          concentration(iisoprene_num)%pArray3D(:,:,1) +  &
+          ((emass(:,:) / mass(:,:,1)) *  &
+           (MWTAIR / mw(iisoprene_num)))
 
        if (pr_surf_emiss)  &
-     &   surf_emiss_out(:,:,iisoprene_num) =  &
-     &     surf_emiss_out(:,:,iisoprene_num) +  &
-     &     (emass(:,:) / mcor(:,:))
+         surf_emiss_out(:,:,iisoprene_num) =  &
+           surf_emiss_out(:,:,iisoprene_num) +  &
+           (emass(:,:) / mcor(:,:))
 
 
        if (pr_emiss_3d) then
           emiss_3d_out(:,:,1,iisoprene_num) =  &
-     &      emiss_3d_out(:,:,1,iisoprene_num) +  &
-     &       (emass(:,:) / mcor(:,:))
+            emiss_3d_out(:,:,1,iisoprene_num) +  &
+             (emass(:,:) / mcor(:,:))
 
        end if
       end if
@@ -704,31 +702,29 @@
 !       Biogenic source of CO from methanol oxidation, scaled from isoprene.
 !       --------------------------------------------------------------------
 
-        emass(:,:) =  &
-     &    emiss_isop(:,:) * tdt *  &
-     &    ICO_FAC_ISOP
+        emass(:,:) = emiss_isop(:,:) * tdt * ICO_FAC_ISOP
 
         concentration(ico_num)%pArray3D(:,:,1) =  &
-     &    concentration(ico_num)%pArray3D(:,:,1) +  &
-     &    ((emass(:,:) / mass(:,:,1)) *  &
-     &     (MWTAIR / mw(ico_num)))
+          concentration(ico_num)%pArray3D(:,:,1) +  &
+          ((emass(:,:) / mass(:,:,1)) *  &
+           (MWTAIR / mw(ico_num)))
 
        if (pr_surf_emiss)  &
-     &   surf_emiss_out(:,:,ico_num) =  &
-     &     surf_emiss_out(:,:,ico_num) +  &
-     &     (emass(:,:) / mcor(:,:))
-!!!!!!!!!!!!!!!!CO_methanol
+         surf_emiss_out(:,:,ico_num) =  &
+           surf_emiss_out(:,:,ico_num) +  &
+           (emass(:,:) / mcor(:,:))
+!!!!!!!!!!!!!!!CO_methanol
        if (pr_surf_emiss)  &
-     &   surf_emiss_out2(:,:,1) =  &
-     &     surf_emiss_out2(:,:,1) +  &
-     &     (emass(:,:) / mcor(:,:))
-!!!!!!!!!!!!!!!!
+         surf_emiss_out2(:,:,1) =  &
+           surf_emiss_out2(:,:,1) +  &
+           (emass(:,:) / mcor(:,:))
+!!!!!!!!!!!!!!!
 
 
        if (pr_emiss_3d) then
           emiss_3d_out(:,:,1,ico_num) =  &
-     &      emiss_3d_out(:,:,1,ico_num) +  &
-     &       (emass(:,:) / mcor(:,:))
+            emiss_3d_out(:,:,1,ico_num) +  &
+             (emass(:,:) / mcor(:,:))
 
        end if
 
@@ -737,30 +733,30 @@
 !       ---------------------------------------------------------------------
 
         emass(:,:) =  &
-     &    emiss_monot(:,:) * tdt *  &
-     &    ICO_FAC_MONOT
+          emiss_monot(:,:) * tdt *  &
+          ICO_FAC_MONOT
 
         concentration(ico_num)%pArray3D(:,:,1) =  &
-     &    concentration(ico_num)%pArray3D(:,:,1) +  &
-     &    ((emass(:,:) / mass(:,:,1)) *  &
-     &     (MWTAIR / mw(ico_num)))
+          concentration(ico_num)%pArray3D(:,:,1) +  &
+          ((emass(:,:) / mass(:,:,1)) *  &
+           (MWTAIR / mw(ico_num)))
 
        if (pr_surf_emiss)  &
-     &   surf_emiss_out(:,:,ico_num) =  &
-     &     surf_emiss_out(:,:,ico_num) +  &
-     &     (emass(:,:) / mcor(:,:))
+         surf_emiss_out(:,:,ico_num) =  &
+           surf_emiss_out(:,:,ico_num) +  &
+           (emass(:,:) / mcor(:,:))
 
-!!!!!!!!!!!!!!!!CO_monoterpene
+!!!!!!!!!!!!!!!CO_monoterpene
        if (pr_surf_emiss)  &
-     &   surf_emiss_out2(:,:,2) =  &
-     &     surf_emiss_out2(:,:,2) +  &
-     &     (emass(:,:) / mcor(:,:))
-!!!!!!!!!!!!!!!!
+         surf_emiss_out2(:,:,2) =  &
+           surf_emiss_out2(:,:,2) +  &
+           (emass(:,:) / mcor(:,:))
+!!!!!!!!!!!!!!!
 
        if (pr_emiss_3d) then
           emiss_3d_out(:,:,1,ico_num) =  &
-     &      emiss_3d_out(:,:,1,ico_num) +  &
-     &       (emass(:,:) / mcor(:,:))
+            emiss_3d_out(:,:,1,ico_num) +  &
+             (emass(:,:) / mcor(:,:))
        end if
 
       end if
@@ -774,32 +770,32 @@
 !       -------------------------------------------------
 
         emass(:,:) =  &
-     &    emiss_isop(:,:) * tdt *  &
-     &    BIOSCAL *  &
-     &    ((ATOMSC_PER_MOLECISOP / ATOMSC_PER_MOLECPRPE) *  &
-     &     (mw(ipropene_num)     / mw(iisoprene_num)))
+          emiss_isop(:,:) * tdt *  &
+          BIOSCAL *  &
+          ((ATOMSC_PER_MOLECISOP / ATOMSC_PER_MOLECPRPE) *  &
+           (mw(ipropene_num)     / mw(iisoprene_num)))
 
         concentration(ipropene_num)%pArray3D(:,:,1) =  &
-     &    concentration(ipropene_num)%pArray3D(:,:,1) +  &
-     &    ((emass(:,:) / mass(:,:,1)) *  &
-     &     (MWTAIR / mw(ipropene_num)))
+          concentration(ipropene_num)%pArray3D(:,:,1) +  &
+          ((emass(:,:) / mass(:,:,1)) *  &
+           (MWTAIR / mw(ipropene_num)))
 
        if (pr_surf_emiss)  &
-     &   surf_emiss_out(:,:,ipropene_num) =  &
-     &     surf_emiss_out(:,:,ipropene_num) +  &
-     &     (emass(:,:) / mcor(:,:))
+         surf_emiss_out(:,:,ipropene_num) =  &
+           surf_emiss_out(:,:,ipropene_num) +  &
+           (emass(:,:) / mcor(:,:))
 
-!!!!!!!!!!!!!!!!Biogenic_propene
+!!!!!!!!!!!!!!!Biogenic_propene
        if (pr_surf_emiss)  &
-     &   surf_emiss_out2(:,:,3) =  &
-     &     surf_emiss_out2(:,:,3) +  &
-     &     (emass(:,:) / mcor(:,:))
-!!!!!!!!!!!!!!!!
+         surf_emiss_out2(:,:,3) =  &
+           surf_emiss_out2(:,:,3) +  &
+           (emass(:,:) / mcor(:,:))
+!!!!!!!!!!!!!!!
 
        if (pr_emiss_3d) then
           emiss_3d_out(:,:,1,ipropene_num) =  &
-     &      emiss_3d_out(:,:,1,ipropene_num) +  &
-     &       (emass(:,:) / mcor(:,:))
+            emiss_3d_out(:,:,1,ipropene_num) +  &
+             (emass(:,:) / mcor(:,:))
        end if
 !!!!!!!!!!!!!!!!!!
 
@@ -814,31 +810,31 @@
 !       -------------------
 
         emass(:,:) =  &
-     &    emiss_nox(:,:) * tdt
+          emiss_nox(:,:) * tdt
 
         concentration(ino_num)%pArray3D(:,:,1) =  &
-     &    concentration(ino_num)%pArray3D(:,:,1) +  &
-     &    ((emass(:,:) / mass(:,:,1)) *  &
-     &     (MWTAIR / mw(ino_num)))
+          concentration(ino_num)%pArray3D(:,:,1) +  &
+          ((emass(:,:) / mass(:,:,1)) *  &
+           (MWTAIR / mw(ino_num)))
 
        if (pr_surf_emiss)  &
-     &   surf_emiss_out(:,:,ino_num) =  &
-     &     surf_emiss_out(:,:,ino_num) +  &
-     &     (emass(:,:) / mcor(:,:))
+         surf_emiss_out(:,:,ino_num) =  &
+           surf_emiss_out(:,:,ino_num) +  &
+           (emass(:,:) / mcor(:,:))
 
-!!!!!!!!!!!!!!!!Soil_NOx
+!!!!!!!!!!!!!!!Soil_NOx
        if (pr_surf_emiss)  &
-     &   surf_emiss_out2(:,:,4) =  &
-     &     surf_emiss_out2(:,:,4) +  &
-     &     (emass(:,:) / mcor(:,:))
-!!!!!!!!!!!!!!!!
+         surf_emiss_out2(:,:,4) =  &
+           surf_emiss_out2(:,:,4) +  &
+           (emass(:,:) / mcor(:,:))
+!!!!!!!!!!!!!!!
        if (pr_emiss_3d) then
           emiss_3d_out(:,:,1,ino_num) =  &
-     &      emiss_3d_out(:,:,1,ino_num) +  &
-     &       (emass(:,:) / mcor(:,:))
+            emiss_3d_out(:,:,1,ino_num) +  &
+             (emass(:,:) / mcor(:,:))
 
        end if
-!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!
 
       end if
 
@@ -850,8 +846,8 @@
             ! --------------
             emass(:,:) =  emiss_hno3(:,:) * tdt
             if (pr_surf_emiss)  &
-     &         surf_emiss_out2(:,:,5) = surf_emiss_out2(:,:,5) +  &
-     &                                  (emass(:,:) / mcor(:,:))
+               surf_emiss_out2(:,:,5) = surf_emiss_out2(:,:,5) +  &
+                                        (emass(:,:) / mcor(:,:))
          end if
 
          if (io3_num > 0) then
@@ -861,8 +857,8 @@
             ! -------------
             emass(:,:) =  emiss_o3(:,:) * tdt
             if (pr_surf_emiss)  &
-     &         surf_emiss_out2(:,:,6) = surf_emiss_out2(:,:,6) +  &
-     &                                  (emass(:,:) / mcor(:,:))
+               surf_emiss_out2(:,:,6) = surf_emiss_out2(:,:,6) +  &
+                                        (emass(:,:) / mcor(:,:))
          end if
       end if
 
@@ -896,11 +892,11 @@
 !-----------------------------------------------------------------------------
 
       subroutine Add_Semiss_Harvard_Inchem  &
-     &  (iisoprene_num, ico_num, ipropene_num, ino_num, mw,  &
-     &   emiss_isop, emiss_monot, emiss_nox, &
-     &   do_ShipEmission, emiss_hno3, emiss_o3, ihno3_num, io3_num, &
-     &   conv_emiss, surf_emiss, surf_emiss2, emiss_3d, &
-     &   pr_diag, loc_proc, i1, i2, ju1, j2, k1, k2, num_species)
+        (iisoprene_num, ico_num, ipropene_num, ino_num, mw,  &
+         emiss_isop, emiss_monot, emiss_nox, &
+         do_ShipEmission, emiss_hno3, emiss_o3, ihno3_num, io3_num, &
+         conv_emiss, surf_emiss, surf_emiss2, emiss_3d, &
+         pr_diag, loc_proc, i1, i2, ju1, j2, k1, k2, num_species)
 
       implicit none
 
@@ -945,12 +941,12 @@
 !       ----------------------------
 
         surf_emiss(:,:,iisoprene_num) =  &
-     &    surf_emiss(:,:,iisoprene_num) +  &
-     &    (emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num))
+          surf_emiss(:,:,iisoprene_num) +  &
+          (emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num))
 
-              emiss_3d(:,:,1,iisoprene_num) =  &
-     &           emiss_3d(:,:,1,iisoprene_num) +  &
-     &           emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num)
+        emiss_3d(:,:,1,iisoprene_num) =  &
+          emiss_3d(:,:,1,iisoprene_num) +  &
+          emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num)
 
       end if
 
@@ -964,38 +960,38 @@
 !       ----------------------------------------------
 
         surf_emiss(:,:,ico_num) =  &
-     &    surf_emiss(:,:,ico_num) +  &
-     &    (emiss_isop(:,:) * conv_emiss(:,:) / mw(ico_num)) *  &
-     &    ICO_FAC_ISOP
+          surf_emiss(:,:,ico_num) +  &
+          (emiss_isop(:,:) * conv_emiss(:,:) / mw(ico_num)) *  &
+          ICO_FAC_ISOP
 
         surf_emiss2(:,:,1) =  &
-     &    surf_emiss2(:,:,1) +  &
-     &    (emiss_isop(:,:) * conv_emiss(:,:) / mw(ico_num)) *  &
-     &    ICO_FAC_ISOP
+          surf_emiss2(:,:,1) +  &
+          (emiss_isop(:,:) * conv_emiss(:,:) / mw(ico_num)) *  &
+          ICO_FAC_ISOP
 
               emiss_3d(:,:,1,ico_num) =  &
-     &           emiss_3d(:,:,1,ico_num) +  &
-     &           emiss_isop(:,:) * conv_emiss(:,:) / mw(ico_num) *  &
-     &           ICO_FAC_ISOP
+                 emiss_3d(:,:,1,ico_num) +  &
+                 emiss_isop(:,:) * conv_emiss(:,:) / mw(ico_num) *  &
+                 ICO_FAC_ISOP
 
 !       -------------------------------------------------
 !       Biogenic source of CO from monoterpene oxidation.
 !       -------------------------------------------------
 
         surf_emiss(:,:,ico_num) =  &
-     &    surf_emiss(:,:,ico_num) +  &
-     &    (emiss_monot(:,:) *  conv_emiss(:,:) / mw(ico_num)) *  &
-     &    ICO_FAC_MONOT
+          surf_emiss(:,:,ico_num) +  &
+          (emiss_monot(:,:) *  conv_emiss(:,:) / mw(ico_num)) *  &
+          ICO_FAC_MONOT
 
         surf_emiss2(:,:,2) =  &
-     &    surf_emiss2(:,:,2) +  &
-     &    (emiss_monot(:,:) *  conv_emiss(:,:) / mw(ico_num)) *  &
-     &    ICO_FAC_MONOT
+          surf_emiss2(:,:,2) +  &
+          (emiss_monot(:,:) *  conv_emiss(:,:) / mw(ico_num)) *  &
+          ICO_FAC_MONOT
 
               emiss_3d(:,:,1,ico_num) =  &
-     &           emiss_3d(:,:,1,ico_num) +  &
-     &           emiss_monot(:,:) * conv_emiss(:,:) / mw(ico_num) *  &
-     &           ICO_FAC_MONOT
+                 emiss_3d(:,:,1,ico_num) +  &
+                 emiss_monot(:,:) * conv_emiss(:,:) / mw(ico_num) *  &
+                 ICO_FAC_MONOT
 
       end if
 
@@ -1009,22 +1005,22 @@
 !       -------------------------------------------------
 
         surf_emiss(:,:,ipropene_num)  =  &
-     &    surf_emiss(:,:,ipropene_num)  +  &
-     &    (emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num)) *  &
-     &    BIOSCAL *  &
-     &    (ATOMSC_PER_MOLECISOP / ATOMSC_PER_MOLECPRPE)
+          surf_emiss(:,:,ipropene_num)  +  &
+          (emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num)) *  &
+          BIOSCAL *  &
+          (ATOMSC_PER_MOLECISOP / ATOMSC_PER_MOLECPRPE)
 
         surf_emiss2(:,:,3)  =  &
-     &    surf_emiss2(:,:,3)  +  &
-     &    (emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num)) *  &
-     &    BIOSCAL *  &
-     &    (ATOMSC_PER_MOLECISOP / ATOMSC_PER_MOLECPRPE)
+          surf_emiss2(:,:,3)  +  &
+          (emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num)) *  &
+          BIOSCAL *  &
+          (ATOMSC_PER_MOLECISOP / ATOMSC_PER_MOLECPRPE)
 
               emiss_3d(:,:,1,ipropene_num) =  &
-     &           emiss_3d(:,:,1,ipropene_num) +  &
-     &           emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num) *  &
-     &           BIOSCAL *  &
-     &           (ATOMSC_PER_MOLECISOP / ATOMSC_PER_MOLECPRPE)
+                 emiss_3d(:,:,1,ipropene_num) +  &
+                 emiss_isop(:,:) * conv_emiss(:,:) / mw(iisoprene_num) *  &
+                 BIOSCAL *  &
+                 (ATOMSC_PER_MOLECISOP / ATOMSC_PER_MOLECPRPE)
 
       endif
 !     ----------------
@@ -1036,16 +1032,16 @@
 !       -------------------
 
         surf_emiss(:,:,ino_num) =  &
-     &    surf_emiss(:,:,ino_num) +  &
-     &    (emiss_nox(:,:) * conv_emiss(:,:) / mw(ino_num))
+          surf_emiss(:,:,ino_num) +  &
+          (emiss_nox(:,:) * conv_emiss(:,:) / mw(ino_num))
 
         surf_emiss2(:,:,4) =  &
-     &    surf_emiss2(:,:,4) +  &
-     &    (emiss_nox(:,:) * conv_emiss(:,:) / mw(ino_num))
+          surf_emiss2(:,:,4) +  &
+          (emiss_nox(:,:) * conv_emiss(:,:) / mw(ino_num))
 
               emiss_3d(:,:,1,ino_num) =  &
-     &           emiss_3d(:,:,1,ino_num) +  &
-     &           emiss_nox(:,:) * conv_emiss(:,:) / mw(ino_num)
+                 emiss_3d(:,:,1,ino_num) +  &
+                 emiss_nox(:,:) * conv_emiss(:,:) / mw(ino_num)
 
       end if
 
@@ -1056,7 +1052,7 @@
             ! Source of HNO3
             ! --------------
             surf_emiss2(:,:,5) =  surf_emiss2(:,:,5) +  &
-     &          (emiss_hno3(:,:) * conv_emiss(:,:) / mw(ihno3_num))
+                (emiss_hno3(:,:) * conv_emiss(:,:) / mw(ihno3_num))
          end if
 
          if (io3_num > 0) then
@@ -1064,7 +1060,7 @@
             ! Source of O3
             ! ------------
             surf_emiss2(:,:,6) =  surf_emiss2(:,:,6) +  &
-     &          (emiss_o3(:,:) * conv_emiss(:,:) / mw(io3_num))
+                (emiss_o3(:,:) * conv_emiss(:,:) / mw(io3_num))
          end if
 
       end if

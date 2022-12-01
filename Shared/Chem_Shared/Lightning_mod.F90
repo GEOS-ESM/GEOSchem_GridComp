@@ -35,7 +35,7 @@ use, intrinsic :: iso_fortran_env, only: REAL64
    PUBLIC :: read_flash_source
    PUBLIC :: read_lightning_config
    PUBLIC :: update_lightning_ratio
-   PUBLIC :: HEMCO_FlashRate       ! Had been called from MOIST to provide a secondard version of LFR
+   PUBLIC :: HEMCO_FlashRate       ! Had been called from MOIST to provide a secondary version of LFR
 
    ! Enumerated values, along with matching strings
    integer, parameter, public    :: FLASH_SOURCE_MOIST      = 1   ! values also serve as indices into flashSourceNames
@@ -50,7 +50,7 @@ use, intrinsic :: iso_fortran_env, only: REAL64
 
 
    PRIVATE :: MOIST_FlashRate
-   PRIVATE ::  DALE_FlashRate ! fields passed are vertically flipped from GEOS orientation 
+   PRIVATE ::   FIT_FlashRate ! fields passed are vertically flipped from GEOS orientation 
    PRIVATE :: LOPEZ_FlashRate
    PRIVATE :: partition
    PRIVATE :: readLightRatioGlobalData
@@ -85,7 +85,7 @@ use, intrinsic :: iso_fortran_env, only: REAL64
 !  flashrate (or strokerate) and NOx from lightning in the Earth's atmosphere.
 !  The routines for calculation flashrate / stroke rate are:
 ! 
-!     DALE_FlashRate - adapted from the offline GMI-CTM model (Dale Allen)
+!      FIT_FlashRate - adapted from the offline GMI-CTM model (Dale Allen)
 !    MOIST_FlashRate - adapted from MOIST / CTM cinderalla component
 !    HEMCO_FlashRate - GEOS-Chem's flashrate calculation 
 !    LOPEZ_FlashRate (WARNING: this routine is producing invalid results!)
@@ -454,7 +454,7 @@ subroutine getLightning (GC, ggState, CLOCK, &
      ALLOCATE (flashRateDale (IM,JM), stat=STATUS)
 
 
-     call DALE_FlashRate (cldmas0, 0.0d0, ratioLocal, ratioGlobalLight, midLatAdj, &
+     call FIT_FlashRate (cldmas0, 0.0d0, ratioLocal, ratioGlobalLight, midLatAdj, &
           5.0d0, FIT_flashFactor, flashRateDale)
 
      ! flashRateDale has units  [flashes / gridbox / sec]
@@ -1180,12 +1180,12 @@ end subroutine read_lightning_config
 !-------------------------------------------------------------------------
 !BOP
 !
-! !ROUTINE: DALE_FlashRate
+! !ROUTINE: FIT_FlashRate   (previously called DALE_FlashRate)
 
 !
 ! !INTERFACE:
 !
-    subroutine DALE_FlashRate (cldmas, threshold, ratio_local, ratio_global, midlatAdj, &
+    subroutine FIT_FlashRate (cldmas, threshold, ratio_local, ratio_global, midlatAdj, &
          desired_g_N_prod_rate, FIT_flashFactor, flashrate)
 
 ! !USES
@@ -1265,7 +1265,7 @@ end subroutine read_lightning_config
       deallocate(cldmas_local)
       return
 
-    end subroutine DALE_FlashRate
+    end subroutine FIT_FlashRate
 !EOP
 
 !==========================================================================
