@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Instead of importing a set of QQK diagnostic fields for chemical loss of stOX, TR now imports a single field: stOX_loss
+- For OPS configuration: removal of links, change of QFED paths from vNRT/ to v2.5r1-nrt/ 
+- For AMIP configuration: update of QFED from v2.5r1 to v2.6r1 (most recent collection)
 
 ### Fixed
 
