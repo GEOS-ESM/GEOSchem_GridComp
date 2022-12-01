@@ -1,12 +1,12 @@
 Collections:
   aod_a.sfc.%y4%m2%d2_%h2%n2z.nc4:
-    template: aod_a.sfc.%y4%m2%d2_%h2%n2z.nc4
+    template: das.aod_a.sfc.%y4%m2%d2_%h2%n2z.nc4
     freq: PT3H
   aod_f.sfc.%y4%m2%d2_%h2%n2z.nc4:
-    template: aod_f.sfc.%y4%m2%d2_%h2%n2z.nc4
+    template: das.aod_f.sfc.%y4%m2%d2_%h2%n2z.nc4
     freq: PT3H
   aod_k.sfc.%y4%m2%d2_%h2%n2z.nc4:
-    template: aod_k.sfc.%y4%m2%d2_%h2%n2z.nc4
+    template: das.aod_k.sfc.%y4%m2%d2_%h2%n2z.nc4
     freq: PT3H
 
 Samplings:
