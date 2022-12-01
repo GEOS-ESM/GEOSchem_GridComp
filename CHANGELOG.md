@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
 ### Added
 
 - GMI now exports stOX_loss (stratospheric OX tracer loss), customized for the specific chemical mechanism being run.
@@ -15,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Instead of importing a set of QQK diagnostic fields for chemical loss of stOX, TR now imports a single field: stOX_loss
+- Moved to GitHub Actions for label enforcement
 
 ### Fixed
 
