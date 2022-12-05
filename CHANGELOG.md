@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Modified TR to only import stOX_loss if loss_species == OX; without this, a GMI _ASSERT may exit the program needlessly.
+
 ## [1.10.4] - 2022-11-08
 ### Added
 ### Removed
