@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+### Removed
+### Changed
+### Fixed
+
+- lbssad_opt allowed unsupported options, eliminated
+- h2oclim_opt had only one viable option (3), removed h2oclim_opt and various unused arrays
+
+## [?]
+### Added
 
 - GMI now exports stOX_loss (stratospheric OX tracer loss), customized for the specific chemical mechanism being run.
 

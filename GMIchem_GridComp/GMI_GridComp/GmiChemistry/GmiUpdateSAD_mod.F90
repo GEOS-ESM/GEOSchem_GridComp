@@ -46,16 +46,17 @@
 !
 ! !INTERFACE:
 !
-      subroutine updateSurfaceAreaDensities (rateintv, tropp, press3c, press3e,  &
-     &                 kel, concentration, ch4clim, h2oclim, hno3cond, hno3gas,  &
-     &                 lbssad, sadgmi, h2oback, h2ocond, reffice, reffsts, vfall,&
-     &                 dehydmin, dehyd_opt, h2oclim_opt, lbssad_opt, sad_opt,    &
-     &                 ihno3cond_num, idehyd_num, ich4_num,       &
-     &                 ihno3_num, ih2o_num, nymd, pr_diag,         &
-     &                 loc_proc, num_species, num_sad,  &
-     &                 lbssad_timpyr, h2oclim_timpyr, &
-     &                 ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1, k2,      &
-     &                 londeg, latdeg, NoPSCZone, PSCMaxP)
+      subroutine updateSurfaceAreaDensities (rateintv, tropp, press3c,  &
+                      press3e, kel, concentration,                      &
+                      hno3cond, hno3gas,                                &
+                      lbssad, sadgmi, h2oback, h2ocond,                 &
+                      reffice, reffsts, vfall, dehydmin,                &
+                      dehyd_opt, sad_opt,                               &
+                      ihno3cond_num, idehyd_num, ich4_num, ihno3_num,   &
+                      ih2o_num, nymd, pr_diag, loc_proc, num_species,   &
+                      num_sad,                                          &
+                      ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1, k2,     &
+                      londeg, latdeg, NoPSCZone, PSCMaxP)
 
       implicit none
 
@@ -63,12 +64,11 @@
       integer           , intent(in) :: ilo, ihi, julo, jhi
       integer           , intent(in) :: i1, i2, ju1, j2, k1, k2
       integer           , intent(in) :: num_species, num_sad
-      integer           , intent(in) :: lbssad_timpyr, h2oclim_timpyr
       integer           , intent(in) :: ih2o_num, ihno3_num
       integer           , intent(in) :: ihno3cond_num, nymd
       integer           , intent(in) :: idehyd_num, ich4_num
       integer           , intent(in) :: loc_proc, dehyd_opt
-      integer           , intent(in) :: sad_opt, h2oclim_opt, lbssad_opt
+      integer           , intent(in) :: sad_opt
       logical           , intent(in) :: pr_diag
       real*8            , intent(in) :: rateintv
       real*8            , intent(in) :: kel    (ilo:ihi, julo:jhi, k1:k2)
@@ -83,10 +83,8 @@
 !
 ! !OUTPUT PARAMETERS:
       real*8 , intent(out) :: dehydmin
-      real*8  :: ch4clim (i1:i2,   ju1:j2,   k1:k2, h2oclim_timpyr)
-      real*8  :: h2oclim (i1:i2,   ju1:j2,   k1:k2, h2oclim_timpyr)
       real*8  :: hno3gas (i1:i2,   ju1:j2,   k1:k2)
-      real*8  :: lbssad  (i1:i2,   ju1:j2,   k1:k2, lbssad_timpyr)
+      real*8  :: lbssad  (i1:i2,   ju1:j2,   k1:k2)
       real*8  :: h2oback (i1:i2,   ju1:j2,   k1:k2)
       real*8  :: hno3cond (i1:i2,   ju1:j2,   k1:k2)
       real*8  :: reffice (i1:i2,   ju1:j2,   k1:k2)
@@ -102,8 +100,8 @@
 ! Interface for the Surface Area Densities calculations.
 !
 ! !LOCAL VARIABLES:
-      integer :: idumday, idumyear, month, ic
-      real*8, allocatable  :: h2ocombo(:, :, :, :)
+      integer :: idumday, idumyear, ic
+!.sds      real*8, allocatable  :: h2ocombo(:, :, :)
       real*8, allocatable  :: sadcombo(:, :, :, :)
 !
 !EOP
@@ -115,43 +113,31 @@
         call Update_Sad1 (ihno3_num, concentration, hno3cond, hno3gas, sadgmi, &
      &          pr_diag, loc_proc, i1, i2, ju1, j2, k1, k2, num_sad, num_species)
       else if (sad_opt == 2) then
-        allocate(h2ocombo(i1:i2,  ju1:j2,  k1:k2,  h2oclim_timpyr))
+
         allocate(sadcombo(i1:i2,  ju1:j2,  k1:k2,  num_sad       ))
 
-        ! Note: h2ocombo is not used when dehyd_opt = 0.
-        ! ---------------------------------------------
-
-        h2ocombo(:,:,:,:) = h2oclim(:,:,:,:)
-
-        call GmiSplitDateTime (nymd, idumyear, month, idumday)
-
-        where (press3c(i1:i2,ju1:j2,:) > Spread (tropp(:,:), 3, k2))
-           h2ocombo(:,:,:,month) = concentration(ih2o_num)%pArray3D(:,:,:)
-        end where
-
         call Update_Sad2 (rateintv, tropp, press3c, press3e, kel,          &
-     &             concentration, ch4clim, h2ocombo, hno3cond, hno3gas,    &
+     &             concentration, hno3cond, hno3gas,                       &
      &             lbssad, sadgmi, h2oback, h2ocond, reffice, reffsts,     &
-     &             vfall, dehydmin, dehyd_opt, h2oclim_opt, lbssad_opt,    &
+     &             vfall, dehydmin, dehyd_opt,                             &
      &             pr_diag, loc_proc, londeg, latdeg, NoPSCZone, PSCMaxP, nymd, &
      &             ihno3_num, ihno3cond_num, idehyd_num, ich4_num,         &
      &             ih2o_num, ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1,     &
-     &             k2, lbssad_timpyr, h2oclim_timpyr, num_sad, num_species)
+     &             k2, num_sad, num_species)
 
         do ic = 1, num_sad
            sadcombo(:,:,:,ic) = sadgmi(ic)%pArray3D(:,:,:)
         end do
 
-        call Update_Sad3 (press3c, kel, concentration, lbssad, lbssad_opt, &
+        call Update_Sad3 (press3c, kel, concentration, lbssad,             &
      &             sadcombo, pr_diag, loc_proc, nymd, ih2o_num, i1, i2,    &
-     &             ju1, j2, k1, k2, ilo, ihi, julo, jhi, lbssad_timpyr,    &
+     &             ju1, j2, k1, k2, ilo, ihi, julo, jhi,                   &
      &             num_sad, num_species)
 
         where (press3c(i1:i2,ju1:j2,:) > Spread (tropp(:,:), 3, k2))
            sadgmi(ILBSSAD)%pArray3D(:,:,:) = sadcombo(:,:,:,ILBSSAD)
         end where
 
-        deallocate(h2ocombo)
         deallocate(sadcombo)
 
       else if (sad_opt == 3) then
@@ -160,9 +146,9 @@
            sadcombo(:,:,:,ic) = sadgmi(ic)%pArray3D(:,:,:)
         end do
 
-        call Update_Sad3 (press3c, kel, concentration, lbssad, lbssad_opt,     &
+        call Update_Sad3 (press3c, kel, concentration, lbssad,          &
      &             sadcombo, pr_diag, loc_proc, nymd, ih2o_num, i1, i2, &
-     &             ju1, j2, k1, k2, ilo, ihi, julo, jhi, lbssad_timpyr,        &
+     &             ju1, j2, k1, k2, ilo, ihi, julo, jhi,                &
      &             num_sad, num_species)
 
         do ic = 1, num_sad
@@ -236,13 +222,13 @@
 ! !INTERFACE:
 !
       subroutine Update_Sad2 (sadintv, tropp, pres3c, pres3e, temp3,           &
-     &                 concentration, ch4clim, h2oclim,  hno3cond, hno3gas,    &
+     &                 concentration, hno3cond, hno3gas,                       &
      &                 lbssad, sadgmi, h2oback, h2ocond, reffice, reffsts,     &
-     &                 vfall, dehydmin, dehyd_opt, h2oclim_opt, lbssad_opt,    &
+     &                 vfall, dehydmin, dehyd_opt,                             &
      &                 pr_diag, loc_proc, londeg, latdeg, NoPSCZone, PSCMaxP, nymd, &
      &                 ihno3_num, ihno3cond_num, idehyd_num, ich4_num,         &
      &                 ih2o_num, ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1,     &
-     &                 k2, lbssad_timpyr, h2oclim_timpyr, num_sad, num_species)
+     &                 k2, num_sad, num_species)
 !
       implicit none
 !
@@ -253,8 +239,7 @@
       integer, intent(in) :: i1, i2, ju1, j2, k1, k2
            ! 0=disabled (AGCM mode) WARNING: Must be disabled.
       integer, intent(in) :: dehyd_opt
-      INTEGER, INTENT(IN) :: h2oclim_opt, lbssad_opt
-      integer, intent(in) :: lbssad_timpyr, h2oclim_timpyr, num_sad, num_species
+      integer, intent(in) :: num_sad, num_species
       integer, intent(in) :: nymd
       integer, intent(in) :: ihno3_num, idehyd_num
       integer, intent(in) :: ich4_num, ih2o_num
@@ -285,12 +270,8 @@
            ! background      h2o array (mixing ratio)
       real*8 , intent(out)  :: h2oback (i1:i2,   ju1:j2,   k1:k2)
 
-           ! array of ch4 climatology
-      real*8  :: ch4clim (i1:i2,   ju1:j2,   k1:k2, h2oclim_timpyr)
-           ! array of h2o climatology
-      real*8  :: h2oclim (i1:i2,   ju1:j2,   k1:k2, h2oclim_timpyr)
            ! liquid binary sulfate background surface area density (cm^-1)
-      real*8  :: lbssad  (i1:i2,   ju1:j2,   k1:k2, lbssad_timpyr)
+      real*8  :: lbssad  (i1:i2,   ju1:j2,   k1:k2)
            ! effective radius of ICE aerosols  (cm)
       real*8  :: reffice (i1:i2,   ju1:j2,   k1:k2)
            ! effective radius of STS aerosols  (cm)
@@ -322,7 +303,6 @@
       integer :: idumday
       integer :: idumyear
       integer :: ik
-      integer :: month
       real*8  :: fac
       real*8  :: dehyd   (i1:i2, ju1:j2, k1:k2)
       real*8  :: denssts (i1:i2, ju1:j2, k1:k2)
@@ -351,16 +331,13 @@
       h2so4gas(:,:,:) = 0.0d0
       reffnat(:,:,:) = 0.0d0
 
-      call GmiSplitDateTime (nymd, idumyear, month, idumday)
-
       fac = ((GAS_CONST_J * GPKG) / (GMI_G * MWTAIR)) * CMPM
 
       hno3cond(:,:,:) = 0.0d0
 
       hno3gas(:,:,:) = concentration(ihno3_num)%pArray3D(:,:,:)
-      IF(h2oclim_opt == 3) THEN
-       hno3gas(:,:,:) = hno3gas(:,:,:)+concentration(ihno3cond_num)%pArray3D(:,:,:)
-      END IF
+      hno3gas(:,:,:) = hno3gas(:,:,:)+concentration(ihno3cond_num)%pArray3D(:,:,:)
+      h2oback(:,:,:) = concentration(ih2o_num)%pArray3D(:,:,:) + h2ocond(:,:,:)
       
       IF(dehyd_opt == 0) THEN
         dehyd(:,:,:) = 0.0d0
@@ -369,19 +346,7 @@
 	STOP 
       END IF
 
-      IF(h2oclim_opt == 3) THEN
-       h2oback(:,:,:) =  concentration(ih2o_num)%pArray3D(:,:,:) +  &
-     &                   h2ocond(:,:,:)
-      ELSE
-       h2oback(:,:,:) = h2oclim(:,:,:,month) + 2.0d0 *  &
-     &  (concentration(ich4_num)%pArray3D(:,:,:) - ch4clim(:,:,:,month))
-      END IF
-
-      IF(lbssad_opt == 4) THEN
-        sadgmi(ILBSSAD)%pArray3D(:,:,:) = lbssad(:,:,:,1)
-      ELSE
-        sadgmi(ILBSSAD)%pArray3D(:,:,:) = lbssad(:,:,:,month)
-      END IF
+      sadgmi(ILBSSAD)%pArray3D(:,:,:) = lbssad(:,:,:)
 
       do ik = k1, k2
 
@@ -411,8 +376,6 @@
       sadgmi(INATSAD)%pArray3D(:,:,:) = sadgmi_inat(:,:,:)
       sadgmi(ISTSSAD)%pArray3D(:,:,:) = sadgmi_ists(:,:,:)
 
-      call GmiSplitDateTime (nymd, idumyear, month, idumday)
-
 !     For now, just zero out sootsad.
       sadgmi(ISOOTSAD)%pArray3D(:,:,:) = 0.0d0
 
@@ -422,9 +385,7 @@
       END IF
 
       concentration(ihno3_num)%pArray3D(:,:,:)  = hno3gas(:,:,:)
-      IF(h2oclim_opt == 3) THEN
-        concentration(ihno3cond_num)%pArray3D(:,:,:)  = hno3cond(:,:,:)
-      END IF
+      concentration(ihno3cond_num)%pArray3D(:,:,:)  = hno3cond(:,:,:)
 
 ! In GEOS-5 apply only this bounds check on water
 ! -----------------------------------------------
@@ -443,9 +404,9 @@
 !
 ! !INTERFACE:
 !
-      subroutine Update_Sad3 (pres3c, temp3, concentration, lbssad, lbssad_opt,&
+      subroutine Update_Sad3 (pres3c, temp3, concentration, lbssad,                &
      &                 loc_sadgmi, pr_diag, loc_proc, nymd, ih2o_num, i1, i2, ju1, &
-     &                 j2, k1, k2, ilo, ihi, julo, jhi, lbssad_timpyr, num_sad,&
+     &                 j2, k1, k2, ilo, ihi, julo, jhi, num_sad,                   &
      &                 num_species)
 !
       implicit none
@@ -456,10 +417,10 @@
       integer, intent(in) :: nymd
       integer, intent(in) :: ih2o_num
       integer, intent(in) :: i1, i2, ju1, j2, k1, k2, ilo, ihi, julo, jhi
-      integer, intent(in) :: lbssad_timpyr, lbssad_opt, num_sad, num_species
+      integer, intent(in) :: num_sad, num_species
       real*8 , intent(in) :: pres3c(ilo:ihi, julo:jhi, k1:k2)
       real*8 , intent(in) :: temp3 (ilo:ihi, julo:jhi, k1:k2)
-      real*8 , intent(in) :: lbssad(i1:i2, ju1:j2, k1:k2, lbssad_timpyr)
+      real*8 , intent(in) :: lbssad(i1:i2, ju1:j2, k1:k2)
            ! species concentration, known at zone centers (mixing ratio)
       type (t_GmiArrayBundle), intent(in) :: concentration(num_species)
 !
@@ -471,8 +432,6 @@
 !  Sets the tropospheric sulfuric aerosol surface area densities.
 !
 ! !LOCAL VARIABLES:
-      integer :: idumday, idumyear
-      integer :: month
       real*8  :: rh(i1:i2, ju1:j2, k1:k2)
 !EOP
 !------------------------------------------------------------------------------
@@ -504,22 +463,12 @@
       rh(:,:,:) = Max (Min (rh(:,:,:), 1.0d0), 0.0d0)
 
 !     -----------------------------------------------------------------
-!     Choose month only when all 12 months of lbssad are available.
-!     -----------------------------------------------------------------
-
-      IF(lbssad_opt == 4) THEN
-       month = 1
-      ELSE
-       CALL GmiSplitDateTime (nymd, idumyear, month, idumday)
-      END IF
-
-!     -----------------------------------------------------------------
 !     Now calculate the change in surface area density due to humidity.
 !     This is a fit to data from Chuang in the form suggested by Grant.
 !     -----------------------------------------------------------------
 
       loc_sadgmi(:,:,:, 1) =  &
-     &  lbssad(:,:,:,month) *  &
+     &  lbssad(:,:,:) *  &
      &  (1.0d0 +  &
      &   1.25824d0 * (Exp (2.71811d0 * rh(:,:,:)**11.3214) - 1.0d0) +  &
      &   24.94300d0 * (1.0d0 - Exp (-0.0329662 * rh(:,:,:))))**2
