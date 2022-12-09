@@ -354,12 +354,14 @@ CONTAINS
     character(len=ESMF_MAXSTR)     :: rcfilen
     character(len=ESMF_MAXSTR)     :: src_mode
     character(len=ESMF_MAXSTR)     :: snk_mode
+    character(len=ESMF_MAXSTR)     :: loss_species
     character(len=ESMF_MAXSTR)     :: regions_ExtData_entry
     character(len=ESMF_MAXSTR)     :: friend_list
     logical                        :: dry_dep
     logical                        :: wet_removal
     logical                        :: gocart_conv
     logical                        :: lai_needed
+    logical                        :: stOX_loss_needed
 
     character(len=ESMF_MAXSTR), allocatable   :: str_array(:)  ! to hold unique ExtData entries
     integer                        :: s_count                  ! number of entries in str_array
@@ -832,14 +834,17 @@ CONTAINS
         RESTART            = MAPL_RestartSkip,                             &
                                                        __RC__  )
 
-    call MAPL_AddImportSpec(GC,                                            &
-        SHORT_NAME         = 'stOX_loss',                                  &
-        LONG_NAME          = 'loss to apply to strat OX tracer',           &
-        UNITS              = 'mole m-3 s-1',                               &
-        DIMS               = MAPL_DimsHorzVert,                            &
-        VLOCATION          = MAPL_VLocationCenter,                         &
-        RESTART            = MAPL_RestartSkip,                             &
-                                                       __RC__  )
+! Only do this conditionally, because GMI needs to run all the QQJ & QQK
+! in order to provide it:
+!
+!   call MAPL_AddImportSpec(GC,                                            &
+!       SHORT_NAME         = 'stOX_loss',                                  &
+!       LONG_NAME          = 'loss to apply to strat OX tracer',           &
+!       UNITS              = 'mole m-3 s-1',                               &
+!       DIMS               = MAPL_DimsHorzVert,                            &
+!       VLOCATION          = MAPL_VLocationCenter,                         &
+!       RESTART            = MAPL_RestartSkip,                             &
+!                                                      __RC__  )
 
      call MAPL_AddImportSpec(GC,                                           &
         SHORT_NAME         = 'DD_OX',                                      &
@@ -868,6 +873,7 @@ CONTAINS
 !!  Add EXPORT (WR,WRvsum) specs for tracers subject to Wet Removal
 !!
     lai_needed = .FALSE.
+    stOX_loss_needed = .FALSE.
 
     allocate ( str_array( r%nq ), __STAT__ )
     s_count = 0
@@ -1029,6 +1035,13 @@ CONTAINS
 
 !    END IF
 
+     IF ( TRIM(snk_mode) == "chemical_loss" ) THEN
+       call ESMF_ConfigGetAttribute ( myState%CF, label='loss_species:', value=loss_species, default='NO_SPECIES',  __RC__ )
+       IF( TRIM(loss_species) == "OX") THEN
+         stOX_loss_needed = .TRUE.
+       END IF
+     END IF
+
      call ESMF_ConfigGetAttribute ( myState%CF, label='GOCART_convection:',  value=gocart_conv, default=.FALSE., __RC__ )
 
 !MEM
@@ -1080,6 +1093,19 @@ CONTAINS
            RESTART    = MAPL_RestartSkip,                            &
                                                          __RC__ )
 
+    END IF
+
+! Only import if it's going to be used (expensive!):
+    IF ( stOX_loss_needed ) THEN
+
+      call MAPL_AddImportSpec(GC,                                    &
+          SHORT_NAME         = 'stOX_loss',                          &
+          LONG_NAME          = 'loss to apply to strat OX tracer',   &
+          UNITS              = 'mole m-3 s-1',                       &
+          DIMS               = MAPL_DimsHorzVert,                    &
+          VLOCATION          = MAPL_VLocationCenter,                 &
+          RESTART            = MAPL_RestartSkip,                     &
+                                                         __RC__  )
     END IF
 
 !   Import the Region Masks
@@ -2769,7 +2795,7 @@ CONTAINS
 
      call ESMF_ConfigGetAttribute ( CF, label='loss_species:', value=spec%loss_species, __RC__ )
 
-     IF(     TRIM(spec%loss_species) ==   "O3") THEN
+     IF(     TRIM(spec%loss_species) ==   "OX") THEN
 !                                                       OK
      ELSE
       IF(MAPL_AM_I_ROOT()) PRINT *,myname,": Invalid loss_species specified for TRACER snk."
@@ -4174,7 +4200,7 @@ CONTAINS
 
 !CL        CALL MAPL_GetPointer( expChem, cl_export_3d, 'CL_'//TRIM(spec%name), __RC__ )
 
-           IF ( TRIM(spec%loss_species) == 'O3' ) THEN
+           IF ( TRIM(spec%loss_species) == 'OX' ) THEN
 
 !            Use volume mixing ratio
              data_double = DBLE(DATA3d)

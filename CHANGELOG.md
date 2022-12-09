@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
 ### Added
 ### Removed
 ### Changed
@@ -24,8 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Instead of importing a set of QQK diagnostic fields for chemical loss of stOX, TR now imports a single field: stOX_loss
+- Moved to GitHub Actions for label enforcement
+- Update CircleCI to use Baselibs 7.7.0
 
 ### Fixed
+
+- Modified TR to only import stOX_loss if loss_species == OX; without this, a GMI _ASSERT may exit the program needlessly.
 
 ## [1.10.4] - 2022-11-08
 ### Added
