@@ -431,7 +431,7 @@
 !
 ! !LOCAL VARIABLES:
   integer :: i1, i2, ju1, j2, k1, k2, nymd
-  integer :: ic, im, icx, idumday, idumyear
+  integer :: ic, im, icx
 !
 ! !AUTHOR:
 ! !HISTORY:

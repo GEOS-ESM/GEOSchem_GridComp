@@ -2113,6 +2113,7 @@ end subroutine JP_ATM
       read(NJ1,'(A)') TITLE0
 
       read(NJ1,'(10X,14I5)') NJVAL,NWWW,NW1,NW2
+!.sds.. X_ must be 2 greater than the number of cross-sections in the input file
       if (NJVAL.gt.X_-2) then
         write(6,300) NJVAL,X_
         STOP "Fast_JX 6.5 read x-sect ERROR"

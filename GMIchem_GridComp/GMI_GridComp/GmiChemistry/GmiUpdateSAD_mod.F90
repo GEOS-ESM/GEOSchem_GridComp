@@ -100,7 +100,7 @@
 ! Interface for the Surface Area Densities calculations.
 !
 ! !LOCAL VARIABLES:
-      integer :: idumday, idumyear, ic
+      integer :: ic
 !.sds      real*8, allocatable  :: h2ocombo(:, :, :)
       real*8, allocatable  :: sadcombo(:, :, :, :)
 !
@@ -300,8 +300,6 @@
 !
 ! !LOCAL VARIABLES:
       logical :: is_before
-      integer :: idumday
-      integer :: idumyear
       integer :: ik
       real*8  :: fac
       real*8  :: dehyd   (i1:i2, ju1:j2, k1:k2)

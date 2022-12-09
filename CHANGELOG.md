@@ -12,8 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Fixed
 
-- lbssad_opt allowed unsupported options, eliminated
-- h2oclim_opt had only one viable option (3), removed h2oclim_opt and various unused arrays
+- GMI lbssad_opt allowed unsupported options, eliminated
+- GMI h2oclim_opt had only one viable option (3), removed h2oclim_opt and various unused arrays
 
 ## [?]
 ### Added
