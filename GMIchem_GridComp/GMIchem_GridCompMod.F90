@@ -81,6 +81,13 @@
      TYPE(Chem_Bundle),      POINTER :: w_c      => null()
      TYPE(Species_Bundle),   POINTER :: bgg      => null()    ! Bundle of GMI Species - transported
      TYPE(Species_Bundle),   POINTER :: bxx      => null()    ! Bundle of GMI Species - not transported
+     LOGICAL :: flag_emiss
+     LOGICAL :: flag_bc
+     LOGICAL :: flag_depos
+     LOGICAL :: flag_sad
+     LOGICAL :: flag_phot
+     LOGICAL :: flag_therm
+     LOGICAL :: flag_chem
   END TYPE GMIchem_State
 
   TYPE GMIchem_WRAP
@@ -338,6 +345,26 @@ CONTAINS
           DIMS       = MAPL_DimsHorzOnly,                  &
           VLOCATION  = MAPL_VLocationNone,   __RC__) 
     END IF
+
+    CALL ESMF_ConfigGetAttribute(gmiConfig, value=state%flag_emiss,   Default=.TRUE., Label="flag_emiss:", __RC__)
+    CALL ESMF_ConfigGetAttribute(gmiConfig, value=state%flag_bc,      Default=.TRUE., Label="flag_bc:", __RC__)
+    CALL ESMF_ConfigGetAttribute(gmiConfig, value=state%flag_depos,   Default=.TRUE., Label="flag_depos:", __RC__)
+    CALL ESMF_ConfigGetAttribute(gmiConfig, value=state%flag_sad,     Default=.TRUE., Label="flag_sad:", __RC__)
+    CALL ESMF_ConfigGetAttribute(gmiConfig, value=state%flag_phot,    Default=.TRUE., Label="flag_phot:", __RC__)
+    CALL ESMF_ConfigGetAttribute(gmiConfig, value=state%flag_therm,   Default=.TRUE., Label="flag_therm:", __RC__)
+    CALL ESMF_ConfigGetAttribute(gmiConfig, value=state%flag_chem,    Default=.TRUE., Label="flag_chem:", __RC__)
+
+    IF(MAPL_AM_I_ROOT()) THEN
+     PRINT *," "
+     PRINT *, TRIM(Iam)//": flag_emiss=",state%flag_emiss
+     PRINT *, TRIM(Iam)//": flag_bc=",state%flag_bc
+     PRINT *, TRIM(Iam)//": flag_depos=",state%flag_depos
+     PRINT *, TRIM(Iam)//": flag_sad=",state%flag_sad
+     PRINT *, TRIM(Iam)//": flag_phot=",state%flag_phot
+     PRINT *, TRIM(Iam)//": flag_therm=",state%flag_therm
+     PRINT *, TRIM(Iam)//": flag_chem=",state%flag_chem
+    END IF
+
 
     CALL ESMF_ConfigGetAttribute(gmiConfig, value= fastj_opt, Default=4, &
                                             Label="fastj_opt:", __RC__)
@@ -1074,6 +1101,7 @@ CONTAINS
    type(Chem_Bundle), pointer      :: w_c         ! Chemical tracer fields
    type(Species_Bundle), pointer   :: bgg         ! GMI Species - transported
    type(Species_Bundle), pointer   :: bxx         ! GMI Species - not transported
+
    integer                         :: nymd, nhms  ! time of day
    real                            :: gmiDt       ! chemistry timestep (secs)
    real                            :: runDt       ! heartbeat (secs)
@@ -1130,7 +1158,7 @@ CONTAINS
 
 !  Get parameters from gc and clock
 !  --------------------------------
-   call extract_ ( gc, clock, chemReg, ggReg, xxReg, gcGMI, w_c, bgg, bxx, nymd, nhms, gmiDt, runDt, STATUS )
+   call extract_ ( gc, clock, chemReg, ggReg, xxReg, gcGMI, w_c, bgg, bxx, nymd, nhms, gmiDt, runDt, STATUS)
    VERIFY_(STATUS)
    IF(MAPL_AM_I_ROOT()) THEN
     PRINT *," "
@@ -1748,6 +1776,14 @@ CONTAINS
    REAL, ALLOCATABLE               :: wrk(:,:)
    REAL, ALLOCATABLE               :: wgt(:,:)
 
+     LOGICAL :: flag_emiss
+     LOGICAL :: flag_bc
+     LOGICAL :: flag_depos
+     LOGICAL :: flag_sad
+     LOGICAL :: flag_phot
+     LOGICAL :: flag_therm
+     LOGICAL :: flag_chem
+
 ! Overpass Bundle
 ! ---------------
    REAL, POINTER, DIMENSION(:,:,:) :: DATA_FOR_OVP_3D => NULL()
@@ -1795,7 +1831,9 @@ CONTAINS
 
 !  Get ESMF parameters from gc and clock
 !  -------------------------------------
-   CALL extract_(GC, clock, chemReg, ggReg, xxReg, gcGMI, w_c, bgg, bxx, nymd, nhms, gmiDt, runDt, STATUS)
+   CALL extract_(GC, clock, chemReg, ggReg, xxReg, gcGMI, w_c, bgg, bxx, nymd, nhms, gmiDt, runDt, STATUS, &
+                flag_emiss=flag_emiss, flag_bc=flag_bc, flag_depos=flag_depos, flag_sad=flag_sad, flag_phot=flag_phot, flag_therm=flag_therm, flag_chem=flag_chem)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    VERIFY_(STATUS)
 
    dtInverse = 1.00/runDt
@@ -2001,7 +2039,6 @@ CONTAINS
    gcGMI%gcEmiss%doingPredictorNow = doingPredictorNow
 
 
-
 ! At the Heartbeat do Run 1
 ! -------------------------
    Phase1: IF ( phase == 1 ) THEN
@@ -2013,7 +2050,7 @@ CONTAINS
 
     CALL MAPL_TimerOn( MAPLobj, "RUN")
 
-    CALL GMI_GridCompRun1(gc, gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, runDt, clock, STATUS)
+    CALL GMI_GridCompRun1(gc, gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, runDt, clock, flag_emiss, flag_bc, STATUS)
     VERIFY_(STATUS)
 
     CALL MAPL_TimerOff(MAPLobj, "RUN")
@@ -2039,7 +2076,7 @@ CONTAINS
 
      CALL MAPL_TimerOn(MAPLobj, "RUN")
 
-     CALL GMI_GridCompRun2(gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, runDt, gmiDt, RunGMINow, STATUS)
+     CALL GMI_GridCompRun2(gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, runDt, gmiDt, RunGMINow, flag_depos, flag_sad, flag_phot, flag_therm, flag_chem, STATUS)
      VERIFY_(STATUS)
 
      CALL MAPL_TimerOff(MAPLobj, "RUN")
@@ -2624,7 +2661,8 @@ CONTAINS
 !-------------------------------------------------------------------------
 !     NASA/GSFC, Global Modeling and Assimilation Office, Code 610.1     !
 !-------------------------------------------------------------------------
-    SUBROUTINE extract_(gc, clock, chemReg, ggReg, xxReg, gcGMI, w_c, bgg, bxx, nymd, nhms, gmiDt, runDt, rc, state)
+    SUBROUTINE extract_(gc, clock, chemReg, ggReg, xxReg, gcGMI, w_c, bgg, bxx, nymd, nhms, gmiDt, runDt, rc, state, &
+                flag_emiss, flag_bc, flag_depos, flag_sad, flag_phot, flag_therm, flag_chem )
 
     type(ESMF_GridComp), intent(inout) :: gc
     type(ESMF_Clock), intent(in)       :: clock
@@ -2640,6 +2678,7 @@ CONTAINS
     real, intent(out)                  :: runDt
     integer, intent(out)               :: rc
     type(GMIchem_state), pointer, optional   :: state
+    LOGICAL, optional :: flag_emiss, flag_bc, flag_depos, flag_sad, flag_phot, flag_therm, flag_chem
 
 
     type(GMIchem_state), pointer    :: myState
@@ -2672,6 +2711,21 @@ CONTAINS
     if ( present(state) ) then
          state => wrap%ptr
     end if
+
+    IF ( PRESENT(flag_emiss )) flag_emiss = myState%flag_emiss
+    IF ( MAPL_AM_I_ROOT() .AND. PRESENT(flag_emiss )) PRINT*,'EXTRACT flag_emiss = ', myState%flag_emiss
+    IF ( PRESENT(flag_bc )) flag_bc = myState%flag_bc
+    IF ( MAPL_AM_I_ROOT() .AND. PRESENT(flag_bc )) PRINT*,'EXTRACT flag_bc = ', myState%flag_bc
+    IF ( PRESENT(flag_depos )) flag_depos = myState%flag_depos
+    IF ( MAPL_AM_I_ROOT() .AND. PRESENT(flag_depos )) PRINT*,'EXTRACT flag_depos = ', myState%flag_depos
+    IF ( PRESENT(flag_sad )) flag_sad = myState%flag_sad
+    IF ( MAPL_AM_I_ROOT() .AND. PRESENT(flag_sad )) PRINT*,'EXTRACT flag_sad = ', myState%flag_sad
+    IF ( PRESENT(flag_phot )) flag_phot = myState%flag_phot
+    IF ( MAPL_AM_I_ROOT() .AND. PRESENT(flag_phot )) PRINT*,'EXTRACT flag_phot = ', myState%flag_phot
+    IF ( PRESENT(flag_therm )) flag_therm = myState%flag_therm
+    IF ( MAPL_AM_I_ROOT() .AND. PRESENT(flag_therm )) PRINT*,'EXTRACT flag_therm = ', myState%flag_therm
+    IF ( PRESENT(flag_chem )) flag_chem = myState%flag_chem
+    IF ( MAPL_AM_I_ROOT() .AND. PRESENT(flag_chem )) PRINT*,'EXTRACT flag_chem = ', myState%flag_chem
 
 !   This is likely to be allocated during initialize only
 !   -----------------------------------------------------

@@ -169,7 +169,7 @@
 !
 ! !INTERFACE:
 !
-   SUBROUTINE GMI_GridCompRun1(gc, gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, tdt, clock, rc)
+   SUBROUTINE GMI_GridCompRun1(gc, gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, tdt, clock, flag_emiss, flag_bc, rc)
 
 ! !USES:
 
@@ -189,6 +189,7 @@
 
    INTEGER, INTENT(in) :: nymd, nhms	      ! time
    REAL,    INTENT(in) :: tdt		      ! timestep (secs)
+   LOGICAL, INTENT(in) :: flag_emiss, flag_bc
 
 ! !OUTPUT PARAMETERS:
    INTEGER, INTENT(out) ::  rc                ! Error return code:
@@ -224,9 +225,13 @@
 
       mixPBL = .FALSE.
 
-      CALL GmiEmiss_GridCompRun     (gcGMI%gcEmiss, bgg, bxx, impChem, expChem, nymd, nhms, tdt, gc, clock, mixPBL, __RC__)
+      IF ( flag_emiss ) THEN
+        CALL GmiEmiss_GridCompRun     (gcGMI%gcEmiss, bgg, bxx, impChem, expChem, nymd, nhms, tdt, gc, clock, mixPBL, __RC__)
+      ENDIF
 
-      CALL GmiForcingBC_GridCompRun (gcGMI%gcFBC,   bgg, bxx, impChem, expChem, nymd, nhms, tdt,                    __RC__)
+      IF ( flag_bc ) THEN
+        CALL GmiForcingBC_GridCompRun (gcGMI%gcFBC,   bgg, bxx, impChem, expChem, nymd, nhms, tdt,                    __RC__)
+      ENDIF
 
       RETURN
 
@@ -242,7 +247,7 @@
 !
 ! !INTERFACE:
 !
-   SUBROUTINE GMI_GridCompRun2(gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, tdt, cdt, doChem, rc)
+   SUBROUTINE GMI_GridCompRun2(gcGMI, bgg, bxx, impChem, expChem, nymd, nhms, tdt, cdt, doChem, flag_depos, flag_sad, flag_phot, flag_therm, flag_chem, rc)
 ! !USES:
 
    IMPLICIT none
@@ -261,6 +266,7 @@
    REAL,    INTENT(in) :: tdt                 ! heartbeat (secs)
    REAL,    INTENT(in) :: cdt                 ! chemical timestep (secs)
    LOGICAL, INTENT(in) :: doChem              ! whether the alarm is ringing
+   LOGICAL, INTENT(in) :: flag_depos, flag_sad, flag_phot, flag_therm, flag_chem
 
 ! !OUTPUT PARAMETERS:
    INTEGER, INTENT(out) ::  rc                ! Error return code:
@@ -293,17 +299,27 @@
 !BOC
       rc = 0
 
-      CALL GmiDepos_GridCompRun       (gcGMI%gcDepos,     bgg, bxx, impChem, expChem, nymd, nhms, tdt, __RC__)  ! tdt
+      if ( flag_depos ) THEN
+        CALL GmiDepos_GridCompRun       (gcGMI%gcDepos,     bgg, bxx, impChem, expChem, nymd, nhms, tdt, __RC__)  ! tdt
+      ENDIF
 
       IF ( doChem ) THEN
 
-        CALL GmiSAD_GridCompRun       (gcGMI%gcSAD,       bgg, bxx, impChem, expChem, nymd, nhms, cdt, __RC__)
+        if ( flag_sad ) THEN
+          CALL GmiSAD_GridCompRun       (gcGMI%gcSAD,       bgg, bxx, impChem, expChem, nymd, nhms, cdt, __RC__)
+        ENDIF
 
-        CALL GmiPhotolysis_GridCompRun(gcGMI%gcPhot,      bgg, bxx, impChem, expChem, nymd, nhms, cdt, __RC__)
+        if ( flag_phot ) THEN
+          CALL GmiPhotolysis_GridCompRun(gcGMI%gcPhot,      bgg, bxx, impChem, expChem, nymd, nhms, cdt, __RC__)
+        ENDIF
 
-        CALL GmiThermalRC_GridCompRun (gcGMI%gcThermalRC, bgg, bxx, impChem, expChem, nymd, nhms, cdt, __RC__)
+        if ( flag_therm ) THEN
+          CALL GmiThermalRC_GridCompRun (gcGMI%gcThermalRC, bgg, bxx, impChem, expChem, nymd, nhms, cdt, __RC__)
+        ENDIF
 
-        CALL GmiChemistry_GridCompRun (gcGMI%gcChem,      bgg, bxx, impChem, expChem, nymd, nhms, cdt, __RC__)
+        if ( flag_chem ) THEN
+          CALL GmiChemistry_GridCompRun (gcGMI%gcChem,      bgg, bxx, impChem, expChem, nymd, nhms, cdt, __RC__)
+        ENDIF
 
       ENDIF
 
