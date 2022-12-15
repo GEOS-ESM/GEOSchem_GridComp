@@ -171,14 +171,6 @@
      &             pr_diag, loc_proc, ilong, i1, i2, ju1, j2, k1, k2)
       end if
 
-      !-----------------------------------------
-      ! Add hno3cond to hno3gas for transporting 
-      ! when not using predicted H2O and CH4.
-      !-----------------------------------------
-
-      concentration(ihno3_num)%pArray3D(:,:,:) =  &
-               concentration(ihno3_num)%pArray3D(:,:,:) + hno3cond(:,:,:)
-
       return
 
       end subroutine updateChemistry
