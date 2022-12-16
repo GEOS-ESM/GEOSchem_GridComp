@@ -95,7 +95,6 @@
 !
 !
     integer             :: sad_opt
-    integer             :: h2oclim_opt
 !
     character (len=MAX_LENGTH_VAR_NAME)  :: qj_var_name
     integer             :: phot_opt
@@ -291,20 +290,6 @@
      &                default = 0, rc=STATUS )
       VERIFY_(STATUS)
 
-!     ------------------------------------------------
-!     h2oclim_opt
-!       1:  set all h2oclim values to h2oclim_init_val
-!       2:  read in h2oclim
-!       3:  h2oclim, ch4clim not used.  Instead, transported
-!           H2O and CH4 are provided by the host AGCM.
-!     ------------------------------------------------
-
-      call ESMF_ConfigGetAttribute(config, self%h2oclim_opt, &
-     &                label   = "h2oclim_opt:", &
-     &                default = 2, rc=STATUS )
-      VERIFY_(STATUS)
-
-
 !     =========       
 !     nlGmiPhotolysis 
 !     =========
@@ -347,7 +332,6 @@
     ! ---------------------------------------------------------------
       
       call CheckNamelistOptionRange ('chem_opt', self%chem_opt, 0, 8)
-      call CheckNamelistOptionRange ('h2oclim_opt', self%h2oclim_opt, 1, 3)
       call CheckNamelistOptionRange ('phot_opt', self%phot_opt, 0, 3)
       call CheckNamelistOptionRange ('sad_opt', self%sad_opt, 0, 3)
       call CheckNamelistOptionRange ('oz_eq_synoz_opt', self%oz_eq_synoz_opt, 0, 1)
@@ -735,7 +719,7 @@
      &           press3c, press3e, pr_smv2, pr_nc_period, mass, concentration, &
      &           gmiQJ, gmiQK, kel, humidity, pctm2, gmiQQJ, gmiQQK,           &
      &           self%yda, self%qqkda, self%qqjda,                             &
-     &           HNO3GASsad, HNO3CONDsad, self%h2oclim_opt, self%chem_opt,     &
+     &           HNO3GASsad, HNO3CONDsad, self%chem_opt,                       &
      &           self%sad_opt, self%phot_opt, self%do_smv_reord, self%do_synoz,&
      &           do_semiss_inchem, self%do_wetchem, nymd, nhms,                &
      &           gmi_sec, tdt8, pr_diag, loc_proc, self%synoz_threshold,       &

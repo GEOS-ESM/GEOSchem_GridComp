@@ -270,17 +270,6 @@ CH4
 N2O
 ::
 
-#     ------------------------------------------------
-#     h2oclim_opt
-#       1:  set all h2oclim values to h2oclim_init_val
-#       2:  read in h2oclim
-#       3:  h2oclim, ch4clim not used.  Instead, transported
-#           H2O and CH4 are provided by the host AGCM.
-#     ------------------------------------------------
-#     (as listed in GmiChemistryMethod_mod.F90)
-
-h2oclim_opt: 3
-
 #     ----------------------------------------------------
 #     sad_opt
 #       0:  do not allocate or process SAD array
@@ -295,8 +284,8 @@ sad_opt: 2
 #     ----------------------------------------------
 #     lbssad_opt
 #       1:  set all lbssad values to lbssad_init_val
-#       2:  read in lbssad 3d fields
-#       3:  read in lbssad zonal average fields
+#       2:  OBSOLETE - read in lbssad 3d fields
+#       3:  OBSOLETE - read in lbssad zonal average fields
 #       4:  lbssad provided by AGCM, current month only.
 #     ----------------------------------------------
 #     (as listed in GmiSAD_GridCompClassMod.F90)

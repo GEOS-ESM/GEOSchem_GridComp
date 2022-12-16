@@ -44,7 +44,7 @@
      &                 do_qqjk_reset, pr_qqjk, surfEmissForChem, press3c,      &
      &                 press3e, pr_smv2, pr_nc_period, mass, concentration,    &
      &                 qjgmi, qkgmi, kel, humidity, pctm2, qqjgmi, qqkgmi, yda,&
-     &                 qqkda, qqjda, hno3gas, hno3cond, h2oclim_opt, chem_opt, &
+     &                 qqkda, qqjda, hno3gas, hno3cond, chem_opt,              &
      &                 sad_opt, phot_opt, do_smv_reord, do_synoz,              &
      &                 do_semiss_inchem, do_wetchem, nymd, nhms, gmi_sec, tdt, &
      &                 pr_diag, loc_proc, synoz_threshold, chem_cycle,         &
@@ -102,7 +102,6 @@
       real*8 , intent(in) :: press3e(ilo:ihi, julo:jhi, k1-1:k2)
       real*8  :: hno3cond(i1:i2,   ju1:j2,   k1:k2)
       real*8  :: hno3gas (i1:i2,   ju1:j2,   k1:k2)
-      INTEGER, INTENT(IN) :: h2oclim_opt
       real*8,  intent(in)  :: surfEmissForChem(i1:i2, ju1:j2, num_species)
 !
 ! !OUTPUT PARAMETERS:
@@ -171,16 +170,6 @@
      &             num_species, num_qks, num_qjs, num_qjo, &
      &             pr_diag, loc_proc, ilong, i1, i2, ju1, j2, k1, k2)
       end if
-
-      !-----------------------------------------
-      ! Add hno3cond to hno3gas for transporting 
-      ! when not using predicted H2O and CH4.
-      !-----------------------------------------
-
-      IF ((sad_opt == 1 .OR. sad_opt == 2) .AND. h2oclim_opt /= 3) THEN
-         concentration(ihno3_num)%pArray3D(:,:,:) =  &
-     &          concentration(ihno3_num)%pArray3D(:,:,:) + hno3cond(:,:,:)
-      END IF
 
       return
 

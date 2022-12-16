@@ -139,9 +139,7 @@
     integer                 :: num_sad
 
     type (t_GmiArrayBundle), pointer :: sadgmi(:) => null()
-    real(KIND=DBL), pointer :: lbssad   (:,:,:,:) => null()
-    real(KIND=DBL), pointer :: h2oclim  (:,:,:,:) => null()
-    real(KIND=DBL), pointer :: ch4clim  (:,:,:,:) => null()
+    real(KIND=DBL), pointer :: lbssad   (:,:,:)   => null()
     real(KIND=DBL), pointer :: loss_freq(:,:,:,:) => null()
     real(KIND=DBL), pointer :: hno3cond (:,:,:)   => null()
     real(KIND=DBL), pointer :: hno3gas  (:,:,:)   => null()
@@ -153,12 +151,7 @@
 
     integer             :: dehyd_opt
     integer             :: sad_opt, chem_opt
-    integer             :: h2oclim_opt
-    integer             :: h2oclim_timpyr
-    real*8              :: ch4clim_init_val
-    real*8              :: h2oclim_init_val
     integer             :: lbssad_opt
-    integer             :: lbssad_timpyr
     real*8              :: lbssad_init_val
 
     ! This is to store a generic name for each SAD entry
@@ -371,34 +364,7 @@ CONTAINS
      &                default = 0, rc=STATUS )
       VERIFY_(STATUS)
 
-!     ------------------------------------------------
-!     h2oclim_opt
-!       1:  set all h2oclim values to h2oclim_init_val
-!       2:  read in h2oclim
-!       3:  h2oclim, ch4clim not used.  Instead, transported
-!           H2O and CH4 are provided by the host AGCM.
-!     ------------------------------------------------
-
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%h2oclim_opt, &
-     &                label   = "h2oclim_opt:", &
-     &                default = 2, rc=STATUS )
-      VERIFY_(STATUS)
-
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%h2oclim_timpyr, &
-     &                label   = "h2oclim_timpyr:", &
-     &                default = MONTHS_PER_YEAR, rc=STATUS )
-      VERIFY_(STATUS)
-
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%ch4clim_init_val, &
-     &                label   = "ch4clim_init_val:", &
-     &                default = 0.0d0, rc=STATUS )
-      VERIFY_(STATUS)
-
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%h2oclim_init_val, &
-     &                label   = "h2oclim_init_val:", &
-     &                default = 0.0d0, rc=STATUS )
-      VERIFY_(STATUS)
-
+!
       call ESMF_ConfigGetAttribute(gmiConfigFile, value=self%pr_sad, &
      &           label="pr_sad:", default=.false., rc=STATUS)
       VERIFY_(STATUS)
@@ -420,32 +386,31 @@ CONTAINS
 !     ----------------------------------------------
 !     lbssad_opt
 !       1:  set all lbssad values to lbssad_init_val
-!       2:  read in lbssad 3d fields
-!       3:  read in lbssad zonal average fields
-!       4:  lbssad provided by AGCM, current month only.
+!       2: (OBSOLETE)  read in lbssad 3d fields
+!       3: (OBSOLETE)  read in lbssad zonal average fields
+!       4:  lbssad provided by AGCM (ExtData)
 !     ----------------------------------------------
-
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%lbssad_opt, &
      &                label   = "lbssad_opt:", &
-     &                default = 2, rc=STATUS )
+     &                default = 4, rc=STATUS )
       VERIFY_(STATUS)
 
-      call ESMF_ConfigGetAttribute(gmiConfigFile, self%lbssad_timpyr, &
-     &                label   = "lbssad_timpyr:", &
-     &                default = MONTHS_PER_YEAR, rc=STATUS )
-      VERIFY_(STATUS)
-
+!     ----------------------------------------------
+!     lbssad_init_val
+!       set all lbssad values to lbssad_init_val
+!     ----------------------------------------------
       call ESMF_ConfigGetAttribute(gmiConfigFile, self%lbssad_init_val, &
      &                label   = "lbssad_init_val:", &
      &                default = 0.0d0, rc=STATUS )
       VERIFY_(STATUS)
 
-      call CheckNamelistOptionRange ('h2oclim_opt', self%h2oclim_opt, 1, 3)
-      call CheckNamelistOptionRange ('lbssad_opt', self%lbssad_opt, 1, 4)
+!.sds... only allow lbssad_opt == "1" or "4"
+      if (self%lbssad_opt /= 1) then
+        call CheckNamelistOptionRange ('lbssad_opt', self%lbssad_opt, 4, 4)
+      endif
+
       call CheckNamelistOptionRange ('sad_opt', self%sad_opt, 0, 3)
       call CheckNamelistOptionRange ('dehyd_opt', self%dehyd_opt, 0, 1)
-
-      IF (self%lbssad_opt == 4) self%lbssad_timpyr = 1
 
       if (self%sad_opt /= 0) then
          self%num_sad = NSAD
@@ -615,17 +580,11 @@ CONTAINS
                Allocate(self%reffsts(i1:i2, ju1:j2, k1:k2))
                self%reffsts = 0.0d0
 
-               Allocate(self%h2oclim(i1:i2, ju1:j2, k1:k2, self%h2oclim_timpyr))
-               self%h2oclim = 0.0d0
-
-               Allocate(self%ch4clim(i1:i2, ju1:j2, k1:k2, self%h2oclim_timpyr))
-               self%ch4clim = 0.0d0
-
-               Allocate(self%lbssad(i1:i2, ju1:j2, k1:k2, self%lbssad_timpyr))
+               Allocate(self%lbssad(i1:i2, ju1:j2, k1:k2))
                self%lbssad = 0.0d0
             end if
           elseif (self%sad_opt == 3) then
-            Allocate(self%lbssad(i1:i2, ju1:j2, k1:k2, self%lbssad_timpyr))
+            Allocate(self%lbssad(i1:i2, ju1:j2, k1:k2))
             self%lbssad = 0.0d0
           end if
       end if
@@ -936,16 +895,16 @@ CONTAINS
 ! ---------------------------
     self%dehydmin = 0.00
 
-    CALL updateSurfaceAreaDensities (tdt8, tropopausePress, press3c,      &
-    	       press3e, kel, self%SpeciesConcentration%concentration,	  &
-    	       self%ch4clim, self%h2oclim, self%hno3cond, self%hno3gas,   &
-    	       self%lbssad, self%sadgmi, self%h2oback, self%h2ocond,	  &
-    	       self%reffice, self%reffsts, self%vfall, self%dehydmin,	  &
-    	       self%dehyd_opt, self%h2oclim_opt, self%lbssad_opt,	  &
-    	       self%sad_opt, IHNO3COND, self%idehyd_num, ICH4,  	  &
-    	       IHNO3, IH2O, nymd, self%pr_diag, loc_proc, NSP,  	  &
-    	       NSAD, self%lbssad_timpyr, self%h2oclim_timpyr,		  &
-    	       ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1, k2, londeg,	  &
+    CALL updateSurfaceAreaDensities (tdt8, tropopausePress, press3c,    &
+    	       press3e, kel, self%SpeciesConcentration%concentration,	&
+    	       self%hno3cond, self%hno3gas, &
+    	       self%lbssad, self%sadgmi, self%h2oback, self%h2ocond,	&
+    	       self%reffice, self%reffsts, self%vfall, self%dehydmin,	&
+    	       self%dehyd_opt, self%sad_opt,                            &
+    	       IHNO3COND, self%idehyd_num, ICH4,  	                &
+    	       IHNO3, IH2O, nymd, self%pr_diag, loc_proc, NSP,  	&
+    	       NSAD,                                                    &
+    	       ilo, ihi, julo, jhi, i1, i2, ju1, j2, k1, k2, londeg,	&
     	       latdeg, self%NoPSCZone, self%PSCMaxP)
 
 ! Return species concentrations to the chemistry bundle
@@ -1078,12 +1037,12 @@ CONTAINS
 
 ! Sulfate surface area. 12 month climatology, zonal average.
 ! ----------------------------------------------------------
-  self%lbssad(:,:,:,1)=self%lbssad_init_val
-  IF(self%lbssad_opt >= 2) THEN
+  self%lbssad(:,:,:) = self%lbssad_init_val
+  IF(self%lbssad_opt == 4) THEN
     importName = 'SAD'
     CALL MAPL_GetPointer(impChem, PTR3D, TRIM(importName), RC=STATUS)
     VERIFY_(STATUS)
-    self%lbssad(:,:,1:km,1) = PTR3D(:,:,km:1:-1)
+    self%lbssad(:,:,1:km) = PTR3D(:,:,km:1:-1)
     NULLIFY(PTR3D)
   END IF
 
