@@ -615,12 +615,12 @@
 ! !INTERFACE:
 !
       subroutine runChemistry (self, SpeciesConcentration, gmiClock, gmiGrid,   &
-     &              press3c, press3e, gridBoxHeight, mcor, mass, kel, humidity, &
-     &              pctm2, loc_proc, num_species, do_qqjk_reset, HNO3CONDsad,   &
-     &              HNO3GASsad, gmiQK, gmiQQK, gmiQJ, gmiQQJ, surfEmissForChem, &
-     &              pr_diag, do_ftiming, do_qqjk_inchem, pr_qqjk,               &
-     &              do_semiss_inchem, pr_smv2, pr_nc_period,         &
-     &              rootProc, metdata_name_org, metdata_name_model, tdt4)
+                    press3c, press3e, gridBoxHeight, mcor, mass, kel, humidity, &
+                    pctm2, loc_proc, num_species, do_qqjk_reset,                &
+                    HNO3GASsad, gmiQK, gmiQQK, gmiQJ, gmiQQJ, surfEmissForChem, &
+                    pr_diag, do_ftiming, do_qqjk_inchem, pr_qqjk,               &
+                    do_semiss_inchem, pr_smv2, pr_nc_period,                    &
+                    rootProc, metdata_name_org, metdata_name_model, tdt4)
 
 ! !USES:
       use GmiUpdateChemistry_mod, only : updateChemistry
@@ -647,7 +647,6 @@
       type(t_gmiGrid ), intent(in) :: gmiGrid 
       type(t_GmiClock), intent(in) :: gmiClock
       real*8 ,          intent(in) :: surfEmissForChem(:,:,:)
-      real*8 ,          intent(in) :: HNO3CONDsad(:,:,:)
       real*8 ,          intent(in) :: HNO3GASsad(:,:,:)
       type (t_GmiArrayBundle), intent(in) :: gmiQJ(:)
       type (t_GmiArrayBundle), intent(in) :: gmiQK(:)
@@ -713,23 +712,23 @@
 
 
       ! Call the Chemistry control routine
-      call updateChemistry (self%savedVars, rootProc, do_ftiming, &
-     &           TRIM(metdata_name_org), TRIM(metdata_name_model),             &
-     &           do_qqjk_inchem, do_qqjk_reset, pr_qqjk,  surfEmissForChem,    &
-     &           press3c, press3e, pr_smv2, pr_nc_period, mass, concentration, &
-     &           gmiQJ, gmiQK, kel, humidity, pctm2, gmiQQJ, gmiQQK,           &
-     &           self%yda, self%qqkda, self%qqjda,                             &
-     &           HNO3GASsad, HNO3CONDsad, self%chem_opt,                       &
-     &           self%sad_opt, self%phot_opt, self%do_smv_reord, self%do_synoz,&
-     &           do_semiss_inchem, self%do_wetchem, nymd, nhms,                &
-     &           gmi_sec, tdt8, pr_diag, loc_proc, self%synoz_threshold,       &
-     &           self%chem_cycle, self%chem_mask_klo, self%chem_mask_khi,      &
-     &           self%ih2_num, self%ih2o_num, self%ihno3_num, self%ich4_num,   &
-     &           self%imgas_num, self%initrogen_num, self%ioxygen_num,         &
-     &           self%isynoz_num, num_species, self%num_qks, self%num_qjs,     &
-     &           self%num_qjo, self%num_sad, self%num_molefrac, self%num_chem, &
-     &           self%num_active, ilong, ilat, ivert, itloop, ilo, ihi, julo,  &
-     &           jhi, i1, i2, ju1, j2, k1, k2)
+      call updateChemistry (self%savedVars, rootProc, do_ftiming,              &
+                 TRIM(metdata_name_org), TRIM(metdata_name_model),             &
+                 do_qqjk_inchem, do_qqjk_reset, pr_qqjk,  surfEmissForChem,    &
+                 press3c, press3e, pr_smv2, pr_nc_period, mass, concentration, &
+                 gmiQJ, gmiQK, kel, humidity, pctm2, gmiQQJ, gmiQQK,           &
+                 self%yda, self%qqkda, self%qqjda,                             &
+                 HNO3GASsad, self%chem_opt,                                    &
+                 self%sad_opt, self%phot_opt, self%do_smv_reord, self%do_synoz,&
+                 do_semiss_inchem, self%do_wetchem, nymd, nhms,                &
+                 gmi_sec, tdt8, pr_diag, loc_proc, self%synoz_threshold,       &
+                 self%chem_cycle, self%chem_mask_klo, self%chem_mask_khi,      &
+                 self%ih2_num, self%ih2o_num, self%ihno3_num, self%ich4_num,   &
+                 self%imgas_num, self%initrogen_num, self%ioxygen_num,         &
+                 self%isynoz_num, num_species, self%num_qks, self%num_qjs,     &
+                 self%num_qjo, self%num_sad, self%num_molefrac, self%num_chem, &
+                 self%num_active, ilong, ilat, ivert, itloop, ilo, ihi, julo,  &
+                 jhi, i1, i2, ju1, j2, k1, k2)
 
       call Set_concentration(SpeciesConcentration, concentration)
 

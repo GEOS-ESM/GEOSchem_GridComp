@@ -39,21 +39,21 @@
 !
 ! !INTERFACE:
 !
-      subroutine updateChemistry ( savedVars, rootProc, do_ftiming,&
-     &                 metdata_name_org, metdata_name_model, do_qqjk_inchem,   &
-     &                 do_qqjk_reset, pr_qqjk, surfEmissForChem, press3c,      &
-     &                 press3e, pr_smv2, pr_nc_period, mass, concentration,    &
-     &                 qjgmi, qkgmi, kel, humidity, pctm2, qqjgmi, qqkgmi, yda,&
-     &                 qqkda, qqjda, hno3gas, hno3cond, chem_opt,              &
-     &                 sad_opt, phot_opt, do_smv_reord, do_synoz,              &
-     &                 do_semiss_inchem, do_wetchem, nymd, nhms, gmi_sec, tdt, &
-     &                 pr_diag, loc_proc, synoz_threshold, chem_cycle,         &
-     &                 chem_mask_klo, chem_mask_khi, ih2_num, ih2o_num,        &
-     &                 ihno3_num, ich4_num, imgas_num, initrogen_num,          &
-     &                 ioxygen_num, isynoz_num, num_species, num_qks, num_qjs, &
-     &                 num_qjo, num_sad, num_molefrac, num_chem, num_active,   &
-     &                 ilong, ilat, ivert, itloop, ilo, ihi, julo, jhi, i1, i2,&
-     &                 ju1, j2, k1, k2)
+      subroutine updateChemistry ( savedVars, rootProc, do_ftiming,            &
+                       metdata_name_org, metdata_name_model, do_qqjk_inchem,   &
+                       do_qqjk_reset, pr_qqjk, surfEmissForChem, press3c,      &
+                       press3e, pr_smv2, pr_nc_period, mass, concentration,    &
+                       qjgmi, qkgmi, kel, humidity, pctm2, qqjgmi, qqkgmi, yda,&
+                       qqkda, qqjda, hno3gas, chem_opt,                        &
+                       sad_opt, phot_opt, do_smv_reord, do_synoz,              &
+                       do_semiss_inchem, do_wetchem, nymd, nhms, gmi_sec, tdt, &
+                       pr_diag, loc_proc, synoz_threshold, chem_cycle,         &
+                       chem_mask_klo, chem_mask_khi, ih2_num, ih2o_num,        &
+                       ihno3_num, ich4_num, imgas_num, initrogen_num,          &
+                       ioxygen_num, isynoz_num, num_species, num_qks, num_qjs, &
+                       num_qjo, num_sad, num_molefrac, num_chem, num_active,   &
+                       ilong, ilat, ivert, itloop, ilo, ihi, julo, jhi, i1, i2,&
+                       ju1, j2, k1, k2)
 !
       implicit none
 
@@ -100,7 +100,6 @@
                              ! atmospheric pressure at the edge of 
                              ! each grid box (mb)
       real*8 , intent(in) :: press3e(ilo:ihi, julo:jhi, k1-1:k2)
-      real*8  :: hno3cond(i1:i2,   ju1:j2,   k1:k2)
       real*8  :: hno3gas (i1:i2,   ju1:j2,   k1:k2)
       real*8,  intent(in)  :: surfEmissForChem(i1:i2, ju1:j2, num_species)
 !
@@ -115,8 +114,8 @@
       real*8 , intent(inOut) :: qqkda(i1:i2, ju1:j2, k1:k2, num_qks)
       real*8 , intent(inOut) :: yda  (i1:i2, ju1:j2, k1:k2, num_active)
       type (t_GmiArrayBundle), intent(inOut) :: concentration(num_species)
-      type (t_GmiArrayBundle), intent(in) :: qjgmi(num_qjo)
-      type (t_GmiArrayBundle), intent(in) :: qkgmi(num_qks)
+      type (t_GmiArrayBundle), intent(in)    :: qjgmi(num_qjo)
+      type (t_GmiArrayBundle), intent(in)    :: qkgmi(num_qks)
       type (t_GmiArrayBundle), intent(inout) :: qqjgmi(num_qjo)
       type (t_GmiArrayBundle), intent(inout) :: qqkgmi(num_qks)
 !
@@ -153,22 +152,22 @@
       end if
 
       do ix = 1, num_loops
-         call Update_Smv2chem (savedVars, chemintv, surfEmissForChem, &
-     &             humidity, qjgmi, qkgmi, press3e, pctm2, kel, concentration, &
-     &             pr_diag, pr_qqjk, pr_smv2, do_smv_reord, do_synoz,          &
-     &             do_qqjk_inchem, do_semiss_inchem, imgas_num, initrogen_num, &
-     &             ioxygen_num, isynoz_num, yda, qqkda, qqjda, pr_nc_period,   &
-     &             tdt, chem_mask_klo, chem_mask_khi, loc_proc, synoz_threshold, &
-     &             ilong, ilat, ivert, itloop, i1, i2, ju1, j2, k1, k2, ilo,   &
-     &             ihi, julo, jhi, num_molefrac, &
-     &             num_qjo, num_qks, num_qjs, num_active, num_species, rootProc)
+         call Update_Smv2chem (savedVars, chemintv, surfEmissForChem,            &
+                   humidity, qjgmi, qkgmi, press3e, pctm2, kel, concentration,   &
+                   pr_diag, pr_qqjk, pr_smv2, do_smv_reord, do_synoz,            &
+                   do_qqjk_inchem, do_semiss_inchem, imgas_num, initrogen_num,   &
+                   ioxygen_num, isynoz_num, yda, qqkda, qqjda, pr_nc_period,     &
+                   tdt, chem_mask_klo, chem_mask_khi, loc_proc, synoz_threshold, &
+                   ilong, ilat, ivert, itloop, i1, i2, ju1, j2, k1, k2, ilo,     &
+                   ihi, julo, jhi, num_molefrac,                                 &
+                   num_qjo, num_qks, num_qjs, num_active, num_species, rootProc)
       end do
 
       if (pr_qqjk .and. .not. do_qqjk_inchem) then
-         call Accum_Qqjk (do_qqjk_reset, imgas_num, concentration, &
-     &             qjgmi, qkgmi,  qqjgmi, qqkgmi, num_molefrac,  &
-     &             num_species, num_qks, num_qjs, num_qjo, &
-     &             pr_diag, loc_proc, ilong, i1, i2, ju1, j2, k1, k2)
+         call Accum_Qqjk (do_qqjk_reset, imgas_num, concentration,  &
+                   qjgmi, qkgmi,  qqjgmi, qqkgmi, num_molefrac,     &
+                   num_species, num_qks, num_qjs, num_qjo,          &
+                   pr_diag, loc_proc, ilong, i1, i2, ju1, j2, k1, k2)
       end if
 
       return
