@@ -4,6 +4,18 @@
 # Mechanism: StratTrop_Orig
 #==================================
 
+        ###################################
+        # Which sections of GMI are called?
+        ###################################
+
+flag_emiss: T
+flag_bc: T
+flag_depos: T
+flag_sad: T
+flag_phot: T
+flag_therm: T
+flag_chem: T
+
         #############################
         # Where is the GMI mechanism?
         #############################
