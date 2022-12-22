@@ -333,8 +333,9 @@
 
       hno3cond(:,:,:) = 0.0d0
 
-      hno3gas(:,:,:) = concentration(ihno3_num)%pArray3D(:,:,:)
-      hno3gas(:,:,:) = hno3gas(:,:,:)+concentration(ihno3cond_num)%pArray3D(:,:,:)
+      hno3gas(:,:,:) = concentration(ihno3_num    )%pArray3D(:,:,:) + &
+                       concentration(ihno3cond_num)%pArray3D(:,:,:)
+
       h2oback(:,:,:) = concentration(ih2o_num)%pArray3D(:,:,:) + h2ocond(:,:,:)
       
       IF(dehyd_opt == 0) THEN
