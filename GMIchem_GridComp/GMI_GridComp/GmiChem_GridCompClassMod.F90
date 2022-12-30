@@ -32,7 +32,6 @@
    use GmiArrayBundlePointer_mod,     ONLY : t_GmiArrayBundle, CleanArrayPointer
    use GmiFieldBundleESMF_mod,        ONLY : obtainTracerFromBundle
    use GmiFieldBundleESMF_mod,        ONLY : addTracerToBundle
-   use GmiStateFieldESMF_mod,         ONLY : getDataFromStateField
    use GmiSwapSpeciesBundlesMod,      ONLY : SwapSpeciesBundles, speciesReg_for_CCM
 
    IMPLICIT NONE
@@ -732,7 +731,7 @@ CONTAINS
 
 ! SAD related variables coming from the SAD module
 ! ------------------------------------------------
-   REAL(rPrec), POINTER, DIMENSION(:,:,:) :: HNO3GASsad
+   REAL(KIND=DBL), POINTER, DIMENSION(:,:,:) :: HNO3GASsad    !  pointer to use for GetPointer
 
 !  Local
 !  -----
@@ -778,7 +777,7 @@ CONTAINS
    REAL(KIND=DBL), ALLOCATABLE :: kel(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: humidity(:,:,:)
 
-   REAL(KIND=DBL), ALLOCATABLE :: HNO3GAS(:,:,:)
+   REAL(KIND=DBL), ALLOCATABLE :: HNO3GAS(:,:,:)            !  will hold a flipped version
    REAL(KIND=DBL), ALLOCATABLE :: surfEmissForChem(:,:,:)
 
    TYPE (t_GmiArrayBundle), POINTER :: gmiQJ(:) => null()
@@ -820,6 +819,9 @@ CONTAINS
 !  We need lots of pointers!
 !  -------------------------
    CALL FindPointers(STATUS)
+   VERIFY_(STATUS)
+
+   CALL MAPL_GetPointer(expChem,  HNO3GASsad,  'HNO3GASsad', RC=STATUS)
    VERIFY_(STATUS)
 
 !  Reserve some local work space
@@ -1356,10 +1358,6 @@ CONTAINS
     CALL pmaxmin('AIRDENS:', airdens, qmin, qmax, iXj, km, 1. )
    END IF Validate
 
-!  Grab these data from the export state
-!  -------------------------------------
-   CALL getDataFromStateField(expChem,  HNO3GASsad,  'HNO3GASsad')
-
   RETURN
  END SUBROUTINE FindPointers
 
@@ -1408,11 +1406,11 @@ CONTAINS
 ! -----------                                                               ------------       -------------
   DO k=1,km
    kReverse = km-k+1                                                        ! Lid-to-surf      Surf-to-lid
-   press3c(i1:i2,j1:j2,kReverse) = pl(i1:i2,j1:j2,k)*Pa2hPa                 ! Pa               hPa
-   kel(i1:i2,j1:j2,kReverse) = T(i1:i2,j1:j2,k)                             ! K
-   humidity(i1:i2,j1:j2,kReverse) = Q(i1:i2,j1:j2,k)*ToGrPerKg              ! kg kg^{-1}       g kg^{-1}
+    press3c(i1:i2,j1:j2,kReverse)  =         pl(i1:i2,j1:j2,k)*Pa2hPa       ! Pa               hPa
+        kel(i1:i2,j1:j2,kReverse)  =          T(i1:i2,j1:j2,k)              ! K
+   humidity(i1:i2,j1:j2,kReverse)  =          Q(i1:i2,j1:j2,k)*ToGrPerKg    ! kg kg^{-1}       g kg^{-1}
 
-   HNO3GAS(i1:i2,j1:j2,kReverse)  = HNO3GASsad(i1:i2,j1:j2,k)
+    HNO3GAS(i1:i2,j1:j2,kReverse)  = HNO3GASsad(i1:i2,j1:j2,k)
   END DO
 
 ! Layer edges                                                               GEOS-5 Units       GMI Units

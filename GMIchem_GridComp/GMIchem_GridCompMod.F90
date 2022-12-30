@@ -532,6 +532,7 @@ CONTAINS
        UNITS              = 'mixing_ratio',                      &
        DIMS               = MAPL_DimsHorzVert,                   &
        VLOCATION          = MAPL_VLocationCenter,                &
+       PRECISION          = ESMF_KIND_R8,                        &
                                                       RC=STATUS  )
     VERIFY_(STATUS)
 
@@ -541,6 +542,7 @@ CONTAINS
        UNITS              = 'mixing_ratio',                      &
        DIMS               = MAPL_DimsHorzVert,                   &
        VLOCATION          = MAPL_VLocationCenter,                &
+       PRECISION          = ESMF_KIND_R8,                        &
                                                       RC=STATUS  )
     VERIFY_(STATUS)
 

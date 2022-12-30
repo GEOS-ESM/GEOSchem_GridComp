@@ -710,6 +710,14 @@
 
        call Get_concentration(SpeciesConcentration, concentration)
 
+      !-------------------------------------------------------
+      ! Just hno3gas (i.e., no hno3cond) is used by chemistry.
+      !-------------------------------------------------------
+
+      if ((self%sad_opt == 1) .or. (self%sad_opt == 2)) then
+         ! Replace the truncated (~R4) version of HNO3 with the R8 version:
+         concentration(self%ihno3_num)%pArray3D(:,:,:) = HNO3GASsad(:,:,:)
+      end if
 
       ! Call the Chemistry control routine
       call updateChemistry (self%savedVars, rootProc, do_ftiming,              &
@@ -718,12 +726,10 @@
                  press3c, press3e, pr_smv2, pr_nc_period, mass, concentration, &
                  gmiQJ, gmiQK, kel, humidity, pctm2, gmiQQJ, gmiQQK,           &
                  self%yda, self%qqkda, self%qqjda,                             &
-                 HNO3GASsad, self%chem_opt,                                    &
-                 self%sad_opt, self%phot_opt, self%do_smv_reord, self%do_synoz,&
+                 self%do_smv_reord, self%do_synoz,                             &
                  do_semiss_inchem, self%do_wetchem, nymd, nhms,                &
                  gmi_sec, tdt8, pr_diag, loc_proc, self%synoz_threshold,       &
                  self%chem_cycle, self%chem_mask_klo, self%chem_mask_khi,      &
-                 self%ih2_num, self%ih2o_num, self%ihno3_num, self%ich4_num,   &
                  self%imgas_num, self%initrogen_num, self%ioxygen_num,         &
                  self%isynoz_num, num_species, self%num_qks, self%num_qjs,     &
                  self%num_qjo, self%num_sad, self%num_molefrac, self%num_chem, &
