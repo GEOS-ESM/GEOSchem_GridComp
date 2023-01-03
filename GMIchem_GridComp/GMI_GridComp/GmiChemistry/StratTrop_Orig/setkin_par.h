@@ -32,7 +32,6 @@
      &  NACT &
      & ,NCHEM &
      & ,NCONST &
-     & ,NDYN &
      & ,NFAM &
      & ,NMF &
      & ,NSS
@@ -40,7 +39,6 @@
       parameter (NACT   = 114) !Used with ibcb in setkin_ibcb.h
       parameter (NCHEM  = 118) !Apparently not used
       parameter (NCONST =   4) !Apparently not used
-      parameter (NDYN   = 115) !Sizes ldynvar(NDYN) in setkin_lchem.h
       parameter (NFAM   =   2) !Probably replaced by NUMGRP in setkin_group.h
       parameter (NMF    = 115) !Sizes specarr in setkin_kcalc.F90
       parameter (NSS    =   0)

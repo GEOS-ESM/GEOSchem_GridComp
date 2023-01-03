@@ -532,6 +532,7 @@ CONTAINS
        UNITS              = 'mixing_ratio',                      &
        DIMS               = MAPL_DimsHorzVert,                   &
        VLOCATION          = MAPL_VLocationCenter,                &
+       PRECISION          = ESMF_KIND_R8,                        &
                                                       RC=STATUS  )
     VERIFY_(STATUS)
 
@@ -541,6 +542,7 @@ CONTAINS
        UNITS              = 'mixing_ratio',                      &
        DIMS               = MAPL_DimsHorzVert,                   &
        VLOCATION          = MAPL_VLocationCenter,                &
+       PRECISION          = ESMF_KIND_R8,                        &
                                                       RC=STATUS  )
     VERIFY_(STATUS)
 
@@ -982,6 +984,15 @@ CONTAINS
         SHORT_NAME         = 'OVP14_AIRMASS',                           &
         LONG_NAME          = 'mass_of_air_in_layer_2pm_local',          &
         UNITS              = 'kg m-2',                                  &
+        DIMS               = MAPL_DimsHorzVert,                         &
+        VLOCATION          = MAPL_VLocationCenter,                      &
+                                                       RC=STATUS  )
+    VERIFY_(STATUS)
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+        SHORT_NAME         = 'stOX_loss',                               &
+        LONG_NAME          = 'loss to apply to strat OX tracer',        &
+        UNITS              = 'mole m-3 s-1',                            &
         DIMS               = MAPL_DimsHorzVert,                         &
         VLOCATION          = MAPL_VLocationCenter,                      &
                                                        RC=STATUS  )

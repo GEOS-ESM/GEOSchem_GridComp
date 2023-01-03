@@ -40,16 +40,8 @@ TR_regionMask2              NA        N    V          -                none     
 HTAP2_REGION_MASK_COASTAL_MOD  NA     N    V          -                none      none      region_map        ExtData/g5chem/sfc/HTAP2.region_map_modified_coastlines.x720_y360.nc4
 # In case GMI is not running; this is a temporary fix:
 OX_TR                    'none'       N    N          -                none      none      NA                /dev/null
-QQK007                   'none'       N    N          -                none      none      NA                /dev/null
-QQK027                   'none'       N    N          -                none      none      NA                /dev/null
-QQK028                   'none'       N    N          -                none      none      NA                /dev/null
+stOX_loss                'none'       N    N          -                none      none      NA                /dev/null
 DD_OX                    'none'       N    N          -                none      none      NA                /dev/null
-QQK005                   'none'       N    N          -                none      none      NA                /dev/null
-QQK235                   'none'       N    N          -                none      none      NA                /dev/null
-QQK170                   'none'       N    N          -                none      none      NA                /dev/null
-QQK216                   'none'       N    N          -                none      none      NA                /dev/null
-QQK179                   'none'       N    N          -                none      none      NA                /dev/null
-QQK150                   'none'       N    N          -                none      none      NA                /dev/null
 #
 # -------------|--------------|-----|----|----|---|----------------------|--------|-----------|------------------|----------------------   
 %%

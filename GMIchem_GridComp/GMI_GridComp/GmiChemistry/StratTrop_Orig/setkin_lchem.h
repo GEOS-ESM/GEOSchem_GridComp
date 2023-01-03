@@ -20,7 +20,7 @@
 
       integer kmg_i
 
-      character*16 lchemvar(NSP), ldynvar(NDYN)
+      character*16 lchemvar(NSP)
       character*180 lqkchem(NUM_K),  lqjchem(NUM_J)
 !
 !.... All species labels
@@ -144,124 +144,6 @@
       data lchemvar(117) /"O2"/
       data lchemvar(118) /"NUMDENS"/
       data lchemvar(119) /"HNO3COND"/
-!
-!.... Dynamic (transported) species labels
-!
-      data ldynvar(1) /"CH2O"/
-      data ldynvar(2) /"CH4"/
-      data ldynvar(3) /"CO"/
-      data ldynvar(4) /"H"/
-      data ldynvar(5) /"H2"/
-      data ldynvar(6) /"HCOOH"/
-      data ldynvar(7) /"HNO2"/
-      data ldynvar(8) /"HNO3"/
-      data ldynvar(9) /"HNO4"/
-      data ldynvar(10) /"H2O"/
-      data ldynvar(11) /"HO2"/
-      data ldynvar(12) /"H2O2"/
-      data ldynvar(13) /"MO2"/
-      data ldynvar(14) /"MOH"/
-      data ldynvar(15) /"MP"/
-      data ldynvar(16) /"N"/
-      data ldynvar(17) /"N2O"/
-      data ldynvar(18) /"NO"/
-      data ldynvar(19) /"NO2"/
-      data ldynvar(20) /"NO3"/
-      data ldynvar(21) /"N2O5"/
-      data ldynvar(22) /"O"/
-      data ldynvar(23) /"O1D"/
-      data ldynvar(24) /"O3"/
-      data ldynvar(25) /"OH"/
-      data ldynvar(26) /"Br"/
-      data ldynvar(27) /"BrCl"/
-      data ldynvar(28) /"BrO"/
-      data ldynvar(29) /"BrONO2"/
-      data ldynvar(30) /"HBr"/
-      data ldynvar(31) /"HOBr"/
-      data ldynvar(32) /"Cl"/
-      data ldynvar(33) /"Cl2"/
-      data ldynvar(34) /"ClO"/
-      data ldynvar(35) /"Cl2O2"/
-      data ldynvar(36) /"ClONO2"/
-      data ldynvar(37) /"HCl"/
-      data ldynvar(38) /"HOCl"/
-      data ldynvar(39) /"OClO"/
-      data ldynvar(40) /"CH3Br"/
-      data ldynvar(41) /"CH3Cl"/
-      data ldynvar(42) /"CH3CCl3"/
-      data ldynvar(43) /"CCl4"/
-      data ldynvar(44) /"CFC11"/
-      data ldynvar(45) /"CFC12"/
-      data ldynvar(46) /"CFC113"/
-      data ldynvar(47) /"CFC114"/
-      data ldynvar(48) /"CFC115"/
-      data ldynvar(49) /"HCFC22"/
-      data ldynvar(50) /"HCFC141b"/
-      data ldynvar(51) /"HCFC142b"/
-      data ldynvar(52) /"CF2Br2"/
-      data ldynvar(53) /"CF2ClBr"/
-      data ldynvar(54) /"CF3Br"/
-      data ldynvar(55) /"H2402"/
-      data ldynvar(56) /"A3O2"/
-      data ldynvar(57) /"ACTA"/
-      data ldynvar(58) /"ALD2"/
-      data ldynvar(59) /"ALK4"/
-      data ldynvar(60) /"ATO2"/
-      data ldynvar(61) /"B3O2"/
-      data ldynvar(62) /"C2H6"/
-      data ldynvar(63) /"C3H8"/
-      data ldynvar(64) /"EOH"/
-      data ldynvar(65) /"ETO2"/
-      data ldynvar(66) /"ETP"/
-      data ldynvar(67) /"GLYC"/
-      data ldynvar(68) /"GLYX"/
-      data ldynvar(69) /"HAC"/
-      data ldynvar(70) /"IALD"/
-      data ldynvar(71) /"IAO2"/
-      data ldynvar(72) /"IAP"/
-      data ldynvar(73) /"INO2"/
-      data ldynvar(74) /"INPN"/
-      data ldynvar(75) /"ISN1"/
-      data ldynvar(76) /"ISNP"/
-      data ldynvar(77) /"ISOP"/
-      data ldynvar(78) /"KO2"/
-      data ldynvar(79) /"MACR"/
-      data ldynvar(80) /"MAN2"/
-      data ldynvar(81) /"MAO3"/
-      data ldynvar(82) /"MAOP"/
-      data ldynvar(83) /"MAP"/
-      data ldynvar(84) /"MCO3"/
-      data ldynvar(85) /"MEK"/
-      data ldynvar(86) /"MGLY"/
-      data ldynvar(87) /"MRO2"/
-      data ldynvar(88) /"MRP"/
-      data ldynvar(89) /"MVK"/
-      data ldynvar(90) /"PAN"/
-      data ldynvar(91) /"PMN"/
-      data ldynvar(92) /"PO2"/
-      data ldynvar(93) /"PP"/
-      data ldynvar(94) /"PPN"/
-      data ldynvar(95) /"PRN1"/
-      data ldynvar(96) /"PRPE"/
-      data ldynvar(97) /"PRPN"/
-      data ldynvar(98) /"R4N1"/
-      data ldynvar(99) /"R4N2"/
-      data ldynvar(100) /"R4O2"/
-      data ldynvar(101) /"R4P"/
-      data ldynvar(102) /"RA3P"/
-      data ldynvar(103) /"RB3P"/
-      data ldynvar(104) /"RCHO"/
-      data ldynvar(105) /"RCO3"/
-      data ldynvar(106) /"RCOOH"/
-      data ldynvar(107) /"RIO1"/
-      data ldynvar(108) /"RIO2"/
-      data ldynvar(109) /"RIP"/
-      data ldynvar(110) /"ROH"/
-      data ldynvar(111) /"RP"/
-      data ldynvar(112) /"VRO2"/
-      data ldynvar(113) /"VRP"/
-      data ldynvar(114) /"OCSg"/
-      data ldynvar(115) /"HNO3COND"/
 !
 !.... Thermal reaction labels
 !
