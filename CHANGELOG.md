@@ -29,9 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified TR to only import stOX_loss if loss_species == OX; without this, a GMI _ASSERT may exit the program needlessly.
 - Fixed the long_names for GMI chemical species
 - Updated GAAS to now work again after it was changed to use ExtData, only works with ExtData2G
+  - **NOTE 1**: This requires MAPL 2.32 or higher to build as a new procedure had to be created for this to work.
+  - **NOTE 2**: As noted above, GAAS will now *only* work with ExtData2G
 
 ## [1.10.4] - 2022-11-08
-### Added
+
 ### Removed
 
 - Deleted the old CCMI resource files under GMI.
@@ -41,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - StratChem is no longer part of Chem_Registry.rc; instead the entries are in SC_Mech_Registry.rc, and there are two versions of the resource file - one for the Full mechanism and one for the Reduced mechanism.  Choice between the two mechanisms remains a compile time option.
 
 ### Fixed
+
 - Fix 1d vector of latitudes in GCR emissions, pre-cubesphere leftover
 
 ## [1.10.3] - 2022-10-27
