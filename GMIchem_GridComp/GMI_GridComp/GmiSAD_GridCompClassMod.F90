@@ -31,8 +31,6 @@
    use GmiCheckNamelistFile_mod, only : CheckNamelistOptionRange
    use GmiFieldBundleESMF_mod,        ONLY : addTracerToBundle
    use GmiFieldBundleESMF_mod,        ONLY : updateTracerToBundle
-   use GmiStateFieldESMF_mod,         ONLY : setDataToStateField
-   use GmiStateFieldESMF_mod,         ONLY : initDataInStateField
    use GmiSwapSpeciesBundlesMod,      ONLY : SwapSpeciesBundles, speciesReg_for_CCM
 
    IMPLICIT NONE
@@ -141,8 +139,6 @@
     type (t_GmiArrayBundle), pointer :: sadgmi(:) => null()
     real(KIND=DBL), pointer :: lbssad   (:,:,:)   => null()
     real(KIND=DBL), pointer :: loss_freq(:,:,:,:) => null()
-    real(KIND=DBL), pointer :: hno3cond (:,:,:)   => null()
-    real(KIND=DBL), pointer :: hno3gas  (:,:,:)   => null()
     real(KIND=DBL), pointer :: h2oback  (:,:,:)   => null()
     real(KIND=DBL), pointer :: h2ocond  (:,:,:)   => null()
     real(KIND=DBL), pointer :: reffice  (:,:,:)   => null()
@@ -248,8 +244,6 @@ CONTAINS
    REAL :: qmin, qmax, tokgCPerBox
    integer  :: dims1(3), dims2(3)
 
-   REAL(rPrec), POINTER, DIMENSION(:,:,:) :: HNO3CONDsad
-   REAL(rPrec), POINTER, DIMENSION(:,:,:) :: HNO3GASsad
    real(rPrec), pointer :: var(:,:,:)
 
    type(ESMF_FieldBundle)      :: sadBun
@@ -556,15 +550,7 @@ CONTAINS
             self%sadgmi(ic)%pArray3D(i1:i2, ju1:j2, k1:k2) = 0.0d0
          end do
 
-         if ((self%sad_opt == 1) .or. (self%sad_opt == 2)) then
-
-            Allocate(self%hno3gas(i1:i2, ju1:j2, k1:k2))
-            self%hno3gas = 0.0d0
-
-            Allocate(self%hno3cond(i1:i2, ju1:j2, k1:k2))
-            self%hno3cond = 0.0d0
-
-            if (self%sad_opt == 2) then
+         if (self%sad_opt == 2) then
                Allocate(self%h2ocond(i1:i2, ju1:j2, k1:k2))
                self%h2ocond = 0.0d0
 
@@ -582,11 +568,13 @@ CONTAINS
 
                Allocate(self%lbssad(i1:i2, ju1:j2, k1:k2))
                self%lbssad = 0.0d0
-            end if
-          elseif (self%sad_opt == 3) then
+          end if
+
+          if (self%sad_opt == 3) then
             Allocate(self%lbssad(i1:i2, ju1:j2, k1:k2))
             self%lbssad = 0.0d0
           end if
+
       end if
 
 ! Allocate space, etc., but the initialization of the
@@ -596,14 +584,6 @@ CONTAINS
       CALL InitializeSpcConcentration(self%SpeciesConcentration,              &
                      self%gmiGrid, gmiConfigFile, NSP, NMF, NCHEM,            &
                      loc_proc)
-
-      ALLOCATE (HNO3CONDsad(i1:i2,j1:j2,1:km))
-      HNO3CONDsad(i1:i2,j1:j2,1:km) = 0.0
-      CALL initDataInStateField(expChem, bgg%grid_esmf, HNO3CONDsad, 'HNO3CONDsad')
-
-      ALLOCATE (HNO3GASsad(i1:i2,j1:j2,1:km))
-      HNO3GASsad(i1:i2,j1:j2,1:km) = 0.0
-      CALL initDataInStateField(expChem, bgg%grid_esmf, HNO3GASsad,  'HNO3GASsad')
 
    !------------------------------
    ! Add Fields to the ESMF Bundle
@@ -665,7 +645,7 @@ CONTAINS
    USE GmiTimeControl_mod,            ONLY : Set_gmiSeconds, GetSecondsFromJanuary1
    USE GmiSolar_mod,                  ONLY : CalcCosSolarZenithAngle
    USE GmiSpcConcentrationMethod_mod, ONLY : resetFixedConcentration
-   USE GmiUpdateSAD_mod,       ONLY : updateSurfaceAreaDensities
+   USE GmiUpdateSAD_mod,              ONLY : updateSurfaceAreaDensities
 
    IMPLICIT none
 
@@ -712,10 +692,9 @@ CONTAINS
    REAL, POINTER, DIMENSION(:,:,:) :: ple, T, Q, qctot
    REAL, POINTER, DIMENSION(:,:,:) :: reffice, reffsts, fallVel
 
-!  Exports not part of internal state
-!  ----------------------------------
-   REAL(rPrec), POINTER, DIMENSION(:,:,:) :: HNO3CONDsad
-   REAL(rPrec), POINTER, DIMENSION(:,:,:) :: HNO3GASsad
+!  For R*8 exports:
+!  ----------------
+   REAL(KIND=DBL), POINTER, DIMENSION(:,:,:) :: DBLptr3D
 
 !  Local
 !  -----
@@ -763,6 +742,9 @@ CONTAINS
    REAL(KIND=DBL), ALLOCATABLE :: press3c(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: press3e(:,:,:)
    REAL(KIND=DBL), ALLOCATABLE :: kel(:,:,:)
+
+   REAL(KIND=DBL), POINTER :: hno3gas( :,:,:) => null()   ! bottom-up, set by updateSurfaceAreaDensities
+   REAL(KIND=DBL), POINTER :: hno3cond(:,:,:) => null()   ! bottom-up, set by updateSurfaceAreaDensities
 
    REAL*8                      :: tdt8
 
@@ -839,6 +821,16 @@ CONTAINS
    ALLOCATE(               kel(i1:i2,j1:j2,1:km),STAT=STATUS)
    VERIFY_(STATUS)
 
+   if ((self%sad_opt == 1) .or. (self%sad_opt == 2)) then
+     ALLOCATE(           hno3gas(i1:i2,j1:j2,1:km),STAT=STATUS)
+     VERIFY_(STATUS)
+     ALLOCATE(          hno3cond(i1:i2,j1:j2,1:km),STAT=STATUS)
+     VERIFY_(STATUS)
+
+     hno3gas( :,:,:) = DBLE(MAPL_UNDEF)  ! value for first timestep, if import rst file is missing
+     hno3cond(:,:,:) = DBLE(MAPL_UNDEF)  ! value for first timestep, if import rst file is missing
+   end if
+
 ! Geolocation
 ! -----------
    lonDeg(i1:i2,j1:j2)=self%lonRad(i1:i2,j1:j2)*radToDeg
@@ -849,7 +841,7 @@ CONTAINS
    DO k=1,km
     pl(i1:i2,j1:j2,k)=(ple(i1:i2,j1:j2,k-1)+ple(i1:i2,j1:j2,k))*0.50
    END DO
-   
+
 ! Set GMI's clock
 ! ---------------
    CALL Set_curGmiDate(self%gmiClock, nymd)
@@ -897,7 +889,7 @@ CONTAINS
 
     CALL updateSurfaceAreaDensities (tdt8, tropopausePress, press3c,    &
     	       press3e, kel, self%SpeciesConcentration%concentration,	&
-    	       self%hno3cond, self%hno3gas, &
+    	       hno3cond, hno3gas,                                       &
     	       self%lbssad, self%sadgmi, self%h2oback, self%h2ocond,	&
     	       self%reffice, self%reffsts, self%vfall, self%dehydmin,	&
     	       self%dehyd_opt, self%sad_opt,                            &
@@ -967,6 +959,25 @@ CONTAINS
    CALL FillExports(STATUS)
    VERIFY_(STATUS)
 
+   ! Make sure this export is allocated, because the GMI solver will want to use it:
+   CALL MAPL_GetPointer( expChem, DBLptr3D,   'HNO3GASsad', ALLOC=.TRUE., RC=STATUS )
+   VERIFY_(STATUS)
+
+   if ((self%sad_opt == 1) .or. (self%sad_opt == 2)) then
+     DBLptr3D( i1:i2,j1:j2,km:1:-1) = hno3gas( i1:i2,j1:j2,1:km)
+   else
+     DBLptr3D( :,:,:) = DBLE(MAPL_UNDEF)
+   end if
+
+   CALL MAPL_GetPointer( expChem, DBLptr3D, 'HNO3CONDsad', RC=STATUS )
+   VERIFY_(STATUS)
+
+   if ((self%sad_opt == 1) .or. (self%sad_opt == 2)) then
+     if ( ASSOCIATED(DBLptr3D) ) DBLptr3D(i1:i2,j1:j2,km:1:-1) = hno3cond(i1:i2,j1:j2,1:km)
+   else
+     if ( ASSOCIATED(DBLptr3D) ) DBLptr3D(:,:,:) = DBLE(MAPL_UNDEF)
+   end if
+
    CALL populateBundleSAD (expChem)
 
 ! Scratch local work space
@@ -976,6 +987,12 @@ CONTAINS
 
    DEALLOCATE(pl, press3c, press3e, kel, latDeg, lonDeg, STAT=STATUS)
    VERIFY_(STATUS)
+
+   if ((self%sad_opt == 1) .or. (self%sad_opt == 2)) then
+     DEALLOCATE(hno3gas, hno3cond, STAT=STATUS)
+     VERIFY_(STATUS)
+   end if
+
 
 ! IMPORTANT: Reset this switch to .TRUE. after first pass.
 ! --------------------------------------------------------
@@ -1075,16 +1092,6 @@ CONTAINS
   
   rc=0
   IAm="FillExports"
-
-      ALLOCATE (HNO3CONDsad(i1:i2,j1:j2,1:km))
-      HNO3CONDsad(i1:i2,j1:j2,km:1:-1) = self%hno3cond(i1:i2,j1:j2,1:km)
-      CALL setDataToStateField(expChem, HNO3CONDsad, 'HNO3CONDsad')
-
-      ALLOCATE (HNO3GASsad(i1:i2,j1:j2,1:km))
-      HNO3GASsad(i1:i2,j1:j2,km:1:-1) = self%hno3gas(i1:i2,j1:j2,1:km)
-      CALL setDataToStateField(expChem,  HNO3GASsad,  'HNO3GASsad')
-
-      DEALLOCATE (HNO3CONDsad, HNO3GASsad)
 
 ! Ice effective radius
 ! --------------------

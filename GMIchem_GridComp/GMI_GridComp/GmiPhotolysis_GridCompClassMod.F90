@@ -28,8 +28,6 @@
    use GmiArrayBundlePointer_mod,     ONLY : t_GmiArrayBundle, CleanArrayPointer
    use GmiFieldBundleESMF_mod,        ONLY : updateTracerToBundle
    use GmiFieldBundleESMF_mod,        ONLY : addTracerToBundle
-   use GmiStateFieldESMF_mod,         ONLY : setDataToStateField
-   use GmiStateFieldESMF_mod,         ONLY : initDataInStateField
    use GmiSwapSpeciesBundlesMod,      ONLY : SwapSpeciesBundles, speciesReg_for_CCM
    USE GmiFastJX_includeMod,          ONLY : t_fastJXbundle
 
@@ -328,7 +326,6 @@ CONTAINS
    real(r8)  :: hugeReal
    integer   :: badIndex = -9999
    integer   :: IXj
-   REAL, POINTER, DIMENSION(:,:) :: jNO2val_phot
 
 ! Grid cell area can be set by initialize
 ! ---------------------------------------
@@ -1117,10 +1114,6 @@ CONTAINS
             print*,'jno2num not found in GmiPhotolysis_GridCompInitialize'
             stop
          endif
-
-         ALLOCATE (jNO2val_phot(i1:i2,j1:j2))
-         jNO2val_phot(i1:i2,j1:j2) = 0.0
-         CALL initDataInStateField(expChem, bgg%grid_esmf, jNO2val_phot,  'jNO2val')
       endif
 
     !---------------------------------------------------------------
@@ -1228,7 +1221,7 @@ CONTAINS
    REAL, POINTER, DIMENSION(:,:,:) :: SSAOD, SSAHYGRO, SSASA, SSCOD, SSCHYGRO, SSCSA
 
 !  Export for Ship Emissions
-   REAL, POINTER, DIMENSION(:,:) :: jNO2val_phot
+   REAL, POINTER, DIMENSION(:,:) :: arr2D
 
 !  Local
 !  -----
@@ -2372,17 +2365,17 @@ CONTAINS
 ! Ship Emisssions
 ! ---------------
   if (self%do_ShipEmission)  then
-
      bxx%qa(bxx%reg%nq)%data3d(i1:i2,j1:j2,km-1) = self%qjgmi(self%jno2num)%pArray3D(:,:,1)
+  end if
 
-     ALLOCATE (jNO2val_phot(i1:i2,j1:j2),STAT=STATUS)
-     VERIFY_(STATUS)
-
-     jNO2val_phot(:,:) = self%qjgmi(self%jno2num)%pArray3D(:,:,1)
-     CALL setDataToStateField(expChem,  jNO2val_phot,  'jNO2val')
-     
-     DEALLOCATE (jNO2val_phot,STAT=STATUS)
-     VERIFY_(STATUS)
+  CALL MAPL_GetPointer(expChem, arr2D, 'jNO2val', RC=STATUS)
+  VERIFY_(STATUS)
+  if ( ASSOCIATED(arr2D) ) then
+     if (self%do_ShipEmission)  then
+        arr2D(:,:) = self%qjgmi(self%jno2num)%pArray3D(:,:,1)
+     else
+        arr2D(:,:) = MAPL_UNDEF
+     end if
   end if
 
 ! ------------------------------------------------------------------------

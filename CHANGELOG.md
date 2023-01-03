@@ -9,28 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-### Removed
-### Changed
-### Fixed
-
-- GMI lbssad_opt allowed unsupported options, eliminated
-- GMI h2oclim_opt had only one viable option (3), removed h2oclim_opt and various unused arrays
-
-## [?]
-### Added
 
 - GMI now exports stOX_loss (stratospheric OX tracer loss), customized for the specific chemical mechanism being run.
 
 ### Removed
+
+- GMI lbssad_opt allowed unsupported options, eliminated
+- GMI h2oclim_opt had only one viable option (3), removed h2oclim_opt and various unused arrays
+
 ### Changed
 
 - Instead of importing a set of QQK diagnostic fields for chemical loss of stOX, TR now imports a single field: stOX_loss
 - Moved to GitHub Actions for label enforcement
 - Update CircleCI to use Baselibs 7.7.0
+- For GMI, clean-up related to exports HNO3GASsad, HNO3CONDsad and jNO2val.
 
 ### Fixed
 
 - Modified TR to only import stOX_loss if loss_species == OX; without this, a GMI _ASSERT may exit the program needlessly.
+- Fixed the long_names for GMI chemical species
 
 ## [1.10.4] - 2022-11-08
 ### Added
