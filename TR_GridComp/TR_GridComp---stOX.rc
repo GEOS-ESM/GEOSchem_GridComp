@@ -1,5 +1,5 @@
 #
-# Tracer with O3 values in stratosphere, and O3 loss applied in the troposphere
+# Tracer with OX values in stratosphere, and OX loss applied in the troposphere
 #
 
 # SHOULD THE TRACER SOURCE BE ADDED FIRST, OR THE SINK APPLIED FIRST
@@ -10,7 +10,7 @@
 # ---------------------------
 
   src_mode: model_field
-  src_field_name: OX
+  src_field_name: OX_TR
   src_add: FALSE
 
 # SOURCE - Horizontal coverage: all  |  lat_zone  |  latlon_box
@@ -26,7 +26,7 @@
 # ---------------------------
 # snk_mode: none
   snk_mode: chemical_loss
-  loss_species: O3
+  loss_species: OX
 
 # SINK - Horizontal coverage:  all  |  lat_zone  |  latlon_box
 # ---------------------------

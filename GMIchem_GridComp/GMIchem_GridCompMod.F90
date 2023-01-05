@@ -407,6 +407,26 @@ CONTAINS
         PRECISION          =  ESMF_KIND_R4,                  &
         VLOCATION          =  MAPL_VLocationCenter,   __RC__ )
 
+! Can the Registry specify UNGRIDDED_DIMS?
+! Note: 72 = (NVEGTYPE-2)
+     call MAPL_AddImportSpec(GC,                             &
+        SHORT_NAME     = 'VEG_FRAC',                         &
+        LONG_NAME      = 'Olson_land_type_fraction_mils',    &
+        UNITS          = 'mil',                              &
+        DIMS           = MAPL_DimsHorzOnly,                  &
+        VLOCATION      = MAPL_VLocationNone,                 &
+        UNGRIDDED_DIMS = [72],                               &
+        RESTART        = MAPL_RestartSkip,            __RC__ )
+
+     call MAPL_AddImportSpec(GC,                             &
+        SHORT_NAME     = 'LAI_FRAC',                         &
+        LONG_NAME      = 'GMI_leaf_area_index',              &
+        UNITS          = '1',                                &
+        DIMS           = MAPL_DimsHorzOnly,                  &
+        VLOCATION      = MAPL_VLocationNone,                 &
+        UNGRIDDED_DIMS = [72],                               &
+        RESTART        = MAPL_RestartSkip,            __RC__ )
+
 #include "GMICHEM_ImportSpec___.h"
 
 ! ======================== INTERNAL STATE =========================
@@ -532,6 +552,7 @@ CONTAINS
        UNITS              = 'mixing_ratio',                      &
        DIMS               = MAPL_DimsHorzVert,                   &
        VLOCATION          = MAPL_VLocationCenter,                &
+       PRECISION          = ESMF_KIND_R8,                        &
                                                       RC=STATUS  )
     VERIFY_(STATUS)
 
@@ -541,6 +562,7 @@ CONTAINS
        UNITS              = 'mixing_ratio',                      &
        DIMS               = MAPL_DimsHorzVert,                   &
        VLOCATION          = MAPL_VLocationCenter,                &
+       PRECISION          = ESMF_KIND_R8,                        &
                                                       RC=STATUS  )
     VERIFY_(STATUS)
 
@@ -982,6 +1004,15 @@ CONTAINS
         SHORT_NAME         = 'OVP14_AIRMASS',                           &
         LONG_NAME          = 'mass_of_air_in_layer_2pm_local',          &
         UNITS              = 'kg m-2',                                  &
+        DIMS               = MAPL_DimsHorzVert,                         &
+        VLOCATION          = MAPL_VLocationCenter,                      &
+                                                       RC=STATUS  )
+    VERIFY_(STATUS)
+
+    CALL MAPL_AddExportSpec(GC,                                         &
+        SHORT_NAME         = 'stOX_loss',                               &
+        LONG_NAME          = 'loss to apply to strat OX tracer',        &
+        UNITS              = 'mole m-3 s-1',                            &
         DIMS               = MAPL_DimsHorzVert,                         &
         VLOCATION          = MAPL_VLocationCenter,                      &
                                                        RC=STATUS  )

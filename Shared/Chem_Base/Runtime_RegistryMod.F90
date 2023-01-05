@@ -134,7 +134,7 @@ CONTAINS
    call ESMF_ConfigLoadFile(cf, rcfile, rc=rc)
    _ASSERT(rc==0, TRIM(Iam)//': Cannot load RC file '//TRIM(rcfile))
 
-   call ESMF_ConfigGetDim(cf, nq, nx, label=table_name, rc=rc)
+   call ESMF_ConfigGetDim(cf, nq, nx, label=TRIM(table_name), rc=rc)
    _ASSERT(rc==0, TRIM(Iam)//': Cannot get dims for table '//TRIM(table_name)//' in '//TRIM(rcfile))
 
    this%primary_count = 0
@@ -144,7 +144,7 @@ CONTAINS
    this%nq = nq
    allocate ( this%vname(nq), this%vunits(nq), this%vtitle(nq), __STAT__ )
 
-   call ESMF_ConfigFindLabel(cf, table_name, rc=rc)
+   call ESMF_ConfigFindLabel(cf, TRIM(table_name), rc=rc)
    _ASSERT(rc==0, TRIM(Iam)//': Cannot find '//TRIM(table_name)//' in file '//TRIM(rcfile))
 
    do i=1,nq
@@ -189,7 +189,7 @@ CONTAINS
 !     -------------------
       type(ESMF_Config),           intent(inout)  :: cf
       integer,                     intent(in)     :: expected_entries  ! read this many items
-      character(len=TOKEN_LENGTH), intent(out)    :: str_arr(*)   ! space for one or more items
+      character(len=TOKEN_LENGTH), intent(inout)  :: str_arr(*)   ! space for one or more items
       integer,                     intent(out)    :: item_count   ! how many were successfully read
       integer,                     intent(out)    :: retcode      ! see possible values above
 
