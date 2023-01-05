@@ -407,6 +407,26 @@ CONTAINS
         PRECISION          =  ESMF_KIND_R4,                  &
         VLOCATION          =  MAPL_VLocationCenter,   __RC__ )
 
+! Can the Registry specify UNGRIDDED_DIMS?
+! Note: 72 = (NVEGTYPE-2)
+     call MAPL_AddImportSpec(GC,                             &
+        SHORT_NAME     = 'VEG_FRAC',                         &
+        LONG_NAME      = 'Olson_land_type_fraction_mils',    &
+        UNITS          = 'mil',                              &
+        DIMS           = MAPL_DimsHorzOnly,                  &
+        VLOCATION      = MAPL_VLocationNone,                 &
+        UNGRIDDED_DIMS = [72],                               &
+        RESTART        = MAPL_RestartSkip,            __RC__ )
+
+     call MAPL_AddImportSpec(GC,                             &
+        SHORT_NAME     = 'LAI_FRAC',                         &
+        LONG_NAME      = 'GMI_leaf_area_index',              &
+        UNITS          = '1',                                &
+        DIMS           = MAPL_DimsHorzOnly,                  &
+        VLOCATION      = MAPL_VLocationNone,                 &
+        UNGRIDDED_DIMS = [72],                               &
+        RESTART        = MAPL_RestartSkip,            __RC__ )
+
 #include "GMICHEM_ImportSpec___.h"
 
 ! ======================== INTERNAL STATE =========================

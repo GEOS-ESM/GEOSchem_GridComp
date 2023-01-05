@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated GAAS to now work again after it was changed to use ExtData, only works with ExtData2G
   - **NOTE 1**: This requires MAPL 2.32 or higher to build as a new procedure had to be created for this to work.
   - **NOTE 2**: As noted above, GAAS will now *only* work with ExtData2G
+- Fixed the imports for LAI_FRAC and VEG_FRAC in TR and GMI, for simulations with vertical resolution other than 72.
 
 ## [1.10.4] - 2022-11-08
 
