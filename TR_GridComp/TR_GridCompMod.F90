@@ -1079,8 +1079,9 @@ CONTAINS
            SHORT_NAME = 'TR_VEG_FRAC',                               &
            LONG_NAME  = 'vegetation_fraction',                       &
 !          UNITS      = '1',                                         &
-           DIMS       = MAPL_DimsHorzVert,                           &
-           VLOCATION  = MAPL_VLocationCenter,                        &
+           DIMS       = MAPL_DimsHorzOnly,                           &
+           VLOCATION  = MAPL_VLocationNone,                          &
+           UNGRIDDED_DIMS = [72],                                    &
            RESTART    = MAPL_RestartSkip,                            &
                                                          __RC__ )
 
@@ -1088,8 +1089,9 @@ CONTAINS
            SHORT_NAME = 'TR_LAI_FRAC',                               &
            LONG_NAME  = 'leaf_area_index',                           &
 !          UNITS      = '1',                                         &
-           DIMS       = MAPL_DimsHorzVert,                           &
-           VLOCATION  = MAPL_VLocationCenter,                        &
+           DIMS       = MAPL_DimsHorzOnly,                           &
+           VLOCATION  = MAPL_VLocationNone,                          &
+           UNGRIDDED_DIMS = [72],                                    &
            RESTART    = MAPL_RestartSkip,                            &
                                                          __RC__ )
 
