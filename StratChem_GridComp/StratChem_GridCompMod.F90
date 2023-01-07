@@ -43,6 +43,7 @@
 !
 !  25feb2005  da Silva  First crack.
 !  19jul2006  da Silva  First separate StratChem component.
+!  24oct2019      Weir  Connectivity for CoDAS.
 !
 !EOP
 !-------------------------------------------------------------------------
@@ -57,6 +58,10 @@
   type StratChem_WRAP
      type (StratChem_State), pointer :: PTR => null()
   end type StratChem_WRAP
+
+! Use analyzed tracer fields? (for CoDAS IAU only)
+  logical, allocatable :: doCODAS(:)
+  character(len=ESMF_MAXSTR) :: codas_name
 
 CONTAINS
 
@@ -104,6 +109,10 @@ CONTAINS
 
     integer                          :: n, i_XX, j_XX
     CHARACTER(LEN=ESMF_MAXSTR)       :: FRIENDLIES, providerName
+
+!   Variables for CoDAS IAU
+    integer                          :: i
+    CHARACTER(LEN=ESMF_MAXSTR)       :: field_name
 
 !                              ------------
 
@@ -190,6 +199,71 @@ CONTAINS
          VLOCATION          = MAPL_VLocationCenter,    &
                                                         RC=STATUS  )
    VERIFY_(STATUS)
+
+!  Imports for CoDAS IAU
+!  ---------------------
+   call MAPL_AddImportSpec(GC,                              &
+         SHORT_NAME = 'QTOT',                               &
+         LONG_NAME  = 'mass_fraction_of_all_water',         &
+         UNITS      = 'kg kg-1',                            &
+         DIMS       = MAPL_DimsHorzVert,                    &
+         VLOCATION  = MAPL_VLocationCenter, __RC__)
+
+   n = state%scReg%nq
+
+   ALLOCATE(doCODAS(n+1), STAT=STATUS)
+   VERIFY_(STATUS)
+   doCODAS(:) = .false.
+
+   do i = 1,n
+      field_name = state%scReg%vname(i)
+
+      call ESMF_ConfigGetAttribute(CF, codas_name, Default="None", &
+           Label="CODAS_"//trim(field_name)//"_PROVIDER:", RC=STATUS)
+      VERIFY_(STATUS)
+
+      if (codas_name == comp_name) doCODAS(i) = .true.
+
+      if (doCODAS(i)) then
+         if (MAPL_AM_I_ROOT()) print *, "CoDAS: Applying IAU to ", &
+                               trim(comp_name)//"::"//trim(field_name)
+
+         call MAPL_AddImportSpec(GC,                 &
+              SHORT_NAME = "INC_"//trim(field_name), &
+              LONG_NAME  = "analyzed_"//trim(field_name)//"_increment", &
+              UNITS      = "mol mol-1",              &
+              DIMS       = MAPL_DimsHorzVert,        &
+              VLOCATION  = MAPL_VLocationCenter,     &
+              RESTART    = MAPL_RestartSkip,         &
+              RC         = STATUS)
+         VERIFY_(STATUS)
+      endif
+   enddo
+
+!  One more for water vapor
+   i = n+1
+   field_name = "H2O"
+
+    call ESMF_ConfigGetAttribute(CF, codas_name, Default="None", &
+         Label="CODAS_"//trim(field_name)//"_PROVIDER:", RC=STATUS)
+    VERIFY_(STATUS)
+
+   if (codas_name == comp_name) doCODAS(i) = .true.
+
+   if (doCODAS(i)) then
+      if (MAPL_AM_I_ROOT()) print *, "CoDAS: Applying IAU to ", &
+                            trim(comp_name)//"::"//trim(field_name)
+
+      call MAPL_AddImportSpec(GC,                 &
+           SHORT_NAME = "INC_"//trim(field_name), &
+           LONG_NAME  = "analyzed_"//trim(field_name)//"_increment", &
+           UNITS      = "mol mol-1",              &
+           DIMS       = MAPL_DimsHorzVert,        &
+           VLOCATION  = MAPL_VLocationCenter,     &
+           RESTART    = MAPL_RestartSkip,         &
+           RC         = STATUS)
+      VERIFY_(STATUS)
+   endif
 
 ! ======================== INTERNAL STATE =========================
 
@@ -637,6 +711,11 @@ CONTAINS
    LOGICAL, ALLOCATABLE              :: doMyTendency(:)
    CHARACTER(LEN=ESMF_MAXSTR)        :: fieldName, incFieldName
 
+!  Variables for CoDAS IAU
+   real, pointer, dimension(:,:,:) :: ptr_inc => null()
+   real, pointer, dimension(:,:,:) :: specHum => null()
+   real, pointer, dimension(:,:,:) ::    qtot => null()
+
 !  Get my name and set-up traceback handle
 !  ---------------------------------------
    call ESMF_GridCompGet( GC, NAME=COMP_NAME, CONFIG=CF, GRID=grid, RC=STATUS )
@@ -795,6 +874,49 @@ CONTAINS
 !  Chemistry time step length (seconds)
 !  ------------------------------------
    cdt = rdt/split
+
+!  Apply CoDAS IAU if apropros 
+!  ---------------------------
+   n = scReg%nq
+
+   do i = 1,n
+      if (doCODAS(i)) then
+         call MAPL_GetPointer ( impChem, ptr_inc,             &
+                                "INC_"//TRIM(scReg%vname(i)), &
+                                notFoundOK=.TRUE., RC=STATUS )
+         VERIFY_(STATUS)
+         call MAPL_GetPointer ( impChem, qtot, "QTOT", rc=STATUS )
+         VERIFY_(STATUS)
+
+!        Zero-out HNO3 increment in PSC due to equilibrium condition (bweir)
+         IF (TRIM(scReg%vname(i)) == "HNO3") THEN
+            WHERE (0. < bsc%qa(gcChem%iHNO3c)%data3d) ptr_inc = 0.
+         ENDIF
+
+!        Make increment total air, then apply
+!        (6 hour divisor should be read from RC file)
+         ptr_inc = ptr_inc * (1. - qtot)
+         bsc%qa(i)%data3d = bsc%qa(i)%data3d + ptr_inc*rdt/(6.*60.*60.)
+      endif
+   enddo
+
+!  One more for water vapor
+   if (doCODAS(n+1)) then
+      CALL MAPL_GetPointer ( impChem, specHum, "Q", RC=STATUS )
+      VERIFY_(STATUS)
+
+      call MAPL_GetPointer ( impChem, ptr_inc,               &
+                             "INC_H2O",                      &
+                             notFoundOK=.TRUE., RC=STATUS )
+      VERIFY_(STATUS)
+      call MAPL_GetPointer ( impChem, qtot, "QTOT", rc=STATUS )
+      VERIFY_(STATUS)
+
+!     Make increment total air, then apply (convert from mol/mol to kg/kg)
+!     (6 hour divisor should be read from RC file)
+      ptr_inc = ptr_inc * (1. - qtot)
+      specHum = specHum + MAPL_H2OMW/MAPL_AIRMW*ptr_inc*rdt/(6.*60.*60.)
+   endif
 
 !  Run the chemistry
 !  -----------------
@@ -989,6 +1111,11 @@ CONTAINS
 !  Destroy Legacy state
 !  --------------------
    deallocate ( state%scReg, state%gcChem, state%bsc, stat = STATUS )
+   VERIFY_(STATUS)
+
+!  Destroy CoDAS IAU instructions
+!  ------------------------------
+   deallocate ( doCODAS, stat = STATUS )
    VERIFY_(STATUS)
 
 !  Stop timers
