@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed `TR_GridComp`, `GMI_GridComp`, and `StratChem_GridComp` as these are now in separate repos
    - `TR_GridComp` → [TR](https://github.com/GEOS-ESM/TR)
-   - `GMI_GridComp` → [GMI](https://github.com/GEOS-ESM/GMI)
+   - `GMIchem_GridComp` → [GMI](https://github.com/GEOS-ESM/GMI)
    - `StratChem_GridComp` → [StratChem](https://github.com/GEOS-ESM/StratChem)
 
 ## [1.11.0] - 2023-01-04
