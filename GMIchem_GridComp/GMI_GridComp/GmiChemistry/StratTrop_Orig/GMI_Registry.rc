@@ -149,8 +149,6 @@
   MDUST5             |  kg m-3         | xyz | C |    |   |   |     |      |  x | dust
   MDUST6             |  kg m-3         | xyz | C |    |   |   |     |      |  x | dust
   MDUST7             |  kg m-3         | xyz | C |    |   |   |     |      |  x | dust
-  VEG_FRAC           |  mil            | xyz | C |    |   |   |     |      |  x | Olson_land_type_fraction_mils
-  LAI_FRAC           |  1              | xyz | C |    |   |   |     |      |  x | GMI_leaf_area_index
 # -------------------|-----------------|-----|---|----|---|---|-----|------|--------------------------
 </ImportSpec>
 
