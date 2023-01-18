@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+-Connectivity added between GOCART2G and HEMCO for anthropogenic OC, BC, SO2, SO4, and NH3 in GEOS_ChemGridComp.F90. These species are now added in HEMCOgocart2g* files with diurnal and day of week scaling implemented.
 ### Removed
 ### Changed
 ### Fixed
