@@ -32,7 +32,6 @@
      &  NACT &
      & ,NCHEM &
      & ,NCONST &
-     & ,NDYN &
      & ,NFAM &
      & ,NMF &
      & ,NSS
@@ -40,7 +39,6 @@
       parameter (NACT   = 125)
       parameter (NCHEM  = 129)
       parameter (NCONST =   4)
-      parameter (NDYN   = 126)
       parameter (NFAM   =   2)
       parameter (NMF    = 126)
       parameter (NSS    =   0)

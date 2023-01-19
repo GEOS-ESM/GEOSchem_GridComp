@@ -95,7 +95,6 @@
 !
 !
     integer             :: sad_opt
-    integer             :: h2oclim_opt
 !
     character (len=MAX_LENGTH_VAR_NAME)  :: qj_var_name
     integer             :: phot_opt
@@ -291,20 +290,6 @@
      &                default = 0, rc=STATUS )
       VERIFY_(STATUS)
 
-!     ------------------------------------------------
-!     h2oclim_opt
-!       1:  set all h2oclim values to h2oclim_init_val
-!       2:  read in h2oclim
-!       3:  h2oclim, ch4clim not used.  Instead, transported
-!           H2O and CH4 are provided by the host AGCM.
-!     ------------------------------------------------
-
-      call ESMF_ConfigGetAttribute(config, self%h2oclim_opt, &
-     &                label   = "h2oclim_opt:", &
-     &                default = 2, rc=STATUS )
-      VERIFY_(STATUS)
-
-
 !     =========       
 !     nlGmiPhotolysis 
 !     =========
@@ -347,7 +332,6 @@
     ! ---------------------------------------------------------------
       
       call CheckNamelistOptionRange ('chem_opt', self%chem_opt, 0, 8)
-      call CheckNamelistOptionRange ('h2oclim_opt', self%h2oclim_opt, 1, 3)
       call CheckNamelistOptionRange ('phot_opt', self%phot_opt, 0, 3)
       call CheckNamelistOptionRange ('sad_opt', self%sad_opt, 0, 3)
       call CheckNamelistOptionRange ('oz_eq_synoz_opt', self%oz_eq_synoz_opt, 0, 1)
@@ -631,12 +615,12 @@
 ! !INTERFACE:
 !
       subroutine runChemistry (self, SpeciesConcentration, gmiClock, gmiGrid,   &
-     &              press3c, press3e, gridBoxHeight, mcor, mass, kel, humidity, &
-     &              pctm2, loc_proc, num_species, do_qqjk_reset, HNO3CONDsad,   &
-     &              HNO3GASsad, gmiQK, gmiQQK, gmiQJ, gmiQQJ, surfEmissForChem, &
-     &              pr_diag, do_ftiming, do_qqjk_inchem, pr_qqjk,               &
-     &              do_semiss_inchem, pr_smv2, pr_nc_period,         &
-     &              rootProc, metdata_name_org, metdata_name_model, tdt4)
+                    press3c, press3e, gridBoxHeight, mcor, mass, kel, humidity, &
+                    pctm2, loc_proc, num_species, do_qqjk_reset,                &
+                    HNO3GASsad, gmiQK, gmiQQK, gmiQJ, gmiQQJ, surfEmissForChem, &
+                    pr_diag, do_ftiming, do_qqjk_inchem, pr_qqjk,               &
+                    do_semiss_inchem, pr_smv2, pr_nc_period,                    &
+                    rootProc, metdata_name_org, metdata_name_model, tdt4)
 
 ! !USES:
       use GmiUpdateChemistry_mod, only : updateChemistry
@@ -663,7 +647,6 @@
       type(t_gmiGrid ), intent(in) :: gmiGrid 
       type(t_GmiClock), intent(in) :: gmiClock
       real*8 ,          intent(in) :: surfEmissForChem(:,:,:)
-      real*8 ,          intent(in) :: HNO3CONDsad(:,:,:)
       real*8 ,          intent(in) :: HNO3GASsad(:,:,:)
       type (t_GmiArrayBundle), intent(in) :: gmiQJ(:)
       type (t_GmiArrayBundle), intent(in) :: gmiQK(:)
@@ -727,25 +710,31 @@
 
        call Get_concentration(SpeciesConcentration, concentration)
 
+      !-------------------------------------------------------
+      ! Just hno3gas (i.e., no hno3cond) is used by chemistry.
+      !-------------------------------------------------------
+
+      if ((self%sad_opt == 1) .or. (self%sad_opt == 2)) then
+         ! Replace the truncated (~R4) version of HNO3 with the R8 version:
+         concentration(self%ihno3_num)%pArray3D(:,:,:) = HNO3GASsad(:,:,:)
+      end if
 
       ! Call the Chemistry control routine
-      call updateChemistry (self%savedVars, rootProc, do_ftiming, &
-     &           TRIM(metdata_name_org), TRIM(metdata_name_model),             &
-     &           do_qqjk_inchem, do_qqjk_reset, pr_qqjk,  surfEmissForChem,    &
-     &           press3c, press3e, pr_smv2, pr_nc_period, mass, concentration, &
-     &           gmiQJ, gmiQK, kel, humidity, pctm2, gmiQQJ, gmiQQK,           &
-     &           self%yda, self%qqkda, self%qqjda,                             &
-     &           HNO3GASsad, HNO3CONDsad, self%h2oclim_opt, self%chem_opt,     &
-     &           self%sad_opt, self%phot_opt, self%do_smv_reord, self%do_synoz,&
-     &           do_semiss_inchem, self%do_wetchem, nymd, nhms,                &
-     &           gmi_sec, tdt8, pr_diag, loc_proc, self%synoz_threshold,       &
-     &           self%chem_cycle, self%chem_mask_klo, self%chem_mask_khi,      &
-     &           self%ih2_num, self%ih2o_num, self%ihno3_num, self%ich4_num,   &
-     &           self%imgas_num, self%initrogen_num, self%ioxygen_num,         &
-     &           self%isynoz_num, num_species, self%num_qks, self%num_qjs,     &
-     &           self%num_qjo, self%num_sad, self%num_molefrac, self%num_chem, &
-     &           self%num_active, ilong, ilat, ivert, itloop, ilo, ihi, julo,  &
-     &           jhi, i1, i2, ju1, j2, k1, k2)
+      call updateChemistry (self%savedVars, rootProc, do_ftiming,              &
+                 TRIM(metdata_name_org), TRIM(metdata_name_model),             &
+                 do_qqjk_inchem, do_qqjk_reset, pr_qqjk,  surfEmissForChem,    &
+                 press3c, press3e, pr_smv2, pr_nc_period, mass, concentration, &
+                 gmiQJ, gmiQK, kel, humidity, pctm2, gmiQQJ, gmiQQK,           &
+                 self%yda, self%qqkda, self%qqjda,                             &
+                 self%do_smv_reord, self%do_synoz,                             &
+                 do_semiss_inchem, self%do_wetchem, nymd, nhms,                &
+                 gmi_sec, tdt8, pr_diag, loc_proc, self%synoz_threshold,       &
+                 self%chem_cycle, self%chem_mask_klo, self%chem_mask_khi,      &
+                 self%imgas_num, self%initrogen_num, self%ioxygen_num,         &
+                 self%isynoz_num, num_species, self%num_qks, self%num_qjs,     &
+                 self%num_qjo, self%num_sad, self%num_molefrac, self%num_chem, &
+                 self%num_active, ilong, ilat, ivert, itloop, ilo, ihi, julo,  &
+                 jhi, i1, i2, ju1, j2, k1, k2)
 
       call Set_concentration(SpeciesConcentration, concentration)
 

@@ -35,7 +35,6 @@
    USE GmiFieldBundleESMF_mod,        ONLY : addTracerToBundle
    USE GmiFieldBundleESMF_mod,        ONLY : obtainTracerFromBundle
    USE GmiShipEmission_mod,           ONLY : calcShipEmission
-   USE GmiStateFieldESMF_mod,	      ONLY : getDataFromStateField
    USE GmiSurfaceEmissionInChemistry_mod, ONLY : updateSurfEmissionInChemistry
    USE GmiSwapSpeciesBundlesMod,      ONLY : SwapSpeciesBundles, speciesReg_for_CCM
    USE VegLaiMod,                     ONLY : Decode_Land_Types, Decode_XLAI

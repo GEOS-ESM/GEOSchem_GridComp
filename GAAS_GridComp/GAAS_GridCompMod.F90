@@ -25,6 +25,7 @@
    Use  MAPL_GridManagerMod
    Use  MAPL_LatLonGridFactoryMod
    Use  MAPL_CubedSphereGridFactoryMod, only: CubedSphereGridFactory
+   use mpi
 
    IMPLICIT NONE
    PRIVATE
@@ -457,13 +458,20 @@ CONTAINS
     real, dimension(:,:), allocatable, target :: aodInt, aod_a_, aod_k_, aod_f_, &
                                                  y_a_, y_d_
     real, pointer, dimension(:,:,:)  :: DUsum, SSsum, SUsum, NIsum, CAOCsum, CABCsum, CABRsum
-
+    type(ESMF_Field)              :: aod_field
+    logical :: skip_analysis 
+    integer :: hour,minute,second,year,month,day
+    type(ESMF_Time) :: current_time
+    type(ESMF_Field) :: aod_a_field
 
 #   include "GAAS_DeclarePointer___.h"
 
                                 __Iam__('Run_')
 
-
+!  Get pointer for IMPORT/EXPORT/INTERNAL states 
+!  ---------------------------------------------
+#  include "GAAS_GetPointer___.h"
+      
 !  Set these exports to UNDEF
 !  --------------------------
    if ( associated(aodana) ) aodana(:,:) = MAPL_UNDEF
@@ -483,31 +491,20 @@ CONTAINS
 !  Extract relevant runtime information
 !  ------------------------------------
    call extract_ ( GC, CLOCK, self, GRID, CF, time, nymd, nhms, __RC__)
+!
+   call ESMF_StateGet(import,"aod_a",aod_a_field,_RC)
+!  Is it time for analysis?
+!  ------------------------
+   skip_analysis = ESMFL_field_is_undefined(aod_a_field,_RC)
+   analysis_time = .not.skip_analysis
 
 !  Is it time for analysis?
 !  ------------------------
-   call MAPL_Get (MAPL, RUNALARM=Alarm, __RC__)
-#if 0
-   analysis_time = ESMF_AlarmIsRinging(Alarm,__RC__)
-#endif
-
    call ESMF_ClockGetAlarm(Clock,'PredictorActive',Predictor_Alarm,__RC__)
    PREDICTOR_STEP = ESMF_AlarmIsRinging( Predictor_Alarm,__RC__)
 
    call ESMF_ClockGetAlarm(Clock,'ReplayShutOff',ReplayShutOff_Alarm,__RC__)
    ReplayShutOff  = ESMF_AlarmIsRinging( ReplayShutOff_Alarm,__RC__)
-
-!  For some reason the alarm above is not working.
-!  For now, hardwire this...
-!  -----------------------------------------------
-   analysis_time =  nhms ==      0 .OR. &
-                    nhms ==  30000 .OR. &
-                    nhms ==  60000 .OR. &
-                    nhms ==  90000 .OR. &
-                    nhms == 120000 .OR. &
-                    nhms == 150000 .OR. &
-                    nhms == 180000 .OR. &
-                    nhms == 210000
 
 !  Stop here if it is NOT analysis time
 !  -------------------------------------
@@ -521,14 +518,6 @@ CONTAINS
       PRINT *, TRIM(Iam)//': Starting Aerosol Assimilation at ', nymd, nhms
       PRINT *,' '
    end if
-
-!  Run MAPL Generic
-!  ----------------
-!ALT   call MAPL_GenericRunChildren ( gc, IMPORT, EXPORT, clock,  __RC__ )
-
-!  Get pointer for IMPORT/EXPORT/INTERNAL states 
-!  ---------------------------------------------
-#  include "GAAS_GetPointer___.h"
 
 !  Retrieve AOD from AERO state and fill SimpleBundle
 !  ------------------------------------------------------
@@ -552,7 +541,7 @@ CONTAINS
 
    ! execute the aero provider's optics method
    call ESMF_MethodExecute(aero, label="get_monochromatic_aop", __RC__)
-
+ 
    ! Retrieve vertically summed AOD from AERO
    allocate(aodInt(ubound(rh2,1), ubound(rh2,2)), __STAT__)
    aodInt = 0.0

@@ -473,7 +473,8 @@ contains
 ! -------------------------------
   IF(myState%enable_GOCART) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'AIRDENS     ','AIRDENS_DRYP', 'DELP        ', 'CN_PRCP     ', 'NCN_PRCP    '/), &
+          SHORT_NAME  = (/'AIRDENS     ', 'AIRDENS_DRYP', 'DELP        ',    &
+                          'CN_PRCP     ', 'NCN_PRCP    ', 'QTOT        ' /), &
           DST_ID = GOCART, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
@@ -528,8 +529,9 @@ contains
 
   IF(myState%enable_STRATCHEM) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/ 'AIRDENS     ', 'AIRDENS_DRYP', 'DELP        ',    &
-                           'CN_PRCP     ', 'NCN_PRCP    ', 'LFR         ' /), &
+          SHORT_NAME  = (/ 'AIRDENS     ', 'AIRDENS_DRYP', 'DELP        ', &
+                           'CN_PRCP     ', 'NCN_PRCP    ', 'LFR         ', &
+                           'QTOT        ' /), &
           DST_ID = STRATCHEM, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
@@ -560,26 +562,22 @@ contains
 
   IF(myState%enable_TR) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'AIRDENS     ', 'AIRDENS_DRYP', 'DELP        ', &
-                          'CN_PRCP     ', 'NCN_PRCP    '/), &
-          DST_ID = TR, SRC_ID = CHEMENV, __RC__  )
+            SHORT_NAME  = (/'AIRDENS     ', 'AIRDENS_DRYP', 'DELP        ',    &
+                            'CN_PRCP     ', 'NCN_PRCP    ', 'QTOT        ' /), &
+            DST_ID = TR, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
   IF(myState%enable_TR .AND. myState%enable_GMICHEM) then
-     ! First test - add O3 and the species needed to compute O3 loss
-     ! Later, parse the TR .rc files to determine the fields we need
      CALL MAPL_AddConnectivity ( GC, &
-            SRC_NAME  = (/'OX    ', 'QQK007', 'QQK027', 'QQK028', 'DD_OX ', 'QQK005', &
-                          'QQK235', 'QQK170', 'QQK216', 'QQK179', 'QQK150'/), &
-            DST_NAME  = (/'OX_TR ', 'QQK007', 'QQK027', 'QQK028', 'DD_OX ', 'QQK005', &
-                          'QQK235', 'QQK170', 'QQK216', 'QQK179', 'QQK150'/), &
-          DST_ID = TR, SRC_ID = GMICHEM, __RC__  )
+            SRC_NAME  = (/'OX       ', 'stOX_loss', 'DD_OX    '/), &
+            DST_NAME  = (/'OX_TR    ', 'stOX_loss', 'DD_OX    '/), &
+            DST_ID = TR, SRC_ID = GMICHEM, __RC__  )
   ENDIF
 
   IF(myState%enable_GEOSCHEM) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'AIRDENS', 'DELP   ', 'LFR    ', 'BYNCY  '/), &
-          DST_ID = GEOSCHEM, SRC_ID = CHEMENV, __RC__  )
+            SHORT_NAME  = (/'AIRDENS', 'DELP   ', 'LFR    ', 'BYNCY  '/), &
+            DST_ID = GEOSCHEM, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
 ! Ozone mole fraction needed by GOCART for
