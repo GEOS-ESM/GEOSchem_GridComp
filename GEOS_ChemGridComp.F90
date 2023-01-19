@@ -18,22 +18,23 @@ module GEOS_ChemGridCompMod
   use Chem_UtilMod
   use Bundle_IncrementMod
 
-  use  GEOS_ChemEnvGridCompMod,  only :   ChemEnv_SetServices => SetServices
-  use       GOCART_GridCompMod,  only :    GOCART_SetServices => SetServices
-  use     GOCART2G_GridCompMod,  only : GOCART2G_SetServices  => SetServices !GOCART REFACTOR
-  use    StratChem_GridCompMod,  only : StratChem_SetServices => SetServices
-  use      GMIchem_GridCompMod,  only :       GMI_SetServices => SetServices
-  use    CARMAchem_GridCompMod,  only :     CARMA_SetServices => SetServices
-  use GEOSCHEMchem_GridCompMod,  only :    GCChem_SetServices => SetServices
-  use   MATRIXchem_GridCompMod,  only :    MATRIX_SetServices => SetServices
-  use      MAMchem_GridCompMod,  only :       MAM_SetServices => SetServices
-  use    GEOS_PChemGridCompMod,  only :     PChem_SetServices => SetServices
-  use    GEOS_AChemGridCompMod,  only :     AChem_SetServices => SetServices
-  use         GAAS_GridCompMod,  only :      GAAS_SetServices => SetServices
-  use          H2O_GridCompMod,  only :       H2O_SetServices => SetServices
-  use           TR_GridCompMod,  only :        TR_SetServices => SetServices
-  use          DNA_GridCompMod,  only :       DNA_SetServices => SetServices
-  use        HEMCO_GridCompMod,  only :     HEMCO_SetServices => SetServices
+  use  GEOS_ChemEnvGridCompMod,  only :    ChemEnv_SetServices => SetServices
+  use       GOCART_GridCompMod,  only :     GOCART_SetServices => SetServices
+  use     GOCART2G_GridCompMod,  only :   GOCART2G_SetServices => SetServices !GOCART REFACTOR
+  use   GEOScarbon_GridCompMod,  only : GEOScarbon_SetServices => SetServices !Carbon gases refactor
+  use    StratChem_GridCompMod,  only :  StratChem_SetServices => SetServices
+  use      GMIchem_GridCompMod,  only :        GMI_SetServices => SetServices
+  use    CARMAchem_GridCompMod,  only :      CARMA_SetServices => SetServices
+  use GEOSCHEMchem_GridCompMod,  only :     GCChem_SetServices => SetServices
+  use   MATRIXchem_GridCompMod,  only :     MATRIX_SetServices => SetServices
+  use      MAMchem_GridCompMod,  only :        MAM_SetServices => SetServices
+  use    GEOS_PChemGridCompMod,  only :      PChem_SetServices => SetServices
+  use    GEOS_AChemGridCompMod,  only :      AChem_SetServices => SetServices
+  use         GAAS_GridCompMod,  only :       GAAS_SetServices => SetServices
+  use          H2O_GridCompMod,  only :        H2O_SetServices => SetServices
+  use           TR_GridCompMod,  only :         TR_SetServices => SetServices
+  use          DNA_GridCompMod,  only :        DNA_SetServices => SetServices
+  use        HEMCO_GridCompMod,  only :      HEMCO_SetServices => SetServices
 
   implicit none
   private
@@ -54,6 +55,7 @@ module GEOS_ChemGridCompMod
      LOGICAL :: enable_GOCART
      LOGICAL :: enable_GOCARTdata
      LOGICAL :: enable_GOCART2G        ! GOCART REFACTOR
+     LOGICAL :: enable_GEOScarbon      ! Carbon gases refactor (MSL)
      LOGICAL :: enable_GAAS
      LOGICAL :: enable_H2O
      LOGICAL :: enable_STRATCHEM
@@ -91,6 +93,7 @@ module GEOS_ChemGridCompMod
   integer ::       GOCART = -1
   integer ::     GOCART2G = -1
   integer ::   GOCARTdata = -1
+  integer ::   GEOScarbon = -1
   integer ::         GAAS = -1
   integer ::          H2O = -1
   integer ::    STRATCHEM = -1
@@ -173,6 +176,9 @@ contains
     logical                     :: GOCART_instance_of_HEMCO   ! TRUE if HEMCO is running a GOCART instance
     logical                     ::    GMI_instance_of_HEMCO   ! TRUE if HEMCO is running a GMI instance
 
+! <<>> MSL DEV
+    character(LEN=ESMF_MAXSTR) :: RATsLabel
+
 !=============================================================================
 
 ! Begin...
@@ -216,7 +222,8 @@ contains
     call ESMF_ConfigGetAttribute(myCF, myState%enable_ACHEM,      Default=.FALSE., Label="ENABLE_ACHEM:",       __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCART,     Default=.FALSE., Label="ENABLE_GOCART:",      __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCARTdata, Default=.FALSE., Label="ENABLE_GOCART_DATA:", __RC__ )
-    call ESMF_ConfigGetAttribute(myCF,   myState%enable_GOCART2G, Default=.FALSE., Label="ENABLE_GOCART2G:",    __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCART2G,   Default=.FALSE., Label="ENABLE_GOCART2G:",    __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_GEOScarbon, Default=.FALSE., Label="ENABLE_GEOScarbon:",  __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GAAS,       Default=.FALSE., Label="ENABLE_GAAS:",        __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_H2O,        Default=.FALSE., Label="ENABLE_H2O:",         __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_STRATCHEM,  Default=.FALSE., Label="ENABLE_STRATCHEM:",   __RC__ )
@@ -243,23 +250,24 @@ contains
 ! -----------------------------------------------------------------
     CHEMENV = MAPL_AddChild(GC, NAME='CHEMENV', SS=ChemEnv_SetServices, __RC__)
 
-    if (     myState%enable_HEMCO)       HEMCO = MAPL_AddChild(GC, NAME=       'HEMCO', SS=HEMCO_SetServices,     __RC__)
-    if (     myState%enable_PCHEM)       PCHEM = MAPL_AddChild(GC, NAME=       'PCHEM', SS=PChem_SetServices,     __RC__)
-    if (     myState%enable_ACHEM)       ACHEM = MAPL_AddChild(GC, NAME=       'ACHEM', SS=AChem_SetServices,     __RC__)
-    if (    myState%enable_GOCART)      GOCART = MAPL_AddChild(GC, NAME=      'GOCART', SS=GOCART_SetServices,    __RC__)
-    if (myState%enable_GOCARTdata)  GOCARTdata = MAPL_AddChild(GC, NAME= 'GOCART.data', SS=GOCART_SetServices,    __RC__)
-    if (  myState%enable_GOCART2G)    GOCART2G = MAPL_AddChild(GC, NAME=    'GOCART2G', SS=GOCART2G_SetServices,  __RC__)
-    if (      myState%enable_GAAS)        GAAS = MAPL_AddChild(GC, NAME=        'GAAS', SS=GAAS_SetServices,      __RC__)
-    if (       myState%enable_H2O)         H2O = MAPL_AddChild(GC, NAME=         'H2O', SS=H2O_SetServices,       __RC__)
-    if ( myState%enable_STRATCHEM)   STRATCHEM = MAPL_AddChild(GC, NAME=   'STRATCHEM', SS=StratChem_SetServices, __RC__)
-    if (   myState%enable_GMICHEM)     GMICHEM = MAPL_AddChild(GC, NAME=     'GMICHEM', SS=GMI_SetServices,       __RC__)
-    if (     myState%enable_CARMA)       CARMA = MAPL_AddChild(GC, NAME=       'CARMA', SS=CARMA_SetServices,     __RC__)
-    if (  myState%enable_GEOSCHEM)    GEOSCHEM = MAPL_AddChild(GC, NAME='GEOSCHEMCHEM', SS=GCChem_SetServices,    __RC__)
-    if (    myState%enable_MATRIX)      MATRIX = MAPL_AddChild(GC, NAME=      'MATRIX', SS=MATRIX_SetServices,    __RC__)
-    if (       myState%enable_MAM)         MAM = MAPL_AddChild(GC, NAME=         'MAM', SS=MAM_SetServices,       __RC__)
-    if (   myState%enable_MAMdata)     MAMdata = MAPL_AddChild(GC, NAME=    'MAM.data', SS=MAM_SetServices,       __RC__)
-    if (        myState%enable_TR)          TR = MAPL_AddChild(GC, NAME=          'TR', SS=TR_SetServices,        __RC__)
-    if (       myState%enable_DNA)         DNA = MAPL_AddChild(GC, NAME=         'DNA', SS=DNA_SetServices,       __RC__)
+    if (     myState%enable_HEMCO)        HEMCO = MAPL_AddChild(GC, NAME=       'HEMCO', SS=HEMCO_SetServices,     __RC__)
+    if (     myState%enable_PCHEM)        PCHEM = MAPL_AddChild(GC, NAME=       'PCHEM', SS=PChem_SetServices,     __RC__)
+    if (     myState%enable_ACHEM)        ACHEM = MAPL_AddChild(GC, NAME=       'ACHEM', SS=AChem_SetServices,     __RC__)
+    if (    myState%enable_GOCART)       GOCART = MAPL_AddChild(GC, NAME=      'GOCART', SS=GOCART_SetServices,    __RC__)
+    if (myState%enable_GOCARTdata)   GOCARTdata = MAPL_AddChild(GC, NAME= 'GOCART.data', SS=GOCART_SetServices,    __RC__)
+    if (  myState%enable_GOCART2G)     GOCART2G = MAPL_AddChild(GC, NAME=    'GOCART2G', SS=GOCART2G_SetServices,  __RC__)
+    if (  myState%enable_GEOScarbon) GEOScarbon = MAPL_AddChild(GC, NAME=  'GEOScarbon', SS=GEOScarbon_SetServices,__RC__)
+    if (      myState%enable_GAAS)         GAAS = MAPL_AddChild(GC, NAME=        'GAAS', SS=GAAS_SetServices,      __RC__)
+    if (       myState%enable_H2O)          H2O = MAPL_AddChild(GC, NAME=         'H2O', SS=H2O_SetServices,       __RC__)
+    if ( myState%enable_STRATCHEM)    STRATCHEM = MAPL_AddChild(GC, NAME=   'STRATCHEM', SS=StratChem_SetServices, __RC__)
+    if (   myState%enable_GMICHEM)      GMICHEM = MAPL_AddChild(GC, NAME=     'GMICHEM', SS=GMI_SetServices,       __RC__)
+    if (     myState%enable_CARMA)        CARMA = MAPL_AddChild(GC, NAME=       'CARMA', SS=CARMA_SetServices,     __RC__)
+    if (  myState%enable_GEOSCHEM)     GEOSCHEM = MAPL_AddChild(GC, NAME='GEOSCHEMCHEM', SS=GCChem_SetServices,    __RC__)
+    if (    myState%enable_MATRIX)       MATRIX = MAPL_AddChild(GC, NAME=      'MATRIX', SS=MATRIX_SetServices,    __RC__)
+    if (       myState%enable_MAM)          MAM = MAPL_AddChild(GC, NAME=         'MAM', SS=MAM_SetServices,       __RC__)
+    if (   myState%enable_MAMdata)      MAMdata = MAPL_AddChild(GC, NAME=    'MAM.data', SS=MAM_SetServices,       __RC__)
+    if (        myState%enable_TR)           TR = MAPL_AddChild(GC, NAME=          'TR', SS=TR_SetServices,        __RC__)
+    if (       myState%enable_DNA)          DNA = MAPL_AddChild(GC, NAME=         'DNA', SS=DNA_SetServices,       __RC__)
 
 
 ! A container for the friendly tracers
@@ -303,6 +311,43 @@ contains
 ! ------------------------------------------------------------
   CALL MAPL_AddExportSpec ( GC, SHORT_NAME = 'H2O_TEND', &
                             CHILD_ID = RATS_PROVIDER, __RC__ )
+
+! <<>> MSL DEV
+! Allow setting individual RAT sources via AGCM.rc
+  DO i = 1, numRATs
+     write(RATsLabel,'(a)') trim(speciesName(i))//'_PROVIDER:'
+     call GetProvider_(CF, Label=trim(RATsLabel), ID=RATsProviderNumber(i), Name=providerName, Default=trim(RATsProviderName(i)), __RC__) ! A little trickery here.
+     RATsProviderName(i) = trim(ProviderName)
+     if (MAPL_am_I_Root()) write(*,*) '<<>>: ', trim(speciesName(i))," Provider: ",trim(RATsProviderName(i))
+  END DO
+
+! <<>> MSL DEV
+! CO2 is not listed as a RAT, so add it here outside of the RATs code logic
+  ! -- get info from AGCM.rc
+  call ESMF_ConfigGetAttribute(CF, providerName, Default='None', &
+                               Label="CO2_PROVIDER:", __RC__ )
+
+  str = trim(providerName)
+  str = ESMF_UtilStringLowerCase(str, __RC__)
+
+  ! -- Make sure, if label is there, that it is an approved name.
+  if (trim(providerName) .ne. 'GOCART' .and. trim(str) .ne. 'none' .and. trim(providerName) .ne. 'GHG') then
+     write(*,*) 'CHEM ERROR: CO2_PROVIDER can only be None, GOCART or GHG. It is ',trim(providerName)
+     RC = -1
+     return
+
+  ! -- else, if 'None', do nothing.
+  else if (trim(str) .eq. 'none') then
+     if (MAPL_am_I_root()) write(*,*) 'CHEM: CO2 is not added as a RAT from GOCART or GHG.' 
+
+  ! -- else, if GOCART or GHG, set up export
+  else if (trim(providerName) .eq. 'GOCART') then
+     CALL MAPL_AddExportSpec( GC, SHORT_NAME = 'CO2', &
+                              CHILD_ID = GOCART, __RC__ )
+  else if (trim(providerName) .eq. 'GHG'   ) then
+     CALL MAPL_AddExportSpec( GC, SHORT_NAME = 'CO2', &
+                              CHILD_ID = GEOScarbon, __RC__ )
+  endif
 
 ! Priority for first three RATs, OX, O3 and O3PPMV, goes to the ANALYSIS_OX_PROVIDER.
 ! -----------------------------------------------------------------------------------
@@ -442,6 +487,15 @@ contains
      CALL MAPL_AddConnectivity ( GC, &
           SHORT_NAME  = (/'DELP    ', 'AIRDENS ', 'NCN_PRCP' /), &
           DST_ID = GOCART2G, SRC_ID = CHEMENV, __RC__  )
+  ENDIF
+
+  IF(myState%enable_GEOScarbon) then
+     CALL MAPL_AddConnectivity ( GC, &
+          SHORT_NAME  = (/'DELP    ', 'AIRDENS ', 'NCN_PRCP' /), &
+          DST_ID = GEOScarbon, SRC_ID = CHEMENV, __RC__  )
+     CALL MAPL_AddConnectivity ( GC, &
+          SHORT_NAME  = (/'O3'/), &
+          DST_ID = GEOScarbon, SRC_ID = PCHEM, __RC__  )
   ENDIF
 
   IF(myState%enable_GAAS) then
@@ -586,13 +640,11 @@ contains
 ! ---------------------------------
   IF(myState%enable_GOCART2G .AND. myState%enable_ACHEM) then
    IF(chemReg%doing_OCS) THEN
-    CALL MAPL_AddConnectivity ( GC, &
-         SHORT_NAME  = (/'pSO2_OCS'/), &
-         DST_ID = GOCART2G, SRC_ID = ACHEM, __RC__  )
+    CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/'pSO2_OCS'/), DST_ID =&
+         & GOCART2G, SRC_ID = ACHEM, __RC__  )
    ENDIF
-   CALL MAPL_AddConnectivity ( GC, &
-        SHORT_NAME  = (/'pSOA_ANTHRO_VOC', 'pSOA_BIOB_VOC  '/), &
-        DST_ID = GOCART2G, SRC_ID = ACHEM, __RC__  )
+   CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/'pSOA_ANTHRO_VOC',&
+        & 'pSOA_BIOB_VOC  '/), DST_ID = GOCART2G, SRC_ID = ACHEM, __RC__  )
   ENDIF
 
 ! GOCART <=> StratChem coupling ...
@@ -603,21 +655,19 @@ contains
      do n = chemReg%i_SU, chemReg%j_SU
 
         if(trim(chemReg%vname(n)) .eq. 'SO4') then
-           CALL MAPL_AddConnectivity ( GC, &
-            SHORT_NAME = (/ "GOCART::DMS", "GOCART::SO2", "GOCART::SO4", "GOCART::MSA" /), &
-            DST_ID = STRATCHEM, SRC_ID = GOCART, __RC__)
-           CALL MAPL_AddConnectivity ( GC, &
-            SHORT_NAME  = (/"SO4SAREA"/), &
-            DST_ID = STRATCHEM, SRC_ID = GOCART, __RC__)
+           CALL MAPL_AddConnectivity ( GC, SHORT_NAME = (/ "GOCART::DMS",&
+                & "GOCART::SO2", "GOCART::SO4", "GOCART::MSA" /), DST_ID =&
+                & STRATCHEM, SRC_ID = GOCART, __RC__)
+           CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/"SO4SAREA"/),&
+                & DST_ID = STRATCHEM, SRC_ID = GOCART, __RC__)
         endif
 
         if(trim(chemReg%vname(n)) .eq. 'SO4v') then
-           CALL MAPL_AddConnectivity ( GC, &
-            SHORT_NAME = (/"GOCART::DMSv", "GOCART::SO2v", "GOCART::SO4v", "GOCART::MSAv" /), &
-            DST_ID = STRATCHEM, SRC_ID = GOCART, __RC__)
-           CALL MAPL_AddConnectivity ( GC, &
-            SHORT_NAME  = (/"SO4SAREAvolc"/), &
-            DST_ID = STRATCHEM, SRC_ID = GOCART, __RC__)
+           CALL MAPL_AddConnectivity ( GC, SHORT_NAME = (/"GOCART::DMSv",&
+                & "GOCART::SO2v", "GOCART::SO4v", "GOCART::MSAv" /), DST_ID =&
+                & STRATCHEM, SRC_ID = GOCART, __RC__)
+           CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/"SO4SAREAvolc"/),&
+                & DST_ID = STRATCHEM, SRC_ID = GOCART, __RC__)
         endif
 
      enddo
@@ -629,17 +679,17 @@ contains
 ! CARMA <=> StratChem coupling ...
 ! ---------------------------------
   IF(myState%enable_STRATCHEM .AND. TRIM(providerName) == "CARMA") then
-   CALL MAPL_AddConnectivity ( GC, &
-                   SRC_NAME  = (/ 'CARMA_SUSAREA ', 'CARMA_SUSAREAv' /), &
-                   DST_NAME  = (/ 'SO4SAREA      ', 'SO4SAREAvolc  ' /), &
-            DST_ID = STRATCHEM, SRC_ID = CARMA, __RC__)
+   CALL MAPL_AddConnectivity ( GC, SRC_NAME  = (/ 'CARMA_SUSAREA ',&
+        & 'CARMA_SUSAREAv' /), DST_NAME  = (/ 'SO4SAREA      ', 'SO4SAREAvolc&
+        &  ' /), DST_ID = STRATCHEM, SRC_ID = CARMA, __RC__)
 
   END IF
 
 ! GOCART.data <=> GMICHEM coupling ...
 ! ------------------------------------
   IF(myState%enable_GMICHEM .AND. TRIM(providerName) == "GOCART.data") THEN
-   CALL MAPL_AddConnectivity ( GC, SHORT_NAME=(/ "AERO" /), DST_ID=GMICHEM, SRC_ID=GOCARTdata, __RC__)
+   CALL MAPL_AddConnectivity ( GC, SHORT_NAME=(/ "AERO" /), DST_ID=GMICHEM,&
+        & SRC_ID=GOCARTdata, __RC__)
   END IF
 
 ! GOCART <=> GMICHEM coupling ...
@@ -648,40 +698,31 @@ contains
 
 ! GOCART connections to GMICHEM
 ! -----------------------------
-   IF(chemReg%doing_BC) &
-   CALL MAPL_AddConnectivity ( GC, &
-     SHORT_NAME  = (/ "GOCART::BCphobic", "GOCART::BCphilic" /), &
-     DST_ID=GMICHEM, SRC_ID=GOCART, __RC__)
+   IF(chemReg%doing_BC) CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/&
+        & "GOCART::BCphobic", "GOCART::BCphilic" /), DST_ID=GMICHEM, SRC_ID&
+        &=GOCART, __RC__)
 
-   IF(chemReg%doing_DU) &
-   CALL MAPL_AddConnectivity ( GC, &
-     SHORT_NAME  = (/ "GOCART::du001", "GOCART::du002", "GOCART::du003", &
-                      "GOCART::du004", "GOCART::du005" /), &
-     DST_ID=GMICHEM, SRC_ID=GOCART, __RC__)
+   IF(chemReg%doing_DU) CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/&
+        & "GOCART::du001", "GOCART::du002", "GOCART::du003", "GOCART::du004",&
+        & "GOCART::du005" /), DST_ID=GMICHEM, SRC_ID=GOCART, __RC__)
 
-   IF(chemReg%doing_OC) &
-   CALL MAPL_AddConnectivity ( GC, &
-     SHORT_NAME  = (/ "GOCART::OCphobic", "GOCART::OCphilic" /), &
-     DST_ID=GMICHEM, SRC_ID=GOCART, __RC__)
+   IF(chemReg%doing_OC) CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/&
+        & "GOCART::OCphobic", "GOCART::OCphilic" /), DST_ID=GMICHEM, SRC_ID&
+        &=GOCART, __RC__)
 
-   IF(chemReg%doing_SS) &
-   CALL MAPL_AddConnectivity ( GC, &
-     SHORT_NAME  = (/ "GOCART::ss001", "GOCART::ss002", "GOCART::ss003", &
-                      "GOCART::ss004", "GOCART::ss005" /), &
-     DST_ID=GMICHEM, SRC_ID=GOCART, __RC__)
+   IF(chemReg%doing_SS) CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/&
+        & "GOCART::ss001", "GOCART::ss002", "GOCART::ss003", "GOCART::ss004",&
+        & "GOCART::ss005" /), DST_ID=GMICHEM, SRC_ID=GOCART, __RC__)
 
-   IF(chemReg%doing_SU) &
-   CALL MAPL_AddConnectivity ( GC, &
-     SHORT_NAME  = (/ "GOCART::DMS", "GOCART::SO2", &
-                      "GOCART::SO4", "GOCART::MSA" /), &
-     DST_ID=GMICHEM, SRC_ID=GOCART, __RC__)
+   IF(chemReg%doing_SU) CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/&
+        & "GOCART::DMS", "GOCART::SO2", "GOCART::SO4", "GOCART::MSA" /),&
+        & DST_ID=GMICHEM, SRC_ID=GOCART, __RC__)
 
      Search_SO4v: DO n = chemReg%i_SU, chemReg%j_SU
 
       IF( TRIM(chemReg%vname(n)) == "SO4v" )  THEN
-        CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/ "GOCART::SO4v" /), &
-          DST_ID=GMICHEM, SRC_ID=GOCART, __RC__)
+        CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/ "GOCART::SO4v" /),&
+             & DST_ID=GMICHEM, SRC_ID=GOCART, __RC__)
       END IF
 
      END DO Search_SO4v
@@ -693,38 +734,31 @@ contains
 
 ! ... For GOCART::SU,NI
 ! ---------------------
-   CALL MAPL_AddConnectivity ( GC, &
-    SHORT_NAME  = (/ "OH  ", "CH4 ", "H2O2", "NO3 ", "HNO3" /), &
-    DST_ID=GOCART, SRC_ID=GMICHEM, __RC__)
+   CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/ "OH  ", "CH4 ", "H2O2",&
+        & "NO3 ", "HNO3" /), DST_ID=GOCART, SRC_ID=GMICHEM, __RC__)
 
 ! ... For GOCART::CFC
 ! -------------------
-   CALL MAPL_AddConnectivity ( GC, &
-    SRC_NAME  = (/"OX"/), &
-    DST_NAME  = (/"O3"/), &
-    DST_ID=GOCART, SRC_ID=GMICHEM, __RC__)
+   CALL MAPL_AddConnectivity ( GC, SRC_NAME  = (/"OX"/), DST_NAME  = (/"O3"/)&
+        &, DST_ID=GOCART, SRC_ID=GMICHEM, __RC__)
   
   END IF
 
 ! GMICHEM connections to MAM
 ! -----------------------------
-   IF(myState%enable_MAM) &
-   CALL MAPL_AddConnectivity ( GC, &
-    SHORT_NAME  = (/ "ALK4", "CH4 ", "C2H6", "C3H6", "C3H8", "ISOP" /), &
-    DST_ID=MAM, SRC_ID=GMICHEM, __RC__)
+   IF(myState%enable_MAM) CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/&
+        & "ALK4", "CH4 ", "C2H6", "C3H6", "C3H8", "ISOP" /), DST_ID=MAM,&
+        & SRC_ID=GMICHEM, __RC__)
 
 ! GMICHEM connections to ACHEM
 ! --------------------------------
    IF(myState%enable_ACHEM) THEN
 
-   CALL MAPL_AddConnectivity ( GC, &
-    SHORT_NAME  = (/ "OH  ", "H2O2", "NO3 " /), &
-    DST_ID=ACHEM, SRC_ID=GMICHEM, __RC__)
+   CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/ "OH  ", "H2O2", "NO3 " /)&
+        &, DST_ID=ACHEM, SRC_ID=GMICHEM, __RC__)
 
-   CALL MAPL_AddConnectivity ( GC, &
-    SRC_NAME  = (/"OX"/), &
-    DST_NAME  = (/"O3"/), &
-    DST_ID=ACHEM, SRC_ID=GMICHEM, __RC__)
+   CALL MAPL_AddConnectivity ( GC, SRC_NAME  = (/"OX"/), DST_NAME  = (/"O3"/)&
+        &, DST_ID=ACHEM, SRC_ID=GMICHEM, __RC__)
 
    END IF
 
@@ -735,15 +769,12 @@ contains
 ! -----------------------------
   IF(myState%enable_PCHEM .AND. myState%enable_GEOSCHEM) THEN
 
-   CALL MAPL_AddConnectivity ( GC, &
-    SHORT_NAME  = (/ "TO3" /), &
-    DST_ID=GEOSCHEM, SRC_ID=PCHEM, __RC__)
+   CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/ "TO3" /), DST_ID=GEOSCHEM&
+        &, SRC_ID=PCHEM, __RC__)
 
    ! added by ckeller, 10/31/2018
-   CALL MAPL_AddConnectivity ( GC, &
-    SRC_NAME  = (/"O3"/), &
-    DST_NAME  = (/"PCHEM_O3"/), &
-    DST_ID = GEOSCHEM, SRC_ID = PCHEM, __RC__  )
+   CALL MAPL_AddConnectivity ( GC, SRC_NAME  = (/"O3"/), DST_NAME  = &
+        &(/"PCHEM_O3"/), DST_ID = GEOSCHEM, SRC_ID = PCHEM, __RC__  )
 
   END IF
 
@@ -751,10 +782,8 @@ contains
   ! Only provide it from GEOS-Chem if PCHEM is not running.
   IF(myState%enable_GOCART .AND. myState%enable_GEOSCHEM) then
    IF ( .NOT. myState%enable_PCHEM ) THEN
-    CALL MAPL_AddConnectivity ( GC, &
-       SRC_NAME  = (/"TRC_O3"/), &
-       DST_NAME  = (/"O3"/), &
-       DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__  )
+    CALL MAPL_AddConnectivity ( GC, SRC_NAME  = (/"TRC_O3"/), DST_NAME  = &
+         &(/"O3"/), DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__  )
    ENDIF
   ENDIF
 
@@ -766,7 +795,8 @@ contains
 
   IF( myState%enable_HEMCO ) THEN
 
-    CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/ 'AIRDENS', 'BYNCY  ' /), DST_ID=HEMCO, SRC_ID=CHEMENV, __RC__)
+    CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/ 'AIRDENS', 'BYNCY  ' /),&
+         & DST_ID=HEMCO, SRC_ID=CHEMENV, __RC__)
 
     !!!!!!!!!!!!!!!!!!
     ! Determine if GOCART or GMI expect data from HEMCO:  
@@ -778,10 +808,12 @@ contains
     CALL ESMF_ConfigLoadFile( HemcoCF, 'HEMCO_GridComp.rc', __RC__ )
 
     ! Get number of instances
-    call ESMF_ConfigGetAttribute(HemcoCF, nnInst, Label="HEMCO_Instances:" , DEFAULT=1, __RC__)
+    call ESMF_ConfigGetAttribute(HemcoCF, nnInst, Label="HEMCO_Instances:" ,&
+         & DEFAULT=1, __RC__)
 
     ! Verbose
-    IF ( MAPL_Am_I_Root() ) WRITE(*,*) 'CHEMsetup - number of HEMCO instances: ', nnInst
+    IF ( MAPL_Am_I_Root() ) WRITE(*,*) 'CHEMsetup - number of HEMCO&
+         & instances: ', nnInst
 
 
     ! Identify HEMCO instances
@@ -789,27 +821,32 @@ contains
 
        ! Get HEMCO configuration file names
        WRITE(Label,'(a14,i3.3,a1)') 'HEMCO_CONFIG--',N,':'
-       call ESMF_ConfigGetAttribute( HemcoCF, ConfigFile, Label=TRIM(Label), &
-                                     DEFAULT="HEMCOsa_Config.rc", __RC__)
+       call ESMF_ConfigGetAttribute( HemcoCF, ConfigFile, Label=TRIM(Label),&
+            & DEFAULT="HEMCOsa_Config.rc", __RC__)
 
-       IF ( TRIM(ConfigFile) ==    'HEMCOgmi_Config.rc' )    GMI_instance_of_HEMCO = .TRUE.
-       IF ( TRIM(ConfigFile) == 'HEMCOgocart2g_Config.rc' )  GOCART_instance_of_HEMCO = .TRUE.
+       IF ( TRIM(ConfigFile) ==    'HEMCOgmi_Config.rc' )   &
+            & GMI_instance_of_HEMCO = .TRUE.
+       IF ( TRIM(ConfigFile) == 'HEMCOgocart2g_Config.rc' ) &
+            & GOCART_instance_of_HEMCO = .TRUE.
 
        ! Verbose
-       IF ( MAPL_Am_I_Root() ) WRITE(*,'(a19,i3.3,a2,a)') '--> HEMCO instance ', N, ': ', TRIM(ConfigFile)
+       IF ( MAPL_Am_I_Root() ) WRITE(*,'(a19,i3.3,a2,a)') '--> HEMCO instance&
+            & ', N, ': ', TRIM(ConfigFile)
 
     ENDDO
 
-    IF ( MAPL_Am_I_Root() ) WRITE(*,*) '-->    GMI_instance_of_HEMCO: ',    GMI_instance_of_HEMCO
-    IF ( MAPL_Am_I_Root() ) WRITE(*,*) '--> GOCART_instance_of_HEMCO: ', GOCART_instance_of_HEMCO
+    IF ( MAPL_Am_I_Root() ) WRITE(*,*) '-->    GMI_instance_of_HEMCO: ',   &
+         & GMI_instance_of_HEMCO
+    IF ( MAPL_Am_I_Root() ) WRITE(*,*) '--> GOCART_instance_of_HEMCO: ',&
+         & GOCART_instance_of_HEMCO
   END IF
 
 ! HEMCO -> GOCART
 ! ---------------
   IF( myState%enable_HEMCO .AND. myState%enable_GOCART2G ) THEN
-   CALL MAPL_AddConnectivity ( GC, &
-    SHORT_NAME  = (/ 'OC_ISOPRENE', 'OC_MTPA    ', 'OC_MTPO    ', 'OC_LIMO    '/), &
-    SRC_ID=HEMCO, DST_ID=GOCART2G, __RC__)
+   CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/ 'OC_ISOPRENE', 'OC_MTPA  &
+        &  ', 'OC_MTPO    ', 'OC_LIMO    '/), SRC_ID=HEMCO, DST_ID=GOCART2G,&
+        & __RC__)
   END IF
 
 ! HEMCO -> GMI 
@@ -828,33 +865,34 @@ contains
      gmi_config = ESMF_ConfigCreate(__RC__ )
      call ESMF_ConfigLoadFile(gmi_config, TRIM(gmi_rcfilen), __RC__ )
 
-     call ESMF_ConfigGetAttribute(gmi_config, value=doMEGANemission, &
-                                             label="doMEGANemission:", default=.FALSE., __RC__ )
+     call ESMF_ConfigGetAttribute(gmi_config, value=doMEGANemission, label&
+          &="doMEGANemission:", default=.FALSE., __RC__ )
 
-     call ESMF_ConfigGetAttribute(gmi_config, value=doMEGANviaHEMCO, &
-                                             label="doMEGANviaHEMCO:", default=.FALSE., __RC__ )
+     call ESMF_ConfigGetAttribute(gmi_config, value=doMEGANviaHEMCO, label&
+          &="doMEGANviaHEMCO:", default=.FALSE., __RC__ )
        
      ! make sure we don't have inconsistent HEMCO flags
      IF ( GMI_instance_of_HEMCO .neqv. doMEGANviaHEMCO ) THEN
-        PRINT*,'Inconsistency --- HEMCO GMI instance  = ', GMI_instance_of_HEMCO
+        PRINT*,'Inconsistency --- HEMCO GMI instance  = ',&
+             & GMI_instance_of_HEMCO
         PRINT*,'              --- GMI:doMEGANviaHEMCO = ', doMEGANviaHEMCO
         STATUS=98
         VERIFY_(STATUS)
      END IF
 
      ! make sure we don't have inconsistent MEGAN flags
-     IF ( doMEGANviaHEMCO .eqv. .TRUE.    .AND.  &
-          doMEGANemission .eqv. .FALSE. ) THEN
-        PRINT*,'Inconsistent GMI flags: doMEGANviaHEMCO==T, doMEGANemission==F'
+     IF ( doMEGANviaHEMCO .eqv. .TRUE.    .AND. doMEGANemission .eqv. .FALSE.&
+          & ) THEN
+        PRINT*,'Inconsistent GMI flags: doMEGANviaHEMCO==T, doMEGANemission&
+             &==F'
         STATUS=99
         VERIFY_(STATUS)
      END IF
 
      ! connect HEMCO isoprene to GMI if doMEGANviaHEMCO is true
      IF (doMEGANviaHEMCO) THEN
-        CALL MAPL_AddConnectivity ( GC,          &
-             SHORT_NAME  = (/'GMI_ISOPRENE'/),   &
-             SRC_ID=HEMCO, DST_ID=GMICHEM, __RC__)
+        CALL MAPL_AddConnectivity ( GC, SHORT_NAME  = (/'GMI_ISOPRENE'/),&
+             & SRC_ID=HEMCO, DST_ID=GMICHEM, __RC__)
      ENDIF
 
   END IF
@@ -920,7 +958,8 @@ contains
 
 !   Get my internal state
 !   ---------------------
-    call ESMF_UserCompGetInternalState(gc, 'GEOSchem_GridComp_State', WRAP, STATUS)
+    call ESMF_UserCompGetInternalState(gc, 'GEOSchem_GridComp_State', WRAP,&
+         & STATUS)
     VERIFY_(STATUS)
     myState => wrap%ptr
 
@@ -934,24 +973,18 @@ contains
 
 !   Get children and their im/ex states from my generic state.
 !   ----------------------------------------------------------
-    call MAPL_Get ( MAPL, GCS=GCS, GEX=GEX,              &
-                    INTERNAL_ESMF_STATE=INTERNAL, __RC__ )
+    call MAPL_Get ( MAPL, GCS=GCS, GEX=GEX, INTERNAL_ESMF_STATE=INTERNAL,&
+         & __RC__ )
 
 !   Fill in INTERNAL friendly bundle: CHEM_TRACERS
 !   VERY IMPORTANT: Only the RATS provider can make OX friendly
 !                   to ANALYSIS.
 !   -----------------------------------------------------------
     call ESMF_StateGet (INTERNAL, 'CHEM_TRACERS', fBUNDLE, __RC__)
-    call MAPL_GridCompGetFriendlies(GCS,                       &
-                                         (/ "ANALYSIS    ",    &
-                                            "TURBULENCE  ",    &
-                                            "DYNAMICS    ",    &
-                                            "MOIST       ",    &
-                                            "STRATCHEM   ",    &
-                                            "GMICHEM     ",    &
-                                            "GEOSCHEMCHEM",    &
-                                            "TR          " /), &
-                                           fBUNDLE, AddGCPrefix=.true., __RC__ )
+    call MAPL_GridCompGetFriendlies(GCS, (/ "ANALYSIS    ", "TURBULENCE  ",&
+         & "DYNAMICS    ", "MOIST       ", "STRATCHEM   ", "GMICHEM     ",&
+         & "GEOSCHEMCHEM", "TR          " /), fBUNDLE, AddGCPrefix=.true.,&
+         & __RC__ )
 
 
 
@@ -970,11 +1003,14 @@ contains
         ! Radiation will not call the aerosol optics method 
         ! unless this attribute is explicitly set to true.
         call ESMF_StateGet(EXPORT, 'AERO', AERO, __RC__)
-        call ESMF_AttributeSet(AERO, name='implements_aerosol_optics_method', value=.false., __RC__)
+        call ESMF_AttributeSet(AERO, name='implements_aerosol_optics_method',&
+             & value=.false., __RC__)
 
         ! Moist will not call the aerosol activation method 
         ! unless this attribute is explicitly set to true.
-        call ESMF_AttributeSet(AERO, name='implements_aerosol_activation_properties_method', value=.false., __RC__)
+        call ESMF_AttributeSet(AERO, name&
+             &='implements_aerosol_activation_properties_method', value&
+             &=.false., __RC__)
     end if
 
 #ifdef PRINT_STATES
@@ -991,16 +1027,25 @@ contains
                                              call ESMF_StatePrint ( EXPORT )
 
        print *,  trim(Iam)//": AERO State (EXPORT)"
-                                             call ESMF_StateGet   ( EXPORT, 'AERO', AERO, __RC__ ) 
-                                             call ESMF_StatePrint ( AERO, nestedFlag=.false., __RC__ )
+                                             call ESMF_StateGet   ( EXPORT,&
+                                                  & 'AERO', AERO, __RC__ ) 
+                                             call ESMF_StatePrint ( AERO,&
+                                                  & nestedFlag=.false.,&
+                                                  & __RC__ )
        print *,  trim(Iam)//": AERO State (PROVIDER)",  myState%AERO_PROVIDER
                                          if (myState%AERO_PROVIDER > 0) then
-                                             call ESMF_StateGet   ( GEX(myState%AERO_PROVIDER), 'AERO', AERO, __RC__ )
-                                             call ESMF_StatePrint ( AERO, nestedFlag=.false., __RC__ )
+                                             call ESMF_StateGet   (&
+                                                  & GEX(myState&
+                                                  &%AERO_PROVIDER), 'AERO',&
+                                                  & AERO, __RC__ )
+                                             call ESMF_StatePrint ( AERO,&
+                                                  & nestedFlag=.false.,&
+                                                  & __RC__ )
                                          end if
 
        print *,  trim(Iam)//": Friendly Tracers (INTERNAL)"
-                                             call ESMF_FieldBundlePrint ( fBUNDLE )
+                                             call ESMF_FieldBundlePrint (&
+                                                  & fBUNDLE )
     end if
 
 #endif
@@ -1367,6 +1412,8 @@ contains
                                     ID = TR
            case ('DNA')
                                     ID = DNA
+           case ('GHG')
+                                    ID = GEOScarbon
            case DEFAULT
 
               message = "unknown provider "//trim(name)
