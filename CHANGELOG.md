@@ -9,21 +9,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+### Removed
+### Changed
+### Fixed
+
+## [1.12.0] - 2023-01-18
+
+### Removed
+
+- Removed `TR_GridComp`, `GMI_GridComp`, and `StratChem_GridComp` as these are now in separate repos
+   - `TR_GridComp` → [TR](https://github.com/GEOS-ESM/TR)
+   - `GMIchem_GridComp` → [GMI](https://github.com/GEOS-ESM/GMI)
+   - `StratChem_GridComp` → [StratChem](https://github.com/GEOS-ESM/StratChem)
+
+## [1.11.0] - 2023-01-04
+
+### Added
 
 - GMI now exports stOX_loss (stratospheric OX tracer loss), customized for the specific chemical mechanism being run.
 
 ### Removed
+
+- GMI lbssad_opt allowed unsupported options, eliminated
+- GMI h2oclim_opt had only one viable option (3), removed h2oclim_opt and various unused arrays
+
 ### Changed
 
 - Instead of importing a set of QQK diagnostic fields for chemical loss of stOX, TR now imports a single field: stOX_loss
 - For OPS configuration: removal of links, change of QFED paths from vNRT/ to v2.5r1-nrt/ 
 - For AMIP configuration: update of QFED from v2.5r1 to v2.6r1 (most recent collection)
 - Moved to GitHub Actions for label enforcement
+- Update CircleCI to use Baselibs 7.7.0
+- For GMI, clean-up related to exports HNO3GASsad, HNO3CONDsad and jNO2val.
 
 ### Fixed
 
+- Modified TR to only import stOX_loss if loss_species == OX; without this, a GMI _ASSERT may exit the program needlessly.
+- Fixed the long_names for GMI chemical species
+- Fixed the long_names for StratChem chemical species
+- Updated GAAS to now work again after it was changed to use ExtData, only works with ExtData2G
+  - **NOTE 1**: This requires MAPL 2.32 or higher to build as a new procedure had to be created for this to work.
+  - **NOTE 2**: As noted above, GAAS will now *only* work with ExtData2G
+- Fixed the imports for LAI_FRAC and VEG_FRAC in TR and GMI, for simulations with vertical resolution other than 72.
+
 ## [1.10.4] - 2022-11-08
-### Added
+
 ### Removed
 
 - Deleted the old CCMI resource files under GMI.
@@ -33,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - StratChem is no longer part of Chem_Registry.rc; instead the entries are in SC_Mech_Registry.rc, and there are two versions of the resource file - one for the Full mechanism and one for the Reduced mechanism.  Choice between the two mechanisms remains a compile time option.
 
 ### Fixed
+
 - Fix 1d vector of latitudes in GCR emissions, pre-cubesphere leftover
 
 ## [1.10.3] - 2022-10-27
