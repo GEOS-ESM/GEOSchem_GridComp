@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Fixed
 
+### Added
+
+- Added connectivities in GEOS_ChemGridComp for CARMA-GMI coupling
+- Added STS growth in CARMA microphysics
+
 ## [1.12.0] - 2023-01-18
 
 ### Removed
