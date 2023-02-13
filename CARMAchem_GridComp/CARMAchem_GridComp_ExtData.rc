@@ -10,12 +10,18 @@ CARMA_SM_ANTEOC1 NA  Y Y %y4-%m2-%d2t12:00:00 none none anteoc1 ExtData/AeroCom/
 CARMA_SM_ANTEOC2 NA  Y Y %y4-%m2-%d2t12:00:00 none none anteoc2 /dev/null
 CARMA_SM_SHIP    NA  Y Y %y4-%m2-%d2t12:00:00 none none oc_ship ExtData/MERRA2/sfc/edgar-v41.emis_oc.navigation.x360_y181_t47.19750703T12z_20210703T00z.nc4
 CARMA_OC_TERPENE NA Y Y %y4-%m2-%d2t12:00:00 none none terpene ExtData/PIESA/sfc/geia.terpene_biogenic.x144_y91_t12.1971.nc
-pSOA_ANTHRO_VOC  NA Y Y %y4-%m2-%d2t12:00:00 none none biofuel /dev/null
-pSOA_BIOB_VOC    NA Y Y %y4-%m2-%d2t12:00:00 none none biofuel /dev/null
+CARMA_PSOA_ANTHRO_VOC  NA Y Y %y4-%m2-%d2t12:00:00 none none biofuel /dev/null
+CARMA_PSOA_BIOB_VOC    NA Y Y %y4-%m2-%d2t12:00:00 none none biofuel /dev/null
 
 
 
 # SULFATE PRODUCTION
-PSO4TOT NA Y Y %y4-%m2-%d2t12:00:00 none none pso4tot /dev/null
+CARMA_PSO4TOT NA Y Y %y4-%m2-%d2t12:00:00 none none pso4tot /dev/null
+
+# Nitric Acid for STS
+CARMA_HNO3    NA Y Y %y4-%m2-%d2t12:00:00 none none hno3    /dev/null
+
+# Sulfuric Acid Vapor input
+CARMA_H2SO4   NA Y Y %y4-%m2-%d2t12:00:00 none none h2so4   /dev/null
 
 %%

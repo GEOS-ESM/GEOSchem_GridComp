@@ -401,6 +401,7 @@ module carma_types_mod
     integer                                       :: f_igash2o
     integer                                       :: f_igash2so4
     integer                                       :: f_igasso2
+    integer                                       :: f_igashno3
     integer                                       :: f_maxsubsteps 
     integer                                       :: f_minsubsteps 
     integer                                       :: f_maxretries 

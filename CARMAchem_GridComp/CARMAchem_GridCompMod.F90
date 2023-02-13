@@ -376,6 +376,16 @@ CONTAINS
 !
 #include "CARMA_ExportSpec___.h"
 
+
+!   Set the profiling timers
+!   ------------------------
+    CALL MAPL_TimerAdd(GC, NAME="INITIALIZE", RC=STATUS)
+    VERIFY_(STATUS)
+    CALL MAPL_TimerAdd(GC, NAME="RUN", RC=STATUS)
+    VERIFY_(STATUS)
+    CALL MAPL_TimerAdd(GC, NAME="FINALIZE", RC=STATUS)
+    VERIFY_(STATUS)
+
 !   Generic Set Services
 !   --------------------
     call MAPL_GenericSetServices ( GC, RC=STATUS )
@@ -439,7 +449,7 @@ CONTAINS
    real                            :: cdt         ! chemistry timestep (secs)
 
    type(ESMF_Grid)                 :: grid        
-   type(ESMF_Config)               :: CF
+   type(ESMF_Config)               :: CF, carmaCF
  
    integer                         :: i1=1, i2, ig=0, im  ! dist grid indices
    integer                         :: j1=1, j2, jg=0, jm  ! dist grid indices
@@ -487,13 +497,12 @@ CONTAINS
 !  -----------------------------------
    call MAPL_GetObjectFromGC ( GC, ggState, __RC__)
 
+   call MAPL_TimerOn(ggState, 'TOTAL')
    call MAPL_TimerOn(ggState, 'INITIALIZE')
 
 !  Initialize GEOS Generic
 !  ------------------------
    call MAPL_GenericInitialize ( gc, import, export, clock,  __RC__ )
-
-   call MAPL_TimerOn(ggState, 'TOTAL')
 
 !  Get parameters from gc and clock
 !  --------------------------------
@@ -669,13 +678,16 @@ CONTAINS
             instance = instanceComputational
 !        end if
 
+        carmaCF = ESMF_ConfigCreate(__RC__)
+        call ESMF_ConfigLoadFile(carmaCF,'CARMAchem_Registry.rc', __RC__)
         allocate(mieReg, stat=STATUS)
         VERIFY_(STATUS)
         mieReg = Chem_RegistryCreate(rc,rcfile='CARMAchem_MieRegistry.rc')
         if ( rc /= 0 ) call die('CARMA', 'Cannot read CARMAchem_MieRegistry.rc' )
-        carmaMieTable(instance) = Chem_MieCreate(CF, chemReg=mieReg, __RC__)
+        carmaMieTable(instance) = Chem_MieCreate(carmaCF, chemReg=mieReg, __RC__)
         deallocate(mieReg,stat=STATUS)
         VERIFY_(STATUS)
+        call ESMF_ConfigDestroy(carmaCF, __RC__)
 
         ! Mie Table instance/index
         call ESMF_AttributeSet(aero, name='mie_table_instance', value=instance, __RC__)
@@ -750,6 +762,11 @@ CONTAINS
 
 #endif
 
+!  Stop timers
+!  -----------
+   CALL MAPL_TimerOff(ggState, "INITIALIZE")
+   CALL MAPL_TimerOff(ggState, "TOTAL")
+
 
     RETURN_(ESMF_SUCCESS)
 
@@ -816,6 +833,7 @@ CONTAINS
 
    type(ESMF_State)                :: internal
    type(MAPL_VarSpec), pointer     :: InternalSpec(:)
+   type(MAPL_MetaComp), pointer    :: ggState      ! GEOS Generic State
 
 
    real, pointer, dimension(:,:)   :: LATS
@@ -831,6 +849,15 @@ CONTAINS
 !  ---------------------------------------
    call ESMF_GridCompGet( GC, NAME=COMP_NAME, __RC__)
    Iam = trim(COMP_NAME) // '::Run_'
+
+!  Get my internal MAPL_Generic state
+!  -----------------------------------
+   CALL MAPL_GetObjectFromGC(GC, ggState, __RC__)
+
+!  Start a comprehensive timer
+!  ---------------------------
+   CALL MAPL_TimerOn(ggState, "TOTAL")
+   CALL MAPL_TimerOn(ggState, "RUN")
 
 !  Get pointers to IMPORT/EXPORT/INTERNAL states 
 !  ---------------------------------------------
@@ -866,6 +893,9 @@ CONTAINS
    call CARMA_ComputeDiags  ( gcCARMA, qa, import, export, nymd, nhms, &
                               cdt, STATUS )
    VERIFY_(STATUS)
+
+   CALL MAPL_TimerOff(ggState, "RUN")
+   CALL MAPL_TimerOff(ggState, "TOTAL")
 
    RETURN_(ESMF_SUCCESS)
 
@@ -921,13 +951,24 @@ CONTAINS
    integer                         :: nymd, nhms  ! time
    real                            :: cdt         ! chemistry timestep (secs)
 
-    type(CARMAchem_state), pointer     :: state
+   type(CARMAchem_state), pointer     :: state
+
+   type(MAPL_MetaComp), pointer    :: ggState      ! GEOS Generic State
 
 !  Get my name and set-up traceback handle
 !  ---------------------------------------
    call ESMF_GridCompGet( GC, NAME=COMP_NAME, RC=STATUS )
    VERIFY_(STATUS)
    Iam = trim(COMP_NAME) // 'Finalize_'
+
+!  Get my internal MAPL_Generic state
+!  -----------------------------------
+   CALL MAPL_GetObjectFromGC(GC, ggState, RC=STATUS)
+
+!  Start timers
+!  ------------
+   CALL MAPL_TimerOn(ggState, "TOTAL")
+   CALL MAPL_TimerOn(ggState, "FINALIZE")
 
 !  Get ESMF parameters from gc and clock
 !  -------------------------------------
@@ -939,11 +980,6 @@ CONTAINS
 !  -----------------
    call CARMA_GridCompFinalize ( gcCARMA, import, export, &
                                  nymd, nhms, cdt, STATUS )
-   VERIFY_(STATUS)
-
-!  Finalize MAPL Generic.  Atanas says, "Do not deallocate foreign objects."
-!  -------------------------------------------------------------------------
-   call MAPL_GenericFinalize ( gc, import, export, clock,  RC=STATUS )
    VERIFY_(STATUS)
 
 !  Destroy Mie Tables
@@ -963,6 +999,16 @@ CONTAINS
 !  --------------------
    call registry_destroy_ (state%CARMAreg)
    deallocate ( state%CARMAreg, state%qa, state%gcCARMA, state%chemReg, __STAT__)
+   VERIFY_(STATUS)
+
+!  Stop timers
+!  -----------
+   CALL MAPL_TimerOff(ggState, "FINALIZE")
+   CALL MAPL_TimerOff(ggState, "TOTAL")
+
+!  Finalize MAPL Generic.  Atanas says, "Do not deallocate foreign objects."
+!  -------------------------------------------------------------------------
+   call MAPL_GenericFinalize ( gc, import, export, clock,  RC=STATUS )
    VERIFY_(STATUS)
 
    RETURN_(ESMF_SUCCESS)
@@ -1389,6 +1435,9 @@ CONTAINS
    end if
 
 !  Sulfate
+   call i90_label ( 'gmi_chem_provider:', ios )
+   if(ios .eq. 0) r%gmi_chem_provider = i90_gint( ier(1) )
+
 
 !  Get any requested point emissions
 !  ---------------------------------
@@ -1476,7 +1525,7 @@ CONTAINS
      enddo
     end if
 
-    call i90_label ( 'DU_OPTICS:', ios )
+    call i90_label ( 'filename_optical_properties_DU:', ios )
      if ( ios /= 0 ) then
       call final_(65)
      else
@@ -1484,7 +1533,7 @@ CONTAINS
       if ( ios /= 0 ) call final_(66)
      end if
 
-    call i90_label ( 'SS_OPTICS:', ios )
+    call i90_label ( 'filename_optical_properties_SS:', ios )
      if ( ios /= 0 ) then
       call final_(67)
      else
@@ -1492,7 +1541,7 @@ CONTAINS
       if ( ios /= 0 ) call final_(68)
      end if
 
-    call i90_label ( 'BC_OPTICS:', ios )
+    call i90_label ( 'filename_optical_properties_BC:', ios )
      if ( ios /= 0 ) then
       call final_(67)
      else
@@ -1500,7 +1549,7 @@ CONTAINS
       if ( ios /= 0 ) call final_(68)
      end if
 
-    call i90_label ( 'SM_OPTICS:', ios )
+    call i90_label ( 'filename_optical_properties_SM:', ios )
      if ( ios /= 0 ) then
       call final_(69)
      else
@@ -1508,7 +1557,7 @@ CONTAINS
       if ( ios /= 0 ) call final_(70)
      end if
 
-    call i90_label ( 'SU_OPTICS:', ios )
+    call i90_label ( 'filename_optical_properties_SU:', ios )
      if ( ios /= 0 ) then
       call final_(69)
      else

@@ -45,6 +45,9 @@ subroutine rhopart(carma, cstate, rc)
   real(kind=f)    :: mcore(NBIN)
   real(kind=f)    :: r_ratio
   real(kind=f)    :: h2o_mass
+  real(kind=f)    :: h2o_vmr
+  real(kind=f)    :: hno3_vmr
+  real(kind=f)    :: h2so4m
 
   1 format(/,'rhopart::WARNING - core mass > total mass, truncating : iz=',i4,',igroup=',&
               i4,',ibin=',i4,',total mass=',e10.3,',core mass=',e10.3,',using rhop=',f9.4)
@@ -118,8 +121,16 @@ subroutine rhopart(carma, cstate, rc)
       ! and dry radius are the same.
     
       ! Determine the weight percent of sulfate, and store it for later use.
-      if (irhswell(igroup) == I_WTPCT_H2SO4) then
+      if (irhswell(igroup) == I_WTPCT_H2SO4 .OR. &
+          (irhswell(igroup) == I_WTPCT_STS .AND. t(iz) > 200._f)) then
         h2o_mass     = gc(iz, igash2o) / (xmet(iz) * ymet(iz) * zmet(iz))
+      else if (irhswell(igroup) == I_WTPCT_STS) then
+        ! h2o_vmr and hno3_vmr are taken from gas concentrations while h2so4m
+        !   needs to be the mass of h2so4 in particles and in gas phase
+        h2o_vmr     = gc(iz, igash2o) / gwtmol(igash2o) * WTMOL_AIR
+        hno3_vmr    = gc(iz, igashno3) / gwtmol(igashno3) * WTMOL_AIR 
+        h2so4m       = sum(rmass(:, igroup) * pc(iz, :, iepart)) + &
+                         gc(iz, igash2so4) / (xmet(iz) * ymet(iz) * zmet(iz))
       end if
           
       ! Loop over particle size bins.
@@ -127,7 +138,8 @@ subroutine rhopart(carma, cstate, rc)
       
         ! If humidity affects the particle, then determine the equilbirium
         ! radius and density based upon the relative humidity.
-        if (irhswell(igroup) == I_WTPCT_H2SO4) then
+        if (irhswell(igroup) == I_WTPCT_H2SO4 .OR. &
+            (irhswell(igroup) == I_WTPCT_STS .AND. t(iz) > 200._f)) then
         
           ! rlow
           call getwetr(carma, igroup, relhum(iz), rlow(ibin,igroup), rlow_wet(iz,ibin,igroup), &
@@ -145,6 +157,31 @@ subroutine rhopart(carma, cstate, rc)
           call getwetr(carma, igroup, relhum(iz), r(ibin,igroup), r_wet(iz,ibin,igroup), &
             rhop(iz,ibin,igroup), rhop_wet(iz,ibin,igroup), rc, h2o_mass=h2o_mass, &
             h2o_vp=pvapl(iz, igash2o), temp=t(iz))
+          if (rc < 0) return
+
+        ! If STS parameterization is selected, use hno3, h2o, and h2so4 mass
+        ! to determine equilibrium radius and density
+        else if (irhswell(igroup) == I_WTPCT_STS) then
+        
+          ! rlow
+          call getwetr(carma, igroup, relhum(iz), rlow(ibin,igroup), rlow_wet(iz,ibin,igroup), &
+            rhop(iz,ibin,igroup), rhop_wet(iz,ibin,igroup), rc, h2o_vmr=h2o_vmr, &
+            h2o_vp=pvapl(iz, igash2o), temp=t(iz), press=cstate%f_p(iz), h2so4m = h2so4m, &
+            hno3_vmr = hno3_vmr)
+          if (rc < 0) return
+
+          ! rup
+          call getwetr(carma, igroup, relhum(iz), rup(ibin,igroup), rup_wet(iz,ibin,igroup), &
+            rhop(iz,ibin,igroup), rhop_wet(iz,ibin,igroup), rc, h2o_vmr=h2o_vmr, &
+            h2o_vp=pvapl(iz, igash2o), temp=t(iz), press=cstate%f_p(iz), h2so4m = h2so4m, &
+            hno3_vmr = hno3_vmr)
+          if (rc < 0) return
+
+          ! r
+          call getwetr(carma, igroup, relhum(iz), r(ibin,igroup), r_wet(iz,ibin,igroup), &
+            rhop(iz,ibin,igroup), rhop_wet(iz,ibin,igroup), rc, h2o_vmr=h2o_vmr, &
+            h2o_vp=pvapl(iz, igash2o), temp=t(iz), press=cstate%f_p(iz), h2so4m = h2so4m, &
+            hno3_vmr = hno3_vmr)
           if (rc < 0) return
 
         else

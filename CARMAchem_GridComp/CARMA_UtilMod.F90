@@ -97,12 +97,30 @@
 !  injection based on Guo et al. 2004 Table 5 (6/15/91 10:53-18:07 effective
 !  radius = 0.2 - 0.21 microns, so this is dMass mapped to 22 size bin sulfate
 !  assuming rmed = 0.12 um and sigma = 1.59
-   real, parameter :: dMpin(22) = &   
-    (/ 0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000, 0.00000, &
-       0.00000,  0.00000,  0.00000,  0.00008,  0.00258,  0.03307,  0.17177, 0.36158, &
-       0.30846,  0.10664,  0.01494,  0.00085,  0.00002,  0.00000 /)
+!   real, parameter :: dMpin(22) = &   
+!    (/ 0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000, 0.00000, &
+!       0.00000,  0.00000,  0.00000,  0.00008,  0.00258,  0.03307,  0.17177, 0.36158, &
+!       0.30846,  0.10664,  0.01494,  0.00085,  0.00002,  0.00000 /)
 
-
+! 24-bin specific values
+! Same lognormal parameters as the 22 bin case above. This distribution was
+! created assuming the 24 bins, rmrat=3.7515201, rmin=2.6686863e-10 m, and
+! rhop=1923 kg m-3
+!   real, parameter :: dMpin(24) = &
+!    (/ 0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000, 
+!       0.00000,  0.00000,  0.00045,  0.00942,  0.07945,  0.27143,  0.37581,  0.21087, 
+!       0.04795,  0.00442,  0.00017,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000 /)
+! This size distribution is based on effective radius 0.15 (6/15/91 .8 hours
+! after eruption. rmed = 0.087 um and sigma = 1.59
+   real, parameter :: dMpin(24) = &
+    (/ 0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000, &
+       0.00000,  0.00018,  0.00488,  0.05132,  0.21858,  0.37728,  0.26391,  0.07481, &
+       0.00860,  0.00040,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000 /)
+! This size distribution is putting all of the particles in the smallest bin
+!   real, parameter :: dMpin(24) = &
+!    (/ 1.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000, &
+!       0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000, &
+!       0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000 /)
 
 
 !  Export stuff
@@ -152,7 +170,7 @@ CONTAINS
 !-------------------------------------------------------------------------
 
    CHARACTER(LEN=*), PARAMETER :: myname = 'CARMA_Emissions'
-   CHARACTER(LEN=255) :: groupname, elemname
+   CHARACTER(LEN=255) :: groupname, elemname, gasname
 
    INTEGER :: ielem, ibin, igroup, igas, ienconc
    CHARACTER(LEN=*), PARAMETER :: IAm = 'CARMA_UtilMod'
@@ -174,7 +192,7 @@ CONTAINS
    real, allocatable         ::  fgridefficiency(:,:), fsstemis(:,:), tskin_c(:,:)
 
    REAL, POINTER, DIMENSION(:,:,:) :: p, ple, rhoa, tmpu, zc, zl, q, zle, rh
-   REAL, POINTER, DIMENSION(:,:,:) :: pso4, psoa_anthro, psoa_biomass
+   REAL, POINTER, DIMENSION(:,:,:) :: pso4, psoa_anthro, psoa_biomass, hno3, h2so4
    REAL, POINTER, DIMENSION(:,:)   :: gwettop, frlake, oro, u10m, v10m, &
                                       ustar, pblh, z0h, shflux, precc, precl, &
                                       frocean, frseaice, frland, tskin, area
@@ -247,7 +265,8 @@ CONTAINS
    call MAPL_GetPointer ( impChem, precc, 'CN_PRCP', __RC__)
    call MAPL_GetPointer ( impChem, oro, 'LWI', __RC__)
 !   call MAPL_GetPointer ( impChem, tskin, 'TS', __RC__)
-   call MAPL_GetPointer ( impChem, pso4, 'PSO4TOT', __RC__)
+   call MAPL_GetPointer ( impChem, pso4,  'CARMA_PSO4TOT', notFoundOK=.TRUE., __RC__)
+   call MAPL_GetPointer ( impChem, hno3,  'CARMA_HNO3',    notFoundOK=.TRUE., __RC__)
 
 
 !  Define 10-m wind speed
@@ -438,8 +457,8 @@ CONTAINS
       call MAPL_GetPointer( impChem, ebcant2_src,  'CARMA_SM_ANTEOC2', __RC__)
       call MAPL_GetPointer( impChem, bc_ship_src,  'CARMA_SM_SHIP', __RC__)
       call MAPL_GetPointer( impChem, biogenic_src, 'CARMA_OC_TERPENE', __RC__)
-      call MAPL_GetPointer( impChem, psoa_anthro,  'pSOA_ANTHRO_VOC', __RC__)
-      call MAPL_GetPointer( impChem, psoa_biomass, 'pSOA_BIOB_VOC', __RC__)
+      call MAPL_GetPointer( impChem, psoa_anthro,  'CARMA_PSOA_ANTHRO_VOC', __RC__)
+      call MAPL_GetPointer( impChem, psoa_biomass, 'CARMA_PSOA_BIOB_VOC', __RC__)
 
       if(associated(SM_emis)) SM_emis = ( biomass_src + biofuel_src + &
                                           bc_ship_src + ebcant1_src + &
@@ -464,7 +483,7 @@ CONTAINS
        endif
       enddo
 
-!     pSOA from VOC oxidation
+!     PSOA from VOC oxidation
       do ibin = 1, reg%NBIN
        n = n1 + (ielem-1)*reg%NBIN + ibin - 1
        do k = 1, km
@@ -486,7 +505,8 @@ CONTAINS
 
 !   Volcanic Ash
 !   ------------------------------------------------------------------------
-    if(groupname == 'ash' .OR. groupname == 'ASH') then
+   if(  groupname == 'ASH' .or. &
+       ( reg%igrp_ash < 1 .AND. groupname == 'MIXEDP' .AND. elemname  == 'ASH'      ) ) then
 
     if(reg%doing_point_emissions_ash) then
      call Chem_UtilPointEmissions( nymd, reg%point_emissions_srcfilen_ash, &
@@ -656,14 +676,22 @@ CONTAINS
 
    enddo   ! NELEM
 
-!  Do the gases (for now set up only for H2SO4 from GOCART)
+!  Do the gas source functions
+!  Direct updates of mixing ratios from chemistry providers
+!  are done in the CARMA_GridComp Run method
+!  Not quite yet...yes for GMI, not all other possibilities
 !  --------------------------------------------------------
    if(reg%NGAS > 0) then
      do igas = 1, reg%NGAS
       n = n1 + reg%NELEM*reg%NBIN - 1 + igas
-      if( trim(reg%gasname(igas)) == 'h2so4' .or. &
-          trim(reg%gasname(igas)) == 'H2SO4') &
-         qa(n)%data3d = qa(n)%data3d + pso4 * dtime
+      gasname = ESMF_UtilStringUpperCase(trim(reg%gasname(igas)))
+      if(  gasname == 'H2SO4' .and. &
+         (.not. reg%gmi_chem_provider) ) then
+             qa(n)%data3d = qa(n)%data3d + pso4 * dtime
+      endif
+      if( gasname == 'HNO3') then  ! go to MMR
+             qa(n)%data3d = hno3*WTMOL_HNO3/WTMOL_AIR
+      endif
      end do
    endif
 
@@ -1424,6 +1452,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !
+!  12Mar2021 Case      Added sulfate stratospheric column diagnostics
 !  10Mar2010 Colarco   First crack.
 !
 !EOP
@@ -1445,7 +1474,8 @@ CONTAINS
    REAL, POINTER, DIMENSION(:,:,:) :: p, ple, rhoa, tmpu, zc, zl, q, zle, &
                                       rh, u, v
    REAL, POINTER, DIMENSION(:,:)   :: gwettop, fraclake, oro, u10m, v10m, &
-                                      ustar, pblh, z0h, shflux, precc, precl
+                                      ustar, pblh, z0h, shflux, precc, precl, &
+                                      tropp
    real, pointer, dimension(:,:,:) :: du_mass, su_mass, ss_mass, bc_mass, ash_mass, sm_mass, &
                                       mxdu_mass, mxsu_mass, mxss_mass, mxbc_mass, mxash_mass, mxsm_mass
    real, pointer, dimension(:,:,:) :: du_conc, su_conc, ss_conc, bc_conc, ash_conc, sm_conc, &
@@ -1464,6 +1494,7 @@ CONTAINS
 !                               Scattering AOT (??_scatau @ 550 nm),
 !                               Angstrom parameter (??_angstr for 470 and 870 nm wavelength pair)
    real, pointer, dimension(:,:)   :: du_exttau, su_exttau, ss_exttau, bc_exttau, ash_exttau, sm_exttau
+   real, pointer, dimension(:,:)   :: su_stratexttau, su_stratscatau
    real, pointer, dimension(:,:)   :: du_scatau, su_scatau, ss_scatau, bc_scatau, ash_scatau, sm_scatau
    real, pointer, dimension(:,:)   :: du_angstr, su_angstr, ss_angstr, bc_angstr, ash_angstr, sm_angstr
    real, pointer, dimension(:,:)   :: totexttau, totscatau, totangstr
@@ -1512,6 +1543,7 @@ CONTAINS
    call MAPL_GetPointer ( impChem, rhoa, 'AIRDENS', __RC__)
    call MAPL_GetPointer ( impChem, ple, 'PLE', __RC__)
    call MAPL_GetPointer ( impChem, zle, 'ZLE', __RC__)
+   call MAPL_GetPointer ( impChem, tropp, 'TROPP', __RC__)
    call MAPL_GetPointer ( impChem, q, 'Q', __RC__)
    call MAPL_GetPointer ( impChem, rh, 'RH2', __RC__)
    call MAPL_GetPointer ( impChem, tmpu, 'T', __RC__)
@@ -1609,12 +1641,14 @@ CONTAINS
    call MAPL_GetPointer(expChem, bc_exttau,   'CARMA_BCEXTTAU',   __RC__)
    call MAPL_GetPointer(expChem, sm_exttau,   'CARMA_SMEXTTAU',   __RC__)
    call MAPL_GetPointer(expChem, ash_exttau,  'CARMA_ASHEXTTAU',   __RC__)
+   call MAPL_GetPointer(expChem, su_stratexttau,   'CARMA_SUSTRATEXTTAU',   __RC__)
    call MAPL_GetPointer(expChem, du_scatau,   'CARMA_DUSCATAU',   __RC__)
    call MAPL_GetPointer(expChem, su_scatau,   'CARMA_SUSCATAU',   __RC__)
    call MAPL_GetPointer(expChem, ss_scatau,   'CARMA_SSSCATAU',   __RC__)
    call MAPL_GetPointer(expChem, bc_scatau,   'CARMA_BCSCATAU',   __RC__)
    call MAPL_GetPointer(expChem, sm_scatau,   'CARMA_SMSCATAU',   __RC__)
    call MAPL_GetPointer(expChem, ash_scatau,  'CARMA_ASHSCATAU',   __RC__)
+   call MAPL_GetPointer(expChem, su_stratscatau,   'CARMA_SUSTRATSCATAU',   __RC__)
    call MAPL_GetPointer(expChem, du_angstr,   'CARMA_DUANGSTR',   __RC__)
    call MAPL_GetPointer(expChem, su_angstr,   'CARMA_SUANGSTR',   __RC__)
    call MAPL_GetPointer(expChem, ss_angstr,   'CARMA_SSANGSTR',   __RC__)
@@ -1969,6 +2003,9 @@ CONTAINS
    if( associated(SU_scatau)) SU_scatau(:,:) = 0.
    if( associated(SU_angstr)) SU_angstr(:,:) = 0.
 
+   if( associated(SU_stratexttau)) SU_stratexttau(:,:) = 0.
+   if( associated(SU_stratscatau)) SU_stratscatau(:,:) = 0.
+
    if( associated(SS_exttau)) SS_exttau(:,:) = 0.
    if( associated(SS_scatau)) SS_scatau(:,:) = 0.
    if( associated(SS_angstr)) SS_angstr(:,:) = 0.
@@ -2075,7 +2112,8 @@ CONTAINS
 !  -------
    if( associated(SU_exttau) .or. associated(SU_scatau) .or. &
        associated(SU_extcoef) .or. associated(SU_scacoef) .or. &
-       associated(SU_angstr)  ) then
+       associated(SU_angstr) .or. associated(SU_stratexttau) .or. &
+       associated(SU_stratscatau) ) then
 
      if(do_angstrom)tau470(i1:i2,j1:j2) = tiny(1.0)
      if(do_angstrom)tau870(i1:i2,j1:j2) = tiny(1.0)
@@ -2114,6 +2152,15 @@ CONTAINS
               if( associated(SU_scacoef) ) then
                   SU_scacoef(i,j,k) = SU_scacoef(i,j,k) + &
                                       ssa * tau * (grav_mks * rhoa(i,j,k) / delp)
+              endif
+
+              if( ple(i,j,k) < tropp(i,j) ) then
+                  if( associated(SU_stratexttau) ) then
+                      SU_stratexttau(i,j) = SU_stratexttau(i,j) + tau
+                  endif
+                  if( associated(SU_stratscatau) ) then
+                      SU_stratscatau(i,j) = SU_stratscatau(i,j) + tau*ssa
+                  endif
               endif
 
               if (associated(SU_angstr) .and. do_angstrom) then
