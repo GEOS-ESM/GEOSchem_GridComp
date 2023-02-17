@@ -104,7 +104,6 @@ organic_matter_to_organic_carbon_ratio: 1.8
 fraction_terpene_to_organic_carbon:     0.1
 
 #SULFATE
-gmi_chem_provider: 1
 
 # Point-wise sulfate source
 point_emissions_srcfilen_sulfate: /dev/null

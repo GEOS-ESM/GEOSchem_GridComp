@@ -188,7 +188,7 @@
 !    Black Carbon
 
 !    Sulfate
-     logical :: gmi_chem_provider=.false. ! direct exchange of h2so4, hno3, ...
+     character(len=255) :: sulfuric_acid_source
 
 !    GOCART-style Mie Lookup Tables
      integer            :: nchannels, nmoments
@@ -867,6 +867,7 @@ CONTAINS
    CHARACTER(LEN=255) :: groupname, elemname, gasname
 
    REAL :: qmax,qmin
+   REAL, allocatable :: h2so4_(:,:,:), hno3_(:,:,:)
    real(kind=f) :: lon, lat
    real(kind=f), allocatable :: xc(:), dx(:), yc(:), dy(:)
    real(kind=f), allocatable :: p_(:), ple_(:), tmpu_(:), zc_(:), zl_(:), &
@@ -977,12 +978,20 @@ CONTAINS
 !  Fill the internal state with direct gas species from GMI
 !  Expectation is species are in VMR and needed in MMR for CARMA
 !  -----------
-   if(reg%gmi_chem_provider .and. reg%NGAS > 0) then
+   if(trim(reg%sulfuric_acid_source) == 'full_field' .and. reg%NGAS > 0) then
     do igas = 1, reg%NGAS
      n  = nCARMAbegin + reg%NBIN*reg%NELEM - 1 + igas
      gasname = ESMF_UtilStringUpperCase(reg%gasname(igas))
-     if(gasname == 'H2SO4') qa(n)%data3d = h2so4*WTMOL_H2SO4/WTMOL_AIR
-     if(gasname == 'HNO3' ) qa(n)%data3d = hno3 *WTMOL_HNO3 /WTMOL_AIR
+     if(gasname == 'H2SO4') then
+      allocate(h2so4_(i1:i2,j1:j2,km), __STAT__)
+      h2so4_ = h2so4
+      qa(n)%data3d = h2so4_*WTMOL_H2SO4/WTMOL_AIR
+     endif
+     if(gasname == 'HNO3' ) then
+      allocate(hno3_(i1:i2,j1:j2,km), __STAT__)
+      hno3_ = hno3
+      qa(n)%data3d = hno3_ *WTMOL_HNO3 /WTMOL_AIR
+     endif
     enddo
    endif
 
@@ -1395,13 +1404,21 @@ endif
 !  Return the updated gas species to GMI from the internal state
 !  Expectation is species are in MMR and needed in VMR for GMI
 !  -----------
-   if(reg%gmi_chem_provider .and. reg%NGAS > 0) then
+   if(trim(reg%sulfuric_acid_source) == 'full_field' .and. reg%NGAS > 0) then
     do igas = 1, reg%NGAS
      n  = nCARMAbegin + reg%NBIN*reg%NELEM - 1 + igas
      gasname = ESMF_UtilStringUpperCase(reg%gasname(igas))
-     if(gasname == 'H2SO4') h2so4 = qa(n)%data3d*WTMOL_AIR/WTMOL_H2SO4
-!     Don't update HNO3
-!     if(gasname == 'HNO3' ) hno3  = qa(n)%data3d*WTMOL_AIR /WTMOL_HNO3
+     if(gasname == 'H2SO4') then
+      h2so4_ = qa(n)%data3d*WTMOL_AIR/WTMOL_H2SO4
+      h2so4  = h2so4_
+      deallocate(h2so4_, __STAT__)
+     endif
+     if(gasname == 'HNO3' ) then
+      hno3_ = qa(n)%data3d*WTMOL_AIR /WTMOL_HNO3
+!     For now don't update HNO3
+!     hno3 = hno3_
+      deallocate(hno3_, __STAT__)
+     endif
     enddo
    endif
 

@@ -459,6 +459,9 @@ contains
   ENDIF
 
   IF(myState%enable_CARMA) then
+      CALL MAPL_ConfigSetAttribute(CF, 'tendency', &
+           label='SULFURIC_ACID_SOURCE:', __RC__)
+
       CALL MAPL_AddConnectivity ( GC, &
            SHORT_NAME  = (/'AIRDENS ', 'CN_PRCP ', 'NCN_PRCP'/), &
            DST_ID = CARMA, SRC_ID = CHEMENV, __RC__  )
@@ -480,6 +483,8 @@ contains
               SRC_NAME  = (/'H2SO4',       'HNO3'/), &
               DST_NAME  = (/'CARMA_H2SO4', 'CARMA_HNO3'/), &
               DST_ID = CARMA, SRC_ID = GMICHEM, __RC__  )
+         CALL MAPL_ConfigSetAttribute(CF, 'full_field', &
+              label='SULFURIC_ACID_SOURCE:', __RC__)
       endif
       if(myState%enable_GMICHEM .AND. TRIM(providerName) == "CARMA") then
          CALL MAPL_AddConnectivity ( GC, &

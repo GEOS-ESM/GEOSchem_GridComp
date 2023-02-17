@@ -546,12 +546,6 @@ CONTAINS
    gcCARMA%j2 = dims(2)
    gcCARMA%km = dims(3)
 
-! PRC: Should do it this way, but it crashes...
-!   call ESMF_GridGetCoord(grid, fptr=lons, coordDim=1, localDE=0, rc=STATUS)
-!   VERIFY_(STATUS)
-!   call ESMF_GridGetCoord(grid, fptr=lats, coordDim=2, localDE=0, rc=STATUS)
-!   VERIFY_(STATUS)
-
 !   Initialize the tracer array
 !   ---------------------------
     _ASSERT( size(InternalSpec) == reg%nq, 'needs informative message' )
@@ -615,9 +609,14 @@ CONTAINS
 
 #endif
 
+!   Get the chemistry coupling information from the configuration
+!   -------------------------------------------------------------
+    call ESMF_ConfigGetAttribute(CF, reg%sulfuric_acid_source, &
+         Label="SULFURIC_ACID_SOURCE:" , DEFAULT='tendency', __RC__)
+  
+
 !   Fill in the scavenging attribute
 !   --------------------------------
-    reg => gcCARMA%carmaReg
     nCARMABegin =  1
     nCARMAEnd   =  reg%nq
     do ielem = 1, reg%NELEM
@@ -1433,11 +1432,6 @@ CONTAINS
          call final_(40)
          return
    end if
-
-!  Sulfate
-   call i90_label ( 'gmi_chem_provider:', ios )
-   if(ios .eq. 0) r%gmi_chem_provider = i90_gint( ier(1) )
-
 
 !  Get any requested point emissions
 !  ---------------------------------
