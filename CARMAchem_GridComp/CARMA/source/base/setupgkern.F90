@@ -124,6 +124,15 @@ subroutine setupgkern(carma, cstate, rc)
         ! for water vapor.
         akelvini(k, igas) = akelvini(k, igash2o)
       end do   
+    else if (igas .eq. igashno3) then
+      ! Not growing anything with HNO3
+      ! Just grabbing akelvin for h2so4(liq)/water vapor(ice)
+      do k = 1, NZ  
+        surf_tens = sulfate_surf_tens(carma, wtpct(k), t(k), rc)
+        rho_H2SO4 = sulfate_density(carma, wtpct(k), t(k), rc)
+        akelvin(k, igas) = 2._f * gwtmol(igas) * surf_tens / (t(k) * rho_H2SO4 * RGAS)
+        akelvini(k, igas) = akelvini(k, igash2o)
+      end do
     else 
 
       ! Condensing gas is not yet configured.

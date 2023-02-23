@@ -65,6 +65,7 @@ module carma_enums_mod
   integer, public, parameter :: I_FITZGERALD   = 1   !! Fitzgerald
   integer, public, parameter :: I_GERBER       = 2   !! Gerber
   integer, public, parameter :: I_WTPCT_H2SO4  = 3   !! The weight percent method for sulfate aerosol
+  integer, public, parameter :: I_WTPCT_STS    = 4   !! The weight percent method for sts
   
   !  Define vallues of flag used for particle swelling composition (Fiztgerald)
   integer, public, parameter :: I_SWF_NH42SO4   = 1   !! (NH4)2SO4
@@ -88,6 +89,7 @@ module carma_enums_mod
   integer, public, parameter :: I_VAPRTN_H2O_MURPHY2005    = 2   !! H2O, Murphy & Koop [2005]
   integer, public, parameter :: I_VAPRTN_H2O_GOFF1946      = 3   !! H2O, Goff & Gratch [1946], used in CAM
   integer, public, parameter :: I_VAPRTN_H2SO4_AYERS1980   = 4   !! H2SO4, Ayers [1980] & Kumala [1990]
+  integer, public, parameter :: I_VAPRTN_NULL              = 5   !! For non-condensing gases
 
   ! Routines to calculate fall velocities
   integer, public, parameter :: I_FALLRTN_STD              = 1   !! Standard CARMA 2.3 routine (spherical only)
@@ -103,6 +105,7 @@ module carma_enums_mod
   integer, public, parameter :: I_GCOMP_H2O             = 1   !! Water Vapor
   integer, public, parameter :: I_GCOMP_H2SO4           = 2   !! Sulphuric Acid
   integer, public, parameter :: I_GCOMP_SO2             = 3   !! Sulfer Dioxide
+  integer, public, parameter :: I_GCOMP_HNO3            = 4   !! Nitric Acid
   
   ! How is the CARMA group represented in the parent model
   integer, public, parameter :: I_CNSTTYPE_PROGNOSTIC   = 1   !! Prognostic, advected constituent for each bin

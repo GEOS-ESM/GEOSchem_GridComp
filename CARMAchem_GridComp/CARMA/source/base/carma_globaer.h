@@ -180,6 +180,7 @@
 #define dt_threshold  carma%f_dt_threshold
 #define igash2o       carma%f_igash2o
 #define igash2so4     carma%f_igash2so4
+#define igashno3      carma%f_igashno3
 #define igasso2       carma%f_igasso2
 #define tstick        carma%f_tstick
 #define gsticki       carma%f_gsticki

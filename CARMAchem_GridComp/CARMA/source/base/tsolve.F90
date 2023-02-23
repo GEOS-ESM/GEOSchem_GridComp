@@ -74,7 +74,7 @@ subroutine tsolve(carma, cstate, iz, scale_threshold, rc)
     dt           = dt + dtime * phprod
     partheat(iz) = partheat(iz) + phprod * dtime
   end if
-  
+
   t(iz) = t(iz) + dt
  
   
