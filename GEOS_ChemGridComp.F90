@@ -480,8 +480,8 @@ contains
       endif
       if(myState%enable_GMICHEM) then
          CALL MAPL_AddConnectivity ( GC, &
-              SRC_NAME  = (/'H2SO4',       'HNO3'/), &
-              DST_NAME  = (/'CARMA_H2SO4', 'CARMA_HNO3'/), &
+              SRC_NAME  = (/'H2SO4',       'HNO3 '/), &
+              DST_NAME  = (/'CARMA_H2SO4', 'CARMA_HNO3 '/), &
               DST_ID = CARMA, SRC_ID = GMICHEM, __RC__  )
          CALL MAPL_ConfigSetAttribute(CF, 'full_field', &
               label='SULFURIC_ACID_SOURCE:', __RC__)
