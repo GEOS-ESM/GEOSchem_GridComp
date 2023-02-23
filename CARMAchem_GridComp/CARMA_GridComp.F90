@@ -982,10 +982,10 @@ CONTAINS
      n  = nCARMAbegin + reg%NBIN*reg%NELEM - 1 + igas
      gasname = ESMF_UtilStringUpperCase(reg%gasname(igas))
      if(gasname == 'H2SO4') then
-      qa(n)%data3d = h2so4*WTMOL_H2SO4/WTMOL_AIR
+      if(associated(h2so4)) qa(n)%data3d = h2so4*WTMOL_H2SO4/WTMOL_AIR
      endif
      if(gasname == 'HNO3' ) then
-      qa(n)%data3d = hno3 *WTMOL_HNO3 /WTMOL_AIR
+      if(associated(hno3))  qa(n)%data3d = hno3 *WTMOL_HNO3 /WTMOL_AIR
      endif
     enddo
    endif
@@ -1404,11 +1404,11 @@ endif
      n  = nCARMAbegin + reg%NBIN*reg%NELEM - 1 + igas
      gasname = ESMF_UtilStringUpperCase(reg%gasname(igas))
      if(gasname == 'H2SO4') then
-      h2so4 = qa(n)%data3d*WTMOL_AIR/WTMOL_H2SO4
+      if(associated(h2so4)) h2so4 = qa(n)%data3d*WTMOL_AIR/WTMOL_H2SO4
      endif
      if(gasname == 'HNO3' ) then
 !     For now don't update HNO3
-!      hno3 = qa(n)%data3d*WTMOL_AIR /WTMOL_HNO3
+!      if(associated(hno3)) hno3 = qa(n)%data3d*WTMOL_AIR /WTMOL_HNO3
      endif
     enddo
    endif
