@@ -79,6 +79,9 @@
      real                       :: channel=550. ! Single channel to analyze
 
      logical                    :: no_fuss=.FALSE. ! do not fuss if analysis file is missing
+  
+     logical                    :: monitor_g2g=.FALSE. ! Run in monitoring mode for G2G 
+     logical                    :: monitor_gcc=.TRUE.  ! Run in monitoring mode for GEOS-Chem
 
   END TYPE GAAS_State
 
@@ -154,6 +157,11 @@ CONTAINS
     call ESMF_ConfigGetAttribute(self%CF, self%channel, Label='single_channel:',  &
                                           default = 550., __RC__ )
 
+    call ESMF_ConfigGetAttribute(self%CF, self%monitor_g2g, Label='monitor_g2g:',  &
+                                          default = .FALSE., __RC__ )
+    call ESMF_ConfigGetAttribute(self%CF, self%monitor_gcc, Label='monitor_gcc:',  &
+                                          default = .TRUE., __RC__ )
+
 !                       ------------------------
 !                       ESMF Functional Services
 !                       ------------------------
@@ -193,6 +201,15 @@ CONTAINS
 ! !EXTERNAL STATE:
 
 #   include "GAAS_ExportSpec___.h"
+
+     ! Bundle with GEOS-Chem friendlies
+     call MAPL_AddExportSpec(GC,                                  &
+        SHORT_NAME         = 'AEROGCC',                          &
+        LONG_NAME          = 'GEOS-Chem species for GAAS',        &
+        UNITS              = 'kg kg-1',                           &
+        DIMS               = MAPL_DimsHorzVert,                   &
+        VLOCATION          = MAPL_VLocationCenter,                &
+        DATATYPE           = MAPL_BundleItem, __RC__ ) 
 
 !   Generic Set Services
 !   --------------------
@@ -458,16 +475,17 @@ CONTAINS
                                                  y_a_, y_d_
     real, pointer, dimension(:,:,:)  :: DUsum, SSsum, SUsum, NIsum, CAOCsum, CABCsum, CABRsum
 
+    ! updates to make things work with GEOS-Chem
+    logical :: do_analysis, need_bkg
+    integer :: NANA, IANA, NFLD, IFLD
+    integer :: fieldCount
+    real, dimension(:,:,:,:), allocatable :: q_orig
+    type(ESMF_FieldBundle) :: aerogcc
 
 #   include "GAAS_DeclarePointer___.h"
 
                                 __Iam__('Run_')
 
-
-!  Set these exports to UNDEF
-!  --------------------------
-   if ( associated(aodana) ) aodana(:,:) = MAPL_UNDEF
-   if ( associated(aodinc) ) aodinc(:,:) = MAPL_UNDEF
 
 !  Get my name and set-up traceback handle
 !  ---------------------------------------
@@ -511,24 +529,99 @@ CONTAINS
 
 !  Stop here if it is NOT analysis time
 !  -------------------------------------
+   do_analysis = .TRUE.
    if ( PREDICTOR_STEP .or. ReplayShutOff .or. (.not. analysis_time) ) then
-      RETURN_(ESMF_SUCCESS)
+      do_analysis = .FALSE.
+      !RETURN_(ESMF_SUCCESS)
    end if
+
+!  Get pointer for IMPORT/EXPORT/INTERNAL states 
+!  ---------------------------------------------
+#  include "GAAS_GetPointer___.h"
+
+!  Reset exports. Do this on every time step. Also check if we need 
+!  the bkg diagnostics. Those can be filled on every time step 
+!  -----------------
+   need_bkg = (associated(aodbkg) .or. associated(aodbkg_gcc)) 
+
+!  Set these exports to UNDEF
+!  --------------------------
+   if ( associated(aodbkg) ) aodbkg(:,:) = MAPL_UNDEF
+   if ( associated(aodana) ) aodana(:,:) = MAPL_UNDEF
+   if ( associated(aodinc) ) aodinc(:,:) = MAPL_UNDEF
+
+   if ( associated(duana) ) duana = 0.0
+   if ( associated(ssana) ) ssana = 0.0
+   if ( associated(niana) ) niana = 0.0
+   if ( associated(bcana) ) bcana = 0.0
+   if ( associated(ocana) ) ocana = 0.0
+   if ( associated(brana) ) brana = 0.0
+   if ( associated(suana) ) suana = 0.0
+
+   if ( associated(duinc) ) duinc = 0.0
+   if ( associated(ssinc) ) ssinc = 0.0
+   if ( associated(niinc) ) niinc = 0.0
+   if ( associated(bcinc) ) bcinc = 0.0
+   if ( associated(ocinc) ) ocinc = 0.0
+   if ( associated(brinc) ) brinc = 0.0
+   if ( associated(suinc) ) suinc = 0.0
+
+   ! GCC diagnostics
+   if ( associated(aodbkg_gcc) ) aodbkg_gcc(:,:) = MAPL_UNDEF
+   if ( associated(aodana_gcc) ) aodana_gcc(:,:) = MAPL_UNDEF
+   if ( associated(aodinc_gcc) ) aodinc_gcc(:,:) = MAPL_UNDEF
+
+   if ( associated(duana_gcc) ) duana_gcc = 0.0
+   if ( associated(ssana_gcc) ) ssana_gcc = 0.0
+   if ( associated(niana_gcc) ) niana_gcc = 0.0
+   if ( associated(bcana_gcc) ) bcana_gcc = 0.0
+   if ( associated(ocana_gcc) ) ocana_gcc = 0.0
+   if ( associated(brana_gcc) ) brana_gcc = 0.0
+   if ( associated(suana_gcc) ) suana_gcc = 0.0
+
+   if ( associated(duinc_gcc) ) duinc_gcc = 0.0
+   if ( associated(ssinc_gcc) ) ssinc_gcc = 0.0
+   if ( associated(niinc_gcc) ) niinc_gcc = 0.0
+   if ( associated(bcinc_gcc) ) bcinc_gcc = 0.0
+   if ( associated(ocinc_gcc) ) ocinc_gcc = 0.0
+   if ( associated(brinc_gcc) ) brinc_gcc = 0.0
+   if ( associated(suinc_gcc) ) suinc_gcc = 0.0
+
+   ! can return here if it's not time and we don't need the bkg fields
+   if ( .not. do_analysis .and. .not. need_bkg ) then
+      RETURN_(ESMF_SUCCESS)
+   endif
+
+   ! Number of 'instances'. Can be one (GOCART2G) or two (GCC+GOCART2G)
+   NANA = 1
+
+   ! Check if GEOS-Chem aerosols are available 
+   CALL ESMF_StateGet (EXPORT, 'AEROGCC', aerogcc, RC=status )
+   if ( status == ESMF_SUCCESS ) then
+      call ESMF_FieldBundleGet( aerogcc, fieldCount=fieldCount, __RC__)
+      if ( fieldCount > 0 ) NANA = NANA + 1
+   endif
 
 !  OK, let's assimilate the AOD analysis
 !  -------------------------------------
-   if (MAPL_AM_I_ROOT()) then
+
+   ! Now loop over number of assimilation instances 
+   DO IANA = 1,NANA
+
+   if (MAPL_AM_I_ROOT() .and. do_analysis ) then
       PRINT *, TRIM(Iam)//': Starting Aerosol Assimilation at ', nymd, nhms
+      IF ( NANA == 2 ) THEN
+          IF ( IANA <  NANA ) WRITE(*,*) ' --> GAAS run 1: GEOS-Chem'
+          IF ( IANA == NANA ) WRITE(*,*) ' --> GAAS run 2: GOCART2G' 
+      ENDIF
+      IF ( (IANA< NANA) .and. self%monitor_gcc ) WRITE(*,*) '  -> Use monitoring mode for GEOS-Chem'
+      IF ( (IANA==NANA) .and. self%monitor_g2g ) WRITE(*,*) '  -> Use monitoring mode for G2G'
       PRINT *,' '
    end if
 
 !  Run MAPL Generic
 !  ----------------
 !ALT   call MAPL_GenericRunChildren ( gc, IMPORT, EXPORT, clock,  __RC__ )
-
-!  Get pointer for IMPORT/EXPORT/INTERNAL states 
-!  ---------------------------------------------
-#  include "GAAS_GetPointer___.h"
 
 !  Retrieve AOD from AERO state and fill SimpleBundle
 !  ------------------------------------------------------
@@ -547,6 +640,33 @@ CONTAINS
       ptr3d = ple
    end if
 
+   ! If doing GAAS with GEOS-Chem, we first store the GOCART2G tracer concentrations locally. Will be copied back
+   ! at the end
+   IF ( IANA < NANA .or. self%monitor_g2g ) THEN
+     ! debug: print content of AEROGCC bundle 
+!     IF ( MAPL_AM_I_ROOT() .and. debug ) THEN
+!      call ESMF_FieldBundleGet( aerogcc, fieldCount=fieldCount, __RC__)
+!      write(*,*) 'Number of fields in AEROGCC: ',fieldCount
+!      allocate (fieldList(fieldCount), __STAT__)
+!      call ESMF_FieldBundleGet (aerogcc, fieldList=fieldList, __RC__)
+!      do IFLD = 1,fieldCount
+!       call ESMF_FieldGet(fieldList(IFLD),name=varName, __RC__)
+!       call ESMF_FieldGet(fieldList(IFLD),rank=fieldRank, __RC__)
+!       write(*,*) 'AEROGCC field: ',IFLD,TRIM(varName), fieldRank
+!      enddo
+!      deallocate(fieldList, __STAT__) 
+!     ENDIF
+
+     NFLD = self%q_a%n3d
+     allocate(q_orig(ubound(rh2,1),ubound(rh2,2),ubound(rh2,3),NFLD))
+     q_orig(:,:,:,:) = 0.0
+     do IFLD = 1, NFLD
+       ! make local copy before overwriting
+       q_orig(:,:,:,IFLD) = self%q_a%r3(IFLD)%q(:,:,:)
+       if ( IANA<NANA ) call map_gcc( IFLD, 1, __RC__ )
+     enddo
+   ENDIF
+
    ! Set wavelength at 550nm (550 should be a parameter called "monochromatic_wavelength_nm" defined in GAAS)
    call ESMF_AttributeSet(aero, name='wavelength_for_aerosol_optics', value=self%channel*1.0e-9, __RC__)
 
@@ -562,144 +682,238 @@ CONTAINS
       aodInt = ptr2d
    end if
 
-!  Set AOD value in y_f
-!   self%y_f%r2(1)%name='aod'
-   self%y_f%r2(1)%qr4 => aodInt  ! vertically summed AOD
-   self%y_f%r2(1)%q => self%y_f%r2(1)%qr4
+   ! aodbkg diagnostics for GCC
+   if ( IANA < NANA ) then
+    if (associated(aodbkg_gcc)) aodbkg_gcc(:,:) = aodInt(:,:)
+   else
+    if (associated(aodbkg))     aodbkg(:,:)     = aodInt(:,:)
+   endif 
 
-   if ( self%verbose ) then
-       call MAPL_SimpleBundlePrint(self%y_f)
-       call MAPL_SimpleBundlePrint(self%q_f)
-   end if
+   ! do the following only during analysis time
+   if ( do_analysis ) then
 
+   !  Set AOD value in y_f
+   !   self%y_f%r2(1)%name='aod'
+      self%y_f%r2(1)%qr4 => aodInt  ! vertically summed AOD
+      self%y_f%r2(1)%q => self%y_f%r2(1)%qr4
+   
+      if ( self%verbose ) then
+          call MAPL_SimpleBundlePrint(self%y_f)
+          call MAPL_SimpleBundlePrint(self%q_f)
+      end if
+   
+   !  Read off-line AOD analysis, background and averaging kernel
+   !  -----------------------------------------------------------    
+      allocate(aod_a_(ubound(rh2,1),ubound(rh2,2)), __STAT__)
+      aod_a_ = aod_a
+      allocate(aod_f_(ubound(rh2,1),ubound(rh2,2)), __STAT__)
+      aod_f_ = aod_f
+      allocate(aod_k_(ubound(rh2,1),ubound(rh2,2)), __STAT__)
+      aod_k_ = aod_k
+   
+      self%z_a%r2(1)%qr4 => aod_a_    !Move these pointer assignments to Initialize method? -ES
+      self%z_a%r2(1)%q => self%z_a%r2(1)%qr4
+   
+      self%z_f%r2(1)%qr4 => aod_f_
+      self%z_f%r2(1)%q => self%z_f%r2(1)%qr4
+   
+      self%z_k%r2(1)%qr4 => aod_k_
+      self%z_k%r2(1)%q => self%z_k%r2(1)%qr4
+   
+   !  Print summary of input
+   !  ----------------------
+      if ( self%verbose ) then
+         call MAPL_SimpleBundlePrint(self%z_f)
+         call MAPL_SimpleBundlePrint(self%z_a)
+         call MAPL_SimpleBundlePrint(self%z_k)
+      end if
+   
+   !  Convert AOD to Log(AOD+eps) for A.K. Adjustment
+   !  -----------------------------------------------
+      self%z_a%r2(1)%q = Log(self%z_a%r2(1)%q + self%eps)
+      self%z_f%r2(1)%q = Log(self%z_f%r2(1)%q + self%eps)
+      self%y_f%r2(1)%q = Log(self%y_f%r2(1)%q + self%eps)
+   
+   !  Background adjustment using averaging kernel
+   !   This must be done in the Log(AOD+eps) variable
+   !  -----------------------------------------------
+      allocate(y_a_(ubound(rh2,1), ubound(rh2,2)), __STAT__)
+      y_a_ = self%z_a%r2(1)%q &
+           + (1.-self%z_k%r2(1)%q) &
+           * ( self%y_f%r2(1)%q - self%z_f%r2(1)%q )
+   
+      self%y_a%r2(1)%qr4 => y_a_
+      self%y_a%r2(1)%q => self%y_a%r2(1)%qr4
+   
+   !  Convert from Log(AOD+eps) back to AOD
+   !  -------------------------------------
+      self%y_a%r2(1)%q = Exp(self%y_a%r2(1)%q) - self%eps
+      self%y_f%r2(1)%q = Exp(self%y_f%r2(1)%q) - self%eps
+   
+      allocate(y_d_(ubound(rh2,1), ubound(rh2,2)), __STAT__)
+      y_d_ = self%y_a%r2(1)%q - self%y_f%r2(1)%q
+      self%y_d%r2(1)%qr4 => y_d_
+      self%y_d%r2(1)%q => self%y_d%r2(1)%qr4
 
-!  Read off-line AOD analysis, background and averaging kernel
-!  -----------------------------------------------------------    
-   self%z_a%r2(1)%qr4 => aod_a    !Move these pointer assignments to Initialize method? -ES
-   self%z_a%r2(1)%q => self%z_a%r2(1)%qr4
+      if ( self%verbose ) then
+          call MAPL_SimpleBundlePrint(self%y_d)
+          call MAPL_SimpleBundlePrint(self%y_a)
+          call MAPL_SimpleBundlePrint(self%y_f)
+      end if
+   
+   !  Get sum of aerosol mixing ratios
+      call get_aerosolSum (aero, 'dust', DUsum, __RC__)
+      call get_aerosolSum (aero, 'seasalt', SSsum, __RC__)
+      call get_aerosolSum (aero, 'sulfate', SUsum, __RC__)
+      call get_aerosolSum (aero, 'nitrate', NIsum, __RC__)
+      call get_aerosolSum (aero, 'organicCarbon', CAOCsum, __RC__)
+      call get_aerosolSum (aero, 'blackCarbon', CABCsum, __RC__)
+      call get_aerosolSum (aero, 'brownCarbon', CABRsum, __RC__)
+   
+   !  Handle 3D exports (save bkg for increments)
+   !  -------------------------------------------
+      IF ( IANA==NANA ) THEN
+       if ( .not. self%monitor_g2g ) then
+        if ( associated(duinc) ) duinc = DUsum
+        if ( associated(ssinc) ) ssinc = SSsum
+        if ( associated(niinc) ) niinc = NIsum
+        if ( associated(bcinc) ) bcinc = CABCsum
+        if ( associated(ocinc) ) ocinc = CAOCsum
+        if ( associated(brinc) ) brinc = CABRsum
+        if ( associated(suinc) ) suinc = SUsum
+       endif
+      ELSE
+       if ( .not. self%monitor_gcc ) then
+        if ( associated(duinc_gcc) ) duinc_gcc = DUsum
+        if ( associated(ssinc_gcc) ) ssinc_gcc = SSsum
+        if ( associated(niinc_gcc) ) niinc_gcc = NIsum
+        if ( associated(bcinc_gcc) ) bcinc_gcc = CABCsum
+        if ( associated(ocinc_gcc) ) ocinc_gcc = CAOCsum
+        if ( associated(brinc_gcc) ) brinc_gcc = CABRsum
+        if ( associated(suinc_gcc) ) suinc_gcc = SUsum
+       endif
+      ENDIF
+   
+   !  Create concetration analysis from AOD increments
+   !   Here we pass in the y_f and y_d in terms of AOD,
+   !   *not* Log(AOD+eps)
+   !  ------------------------------------------------
+      call LDE_Projector1c ( self%E, self%q_a, self%q_f, self%y_f, self%y_d, self%verbose, __RC__ )
+   
+   !  Get updated sum of aerosol mixing ratios
+      call get_aerosolSum (aero, 'dust', DUsum, __RC__)
+      call get_aerosolSum (aero, 'seasalt', SSsum, __RC__)
+      call get_aerosolSum (aero, 'sulfate', SUsum, __RC__)
+      call get_aerosolSum (aero, 'nitrate', NIsum, __RC__)
+      call get_aerosolSum (aero, 'organicCarbon', CAOCsum, __RC__)
+      call get_aerosolSum (aero, 'blackCarbon', CABCsum, __RC__)
+      call get_aerosolSum (aero, 'brownCarbon', CABRsum, __RC__)
+   
+   !  Handle 2D exports
+   !  -----------------
+      IF ( IANA==NANA ) THEN
+       if ( associated(aodana) ) aodana(:,:) = self%y_a%r2(1)%q(:,:)
+       if ( associated(aodinc) ) aodinc(:,:) = self%y_d%r2(1)%q(:,:)
+      ELSE 
+       if ( associated(aodana_gcc) ) aodana_gcc(:,:) = self%y_a%r2(1)%q(:,:)
+       if ( associated(aodinc_gcc) ) aodinc_gcc(:,:) = self%y_d%r2(1)%q(:,:)
+      ENDIF
+   
+   !  Handle 3D exports
+   !  -----------------
+      IF ( IANA==NANA ) THEN
+       if ( associated(duana) ) duana = DUsum
+       if ( associated(ssana) ) ssana = SSsum
+       if ( associated(niana) ) niana = NIsum
+       if ( associated(bcana) ) bcana = CABCsum
+       if ( associated(ocana) ) ocana = CAOCsum
+       if ( associated(brana) ) brana = CABRsum
+       if ( associated(suana) ) suana = SUsum
+   
+   !  Compute increments
+       if ( .not. self%monitor_g2g ) then
+        if ( associated(duinc) ) duinc = DUsum - duinc
+        if ( associated(ssinc) ) ssinc = SSsum - ssinc
+        if ( associated(niinc) ) niinc = NIsum - niinc
+        if ( associated(bcinc) ) bcinc = CABCsum - bcinc
+        if ( associated(ocinc) ) ocinc = CAOCsum - ocinc
+        if ( associated(brinc) ) brinc = CABRsum - brinc
+        if ( associated(suinc) ) suinc = SUsum - suinc
+       endif
+      ELSE
+       if ( associated(duana_gcc) ) duana_gcc = DUsum
+       if ( associated(ssana_gcc) ) ssana_gcc = SSsum
+       if ( associated(niana_gcc) ) niana_gcc = NIsum
+       if ( associated(bcana_gcc) ) bcana_gcc = CABCsum
+       if ( associated(ocana_gcc) ) ocana_gcc = CAOCsum
+       if ( associated(brana_gcc) ) brana_gcc = CABRsum
+       if ( associated(suana_gcc) ) suana_gcc = SUsum
 
-   self%z_f%r2(1)%qr4 => aod_f
-   self%z_f%r2(1)%q => self%z_f%r2(1)%qr4
-
-   self%z_k%r2(1)%qr4 => aod_k
-   self%z_k%r2(1)%q => self%z_k%r2(1)%qr4
-
-!  Print summary of input
-!  ----------------------
-   if ( self%verbose ) then
-      call MAPL_SimpleBundlePrint(self%z_f)
-      call MAPL_SimpleBundlePrint(self%z_a)
-      call MAPL_SimpleBundlePrint(self%z_k)
-   end if
-
-!  Convert AOD to Log(AOD+eps) for A.K. Adjustment
-!  -----------------------------------------------
-   self%z_a%r2(1)%q = Log(self%z_a%r2(1)%q + self%eps)
-   self%z_f%r2(1)%q = Log(self%z_f%r2(1)%q + self%eps)
-   self%y_f%r2(1)%q = Log(self%y_f%r2(1)%q + self%eps)
-
-!  Background adjustment using averaging kernel
-!   This must be done in the Log(AOD+eps) variable
-!  -----------------------------------------------
-   allocate(y_a_(ubound(rh2,1), ubound(rh2,2)), __STAT__)
-   y_a_ = self%z_a%r2(1)%q &
-        + (1.-self%z_k%r2(1)%q) &
-        * ( self%y_f%r2(1)%q - self%z_f%r2(1)%q )
-
-   self%y_a%r2(1)%qr4 => y_a_
-   self%y_a%r2(1)%q => self%y_a%r2(1)%qr4
-
-!  Convert from Log(AOD+eps) back to AOD
-!  -------------------------------------
-   self%y_a%r2(1)%q = Exp(self%y_a%r2(1)%q) - self%eps
-   self%y_f%r2(1)%q = Exp(self%y_f%r2(1)%q) - self%eps
-
-   allocate(y_d_(ubound(rh2,1), ubound(rh2,2)), __STAT__)
-   y_d_ = self%y_a%r2(1)%q - self%y_f%r2(1)%q
-   self%y_d%r2(1)%qr4 => y_d_
-   self%y_d%r2(1)%q => self%y_d%r2(1)%qr4
-
-
-   if ( self%verbose ) then
-       call MAPL_SimpleBundlePrint(self%y_d)
-       call MAPL_SimpleBundlePrint(self%y_a)
-       call MAPL_SimpleBundlePrint(self%y_f)
-   end if
-
-
-!  Get sum of aerosol mixing ratios
-   call get_aerosolSum (aero, 'dust', DUsum, __RC__)
-   call get_aerosolSum (aero, 'seasalt', SSsum, __RC__)
-   call get_aerosolSum (aero, 'sulfate', SUsum, __RC__)
-   call get_aerosolSum (aero, 'nitrate', NIsum, __RC__)
-   call get_aerosolSum (aero, 'organicCarbon', CAOCsum, __RC__)
-   call get_aerosolSum (aero, 'blackCarbon', CABCsum, __RC__)
-   call get_aerosolSum (aero, 'brownCarbon', CABRsum, __RC__)
-
-!  Handle 3D exports (save bkg for increments)
-!  -------------------------------------------
-   if ( associated(duinc) ) duinc = DUsum
-   if ( associated(ssinc) ) ssinc = SSsum
-   if ( associated(niinc) ) niinc = NIsum
-   if ( associated(bcinc) ) bcinc = CABCsum
-   if ( associated(ocinc) ) ocinc = CAOCsum
-   if ( associated(brinc) ) brinc = CABRsum
-   if ( associated(suinc) ) suinc = SUsum
-
-!  Create concetration analysis from AOD increments
-!   Here we pass in the y_f and y_d in terms of AOD,
-!   *not* Log(AOD+eps)
-!  ------------------------------------------------
-   call LDE_Projector1c ( self%E, self%q_a, self%q_f, self%y_f, self%y_d, self%verbose, __RC__ )
-
-!  Get updated sum of aerosol mixing ratios
-   call get_aerosolSum (aero, 'dust', DUsum, __RC__)
-   call get_aerosolSum (aero, 'seasalt', SSsum, __RC__)
-   call get_aerosolSum (aero, 'sulfate', SUsum, __RC__)
-   call get_aerosolSum (aero, 'nitrate', NIsum, __RC__)
-   call get_aerosolSum (aero, 'organicCarbon', CAOCsum, __RC__)
-   call get_aerosolSum (aero, 'blackCarbon', CABCsum, __RC__)
-   call get_aerosolSum (aero, 'brownCarbon', CABRsum, __RC__)
-
-!  Handle 2D exports
-!  -----------------
-   if ( associated(aodana) ) aodana(:,:) = self%y_a%r2(1)%q(:,:)
-   if ( associated(aodinc) ) aodinc(:,:) = self%y_d%r2(1)%q(:,:)
-
-!  Handle 3D exports
-!  -----------------
-   if ( associated(duana) ) duana = DUsum
-   if ( associated(ssana) ) ssana = SSsum
-   if ( associated(niana) ) niana = NIsum
-   if ( associated(bcana) ) bcana = CABCsum
-   if ( associated(ocana) ) ocana = CAOCsum
-   if ( associated(brana) ) brana = CABRsum
-   if ( associated(suana) ) suana = SUsum
-
-!  Compute increments
-   if ( associated(duinc) ) duinc = DUsum - duinc
-   if ( associated(ssinc) ) ssinc = SSsum - ssinc
-   if ( associated(niinc) ) niinc = NIsum - niinc
-   if ( associated(bcinc) ) bcinc = CABCsum - bcinc
-   if ( associated(ocinc) ) ocinc = CAOCsum - ocinc
-   if ( associated(brinc) ) brinc = CABRsum - brinc
-   if ( associated(suinc) ) suinc = SUsum - suinc
-
-
+   !  Compute increments
+       if ( .not. self%monitor_gcc ) then
+        if ( associated(duinc_gcc) ) duinc_gcc = DUsum - duinc_gcc
+        if ( associated(ssinc_gcc) ) ssinc_gcc = SSsum - ssinc_gcc
+        if ( associated(niinc_gcc) ) niinc_gcc = NIsum - niinc_gcc
+        if ( associated(bcinc_gcc) ) bcinc_gcc = CABCsum - bcinc_gcc
+        if ( associated(ocinc_gcc) ) ocinc_gcc = CAOCsum - ocinc_gcc
+        if ( associated(brinc_gcc) ) brinc_gcc = CABRsum - brinc_gcc
+        if ( associated(suinc_gcc) ) suinc_gcc = SUsum - suinc_gcc
+       endif
+      ENDIF
+   
 #ifdef PRINT_STATES
-   if (MAPL_AM_I_ROOT()) then
-       print *, trim(Iam)//': IMPORT   State during Run():'
-       call ESMF_StatePrint ( IMPORT )
-       print *, trim(Iam)//': EXPORT   State during Run():' 
-       call ESMF_StatePrint ( EXPORT )
-    end if
+      if (MAPL_AM_I_ROOT()) then
+          print *, trim(Iam)//': IMPORT   State during Run():'
+          call ESMF_StatePrint ( IMPORT )
+          print *, trim(Iam)//': EXPORT   State during Run():' 
+          call ESMF_StatePrint ( EXPORT )
+       end if
 #endif
+   endif ! do_analysis
+
+   ! For GEOS-Chem, pass concentrations back to GEOS-Chem tracer fields and reset
+   ! the GOCART fields to their original values.
+   ! Note: don't overwrite GEOS-Chem tracer fields if using GAAS in monitoring mode.
+   if ( IANA<NANA ) then
+      ! Zero accumulative GEOS-Chem tracers first (SALA & SALC)
+      if ( do_analysis .and. .not. self%monitor_gcc ) then
+         call ESMFL_BundleGetPointerToData( aerogcc, 'SPC_SALA', ptr3d, __RC__ )
+         ptr3d(:,:,:) = 0.0 
+         call ESMFL_BundleGetPointerToData( aerogcc, 'SPC_SALC', ptr3d, __RC__ )
+         ptr3d(:,:,:) = 0.0 
+      endif
+
+      do IFLD = 1, NFLD
+         if ( do_analysis .and. .not. self%monitor_gcc ) call map_gcc( IFLD, 2, __RC__ )
+         ! set aerosol field back to original value
+         self%q_a%r3(IFLD)%q(:,:,:) = q_orig(:,:,:,IFLD)
+      enddo
+   endif
+
+   ! If using G2G in monitoring mode, need to set aerosol field back to original value
+   if ( IANA==NANA .and. self%monitor_g2g ) then
+      do IFLD = 1, NFLD
+         self%q_a%r3(IFLD)%q(:,:,:) = q_orig(:,:,:,IFLD)
+      enddo
+   endif
+
+   ! cleanup
+   if(allocated(aodInt)) deallocate(aodInt)
+   if(allocated(aod_a_)) deallocate(aod_a_)
+   if(allocated(aod_f_)) deallocate(aod_f_)
+   if(allocated(aod_k_)) deallocate(aod_k_)
+   if(allocated(y_a_  )) deallocate(y_a_)
+   if(allocated(y_d_  )) deallocate(y_d_)
+   if(allocated(q_orig)) deallocate(q_orig)
+
+   ! End loop over instances 
+   ENDDO
 
 !  Stop timers
 !  ------------
    call MAPL_TimerOff( MAPL, "TOTAL")
 
-if (mapl_am_i_root()) print*,'GAAS finished!'
+if (mapl_am_i_root() .and. do_analysis ) print*,'GAAS finished!'
 
 !  All done
 !  --------
@@ -753,6 +967,162 @@ Contains
      end if
 
    end subroutine get_aerosolSum
+
+   ! map GCC species to GOCART and vice versa
+   subroutine map_gcc ( field_id, direction, rc )
+
+     implicit none
+
+     !ARGUMENTS:
+     integer,                         intent(in)       :: field_id
+     integer,                         intent(in)       :: direction   ! 1=GCC->GOCART; 2=GOCART->GCC
+     integer,                         intent(out)      :: rc
+
+     ! LOCAL VARIABLES
+     character(len=ESMF_MAXSTR) :: gcc_name
+     real :: gcc_fraction
+     real, pointer :: gccptr(:,:,:), gcchms(:,:,:), gccsoas(:,:,:)
+     real, allocatable :: ratio(:,:,:)
+     real, parameter :: tinyval = 1.0e-16
+     real, parameter :: hms_so4 = 111.10/96.06
+     real, parameter :: om_oc   = 1.4
+     logical, parameter :: debug = .false.
+
+     __Iam__('map_gcc')
+
+     ! set default values 
+     gcc_name = 'unknown' 
+     gcc_fraction = 1.0
+
+     ! map list
+     select case ( trim(self%q_a%r3(field_id)%name) )
+        ! Dust
+        case ( 'DU' )
+         gcc_name = 'SPC_DST1'
+        case ( 'DU002' )
+         gcc_name = 'SPC_DST2'
+        case ( 'DU003' )
+         gcc_name = 'SPC_DST3'
+        case ( 'DU004' )
+         gcc_name = 'SPC_DST4'
+        ! Sea salt 
+        case ( 'SS' )
+         gcc_name = 'SPC_SALA'
+         gcc_fraction = 0.2
+        case ( 'SS002' )
+         gcc_name = 'SPC_SALA'
+         gcc_fraction = 0.8
+        case ( 'SS003' )
+         gcc_name = 'SPC_SALC'
+         gcc_fraction = 0.13
+        case ( 'SS004' )
+         gcc_name = 'SPC_SALC'
+         gcc_fraction = 0.47
+        case ( 'SS005' )
+         gcc_name = 'SPC_SALC'
+         gcc_fraction = 0.4
+        ! Sulfate 
+        case ( 'SO4' )
+         gcc_name = 'SPC_SO4'
+        ! Nitrate
+        case ( 'NH4a' )
+         gcc_name = 'SPC_NH4'
+        case ( 'NO3an1' )
+         gcc_name = 'SPC_NIT'
+        case ( 'NO3an2' )
+         gcc_name = 'SPC_NITs'
+        ! Carbon
+        case ( 'CAphilicCA.bc' )
+         gcc_name = 'SPC_BCPI'
+        case ( 'CAphobicCA.bc' )
+         gcc_name = 'SPC_BCPO'
+        case ( 'CAphilicCA.oc' )
+         gcc_name = 'SPC_OCPI'
+        case ( 'CAphobicCA.oc' )
+         gcc_name = 'SPC_OCPO'
+     end select
+
+     gccptr => null()
+     if ( trim(gcc_name) /= 'unknown' ) then
+      ! debugging
+      if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) 'Trying to get from AEROGCC: ',TRIM(gcc_name)
+      call ESMFL_BundleGetPointerToData( aerogcc, gcc_name, gccptr, __RC__ )
+     endif
+
+     ! Direction 1: from GEOS-Chem to GOCART
+     if ( direction == 1 ) then
+        if ( associated(gccptr) ) then
+           self%q_a%r3(field_id)%q(:,:,:) = gccptr(:,:,:)*gcc_fraction
+           if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) 'GCC mapped to GAAS: ',trim(gcc_name),' --> ',trim(self%q_a%r3(field_id)%name), gcc_fraction
+           ! For sulfate ,we map two GEOS-Chem species onto one GOCART bin (SO4 + HMS).
+           ! Convert HMS to SO4 using MW's (96.06 / 111.10)
+           if ( trim(self%q_a%r3(field_id)%name)=='SO4' ) then
+              call ESMFL_BundleGetPointerToData( aerogcc, 'SPC_HMS', gcchms, __RC__ )
+              self%q_a%r3(field_id)%q(:,:,:) = self%q_a%r3(field_id)%q(:,:,:) + gcchms(:,:,:)/hms_so4
+              if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) ' --> SPC_HMS added to GAAS SO4'
+              gcchms => null() 
+           endif
+           ! For organic carbon ,we map two GEOS-Chem species onto one GOCART bin (OCPI + SOAS)
+           if ( trim(self%q_a%r3(field_id)%name)=='CAphilicCA.oc' ) then
+              call ESMFL_BundleGetPointerToData( aerogcc, 'SPC_SOAS', gccsoas, __RC__ )
+              self%q_a%r3(field_id)%q(:,:,:) = self%q_a%r3(field_id)%q(:,:,:) + gccsoas(:,:,:)/om_oc
+              if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) ' --> SPC_SOAS added to GAAS CAphilicCA.oc' 
+              gccsoas => null() 
+           endif
+        else
+           self%q_a%r3(field_id)%q(:,:,:) = 0.0
+           if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) 'Aerosol field set to zero for GCC: ',trim(self%q_a%r3(field_id)%name)
+        endif 
+     endif 
+
+     ! Direction 2: from GOCART back to GEOS-Chem
+     if ( direction == 2 .and. associated(gccptr) .and. .not. self%monitor_gcc ) then
+       ! SALA, SALC, NITs 
+       if ( gcc_fraction < 1.0 ) then
+         gccptr(:,:,:) = gccptr(:,:,:) + self%q_a%r3(field_id)%q(:,:,:)
+       else
+         ! For sulfate, partition back into SO4 and HMS based on original ratios
+         if ( trim(self%q_a%r3(field_id)%name)=='SO4' ) then
+           call ESMFL_BundleGetPointerToData( aerogcc, 'SPC_HMS', gcchms, __RC__ )
+           allocate(ratio(ubound(gccptr,1),ubound(gccptr,2),ubound(gccptr,3)), __STAT__)
+           ! fraction of SO4 / (SO4+HMS) before adjustment
+           ratio = gccptr+(gcchms/hms_so4)
+           where(ratio==0.0)
+             ratio=tinyval
+           end where
+           ratio = gccptr / ratio
+           gccptr(:,:,:) = self%q_a%r3(field_id)%q(:,:,:) * ratio
+           gcchms(:,:,:) = self%q_a%r3(field_id)%q(:,:,:) * (1.-ratio) * hms_so4
+           deallocate(ratio)
+           gcchms => null()
+           if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) 'GAAS mapped to GEOS-Chem: SO4 --> SPC_SO4 and SPC_HMS'
+         ! Same procedure for hydrophilic OC (OCPI + SOAS)
+         elseif ( trim(self%q_a%r3(field_id)%name)=='CAphilicCA.oc' ) then
+           call ESMFL_BundleGetPointerToData( aerogcc, 'SPC_SOAS', gccsoas, __RC__ )
+           allocate(ratio(ubound(gccptr,1),ubound(gccptr,2),ubound(gccptr,3)), __STAT__)
+           ! fraction of OCPI / (OCPI+SOAS) before adjustment
+           ratio = gccptr+(gccsoas/om_oc)
+           where(ratio==0.0)
+             ratio=tinyval
+           end where
+           ratio = gccptr / ratio
+           gccptr(:,:,:)  = self%q_a%r3(field_id)%q(:,:,:) * ratio
+           gccsoas(:,:,:) = self%q_a%r3(field_id)%q(:,:,:) * (1.-ratio) * om_oc
+           deallocate(ratio)
+           gccsoas => null()
+           if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) 'GAAS mapped to GEOS-Chem: CAphilicCA.oc --> SPC_OCPI and SPC_SOAS'
+         else
+           gccptr(:,:,:) = self%q_a%r3(field_id)%q(:,:,:)
+           if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) 'GAAS mapped to GEOS-Chem: ',trim(self%q_a%r3(field_id)%name), ' --> ',trim(gcc_name)
+         endif
+       endif 
+     endif
+     gccptr => null()
+
+     ! all done
+     RETURN_(ESMF_SUCCESS)
+
+   end subroutine map_gcc
 
    END SUBROUTINE Run_
 

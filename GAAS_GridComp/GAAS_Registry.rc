@@ -41,6 +41,7 @@ COMP_NAME: GAAS
 #  Short   |            |     | V |Item|Intervl| Sub |          Long
 #  Name    |   Units    | Dim |Loc|Type| R | A |Tiles|          Name
 # ---------|------------|-----|---|----|---|---|-----|---------------------------------
+  AODBKG   |     1      | xy  | C |    |   |   |     | Aerosol Optical Depth Background 
   AODANA   |     1      | xy  | C |    |   |   |     | Aerosol Optical Depth Analysis
   AODINC   |     1      | xy  | C |    |   |   |     | Aerosol Optical Depth Analysis Increment
 #
@@ -59,6 +60,26 @@ COMP_NAME: GAAS
   BCINC    |  kg/kg     | xyz | C |    |   |   |     | Black Carbon Mixing Ratio Analysis Increments
   OCINC    |  kg/kg     | xyz | C |    |   |   |     | Organic Carbon Mixing Ratio Analysis Increments
   BRINC    |  kg/kg     | xyz | C |    |   |   |     | Brown Carbon Mixing Ratio Analysis Increments
+#
+  AODBKG_GCC |     1    | xy  | C |    |   |   |     | GEOS-Chem Aerosol Optical Depth Background 
+  AODANA_GCC |     1    | xy  | C |    |   |   |     | GEOS-Chem Aerosol Optical Depth Analysis 
+  AODINC_GCC |     1    | xy  | C |    |   |   |     | GEOS-Chem Aerosol Optical Depth Analysis Increment
+#
+  DUANA_GCC |  kg/kg    | xyz | C |    |   |   |     | GEOS-Chem Dust Mixing Ratio Analysis
+  SSANA_GCC |  kg/kg    | xyz | C |    |   |   |     | GEOS-Chem Sea-salt Mixing Ratio Analysis
+  NIANA_GCC |  kg/kg    | xyz | C |    |   |   |     | GEOS-Chem Nitrate Mixing Ratio Analysis
+  SUANA_GCC |  kg/kg    | xyz | C |    |   |   |     | GEOS-Chem Sulfate Mixing Ratio Analysis
+  BCANA_GCC |  kg/kg    | xyz | C |    |   |   |     | GEOS-Chem Black Carbon Mixing Ratio Analysis
+  OCANA_GCC |  kg/kg    | xyz | C |    |   |   |     | GEOS-Chem Organic Carbon Mixing Ratio Analysis
+  BRANA_GCC |  kg/kg    | xyz | C |    |   |   |     | GEOS-Chem Brown Carbon Mixing Ratio Analysis
+#
+  DUINC_GCC |  kg/kg    | xyz | C |    |   |   |     | GEOS-Chem Dust Mixing Ratio Analysis Increments
+  SSINC_GCC |  kg/kg    | xyz | C |    |   |   |     | GEOS-Chem Sea-salt Mixing Ratio Analysis Increments
+  NIINC_GCC |  kg/kg    | xyz | C |    |   |   |     | GEOS-Chem Nitrate Mixing Ratio Analysis Increments
+  SUINC_GCC |  kg/kg    | xyz | C |    |   |   |     | GEOS-Chem Sulfate Mixing Ratio Analysis Increments
+  BCINC_GCC |  kg/kg    | xyz | C |    |   |   |     | GEOS-Chem Black Carbon Mixing Ratio Analysis Increments
+  OCINC_GCC |  kg/kg    | xyz | C |    |   |   |     | GEOS-Chem Organic Carbon Mixing Ratio Analysis Increments
+  BRINC_GCC |  kg/kg    | xyz | C |    |   |   |     | GEOS-Chem Brown Carbon Mixing Ratio Analysis Increments
 # ---------|------------|-----|---|----|---|---|-----|---------------------------------
 </ExportSpec>
 

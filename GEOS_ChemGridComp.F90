@@ -918,6 +918,9 @@ contains
     type (GEOS_ChemGridComp), pointer  :: myState   ! private, that is
     type (GEOS_ChemGridComp_Wrap)      :: wrap
 
+    ! GCC/GAAS
+    type(ESMF_FieldBundle)             :: AEROGCC
+
 !=============================================================================
  
 ! Begin... 
@@ -1013,6 +1016,12 @@ contains
     end if
 
 #endif
+
+    ! Fill friendly bundle for GAAS
+    IF ( myState%enable_GAAS .AND. myState%enable_GEOSCHEM ) THEN 
+     call ESMF_StateGet (GEX(GAAS),  'AEROGCC' , AEROGCC, __RC__ )
+     call MAPL_GridCompGetFriendlies(GCS(GEOSCHEM), "GAAS", AEROGCC, AddGCPrefix=.false., __RC__ )
+    ENDIF
 
 !   All Done
 !   --------
