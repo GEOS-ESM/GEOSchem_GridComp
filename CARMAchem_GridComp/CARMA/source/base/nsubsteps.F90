@@ -94,15 +94,18 @@ subroutine nsubsteps(carma, cstate, iz, dtime_save, ntsubsteps, rc)
           elseif( itype(iepart) .eq. I_VOLATILE ) then
           
             do ibin = NBIN-1, 1, -1
-!              if( pc(iz,ibin,iepart) / xmet(iz) / ymet(iz) / zmet(iz) .gt. conmax * pconmax(iz,ig) )then
-!write(*,'(3(i3,2x),6(e15.7,2x))') iz, ibin, iepart, pc(iz,ibin,iepart), conmax,  pconmax(iz,ig), xmet(iz), ymet(iz), zmet(iz)
-!              if( pc(iz,ibin,iepart) .gt. conmax * pconmax(iz,ig) * xmet(iz) * ymet(iz) * zmet(iz) )then
-! Check the presence of NaN or Inf
-  if(ieee_is_nan(pc(iz,ibin,iepart))) print *, '     pc isnan', iz, ibin, iepart, pc(iz,ibin,iepart), pconmax(iz,ig)
-  if(ieee_is_nan(pconmax(iz,ig)))    print *,  'pconmax isnan', iz, ibin, iepart, pc(iz,ibin,iepart), pconmax(iz,ig)
-  if(.not. ieee_is_finite(pc(iz,ibin,iepart))) print *, '     pc isinf', iz, ibin, iepart, pc(iz,ibin,iepart), pconmax(iz,ig)
-  if(.not. ieee_is_finite(pconmax(iz,ig)))     print *, 'pconmax isinf', iz, ibin, iepart, pc(iz,ibin,iepart), pconmax(iz,ig)
-              if( pc(iz,ibin,iepart)/pconmax(iz,ig) .gt. conmax * xmet(iz) * ymet(iz) * zmet(iz) )then
+              ! Check the presence of NaN or Inf
+              ! PAC: Why is this done with "print" instead of "write" like
+              !  the rest of the error messages?
+              if(ieee_is_nan(pc(iz,ibin,iepart))) print *, 'pc isnan', iz, &
+                ibin, iepart, pc(iz,ibin,iepart), pconmax(iz,ig)
+              if(ieee_is_nan(pconmax(iz,ig)))    print *,  'pconmax isnan', iz, &
+                ibin, iepart, pc(iz,ibin,iepart), pconmax(iz,ig)
+              if(.not. ieee_is_finite(pc(iz,ibin,iepart))) print *, 'pc isinf', &
+                iz, ibin, iepart, pc(iz,ibin,iepart), pconmax(iz,ig)
+              if(.not. ieee_is_finite(pconmax(iz,ig))) print *, 'pconmax isinf', &
+                iz, ibin, iepart, pc(iz,ibin,iepart), pconmax(iz,ig)
+              if( pc(iz,ibin,iepart)/pconmax(iz,ig) .gt. conmax * xmet(iz) * ymet(iz) * zmet(iz))then
                 ibin_small(ig) = ibin
               endif
             enddo

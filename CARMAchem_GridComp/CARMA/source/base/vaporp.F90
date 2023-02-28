@@ -46,6 +46,10 @@ subroutine vaporp(carma, cstate, iz, igas, rc)
     case(I_VAPRTN_H2SO4_AYERS1980)
       call vaporp_h2so4_ayers1980(carma, cstate, iz, rc, pvapl(iz, igas), pvapi(iz, igas))
 
+    case(I_VAPRTN_NULL)
+      pvapl(iz, igas) = 1._f
+      pvapi(iz, igas) = 1._f
+
     case default
       if (do_print) write(LUNOPRT,*) "vaporp:: ERROR - Unknown vapor pressure routine  (", ivaprtn(igas), &
         ") for gas (", igas, ")."

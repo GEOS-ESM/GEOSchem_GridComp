@@ -11,7 +11,7 @@ PrimaryExports%%
 # -------------|-------|-------|--------|----------------------|--------|--------|-------------|----------|
 
 # SO2 emissions
-SO2_EMIS_FIRES         'kg m-2 s-1'         N        Y %y4-%m2-%d2t12:00:00        none none     biomass      ExtData/chemistry/QFED/v2.5r1/sfc/0.1/Y%y4/M%m2/qfed2.emis_so2.006.%y4%m2%d2.nc4
+SO2_EMIS_FIRES         'kg m-2 s-1'         N        Y %y4-%m2-%d2t12:00:00        none none     biomass      ExtData/chemistry/QFED/v2.6r1/sfc/0.1/Y%y4/M%m2/qfed2.emis_so2.061.%y4%m2%d2.nc4
 
 
 SO2_EMIS_NONENERGY     'kg m-2 s-1'         Y        Y %y4-%m2-%d2t12:00:00        none none     sanl1        ExtData/chemistry/HTAP/v2.2/sfc/htapv2.2.emisso2.surface.x3600y1800t12.2017.integrate.nc4
@@ -28,7 +28,7 @@ DMS_CONC_OCEAN         'mol m-3'            Y        Y %y4-%m2-%d2t12:00:00     
 
 # NH3 emissions
 NH3_EMIS               'kg m-2 s-1'         N        Y               0             none none     emi_nh3      ExtData/chemistry/MERRA2/v0.0.0/sfc/edgar-v42.emis_nh3.anthropogenic.x1152_y721.19700703T12z_20200703T00z.nc4
-NH3_EMIS_FIRE          'kg m-2 s-1'         N        Y     %y4-%m2-%d2T12:00:00    none none     biomass      ExtData/chemistry/QFED/v2.5r1/sfc/0.1/Y%y4/M%m2/qfed2.emis_nh3.006.%y4%m2%d2.nc4
+NH3_EMIS_FIRE          'kg m-2 s-1'         N        Y     %y4-%m2-%d2T12:00:00    none none     biomass      ExtData/chemistry/QFED/v2.6r1/sfc/0.1/Y%y4/M%m2/qfed2.emis_nh3.061.%y4%m2%d2.nc4
 NH3_EMIS_OCEAN         'kg m-2 s-1'         Y        Y     %y4-%m2-%d2T12:00:00    none none     emiss_ocn    ExtData/chemistry/GEIA/v0.0.0/sfc/GEIA.emis_NH3.ocean.x576_y361.t12.20080715_12z.nc4
 
 # Volume mixing ratio of prescribed oxidant field
@@ -42,7 +42,7 @@ H2O2                   'mol mol-1'          N        N               0          
 SOAG_EMIS              'm-2 s-1'            Y        N               0             none none     soag         ExtData/chemistry/CAM/v0.0.0/sfc/SOAG.emiss.x144_y91_t12.1990.nc4
 
 # CO emissions for VOC
-CO_BIOMASS_VOC         'kg m-2 s-1'         N        Y     %y4-%m2-%d2t12:00:00Z   none none     biomass       ExtData/chemistry/QFED/v2.5r1/sfc/0.1/Y%y4/M%m2/qfed2.emis_co.006.%y4%m2%d2.nc4
+CO_BIOMASS_VOC         'kg m-2 s-1'         N        Y     %y4-%m2-%d2t12:00:00Z   none none     biomass       ExtData/chemistry/QFED/v2.6r1/sfc/0.1/Y%y4/M%m2/qfed2.emis_co.061.%y4%m2%d2.nc4
 CO_BF_VOC              'kg m-2 s-1'         Y        Y     %y4-%m2-%d2t12:00:00Z   none none     emcobf        /dev/null
 CO_FS_VOC              'kg m-2 s-1'         N        Y     %y4-%m2-%d2t12:00:00Z   none none     co            ExtData/chemistry/CEDS/v2021-04-21/sfc/CO-em-anthro_CMIP_CEDS_gn.x2304_y1441_t12.%y4.nc4
 
