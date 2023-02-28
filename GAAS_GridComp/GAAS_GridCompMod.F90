@@ -25,6 +25,7 @@
    Use  MAPL_GridManagerMod
    Use  MAPL_LatLonGridFactoryMod
    Use  MAPL_CubedSphereGridFactoryMod, only: CubedSphereGridFactory
+   use mpi
 
    IMPLICIT NONE
    PRIVATE
@@ -474,6 +475,11 @@ CONTAINS
     real, dimension(:,:), allocatable, target :: aodInt, aod_a_, aod_k_, aod_f_, &
                                                  y_a_, y_d_
     real, pointer, dimension(:,:,:)  :: DUsum, SSsum, SUsum, NIsum, CAOCsum, CABCsum, CABRsum
+    type(ESMF_Field)              :: aod_field
+    logical :: skip_analysis
+    !integer :: hour,minute,second,year,month,day
+    !type(ESMF_Time) :: current_time
+    type(ESMF_Field) :: aod_a_field
 
     ! updates to make things work with GEOS-Chem
     logical :: do_analysis, need_bkg
@@ -486,63 +492,9 @@ CONTAINS
 
                                 __Iam__('Run_')
 
-
-!  Get my name and set-up traceback handle
-!  ---------------------------------------
-   call ESMF_GridCompGet( GC, name=comp_name, __RC__ )
-   Iam = trim(comp_name) // '::Run'
-
-   call MAPL_GetObjectFromGC (GC, MAPL, __RC__)
-
-!  Start timers
-!  ------------
-   call MAPL_TimerOn( MAPL, "TOTAL")
-
-!  Extract relevant runtime information
-!  ------------------------------------
-   call extract_ ( GC, CLOCK, self, GRID, CF, time, nymd, nhms, __RC__)
-
-!  Is it time for analysis?
-!  ------------------------
-   call MAPL_Get (MAPL, RUNALARM=Alarm, __RC__)
-#if 0
-   analysis_time = ESMF_AlarmIsRinging(Alarm,__RC__)
-#endif
-
-   call ESMF_ClockGetAlarm(Clock,'PredictorActive',Predictor_Alarm,__RC__)
-   PREDICTOR_STEP = ESMF_AlarmIsRinging( Predictor_Alarm,__RC__)
-
-   call ESMF_ClockGetAlarm(Clock,'ReplayShutOff',ReplayShutOff_Alarm,__RC__)
-   ReplayShutOff  = ESMF_AlarmIsRinging( ReplayShutOff_Alarm,__RC__)
-
-!  For some reason the alarm above is not working.
-!  For now, hardwire this...
-!  -----------------------------------------------
-   analysis_time =  nhms ==      0 .OR. &
-                    nhms ==  30000 .OR. &
-                    nhms ==  60000 .OR. &
-                    nhms ==  90000 .OR. &
-                    nhms == 120000 .OR. &
-                    nhms == 150000 .OR. &
-                    nhms == 180000 .OR. &
-                    nhms == 210000
-
-!  Stop here if it is NOT analysis time
-!  -------------------------------------
-   do_analysis = .TRUE.
-   if ( PREDICTOR_STEP .or. ReplayShutOff .or. (.not. analysis_time) ) then
-      do_analysis = .FALSE.
-      !RETURN_(ESMF_SUCCESS)
-   end if
-
 !  Get pointer for IMPORT/EXPORT/INTERNAL states 
 !  ---------------------------------------------
 #  include "GAAS_GetPointer___.h"
-
-!  Reset exports. Do this on every time step. Also check if we need 
-!  the bkg diagnostics. Those can be filled on every time step 
-!  -----------------
-   need_bkg = (associated(aodbkg) .or. associated(aodbkg_gcc)) 
 
 !  Set these exports to UNDEF
 !  --------------------------
@@ -586,6 +538,47 @@ CONTAINS
    if ( associated(ocinc_gcc) ) ocinc_gcc = 0.0
    if ( associated(brinc_gcc) ) brinc_gcc = 0.0
    if ( associated(suinc_gcc) ) suinc_gcc = 0.0
+
+!  Get my name and set-up traceback handle
+!  ---------------------------------------
+   call ESMF_GridCompGet( GC, name=comp_name, __RC__ )
+   Iam = trim(comp_name) // '::Run'
+
+   call MAPL_GetObjectFromGC (GC, MAPL, __RC__)
+
+!  Start timers
+!  ------------
+   call MAPL_TimerOn( MAPL, "TOTAL")
+
+!  Extract relevant runtime information
+!  ------------------------------------
+   call extract_ ( GC, CLOCK, self, GRID, CF, time, nymd, nhms, __RC__)
+
+   call ESMF_StateGet(import,"aod_a",aod_a_field,_RC)
+!  Is it time for analysis?
+!  ------------------------
+   skip_analysis = ESMFL_field_is_undefined(aod_a_field,_RC)
+   analysis_time = .not.skip_analysis
+
+!  Is it time for analysis?
+!  ------------------------
+   call ESMF_ClockGetAlarm(Clock,'PredictorActive',Predictor_Alarm,__RC__)
+   PREDICTOR_STEP = ESMF_AlarmIsRinging( Predictor_Alarm,__RC__)
+
+   call ESMF_ClockGetAlarm(Clock,'ReplayShutOff',ReplayShutOff_Alarm,__RC__)
+   ReplayShutOff  = ESMF_AlarmIsRinging( ReplayShutOff_Alarm,__RC__)
+
+!  Stop here if it is NOT analysis time
+!  -------------------------------------
+   do_analysis = .TRUE.
+   if ( PREDICTOR_STEP .or. ReplayShutOff .or. (.not. analysis_time) ) then
+      do_analysis = .FALSE.
+      !RETURN_(ESMF_SUCCESS)
+   end if
+
+!  Check if we need the bkg diagnostics. Those can be filled on every time step 
+!  ----------------------------------------------------------------------------
+   need_bkg = (associated(aodbkg) .or. associated(aodbkg_gcc)) 
 
    ! can return here if it's not time and we don't need the bkg fields
    if ( .not. do_analysis .and. .not. need_bkg ) then
