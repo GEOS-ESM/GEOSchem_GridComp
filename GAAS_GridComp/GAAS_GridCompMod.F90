@@ -564,13 +564,23 @@ CONTAINS
 
 !  Read off-line AOD analysis, background and averaging kernel
 !  -----------------------------------------------------------    
-   self%z_a%r2(1)%qr4 => aod_a    !Move these pointer assignments to Initialize method? -ES
+
+   ! Make local copy of the import fields before modifying
+   ! them below (cakelle2, 2023/2/28). 
+   allocate(aod_a_(ubound(rh2,1),ubound(rh2,2)), __STAT__)
+   aod_a_ = aod_a
+   allocate(aod_f_(ubound(rh2,1),ubound(rh2,2)), __STAT__)
+   aod_f_ = aod_f
+   allocate(aod_k_(ubound(rh2,1),ubound(rh2,2)), __STAT__)
+   aod_k_ = aod_k
+
+   self%z_a%r2(1)%qr4 => aod_a_   
    self%z_a%r2(1)%q => self%z_a%r2(1)%qr4
 
-   self%z_f%r2(1)%qr4 => aod_f
+   self%z_f%r2(1)%qr4 => aod_f_
    self%z_f%r2(1)%q => self%z_f%r2(1)%qr4
 
-   self%z_k%r2(1)%qr4 => aod_k
+   self%z_k%r2(1)%qr4 => aod_k_
    self%z_k%r2(1)%q => self%z_k%r2(1)%qr4
 
 !  Print summary of input
@@ -683,6 +693,15 @@ CONTAINS
        call ESMF_StatePrint ( EXPORT )
     end if
 #endif
+
+!  Deallocate local arrays
+!  -----------------------
+   if(allocated(aodInt)) deallocate(aodInt)
+   if(allocated(aod_a_)) deallocate(aod_a_)
+   if(allocated(aod_f_)) deallocate(aod_f_)
+   if(allocated(aod_k_)) deallocate(aod_k_)
+   if(allocated(y_a_  )) deallocate(y_a_)
+   if(allocated(y_d_  )) deallocate(y_d_)
 
 !  Stop timers
 !  ------------
