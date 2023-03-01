@@ -13,10 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Fixed
 
+## [1.13.0] - 2023-03-01
+
 ### Added
 
 - Added connectivities in GEOS_ChemGridComp for CARMA-GMI coupling
 - Added STS growth in CARMA microphysics
+
+### Changed
+
+- For OPS configuration: removal of links, change of QFED paths from vNRT/ to v2.5r1-nrt/ (note after November 2021, files are v2.6r1) (0 diff)
+- For AMIP configuration: update of QFED from v2.5r1 to v2.6r1 (most recent collection, may have small diff)
 
 ## [1.12.0] - 2023-01-18
 
