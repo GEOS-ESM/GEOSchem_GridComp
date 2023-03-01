@@ -990,7 +990,7 @@ Contains
      ! map list
      select case ( trim(self%q_a%r3(field_id)%name) )
         ! Dust
-        case ( 'DU' )
+        case ( 'DU001' )
          gcc_name = 'SPC_DST1'
         case ( 'DU002' )
          gcc_name = 'SPC_DST2'
@@ -999,7 +999,7 @@ Contains
         case ( 'DU004' )
          gcc_name = 'SPC_DST4'
         ! Sea salt 
-        case ( 'SS' )
+        case ( 'SS001' )
          gcc_name = 'SPC_SALA'
          gcc_fraction = 0.2
         case ( 'SS002' )
@@ -1025,15 +1025,18 @@ Contains
         case ( 'NO3an2' )
          gcc_name = 'SPC_NITs'
         ! Carbon
-        case ( 'CAphilicCA.bc' )
+        case ( 'CA.bcphilic' )
          gcc_name = 'SPC_BCPI'
-        case ( 'CAphobicCA.bc' )
+        case ( 'CA.bcphobic' )
          gcc_name = 'SPC_BCPO'
-        case ( 'CAphilicCA.oc' )
+        case ( 'CA.ocphilic' )
          gcc_name = 'SPC_OCPI'
-        case ( 'CAphobicCA.oc' )
+        case ( 'CA.ocphobic' )
          gcc_name = 'SPC_OCPO'
      end select
+
+     ! debugging
+     if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) 'map_gcc result: ',trim(self%q_a%r3(field_id)%name),' ',TRIM(gcc_name)
 
      gccptr => null()
      if ( trim(gcc_name) /= 'unknown' ) then
@@ -1047,7 +1050,7 @@ Contains
         if ( associated(gccptr) ) then
            self%q_a%r3(field_id)%q(:,:,:) = gccptr(:,:,:)*gcc_fraction
            if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) 'GCC mapped to GAAS: ',trim(gcc_name),' --> ',trim(self%q_a%r3(field_id)%name), gcc_fraction
-           ! For sulfate ,we map two GEOS-Chem species onto one GOCART bin (SO4 + HMS).
+           ! For sulfate, map two GEOS-Chem species onto one GOCART bin (SO4 + HMS).
            ! Convert HMS to SO4 using MW's (96.06 / 111.10)
            if ( trim(self%q_a%r3(field_id)%name)=='SO4' ) then
               call ESMFL_BundleGetPointerToData( aerogcc, 'SPC_HMS', gcchms, __RC__ )
@@ -1055,11 +1058,11 @@ Contains
               if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) ' --> SPC_HMS added to GAAS SO4'
               gcchms => null() 
            endif
-           ! For organic carbon ,we map two GEOS-Chem species onto one GOCART bin (OCPI + SOAS)
-           if ( trim(self%q_a%r3(field_id)%name)=='CAphilicCA.oc' ) then
+           ! For organic carbon, map two GEOS-Chem species onto one GOCART bin (OCPI + SOAS)
+           if ( trim(self%q_a%r3(field_id)%name)=='CA.ocphilic' ) then
               call ESMFL_BundleGetPointerToData( aerogcc, 'SPC_SOAS', gccsoas, __RC__ )
               self%q_a%r3(field_id)%q(:,:,:) = self%q_a%r3(field_id)%q(:,:,:) + gccsoas(:,:,:)/om_oc
-              if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) ' --> SPC_SOAS added to GAAS CAphilicCA.oc' 
+              if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) ' --> SPC_SOAS added to GAAS CA.ocphilic' 
               gccsoas => null() 
            endif
         else
@@ -1090,7 +1093,7 @@ Contains
            gcchms => null()
            if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) 'GAAS mapped to GEOS-Chem: SO4 --> SPC_SO4 and SPC_HMS'
          ! Same procedure for hydrophilic OC (OCPI + SOAS)
-         elseif ( trim(self%q_a%r3(field_id)%name)=='CAphilicCA.oc' ) then
+         elseif ( trim(self%q_a%r3(field_id)%name)=='CA.ocphilic' ) then
            call ESMFL_BundleGetPointerToData( aerogcc, 'SPC_SOAS', gccsoas, __RC__ )
            allocate(ratio(ubound(gccptr,1),ubound(gccptr,2),ubound(gccptr,3)), __STAT__)
            ! fraction of OCPI / (OCPI+SOAS) before adjustment
@@ -1103,7 +1106,7 @@ Contains
            gccsoas(:,:,:) = self%q_a%r3(field_id)%q(:,:,:) * (1.-ratio) * om_oc
            deallocate(ratio)
            gccsoas => null()
-           if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) 'GAAS mapped to GEOS-Chem: CAphilicCA.oc --> SPC_OCPI and SPC_SOAS'
+           if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) 'GAAS mapped to GEOS-Chem: CA.ocphilic --> SPC_OCPI and SPC_SOAS'
          else
            gccptr(:,:,:) = self%q_a%r3(field_id)%q(:,:,:)
            if ( MAPL_AM_I_ROOT() .and. debug ) write(*,*) 'GAAS mapped to GEOS-Chem: ',trim(self%q_a%r3(field_id)%name), ' --> ',trim(gcc_name)
