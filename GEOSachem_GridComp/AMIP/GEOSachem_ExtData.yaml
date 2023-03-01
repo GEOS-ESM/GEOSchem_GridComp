@@ -23,20 +23,20 @@ Collections:
     template: ExtData/chemistry/HTAP/v2.2/sfc/htapv2.2.emisso2.elevated.x3600y1800t12.2017.integrate.nc4
   GEOSachem_htapv2.2.emisso2.surface.x3600y1800t12.2017.integrate.nc4:
     template: ExtData/chemistry/HTAP/v2.2/sfc/htapv2.2.emisso2.surface.x3600y1800t12.2017.integrate.nc4
-  GEOSachem_qfed2.emis_co.006.%y4%m2%d2.nc4:
-    template: ExtData/chemistry/QFED/v2.5r1/sfc/0.1/Y%y4/M%m2/qfed2.emis_co.006.%y4%m2%d2.nc4
+  GEOSachem_qfed2.emis_co.061.%y4%m2%d2.nc4:
+    template: ExtData/chemistry/QFED/v2.6r1/sfc/0.1/Y%y4/M%m2/qfed2.emis_co.061.%y4%m2%d2.nc4
     valid_range: "2000-02-29T12:00/2025-01-01"
   GEOSachem_hfed.emis_co.x576_y361.%y4%m2.nc4:
     template: ExtData/chemistry/HFED/v1.0/Y%y4/M%m2/hfed.emis_co.x576_y361.%y4%m2.nc4
     valid_range: "1960-01-16T12:00/2000-12-16T12:00"
-  GEOSachem_qfed2.emis_nh3.006.%y4%m2%d2.nc4:
-    template: ExtData/chemistry/QFED/v2.5r1/sfc/0.1/Y%y4/M%m2/qfed2.emis_nh3.006.%y4%m2%d2.nc4
+  GEOSachem_qfed2.emis_nh3.061.%y4%m2%d2.nc4:
+    template: ExtData/chemistry/QFED/v2.6r1/sfc/0.1/Y%y4/M%m2/qfed2.emis_nh3.061.%y4%m2%d2.nc4
     valid_range: "2000-02-29T12:00/2025-01-01"
   GEOSachem_hfed.emis_nh3.x576_y361.%y4%m2.nc4:
     template: ExtData/chemistry/HFED/v1.0/Y%y4/M%m2/hfed.emis_nh3.x576_y361.%y4%m2.nc4
     valid_range: "1960-01-16T12:00/2000-12-16T12:00"
-  GEOSachem_qfed2.emis_so2.006.%y4%m2%d2.nc4:
-    template: ExtData/chemistry/QFED/v2.5r1/sfc/0.1/Y%y4/M%m2/qfed2.emis_so2.006.%y4%m2%d2.nc4
+  GEOSachem_qfed2.emis_so2.061.%y4%m2%d2.nc4:
+    template: ExtData/chemistry/QFED/v2.6r1/sfc/0.1/Y%y4/M%m2/qfed2.emis_so2.061.%y4%m2%d2.nc4
     valid_range: "2000-02-29T12:00/2025-01-01"
   GEOSachem_hfed.emis_so2.x576_y361.%y4%m2.nc4:
     template: ExtData/chemistry/HFED/v1.0/Y%y4/M%m2/hfed.emis_so2.x576_y361.%y4%m2.nc4
@@ -65,7 +65,7 @@ Exports:
     variable: emcobf
   CO_BIOMASS_VOC:
     - {starting: "1960-01-16T12:00", collection: GEOSachem_hfed.emis_co.x576_y361.%y4%m2.nc4, regrid: CONSERVE, sample: GEOSachem_sample_0, variable: biomass}
-    - {starting: "2000-03-01T00:00", collection: GEOSachem_qfed2.emis_co.006.%y4%m2%d2.nc4, regrid: CONSERVE, sample: GEOSachem_sample_0, variable: biomass}
+    - {starting: "2000-03-01T00:00", collection: GEOSachem_qfed2.emis_co.061.%y4%m2%d2.nc4, regrid: CONSERVE, sample: GEOSachem_sample_0, variable: biomass}
   CO_FS_VOC:
     collection: GEOSachem_CO-em-anthro_CMIP_CEDS_gn.x2304_y1441_t12.%y4.nc4
     regrid: CONSERVE
@@ -88,7 +88,7 @@ Exports:
     variable: emi_nh3
   NH3_EMIS_FIRE:
     - {starting: "1960-01-16T12:00", collection: GEOSachem_hfed.emis_nh3.x576_y361.%y4%m2.nc4, regrid: CONSERVE, sample: GEOSachem_sample_0, variable: biomass}
-    - {starting: "2000-03-01T00:00", collection: GEOSachem_qfed2.emis_nh3.006.%y4%m2%d2.nc4, regrid: CONSERVE, sample: GEOSachem_sample_0, variable: biomass}
+    - {starting: "2000-03-01T00:00", collection: GEOSachem_qfed2.emis_nh3.061.%y4%m2%d2.nc4, regrid: CONSERVE, sample: GEOSachem_sample_0, variable: biomass}
   NH3_EMIS_OCEAN:
     collection: GEOSachem_GEIA.emis_NH3.ocean.x576_y361.t12.20080715_12z.nc4
     regrid: CONSERVE
@@ -122,7 +122,7 @@ Exports:
     variable: sanl2
   SO2_EMIS_FIRES:
     - {starting: "1960-01-16T12:00", collection: GEOSachem_hfed.emis_so2.x576_y361.%y4%m2.nc4, regrid: CONSERVE, sample: GEOSachem_sample_0, variable: biomass}
-    - {starting: "2000-03-01T00:00", collection: GEOSachem_qfed2.emis_so2.006.%y4%m2%d2.nc4, regrid: CONSERVE, sample: GEOSachem_sample_0, variable: biomass}
+    - {starting: "2000-03-01T00:00", collection: GEOSachem_qfed2.emis_so2.061.%y4%m2%d2.nc4, regrid: CONSERVE, sample: GEOSachem_sample_0, variable: biomass}
   SO2_EMIS_NONENERGY:
     collection: GEOSachem_htapv2.2.emisso2.surface.x3600y1800t12.2017.integrate.nc4
     regrid: CONSERVE

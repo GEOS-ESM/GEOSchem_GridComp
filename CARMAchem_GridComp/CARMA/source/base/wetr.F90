@@ -14,7 +14,7 @@ contains
   !!
   !! @author  Chuck Bardeen, Pete Colarco
   !! @version May-2009 from Nov-2000 
-  subroutine getwetr(carma, igroup, rh, rdry, rwet, rhopdry, rhopwet, rc, h2o_mass, h2o_vp, temp)
+  subroutine getwetr(carma, igroup, rh, rdry, rwet, rhopdry, rhopwet, rc, h2o_mass, h2o_vmr, hno3_vmr, h2o_vp, h2so4m, temp, press)
   
     ! types
     use carma_precision_mod
@@ -35,9 +35,13 @@ contains
     real(kind=f), intent(in)             :: rhopdry !! dry radius [cm]
     real(kind=f), intent(out)            :: rhopwet !! wet radius [cm]
     integer, intent(inout)               :: rc      !! return code, negative indicates failure
-    real(kind=f), intent(in), optional   :: h2o_mass!! water vapor mass concentration (g/cm3)
-    real(kind=f), intent(in), optional   :: h2o_vp  !! water eq. vaper pressure (dynes/cm2)    
-    real(kind=f), intent(in), optional   :: temp    !! temperature [K]
+    real(kind=f), intent(in), optional   :: h2o_mass !! water vapor mass concentration (g/cm3)
+    real(kind=f), intent(in), optional   :: h2o_vmr  !! water vapor volume mixing ratio
+    real(kind=f), intent(in), optional   :: hno3_vmr !! nitric acid volume mixing ratio
+    real(kind=f), intent(in), optional   :: h2o_vp   !! water eq. vaper pressure (dynes/cm2)    
+    real(kind=f), intent(in), optional   :: h2so4m   !! total aerosol mass of h2so4 (g)  
+    real(kind=f), intent(in), optional   :: temp     !! temperature [K]
+    real(kind=f), intent(in), optional   :: press    !! pressure [dyn cm-2]
   
     ! Local declarations
     real(kind=f)            :: humidity
@@ -45,6 +49,9 @@ contains
     real(kind=f)            :: wtpkelv, den1, den2, drho_dwt
     real(kind=f)            :: sigkelv, sig1, sig2, dsigma_dwt
     real(kind=f)            :: rkelvinH2O_a, rkelvinH2O_b, rkelvinH2O, h2o_kelv
+    real(kind=f)            :: hno3_kelv
+    real(kind=f)            :: wts, wtn
+    real(kind=f)            :: wtpkelv_n
         
     ! The following parameters relate to the swelling of seasalt like particles
     ! following Fitzgerald, Journal of Applied Meteorology, [1975].
@@ -206,7 +213,8 @@ contains
     
     
     ! Sulfate Aerosol, using weight percent.
-    if (irhswell(igroup) == I_WTPCT_H2SO4) then
+    if (irhswell(igroup) == I_WTPCT_H2SO4 .OR. &
+        (irhswell(igroup) == I_WTPCT_STS .AND. temp > 200._f)) then
     
       ! Adjust calculation for the Kelvin effect of H2O:
       wtpkelv = 80._f ! start with assumption of 80 wt % H2SO4 
@@ -232,8 +240,71 @@ contains
       wtpkelv = wtpct_tabaz(carma, temp, h2o_kelv, h2o_vp, rc)
       rhopwet   = sulfate_density(carma, wtpkelv, temp, rc)
       rwet      = rdry * (100._f * rhopdry / wtpkelv / rhopwet)**(1._f / 3._f)   
+    ! STS equilibrium, using weight percent
+    else if (irhswell(igroup) == I_WTPCT_STS) then
+      ! Make sure that we aren't going to go ahead and divide by 0...
+      if (h2so4m == 0.0) then
+        rwet = rdry
+      else
+        !! Adjust calculation for the Kelvin effect of ternary solution
+        !!  This calculation comes from Martin et al., 2000, GRL:
+        !! Begin: Interpolate along wt % H2SO4
+        wtpkelv = 65._f ! start with assumption of 65 wt % H2SO4
+        wtpkelv_n = 20._f ! start with assumption of 20 wt % HNO3
+        den1 = sts_density(carma, (wtpkelv-1_f)*.01_f, wtpkelv_n*.01_f, temp, rc) ! density at 64 wt %
+        den2 = sts_density(carma, wtpkelv*.01_f, wtpkelv_n*.01_f, temp, rc) ! density at 65 wt %
+        drho_dwt = den2-den1 ! change in density for change in 1 wt %
+
+        sig1 = 70.03_f - 0.06_f * (253._f - temp) ! surface tension at 50 wt % H2SO4
+        sig2 = 65.88_f - 0.09_f * (253._f - temp) ! surface tension at 65 wt % H2SO4
+        dsigma_dwt = (sig2-sig1) / (65._f - 50._f)
+        sigkelv = sig1 + dsigma_dwt * (wtpkelv - 50._f)
+
+        rwet = rdry * (100._f * rhopdry / wtpkelv / den2)**(1._f / 3._f)
+
+        rkelvinH2O_b = 1._f + wtpkelv * drho_dwt / den2 - 3._f * wtpkelv &
+            * dsigma_dwt / (2._f*sigkelv)
+
+        rkelvinH2O_a = 2._f * gwtmol(igash2so4) * sigkelv / (den1 * RGAS * temp * rwet)     
+
+        rkelvinH2O = exp (rkelvinH2O_a*rkelvinH2O_b)
+              
+        h2o_kelv = h2o_vmr / rkelvinH2O
+        !! End: Interpolate along wt % H2SO4
+
+
+        !! Begin: Interpolate along wt % HNO3
+        !!  Note: reusing the same variables for the HNO3 calculation
+        wtpkelv = 65._f ! start with assumption of 65 wt % H2SO4
+        wtpkelv_n = 20._f ! start with assumption of 20 wt % HNO3
+        den1 = sts_density(carma, wtpkelv*.01_f, (wtpkelv_n-1_f)*.01_f, temp, rc) !density at 19 wt %
+        den2 = sts_density(carma, wtpkelv*.01_f, wtpkelv_n*.01_f, temp, rc) !density at 20 wt %
+        drho_dwt = den2-den1 ! change in density for change in 1 wt %
+
+        sig1 = 71.17_f - 0.11_f * (253._f - temp) ! surface tension at 10 wt % HNO3
+        sig2 = 65.88_f - 0.09_f * (253._f - temp) ! surface tension at 20 wt % HNO3
+        dsigma_dwt = (sig2-sig1) / (20._f - 10._f)
+        ! PAC: commented out b/c assumption of 20 wt % hno3 is valid at sig2
+        !sigkelv = sig1 + dsigma_dwt * (wtpkelv_n - 10._f)
+        sigkelv = sig2
+
+        rwet = rdry * (100._f * rhopdry / wtpkelv / den2)**(1._f / 3._f)
+
+        rkelvinH2O_b = 1._f + wtpkelv_n * drho_dwt / den2 - 3._f * wtpkelv_n &
+            * dsigma_dwt / (2._f*sigkelv)
+
+        rkelvinH2O_a = 2._f * gwtmol(igash2so4) * sigkelv / (den1 * RGAS * temp * rwet)     
+
+        rkelvinH2O = exp (rkelvinH2O_a*rkelvinH2O_b)
+        hno3_kelv = hno3_vmr / rkelvinH2O
+        !! End: Interpolate along wt % HNO3
+
+        call wtpct_sts(temp, h2so4m, h2o_kelv, hno3_kelv, press/100., wts, wtn, rc)
+        rhopwet   = sts_density(carma, wts*.01_f, wtn*.01_f, temp, rc)
+        rwet      = rdry * (100._f * rhopdry / wts / rhopwet)**(1._f / 3._f)   
+      end if
     end if
-  
+
     ! Return to caller with wet radius evaluated.
     return
   end subroutine

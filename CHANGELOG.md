@@ -13,6 +13,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Fixed
 
+## [1.13.0] - 2023-03-01
+
+### Added
+
+- Added connectivities in GEOS_ChemGridComp for CARMA-GMI coupling
+- Added STS growth in CARMA microphysics
+
+### Changed
+
+- For OPS configuration: removal of links, change of QFED paths from vNRT/ to v2.5r1-nrt/ (note after November 2021, files are v2.6r1) (0 diff)
+- For AMIP configuration: update of QFED from v2.5r1 to v2.6r1 (most recent collection, may have small diff)
+
 ## [1.12.0] - 2023-01-18
 
 ### Removed
@@ -36,6 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Instead of importing a set of QQK diagnostic fields for chemical loss of stOX, TR now imports a single field: stOX_loss
+- For OPS configuration: removal of links, change of QFED paths from vNRT/ to v2.5r1-nrt/ 
+- For AMIP configuration: update of QFED from v2.5r1 to v2.6r1 (most recent collection)
 - Moved to GitHub Actions for label enforcement
 - Update CircleCI to use Baselibs 7.7.0
 - For GMI, clean-up related to exports HNO3GASsad, HNO3CONDsad and jNO2val.
