@@ -772,6 +772,15 @@ contains
    ENDIF
   ENDIF
 
+! GEOS-Chem import of CO2 
+! -----------------------------
+  IF(myState%enable_GEOSCHEM .AND. myState%enable_GOCART .AND. chemReg%doing_CO2) then
+   CALL MAPL_AddConnectivity ( GC, &
+       SRC_NAME  = (/"GOCART::CO2"/), &
+       DST_NAME  = (/"GOCART_CO2"/), &
+       DST_ID=GEOSCHEM, SRC_ID=GOCART, __RC__  )
+  ENDIF
+
 ! HEMCO connections to CHEMENV
 ! -----------------------------
   ! Default values:
