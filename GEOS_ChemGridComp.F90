@@ -77,6 +77,7 @@ module GEOS_ChemGridCompMod
 
      LOGICAL :: running_BC
      LOGICAL :: running_OC
+     LOGICAL :: running_BR
      LOGICAL :: running_DU
      LOGICAL :: running_SU
      LOGICAL :: running_SS
@@ -266,6 +267,7 @@ contains
     if ( myState%enable_GOCART2G ) then
       call IS_G2G_INSTANCE_RUNNING ( aerosol_name="CA", instance_name="CA.bc", running=myState%running_BC, __RC__ )
       call IS_G2G_INSTANCE_RUNNING ( aerosol_name="CA", instance_name="CA.oc", running=myState%running_OC, __RC__ )
+      call IS_G2G_INSTANCE_RUNNING ( aerosol_name="CA", instance_name="CA.br", running=myState%running_BR, __RC__ )
       call IS_G2G_INSTANCE_RUNNING ( aerosol_name="DU", instance_name="DU"   , running=myState%running_DU, __RC__ )
       call IS_G2G_INSTANCE_RUNNING ( aerosol_name="SU", instance_name="SU"   , running=myState%running_SU, __RC__ )
       call IS_G2G_INSTANCE_RUNNING ( aerosol_name="SS", instance_name="SS"   , running=myState%running_SS, __RC__ )
@@ -273,6 +275,7 @@ contains
     else
       myState%running_BC = .FALSE.
       myState%running_OC = .FALSE.
+      myState%running_BR = .FALSE.
       myState%running_DU = .FALSE.
       myState%running_SU = .FALSE.
       myState%running_SS = .FALSE.
@@ -685,6 +688,12 @@ contains
        CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CASCACOEFCA.oc'/), DST_NAME=(/'OCSCACOEF'/),       SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__ )
        CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CASCACOEFCA.oc'/), DST_NAME=(/'OCSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__ )
        ! MAY NEED TO CHANGE SYNTAX in NEXT VERSION OF G2G:  SRC_NAME=(/'CA.ocSCACOEF'/)
+     ENDIF
+
+     IF (myState%running_BR ) THEN
+       CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CASCACOEFCA.br'/), DST_NAME=(/'BRSCACOEF'/),       SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__ )
+       CALL MAPL_AddConnectivity ( GC,   SRC_NAME=(/'CASCACOEFCA.br'/), DST_NAME=(/'BRSCACOEF_avg24'/), SRC_ID=GOCART2G, DST_ID=QUICKCHEM, __RC__ )
+       ! MAY NEED TO CHANGE SYNTAX in NEXT VERSION OF G2G:  SRC_NAME=(/'CA.brSCACOEF'/)
      ENDIF
 
      IF (myState%running_DU ) THEN
