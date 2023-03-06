@@ -459,17 +459,45 @@ contains
   ENDIF
 
   IF(myState%enable_CARMA) then
+      CALL MAPL_ConfigSetAttribute(CF, 'tendency', &
+           label='SULFURIC_ACID_SOURCE:', __RC__)
+
       CALL MAPL_AddConnectivity ( GC, &
            SHORT_NAME  = (/'AIRDENS ', 'CN_PRCP ', 'NCN_PRCP'/), &
            DST_ID = CARMA, SRC_ID = CHEMENV, __RC__  )
            
-      if(myState%enable_GOCART) then
-       if(chemReg%doing_SU) then
+      if(myState%enable_GOCART2G) then
          CALL MAPL_AddConnectivity ( GC, &
-              SHORT_NAME  = (/'PSO4TOT'/), &
-              DST_ID=CARMA, SRC_ID=GOCART, __RC__)
-       endif
+              SRC_NAME  = (/'PSO4TOT'/), &
+              DST_NAME  = (/'CARMA_PSO4TOT'/), &
+              DST_ID=CARMA, SRC_ID=GOCART2G, __RC__)
       endif 
+      if(myState%enable_ACHEM) then
+         CALL MAPL_AddConnectivity ( GC, &
+              SRC_NAME  = (/'pSOA_ANTHRO_VOC', 'pSOA_BIOB_VOC  '/), &
+              DST_NAME  = (/'CARMA_PSOA_ANTHRO_VOC', 'CARMA_PSOA_BIOB_VOC  '/), &
+              DST_ID = CARMA, SRC_ID = ACHEM, __RC__  )
+      endif
+      if(myState%enable_GMICHEM) then
+         CALL MAPL_AddConnectivity ( GC, &
+              SRC_NAME  = (/'H2SO4',       'HNO3 '/), &
+              DST_NAME  = (/'CARMA_H2SO4', 'CARMA_HNO3 '/), &
+              DST_ID = CARMA, SRC_ID = GMICHEM, __RC__  )
+         CALL MAPL_ConfigSetAttribute(CF, 'full_field', &
+              label='SULFURIC_ACID_SOURCE:', __RC__)
+      endif
+      if(myState%enable_GMICHEM .AND. TRIM(providerName) == "CARMA") then
+         CALL MAPL_AddConnectivity ( GC, &
+              SRC_NAME  = (/ 'CARMA_SUSAREA '/), &
+              DST_NAME  = (/ 'SO4SAREA      '/), &
+              DST_ID = GMICHEM, SRC_ID = CARMA, __RC__)
+      endif
+      if(myState%enable_STRATCHEM .AND. TRIM(providerName) == "CARMA") then
+         CALL MAPL_AddConnectivity ( GC, &
+              SRC_NAME  = (/ 'CARMA_SUSAREA ', 'CARMA_SUSAREAv' /), &
+              DST_NAME  = (/ 'SO4SAREA      ', 'SO4SAREAvolc  ' /), &
+              DST_ID = STRATCHEM, SRC_ID = CARMA, __RC__)
+      endif
   ENDIF
 
   IF(myState%enable_STRATCHEM) then
@@ -622,16 +650,6 @@ contains
 
   END IF
 
-! CARMA <=> StratChem coupling ...
-! ---------------------------------
-  IF(myState%enable_STRATCHEM .AND. TRIM(providerName) == "CARMA") then
-   CALL MAPL_AddConnectivity ( GC, &
-                   SRC_NAME  = (/ 'CARMA_SUSAREA ', 'CARMA_SUSAREAv' /), &
-                   DST_NAME  = (/ 'SO4SAREA      ', 'SO4SAREAvolc  ' /), &
-            DST_ID = STRATCHEM, SRC_ID = CARMA, __RC__)
-
-  END IF
-
 ! GOCART.data <=> GMICHEM coupling ...
 ! ------------------------------------
   IF(myState%enable_GMICHEM .AND. TRIM(providerName) == "GOCART.data") THEN
@@ -752,6 +770,15 @@ contains
        DST_NAME  = (/"O3"/), &
        DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__  )
    ENDIF
+  ENDIF
+
+! GEOS-Chem import of CO2 
+! -----------------------------
+  IF(myState%enable_GEOSCHEM .AND. myState%enable_GOCART .AND. chemReg%doing_CO2) then
+   CALL MAPL_AddConnectivity ( GC, &
+       SRC_NAME  = (/"GOCART::CO2"/), &
+       DST_NAME  = (/"GOCART_CO2"/), &
+       DST_ID=GEOSCHEM, SRC_ID=GOCART, __RC__  )
   ENDIF
 
 ! HEMCO connections to CHEMENV
