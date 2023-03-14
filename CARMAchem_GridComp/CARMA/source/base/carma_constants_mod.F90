@@ -47,9 +47,15 @@ module carma_constants_mod
 	
 	!! Define molecular weight of sulphuric acid [ g / mole ]
 	real(kind=f), parameter :: WTMOL_H2SO4 = 98.078479_f
+
+        !! Define molecular weight of sulfur dioxide [ g / mole ]
+	real(kind=f), parameter :: WTMOL_SO2 = 64.066_f
 	
-  !! Define reference pressure, e.g. for potential temp calcs [ dyne / cm^2 ]
-  real(kind=f), parameter :: PREF = 1000.e+3_f
+        !! Define molecular weight of nitric acid [ g / mole ]
+	real(kind=f), parameter :: WTMOL_HNO3 = 62.996_f
+
+        !! Define reference pressure, e.g. for potential temp calcs [ dyne / cm^2 ]
+        real(kind=f), parameter :: PREF = 1000.e+3_f
       
 	!! Define conversion factor for mb to cgs [ dyne / cm^2 ] units
 	real(kind=f), parameter :: RMB2CGS = 1000.e+0_f

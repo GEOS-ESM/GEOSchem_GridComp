@@ -24,22 +24,22 @@ Collections:
   GEOSachem_htapv2.2.emisso2.surface.x3600y1800t12.2017.integrate.nc4:
     template: ExtData/chemistry/HTAP/v2.2/sfc/htapv2.2.emisso2.surface.x3600y1800t12.2017.integrate.nc4
   GEOSachem_qfed2.emis_co.006.%y4%m2%d2.nc4:
-    template: ExtData/chemistry/QFED/vNRT/sfc/0.1/Y%y4/M%m2/qfed2.emis_co.006.%y4%m2%d2.nc4
+    template: ExtData/chemistry/QFED/v2.5r1-nrt/sfc/0.1/Y%y4/M%m2/qfed2.emis_co.006.%y4%m2%d2.nc4
     valid_range:  "2014-12-01T12:00/2021-11-01T12:00"
   GEOSachem_qfed2.emis_nh3.006.%y4%m2%d2.nc4:
-    template: ExtData/chemistry/QFED/vNRT/sfc/0.1/Y%y4/M%m2/qfed2.emis_nh3.006.%y4%m2%d2.nc4
+    template: ExtData/chemistry/QFED/v2.5r1-nrt/sfc/0.1/Y%y4/M%m2/qfed2.emis_nh3.006.%y4%m2%d2.nc4
     valid_range:  "2014-12-01T12:00/2021-11-01T12:00"
   GEOSachem_qfed2.emis_so2.006.%y4%m2%d2.nc4:
-    template: ExtData/chemistry/QFED/vNRT/sfc/0.1/Y%y4/M%m2/qfed2.emis_so2.006.%y4%m2%d2.nc4
+    template: ExtData/chemistry/QFED/v2.5r1-nrt/sfc/0.1/Y%y4/M%m2/qfed2.emis_so2.006.%y4%m2%d2.nc4
     valid_range:  "2014-12-01T12:00/2021-11-01T12:00"
   GEOSachem_qfed2.emis_co.061.%y4%m2%d2.nc4:
-    template: ExtData/chemistry/QFED/vNRT/sfc/0.1/Y%y4/M%m2/qfed2.emis_co.061.%y4%m2%d2.nc4
+    template: ExtData/chemistry/QFED/v2.5r1-nrt/sfc/0.1/Y%y4/M%m2/qfed2.emis_co.061.%y4%m2%d2.nc4
     valid_range:  "2021-11-01T12:00/2025-01-01"
   GEOSachem_qfed2.emis_nh3.061.%y4%m2%d2.nc4:
-    template: ExtData/chemistry/QFED/vNRT/sfc/0.1/Y%y4/M%m2/qfed2.emis_nh3.061.%y4%m2%d2.nc4
+    template: ExtData/chemistry/QFED/v2.5r1-nrt/sfc/0.1/Y%y4/M%m2/qfed2.emis_nh3.061.%y4%m2%d2.nc4
     valid_range:  "2021-11-01T12:00/2025-01-01"
   GEOSachem_qfed2.emis_so2.061.%y4%m2%d2.nc4:
-    template: ExtData/chemistry/QFED/vNRT/sfc/0.1/Y%y4/M%m2/qfed2.emis_so2.061.%y4%m2%d2.nc4
+    template: ExtData/chemistry/QFED/v2.5r1-nrt/sfc/0.1/Y%y4/M%m2/qfed2.emis_so2.061.%y4%m2%d2.nc4
     valid_range:  "2021-11-01T12:00/2025-01-01"
 
 Samplings:

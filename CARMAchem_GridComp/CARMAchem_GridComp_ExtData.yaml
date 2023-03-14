@@ -59,17 +59,27 @@ Exports:
     regrid: CONSERVE
     sample: CARMAchem_sample_2
     variable: oc_ship
-  PSO4TOT:
+  CARMA_PSO4TOT:
     collection: /dev/null
     regrid: CONSERVE
     sample: CARMAchem_sample_2
     variable: pso4tot
-  pSOA_ANTHRO_VOC:
+  CARMA_H2SO4:
+    collection: /dev/null
+    regrid: CONSERVE
+    sample: CARMAchem_sample_2
+    variable: h2so4
+  CARMA_HNO3:
+    collection: /dev/null
+    regrid: CONSERVE
+    sample: CARMAchem_sample_2
+    variable: hno3
+  CARMA_PSOA_ANTHRO_VOC:
     collection: /dev/null
     regrid: CONSERVE
     sample: CARMAchem_sample_2
     variable: biofuel
-  pSOA_BIOB_VOC:
+  CARMA_PSOA_BIOB_VOC:
     collection: /dev/null
     regrid: CONSERVE
     sample: CARMAchem_sample_2

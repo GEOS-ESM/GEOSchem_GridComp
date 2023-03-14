@@ -171,6 +171,7 @@
      integer :: ielm_mxash    = -1      !! mixed group ash core element
      integer :: igas_h2o      = -1      !! water vapor
      integer :: igas_h2so4    = -1      !! sulfuric acid gas
+     integer :: igas_hno3     = -1      !! nitric acid gas
      integer :: ifallrtn      =  1      !! default fall velocity routine for particles
 
 !    Dust
@@ -187,6 +188,7 @@
 !    Black Carbon
 
 !    Sulfate
+     character(len=255) :: sulfuric_acid_source
 
 !    GOCART-style Mie Lookup Tables
      integer            :: nchannels, nmoments
@@ -410,6 +412,10 @@ CONTAINS
       gwtmol = WTMOL_H2O
      case (2)
       gwtmol = WTMOL_H2SO4
+     case (3)
+      gwtmol = WTMOL_SO2
+     case (4)
+      gwtmol = WTMOL_HNO3
      case default
       print *, 'Unknown gas IGCOMP from CARMAchem_Registry.rc for gas ',i
       call final_(-100)
@@ -471,6 +477,7 @@ CONTAINS
     gasname = ESMF_UtilStringUpperCase(trim(reg%gasname(i)))
     if(gasname == 'H2SO4') reg%igas_h2so4 = i
     if(gasname == 'H2O'  ) reg%igas_h2o   = i
+    if(gasname == 'HNO3'  ) reg%igas_hno3 = i
    end do
 
 !  NEED:
@@ -824,9 +831,11 @@ CONTAINS
                                       zsubsteps, sath2so4, su_sareav, &
                                       su_sarea, su_numd, su_reff, &
                                       du_sarea, du_numd, du_reff, &
+                                      ash_sarea, ash_numd, ash_reff, &
                                       ss_sarea, ss_numd, ss_reff, &
                                       sm_sarea, sm_numd, sm_reff, &
-                                      mx_sarea, mx_numd, mx_reff
+                                      mx_sarea, mx_numd, mx_reff, &
+                                      su_mass, hno3, h2so4
    REAL, POINTER, DIMENSION(:,:)   :: gwettop, fraclake, oro, u10m, v10m, &
                                       ustar, pblh, z0h, shflux, precc, precl, &
                                       substeps, retries
@@ -855,7 +864,7 @@ CONTAINS
 !  MKS values to go back to GEOS-5
    REAL, PARAMETER    :: grav_mks = grav/100.
    integer :: igroup
-   CHARACTER(LEN=255) :: groupname, elemname
+   CHARACTER(LEN=255) :: groupname, elemname, gasname
 
    REAL :: qmax,qmin
    real(kind=f) :: lon, lat
@@ -962,6 +971,24 @@ CONTAINS
    call MAPL_GetPointer ( impChem, oro, 'LWI', __RC__)
    call MAPL_GetPointer ( impChem, u, 'U', __RC__)
    call MAPL_GetPointer ( impChem, v, 'V', __RC__)
+   call MAPL_GetPointer ( impChem, hno3,  'CARMA_HNO3',    notFoundOK=.TRUE., __RC__)
+   call MAPL_GetPointer ( impChem, h2so4, 'CARMA_H2SO4',   notFoundOK=.TRUE., __RC__)
+
+!  Fill the internal state with direct gas species from GMI
+!  Expectation is species are in VMR and needed in MMR for CARMA
+!  -----------
+   if(trim(reg%sulfuric_acid_source) == 'full_field' .and. reg%NGAS > 0) then
+    do igas = 1, reg%NGAS
+     n  = nCARMAbegin + reg%NBIN*reg%NELEM - 1 + igas
+     gasname = ESMF_UtilStringUpperCase(reg%gasname(igas))
+     if(gasname == 'H2SO4') then
+      if(associated(h2so4)) qa(n)%data3d = h2so4*WTMOL_H2SO4/WTMOL_AIR
+     endif
+     if(gasname == 'HNO3' ) then
+      if(associated(hno3))  qa(n)%data3d = hno3 *WTMOL_HNO3 /WTMOL_AIR
+     endif
+    enddo
+   endif
 
 !  Get Exports
 !  -----------
@@ -975,10 +1002,17 @@ CONTAINS
    call MAPL_GetPointer(expChem, du_numd,   'CARMA_DUNUMD',   __RC__)
    call MAPL_GetPointer(expChem, du_reff,   'CARMA_DUREFF',   __RC__)
    call MAPL_GetPointer(expChem, mxdu_sed,  'CARMA_MXDUSD',   __RC__)
+!  Ash
+   call MAPL_GetPointer(expChem, ash_sed,    'CARMA_ASHSD',   __RC__)
+   call MAPL_GetPointer(expChem, ash_sarea,  'CARMA_ASHSAREA',  __RC__)
+   call MAPL_GetPointer(expChem, ash_numd,   'CARMA_ASHNUMD',   __RC__)
+   call MAPL_GetPointer(expChem, ash_reff,   'CARMA_ASHREFF',   __RC__)
+   call MAPL_GetPointer(expChem, mxash_sed,  'CARMA_MXASHSD',   __RC__)
 !  Sulfate
    call MAPL_GetPointer(expChem, su_sed,    'CARMA_SUSD',   __RC__)
    call MAPL_GetPointer(expChem, su_nuc,    'CARMA_SUNUC',  __RC__)
    call MAPL_GetPointer(expChem, su_sarea,  'CARMA_SUSAREA',  __RC__)
+   call MAPL_GetPointer(expChem, su_mass,   'CARMA_SUMASS',  __RC__)
    call MAPL_GetPointer(expChem, su_numd,   'CARMA_SUNUMD',   __RC__)
    call MAPL_GetPointer(expChem, su_reff,   'CARMA_SUREFF',   __RC__)
    call MAPL_GetPointer(expChem, mxsu_sed,  'CARMA_MXSUSD',   __RC__)
@@ -997,13 +1031,11 @@ CONTAINS
 !  Other
    call MAPL_GetPointer(expChem, bc_sed,    'CARMA_BCSD',   __RC__)
    call MAPL_GetPointer(expChem, mxbc_sed,  'CARMA_MXBCSD',   __RC__)
-   call MAPL_GetPointer(expChem, ash_sed,   'CARMA_ASHSD',  __RC__)
-   call MAPL_GetPointer(expChem, mxash_sed, 'CARMA_MXASHSD',   __RC__)
    call MAPL_GetPointer(expChem, substeps,  'CARMA_SUBSTEPS',   __RC__)
    call MAPL_GetPointer(expChem, retries,   'CARMA_RETRIES',    __RC__)
    call MAPL_GetPointer(expChem, zsubsteps, 'CARMA_ZSUBSTEPS',  __RC__)
    call MAPL_GetPointer(expChem, sath2so4,  'CARMA_SATH2SO4',   __RC__)
-   call MAPL_GetPointer(expChem, su_sarea,  'CARMA_SUSAREAv',  __RC__)
+   call MAPL_GetPointer(expChem, su_sareav,  'CARMA_SUSAREAv',  __RC__)
 
 
 !  Allocate space for fall velocity diagnostic and see if requested
@@ -1116,7 +1148,8 @@ endif
    if( associated(retries))   retries(:,:)     = 0.
    if( associated(zsubsteps)) zsubsteps(:,:,:) = 0.
    if( associated(sath2so4))  sath2so4(:,:,:)  = 0.
-   if( associated(SU_sareav)) SU_sareav(:,:,:) = 0.
+   if( associated(su_sareav)) su_sareav(:,:,:) = 0.
+   if( associated(su_mass))   su_mass(:,:,:)  = 0.
    last_sub = 0
    last_ret = 0
 
@@ -1323,8 +1356,11 @@ endif
         if(associated(MX_numd)  .and. igroup .eq. reg%igrp_mixed)   MX_numd(i,j,:)  = MX_numd(i,j,:)  + numd_
         if(associated(SU_sarea) .and. igroup .eq. reg%igrp_sulfate) SU_sarea(i,j,:) = SU_sarea(i,j,:) + sarea_
         if(associated(SU_numd)  .and. igroup .eq. reg%igrp_sulfate) SU_numd(i,j,:)  = SU_numd(i,j,:)  + numd_
+        if(associated(SU_mass)  .and. igroup .eq. reg%igrp_sulfate) SU_mass(i,j,:)  = SU_mass(i,j,:)  + q_
         if(associated(DU_sarea) .and. igroup .eq. reg%igrp_dust)    DU_sarea(i,j,:) = DU_sarea(i,j,:) + sarea_
         if(associated(DU_numd)  .and. igroup .eq. reg%igrp_dust)    DU_numd(i,j,:)  = DU_numd(i,j,:)  + numd_
+        if(associated(ASH_sarea) .and. igroup .eq. reg%igrp_ash)    ASH_sarea(i,j,:) = ASH_sarea(i,j,:) + sarea_
+        if(associated(ASH_numd)  .and. igroup .eq. reg%igrp_ash)    ASH_numd(i,j,:)  = ASH_numd(i,j,:)  + numd_
         if(associated(SM_sarea) .and. igroup .eq. reg%igrp_smoke)   SM_sarea(i,j,:) = SM_sarea(i,j,:) + sarea_
         if(associated(SM_numd)  .and. igroup .eq. reg%igrp_smoke)   SM_numd(i,j,:)  = SM_numd(i,j,:)  + numd_
         if(associated(SS_sarea) .and. igroup .eq. reg%igrp_seasalt) SS_sarea(i,j,:) = SS_sarea(i,j,:) + sarea_
@@ -1335,19 +1371,22 @@ endif
       if(associated(MX_reff) .and. igroup .eq. reg%igrp_mixed)      where(reff_den > 0) MX_reff(i,j,:) = reff_num / reff_den
       if(associated(SM_reff) .and. igroup .eq. reg%igrp_smoke)      where(reff_den > 0) SM_reff(i,j,:) = reff_num / reff_den
       if(associated(DU_reff) .and. igroup .eq. reg%igrp_dust)       where(reff_den > 0) DU_reff(i,j,:) = reff_num / reff_den
+      if(associated(ASH_reff) .and. igroup .eq. reg%igrp_ash)       where(reff_den > 0) ASH_reff(i,j,:) = reff_num / reff_den
       if(associated(SU_reff) .and. igroup .eq. reg%igrp_sulfate)    where(reff_den > 0) SU_reff(i,j,:) = reff_num / reff_den
       if(associated(SS_reff) .and. igroup .eq. reg%igrp_seasalt)    where(reff_den > 0) SS_reff(i,j,:) = reff_num / reff_den
      enddo
 
 
 !    Get the number of substeps, retries from CARMA state
-     call CARMASTATE_Get(cstate, rc, nsubstep=substep_int, &
-                         nretry=retry_real, zsubsteps=zsubsteps_)
-     if(associated(substeps))  substeps(i,j)    = REAL(substep_int-last_sub, kind=f)
-     if(associated(retries))   retries(i,j)     = retry_real-last_ret
-     if(associated(zsubsteps)) zsubsteps(i,j,:) = zsubsteps_
-     last_sub = substep_int
-     last_ret = retry_real
+     if(reg%do_grow) then
+      call CARMASTATE_Get(cstate, rc, nsubstep=substep_int, &
+                          nretry=retry_real, zsubsteps=zsubsteps_)
+      if(associated(substeps))  substeps(i,j)    = REAL(substep_int-last_sub, kind=f)
+      if(associated(retries))   retries(i,j)     = retry_real-last_ret
+      if(associated(zsubsteps)) zsubsteps(i,j,:) = zsubsteps_
+      last_sub = substep_int
+      last_ret = retry_real
+     endif
 
 !  Hack -- for now don't change temperature
 !   ! Get the updated temperature.
@@ -1356,6 +1395,25 @@ endif
 
     end do
    end do
+
+!  Return the updated gas species to GMI from the internal state
+!  Expectation is species are in MMR and needed in VMR for GMI
+!  -----------
+   if(trim(reg%sulfuric_acid_source) == 'full_field' .and. reg%NGAS > 0) then
+    do igas = 1, reg%NGAS
+     n  = nCARMAbegin + reg%NBIN*reg%NELEM - 1 + igas
+     gasname = ESMF_UtilStringUpperCase(reg%gasname(igas))
+     if(gasname == 'H2SO4') then
+      if(associated(h2so4)) h2so4 = qa(n)%data3d*WTMOL_AIR/WTMOL_H2SO4
+     endif
+     if(gasname == 'HNO3' ) then
+!     For now don't update HNO3
+!      if(associated(hno3)) hno3 = qa(n)%data3d*WTMOL_AIR /WTMOL_HNO3
+     endif
+    enddo
+   endif
+
+
 
  ! Cleanup the carma state objects
    call CARMASTATE_Destroy(cstate, rc)

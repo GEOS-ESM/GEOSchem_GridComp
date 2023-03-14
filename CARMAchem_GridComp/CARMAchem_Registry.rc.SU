@@ -16,10 +16,10 @@
 
 # CARMA dimensioning parameters
 NBIN:      22
-NGROUP:    1
-NELEM:     1 
+NGROUP:    4
+NELEM:     4 
 NSOLUTE:   0 
-NGAS:      0
+NGAS:      3
 NWAVE:     0 
 
 # PARTICLES
@@ -36,14 +36,14 @@ NWAVE:     0
 #                                                 2 (I_GERBER), 3 (I_WTPCT_H2SO4),
 #                                                 4 (I_WTPCT_STS)
 # IRHSWCOMP = composition swelling flag
-GROUPNAME: dust       seasalt    smoke
-RMRAT:     2.2587828  2.2587828  2.2587828
-RMIN:      5.e-06     5.e-06     5.e-06
-ISHAPE:    1          1          1
-ESHAPE:    1.         1.         1.
-FSCAV:     0.4        0.4        0.4
-IRHSWELL:  0          2          0
-IRHSWCOMP: 0          12         0
+GROUPNAME: sulfate         dust       seasalt    smoke
+RMRAT:     3.7515201       2.2587828  2.2587828  2.2587828
+RMIN:      2.6686863e-8    5.e-06     5.e-06     5.e-06
+ISHAPE:    1               1          1          1
+ESHAPE:    1.              1.         1.         1.
+FSCAV:     0.4             0.4        0.4        0.4
+IRHSWELL:  3               0          2          0
+IRHSWCOMP: 0               0          12         0
 
 # ELEMENTS: Define the aerosol elements (must be at least NELEM entries)
 # IGROUP       = group (above) the element maps to
@@ -52,11 +52,11 @@ IRHSWCOMP: 0          12         0
 # ITYPE        = element type: 1 (I_INVOLATILE), 2 (I_VOLATILE), 3 (I_COREMASS)
 #                              4 (I_VOLCORE), 5 (I_CORE2MOM)
 # ICOMPOSITION = 
-IGROUP:       1       2       3
-RHOP:         2.65    2.20   1.35
-ELEMNAME:     pc      pc     pc
-ITYPE:        1       1      1
-ICOMPOSITION: 1       2      3
+IGROUP:       1       2       3      4
+RHOP:         1.923   2.65    2.20   1.35
+ELEMNAME:     pc      pc      pc     pc
+ITYPE:        2       1       1      1
+ICOMPOSITION: 0       1       2      3
 
 # GASES
 # -----
@@ -73,10 +73,10 @@ IGVAPREQ:     2       4       -1
 
 # Microphysical process control
 # Logical (0 or 1)
-DO_COAG:     0 
-DO_GROW:     0 
-DO_SUBSTEP:  0 
-DO_THERMO:   0 
+DO_COAG:     1 
+DO_GROW:     1 
+DO_SUBSTEP:  1 
+DO_THERMO:   1 
 DO_VDIFF:    0 
 DO_VTRAN:    1 
 DO_FIXEDINIT:1
