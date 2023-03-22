@@ -14,7 +14,6 @@ set (srcs
   VegLaiMod.F90
   GmiPrintError_mod.F90
   GmiTimeControl_mod.F90
-  GmiSolar_mod.F90
   GmiResistance.F90
   GmiEmissUtils.F90
   Henrys_Law_cts.F90
@@ -22,6 +21,7 @@ set (srcs
   Bundle_IncrementMod.F90
   Lightning_mod.F90
   lightning_toolbox_mod.F90
+  SZA_from_MAPL_mod.F90
   )
 
 if (DOING_GEOS5)
