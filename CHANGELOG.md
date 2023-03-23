@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- Added connectivity from GOCART2G aerosols to GMI chem
+
 ### Removed
 ### Changed
 ### Fixed
