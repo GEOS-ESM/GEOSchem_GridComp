@@ -978,7 +978,7 @@ Contains
      real, allocatable :: ratio(:,:,:)
      real, parameter :: tinyval = 1.0e-16
      real, parameter :: hms_so4 = 111.10/96.06
-     real, parameter :: om_oc   = 1.4
+     real, parameter :: om_oc   = 2.1
      logical, parameter :: debug = .false.
 
      __Iam__('map_gcc')
