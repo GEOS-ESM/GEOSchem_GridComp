@@ -14,6 +14,7 @@ set (srcs
   VegLaiMod.F90
   GmiPrintError_mod.F90
   GmiTimeControl_mod.F90
+  GmiSolar_mod.F90
   GmiResistance.F90
   GmiEmissUtils.F90
   Henrys_Law_cts.F90

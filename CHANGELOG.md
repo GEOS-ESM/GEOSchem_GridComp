@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Removed the GMI routines which computed Solar Zenith Angle, in Chem_Shared
+- Removed the GMI routines which computed Solar Zenith Angle, in Chem_Shared; but in a later commit, this was added back temporarily, so that older versions of GMI and TR don't complain.
 
 ## [1.13.0] - 2023-03-01
 
