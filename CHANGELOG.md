@@ -13,11 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Fixed
 
-## [1.13.1] - 2023-03-02
+## [next release]
 
 ### Added
 
 - Added CO2 connectivity in GEOS_ChemGridComp for GOCART-GEOS-Chem coupling
+- Added a wrapper routine for the MAPL Solar Zenith Angle call, in Chem_Shared
+
+### Removed
+
+- Removed the GMI routines which computed Solar Zenith Angle, in Chem_Shared
 
 ## [1.13.0] - 2023-03-01
 
