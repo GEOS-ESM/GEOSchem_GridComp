@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed the GMI routines which computed Solar Zenith Angle, in Chem_Shared; but in a later commit, this was added back temporarily, so that older versions of GMI and TR don't complain.
 
+- Removed parallel read of PChem species file. This parallel read was causing issues at NAS at large node count, so now we just do a
+  read-on-root followed by a broadcast
+
 ## [1.13.0] - 2023-03-01
 
 ### Added
