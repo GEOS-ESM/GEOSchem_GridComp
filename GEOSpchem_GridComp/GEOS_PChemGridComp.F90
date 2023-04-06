@@ -831,103 +831,87 @@ contains
 
     call MAPL_TimerOn (MAPL,"-Read Header"  )
 
-#ifdef H5_HAVE_PARALLEL
-    call MPI_Info_create(info, STATUS)
-    call MPI_Info_set(info, "romio_cb_read", "automatic", STATUS)
-    VERIFY_(STATUS)
-    call ESMF_VMGet(vm, mpiCommunicator=comm, rc=STATUS)
-    VERIFY_(STATUS)
-
-#ifdef NETCDF_NEED_NF_MPIIO
-    STATUS = NF90_OPEN_PAR(trim(PCHEMFILE),IOR(NF90_NOWRITE,NF90_MPIIO),comm,info,UNIT)
-#else
-    STATUS = NF90_OPEN_PAR(trim(PCHEMFILE),NF90_NOWRITE,comm,info,UNIT)
-#endif
-
-#else
     if ( MAPL_am_I_root() ) then
        STATUS = NF90_OPEN(trim(PCHEMFILE),NF90_NOWRITE,UNIT)
-#endif
-    if(status /= NF90_NOERR) then
-       print*,'Error opening file ',trim(PCHEMFILE), status
-       print*, NF90_STRERROR(status)
-       stop
-    endif
+       if(status /= NF90_NOERR) then
+          print*,'Error opening file ',trim(PCHEMFILE), status
+          print*, NF90_STRERROR(status)
+          stop
+       endif
 
 ! Read various dimension and global information including
 ! number of levels, and the number of species in the PCHEMFILE.
 !--------------------------------------------------------------
 
-    STATUS = NF90_INQ_DIMID(UNIT, 'lat', dimid)
-    if(status /= NF90_NOERR) then
-       print*,'Error getting dimid for lat', status
-       print*, NF90_STRERROR(status)
-       stop
-    endif
-    STATUS = NF90_INQUIRE_DIMENSION(UNIT, dimid, len=PCHEM_STATE%NLATS)
-    if(status /= NF90_NOERR) then
-       print*,'Error getting dimlen for lat', status
-       print*, NF90_STRERROR(status)
-       stop
-    endif
-    STATUS = NF90_INQ_DIMID(UNIT, 'lev', dimid)
-    if(status /= NF90_NOERR) then
-       print*,'Error getting dimid for lev', status
-       print*, NF90_STRERROR(status)
-       stop
-    endif
-    STATUS = NF90_INQUIRE_DIMENSION(UNIT, dimid, len=PCHEM_STATE%NLEVS)
-    if(status /= NF90_NOERR) then
-       print*,'Error getting dimlen for lev', status
-       print*, NF90_STRERROR(status)
-       stop
-    endif
-    STATUS = NF90_GET_ATT(UNIT, NF90_GLOBAL, 'NSPECIES', NSPECIES)
-    if(status /= NF90_NOERR) then
-       print*,'Error getting NSPECIES', status
-       print*, NF90_STRERROR(status)
-       stop
-    endif
-    _ASSERT(PCHEM_STATE%NSPECIES==NSPECIES,'needs informative message')
+       STATUS = NF90_INQ_DIMID(UNIT, 'lat', dimid)
+       if(status /= NF90_NOERR) then
+          print*,'Error getting dimid for lat', status
+          print*, NF90_STRERROR(status)
+          stop
+       endif
+       STATUS = NF90_INQUIRE_DIMENSION(UNIT, dimid, len=PCHEM_STATE%NLATS)
+       if(status /= NF90_NOERR) then
+          print*,'Error getting dimlen for lat', status
+          print*, NF90_STRERROR(status)
+          stop
+       endif
+       STATUS = NF90_INQ_DIMID(UNIT, 'lev', dimid)
+       if(status /= NF90_NOERR) then
+          print*,'Error getting dimid for lev', status
+          print*, NF90_STRERROR(status)
+          stop
+       endif
+       STATUS = NF90_INQUIRE_DIMENSION(UNIT, dimid, len=PCHEM_STATE%NLEVS)
+       if(status /= NF90_NOERR) then
+          print*,'Error getting dimlen for lev', status
+          print*, NF90_STRERROR(status)
+          stop
+       endif
+       STATUS = NF90_GET_ATT(UNIT, NF90_GLOBAL, 'NSPECIES', NSPECIES)
+       if(status /= NF90_NOERR) then
+          print*,'Error getting NSPECIES', status
+          print*, NF90_STRERROR(status)
+          stop
+       endif
+       _ASSERT(PCHEM_STATE%NSPECIES==NSPECIES,'needs informative message')
 
 ! If multiple climYears, the second record tells us starting and ending year and number of years
 !-----------------------------------------------------------------------------------------------
 
-    IF(PCHEM_STATE%climYears == 1) THEN
-       PCHEM_STATE%begClimYear = 1
-       PCHEM_STATE%endClimYear = 1
-    ELSE
-       STATUS = NF90_GET_ATT(UNIT, NF90_GLOBAL, 'begClimYear', PCHEM_STATE%begClimYear)
-       if(status /= NF90_NOERR) then
-          print*,'Error getting begClimYear', status
-          print*, NF90_STRERROR(status)
-          stop
-       endif
-       STATUS = NF90_GET_ATT(UNIT, NF90_GLOBAL, 'endClimYear', PCHEM_STATE%endClimYear)
-       if(status /= NF90_NOERR) then
-          print*,'Error getting endClimYear', status
-          print*, NF90_STRERROR(status)
-          stop
-       endif
-       STATUS = NF90_GET_ATT(UNIT, NF90_GLOBAL, 'climYears'  , climYears)
-       if(status /= NF90_NOERR) then
-          print*,'Error getting climYears', status
-          print*, NF90_STRERROR(status)
-          stop
-       endif
-
-       IF(climYears /= PCHEM_STATE%climYears) THEN
-          PRINT *," "
-          PRINT *,TRIM(Iam)//": Problem with "//TRIM(PCHEMFILE)
-          PRINT *,"Expecting ",PCHEM_STATE%climYears," years but there are ",climYears
-          STATUS=1
-          VERIFY_(STATUS)
+       IF(PCHEM_STATE%climYears == 1) THEN
+          PCHEM_STATE%begClimYear = 1
+          PCHEM_STATE%endClimYear = 1
+       ELSE
+          STATUS = NF90_GET_ATT(UNIT, NF90_GLOBAL, 'begClimYear', PCHEM_STATE%begClimYear)
+          if(status /= NF90_NOERR) then
+             print*,'Error getting begClimYear', status
+             print*, NF90_STRERROR(status)
+             stop
+          endif
+          STATUS = NF90_GET_ATT(UNIT, NF90_GLOBAL, 'endClimYear', PCHEM_STATE%endClimYear)
+          if(status /= NF90_NOERR) then
+             print*,'Error getting endClimYear', status
+             print*, NF90_STRERROR(status)
+             stop
+          endif
+          STATUS = NF90_GET_ATT(UNIT, NF90_GLOBAL, 'climYears'  , climYears)
+          if(status /= NF90_NOERR) then
+             print*,'Error getting climYears', status
+             print*, NF90_STRERROR(status)
+             stop
+          endif
+   
+          IF(climYears /= PCHEM_STATE%climYears) THEN
+             PRINT *," "
+             PRINT *,TRIM(Iam)//": Problem with "//TRIM(PCHEMFILE)
+             PRINT *,"Expecting ",PCHEM_STATE%climYears," years but there are ",climYears
+             STATUS=1
+             VERIFY_(STATUS)
+          END IF
        END IF
-    END IF
 
 ! Allocate and read PCHEMFILE's latitudes (radians) and pressures (Pa).
 !----------------------------------------------------------------------
-#ifndef H5_HAVE_PARALLEL
     endif ! MAPL_am_I_root
 
     call MAPL_CommsBcast (vm, PCHEM_STATE%NLATS   ,1, 0, rc=status)
@@ -939,45 +923,38 @@ contains
     call MAPL_CommsBcast (vm, PCHEM_STATE%endClimYear   ,1, 0, rc=status)
     VERIFY_(STATUS)
 
-#endif
 
     allocate ( PCHEM_STATE%LATS (PCHEM_STATE%NLATS), STAT=STATUS )
     VERIFY_(STATUS)
     allocate ( PCHEM_STATE%LEVS (PCHEM_STATE%NLEVS), STAT=STATUS )
     VERIFY_(STATUS)
 
-#ifndef H5_HAVE_PARALLEL
     if ( MAPL_am_I_root() ) then
-#endif
 
-    STATUS = NF90_INQ_VARID(UNIT, 'lat', varid)
-    if(status /= NF90_NOERR) then
-       print*,'Error getting varid for lat', status
-       print*, NF90_STRERROR(status)
-       stop
-    endif
-    STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%LATS)
-    if(status /= NF90_NOERR) then
-       print*,'Error getting values for lat', status
-       print*, NF90_STRERROR(status)
-       stop
-    endif
-    STATUS = NF90_INQ_VARID(UNIT, 'lev', varid)
-    if(status /= NF90_NOERR) then
-       print*,'Error getting varid for lev', status
-       print*, NF90_STRERROR(status)
-       stop
-    endif
-    STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%LEVS)
-    if(status /= NF90_NOERR) then
-       print*,'Error getting values for lev', status
-       print*, NF90_STRERROR(status)
-       stop
-    endif
-#ifdef H5_HAVE_PARALLEL
-    call MPI_Info_free(info, status)
-    VERIFY_(STATUS)
-#else
+       STATUS = NF90_INQ_VARID(UNIT, 'lat', varid)
+       if(status /= NF90_NOERR) then
+          print*,'Error getting varid for lat', status
+          print*, NF90_STRERROR(status)
+          stop
+       endif
+       STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%LATS)
+       if(status /= NF90_NOERR) then
+          print*,'Error getting values for lat', status
+          print*, NF90_STRERROR(status)
+          stop
+       endif
+       STATUS = NF90_INQ_VARID(UNIT, 'lev', varid)
+       if(status /= NF90_NOERR) then
+          print*,'Error getting varid for lev', status
+          print*, NF90_STRERROR(status)
+          stop
+       endif
+       STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%LEVS)
+       if(status /= NF90_NOERR) then
+          print*,'Error getting values for lev', status
+          print*, NF90_STRERROR(status)
+          stop
+       endif
     endif ! MAPL_am_I_root
 
     call MAPL_CommsBcast (vm, PCHEM_STATE%LATS,size(PCHEM_STATE%LATS), 0, rc=status)
@@ -985,7 +962,6 @@ contains
     call MAPL_CommsBcast (vm, PCHEM_STATE%LEVS,size(PCHEM_STATE%LEVS), 0, rc=status)
     VERIFY_(STATUS)
 
-#endif
     STATUS = NF90_CLOSE(UNIT)
     call MAPL_TimerOff (MAPL,"-Read Header"  )
 
