@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Fixed
 
+## [1.21.1] - 2023-04-06
+
+### Removed
+
+- Removed parallel read of PChem species file. This parallel read was causing issues at NAS at large node count, so now we just do a
+  read-on-root followed by a broadcast
+
 ## [1.12.0] - 2023-01-18
 
 ### Removed
