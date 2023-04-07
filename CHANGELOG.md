@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Fixed
 
+## [1.21.2] - 2023-04-07
+
+### Removed
+
+- Completely remove parallel read of PChem species file.
+
 ## [1.21.1] - 2023-04-06
 
 ### Removed

@@ -1327,172 +1327,154 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
           call ESMF_VMGet(vm, mpiCommunicator=comm, rc=STATUS)
           VERIFY_(STATUS)
 
-#ifdef H5_HAVE_PARALLEL
-          call MPI_Info_create(info, STATUS)
-          VERIFY_(STATUS)
-          call MPI_Info_set(info, "romio_cb_read", "automatic", STATUS)
-          VERIFY_(STATUS)
-
-#ifdef NETCDF_NEED_NF_MPIIO
-          STATUS = NF90_OPEN_PAR(trim(PCHEMFILE),IOR(NF90_NOWRITE,NF90_MPIIO),comm,info,UNIT)
-#else
-          STATUS = NF90_OPEN_PAR(trim(PCHEMFILE),NF90_NOWRITE,comm,info,UNIT)
-#endif
-
-#else
           if ( MAPL_am_I_root() ) then
              STATUS = NF90_OPEN(trim(PCHEMFILE),NF90_NOWRITE,UNIT)
-#endif
-          if(status /= NF90_NOERR) then
-             print*,'Error opening file ',trim(PCHEMFILE), status
-             print*, NF90_STRERROR(status)
-             stop
-          endif
-
-          start(1) = 1
-          start(2) = 1
-          cnt(1) = PCHEM_STATE%NLATS
-          cnt(2) = PCHEM_STATE%NLEVS
-          cnt(3) = 1
-
-          DO K = 1,PCHEM_STATE%NSPECIES
-             FieldName = PCHEM_STATE%ITEMNAMES(K)
-             STATUS = NF90_INQ_VARID(UNIT, trim(FieldName), varid)
              if(status /= NF90_NOERR) then
-                print*,'Error getting varid for variable ',trim(FieldName), status
+                print*,'Error opening file ',trim(PCHEMFILE), status
                 print*, NF90_STRERROR(status)
                 stop
              endif
+
+             start(1) = 1
+             start(2) = 1
+             cnt(1) = PCHEM_STATE%NLATS
+             cnt(2) = PCHEM_STATE%NLEVS
+             cnt(3) = 1
+
+             DO K = 1,PCHEM_STATE%NSPECIES
+                FieldName = PCHEM_STATE%ITEMNAMES(K)
+                STATUS = NF90_INQ_VARID(UNIT, trim(FieldName), varid)
+                if(status /= NF90_NOERR) then
+                   print*,'Error getting varid for variable ',trim(FieldName), status
+                   print*, NF90_STRERROR(status)
+                   stop
+                endif
 ! Need two separate reads because INDX2 isn't always sequentially after INDX1, otherwise
 ! we could combine the reads into one
-             start(3) = INDX1
-             STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNCV(:,:,K,1), start, cnt)
-             if(status /= NF90_NOERR) then
-                print*,'Error reading lower bracket month ',status
-                print*, NF90_STRERROR(status)
-                stop
-             endif
-             start(3) = INDX2
-             STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNCV(:,:,K,2), start, cnt)
-             if(status /= NF90_NOERR) then
-                print*,'Error reading upper bracket month ',status
-                print*, NF90_STRERROR(status)
-                stop
-             endif
+                start(3) = INDX1
+                STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNCV(:,:,K,1), start, cnt)
+                if(status /= NF90_NOERR) then
+                   print*,'Error reading lower bracket month ',status
+                   print*, NF90_STRERROR(status)
+                   stop
+                endif
+                start(3) = INDX2
+                STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNCV(:,:,K,2), start, cnt)
+                if(status /= NF90_NOERR) then
+                   print*,'Error reading upper bracket month ',status
+                   print*, NF90_STRERROR(status)
+                   stop
+                endif
 
 ! Convert H2O to mass fraction.
 !------------------------------
-             IF(K == PCHEM_STATE%H2O) then
-                PCHEM_STATE%MNCV(:,:,K,1) = PCHEM_STATE%MNCV(:,:,K,1)*(MAPL_H2OMW/MAPL_AIRMW)
-                PCHEM_STATE%MNCV(:,:,K,2) = PCHEM_STATE%MNCV(:,:,K,2)*(MAPL_H2OMW/MAPL_AIRMW)
-             endif
+                IF(K == PCHEM_STATE%H2O) then
+                   PCHEM_STATE%MNCV(:,:,K,1) = PCHEM_STATE%MNCV(:,:,K,1)*(MAPL_H2OMW/MAPL_AIRMW)
+                   PCHEM_STATE%MNCV(:,:,K,2) = PCHEM_STATE%MNCV(:,:,K,2)*(MAPL_H2OMW/MAPL_AIRMW)
+                endif
 
 ! Production rates and loss frequencies. If multiple climYears, simply set to zero.
 ! ---------------------------------------------------------------------------------
-             IF(PCHEM_STATE%climYears == 1) THEN
+                IF(PCHEM_STATE%climYears == 1) THEN
 
-                STATUS = NF90_INQ_VARID(UNIT, trim(FieldName)//'_PROD', varid)
-                if(status /= NF90_NOERR) then
-                   print*,'Error getting varid for variable ',trim(FieldName)//'_PROD', status
-                   print*, NF90_STRERROR(status)
-                   stop
-                endif
-                start(3) = INDX1
-                STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNPL(:,:,K,1,1), start, cnt)
-                if(status /= NF90_NOERR) then
-                   print*,'Error reading lower bracket month for production ',status
-                   print*, NF90_STRERROR(status)
-                   stop
-                endif
-                start(3) = INDX2
-                STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNPL(:,:,K,1,2), start, cnt)
-                if(status /= NF90_NOERR) then
-                   print*,'Error reading upper bracket month for production ',status
-                   print*, NF90_STRERROR(status)
-                   stop
-                endif
-                IF(K == PCHEM_STATE%H2O) PCHEM_STATE%MNPL(:,:,K,1,1) = PCHEM_STATE%MNPL(:,:,K,1,1)*(MAPL_H2OMW/MAPL_AIRMW)
-                IF(K == PCHEM_STATE%H2O) PCHEM_STATE%MNPL(:,:,K,1,2) = PCHEM_STATE%MNPL(:,:,K,1,2)*(MAPL_H2OMW/MAPL_AIRMW)
+                   STATUS = NF90_INQ_VARID(UNIT, trim(FieldName)//'_PROD', varid)
+                   if(status /= NF90_NOERR) then
+                      print*,'Error getting varid for variable ',trim(FieldName)//'_PROD', status
+                      print*, NF90_STRERROR(status)
+                      stop
+                   endif
+                   start(3) = INDX1
+                   STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNPL(:,:,K,1,1), start, cnt)
+                   if(status /= NF90_NOERR) then
+                      print*,'Error reading lower bracket month for production ',status
+                      print*, NF90_STRERROR(status)
+                      stop
+                   endif
+                   start(3) = INDX2
+                   STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNPL(:,:,K,1,2), start, cnt)
+                   if(status /= NF90_NOERR) then
+                      print*,'Error reading upper bracket month for production ',status
+                      print*, NF90_STRERROR(status)
+                      stop
+                   endif
+                   IF(K == PCHEM_STATE%H2O) PCHEM_STATE%MNPL(:,:,K,1,1) = PCHEM_STATE%MNPL(:,:,K,1,1)*(MAPL_H2OMW/MAPL_AIRMW)
+                   IF(K == PCHEM_STATE%H2O) PCHEM_STATE%MNPL(:,:,K,1,2) = PCHEM_STATE%MNPL(:,:,K,1,2)*(MAPL_H2OMW/MAPL_AIRMW)
 ! Loss
 ! ----
-                STATUS = NF90_INQ_VARID(UNIT, trim(FieldName)//'_LOSS', varid)
-                if(status /= NF90_NOERR) then
-                   print*,'Error getting varid for variable ',trim(FieldName)//'_LOSS', status
+                   STATUS = NF90_INQ_VARID(UNIT, trim(FieldName)//'_LOSS', varid)
+                   if(status /= NF90_NOERR) then
+                      print*,'Error getting varid for variable ',trim(FieldName)//'_LOSS', status
+                      print*, NF90_STRERROR(status)
+                      stop
+                   endif
+                   start(3) = INDX1
+                   STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNPL(:,:,K,2,1), start, cnt)
+                   if(status /= NF90_NOERR) then
+                      print*,'Error reading lower bracket month for loss ',status
+                      print*, NF90_STRERROR(status)
+                      stop
+                   endif
+                   start(3) = INDX2
+                   STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNPL(:,:,K,2,2), start, cnt)
+                   if(status /= NF90_NOERR) then
+                      print*,'Error reading upper bracket month for loss ',status
+                      print*, NF90_STRERROR(status)
+                      stop
+                   endif
+                ENDIF
+
+             ENDDO
+
+!fli2 Read H2O production and loss rate if use_h2o_prodloss
+             IF (USE_H2O_ProdLoss) THEN
+
+                STATUS = NF90_INQ_VARID(UNIT, 'H2OprRate', varid)
+                if(status /= nf90_noerr) then
+                   print*,'Error getting varid for variable H2OprRate', status
                    print*, NF90_STRERROR(status)
                    stop
                 endif
                 start(3) = INDX1
-                STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNPL(:,:,K,2,1), start, cnt)
-                if(status /= NF90_NOERR) then
-                   print*,'Error reading lower bracket month for loss ',status
+                STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%H2OprRate(:,:,1), start, cnt)
+                if(status /= nf90_noerr) then
+                   print*,'Error reading lower bracket month ',status
                    print*, NF90_STRERROR(status)
                    stop
                 endif
                 start(3) = INDX2
-                STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%MNPL(:,:,K,2,2), start, cnt)
-                if(status /= NF90_NOERR) then
-                   print*,'Error reading upper bracket month for loss ',status
+                STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%H2OprRate(:,:,2), start, cnt)
+                if(status /= nf90_noerr) then
+                   print*,'Error reading upper bracket month ',status
                    print*, NF90_STRERROR(status)
                    stop
                 endif
+   
+                STATUS = NF90_INQ_VARID(UNIT, 'H2OlsRate', varid)
+                if(status /= nf90_noerr) then
+                   print*,'Error getting varid for variable H2OlsRate', status
+                   print*, NF90_STRERROR(status)
+                   stop
+                endif
+                start(3) = INDX1
+                STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%H2OlsRate(:,:,1), start, cnt)
+                if(status /= nf90_noerr) then
+                   print*,'Error reading lower bracket month ',status
+                   print*, NF90_STRERROR(status)
+                   stop
+                endif
+                start(3) = INDX2
+                STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%H2OlsRate(:,:,2), start, cnt)
+                if(status /= nf90_noerr) then
+                   print*,'Error reading upper bracket month ',status
+                   print*, NF90_STRERROR(status)
+                   stop
+                endif
+   
              ENDIF
 
-          ENDDO
+             STATUS = NF90_CLOSE(UNIT)
+             VERIFY_(STATUS)
 
-!fli2 Read H2O production and loss rate if use_h2o_prodloss
-          IF (USE_H2O_ProdLoss) THEN
-
-             STATUS = NF90_INQ_VARID(UNIT, 'H2OprRate', varid)
-             if(status /= nf90_noerr) then
-                print*,'Error getting varid for variable H2OprRate', status
-                print*, NF90_STRERROR(status)
-                stop
-             endif
-             start(3) = INDX1
-             STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%H2OprRate(:,:,1), start, cnt)
-             if(status /= nf90_noerr) then
-                print*,'Error reading lower bracket month ',status
-                print*, NF90_STRERROR(status)
-                stop
-             endif
-             start(3) = INDX2
-             STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%H2OprRate(:,:,2), start, cnt)
-             if(status /= nf90_noerr) then
-                print*,'Error reading upper bracket month ',status
-                print*, NF90_STRERROR(status)
-                stop
-             endif
-
-             STATUS = NF90_INQ_VARID(UNIT, 'H2OlsRate', varid)
-             if(status /= nf90_noerr) then
-                print*,'Error getting varid for variable H2OlsRate', status
-                print*, NF90_STRERROR(status)
-                stop
-             endif
-             start(3) = INDX1
-             STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%H2OlsRate(:,:,1), start, cnt)
-             if(status /= nf90_noerr) then
-                print*,'Error reading lower bracket month ',status
-                print*, NF90_STRERROR(status)
-                stop
-             endif
-             start(3) = INDX2
-             STATUS = NF90_GET_VAR(UNIT, varid, PCHEM_STATE%H2OlsRate(:,:,2), start, cnt)
-             if(status /= nf90_noerr) then
-                print*,'Error reading upper bracket month ',status
-                print*, NF90_STRERROR(status)
-                stop
-             endif
-
-          ENDIF
-
-          STATUS = NF90_CLOSE(UNIT)
-          VERIFY_(STATUS)
-
-#ifdef H5_HAVE_PARALLEL
-          call MPI_Info_free(info, status)
-          VERIFY_(STATUS)
-#else
           endif ! MAPL_am_I_root
           call MPI_Bcast (PCHEM_STATE%MNCV, size(PCHEM_STATE%MNCV), MPI_REAL, 0, comm, STATUS)
           VERIFY_(STATUS)
@@ -1500,7 +1482,6 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
              call MPI_Bcast (PCHEM_STATE%MNPL, size(PCHEM_STATE%MNPL), MPI_REAL, 0, comm, STATUS)
              VERIFY_(STATUS)
           ENDIF
-#endif
 
           call MAPL_TimerOff (MAPL,"-Read Species"  )
           call MAPL_TimerOn  (MAPL,"RUN"  )
