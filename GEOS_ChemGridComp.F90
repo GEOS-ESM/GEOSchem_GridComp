@@ -654,33 +654,12 @@ contains
 ! ---------------------------------
   IF(myState%enable_GMICHEM .AND. TRIM(providerName) == "GOCART2G") THEN
 
-! GOCART2G connections to GMICHEM
-! -------------------------------
    IF(myState%enable_GOCART2G) &
-   CALL MAPL_AddConnectivity ( GC, &
-     SHORT_NAME  = (/ "CA.bcphobic", "CA.bcphilic" /), &
-     DST_ID=GMICHEM, SRC_ID=GOCART2G, __RC__)
 
-   CALL MAPL_AddConnectivity ( GC, &
-     SHORT_NAME  = (/ "DU" /), &
-     DST_ID=GMICHEM, SRC_ID=GOCART2G, __RC__)
+    CALL MAPL_AddConnectivity ( GC, &
+         SHORT_NAME  = (/'AERO'/),                &
+         DST_ID = GMICHEM, SRC_ID = GOCART2G, __RC__  )
 
-   CALL MAPL_AddConnectivity ( GC, &
-     SHORT_NAME  = (/ "CA.ocphobic", "CA.ocphilic" /), &
-     DST_ID=GMICHEM, SRC_ID=GOCART2G, __RC__)
-
-   CALL MAPL_AddConnectivity ( GC, &
-     SHORT_NAME  = (/ "CA.brphobic", "CA.brphilic" /), &
-     DST_ID=GMICHEM, SRC_ID=GOCART2G, __RC__)
-
-   CALL MAPL_AddConnectivity ( GC, &
-     SHORT_NAME  = (/ "SS" /), &
-     DST_ID=GMICHEM, SRC_ID=GOCART2G, __RC__)
-
-   CALL MAPL_AddConnectivity ( GC, &
-     SHORT_NAME  = (/ "DMS", "SO2", &
-                      "SO4", "MSA" /), &
-     DST_ID=GMICHEM, SRC_ID=GOCART2G, __RC__)
   END IF
 
 ! GOCART.data <=> GMICHEM coupling ...
