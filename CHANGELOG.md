@@ -13,6 +13,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Fixed
 
+## [1.13.1] - 2023-04-24
+
+### Added
+
+- Added CO2 connectivity in GEOS_ChemGridComp for GOCART-GEOS-Chem coupling
+- Added a wrapper routine for the MAPL Solar Zenith Angle call, in Chem_Shared
+- Added connectivity from GOCART2G aerosols to GMI chem
+
+### Removed
+
+- Removed the GMI routines which computed Solar Zenith Angle, in Chem_Shared; but in a later commit, this was added back temporarily, so that older versions of GMI and TR don't complain.
+
+- Removed parallel read of PChem species file. This parallel read was causing issues at NAS at large node count, so now we just do a read-on-root followed by a broadcast
+
+### Fixed
+
+- Fixed a bug that had prevented GMI running with HEMCO
+
 ## [1.13.0] - 2023-03-01
 
 ### Added

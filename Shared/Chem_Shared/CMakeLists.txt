@@ -22,6 +22,7 @@ set (srcs
   Bundle_IncrementMod.F90
   Lightning_mod.F90
   lightning_toolbox_mod.F90
+  SZA_from_MAPL_mod.F90
   )
 
 if (DOING_GEOS5)
