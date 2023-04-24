@@ -7,3 +7,18 @@ OC_MTPA          MTPA           108    -1   -1   2   kg/m2/s
 OC_MTPO          MTPO           108    -1   -1   2   kg/m2/s
 OC_LIMO          LIMO           108    -1   -1   2   kg/m2/s
 OC_SESQ          SESQ           108    -1   -1   2   kg/m2/s
+SU_ANTHROL1    SO2    0      1  -1   2   kg/m2/s
+SU_ANTHROL2    SO2    0      2  -1   2   kg/m2/s
+SU_SHIPSO2     SO2    0      3  -1   2   kg/m2/s
+SU_SHIPSO4     SO4    0      1  -1   2   kg/m2/s
+OC_ANTEOC1     OC     0      1  -1   2   kg/m2/s
+OC_ANTEOC2     OC     0      2  -1   2   kg/m2/s
+OC_SHIP        OC     0      3  -1   2   kg/m2/s
+BC_ANTEBC1     BC     0      1  -1   2   kg/m2/s
+BC_ANTEBC2     BC     0      2  -1   2   kg/m2/s
+BC_SHIP        BC     0      3  -1   2   kg/m2/s
+EMI_NH3_EN     NH3    0      1  -1   2   kg/m2/s
+
+#BC_AIRCRAFT    BC     0      4  -1   3   kg/m2/s
+#OC_AIRCRAFT    OC     0      4  -1   3   kg/m2/s
+#SU_AIRCRAFT    SO2    0      4  -1   3   kg/m2/s
