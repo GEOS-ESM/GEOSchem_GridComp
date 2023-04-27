@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Removed
+
+- Removed `MAMchem_GridComp`, `MATRIXchem_GridComp`, and `DNA_GridComp` as these are now in separate repos
+   - `MAMchem_GridComp` → [MAM](https://github.com/GEOS-ESM/MAM)
+   - `MATRIXchem_GridComp` → [MATRIX](https://github.com/GEOS-ESM/MATRIX)
+   - `DNA_GridComp` → [DNA](https://github.com/GEOS-ESM/DNA)
+
 ### Changed
 ### Fixed
 
