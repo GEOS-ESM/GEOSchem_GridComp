@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Update CI to use Baselibs 7.13.0
+
 ### Fixed
 
 ## [1.13.1] - 2023-04-24
