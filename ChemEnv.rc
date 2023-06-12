@@ -30,6 +30,8 @@ HEMCO_flashFactor_resvec_CTM:    0.6       0.355     0.1       2.095e-2  7.024e-
 HEMCO_flashFactor_resvec_FREE:   0.6       0.355     0.1       2.095e-2  7.024e-3  1.4152e-3
 HEMCO_flashFactor_resvec_REPLAY: 0.6       0.355     0.1       2.095e-2  7.024e-3  1.4152e-3
 
+usePreconCape: TRUE
+
 # for NOx emissions
 lightNOampFactor: 1.07
 numberNOperFlash: 1.50e+26
