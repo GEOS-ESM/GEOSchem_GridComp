@@ -291,6 +291,7 @@ contains
          __RC__  )
 
 
+
 ! Radiatively Active Tracers (RATs).  If a RATS_PROVIDER is not
 ! specified in the AGCM.rc, then the provider defaults to PCHEM.
 ! --------------------------------------------------------------
@@ -341,6 +342,7 @@ contains
   str = trim(providerName)
   str = ESMF_UtilStringLowerCase(str, __RC__)
 
+
   if (trim(str) == 'none') then
       AERO_PROVIDER = -1
 
@@ -381,6 +383,12 @@ contains
 !     ----------------------------------------------------
       call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO',    &
                                 CHILD_ID = AERO_PROVIDER, __RC__  )
+
+!     Needed in Turbulence for diagnosing PBLH
+!      ----------------------------------------
+       call MAPL_AddExportSpec(GC,                          &
+                               SHORT_NAME = 'TOTABCKTOA',   &
+                               CHILD_ID = AERO_PROVIDER, __RC__)
 
 #ifdef ENABLE_AERO_ACI
       ! IMPORTANT: This feature is currently disabled in Physics above,
