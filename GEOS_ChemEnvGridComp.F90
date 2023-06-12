@@ -49,6 +49,7 @@ module GEOS_ChemEnvGridCompMod
   real                       :: FIT_flashFactor
   real                       :: HEMCO_flashFactor
   real                       :: LOPEZ_flashFactor
+  logical                    :: usePreconCape       ! use CAPE, INHB and BYNCY from MOIST
 
   ! May change during the course of the run:
   integer                    :: year_for_ratio = 0
@@ -367,6 +368,30 @@ contains
          LONG_NAME  = 'tropopause_pressure_based_on_blended_estimate',  &
          UNITS      = 'Pa',                                             &
          DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                         __RC__)
+
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME ='BYNCY',                                           &
+         LONG_NAME  ='buoyancy_of surface_parcel',                      &
+         UNITS      ='m s-2',                                           &
+         RESTART    = MAPL_RestartSkip,                                 &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                       __RC__)
+
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME ='CAPE',                                            &
+         LONG_NAME  ='cape_for_surface_parcel',                         &
+         UNITS      ='J kg-1',                                          &
+         RESTART    = MAPL_RestartSkip,                                 &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                         __RC__)
+       
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME ='INHB',                                            &
+         LONG_NAME  ='inhibition_for_surface_parcel',                   &
+         UNITS      ='J kg-1',                                          &
+         RESTART    = MAPL_RestartSkip,                                 &
+         DIMS       = MAPL_DimsHorzOnly,                                & 
          VLOCATION  = MAPL_VLocationNone,                         __RC__)
 
 
@@ -734,13 +759,16 @@ contains
                                  numberNOperFlash,                     &
                                  MOIST_flashFactor, FIT_flashFactor,   &
                                  HEMCO_flashFactor, LOPEZ_flashFactor, &
+                                 usePreconCape,                        &
                                  __RC__ )
 
     IF(MAPL_AM_I_ROOT()) THEN
-      if ( flash_source_enum == FLASH_SOURCE_MOIST ) PRINT*,'MOIST_flashFactor is ',MOIST_flashFactor
-      if ( flash_source_enum == FLASH_SOURCE_FIT   ) PRINT*, ' FIT_flashFactor is ',  FIT_flashFactor
-      if ( flash_source_enum == FLASH_SOURCE_HEMCO ) PRINT*,'HEMCO_flashFactor is ',HEMCO_flashFactor
-      if ( flash_source_enum == FLASH_SOURCE_LOPEZ ) PRINT*,'LOPEZ_flashFactor is ',LOPEZ_flashFactor
+      if ( flash_source_enum == FLASH_SOURCE_MOIST ) PRINT*,'MOIST_flashFactor is ', MOIST_flashFactor
+      if ( flash_source_enum == FLASH_SOURCE_FIT   ) PRINT*, ' FIT_flashFactor is ',   FIT_flashFactor
+      if ( flash_source_enum == FLASH_SOURCE_HEMCO ) PRINT*,'HEMCO_flashFactor is ', HEMCO_flashFactor
+      if ( flash_source_enum == FLASH_SOURCE_LOPEZ ) PRINT*,'LOPEZ_flashFactor is ', LOPEZ_flashFactor
+
+                                                     PRINT*,'usePreconCape = ', usePreconCape
     ENDIF
 
     RETURN_(ESMF_SUCCESS)
@@ -806,6 +834,10 @@ contains
   real, pointer, dimension(:,:,:) ::     CNV_MFD => null()
   real, pointer, dimension(:,:,:) ::      PFI_CN => null()
   real, pointer, dimension(:,:,:) ::      CNV_QC => null()
+
+  real, pointer, dimension(:,:)   ::       CAPE_PRECON => null()
+  real, pointer, dimension(:,:)   ::       INHB_PRECON => null()
+  real, pointer, dimension(:,:,:) ::      BYNCY_PRECON => null()
 
 ! Exports
   real,   pointer, dimension(:,:,:)  ::           delp => null()
@@ -922,6 +954,11 @@ contains
     call MAPL_GetPointer ( IMPORT, CNV_QC,      'CNV_QC',   __RC__ )
     call MAPL_GetPointer ( IMPORT, cellArea,    'AREA',     __RC__ )
 
+    call MAPL_GetPointer ( IMPORT,  CAPE_PRECON, 'CAPE',    __RC__ )
+    call MAPL_GetPointer ( IMPORT,  INHB_PRECON, 'INHB',    __RC__ )
+    call MAPL_GetPointer ( IMPORT, BYNCY_PRECON, 'BYNCY',   __RC__ )
+
+
               BYNCY(:,:,:) = real(0)
                CAPE(:,:)   = real(0)
                 LFR(:,:)   = real(0)
@@ -949,7 +986,8 @@ contains
                 TS, CNV_MFC, CNV_QC, T, TH, PFI_CN, PLE, Q, ZLE,   &
                 minDeepCloudTop, lightNOampFactor, numberNOperFlash, &
                 MOIST_flashFactor, FIT_flashFactor, HEMCO_flashFactor, LOPEZ_flashFactor, &
-                CNV_MFD, CAPE, BYNCY, LFR, LIGHT_NO_PROD, PHIS, &
+                CNV_MFD, usePreconCape, CAPE_PRECON, INHB_PRECON, BYNCY_PRECON, &
+                CAPE, BYNCY, LFR, LIGHT_NO_PROD, PHIS, &
                 __RC__)
 
 !   call pmaxmin('LFR', LFR, flashRateMin, flashRateMax, nc, 1, 1.)
