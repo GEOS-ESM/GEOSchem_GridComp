@@ -304,6 +304,7 @@ contains
   CALL MAPL_AddExportSpec ( GC, SHORT_NAME = 'H2O_TEND', &
                             CHILD_ID = RATS_PROVIDER, __RC__ )
 
+
 ! Priority for first three RATs, OX, O3 and O3PPMV, goes to the ANALYSIS_OX_PROVIDER.
 ! -----------------------------------------------------------------------------------
   call GetProvider_(CF, Label='ANALYSIS_OX_PROVIDER:', ID=i, Name=providerName, Default='PCHEM', __RC__)
@@ -381,6 +382,10 @@ contains
 !     ----------------------------------------------------
       call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO',    &
                                 CHILD_ID = AERO_PROVIDER, __RC__  )
+
+      CALL MAPL_AddExportSpec ( GC, SHORT_NAME = 'TOTABCKTOA', &
+                                CHILD_ID = AERO_PROVIDER, __RC__ )
+
 
 #ifdef ENABLE_AERO_ACI
       ! IMPORTANT: This feature is currently disabled in Physics above,
