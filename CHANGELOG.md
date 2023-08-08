@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- Connectivity from GMI to ACHEM (4 fields)
+
 ### Removed
 
 - Removed `MAMchem_GridComp`, `MATRIXchem_GridComp`, `DNA_GridComp`, `CARMAchem_GridComp`, `GAAS_GridComp`, and `GEOSachem_GridComp` as these are now in separate repos
@@ -20,7 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    - `GEOSachem_GridComp` → [GEOSachem](https://github.com/GEOS-ESM/GEOSachem)
 
 ### Changed
+
+- Update CI to use Baselibs 7.13.0
+
 ### Fixed
+
+- Fix a bug in GAAS where it gets the VM (global instead of the correct current)
 
 ## [1.13.1] - 2023-04-24
 

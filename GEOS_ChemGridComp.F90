@@ -605,6 +605,13 @@ contains
         DST_ID = ACHEM, SRC_ID = STRATCHEM, __RC__  )
   ENDIF
 
+  IF(myState%enable_GMICHEM .AND. myState%enable_ACHEM) then
+   CALL MAPL_AddConnectivity ( GC, &
+        SRC_NAME  = (/'O        ', 'OH       ', 'OX       ', 'OCS_JRATE'/), &
+        DST_NAME  = (/'O3P      ', 'OHSTRAT  ', 'O3       ', 'OCS_JRATE'/), &
+        DST_ID = ACHEM, SRC_ID = GMICHEM, __RC__  )
+  ENDIF
+ 
 
 ! GOCART <=> ACHEM (OCS CHEMISTRY)
 ! ---------------------------------
