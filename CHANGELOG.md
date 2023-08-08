@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Removed `MAMchem_GridComp`, `MATRIXchem_GridComp`, `DNA_GridComp`, `CARMAchem_GridComp`, `GAAS_GridComp`, and `GEOSachem_GridComp` as these are now in separate repos
+   - `MAMchem_GridComp` → [MAM](https://github.com/GEOS-ESM/MAM)
+   - `MATRIXchem_GridComp` → [MATRIX](https://github.com/GEOS-ESM/MATRIX)
+   - `DNA_GridComp` → [DNA](https://github.com/GEOS-ESM/DNA)
+   - `CARMAchem_GridComp` → [CARMA](https://github.com/GEOS-ESM/CARMA)
+   - `GAAS_GridComp` → [GAAS](https://github.com/GEOS-ESM/GAAS)
+   - `GEOSachem_GridComp` → [GEOSachem](https://github.com/GEOS-ESM/GEOSachem)
+
 ### Changed
 
 - Update CI to use Baselibs 7.13.0
@@ -75,7 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Instead of importing a set of QQK diagnostic fields for chemical loss of stOX, TR now imports a single field: stOX_loss
-- For OPS configuration: removal of links, change of QFED paths from vNRT/ to v2.5r1-nrt/ 
+- For OPS configuration: removal of links, change of QFED paths from vNRT/ to v2.5r1-nrt/
 - For AMIP configuration: update of QFED from v2.5r1 to v2.6r1 (most recent collection)
 - Moved to GitHub Actions for label enforcement
 - Update CircleCI to use Baselibs 7.7.0
@@ -123,7 +131,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updates to emissions from galactic cosmic rays in GMI
 - Minor improvement to Runtime_Registry module.
-- Broke away the GMI contents from Chem_Registry.rc, into a separate file 
+- Broke away the GMI contents from Chem_Registry.rc, into a separate file
 
 ## [1.10.1] - 2022-08-30
 
@@ -179,7 +187,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix YAML typo in `GEOSachem_GridComp/GEOSachem_ExtData.yaml`
 
-## [1.9.4] - 2022-05-31 
+## [1.9.4] - 2022-05-31
 
 ### Fixed
 
