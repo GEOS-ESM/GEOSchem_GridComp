@@ -531,12 +531,6 @@ contains
      CALL MAPL_AddConnectivity ( GC, &
           SHORT_NAME  = (/'AIRDENS', 'DELP   ', 'LFR    ', 'BYNCY  '/), &
           DST_ID = GEOSCHEM, SRC_ID = CHEMENV, __RC__  )
-     CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'SSEMOUT', 'SSDDOUT', 'SSWDOUT', 'SSSDOUT'/), &
-          DST_ID = GEOSCHEM, SRC_ID = GOCART2G, __RC__  )
-     CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'DUEMOUT', 'DUDDOUT', 'DUWDOUT', 'DUSDOUT'/), &
-          DST_ID = GEOSCHEM, SRC_ID = GOCART2G, __RC__  )
   ENDIF
 
 ! Ozone mole fraction needed by GOCART for
@@ -914,7 +908,7 @@ contains
    type (ESMF_State)                   :: INTERNAL
    type (ESMF_State),          pointer :: GEX(:)
    type (ESMF_FieldBundle)             :: fBUNDLE
-   type (ESMF_FieldBundle)             :: imSS, imDU, imSU ! internally mixed species from chem
+   type (ESMF_FieldBundle)             :: imSS, imDU, imCA, imSU ! internally mixed species from chem
    type (ESMF_FieldBundle)             :: SPC ! Directly mixed species shared with chem
    type (ESMF_State)                   :: AERO
    type (ESMF_Config)                  :: CF, myCF
@@ -1034,10 +1028,15 @@ contains
     call MAPL_GridCompGetFriendlies(GCS(GEOSCHEM), "DU", imDU, AddGCPrefix=.false., __RC__ )
     CALL IM_FieldBundleInit( imDU, __RC__ )
 
-!   Sulfur
-!    call ESMF_StateGet   (GEX(GOCART2G),  'imSU' , imSU, __RC__ )
-!    call MAPL_GridCompGetFriendlies(GCS(GEOSCHEM), "SU", imSU, AddGCPrefix=.false., __RC__ )
-!    CALL IM_FieldBundleInit( imSU, 'imSU', __RC__ )
+!   Carbon aerosols
+    call ESMF_StateGet   (GEX(GOCART2G),  'imCA' , imCA, __RC__ )
+    call MAPL_GridCompGetFriendlies(GCS(GEOSCHEM), "CA.oc", imCA, AddGCPrefix=.false., __RC__ )
+    CALL IM_FieldBundleInit( imCA, 'imCA', __RC__ )
+
+!   Sulfur aerosols
+    call ESMF_StateGet   (GEX(GOCART2G),  'imSU' , imSU, __RC__ )
+    call MAPL_GridCompGetFriendlies(GCS(GEOSCHEM), "SU", imSU, AddGCPrefix=.false., __RC__ )
+    CALL IM_FieldBundleInit( imSU, 'imSU', __RC__ )
 
 !   GEOSChem-CHEM
     ! AddGCPrefix ensures that GOCART2G's children are scanned for friendlies to GEOSCHEMCHEM
