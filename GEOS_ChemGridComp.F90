@@ -1045,26 +1045,50 @@ contains
     call MAPL_GridCompGetFriendlies(GCS(GEOSCHEM), "SS", imSS, AddGCPrefix=.false., __RC__ )
     CALL IM_FieldBundleInit( imSS, __RC__ )
 
+#ifdef PRINT_STATES
+    if (mapl_am_I_Root()) write(*,*) 'Content of bundle imSS'
+    if (mapl_am_I_Root()) CALL ESMF_FieldBundlePrint( imSS )
+#endif
+
 !   Dust
     call ESMF_StateGet   (GEX(GOCART2G),  'imDU' , imDU, __RC__ )
     call MAPL_GridCompGetFriendlies(GCS(GEOSCHEM), "DU", imDU, AddGCPrefix=.false., __RC__ )
     CALL IM_FieldBundleInit( imDU, __RC__ )
+
+#ifdef PRINT_STATES
+    if (mapl_am_I_Root()) write(*,*) 'Content of bundle imDU'
+    if (mapl_am_I_Root()) CALL ESMF_FieldBundlePrint( imDU )
+#endif
 
 !   Carbon aerosols
     call ESMF_StateGet   (GEX(GOCART2G),  'imCA' , imCA, __RC__ )
     call MAPL_GridCompGetFriendlies(GCS(GEOSCHEM), "CA.oc", imCA, AddGCPrefix=.false., __RC__ )
     CALL IM_FieldBundleInit( imCA, 'imCA', __RC__ )
 
+#ifdef PRINT_STATES
+    if (mapl_am_I_Root()) write(*,*) 'Content of bundle imCA'
+    if (mapl_am_I_Root()) CALL ESMF_FieldBundlePrint( imCA )
+#endif
+
 !   Sulfur aerosols
     call ESMF_StateGet   (GEX(GOCART2G),  'imSU' , imSU, __RC__ )
     call MAPL_GridCompGetFriendlies(GCS(GEOSCHEM), "SU", imSU, AddGCPrefix=.false., __RC__ )
     CALL IM_FieldBundleInit( imSU, 'imSU', __RC__ )
 
+#ifdef PRINT_STATES
+    if (mapl_am_I_Root()) write(*,*) 'Content of bundle imSU'
+    if (mapl_am_I_Root()) CALL ESMF_FieldBundlePrint( imSU )
+#endif
+
 !   GEOSChem-CHEM
     ! AddGCPrefix ensures that GOCART2G's children are scanned for friendlies to GEOSCHEMCHEM
     call ESMF_StateGet   (GEX(GEOSCHEM),  'fSPC' , SPC, __RC__ )
     call MAPL_GridCompGetFriendlies(GCS(GOCART2G), "GEOSCHEMCHEM", SPC, AddGCPrefix=.true., __RC__ )
-!    if (mapl_am_I_Root()) CALL ESMF_FieldBundlePrint( SPC )
+
+#ifdef PRINT_STATES
+    if (mapl_am_I_Root()) write(*,*) 'Content of bundle fSPC'
+    if (mapl_am_I_Root()) CALL ESMF_FieldBundlePrint( SPC )
+#endif
 
 !   All Done
 !   --------
