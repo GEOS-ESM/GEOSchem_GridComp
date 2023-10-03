@@ -23,7 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix a bug in GAAS where it gets the VM (global instead of the correct current)
 - Fix an issue in GAAS where the `aod_?` fields were not declared as `MAPL_RestartSkip` in the Registry file.
 
-
 ## [1.13.1] - 2023-04-24
 
 ### Added
