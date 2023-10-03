@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Fixed
 
+## [1.21.3] - 2023-10-03
+
+### Fixed
+
+- Fix an issue in GAAS where the `aod_?` fields were not declared as `MAPL_RestartSkip` in the Registry file.
+
 ## [1.21.2] - 2023-04-07
 
 ### Removed
