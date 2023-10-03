@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Update CI to use Baselibs 7.13.0
+- Update CI to use Baselibs default from the CircleCI orb
 
 ### Fixed
 
