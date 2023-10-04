@@ -495,7 +495,7 @@ CONTAINS
    call ESMF_StateGet(import,"aod_a",aod_a_field,_RC)
 !  Is it time for analysis?
 !  ------------------------
-   skip_analysis = ESMFL_field_is_undefined(aod_a_field,_RC)
+!   skip_analysis = ESMFL_field_is_undefined(aod_a_field,_RC)
    analysis_time = .not.skip_analysis
 
 !  Is it time for analysis?
