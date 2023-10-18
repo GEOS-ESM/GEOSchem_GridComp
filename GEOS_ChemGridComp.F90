@@ -555,21 +555,21 @@ contains
 ! Ozone mole fraction needed by GOCART for
 ! CFC-12 photolysis.  For GMICHEM case, see below.
 ! ------------------------------------------------
-  IF(myState%enable_GOCART .AND. myState%enable_PCHEM) then
+  IF(myState%enable_GOCART .AND. myState%enable_PCHEM .AND. RATsProviderNumber(1)==PCHEM ) THEN
    CALL MAPL_AddConnectivity ( GC, &
         SRC_NAME  = (/"OX"/), &
         DST_NAME  = (/"O3"/), &
         DST_ID = GOCART, SRC_ID = PCHEM, __RC__  )
   ENDIF
 
-  IF(myState%enable_GOCART .AND. myState%enable_STRATCHEM) then
+  IF(myState%enable_GOCART .AND. myState%enable_STRATCHEM .AND. RATsProviderNumber(1)==STRATCHEM ) then
    CALL MAPL_AddConnectivity ( GC, &
         SRC_NAME  = (/"O3CHEM"/), &
         DST_NAME  = (/"O3"/), &
         DST_ID = GOCART, SRC_ID = STRATCHEM, __RC__  )
   ENDIF
 
-  IF(myState%enable_ACHEM .AND. myState%enable_PCHEM) then
+  IF(myState%enable_ACHEM .AND. myState%enable_PCHEM .AND. RATsProviderNumber(1)==ACHEM ) then
    CALL MAPL_AddConnectivity ( GC, &
         SRC_NAME  = (/"O3"/), &
         DST_NAME  = (/"O3"/), &
@@ -732,10 +732,12 @@ contains
 
 ! ... For GOCART::CFC
 ! -------------------
+  IF( RATsProviderNumber(1)==GMICHEM ) then
    CALL MAPL_AddConnectivity ( GC, &
     SRC_NAME  = (/"OX"/), &
     DST_NAME  = (/"O3"/), &
     DST_ID=GOCART, SRC_ID=GMICHEM, __RC__)
+  END IF
   
   END IF
 
@@ -781,14 +783,12 @@ contains
   END IF
 
   ! GOCART needs ozone for CFC12 photolysis.
-  ! Only provide it from GEOS-Chem if PCHEM is not running.
-  IF(myState%enable_GOCART .AND. myState%enable_GEOSCHEM) then
-   IF ( .NOT. myState%enable_PCHEM ) THEN
-    CALL MAPL_AddConnectivity ( GC, &
-       SRC_NAME  = (/"TRC_O3"/), &
-       DST_NAME  = (/"O3"/), &
-       DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__  )
-   ENDIF
+  ! Provide from GEOS-Chem if it is the OX provider 
+  IF(myState%enable_GOCART .AND. myState%enable_GEOSCHEM .AND. RATsProviderNumber(1)==GEOSCHEM ) then
+   CALL MAPL_AddConnectivity ( GC, &
+      SRC_NAME  = (/"OX"/), &
+      DST_NAME  = (/"O3"/), &
+      DST_ID=GOCART, SRC_ID=GEOSCHEM, __RC__  )
   ENDIF
 
 ! GEOS-Chem import of CO2 

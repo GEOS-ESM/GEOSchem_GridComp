@@ -181,7 +181,7 @@
 #======================
 #  O3PPMV	                  | ppmv	   | xyz | C |    |   |   |	| ozone_volume_mixing_ratio_in_ppm
 #  OX_TEND	                  | kg kg-1 s-1    | xyz | C |    |   |   |	| tendency_of_odd_oxygen_mixing_ratio_due_to_chemistry
-  H2O_TEND                       | kg kg-1 s-1    | xyz | C |    |   |   |     | Tendency_of_water_vapor_mixing_ratio_due_to_chemistry
+#  H2O_TEND                       | kg kg-1 s-1    | xyz | C |    |   |   |     | Tendency_of_water_vapor_mixing_ratio_due_to_chemistry
 #===========	                  
 # GCHP only:	                  
 #===========	                  
@@ -250,12 +250,12 @@
  SO2AfterChem     |   vv-1     | xyz | C |    |   |   |     |      |    |    | S       | soluble_fraction_SO2
  KPPHvalue        |   1        | xyz | C |    |   |   |     |      |    |    | S       | HSAVE_for_KPP 
  SESQ_CARBDENS    | kgCm-3     | xyz | C |    |   |   |     |      |    |    | S       | sesquiterpene_conc_restart
- Iso_Hplus_coarse | molL-1     | xyz | C |    |   |   |     |0.0   |    |    | S       | Isorropia_H+_concentration_coarse
- Iso_Hplus_fine   | molL-1     | xyz | C |    |   |   |     |0.0   |    |    | S       | Isorropia_H+_concentration_fine
- Iso_sulfate      | molL-1     | xyz | C |    |   |   |     |0.0   |    |    | S       | Isorropia_sulfate_concentratio
- Iso_nitrate_coarse | molL-1     | xyz | C |    |   |   |     |0.0   |    |    | S       | Isorropia_Na+_concentration_coarse
- Iso_nitrate_fine | molL-1     | xyz | C |    |   |   |     |0.0   |    |    | S       | Isorropia_Na+_concentration_fine
- Iso_bisulfate    | molL-1     | xyz | C |    |   |   |     |0.0   |    |    | S       | Isorropia_bisulfate_concentration
+# Iso_Hplus_coarse | molL-1     | xyz | C |    |   |   |     |0.0   |    |    | S       | Isorropia_H+_concentration_coarse
+# Iso_Hplus_fine   | molL-1     | xyz | C |    |   |   |     |0.0   |    |    | S       | Isorropia_H+_concentration_fine
+# Iso_sulfate      | molL-1     | xyz | C |    |   |   |     |0.0   |    |    | S       | Isorropia_sulfate_concentratio
+# Iso_nitrate_coarse | molL-1     | xyz | C |    |   |   |     |0.0   |    |    | S       | Isorropia_Na+_concentration_coarse
+# Iso_nitrate_fine | molL-1     | xyz | C |    |   |   |     |0.0   |    |    | S       | Isorropia_Na+_concentration_fine
+# Iso_bisulfate    | molL-1     | xyz | C |    |   |   |     |0.0   |    |    | S       | Isorropia_bisulfate_concentration
 ### the following are not needed
 # Iso_acidpur      | molL-1     | xyz | C |    |   |   |     |0.0   |    |    | S       | Isorropia_acid
 # Iso_pH           |   1        | xyz | C |    |   |   |     |0.0   |    |    | S       | Isorropia_aerosol_pH
