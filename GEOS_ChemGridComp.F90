@@ -607,6 +607,7 @@ contains
  
   IF(myState%enable_GMICHEM .AND. myState%enable_ACHEM) then
    CALL MAPL_AddConnectivity ( GC, &
+!!! ---  note QJ073 is the right number for the old Mech only!
 !!! ---  note QJ075 is the right number for the new Mech only!
         SRC_NAME  = (/'O        ', 'OH       ', 'OX       ', 'QJ075    '/), &
         DST_NAME  = (/'O3P      ', 'OHSTRAT  ', 'O3       ', 'OCS_JRATE'/), &

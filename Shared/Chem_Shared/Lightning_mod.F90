@@ -456,9 +456,17 @@ subroutine getLightning (GC, ggState, CLOCK, &
      enddo
 !print*, 'count of TOPP >= 50000:', COUNT(CNV_TOPP >= 50000.)
 
+!    call MOIST_FlashRate(ggState, nc, LM, TS, CNV_TOPP, FROCEAN, &
+!         CNV_PRCP, CAPE_MERRA2, CNV_MFC, TH, PLE, ZLE, MOIST_flashFactor, &
+!         flashRate, __RC__ ) !TODO signify Dale Allen Old
+
+
+! FOR TESTING PURPOSES: use CAPE_PRECON
+
      call MOIST_FlashRate(ggState, nc, LM, TS, CNV_TOPP, FROCEAN, &
-          CNV_PRCP, CAPE_MERRA2, CNV_MFC, TH, PLE, ZLE, MOIST_flashFactor, &
+          CNV_PRCP, CAPE_PRECON, CNV_MFC, TH, PLE, ZLE, MOIST_flashFactor, &
           flashRate, __RC__ ) !TODO signify Dale Allen Old
+
 
 !print*, "min/max LFR MOIST: ", minval(flashRate), maxval(flashRate)
 
