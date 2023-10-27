@@ -1,7 +1,7 @@
 #-----------------------
 # Settings for Lightning
 #-----------------------
-flashSource: MOIST       # MOIST (default), FIT, HEMCO, LOPEZ
+flashSource: LOPEZ       # MOIST (default), FIT, HEMCO, LOPEZ
 
 # for FIT only:
 ratioGlobalFile: ExtData/g5chem/x/lightning/RatioGlobal.asc
@@ -20,9 +20,9 @@ MOIST_flashFactor_resvec_REPLAY: 2.0       2.0       2.0       1.84      1.84   
   FIT_flashFactor_resvec_REPLAY: 1.0       1.0       1.0       1.0       1.0       1.0 
 
 #  originally called 'alpha'
-LOPEZ_flashFactor_resvec_CTM:    37.5      37.5      37.5      37.5      37.5      37.5
-LOPEZ_flashFactor_resvec_FREE:   37.5      37.5      37.5      37.5      37.5      37.5
-LOPEZ_flashFactor_resvec_REPLAY: 37.5      37.5      37.5      37.5      37.5      37.5
+LOPEZ_flashFactor_resvec_CTM:    37.5      37.5      37.5      37.5    165300      37.5
+LOPEZ_flashFactor_resvec_FREE:   37.5      37.5      37.5      37.5    165300      37.5
+LOPEZ_flashFactor_resvec_REPLAY: 37.5      37.5      37.5      37.5    165300      37.5
 
 #  originally called 'otdLisScale'
 #  NOTE: testing (Nov2020) indicated c-90 value of 9.48e-3 might be better
@@ -30,9 +30,9 @@ HEMCO_flashFactor_resvec_CTM:    0.6       0.355     0.1       2.095e-2  7.024e-
 HEMCO_flashFactor_resvec_FREE:   0.6       0.355     0.1       2.095e-2  7.024e-3  1.4152e-3
 HEMCO_flashFactor_resvec_REPLAY: 0.6       0.355     0.1       2.095e-2  7.024e-3  1.4152e-3
 
-usePreconCape: TRUE
-
 # for NOx emissions
 lightNOampFactor: 1.07
 numberNOperFlash: 1.50e+26
 minDeepCloudTop: 7.0
+
+usePreconCape: TRUE
