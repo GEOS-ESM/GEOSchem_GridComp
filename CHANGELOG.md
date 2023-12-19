@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Connectivity from GMI to ACHEM (4 fields)
+- Connectivity from GMI to ACHEM (4 fields), requires GMI v1.2.0 or later to run
+- Slight improvement for lightning flash rate calculation (LOPEZ and MOIST schemes). See the option UsePreconCape in ChemEnv.rc . This involves new imports from MOIST: CAPE, BYNCY and INHB. **NOTE** THIS REQUIRES GEOSgcm_GridComp develop branch (as of 12/12/23).
 
 ### Removed
 
