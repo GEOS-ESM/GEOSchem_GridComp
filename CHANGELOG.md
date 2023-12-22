@@ -9,18 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- Connectivity from GMI to ACHEM (4 fields), requires GMI v1.2.0 or later to run
+- Slight improvement for lightning flash rate calculation (LOPEZ and MOIST schemes). See the option UsePreconCape in ChemEnv.rc . This involves new imports from MOIST: CAPE, BYNCY and INHB. **NOTE** THIS REQUIRES GEOSgcm_GridComp develop branch (as of 12/12/23).
+
 ### Removed
+
 ### Changed
+
+- Update CI to use Baselibs default from the CircleCI orb
+
 ### Fixed
 
-## [Unreleased - Peter.R.Colarco@nasa.gov] - 2023-12-22
-
-### Fixed 
-
 - Fixed CARMA to fix radiation callback
-- Fixed code in CARMA to properly check whether GMI or GOCART are providing
-  sulfur inputs
+- Fixed code in CARMA to properly check whether GMI or GOCART are providing sulfur inputs
 - Fixed CARMA/GOCART2G sulfate production tendency term
+- Fix a bug in GAAS where it gets the VM (global instead of the correct current)
+- Fix an issue in GAAS where the `aod_?` fields were not declared as `MAPL_RestartSkip` in the Registry file.
 
 ## [1.13.1] - 2023-04-24
 
