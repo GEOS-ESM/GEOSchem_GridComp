@@ -1,5 +1,11 @@
 AeroChem ChangeLog
 
+2023-12-22 <peter.r.colarco@nasa.gov> Bugfix to CARMA
+    * Added bug fix to CARMA to fix radiation callback
+    * Added code in CARMA to properly check whether GMI or GOCART are providing
+      sulfur inputs
+    * Updated CARMA/GOCART2G sulfate production tendency term
+
 2021-12-20 <michael.manyin@nasa.gov>  Feature added to v1.7.0
     * Bug fix for HEMCO run phases
     * Bug fix in Surface Area Density calculation in GMI and StratChem
