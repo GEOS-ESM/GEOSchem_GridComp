@@ -685,7 +685,7 @@ CONTAINS
      do igas = 1, reg%NGAS
       n = n1 + reg%NELEM*reg%NBIN - 1 + igas
       gasname = ESMF_UtilStringUpperCase(trim(reg%gasname(igas)))
-      if(trim(reg%sulfuric_acid_source) == 'tendency' .and. gasname == 'H2SO4') then
+      if(reg%sulfuric_acid_source(1:8) == 'tendency' .and. gasname == 'H2SO4') then
              qa(n)%data3d = qa(n)%data3d + pso4 * dtime
       endif
       if( gasname == 'HNO3') then  ! go to MMR
