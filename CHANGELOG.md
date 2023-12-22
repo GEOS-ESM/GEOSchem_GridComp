@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Fixed
 
+## [Unreleased - Peter.R.Colarco@nasa.gov] - 2023-12-22
+
+### Fixed 
+
+- Fixed CARMA to fix radiation callback
+- Fixed code in CARMA to properly check whether GMI or GOCART are providing
+  sulfur inputs
+- Fixed CARMA/GOCART2G sulfate production tendency term
+
 ## [1.13.1] - 2023-04-24
 
 ### Added
