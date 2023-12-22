@@ -468,7 +468,7 @@ contains
            
       if(myState%enable_GOCART2G) then
          CALL MAPL_AddConnectivity ( GC, &
-              SRC_NAME  = (/'PSO4TOT'/), &
+              SRC_NAME  = (/'PSO4'/), &
               DST_NAME  = (/'CARMA_PSO4TOT'/), &
               DST_ID=CARMA, SRC_ID=GOCART2G, __RC__)
       endif 
