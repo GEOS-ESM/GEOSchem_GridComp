@@ -66,6 +66,8 @@ module GEOS_ChemGridCompMod
      LOGICAL :: enable_TR
      LOGICAL :: enable_DNA
      LOGICAL :: enable_HEMCO
+     LOGICAL :: strict_child_timing    ! Call a barrier before and after each child is run
+                                       ! Only use this to test timings, not operationally
      INTEGER :: AERO_PROVIDER
      INTEGER :: RATS_PROVIDER          ! WARNING: May be multiple RATS_PROVIDERs 
   END TYPE GEOS_ChemGridComp
@@ -229,6 +231,8 @@ contains
     call ESMF_ConfigGetAttribute(myCF, myState%enable_TR,         Default=.FALSE., Label="ENABLE_TR:",          __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_DNA,        Default=.FALSE., Label="ENABLE_DNA:",         __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_HEMCO,      Default=.FALSE., Label="ENABLE_HEMCO:",       __RC__ )
+
+    call ESMF_ConfigGetAttribute(myCF, myState%strict_child_timing, Default=.FALSE., Label="strict_child_timing:", __RC__ )
 
 !ALT: valgrind flagged a memory leak.    myState%CF => myCF ! save for later
     call ESMF_ConfigDestroy(myCF, __RC__)
@@ -1095,6 +1099,9 @@ contains
   integer                               :: userRC
   character(len=ESMF_MAXSTR)            :: CHILD_NAME
   real, pointer                         :: th(:,:,:) => NULL()
+  type (GEOS_ChemGridComp), pointer     :: myState   ! private, that is
+  type (GEOS_ChemGridComp_Wrap)         :: wrap
+  type (ESMF_VM)                        :: VM
 
 !=============================================================================
 
@@ -1108,6 +1115,12 @@ contains
    VERIFY_(STATUS)
    call MAPL_Get(MAPL, RUNALARM = ALARM, RC=STATUS )
    VERIFY_(STATUS)
+
+!  Get my internal state
+!  ---------------------
+   call ESMF_UserCompGetInternalState(GC, 'GEOSchem_GridComp_State', WRAP, STATUS)
+   VERIFY_(STATUS)
+   myState => wrap%ptr
 
 !  Start timers
 !  ------------
@@ -1158,6 +1171,12 @@ contains
         ! exists. Also updated MAPL_Get to accept the output 
         ! argument NumRunPhases (ckeller, 09/10/2014)
         ! --------------------------------------------------------
+
+        IF ( myState%strict_child_timing ) THEN
+          call ESMF_VMGetCurrent ( VM=VM, __RC__ )
+          call ESMF_VMBarrier(VM, __RC__ )
+        END IF
+
         do I=1,NCHLD
           call ESMF_GridCompGet( GCS(I), NAME=CHILD_NAME, __RC__ )
           call MAPL_GetObjectFromGC(GCS(I), CHLD, __RC__ )
@@ -1171,7 +1190,12 @@ contains
                            phase = IPHASE, &
                           userRC = userRC, &
                                      __RC__ )
-            _ASSERT(userRC==ESMF_SUCCESS,'needs informative message')
+            _ASSERT(userRC==ESMF_SUCCESS,'Failed running the CHEM child '//trim(CHILD_NAME))
+
+            IF ( myState%strict_child_timing ) THEN
+              call ESMF_VMBarrier(VM, __RC__ )
+            END IF
+
             call MAPL_TimerOff(MAPL,trim(CHILD_NAME))
           endif
         enddo !I
@@ -1243,6 +1267,9 @@ contains
     integer                               :: NPHASE, IPHASE
     integer                               :: userRC
     character(len=ESMF_MAXSTR)            :: CHILD_NAME
+    type (GEOS_ChemGridComp), pointer     :: myState   ! private, that is
+    type (GEOS_ChemGridComp_Wrap)         :: wrap
+    type (ESMF_VM)                        :: VM
 !-------------------------------------------------------------------
 ! Begin... 
 
@@ -1253,6 +1280,12 @@ contains
    call MAPL_GetObjectFromGC ( GC, MAPL, RC=STATUS)
    VERIFY_(STATUS)
    call MAPL_Get(MAPL, RUNALARM = ALARM, __RC__ ) 
+
+!  Get my internal state
+!  ---------------------
+   call ESMF_UserCompGetInternalState(GC, 'GEOSchem_GridComp_State', WRAP, STATUS)
+   VERIFY_(STATUS)
+   myState => wrap%ptr
 
 !  Start timers
 !  ------------
@@ -1289,6 +1322,12 @@ contains
         ! do for every child: get child state, determine number of 
         ! run phases and phase to call, execute.
         ! --------------------------------------------------------
+
+        IF ( myState%strict_child_timing ) THEN
+          call ESMF_VMGetCurrent ( VM=VM, __RC__ )
+          call ESMF_VMBarrier(VM, __RC__ )
+        END IF
+
         do I=1,NCHLD
           call MAPL_GetObjectFromGC(GCS(I), CHLD, __RC__ )
           call ESMF_GridCompGet( GCS(I), NAME=CHILD_NAME, __RC__ )
@@ -1307,7 +1346,12 @@ contains
                          phase = IPHASE, &
                         userRC = userRC, &
                                    __RC__ )
-          _ASSERT(userRC==ESMF_SUCCESS,'needs informative message')
+          _ASSERT(userRC==ESMF_SUCCESS,'Failed running the CHEM child '//trim(CHILD_NAME))
+
+          IF ( myState%strict_child_timing ) THEN
+            call ESMF_VMBarrier(VM, __RC__ )
+          END IF
+
           call MAPL_TimerOff(MAPL,trim(CHILD_NAME))
         enddo !I
       endif
