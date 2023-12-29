@@ -132,7 +132,8 @@ contains
 ! ErrLog Variables
 
     __Iam__('SetServices')      ! NOTE: this macro declares STATUS
-                                ! ALSO: Never set Iam = TRIM(Iam) // suffix
+                                ! ALSO: Never set Iam to a string containing Iam
+                                !       in any routine that is run more than once
                                 !       because Iam is a SAVED varaible
     character(len=ESMF_MAXSTR) :: COMP_NAME
 
@@ -247,23 +248,23 @@ contains
 ! -----------------------------------------------------------------
     CHEMENV = MAPL_AddChild(GC, NAME='CHEMENV', SS=ChemEnv_SetServices, __RC__)
 
-    if (     myState%enable_HEMCO)       HEMCO = MAPL_AddChild(GC, NAME=       'HEMCO', SS=HEMCO_SetServices,     __RC__)
-    if (     myState%enable_PCHEM)       PCHEM = MAPL_AddChild(GC, NAME=       'PCHEM', SS=PChem_SetServices,     __RC__)
-    if (     myState%enable_ACHEM)       ACHEM = MAPL_AddChild(GC, NAME=       'ACHEM', SS=AChem_SetServices,     __RC__)
-    if (    myState%enable_GOCART)      GOCART = MAPL_AddChild(GC, NAME=      'GOCART', SS=GOCART_SetServices,    __RC__)
+    if (myState%enable_HEMCO     )       HEMCO = MAPL_AddChild(GC, NAME=       'HEMCO', SS=HEMCO_SetServices,     __RC__)
+    if (myState%enable_PCHEM     )       PCHEM = MAPL_AddChild(GC, NAME=       'PCHEM', SS=PChem_SetServices,     __RC__)
+    if (myState%enable_ACHEM     )       ACHEM = MAPL_AddChild(GC, NAME=       'ACHEM', SS=AChem_SetServices,     __RC__)
+    if (myState%enable_GOCART    )      GOCART = MAPL_AddChild(GC, NAME=      'GOCART', SS=GOCART_SetServices,    __RC__)
     if (myState%enable_GOCARTdata)  GOCARTdata = MAPL_AddChild(GC, NAME= 'GOCART.data', SS=GOCART_SetServices,    __RC__)
-    if (  myState%enable_GOCART2G)    GOCART2G = MAPL_AddChild(GC, NAME=    'GOCART2G', SS=GOCART2G_SetServices,  __RC__)
-    if (      myState%enable_GAAS)        GAAS = MAPL_AddChild(GC, NAME=        'GAAS', SS=GAAS_SetServices,      __RC__)
-    if (       myState%enable_H2O)         H2O = MAPL_AddChild(GC, NAME=         'H2O', SS=H2O_SetServices,       __RC__)
-    if ( myState%enable_STRATCHEM)   STRATCHEM = MAPL_AddChild(GC, NAME=   'STRATCHEM', SS=StratChem_SetServices, __RC__)
-    if (   myState%enable_GMICHEM)     GMICHEM = MAPL_AddChild(GC, NAME=     'GMICHEM', SS=GMI_SetServices,       __RC__)
-    if (     myState%enable_CARMA)       CARMA = MAPL_AddChild(GC, NAME=       'CARMA', SS=CARMA_SetServices,     __RC__)
-    if (  myState%enable_GEOSCHEM)    GEOSCHEM = MAPL_AddChild(GC, NAME='GEOSCHEMCHEM', SS=GCChem_SetServices,    __RC__)
-    if (    myState%enable_MATRIX)      MATRIX = MAPL_AddChild(GC, NAME=      'MATRIX', SS=MATRIX_SetServices,    __RC__)
-    if (       myState%enable_MAM)         MAM = MAPL_AddChild(GC, NAME=         'MAM', SS=MAM_SetServices,       __RC__)
-    if (   myState%enable_MAMdata)     MAMdata = MAPL_AddChild(GC, NAME=    'MAM.data', SS=MAM_SetServices,       __RC__)
-    if (        myState%enable_TR)          TR = MAPL_AddChild(GC, NAME=          'TR', SS=TR_SetServices,        __RC__)
-    if (       myState%enable_DNA)         DNA = MAPL_AddChild(GC, NAME=         'DNA', SS=DNA_SetServices,       __RC__)
+    if (myState%enable_GOCART2G  )    GOCART2G = MAPL_AddChild(GC, NAME=    'GOCART2G', SS=GOCART2G_SetServices,  __RC__)
+    if (myState%enable_GAAS      )        GAAS = MAPL_AddChild(GC, NAME=        'GAAS', SS=GAAS_SetServices,      __RC__)
+    if (myState%enable_H2O       )         H2O = MAPL_AddChild(GC, NAME=         'H2O', SS=H2O_SetServices,       __RC__)
+    if (myState%enable_STRATCHEM )   STRATCHEM = MAPL_AddChild(GC, NAME=   'STRATCHEM', SS=StratChem_SetServices, __RC__)
+    if (myState%enable_GMICHEM   )     GMICHEM = MAPL_AddChild(GC, NAME=     'GMICHEM', SS=GMI_SetServices,       __RC__)
+    if (myState%enable_CARMA     )       CARMA = MAPL_AddChild(GC, NAME=       'CARMA', SS=CARMA_SetServices,     __RC__)
+    if (myState%enable_GEOSCHEM  )    GEOSCHEM = MAPL_AddChild(GC, NAME='GEOSCHEMCHEM', SS=GCChem_SetServices,    __RC__)
+    if (myState%enable_MATRIX    )      MATRIX = MAPL_AddChild(GC, NAME=      'MATRIX', SS=MATRIX_SetServices,    __RC__)
+    if (myState%enable_MAM       )         MAM = MAPL_AddChild(GC, NAME=         'MAM', SS=MAM_SetServices,       __RC__)
+    if (myState%enable_MAMdata   )     MAMdata = MAPL_AddChild(GC, NAME=    'MAM.data', SS=MAM_SetServices,       __RC__)
+    if (myState%enable_TR        )          TR = MAPL_AddChild(GC, NAME=          'TR', SS=TR_SetServices,        __RC__)
+    if (myState%enable_DNA       )         DNA = MAPL_AddChild(GC, NAME=         'DNA', SS=DNA_SetServices,       __RC__)
 
 
 ! A container for the friendly tracers
@@ -324,6 +325,7 @@ contains
 
   IF(MAPL_AM_I_ROOT()) THEN
    PRINT *," "
+   PRINT *, TRIM(Iam)//": strict_child_timing =", myState%strict_child_timing
    PRINT *, TRIM(Iam)//": RATs Provider List" 
     DO i = 1, numRATs
      PRINT *,"  "//TRIM(speciesName(i))//": "//TRIM(RATsProviderName(i))
