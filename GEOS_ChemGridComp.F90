@@ -669,6 +669,15 @@ contains
          SHORT_NAME  = (/'AERO'/),                &
          DST_ID = GMICHEM, SRC_ID = GOCART2G, __RC__  )
 
+   IF(myState%enable_GOCART2G) &
+
+!  ... For GOCART::SU,NI
+!  ---------------------
+    CALL MAPL_AddConnectivity ( GC, &
+     SRC_NAME  = (/ "OH  ", "H2O2", "NO3 " /), &
+     DST_NAME  = (/ "GMI_OH  ", "GMI_H2O2", "GMI_NO3 " /), &
+     DST_ID=GOCART2G, SRC_ID=GMICHEM, __RC__)
+
   END IF
 
 ! GOCART.data <=> GMICHEM coupling ...
