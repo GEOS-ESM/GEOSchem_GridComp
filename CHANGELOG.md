@@ -7,9 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
 ### Added
+- Added Cloud-J subdirectory and CMake updates for Cloud-J repository
+
 ### Removed
+
 ### Changed
+- Removed variable WLI from HEMCO grid comp module for compatibility with HEMCO v3.8
+
 ### Fixed
 
 ## [1.10.2] - 2022-09-22
