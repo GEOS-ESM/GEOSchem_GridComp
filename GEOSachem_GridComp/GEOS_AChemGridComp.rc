@@ -26,7 +26,7 @@ voc_BiomassBurnFactor:  0.013   # 'g/g CO'
 voc_AnthroFactor:       0.069   # 'g/g CO'
 voc_MW:                 0.150   # 'kg/mol'
 soa_MW:                 0.161   # 'kg/mol'
-
+CO_BB_point:            /dev/null
 
 # Maximum allowed time step for integrating aqueous phase chemistry kinematics
 # ----------------------------------------------------------------------------

@@ -741,7 +741,7 @@ contains
 !
 ! !INTERFACE:
 
-   subroutine VOC_Emissions(delp,          &
+   subroutine VOC_Emissions(delp, zle,         &
                             voc_BiomassBurnFactor,  &
 			    voc_AnthroFactor,  &
 			    co_biomass_voc, &
@@ -750,6 +750,11 @@ contains
 			    voc_MW, &
                             q, qb,         &
                             cdt,           &
+                            nPts, pEmis,   &
+                            pBot, pTop, p_i, p_j, &
+                            pStart, pEnd, &
+                            nymd, nhms, &
+                            cell_area, &
                             rc)
 ! !USES:
 
@@ -760,6 +765,7 @@ contains
 ! !INPUT PARAMETERS:
 
    real, dimension(:,:,:), intent(in)    :: delp            ! pressure level thickness, Pa
+   real, dimension(:,:,0:),intent(in)    :: zle             ! edge heights, m
 
    real, dimension(:,:),   intent(in)    :: co_biomass_voc  ! CO biomass burning emissions, kg m-2 s-1
    real, dimension(:,:),   intent(in)    :: co_bf_voc       ! CO biofuel emissions, kg m-2 s-1
@@ -771,8 +777,14 @@ contains
    
    real, intent(in)                      :: cdt             ! time step
 
+   integer, intent(in)                   :: nPts
+   real,    pointer, dimension(:)        :: pBot, pTop, pEmis
+   integer, pointer, dimension(:)        :: pStart, pEnd
+   integer, pointer, dimension(:)        :: p_i, p_j
+   integer, intent(in)                   :: nymd                ! current date
+   integer, intent(in)                   :: nhms                ! current time
+   real, dimension(:,:),   intent(in)    :: cell_area           !
 
-! !OUTPUT PARAMETERS:
    real, dimension(:,:,:), intent(inout) :: q               ! VOC mixing ratio, mol mol-1 (anthro)
    real, dimension(:,:,:), intent(inout) :: qb              ! VOC mixing ratio, mol mol-1 (biob)
    integer, intent(out)                  :: rc              ! return code   
@@ -791,15 +803,106 @@ contains
    real                                  :: f
    real, allocatable, dimension(:,:)     :: dvoc
    integer                               :: i1, i2, j1, j2, k1, km
+   integer                               :: i, j, k, it
+   real                                  :: COsource, deltaCO
+
+   real, allocatable, dimension(:,:)     :: z0
+
+   real                                  :: hup, hlow, dz_emis
+   real                                  :: dz, z1
+
+
+! !OUTPUT PARAMETERS:
    
    rc = 0
 
    i1 = lbound(q, 1); i2 = ubound(q, 1)
    j1 = lbound(q, 2); j2 = ubound(q, 2)
    k1 = lbound(q, 3); km = ubound(q, 3)
+
+! The scaling factor here results in a change in the volume mixing ratio of VOC
+  f =  (mw_air / voc_MW) * g_earth * cdt
    
-   ! The scaling here results in a change in the volume mixing ratio of VOC
-   f =  (mw_air / voc_MW) * g_earth * cdt
+!  Point source of CO used to add to BB VOC tracer
+   allocate(z0(i1:i2,j1:j2), __STAT__)
+   z0 = zle(:,:,km)
+   if (nPts > 0) then
+
+       do it = 1, nPts
+
+           i = p_i(it)
+           j = p_j(it)
+         
+           ! skip this point?
+           if ((i < 1) .or. (j < 1)) cycle ! point not in sub-domain
+
+           ! check time against time range of inject
+           if (nhms < pStart(it) .or. nhms >= pEnd(it)) cycle
+
+           COsource = 0.0
+
+           ! emissions per volcano
+           if (cell_area(i,j) > 1.0) then                 ! omit volcanos in very small grid boxes
+               COsource = pEmis(it) / cell_area(i,j)    ! to 'kg(CO) s-1 m-2'
+               COsource = max(COsource, tiny(COsource))
+           endif
+
+           ! distribute in the vertical
+           hup  = pTop(it)
+           hlow = pBot(it)
+
+!           ! diagnostic - sum of volcanos
+!           if (hup .eq. hlow) then
+!               emiss_volcanic_nexp(i,j) = emiss_volcanic_nexp(i,j) + COsource
+!           else
+!               emiss_volcanic_expl(i,j) = emiss_volcanic_expl(i,j) + COsource
+!           end if
+
+           dz_emis = hup - hlow
+
+           VERTICAL_LEVELS: do k = km, 1, -1
+               z1 = zle(i,j,k-1)
+               dz = z1 - z0(i,j)
+               deltaCO = 0.0
+
+               ! volcano is above this level
+               if(z1 .lt. hlow) then
+                   z0(i,j) = z1
+                   cycle
+               end if
+
+               ! volcano is below this level
+               if (z0(i,j) .gt. hup) then
+                   z0(i,j) = z1
+                   cycle
+               end if
+
+               ! source is in this level
+               if ((k .eq. km .and. z0(i,j) .gt. hup) .or. &      ! below surface
+                   (z0(i,j) .le. hlow .and. z1 .ge. hup))  then   ! in level
+                   deltaCO = COsource
+
+               ! source only partly in level                     ! cell:
+               else if (z0(i,j) .lt. hlow .and. z1 .lt. hup) then ! has bottom of cloud
+                   deltaCO = (z1 - hlow)/dz_emis * COsource
+ 
+               else if (z0(i,j) .gt. hlow .and. z1 .gt. hup) then ! has top of cloud
+                   deltaCO = (hup - z0(i,j))/dz_emis * COsource
+ 
+               else                                               ! is filled with cloud
+                   deltaCO = dz/dz_emis * COsource
+               end if
+
+               z0(i,j) = z1
+
+               qb(i,j,k) = qb(i,j,k) + f * deltaCO * voc_BiomassBurnFactor / delp(i,j,k)
+           end do VERTICAL_LEVELS
+       end do
+
+   endif
+
+
+!  Apply fluxes   
    allocate(dvoc(i1:i2,j1:j2), __STAT__)
    ! Anthropogenic + Biofuel
    dvoc = f * (co_bf_voc + co_fs_voc) * voc_AnthroFactor / delp(:,:,km)
@@ -808,6 +911,7 @@ contains
    dvoc = f *  co_biomass_voc * voc_BiomassBurnFactor / delp(:,:,km)
    qb(:,:,km) = qb(:,:,km) + dvoc
    deallocate(dvoc, __STAT__)
+   deallocate(z0,   __STAT__)
    
    end subroutine VOC_Emissions
 !

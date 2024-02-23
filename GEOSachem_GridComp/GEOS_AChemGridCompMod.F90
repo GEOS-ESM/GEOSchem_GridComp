@@ -93,6 +93,7 @@
      integer             :: nymd_volcanic_emiss       ! nYMD of last volcanic emission update
      character(len=1024) :: volcanic_emiss_file       ! resource file with volcanic emissions data
      integer             :: n_volcanoes = 0           ! point wise location, amount, elevation, plume height, cell indexes
+     logical             :: do_volc_emissions = .true.
      real, pointer, dimension(:)    :: volc_lat   => null(), &
                                        volc_lon   => null(), &
                                        volc_SO2   => null(), &
@@ -102,6 +103,22 @@
                                        volc_end   => null(), &
                                        volc_i     => null(), &
                                        volc_j     => null()
+
+!    Workspace for point emissions of CO for BB SOA production
+     logical                         :: do_co_point_emissions = .true.
+     integer                         :: nymd_co_emiss
+     character(len=255)              :: point_co_emissions_srcfilen   ! filename for pointwise emissions
+     integer                         :: nPtsCO = -1
+     integer, pointer, dimension(:)  :: pstart => null(), &
+                                        pend   => null(), &
+                                        p_i    => null(), &
+                                        p_j    => null()
+     real, pointer, dimension(:)     :: pLat   => null(), &
+                                        pLon   => null(), &
+                                        pBot   => null(), &
+                                        pTop   => null(), &
+                                        pEmis  => null()
+
 
      real, pointer, dimension(:,:,:) :: h2o2          ! buffer for H2O2 that is being replenished every 3 hours
                                                       ! if it is from climatology
@@ -189,7 +206,12 @@ contains
 
     ! volcanic emissions
     call ESMF_ConfigGetAttribute(self%CF, self%volcanic_emiss_file, Label='volcanoes:', default='/dev/null', __RC__)
+     if ( (index(self%volcanic_emiss_file,'/dev/null')>0) ) self%do_volc_emissions=.false.
 
+    ! CO point emissions for BB SOA production
+    call ESMF_ConfigGetAttribute(self%CF, self%point_co_emissions_srcfilen, Label='CO_BB_point:', default='/dev/null', __RC__)
+     if ( (index(self%point_co_emissions_srcfilen,'/dev/null')>0) ) self%do_co_point_emissions=.false.
+    
     ! heights of aviation layers
     self%aviation_layers = 0.0
     call ESMF_ConfigFindLabel(self%CF, Label='aviation_vertical_layers:', __RC__)
@@ -1005,17 +1027,16 @@ contains
 
 !  Initialize volcanic emissions timestamp
 !  ---------------------------------------
-   self%nymd_volcanic_emiss = -1
+   call initializePointEmissions ( self%nymd_volcanic_emiss, self%volc_lat, self%volc_lon, &
+                                   self%volc_SO2, self%volc_elev, self%volc_cloud, &
+                                   self%volc_start,self%volc_end, self%volc_i, self%volc_j)
 
-   nullify(self%volc_lat)
-   nullify(self%volc_lon)
-   nullify(self%volc_SO2)
-   nullify(self%volc_elev)
-   nullify(self%volc_cloud)
-   nullify(self%volc_start)
-   nullify(self%volc_end)
-   nullify(self%volc_i)
-   nullify(self%volc_j)
+!  Initialize CO BB point emissions timestamp
+!  ------------------------------------------
+   call initializePointEmissions ( self%nymd_co_emiss, self%plat, self%plon, &
+                                   self%pemis, self%pbot, self%ptop, &
+                                   self%pstart,self%pend, self%p_i, self%p_j)
+   if(MAPL_AM_I_ROOT()) print *, 'ACHEM: HERE1'
 
    INIT_H2O2: if (self%aqu_phase_chem) then
       ! Initialize the internal copy of H2O2
@@ -1484,36 +1505,23 @@ contains
    UPDATE_VOLCANIC_EMISSIONS: if (self%mam_chem) then
 !  Update volcanic emissions if necessary (daily)
 !  ----------------------------------------------
-   if(self%nymd_volcanic_emiss .ne. nymd) then
-       self%nymd_volcanic_emiss = nymd
-
-       call GetVolcDailyTables(self%nymd_volcanic_emiss,       &
-                               trim(self%volcanic_emiss_file), &
-                               self%n_volcanoes,               &
-                               self%volc_lat,                  &
-                               self%volc_lon,                  &
-                               self%volc_elev,                 &
-                               self%volc_cloud,                &
-                               self%volc_SO2,                  &
-                               self%volc_start,                &
-                               self%volc_end,                  &
-                               __RC__)
-
-       if (self%n_volcanoes > 0) then
-           if (associated(self%volc_i)) deallocate(self%volc_i, __STAT__)
-           allocate(self%volc_i(self%n_volcanoes), __STAT__)
-
-           if (associated(self%volc_j)) deallocate(self%volc_j, __STAT__)
-           allocate(self%volc_j(self%n_volcanoes), __STAT__)
-
-           ! get indices for volcanic emissions
-           call MAPL_GetHorzIJIndex(self%n_volcanoes,                      &
-                                    self%volc_i, self%volc_j,              &
-                                    grid = self%grid,                      &
-                                    lon = self%volc_lon * (MAPL_PI/180.0), &
-                                    lat = self%volc_lat * (MAPL_PI/180.0), &
-                                    __RC__)
-       end if
+   if(self%nymd_volcanic_emiss .ne. nymd .and. self%do_volc_emissions) then
+      self%nymd_volcanic_emiss = nymd
+      call updatePointEmissions (self%nymd_volcanic_emiss,       &
+                                 self%grid,                      &
+                                 trim(self%volcanic_emiss_file), &
+                                 self%n_volcanoes,               &
+                                 self%volc_lat,                  &
+                                 self%volc_lon,                  &
+                                 self%volc_elev,                 &
+                                 self%volc_cloud,                &
+                                 self%volc_SO2,                  &
+                                 self%volc_start,                &
+                                 self%volc_end,                  &
+                                 self%volc_i,                    &
+                                 self%volc_j,                    &
+                                 'volcano::',                    &
+                                 __RC__)
    end if
    end if UPDATE_VOLCANIC_EMISSIONS
 
@@ -1765,16 +1773,33 @@ contains
 
    UPDATE_VOC_EMISSIONS: if (self%voc_chem) then
 
-      call VOC_Emissions(delp,                       &
-                         self%voc_BiomassBurnFactor, &
-                         self%voc_AnthroFactor,      &
-                         co_biomass_voc,             &
-                         co_bf_voc,                  &
-                         co_fs_voc,                  &
-                         self%voc_MW,                &
-                         q_VOCanth, q_VOCbiob,       &
-                         cdt,                        &
-                         rc)
+   if(MAPL_AM_I_ROOT()) print *, 'ACHEM: HERE2'
+   if(self%nymd_co_emiss .ne. nymd .and. self%do_co_point_emissions) then
+      self%nymd_co_emiss = nymd
+      call updatePointEmissions (self%nymd_co_emiss, self%grid,          &
+                                 trim(self%point_co_emissions_srcfilen), &
+                                 self%nPtsCO, self%plat, self%plon,      &
+                                 self%pBot, self%pTop, self%pEmis,       &
+                                 self%pStart, self%pEnd,                 &
+                                 self%p_i, self%p_j, 'CO::', __RC__)
+   if(MAPL_AM_I_ROOT()) print *, 'ACHEM: HERE3'
+   end if
+   call VOC_Emissions(delp, zle,                     &
+                      self%voc_BiomassBurnFactor, &
+                      self%voc_AnthroFactor,      &
+                      co_biomass_voc,             &
+                      co_bf_voc,                  &
+                      co_fs_voc,                  &
+                      self%voc_MW,                &
+                      q_VOCanth, q_VOCbiob,       &
+                      cdt,                        &
+                      self%nPtsCO, self%pEmis,    &
+                      self%pBot, self%pTop,       &
+                      self%p_i, self%p_j,         &
+                      self%pStart, self%pEnd,     &
+                      nymd, nhms,                 &
+                      cell_area,                  &
+                      rc)
 
    end if UPDATE_VOC_EMISSIONS
 
@@ -2508,16 +2533,14 @@ contains
    call extract_(GC, CLOCK, self, GRID, CF, i1, i2, im, j1, j2, jm, km, nymd, nhms, cdt, __RC__)
 
 
-!  Free memory used to hold point volcanic emissions
-!  -------------------------------------------------
-   if (associated(self%volc_lat))    deallocate(self%volc_lat,   __STAT__)
-   if (associated(self%volc_lon))    deallocate(self%volc_lon,   __STAT__)
-   if (associated(self%volc_SO2))    deallocate(self%volc_SO2,   __STAT__)
-   if (associated(self%volc_elev))   deallocate(self%volc_elev,  __STAT__)
-   if (associated(self%volc_cloud))  deallocate(self%volc_cloud, __STAT__)
-   if (associated(self%volc_i))      deallocate(self%volc_i,     __STAT__)
-   if (associated(self%volc_j))      deallocate(self%volc_j,     __STAT__)
-
+!  Free memory used to hold point volcanic emissions and point emissions
+!  ---------------------------------------------------------------------
+   call finalizePointEmissions ( self%volc_lat, self%volc_lon, &
+                                 self%volc_SO2, self%volc_elev, self%volc_cloud, &
+                                 self%volc_start,self%volc_end, self%volc_i, self%volc_j)
+   call finalizePointEmissions ( self%plat, self%plon, &
+                                 self%pemis, self%pbot, self%ptop, &
+                                 self%pstart,self%pend, self%p_i, self%p_j)
 
 !  Free memory used to hold the internal copy of H2O2
 !  --------------------------------------------------
@@ -2649,20 +2672,20 @@ contains
 !-------------------------------------------------------------------------
 !BOP
 !
-! !IROUTINE:  GetVolcDailyTables - Get pointwise SO2 and altitude of volcanoes
-!                                  from a daily file database
+! !IROUTINE:  GetDailyTables - Get pointwise emissions from a daily file database
 
 !
 ! !INTERFACE:
 !
 
-   subroutine GetVolcDailyTables(nymd, volc_emiss_file,   &
+   subroutine GetDailyTables    (nymd, emiss_file,        &
                                        nVolcPts,          &
                                        vLat, vLon,        &
-                                       vElev,             &
-                                       vCloud,            &
-                                       vSO2,              &
+                                       vBot,              &
+                                       vTop,              &
+                                       vEmis,             &
                                        vStart, vEnd,      &
+                                       labelStr,          &
                                        rc)
 
 ! !USES:
@@ -2675,11 +2698,11 @@ contains
 !  volcanic emissions (as points, per volcano).
 
    integer, intent(in)            :: nymd
-   character(len=*), intent(in)   :: volc_emiss_file
+   character(len=*), intent(in)   :: emiss_file
    integer, intent(out)           :: nVolcPts
-   real, pointer, dimension(:)    :: vLat, vLon, vElev, vCloud, vSO2
+   real, pointer, dimension(:)    :: vLat, vLon, vBot, vTop, vEmis
    integer, pointer, dimension(:) :: vStart, vEnd
-
+   character(len=*), intent(in)   :: labelStr  ! string label in emission file
    integer, intent(out)           :: rc
 
    ! local
@@ -2689,8 +2712,9 @@ contains
    character(len=1024)            :: fname
    type(ESMF_Config)              :: cf
    real, pointer, dimension(:)    :: vData
-
-                     __Iam__('GetVolcDailyTables')
+   real                           :: fscale = 1.
+   logical                        :: fileExists
+                     __Iam__('GetDailyTables')
 
    STATUS = ESMF_SUCCESS
 
@@ -2698,9 +2722,9 @@ contains
 !  to get the correct number of elements
    if (associated(vLat))   deallocate(vLat,   __STAT__)
    if (associated(vLon))   deallocate(vLon,   __STAT__)
-   if (associated(vSO2))   deallocate(vSO2,   __STAT__)
-   if (associated(vElev))  deallocate(vElev,  __STAT__)
-   if (associated(vCloud)) deallocate(vCloud, __STAT__)
+   if (associated(vEmis))  deallocate(vEmis,  __STAT__)
+   if (associated(vBot))   deallocate(vBot,   __STAT__)
+   if (associated(vTop))   deallocate(vTop,   __STAT__)
    if (associated(vStart)) deallocate(vStart, __STAT__)
    if (associated(vEnd))   deallocate(vEnd,   __STAT__)
 
@@ -2710,35 +2734,44 @@ contains
 !  --------------------------------
 !  Note: Volcanic emissions in these files are in mass of sulfur
 !        Returned volcanic emissions (vSO2) are in mass of sulfur dioxide
-
+   
+   if(trim(labelStr) == 'volcano::') fscale = mw_SO2 / mw_S
+   
    nymd_volc = nymd
    nhms_volc = 120000
+   call StrTemplate(fname, trim(emiss_file), xid='unknown', nymd=nymd_volc, nhms=nhms_volc)
+if(MAPL_AM_I_ROOT()) print *, 'ACHEM: HERE2.55', nymd_volc, fname, emiss_file
 
-   call StrTemplate(fname, trim(volc_emiss_file), xid='unknown', nymd=nymd_volc, nhms=nhms_volc)
+   inquire( file=fname, exist=fileExists)
+   if (fileExists) then
 
-   cf = ESMF_ConfigCreate()
-   call ESMF_ConfigLoadFile(cf, fileName=trim(fname), __RC__)
-   call ESMF_ConfigGetDim(cf, nLines, nCols, LABEL='volcano::', __RC__)
+    cf = ESMF_ConfigCreate()
+    call ESMF_ConfigLoadFile(cf, fileName=trim(fname), __RC__)
+    call ESMF_ConfigGetDim(cf, nLines, nCols, LABEL=trim(labelStr), __RC__)
 
-   nVolcPts = nLines
+    nVolcPts = nLines
+   else if (.not. fileExists) then
+    nVolcPts = -1
+    if(MAPL_AM_I_ROOT()) print *, 'ACHEM:Point CO file does not exist; proceed'
+   endif
 
-   PARSE_DATA: if (nVolcPts > 0) then
-       call ESMF_ConfigFindLabel(cf, 'volcano::', __RC__)
+    PARSE_DATA: if (nVolcPts > 0) then
+        call ESMF_ConfigFindLabel(cf, trim(labelStr), __RC__)
 
-       allocate(vData(nCols),   __STAT__)
+        allocate(vData(nCols),   __STAT__)
 
-       allocate(vLat(nLines),   __STAT__)
-       allocate(vLon(nLines),   __STAT__)
-       allocate(vSO2(nLines),   __STAT__)
-       allocate(vElev(nLines),  __STAT__)
-       allocate(vStart(nLines), __STAT__)
-       allocate(vEnd(nLines),   __STAT__)
-       allocate(vCloud(nLines), __STAT__)
+        allocate(vLat(nLines),   __STAT__)
+        allocate(vLon(nLines),   __STAT__)
+        allocate(vEmis(nLines),  __STAT__)
+        allocate(vBot(nLines),   __STAT__)
+        allocate(vStart(nLines), __STAT__)
+        allocate(vEnd(nLines),   __STAT__)
+        allocate(vTop(nLines),   __STAT__)
 
-       vStart = -1
-       vEnd   = -1
+        vStart = -1
+        vEnd   = -1
 
-       do i = 1, nLines
+        do i = 1, nLines
            call ESMF_ConfigNextLine(cf, __RC__)
 
            do j = 1, nCols
@@ -2747,25 +2780,123 @@ contains
 
            vLat(i)    = vData(1)
            vLon(i)    = vData(2)
-           vSO2(i)    = vData(3) * mw_SO2 / mw_S
-           vElev(i)   = vData(4)
-           vCloud(i)  = vData(5)
+           vEmis(i)   = vData(3) * fscale
+           vBot(i)    = vData(4)
+           vTop(i)    = vData(5)
 
            if(nCols >= 6) vStart(i)  = vData(6)
            if(nCols >= 7) vEnd(i)    = vData(7)
-       end do
+        end do
 
-       where(vStart < 0) vStart = 000000
+        where(vStart < 0) vStart = 000000
        where(vEnd   < 0) vEnd   = 240000
-   end if PARSE_DATA
 
-   call ESMF_ConfigDestroy(cf, __RC__)
+       call ESMF_ConfigDestroy(cf, __RC__)
+       deallocate(vData, __STAT__)
 
-   deallocate(vData, __STAT__)
+    end if PARSE_DATA
 
    RETURN_(ESMF_SUCCESS)
 
- end subroutine GetVolcDailyTables
+ end subroutine GetDailyTables
+
+
+ subroutine initializePointEmissions (nymd, plat, plon, pemis, pbot, ptop, &
+                                        pstart, pend, p_i, p_j)
+
+   integer :: nymd
+   real, pointer, dimension(:)    :: plat, plon, pemis, pbot, ptop
+   integer, pointer, dimension(:) :: pstart, pend, p_i, p_j
+   integer :: rc
+                        __Iam__('initializePointEmissions')
+
+   nymd = -1
+   nullify(plat)
+   nullify(plon)
+   nullify(pemis)
+   nullify(pbot)
+   nullify(ptop)
+   nullify(pstart)
+   nullify(pend)
+   nullify(p_i)
+   nullify(p_j)
+
+   RETURN_(ESMF_SUCCESS)
+ end subroutine initializePointEmissions
+
+ subroutine finalizePointEmissions (plat, plon, pemis, pbot, ptop, &
+                                    pstart, pend, p_i, p_j)
+
+   real, pointer, dimension(:)    :: plat, plon, pemis, pbot, ptop
+   integer, pointer, dimension(:) :: pstart, pend, p_i, p_j
+   integer :: rc
+                        __Iam__('finalizePointEmissions')
+
+   if (associated(plat))  deallocate(plat,  __STAT__)
+   if (associated(plon))  deallocate(plon,  __STAT__)
+   if (associated(pemis)) deallocate(pemis, __STAT__)
+   if (associated(pbot))  deallocate(pbot, __STAT__)
+   if (associated(ptop))  deallocate(ptop,  __STAT__)
+   if (associated(p_i))   deallocate(p_i,   __STAT__)
+   if (associated(p_j))   deallocate(p_j,   __STAT__)
+   RETURN_(ESMF_SUCCESS)
+ end subroutine finalizePointEmissions
+
+
+ subroutine updatePointEmissions (  nymd, grid, emiss_file,  &
+                                    nPts,              &
+                                    pLat, pLon,        &
+                                    pBot,              &
+                                    pTop,              &
+                                    pEmis,             &
+                                    pStart, pEnd,      &
+                                    p_i, p_j,          &
+                                    labelStr,          &
+                                    rc)
+
+! !USES:
+
+   implicit none
+
+
+!  Read Point Emissions and find local grid boxes
+
+   integer, intent(in)            :: nymd
+   type(ESMF_Grid)                :: grid                      ! Grid
+   character(len=*), intent(in)   :: emiss_file
+   integer, intent(out)           :: nPts
+   real, pointer, dimension(:)    :: pLat, pLon, pBot, pTop, pEmis
+   integer, pointer, dimension(:) :: pStart, pEnd, p_i, p_j
+   character(len=*), intent(in)   :: labelStr  ! string label in emission file
+   integer, intent(out)           :: rc
+
+                      __Iam__('updatePointEmissions')
+
+   STATUS = ESMF_SUCCESS
+   if(MAPL_AM_I_ROOT()) print *, 'ACHEM: HERE2.5'
+   if(MAPL_AM_I_ROOT()) print *, nymd, trim(emiss_file), trim(labelStr)
+   call GetDailyTables    (nymd, trim(emiss_file), nPts, pLat, pLon,       &
+                           pBot, pTop, pEmis, pStart, pEnd, trim(labelStr), __RC__)
+   if(MAPL_AM_I_ROOT()) print *, 'ACHEM: HERE2.8'
+   if (nPts > 0) then
+           if (associated(p_i)) deallocate(p_i, __STAT__)
+           allocate(p_i(nPts), __STAT__)
+
+           if (associated(p_j)) deallocate(p_j, __STAT__)
+           allocate(p_j(nPts), __STAT__)
+
+           ! get indices for volcanic emissions
+           call MAPL_GetHorzIJIndex(nPts,                      &
+                                    p_i, p_j,              &
+                                    grid = grid,                      &
+                                    lon = pLon * (MAPL_PI/180.0), &
+                                    lat = pLat * (MAPL_PI/180.0), &
+                                    __RC__)
+    end if
+
+    if(MAPL_AM_I_ROOT()) print *, 'ACHEM: HERE2.9'
+    RETURN_(ESMF_SUCCESS)
+  end subroutine updatePointEmissions
 
 
  subroutine gas_chemistry(delp,          &
