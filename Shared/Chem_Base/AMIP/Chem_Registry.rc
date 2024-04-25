@@ -45,7 +45,7 @@ doing_NI:  no   # &YesNo Include nitrate?
 doing_Rn:  no   # &YesNo include Radon?
 doing_CH4: no   # &YesNo include Methane?
 doing_PC:  yes  # parameterized chemistry (GEOS-5)
-doing_OCS: no   # ACHEM chemistry (OCS)
+doing_OCS: yes  # ACHEM chemistry (OCS)
 
 # You can select the number of bins (e.g., particle size)
 # for each of the constituents. Note nbins>1 may not be
