@@ -130,6 +130,7 @@ module GEOS_PChemGridCompMod
   type T_Pchem_STATE
      private
      integer                             :: NLATS, NLEVS
+     integer                             :: INDX1, INDX2
      real, pointer, dimension(:)         :: LATS => null()
      real, pointer, dimension(:)         :: LEVS => null()
      real, pointer, dimension(:,:,:,:,:) :: MNPL => null() ! Production rates and loss frequencies
@@ -153,7 +154,6 @@ module GEOS_PChemGridCompMod
      INTEGER                             :: endClimYear
 
      INTEGER                             :: dayOfMonth = -1
-     type(ESMF_Time)                     :: lastTimeHere
   end type T_Pchem_STATE
 
   type Pchem_WRAP
@@ -732,9 +732,7 @@ contains
     type (T_Pchem_STATE    ), pointer       :: Pchem_STATE 
     type (Pchem_wrap)                       :: WRAP
     type (ESMF_DELayout)                    :: layout
-    type(ESMF_Time)                         :: PRVMONTH
     type(ESMF_State)                        :: INTERNAL
-    type(ESMF_Alarm)                        :: PCHEM_ALARM
     type(ESMF_VM)                           :: VM
 
     character(len=ESMF_MAXSTR)              :: PCHEMFILE
@@ -988,27 +986,12 @@ contains
        VERIFY_(STATUS)
        PCHEM_STATE%H2OlsRate = Z'7FA00000'
     ENDIF
-
-! Setting the alarm to ringing will reinitialize all data during first run
-!-------------------------------------------------------------------------
-
-    call ESMF_TimeSet(PRVMONTH,YY=1869,MM=1,DD=1, H=0, M=0, S=0, RC=STATUS)
-    VERIFY_(STATUS)
-    PCHEM_ALARM = ESMF_AlarmCreate(name='REFRESH_PCHEM_SPECIES', clock=CLOCK,      &
-                                ringTime=PRVMONTH, sticky=.false.,     RC=STATUS)
-    VERIFY_(STATUS)
-    call ESMF_AlarmRingerOn(PCHEM_ALARM, rc=status)
-    VERIFY_(STATUS)
-
     END IF NeedRATsFile
-
-
 
 ! Time
 !-----
-    CALL ESMF_ClockGet(CLOCK, currTime=PCHEM_STATE%lastTimeHere, RC=STATUS)
-    VERIFY_(STATUS)
-
+    PCHEM_STATE%INDX1 = -999
+    PCHEM_STATE%INDX2 = -999
 
 #ifdef PRINT_STATES
 
@@ -1086,7 +1069,6 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
   type (Pchem_wrap)                 :: WRAP
   type (MAPL_SunOrbit)              :: ORBIT
   type (ESMF_Time)                  :: CurrTime, dummyTIME
-  type(ESMF_Alarm)                  :: PCHEM_ALARM
   type(ESMF_Alarm)                  :: RUN_ALARM
   type(ESMF_TimeInterval)           :: RingInterval
   type(ESMF_VM)                     :: VM
@@ -1099,6 +1081,7 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
   integer                           :: YY, MM, DD
   integer                           :: CCYY
   integer                           :: start(3), cnt(3), UNIT, K, varid, comm, info
+  logical                           :: timeToUpdate
   real                              :: FAC
   real                              :: DT
 
@@ -1305,19 +1288,13 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
        IF(INDX2 == N+1) INDX2 = N-11
        IF(YY > PCHEM_STATE%endClimYear .AND. INDX1 == N-12) INDX1 = N
 
-       call ESMF_ClockGetAlarm(CLOCK,'REFRESH_PCHEM_SPECIES', PCHEM_ALARM,RC=STATUS)
-       VERIFY_(STATUS)
+       timeToUpdate = .false.
+       if (PCHEM_STATE%INDX1 /= INDX1 .or. PCHEM_STATE%INDX2 /= INDX2) timeToUpdate = .true.
 
-       if (currTime < PCHEM_STATE%lastTimeHere) then
-          ! this should have not happen, unless we are doing replay and rewind clock
-          call ESMF_AlarmRingerOn(PCHEM_ALARM, RC=STATUS)
-          VERIFY_(STATUS)
-       end if
+       if ( timeToUpdate ) then
+          PCHEM_STATE%INDX1 = INDX1
+          PCHEM_STATE%INDX2 = INDX2
 
-       if ( ESMF_AlarmIsRinging( PCHEM_ALARM ) ) then
-
-          call ESMF_AlarmRingerOff(PCHEM_ALARM, RC=STATUS)
-          VERIFY_(STATUS)
 
           call MAPL_TimerOff(MAPL,"RUN"  )
           call MAPL_TimerOn (MAPL,"-Read Species"  )
@@ -1327,7 +1304,8 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
           call ESMF_VMGet(vm, mpiCommunicator=comm, rc=STATUS)
           VERIFY_(STATUS)
 
-          if ( MAPL_am_I_root() ) then
+          if ( MAPL_am_I_root(vm) ) then
+             print *,'DEBUG: Reading ',trim(PChemFile)
              STATUS = NF90_OPEN(trim(PCHEMFILE),NF90_NOWRITE,UNIT)
              if(status /= NF90_NOERR) then
                 print*,'Error opening file ',trim(PCHEMFILE), status
@@ -1498,12 +1476,10 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
           endif
           call ESMF_TimeGet (dummyTIME, midMonth=midMonth,    RC=STATUS)
           VERIFY_(STATUS)
-          call ESMF_AlarmSet(PCHEM_ALARM, ringtime=midMonth, RC=STATUS)
-          VERIFY_(STATUS)
 
 #ifdef DEBUG
-          if(MAPL_AM_I_ROOT()) then
-             print*,'Next ring time for SPECIES Alarm is'
+          if(MAPL_AM_I_ROOT(vm)) then
+             print*,'Next update time for SPECIES is'
              call ESMF_TimePrint(midMonth, "string", rc)
           endif
 #endif
@@ -1638,9 +1614,6 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 
     AOA         = AOA +  (DT/86400.0) 
     AOA(:,:,LM) = 0.0
-
-    PCHEM_STATE%lastTimeHere = currTime
-
 
 ! Clean-up
 !---------
