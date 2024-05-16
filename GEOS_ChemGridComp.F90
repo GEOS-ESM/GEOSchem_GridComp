@@ -26,7 +26,7 @@ module GEOS_ChemGridCompMod
   use    CARMAchem_GridCompMod,  only :     CARMA_SetServices => SetServices
   use GEOSCHEMchem_GridCompMod,  only :    GCChem_SetServices => SetServices
   use   MATRIXchem_GridCompMod,  only :    MATRIX_SetServices => SetServices
-  use      MAMchem_GridCompMod,  only :       MAM_SetServices => SetServices
+  use          MAM_GridCompMod,  only :       MAM_SetServices => SetServices
   use    GEOS_PChemGridCompMod,  only :     PChem_SetServices => SetServices
   use    GEOS_AChemGridCompMod,  only :     AChem_SetServices => SetServices
   use         GAAS_GridCompMod,  only :      GAAS_SetServices => SetServices
