@@ -311,6 +311,14 @@ contains
   RATsProviderNumber(1:3) = i
   RATsProviderName(1:3)   = trim(providerName)
 
+! Sourish Basu
+! Option to set RAT CH4 distinct from others (e.g. GOCART) -  RAT_CH4_PROVIDER
+! -----------------------------------------------------------------------------------
+  call GetProvider_(CF, Label='RATS_PROVIDER_CH4:', ID=i, Name=providerName, Default=TRIM(RATsProviderName(4)), __RC__)
+
+  RATsProviderNumber(4) = i
+  RATsProviderName(4)   = trim(providerName)
+
 ! Add export specs for the RATs ...
 ! ---------------------------------
   DO i = 1, numRATs
@@ -428,9 +436,16 @@ contains
 ! -------------------------------
   IF(myState%enable_GOCART) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'AIRDENS     ','AIRDENS_DRYP', 'DELP        ', 'CN_PRCP     ', 'NCN_PRCP    '/), &
+          SHORT_NAME  = (/ &
+            'AIRDENS     ', &
+            'AIRDENS_DRYP', &
+            'QTOT        ', & ! Sourish
+            'DELP        ', &
+            'TPREC       ', &
+            'CN_PRCP     ', &
+            'NCN_PRCP    '/), & ! broken over multiple lines so that it's easy to check equal width
           DST_ID = GOCART, SRC_ID = CHEMENV, __RC__  )
-  ENDIF
+  END IF
 
   IF(myState%enable_GOCARTdata) then
      CALL MAPL_AddConnectivity ( GC, &
@@ -545,6 +560,13 @@ contains
             DST_NAME  = (/'OX_TR    ', 'stOX_loss', 'DD_OX    '/), &
             DST_ID = TR, SRC_ID = GMICHEM, __RC__  )
   ENDIF
+
+!! Sourish Basu
+  !IF(myState%enable_TR) then
+     !CALL MAPL_AddConnectivity ( GC, &
+          !SHORT_NAME  = (/'AIRDENS', 'QTOT   ', 'DELP   '/), &
+          !DST_ID = TR, SRC_ID = CHEMENV, __RC__  )
+  !ENDIF
 
   IF(myState%enable_GEOSCHEM) then
      CALL MAPL_AddConnectivity ( GC, &
