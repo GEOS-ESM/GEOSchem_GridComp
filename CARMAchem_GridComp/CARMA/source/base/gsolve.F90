@@ -64,7 +64,7 @@ subroutine gsolve(carma, cstate, iz, previous_ice, previous_liquid, scale_thresh
 
     if (gc(iz,igas) < 0.0_f) then
       if (do_substep) then
-        if (nretries == maxretries) then 
+        if (nretries == maxretries .and. .not. do_pfast) then 
           if (do_print) write(LUNOPRT,1) trim(gasname(igas)), iz, lat, lon, gc(iz,igas), gasprod(igas), &
             supsati(iz,igas), supsatl(iz,igas), t(iz)
           if (do_print) write(LUNOPRT,2) gcl(iz,igas), supsatiold(iz,igas), supsatlold(iz,igas), told(iz), d_gc(iz,igas), d_t(iz)

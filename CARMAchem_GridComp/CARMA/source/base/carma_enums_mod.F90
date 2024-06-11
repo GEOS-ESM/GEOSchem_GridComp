@@ -118,6 +118,7 @@ module carma_enums_mod
   integer, public, parameter :: RC_ERROR          = -1  !! Failure
   integer, public, parameter :: RC_WARNING        = 1   !! Warning
   integer, public, parameter :: RC_WARNING_RETRY  = 2   !! Warning, Retry Suggested
+  integer, public, parameter :: RC_WARNING_PFAST  = 3   !! Warning, Parameterization Suggested
 
 
   !  Define values of symbols used to specify horizontal & vertical grid type.
