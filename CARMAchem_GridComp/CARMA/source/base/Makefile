@@ -16,7 +16,7 @@ setupcoag.o smallconc.o step.o supersat.o vaporp.o vertadv.o \
 vertdif.o vertical.o versol.o rhopart.o psolve.o zeromicro.o \
 nsubsteps.o setupgrow.o setupgkern.o setupnuc.o growevapl.o microfast.o \
 gsolve.o actdropl.o freezglaerl_murray2010.o growp.o downgxfer.o \
-gasexchange.o melticel.o upgxfer.o freezdropl.o \
+gasexchange.o melticel.o upgxfer.o freezdropl.o pfastdmdt.o \
 downgevapply.o evapp.o evap_poly.o evap_mono.o \
 evap_ingrp.o tsolve.o miess.o vaporp_h2o_buck1981.o \
 vaporp_h2o_murphy2005.o maxconc.o setupbdif.o setupvf_std.o \
@@ -157,6 +157,9 @@ growp.o : growp.F90 carma_globaer.h carma_mod.mod carmastate_mod.mod carma_types
 	$(FORTRAN) $(FFLAGS) -c $<
 
 gsolve.o : gsolve.F90 carma_globaer.h carma_mod.mod carmastate_mod.mod carma_types_mod.mod carma_constants_mod.mod carma_enums_mod.mod carma_precision_mod.mod 
+	$(FORTRAN) $(FFLAGS) -c $<
+
+pfastdmdt.o : pfastdmdt.F90 carma_globaer.h carma_mod.mod carmastate_mod.mod carma_types_mod.mod carma_constants_mod.mod carma_enums_mod.mod carma_precision_mod.mod 
 	$(FORTRAN) $(FFLAGS) -c $<
 
 fractal_meanfield_mod.o : fractal_meanfield_mod.F90 carma_globaer.h carma_mod.mod carmastate_mod.mod carma_types_mod.mod carma_constants_mod.mod carma_enums_mod.mod carma_precision_mod.mod adgaquad_mod.mod lusolvec_mod.mod 

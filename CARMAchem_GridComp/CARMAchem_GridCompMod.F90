@@ -748,7 +748,7 @@ CONTAINS
         end if
        
         ! attach the aerosol optics method
-        call ESMF_MethodAdd(aero, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
+        call ESMF_MethodAdd(aero, label='run_aerosol_optics', userRoutine=aerosol_optics, __RC__)
 
     end if
 
