@@ -1097,7 +1097,7 @@ CONTAINS
    if(qa(n2)%data3d(i1,j2,km) < 0.) qa(n2)%data3d = qa(n)%data3d
   enddo
 
-! replaced #ifdef DEBUG
+#ifdef DEBUG
 if(reg%NGAS > 0) then
    n = reg%NBIN*reg%NELEM + 1
    call pmaxmin('CARMA::h2o_0:           ', qa(n)%data3d(i1:i2,j1:j2,1:km), qmin, qmax, ijl, km, 1. )
@@ -1115,7 +1115,7 @@ if(reg%NGAS > 0) then
    n = reg%NBIN*reg%NELEM + reg%NGAS + reg%NGAS + reg%NGAS + reg%NGAS + 1
    call pmaxmin('CARMA::satice2_old_0:   ', qa(n)%data3d(i1:i2,j1:j2,1:km), qmin, qmax, ijl, km, 1. )
 endif
-! replaced #endif
+#endif
 
 !  ====================  CARMA Step ================================
 !  Establish the CARMA state, do a step, and retain diagnostic
