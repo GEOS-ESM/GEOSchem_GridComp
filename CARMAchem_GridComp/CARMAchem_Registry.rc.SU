@@ -64,8 +64,9 @@ ICOMPOSITION: 0       1       2      3
 # GASNAME  = name
 # IGCOMP   = gas composition: 1 (I_GCOMP_H2O), 2 (I_GCOMP_H2SO4), 3 (I_GCOMP_SO2),
 #                             4 (I_GCOMP_HNO3)
-# IGVAPREQ = vapor pressure equation: 1 (I_VAPRTN_H2O_BUCK1981), 2 (I_VAPRTN_H2O_MURPHY2005)
-#                                     3 (I_VAPRTN_H2O_GOFF1946), 4 (I_VAPRTN_H2SO4_AYERS1980)
+# IGVAPREQ = vapor pressure equation: -1 (I_VAPRTN_NULL), 1 (I_VAPRTN_H2O_BUCK1981), 
+#                                     2 (I_VAPRTN_H2O_MURPHY2005), 3 (I_VAPRTN_H2O_GOFF1946),
+#                                     4 (I_VAPRTN_H2SO4_AYERS1980)
 GASNAME:      H2O     H2SO4   HNO3
 IGCOMP:       1       2       4
 IGVAPREQ:     2       4       -1

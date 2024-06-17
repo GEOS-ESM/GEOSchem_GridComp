@@ -85,11 +85,11 @@ module carma_enums_mod
   integer, public, parameter :: I_SWG_RURAL     = 14  !! Rural
   
   ! Routines to calculate gas vapor pressures
+  integer, public, parameter :: I_VAPRTN_NULL              = -1  !! For non-condensing gases
   integer, public, parameter :: I_VAPRTN_H2O_BUCK1981      = 1   !! H2O, Buck[1981]
   integer, public, parameter :: I_VAPRTN_H2O_MURPHY2005    = 2   !! H2O, Murphy & Koop [2005]
   integer, public, parameter :: I_VAPRTN_H2O_GOFF1946      = 3   !! H2O, Goff & Gratch [1946], used in CAM
   integer, public, parameter :: I_VAPRTN_H2SO4_AYERS1980   = 4   !! H2SO4, Ayers [1980] & Kumala [1990]
-  integer, public, parameter :: I_VAPRTN_NULL              = 5   !! For non-condensing gases
 
   ! Routines to calculate fall velocities
   integer, public, parameter :: I_FALLRTN_STD              = 1   !! Standard CARMA 2.3 routine (spherical only)
