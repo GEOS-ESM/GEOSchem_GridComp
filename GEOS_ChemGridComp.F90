@@ -488,8 +488,8 @@ contains
       endif
       if(myState%enable_GMICHEM .AND. TRIM(providerName) == "CARMA") then
          CALL MAPL_AddConnectivity ( GC, &
-              SRC_NAME  = (/ 'CARMA_SUSAREA '/), &
-              DST_NAME  = (/ 'SO4SAREA      '/), &
+              SRC_NAME  = (/ 'CARMA_SUSAREA ', 'CARMA_SUREFF'/), &
+              DST_NAME  = (/ 'SO4SAREA      ', 'SO4Reff     '/), &
               DST_ID = GMICHEM, SRC_ID = CARMA, __RC__)
       endif
       if(myState%enable_STRATCHEM .AND. TRIM(providerName) == "CARMA") then
