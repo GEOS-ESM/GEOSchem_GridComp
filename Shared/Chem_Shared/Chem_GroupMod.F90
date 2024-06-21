@@ -456,9 +456,9 @@ CONTAINS
 ! !INTERFACE:
 
 #ifdef CHEM_INFO
- SUBROUTINE Unpack_Chem_Groups(state, PLE, AREA, Q_separate, bry_ratio, aBRCL, aCL2, aOCLO, aCL2O2, aCLO, aHCL, aHOCL, zBRCL, zCL2, zOCLO, zCL2O2, zCLO, zHCL, zHOCL, zBRY, aCLY, zCLY )
+ SUBROUTINE Unpack_Chem_Groups(state, PLE, AREA, Q_separate, verbose, bry_ratio, aBRCL, aCL2, aOCLO, aCL2O2, aCLO, aHCL, aHOCL, zBRCL, zCL2, zOCLO, zCL2O2, zCLO, zHCL, zHOCL, zBRY, aCLY, zCLY )
 #else
- SUBROUTINE Unpack_Chem_Groups(state, PLE, AREA, Q_separate)
+ SUBROUTINE Unpack_Chem_Groups(state, PLE, AREA, Q_separate, verbose )
 #endif
 
   IMPLICIT NONE
@@ -470,6 +470,7 @@ CONTAINS
    REAL*4, POINTER, DIMENSION(:,:,:), INTENT(IN), OPTIONAL :: Q_separate  ! water vapor  [kg vapor / kg moist air]
                                                                           ! option to provide Q separate from the advection bundle,
                                                                           ! otherwise we get Q from that bundle (TRADV)
+   LOGICAL,                           INTENT(IN), OPTIONAL :: verbose     ! if true (default), print CL/N LOOP COUNT
 #ifdef CHEM_INFO
    REAL*4, POINTER, DIMENSION(:,:,:)  :: bry_ratio, aBRCL, aCL2, aOCLO, aCL2O2, aCLO, aHCL, aHOCL
    REAL*4, POINTER, DIMENSION(:,:,:)  ::            zBRCL, zCL2, zOCLO, zCL2O2, zCLO, zHCL, zHOCL
@@ -513,7 +514,13 @@ CONTAINS
    REAL, PARAMETER                       :: MAXFRAC = 0.99   ! Do not reduce more than this
    REAL, PARAMETER                       :: VERY_SMALL = 1.0e-25
 
+   LOGICAL                               :: verb
+
    Iam = "Unpack_Chem_Groups"
+
+   ! verbose flag
+   verb = .TRUE.
+   IF ( PRESENT(verbose) ) verb = verbose
 
    IF ( GMI_groups_active ) THEN
 
@@ -1274,7 +1281,7 @@ CONTAINS
 
             END DO
 
-            IF ( loop_count > 0 ) print*,'CL LOOP COUNT = ', loop_count, COUNT(in_play(:))
+            IF ( loop_count > 0 .and. verb ) print*,'CL LOOP COUNT = ', loop_count, COUNT(in_play(:))
 
             if ( vsum_EXTRA > 0.0d0 ) then
               print*,'Cannot conserve Cl !!'
@@ -1474,7 +1481,7 @@ CONTAINS
 
             END DO
 
-            IF ( loop_count > 0 ) print*,'N LOOP COUNT = ', loop_count, COUNT(in_play(:))
+            IF ( loop_count > 0 .and. verb ) print*,'N LOOP COUNT = ', loop_count, COUNT(in_play(:))
 
             if ( vsum_EXTRA > 0.0d0 ) then
               print*,'Cannot conserve N!!'
@@ -1698,7 +1705,7 @@ CONTAINS
 
             END DO
 
-            IF ( loop_count > 0 ) print*,'CL LOOP COUNT = ', loop_count, COUNT(in_play(:))
+            IF ( loop_count > 0 .and. verb ) print*,'CL LOOP COUNT = ', loop_count, COUNT(in_play(:))
 
             if ( vsum_EXTRA > 0.0d0 ) then
               print*,'Cannot conserve Cl !!'
@@ -1879,7 +1886,7 @@ CONTAINS
 
             END DO
 
-            IF ( loop_count > 0 ) print*,'N LOOP COUNT = ', loop_count, COUNT(in_play(:))
+            IF ( loop_count > 0 .and. verb ) print*,'N LOOP COUNT = ', loop_count, COUNT(in_play(:))
 
             if ( vsum_EXTRA > 0.0d0 ) then
               print*,'Cannot conserve N!!'
