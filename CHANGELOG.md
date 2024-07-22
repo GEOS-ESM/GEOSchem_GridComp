@@ -7,14 +7,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+### Removed
+### Changed
+### Fixed
+### Deprecated
+
+
+## [1.14.0] - 2024-06-21
 
 ### Added
 
 - Connectivity from GMI to ACHEM (4 fields), requires GMI v1.2.0 or later to run
 - Slight improvement for lightning flash rate calculation (LOPEZ and MOIST schemes). See the option UsePreconCape in ChemEnv.rc . This involves new imports from MOIST: CAPE, BYNCY and INHB. **NOTE** THIS REQUIRES GEOSgcm_GridComp develop branch (as of 12/12/23).
 - Added a flag for 'strict' child timing, intended to reduce the timing bias against child GC's that employ 'gather' calls. Such calls are occasionally necessary, but can cause timers to attribute excessive time to a child, time that is actually the synchronization lag time that would eventually be spent -somewhere- in the program, but which gets attributed to the child with a 'gather' or barrier call. The new flag is for timing tests only.
-
-### Removed
 
 ### Changed
 
