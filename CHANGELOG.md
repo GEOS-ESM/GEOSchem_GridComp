@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+-The filepath for anthropogenic emissions of CO used by achem was changed. Note the previous version of the emissions has an incorrect seasonal cycle.
 ### Removed
 ### Changed
 ### Fixed
