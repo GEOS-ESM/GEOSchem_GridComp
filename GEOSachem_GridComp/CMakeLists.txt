@@ -27,7 +27,7 @@ set (srcs
 esma_add_library (
   ${this}
   SRCS ${srcs}
-  DEPENDENCIES Chem_Shared MAPL GMAO_mpeu esmf NetCDF::NetCDF_Fortran
+  DEPENDENCIES Chem_Shared MAPL GMAO_mpeu ESMF::ESMF NetCDF::NetCDF_Fortran
   )
 target_compile_definitions (${this} PRIVATE MAPL_MODE GEOS5)
 set_target_properties (${this} PROPERTIES COMPILE_FLAGS ${PP})
