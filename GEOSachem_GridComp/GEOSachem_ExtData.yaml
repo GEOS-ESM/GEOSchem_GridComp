@@ -1,6 +1,6 @@
 Collections:
   GEOSachem_CO-em-anthro_CMIP_CEDS_gn.x2304_y1441_t12.%y4.nc4:
-    template: ExtData/chemistry/CEDS/v2021-04-21/sfc/CO-em-anthro_CMIP_CEDS_gn.x2304_y1441_t12.%y4.nc4
+    template: ExtData/chemistry/CEDS/v2021-04-21-revised/sfc/CO-em-anthro_CMIP_CEDS_gn.x2304_y1441_t12.%y4.nc4
   GEOSachem_DMSclim_sfcconcentration.x360_y181_t12.Lana2011.nc4:
     template: ExtData/chemistry/Lana/v2011/DMSclim_sfcconcentration.x360_y181_t12.Lana2011.nc4
   GEOSachem_GEIA.emis_NH3.ocean.x576_y361.t12.20080715_12z.nc4:
