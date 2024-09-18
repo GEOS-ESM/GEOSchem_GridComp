@@ -22,6 +22,7 @@ set (srcs
   Bundle_IncrementMod.F90
   Lightning_mod.F90
   lightning_toolbox_mod.F90
+  SZA_from_MAPL_mod.F90
   )
 
 if (DOING_GEOS5)
@@ -34,7 +35,7 @@ endif ()
 
 esma_add_library(${this}
    SRCS ${srcs}
-   DEPENDENCIES GMAO_mpeu MAPL Chem_Base GEOS_Shared GMAO_hermes esmf NetCDF::NetCDF_Fortran)
+   DEPENDENCIES GMAO_mpeu MAPL Chem_Base GEOS_Shared GMAO_hermes ESMF::ESMF NetCDF::NetCDF_Fortran)
 #add_definitions(-DDEBUG)
 add_definitions(-DSPMD -DFVCHEM)
 

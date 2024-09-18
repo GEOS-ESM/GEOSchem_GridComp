@@ -12,7 +12,7 @@ foreach (dir ${src_directories})
   list (APPEND srcs ${tmpsrcs})
 endforeach()
 
-set (dependencies Chem_Shared Chem_Base GMAO_mpeu esmf)
+set (dependencies Chem_Shared Chem_Base GMAO_mpeu ESMF::ESMF)
 esma_add_library (${this} SRCS ${srcs} DEPENDENCIES ${dependencies})
 target_include_directories (${this} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/CARMA/source/base>)
 

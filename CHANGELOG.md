@@ -7,16 +7,66 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-
 ### Added
 ### Removed
 ### Changed
+
+- The file path was changed for anthropogenic CO emissions that are used by achem. Note that the previous version of the emissions have an incorrect seasonal cycle.
+- Update ESMF CMake target to `ESMF::ESMF`
+
 ### Fixed
+### Deprecated
+
+
+## [1.14.0] - 2024-06-21
+
+### Added
+
+- Connectivity from GMI to ACHEM (4 fields), requires GMI v1.2.0 or later to run
+- Slight improvement for lightning flash rate calculation (LOPEZ and MOIST schemes). See the option UsePreconCape in ChemEnv.rc . This involves new imports from MOIST: CAPE, BYNCY and INHB. **NOTE** THIS REQUIRES GEOSgcm_GridComp develop branch (as of 12/12/23).
+- Added a flag for 'strict' child timing, intended to reduce the timing bias against child GC's that employ 'gather' calls. Such calls are occasionally necessary, but can cause timers to attribute excessive time to a child, time that is actually the synchronization lag time that would eventually be spent -somewhere- in the program, but which gets attributed to the child with a 'gather' or barrier call. The new flag is for timing tests only.
+
+### Changed
+
+- Update CI to use v2 orb
+
+### Fixed
+
+- Fixed CARMA to fix radiation callback
+- Fixed code in CARMA to properly check whether GMI or GOCART are providing sulfur inputs
+- Fixed CARMA/GOCART2G sulfate production tendency term
+- Fix a bug in GAAS where it gets the VM (global instead of the correct current)
+- Fix an issue in GAAS where the `aod_?` fields were not declared as `MAPL_RestartSkip` in the Registry file.
+
+## [1.13.1] - 2023-04-24
+
+### Added
+
+- Added CO2 connectivity in GEOS_ChemGridComp for GOCART-GEOS-Chem coupling
+- Added a wrapper routine for the MAPL Solar Zenith Angle call, in Chem_Shared
+- Added connectivity from GOCART2G aerosols to GMI chem
+
+### Removed
+
+- Removed the GMI routines which computed Solar Zenith Angle, in Chem_Shared; but in a later commit, this was added back temporarily, so that older versions of GMI and TR don't complain.
+
+- Removed parallel read of PChem species file. This parallel read was causing issues at NAS at large node count, so now we just do a read-on-root followed by a broadcast
+
+### Fixed
+
+- Fixed a bug that had prevented GMI running with HEMCO
+
+## [1.13.0] - 2023-03-01
 
 ### Added
 
 - Added connectivities in GEOS_ChemGridComp for CARMA-GMI coupling
 - Added STS growth in CARMA microphysics
+
+### Changed
+
+- For OPS configuration: removal of links, change of QFED paths from vNRT/ to v2.5r1-nrt/ (note after November 2021, files are v2.6r1) (0 diff)
+- For AMIP configuration: update of QFED from v2.5r1 to v2.6r1 (most recent collection, may have small diff)
 
 ## [1.12.0] - 2023-01-18
 
@@ -41,7 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Instead of importing a set of QQK diagnostic fields for chemical loss of stOX, TR now imports a single field: stOX_loss
-- For OPS configuration: removal of links, change of QFED paths from vNRT/ to v2.5r1-nrt/ 
+- For OPS configuration: removal of links, change of QFED paths from vNRT/ to v2.5r1-nrt/
 - For AMIP configuration: update of QFED from v2.5r1 to v2.6r1 (most recent collection)
 - Moved to GitHub Actions for label enforcement
 - Update CircleCI to use Baselibs 7.7.0
@@ -89,7 +139,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updates to emissions from galactic cosmic rays in GMI
 - Minor improvement to Runtime_Registry module.
-- Broke away the GMI contents from Chem_Registry.rc, into a separate file 
+- Broke away the GMI contents from Chem_Registry.rc, into a separate file
 
 ## [1.10.1] - 2022-08-30
 
@@ -145,7 +195,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix YAML typo in `GEOSachem_GridComp/GEOSachem_ExtData.yaml`
 
-## [1.9.4] - 2022-05-31 
+## [1.9.4] - 2022-05-31
 
 ### Fixed
 
