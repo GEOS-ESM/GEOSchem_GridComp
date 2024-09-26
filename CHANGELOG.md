@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update ESMF CMake target to `ESMF::ESMF`
 
 ### Fixed
+- Updated GAAS_Gridcomp_Extdata.yaml in AMIP/ to avoid the model to crash when GAAS is turned on and AMIP emissions chosen.
 ### Deprecated
 
 
