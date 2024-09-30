@@ -24,3 +24,4 @@
   ENABLE_TR:          .TRUE.
   ENABLE_DNA:         .FALSE.
   ENABLE_HEMCO:       .TRUE.
+  ENABLE_RRG:         .FALSE.
