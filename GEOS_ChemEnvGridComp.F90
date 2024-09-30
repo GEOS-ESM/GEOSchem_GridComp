@@ -164,6 +164,13 @@ contains
          DIMS       = MAPL_DimsHorzVert,                                &
          VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME = 'QCTOT',                                          &
+         LONG_NAME  = 'mass_fraction_of_total_water',                   &
+         UNITS      = 'kg kg-1',                                        &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
+
 !   Geopotential Height
 !   -------------------
     call MAPL_AddImportSpec(GC,                                         &
@@ -387,6 +394,15 @@ contains
          SHORT_NAME = 'AIRDENS_DRYP',                                   &
          LONG_NAME  = 'partial_dry_air_density',                        &
          UNITS      = 'kg dry m-3 tot',                                 &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
+
+!   Mixing ratio of water (all phases; needed for CoDAS)
+!   ----------------------------------------------------
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'QTOT',                                           &
+         LONG_NAME  = 'mass_fraction_of_all_water',                     &
+         UNITS      = 'kg kg-1',                                        &
          DIMS       = MAPL_DimsHorzVert,                                &
          VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
@@ -888,7 +904,6 @@ contains
        end do
     end if
 
-
     !------------------------------------------------
     ! Flash Rate (LFR) for Lighting Parameterization
     !------------------------------------------------
@@ -1001,6 +1016,11 @@ contains
   real, pointer, dimension(:,:)        ::  cn_prcp => null()
   real, pointer, dimension(:,:)        :: ncn_prcp => null()
 
+! Exports (needed for CoDAS)
+  real, pointer, dimension(:,:,:)      :: q    => null()
+  real, pointer, dimension(:,:,:)      :: qc   => null()
+  real, pointer, dimension(:,:,:)      :: qtot => null()
+
 !=============================================================================
  
     type (MAPL_MetaComp), pointer      :: MAPL
@@ -1048,6 +1068,8 @@ contains
 !   Get to the imports...
 !   ---------------------
     call MAPL_GetPointer ( IMPORT,  PLE,  'PLE', __RC__ )
+    call MAPL_GetPointer ( IMPORT,    q,  'Q',     __RC__ )
+    call MAPL_GetPointer ( IMPORT,   qc,  'QCTOT', __RC__ )
 
 !   Dimensions of fields with VLOC=center
 !   -------------------------------------
@@ -1058,6 +1080,7 @@ contains
 !   Get to the exports...
 !   ---------------------
     call MAPL_GetPointer ( EXPORT, delp,   'DELP',        __RC__ )
+    call MAPL_GetPointer ( EXPORT, qtot,   'QTOT',        __RC__ )
 
 !   Compute moist (rho) and dry (rhoDry) air density
 !   ------------------------------------------------
@@ -1070,6 +1093,8 @@ contains
           delp(:,:,k) = PLE(:,:,k-k0+1) - PLE(:,:,k-k0)
        end do
     end if
+
+    if ( associated(qtot) ) qtot = q + qc
 
 ! Import total precip from SURFACE (either model or observed precip)
 ! Export total, convective and non-convective precipitation.

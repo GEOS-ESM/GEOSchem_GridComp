@@ -21,6 +21,7 @@ module GEOS_ChemGridCompMod
   use  GEOS_ChemEnvGridCompMod,  only :   ChemEnv_SetServices => SetServices
   use       GOCART_GridCompMod,  only :    GOCART_SetServices => SetServices
   use     GOCART2G_GridCompMod,  only : GOCART2G_SetServices  => SetServices !GOCART REFACTOR
+  use          RRG_GridCompMod,  only :       RRG_SetServices => SetServices !Carbon gases refactor
   use    StratChem_GridCompMod,  only : StratChem_SetServices => SetServices
   use      GMIchem_GridCompMod,  only :       GMI_SetServices => SetServices
   use    CARMAchem_GridCompMod,  only :     CARMA_SetServices => SetServices
@@ -54,6 +55,7 @@ module GEOS_ChemGridCompMod
      LOGICAL :: enable_GOCART
      LOGICAL :: enable_GOCARTdata
      LOGICAL :: enable_GOCART2G        ! GOCART REFACTOR
+     LOGICAL :: enable_RRG             ! Carbon gases refactor (MSL)
      LOGICAL :: enable_GAAS
      LOGICAL :: enable_H2O
      LOGICAL :: enable_STRATCHEM
@@ -90,6 +92,7 @@ module GEOS_ChemGridCompMod
   integer ::        ACHEM = -1
   integer ::       GOCART = -1
   integer ::     GOCART2G = -1
+  integer ::          RRG = -1
   integer ::   GOCARTdata = -1
   integer ::         GAAS = -1
   integer ::          H2O = -1
@@ -173,6 +176,10 @@ contains
     logical                     :: GOCART_instance_of_HEMCO   ! TRUE if HEMCO is running a GOCART instance
     logical                     ::    GMI_instance_of_HEMCO   ! TRUE if HEMCO is running a GMI instance
 
+!   RATS source settings - MSL
+!   --------------------
+    character(LEN=ESMF_MAXSTR) :: RATsLabel
+
 !=============================================================================
 
 ! Begin...
@@ -217,6 +224,7 @@ contains
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCART,     Default=.FALSE., Label="ENABLE_GOCART:",      __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCARTdata, Default=.FALSE., Label="ENABLE_GOCART_DATA:", __RC__ )
     call ESMF_ConfigGetAttribute(myCF,   myState%enable_GOCART2G, Default=.FALSE., Label="ENABLE_GOCART2G:",    __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_RRG,        Default=.FALSE., Label="ENABLE_RRG:",         __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GAAS,       Default=.FALSE., Label="ENABLE_GAAS:",        __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_H2O,        Default=.FALSE., Label="ENABLE_H2O:",         __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_STRATCHEM,  Default=.FALSE., Label="ENABLE_STRATCHEM:",   __RC__ )
@@ -249,6 +257,7 @@ contains
     if (    myState%enable_GOCART)      GOCART = MAPL_AddChild(GC, NAME=      'GOCART', SS=GOCART_SetServices,    __RC__)
     if (myState%enable_GOCARTdata)  GOCARTdata = MAPL_AddChild(GC, NAME= 'GOCART.data', SS=GOCART_SetServices,    __RC__)
     if (  myState%enable_GOCART2G)    GOCART2G = MAPL_AddChild(GC, NAME=    'GOCART2G', SS=GOCART2G_SetServices,  __RC__)
+    if (       myState%enable_RRG)          RRG = MAPL_AddChild(GC, NAME=         'RRG', SS=RRG_SetServices,       __RC__)
     if (      myState%enable_GAAS)        GAAS = MAPL_AddChild(GC, NAME=        'GAAS', SS=GAAS_SetServices,      __RC__)
     if (       myState%enable_H2O)         H2O = MAPL_AddChild(GC, NAME=         'H2O', SS=H2O_SetServices,       __RC__)
     if ( myState%enable_STRATCHEM)   STRATCHEM = MAPL_AddChild(GC, NAME=   'STRATCHEM', SS=StratChem_SetServices, __RC__)
@@ -303,6 +312,43 @@ contains
 ! ------------------------------------------------------------
   CALL MAPL_AddExportSpec ( GC, SHORT_NAME = 'H2O_TEND', &
                             CHILD_ID = RATS_PROVIDER, __RC__ )
+
+! Allow setting individual RAT sources via AGCM.rc
+! ------------------------------------------------
+  DO i = 1, numRATs
+     write(RATsLabel,'(a)') trim(speciesName(i))//'_PROVIDER:'
+     call GetProvider_(CF, Label=trim(RATsLabel), ID=RATsProviderNumber(i), Name=providerName, Default=trim(RATsProviderName(i)), __RC__) ! A little trickery here.
+     RATsProviderName(i) = trim(ProviderName)
+     if (MAPL_am_I_Root()) write(*,*) '<<>>: ', trim(speciesName(i))," Provider: ",trim(RATsProviderName(i))
+  END DO
+
+! CO2 is not listed as a RAT, so add it here outside of the RATs code logic
+! -------------------------------------------------------------------------
+  ! -- get info from AGCM.rc
+  call ESMF_ConfigGetAttribute(CF, providerName, Default='None', &
+                               Label="CO2_PROVIDER:", __RC__ )
+
+  str = trim(providerName)
+  str = ESMF_UtilStringLowerCase(str, __RC__)
+
+  ! -- Make sure, if label is there, that it is an approved name.
+  if (trim(providerName) .ne. 'GOCART' .and. trim(str) .ne. 'none' .and. trim(providerName) .ne. 'GHG') then
+     write(*,*) 'CHEM ERROR: CO2_PROVIDER can only be None, GOCART or GHG. It is ',trim(providerName)
+     RC = -1
+     return
+
+  ! -- else, if 'None', do nothing.
+  else if (trim(str) .eq. 'none') then
+     if (MAPL_am_I_root()) write(*,*) 'CHEM: CO2 is not added as a RAT from GOCART or GHG.' 
+
+  ! -- else, if GOCART or GHG, set up export
+  else if (trim(providerName) .eq. 'GOCART') then
+     CALL MAPL_AddExportSpec( GC, SHORT_NAME = 'CO2', &
+                              CHILD_ID = GOCART, __RC__ )
+  else if (trim(providerName) .eq. 'GHG'   ) then
+     CALL MAPL_AddExportSpec( GC, SHORT_NAME = 'CO2', &
+                              CHILD_ID = RRG, __RC__ )
+  endif
 
 ! Priority for first three RATs, OX, O3 and O3PPMV, goes to the ANALYSIS_OX_PROVIDER.
 ! -----------------------------------------------------------------------------------
@@ -428,7 +474,8 @@ contains
 ! -------------------------------
   IF(myState%enable_GOCART) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'AIRDENS     ','AIRDENS_DRYP', 'DELP        ', 'CN_PRCP     ', 'NCN_PRCP    '/), &
+          SHORT_NAME  = (/'AIRDENS     ', 'AIRDENS_DRYP', 'DELP        ',    &
+                          'CN_PRCP     ', 'NCN_PRCP    ', 'QTOT        ' /), &
           DST_ID = GOCART, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
@@ -442,6 +489,15 @@ contains
      CALL MAPL_AddConnectivity ( GC, &
           SHORT_NAME  = (/'DELP    ', 'AIRDENS ', 'NCN_PRCP' /), &
           DST_ID = GOCART2G, SRC_ID = CHEMENV, __RC__  )
+  ENDIF
+
+  IF(myState%enable_RRG) then
+     CALL MAPL_AddConnectivity ( GC, &
+          SHORT_NAME  = (/'DELP    ', 'AIRDENS ', 'NCN_PRCP', 'QTOT ' /), &
+          DST_ID = RRG, SRC_ID = CHEMENV, __RC__  )
+     CALL MAPL_AddConnectivity ( GC, &
+          SHORT_NAME  = (/'O3'/), &
+          DST_ID = RRG, SRC_ID = PCHEM, __RC__  )
   ENDIF
 
   IF(myState%enable_GAAS) then
@@ -503,7 +559,8 @@ contains
   IF(myState%enable_STRATCHEM) then
      CALL MAPL_AddConnectivity ( GC, &
           SHORT_NAME  = (/ 'AIRDENS     ', 'AIRDENS_DRYP', 'DELP        ',    &
-                           'CN_PRCP     ', 'NCN_PRCP    ', 'LFR         ' /), &
+                           'CN_PRCP     ', 'NCN_PRCP    ', 'LFR         ', &
+                           'QTOT        ' /), &
           DST_ID = STRATCHEM, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
@@ -535,7 +592,7 @@ contains
   IF(myState%enable_TR) then
      CALL MAPL_AddConnectivity ( GC, &
             SHORT_NAME  = (/'AIRDENS     ', 'AIRDENS_DRYP', 'DELP        ', &
-                            'CN_PRCP     ', 'NCN_PRCP    '/), &
+                            'CN_PRCP     ', 'NCN_PRCP    ', 'QTOT        '/), &
             DST_ID = TR, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
@@ -1300,7 +1357,7 @@ contains
                          phase = IPHASE, &
                         userRC = userRC, &
                                    __RC__ )
-          _ASSERT(userRC==ESMF_SUCCESS,'needs informative message')
+          _ASSERT(userRC==ESMF_SUCCESS,'WTF?')
           call MAPL_TimerOff(MAPL,trim(CHILD_NAME))
         enddo !I
       endif
@@ -1402,6 +1459,8 @@ contains
                                     ID = TR
            case ('DNA')
                                     ID = DNA
+           case ('GHG')
+                                    ID = RRG
            case DEFAULT
 
               message = "unknown provider "//trim(name)
