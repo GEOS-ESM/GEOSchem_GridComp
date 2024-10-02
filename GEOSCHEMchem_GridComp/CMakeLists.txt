@@ -17,7 +17,7 @@ set (src_directories
    ${geos_chem_dir}/KPP/fullchem
    ${geos_chem_dir}/GeosCore
    ${geos_chem_dir}/Interfaces/GCHP
-   ${geos_chem_dir}/Interfaces/GEOS  
+   ${geos_chem_dir}/Interfaces/GEOS
    ${geos_chem_dir}/ObsPack
   )
 include_directories (${geos_chem_dir}/Headers)
@@ -77,7 +77,7 @@ endif ()
 esma_add_library (${this}
    SRCS ${srcs}
    DEPENDENCIES MAPL MAPL_cfio_r4 Chem_Base Chem_Shared HEMCO
-                OpenMP::OpenMP_Fortran esmf NetCDF::NetCDF_Fortran
+                OpenMP::OpenMP_Fortran ESMF::ESMF NetCDF::NetCDF_Fortran
    )
 
 target_compile_definitions(${this} PRIVATE

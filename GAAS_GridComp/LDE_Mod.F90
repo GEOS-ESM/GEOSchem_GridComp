@@ -130,7 +130,7 @@ CONTAINS
 
 !    Get VM for later
 !    ----------------
-     call ESMF_VMGetGlobal(self%VM,__RC__)
+     call ESMF_VMGetCurrent(self%VM,__RC__)
 
 !    Set Ensemble indices on root PE
 !    -------------------------------

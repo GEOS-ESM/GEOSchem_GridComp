@@ -12,23 +12,23 @@ COMP_NAME: GAAS
 # Only change the Registry version when major structural changes
 # occurs, not changes in content
 # --------------------------------------------------------------
-  MAPL_REGISTRY_VERSION: 1.00  
+  MAPL_REGISTRY_VERSION: 1.00
 
 #                               ------------
 #                               Import State
 #                               ------------
 
-<ImportSpec name="GAAS", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,long_name">
-# ---------|------------|-----|---|----|---|---|-----|------|--------------------------
-#  Short   |            |     | V |Item|Intervl| Sub | Def  |        Long
-#  Name    |   Units    | Dim |Loc|Type| R | A |Tiles| ault |        Name
-# ---------|------------|-----|---|----|---|---|-----|------|--------------------------   
-   DELP    |    Pa      | xyz | C |    |   |   |     |      | Pressure Thickness
-    RH2    |     1      | xyz | C |    |   |   |     |      | Relative Humidity 
-    PLE    |    Pa      | xyz | E |    |   |   |     |      | Air Pressure
-   aod_a   |     1      | xy  | C |    |   |   |     |      | AOD
-   aod_f   |     1      | xy  | C |    |   |   |     |      | AOD
-   aod_k   |     1      | xy  | C |    |   |   |     |      | AOD
+<ImportSpec name="GAAS", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,norestart,long_name">
+# ---------|------------|-----|---|----|---|---|-----|------|-----|--------------------------
+#  Short   |            |     | V |Item|Intervl| Sub | Def  | No  |  Long
+#  Name    |   Units    | Dim |Loc|Type| R | A |Tiles| ault | Rst |  Name
+# ---------|------------|-----|---|----|---|---|-----|------|-----|--------------------------
+   DELP    |    Pa      | xyz | C |    |   |   |     |      |     | Pressure Thickness
+    RH2    |     1      | xyz | C |    |   |   |     |      |     | Relative Humidity
+    PLE    |    Pa      | xyz | E |    |   |   |     |      |     | Air Pressure
+   aod_a   |     1      | xy  | C |    |   |   |     |      |  x  | AOD
+   aod_f   |     1      | xy  | C |    |   |   |     |      |  x  | AOD
+   aod_k   |     1      | xy  | C |    |   |   |     |      |  x  | AOD
 # ---------|------------|-----|---|----|---|---|-----|------|--------------------------
 </ImportSpec>
 

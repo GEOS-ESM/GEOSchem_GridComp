@@ -22,7 +22,7 @@ set (srcs
   MATRIXchem_GridCompMod.F90
   )
 
-esma_add_library (${this} SRCS ${srcs} DEPENDENCIES Chem_Shared MAPL esmf)
+esma_add_library (${this} SRCS ${srcs} DEPENDENCIES Chem_Shared MAPL ESMF::ESMF)
 if (EXTENDED_SOURCE)
   set_target_properties (${this} PROPERTIES COMPILE_FLAGS ${EXTENDED_SOURCE})
 endif ()

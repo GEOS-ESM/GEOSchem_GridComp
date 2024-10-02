@@ -977,7 +977,7 @@ CONTAINS
 !  Fill the internal state with direct gas species from GMI
 !  Expectation is species are in VMR and needed in MMR for CARMA
 !  -----------
-   if(trim(reg%sulfuric_acid_source) == 'full_field' .and. reg%NGAS > 0) then
+   if(reg%sulfuric_acid_source(1:10) == 'full_field' .and. reg%NGAS > 0) then
     do igas = 1, reg%NGAS
      n  = nCARMAbegin + reg%NBIN*reg%NELEM - 1 + igas
      gasname = ESMF_UtilStringUpperCase(reg%gasname(igas))
@@ -1399,7 +1399,7 @@ endif
 !  Return the updated gas species to GMI from the internal state
 !  Expectation is species are in MMR and needed in VMR for GMI
 !  -----------
-   if(trim(reg%sulfuric_acid_source) == 'full_field' .and. reg%NGAS > 0) then
+   if(reg%sulfuric_acid_source(1:10) == 'full_field' .and. reg%NGAS > 0) then
     do igas = 1, reg%NGAS
      n  = nCARMAbegin + reg%NBIN*reg%NELEM - 1 + igas
      gasname = ESMF_UtilStringUpperCase(reg%gasname(igas))
