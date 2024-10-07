@@ -44,7 +44,7 @@ SOAG_EMIS              'm-2 s-1'            Y        N               0          
 # CO emissions for VOC
 CO_BIOMASS_VOC         'kg m-2 s-1'         N        Y     %y4-%m2-%d2t12:00:00Z   none none     biomass       ExtData/chemistry/QFED/v2.6r1/sfc/0.1/Y%y4/M%m2/qfed2.emis_co.061.%y4%m2%d2.nc4
 CO_BF_VOC              'kg m-2 s-1'         Y        Y     %y4-%m2-%d2t12:00:00Z   none none     emcobf        /dev/null
-CO_FS_VOC              'kg m-2 s-1'         N        Y     %y4-%m2-%d2t12:00:00Z   none none     co            ExtData/chemistry/CEDS/v2021-04-21/sfc/CO-em-anthro_CMIP_CEDS_gn.x2304_y1441_t12.%y4.nc4
+CO_FS_VOC              'kg m-2 s-1'         N        Y     %y4-%m2-%d2t12:00:00Z   none none     co            ExtData/chemistry/CEDS/v2021-04-21-revised/sfc/CO-em-anthro_CMIP_CEDS_gn.x2304_y1441_t12.%y4.nc4
 
 # Photolysis rates
 #jH2O2                 's-1'                Y        N               0             none none     jH2O2         ExtData/chemistry/GMI/v0.0.0/L72/Y2008/gmi_jh2o2.x144_y91_z72.2008%m2.nc4

@@ -7,7 +7,7 @@ set (srcs
 esma_add_library (
   ${this}
   SRCS ${srcs}
-  DEPENDENCIES Chem_Shared MAPL HEMCO esmf NetCDF::NetCDF_Fortran
+  DEPENDENCIES Chem_Shared MAPL HEMCO ESMF::ESMF NetCDF::NetCDF_Fortran
   )
 target_compile_definitions (${this} PRIVATE ESMF_ DEVEL GEOS_FP)
 

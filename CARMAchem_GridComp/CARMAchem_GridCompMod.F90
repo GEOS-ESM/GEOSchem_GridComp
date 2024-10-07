@@ -748,7 +748,7 @@ CONTAINS
         end if
        
         ! attach the aerosol optics method
-        call ESMF_MethodAdd(aero, label='aerosol_optics', userRoutine=aerosol_optics, __RC__)
+        call ESMF_MethodAdd(aero, label='run_aerosol_optics', userRoutine=run_aerosol_optics, __RC__)
 
     end if
 
@@ -1730,7 +1730,7 @@ CONTAINS
    END SUBROUTINE final_
 
 
-subroutine aerosol_optics(state, rc)
+subroutine run_aerosol_optics(state, rc)
 
   implicit none
 
@@ -1774,7 +1774,7 @@ subroutine aerosol_optics(state, rc)
   real    :: x
   integer :: i, j, k
 
-  Iam = 'CARMA::aerosol_optics()'
+  Iam = 'CARMA::run_aerosol_optics()'
 
 
 ! Mie Table instance/index
@@ -1930,7 +1930,7 @@ contains
 
     end subroutine mie_
 
- end subroutine aerosol_optics
+ end subroutine run_aerosol_optics
 
 
 

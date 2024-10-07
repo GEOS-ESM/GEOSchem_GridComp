@@ -25,3 +25,7 @@
   ENABLE_DNA:         .FALSE.
   ENABLE_HEMCO:       .TRUE.
   ENABLE_RRG:         .FALSE.
+
+# Use only for diagnostic timing tests:
+# --------------------------------------------------
+ strict_child_timing: .FALSE.
