@@ -317,9 +317,14 @@ contains
 ! ------------------------------------------------
   DO i = 1, numRATs
      write(RATsLabel,'(a)') trim(speciesName(i))//'_PROVIDER:'
-     call GetProvider_(CF, Label=trim(RATsLabel), ID=RATsProviderNumber(i), Name=providerName, Default=trim(RATsProviderName(i)), __RC__) ! A little trickery here.
-     RATsProviderName(i) = trim(ProviderName)
-     if (MAPL_am_I_Root()) write(*,*) '<<>>: ', trim(speciesName(i))," Provider: ",trim(RATsProviderName(i))
+     call ESMF_ConfigGetAttribute(CF, providerName, Default='none', Label=RATsLabel, __RC__)
+     call ESMF_ConfigFindLabel( CF,RATsLabel,rc=RC ) ! Godda reset!
+     n = ESMF_ConfigGetLen(CF,label=RATsLabel,rc=status) ! Is it an empty tag?
+     if (ESMF_UtilStringLowerCase(trim(ProviderName)) .ne. 'none' .and. n .gt. 0) then ! If *_PROVIDER looks like a valid GridComp tag
+        call GetProvider_(CF, Label=trim(RATsLabel), ID=RATsProviderNumber(i), Name=providerName, Default=trim(RATsProviderName(i)), __RC__) ! A little trickery here.
+        RATsProviderName(i) = trim(ProviderName)
+        if (MAPL_am_I_Root()) write(*,*) '<<>>: ', trim(speciesName(i))," Provider: ",trim(RATsProviderName(i))
+     endif ! Else, don't change PROVIDER info set by RATS_PROVIDER
   END DO
 
 ! CO2 is not listed as a RAT, so add it here outside of the RATs code logic
@@ -328,24 +333,22 @@ contains
   call ESMF_ConfigGetAttribute(CF, providerName, Default='None', &
                                Label="CO2_PROVIDER:", __RC__ )
 
-  str = trim(providerName)
-  str = ESMF_UtilStringLowerCase(str, __RC__)
-
   ! -- Make sure, if label is there, that it is an approved name.
-  if (trim(providerName) .ne. 'GOCART' .and. trim(str) .ne. 'none' .and. trim(providerName) .ne. 'GHG') then
-     write(*,*) 'CHEM ERROR: CO2_PROVIDER can only be None, GOCART or GHG. It is ',trim(providerName)
+  if (trim(providerName) .ne. 'GOCART' .and. ESMF_UtilStringLowerCase(trim(providerName)) .ne. 'none' &
+                 .and. trim(providerName) .ne. 'RRG' .and. len_trim(providerName) .ne. 0) then
+     write(*,*) 'CHEM ERROR: CO2_PROVIDER can only be None, GOCART or RRG. It is ',trim(providerName)
      RC = -1
      return
 
   ! -- else, if 'None', do nothing.
-  else if (trim(str) .eq. 'none') then
-     if (MAPL_am_I_root()) write(*,*) 'CHEM: CO2 is not added as a RAT from GOCART or GHG.' 
+  else if (ESMF_UtilStringLowerCase(trim(providerName)) .eq. 'none') then
+     if (MAPL_am_I_root()) write(*,*) 'CHEM: CO2 is not added as a RAT from GOCART or RRG.' 
 
-  ! -- else, if GOCART or GHG, set up export
+  ! -- else, if GOCART or RRF, set up export
   else if (trim(providerName) .eq. 'GOCART') then
      CALL MAPL_AddExportSpec( GC, SHORT_NAME = 'CO2', &
                               CHILD_ID = GOCART, __RC__ )
-  else if (trim(providerName) .eq. 'GHG'   ) then
+  else if (trim(providerName) .eq. 'RRG'   ) then
      CALL MAPL_AddExportSpec( GC, SHORT_NAME = 'CO2', &
                               CHILD_ID = RRG, __RC__ )
   endif
@@ -493,7 +496,7 @@ contains
 
   IF(myState%enable_RRG) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'DELP    ', 'AIRDENS ', 'NCN_PRCP', 'QTOT ' /), &
+          SHORT_NAME  = (/'DELP    ', 'AIRDENS ', 'NCN_PRCP', 'QTOT    ' /), &
           DST_ID = RRG, SRC_ID = CHEMENV, __RC__  )
      CALL MAPL_AddConnectivity ( GC, &
           SHORT_NAME  = (/'O3'/), &
@@ -1459,7 +1462,7 @@ contains
                                     ID = TR
            case ('DNA')
                                     ID = DNA
-           case ('GHG')
+           case ('RRG')
                                     ID = RRG
            case DEFAULT
 
