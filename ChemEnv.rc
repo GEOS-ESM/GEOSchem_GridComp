@@ -1,7 +1,7 @@
 #-----------------------
 # Settings for Lightning
 #-----------------------
-flashSource: MOIST       # MOIST (default), FIT, HEMCO, LOPEZ
+flashSource: LOPEZ       # MOIST, FIT, HEMCO, LOPEZ (default)
 
 # for FIT only:
 ratioGlobalFile: ExtData/g5chem/x/lightning/RatioGlobal.asc
@@ -20,9 +20,11 @@ MOIST_flashFactor_resvec_REPLAY: 2.0       2.0       2.0       1.84      1.84   
   FIT_flashFactor_resvec_REPLAY: 1.0       1.0       1.0       1.0       1.0       1.0 
 
 #  originally called 'alpha'
-LOPEZ_flashFactor_resvec_CTM:    37.5      37.5      37.5      37.5    165300      37.5
-LOPEZ_flashFactor_resvec_FREE:   37.5      37.5      37.5      37.5    165300      37.5
-LOPEZ_flashFactor_resvec_REPLAY: 37.5      37.5      37.5      37.5    165300      37.5
+#  10.29.24 Manyin provided c90 and c180, FREE and REPLAY
+#           Assume CTM is close to REPLAY
+LOPEZ_flashFactor_resvec_CTM:    6705.50   6705.50   6705.50   6941.09   6941.09   6941.09
+LOPEZ_flashFactor_resvec_FREE:   5672.30   5672.30   5672.30   6495.07   6495.07   6495.07
+LOPEZ_flashFactor_resvec_REPLAY: 6705.50   6705.50   6705.50   6941.09   6941.09   6941.09
 
 #  originally called 'otdLisScale'
 #  NOTE: testing (Nov2020) indicated c-90 value of 9.48e-3 might be better

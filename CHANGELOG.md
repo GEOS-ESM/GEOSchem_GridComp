@@ -13,9 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The file path was changed for anthropogenic CO emissions that are used by achem. Note that the previous version of the emissions have an incorrect seasonal cycle.
 - Update ESMF CMake target to `ESMF::ESMF`
+- Overhauled the Lopez lightning scheme, and made it the default scheme; note that lightning is used by GMI for computing NOx emissions; PCHEM does not use lightning
 
 ### Fixed
+
 - Updated GAAS_Gridcomp_Extdata.yaml in AMIP/ to avoid the model to crash when GAAS is turned on and AMIP emissions chosen.
+
 ### Deprecated
 
 
