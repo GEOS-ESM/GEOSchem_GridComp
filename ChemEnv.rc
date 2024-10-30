@@ -1,7 +1,7 @@
 #-----------------------
 # Settings for Lightning
 #-----------------------
-flashSource: LOPEZ       # MOIST, FIT, HEMCO, LOPEZ (default)
+flashSource: MOIST       # MOIST, FIT, HEMCO, LOPEZ (default)
 
 # for FIT only:
 ratioGlobalFile: ExtData/g5chem/x/lightning/RatioGlobal.asc
