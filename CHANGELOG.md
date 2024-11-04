@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Removed variable WLI from HEMCO grid comp module for compatibility with HEMCO v3.8
+- Updating CMakeLists in GEOSCHEMchem to copy all rc and yaml files to install/etc needed to run GEOS with GEOS-Chem
 
 ### Fixed
 
