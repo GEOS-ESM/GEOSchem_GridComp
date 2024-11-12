@@ -14,7 +14,7 @@ set (srcs
   Chem_AodMod.F90
   Chem_SimpleBundleMod.F90
   )
-esma_add_library(${this} SRCS ${srcs} DEPENDENCIES GMAO_mpeu MAPL GMAO_gfio_r4 esmf NetCDF::NetCDF_Fortran)
+esma_add_library(${this} SRCS ${srcs} DEPENDENCIES GMAO_mpeu MAPL GMAO_gfio_r4 ESMF::ESMF NetCDF::NetCDF_Fortran)
 target_compile_definitions (${this} PRIVATE GEOS5)
 
 ecbuild_add_executable(TARGET gogo.x SOURCES gogo.F90 LIBS ${this})

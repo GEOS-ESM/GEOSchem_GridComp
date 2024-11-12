@@ -49,6 +49,7 @@ module GEOS_ChemEnvGridCompMod
   real                       :: FIT_flashFactor
   real                       :: HEMCO_flashFactor
   real                       :: LOPEZ_flashFactor
+  logical                    :: usePreconCape       ! use CAPE, INHB and BYNCY from MOIST
 
   ! May change during the course of the run:
   integer                    :: year_for_ratio = 0
@@ -250,7 +251,7 @@ contains
 
     call MAPL_AddImportSpec(GC,                                         &
          SHORT_NAME = 'PFI_CN',                                         &
-         LONG_NAME  = 'ice_convective_precipitation',                   &
+         LONG_NAME  = '3D_flux_of_ice_convective_precipitation',                   &
          UNITS      = 'kg m-2 s-1',                                     &
          DIMS       = MAPL_DimsHorzVert,                                &
          VLOCATION  = MAPL_VLocationEdge,                        __RC__ )
@@ -368,6 +369,48 @@ contains
          UNITS      = 'Pa',                                             &
          DIMS       = MAPL_DimsHorzOnly,                                &
          VLOCATION  = MAPL_VLocationNone,                         __RC__)
+
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME ='BYNCY',                                           &
+         LONG_NAME  ='buoyancy_of surface_parcel',                      &
+         UNITS      ='m s-2',                                           &
+         RESTART    = MAPL_RestartSkip,                                 &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                       __RC__)
+
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME ='CAPE',                                            &
+         LONG_NAME  ='cape_for_surface_parcel',                         &
+         UNITS      ='J kg-1',                                          &
+         RESTART    = MAPL_RestartSkip,                                 &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                         __RC__)
+       
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME ='INHB',                                            &
+         LONG_NAME  ='inhibition_for_surface_parcel',                   &
+         UNITS      ='J kg-1',                                          &
+         RESTART    = MAPL_RestartSkip,                                 &
+         DIMS       = MAPL_DimsHorzOnly,                                & 
+         VLOCATION  = MAPL_VLocationNone,                         __RC__)
+
+
+    call MAPL_AddImportSpec(GC,                               &
+         SHORT_NAME='ZLCL',                                        &
+         LONG_NAME ='lifting_condensation_level',                  &
+         UNITS     ='m'  ,                                         &
+         DIMS      = MAPL_DimsHorzOnly,                            &
+         VLOCATION = MAPL_VLocationNone,                RC=STATUS  )
+    VERIFY_(STATUS)
+  
+    call MAPL_AddImportSpec(GC,                               &
+         SHORT_NAME='ZLFC',                                        &
+         LONG_NAME ='level_of_free_convection',                    &
+         UNITS     ='m'  ,                                         &
+         DIMS      = MAPL_DimsHorzOnly,                            &
+         VLOCATION = MAPL_VLocationNone,                RC=STATUS  )
+    VERIFY_(STATUS)
+
 
 
 ! !EXPORT STATE:
@@ -734,13 +777,16 @@ contains
                                  numberNOperFlash,                     &
                                  MOIST_flashFactor, FIT_flashFactor,   &
                                  HEMCO_flashFactor, LOPEZ_flashFactor, &
+                                 usePreconCape,                        &
                                  __RC__ )
 
     IF(MAPL_AM_I_ROOT()) THEN
-      if ( flash_source_enum == FLASH_SOURCE_MOIST ) PRINT*,'MOIST_flashFactor is ',MOIST_flashFactor
-      if ( flash_source_enum == FLASH_SOURCE_FIT   ) PRINT*, ' FIT_flashFactor is ',  FIT_flashFactor
-      if ( flash_source_enum == FLASH_SOURCE_HEMCO ) PRINT*,'HEMCO_flashFactor is ',HEMCO_flashFactor
-      if ( flash_source_enum == FLASH_SOURCE_LOPEZ ) PRINT*,'LOPEZ_flashFactor is ',LOPEZ_flashFactor
+      if ( flash_source_enum == FLASH_SOURCE_MOIST ) PRINT*,'MOIST_flashFactor is ', MOIST_flashFactor
+      if ( flash_source_enum == FLASH_SOURCE_FIT   ) PRINT*,'  FIT_flashFactor is ',   FIT_flashFactor
+      if ( flash_source_enum == FLASH_SOURCE_HEMCO ) PRINT*,'HEMCO_flashFactor is ', HEMCO_flashFactor
+      if ( flash_source_enum == FLASH_SOURCE_LOPEZ ) PRINT*,'LOPEZ_flashFactor is ', LOPEZ_flashFactor
+
+                                                     PRINT*,'usePreconCape = ', usePreconCape
     ENDIF
 
     RETURN_(ESMF_SUCCESS)
@@ -797,6 +843,9 @@ contains
   real, pointer, dimension(:,:)   ::         LWI => null()
   real, pointer, dimension(:,:)   ::        PBLH => null()
 
+  real, pointer, dimension(:,:)   ::          ZLFC => null()
+  real, pointer, dimension(:,:)   ::          ZLCL => null()
+
   real, pointer, dimension(:,:)   ::          TS => null()
   real, pointer, dimension(:,:)   ::     FROCEAN => null()
   real, pointer, dimension(:,:)   ::      FRLAND => null()
@@ -806,6 +855,10 @@ contains
   real, pointer, dimension(:,:,:) ::     CNV_MFD => null()
   real, pointer, dimension(:,:,:) ::      PFI_CN => null()
   real, pointer, dimension(:,:,:) ::      CNV_QC => null()
+
+  real, pointer, dimension(:,:)   ::       CAPE_PRECON => null()
+  real, pointer, dimension(:,:)   ::       INHB_PRECON => null()
+  real, pointer, dimension(:,:,:) ::      BYNCY_PRECON => null()
 
 ! Exports
   real,   pointer, dimension(:,:,:)  ::           delp => null()
@@ -904,11 +957,11 @@ contains
       call MAPL_GetPointer ( IMPORT, MIDLAT_ADJ,  'MIDLAT_ADJ',   __RC__ )
     end if
 
-    call MAPL_GetPointer ( IMPORT, CNV_MFC,     'CNV_MFC', __RC__ )
-    call MAPL_GetPointer ( IMPORT, CNV_MFD,     'CNV_MFD', __RC__ )
-    call MAPL_GetPointer ( IMPORT, CN_PRCP,     'CN_PRCP', __RC__ )
-    call MAPL_GetPointer ( IMPORT, PHIS,        'PHIS',    __RC__ )
-    call MAPL_GetPointer ( IMPORT, PFI_CN,      'PFI_CN', ALLOC=.TRUE., __RC__  )     !  ??
+    call MAPL_GetPointer ( IMPORT, CNV_MFC,     'CNV_MFC',  __RC__ )
+    call MAPL_GetPointer ( IMPORT, CNV_MFD,     'CNV_MFD',  __RC__ )
+    call MAPL_GetPointer ( IMPORT, CN_PRCP,     'CN_PRCP',  __RC__ )
+    call MAPL_GetPointer ( IMPORT, PHIS,        'PHIS',     __RC__ )
+    call MAPL_GetPointer ( IMPORT, PFI_CN,      'PFI_CN',   __RC__ )
 
     call MAPL_GetPointer ( IMPORT, T,           'T',        __RC__ )
     call MAPL_GetPointer ( IMPORT, TH,          'TH',       __RC__ )
@@ -921,6 +974,14 @@ contains
     call MAPL_GetPointer ( IMPORT, ZLE,         'ZLE',      __RC__ )
     call MAPL_GetPointer ( IMPORT, CNV_QC,      'CNV_QC',   __RC__ )
     call MAPL_GetPointer ( IMPORT, cellArea,    'AREA',     __RC__ )
+
+    call MAPL_GetPointer ( IMPORT,  CAPE_PRECON, 'CAPE',    __RC__ )
+    call MAPL_GetPointer ( IMPORT,  INHB_PRECON, 'INHB',    __RC__ )
+    call MAPL_GetPointer ( IMPORT, BYNCY_PRECON, 'BYNCY',   __RC__ )
+
+    call MAPL_GetPointer ( IMPORT, ZLFC, 'ZLFC',   __RC__ )
+    call MAPL_GetPointer ( IMPORT, ZLCL, 'ZLCL',   __RC__ )
+
 
               BYNCY(:,:,:) = real(0)
                CAPE(:,:)   = real(0)
@@ -949,7 +1010,8 @@ contains
                 TS, CNV_MFC, CNV_QC, T, TH, PFI_CN, PLE, Q, ZLE,   &
                 minDeepCloudTop, lightNOampFactor, numberNOperFlash, &
                 MOIST_flashFactor, FIT_flashFactor, HEMCO_flashFactor, LOPEZ_flashFactor, &
-                CNV_MFD, CAPE, BYNCY, LFR, LIGHT_NO_PROD, PHIS, &
+                CNV_MFD, usePreconCape, CAPE_PRECON, INHB_PRECON, BYNCY_PRECON, &
+                CAPE, BYNCY, ZLFC, ZLCL, LFR, LIGHT_NO_PROD, PHIS, &
                 __RC__)
 
 !   call pmaxmin('LFR', LFR, flashRateMin, flashRateMax, nc, 1, 1.)
