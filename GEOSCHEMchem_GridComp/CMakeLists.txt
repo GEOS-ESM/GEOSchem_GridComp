@@ -76,7 +76,7 @@ endif ()
 
 esma_add_library (${this}
    SRCS ${srcs}
-   DEPENDENCIES MAPL MAPL_cfio_r4 Chem_Base Chem_Shared HEMCO Cloud-J
+   DEPENDENCIES MAPL MAPL_cfio_r4 Chem_Base Chem_Shared HEMCO Cloud-J HETP
                 OpenMP::OpenMP_Fortran esmf NetCDF::NetCDF_Fortran
    )
 
