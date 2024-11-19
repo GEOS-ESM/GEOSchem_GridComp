@@ -6,12 +6,12 @@ set (MODEL_GEOSCHEM TRUE) # Will need to rework to use with GMI instead
 set (MAPL_ESMF TRUE)
 
 set (srcs
-   ${CMAKE_CURRENT_SOURCE_DIR}/${cloud_j_dir}/src/Core/cldj_sub_mod.F90
    ${CMAKE_CURRENT_SOURCE_DIR}/${cloud_j_dir}/src/Core/cldj_cmn_mod.F90
    ${CMAKE_CURRENT_SOURCE_DIR}/${cloud_j_dir}/src/Core/cldj_error_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/${cloud_j_dir}/src/Core/cldj_init_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/${cloud_j_dir}/src/Core/cldj_fjx_osa_mod.F90
    ${CMAKE_CURRENT_SOURCE_DIR}/${cloud_j_dir}/src/Core/cldj_fjx_sub_mod.F90
-   ${CMAKE_CURRENT_SOURCE_DIR}/${cloud_j_dir}/src/Core/cldj_osa_sub_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/${cloud_j_dir}/src/Core/cldj_init_mod.F90
+   ${CMAKE_CURRENT_SOURCE_DIR}/${cloud_j_dir}/src/Core/cldj_sub_mod.F90
    )
 
 # placeholder for excluding files from build
