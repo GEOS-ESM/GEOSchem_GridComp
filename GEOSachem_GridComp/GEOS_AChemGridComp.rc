@@ -41,3 +41,7 @@ aviation_vertical_layers: 0.0 100.0 9.0e3 10.0e3
 # Volcanic emissions
 # ------------------
 volcanoes: ExtData/chemistry/CARN/v202106/sfc/so2_volcanic_emissions_CARN_v202106.degassing_only.rc
+
+# OH H202 NO3 from an offline 1-hourly simulation such as GEOS-CF
+# --------------------------------------------------------------
+apply_diurnal_cycle: .false.
