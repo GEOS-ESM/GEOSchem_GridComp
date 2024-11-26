@@ -21,6 +21,7 @@ module GEOS_ChemGridCompMod
   use  GEOS_ChemEnvGridCompMod,  only :   ChemEnv_SetServices => SetServices
   use       GOCART_GridCompMod,  only :    GOCART_SetServices => SetServices
   use     GOCART2G_GridCompMod,  only : GOCART2G_SetServices  => SetServices !GOCART REFACTOR
+  use          RRG_GridCompMod,  only :       RRG_SetServices => SetServices !Carbon gases refactor
   use    StratChem_GridCompMod,  only : StratChem_SetServices => SetServices
   use      GMIchem_GridCompMod,  only :       GMI_SetServices => SetServices
   use    CARMAchem_GridCompMod,  only :     CARMA_SetServices => SetServices
@@ -54,6 +55,7 @@ module GEOS_ChemGridCompMod
      LOGICAL :: enable_GOCART
      LOGICAL :: enable_GOCARTdata
      LOGICAL :: enable_GOCART2G        ! GOCART REFACTOR
+     LOGICAL :: enable_RRG             ! Carbon gases refactor (MSL)
      LOGICAL :: enable_GAAS
      LOGICAL :: enable_H2O
      LOGICAL :: enable_STRATCHEM
@@ -92,6 +94,7 @@ module GEOS_ChemGridCompMod
   integer ::        ACHEM = -1
   integer ::       GOCART = -1
   integer ::     GOCART2G = -1
+  integer ::          RRG = -1
   integer ::   GOCARTdata = -1
   integer ::         GAAS = -1
   integer ::          H2O = -1
@@ -141,7 +144,7 @@ contains
 
    type (ESMF_GridComp), pointer :: GCS(:)
 
-    integer                    :: I, RATS_PROVIDER, AERO_PROVIDER
+    integer                    :: I, J, RATS_PROVIDER, AERO_PROVIDER
     type (ESMF_Config), target :: CF, myCF
 
     integer                    :: n, id
@@ -175,6 +178,11 @@ contains
     integer                     :: nnInst
     logical                     :: GOCART_instance_of_HEMCO   ! TRUE if HEMCO is running a GOCART instance
     logical                     ::    GMI_instance_of_HEMCO   ! TRUE if HEMCO is running a GMI instance
+
+!   For RATs diagnostics
+    character(LEN=ESMF_MAXSTR) :: RATsLabel, gen_str
+    character(len=ESMF_MAXSTR), allocatable :: nameRATS(:)
+    logical                    :: getout
 
 !=============================================================================
 
@@ -219,7 +227,8 @@ contains
     call ESMF_ConfigGetAttribute(myCF, myState%enable_ACHEM,      Default=.FALSE., Label="ENABLE_ACHEM:",       __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCART,     Default=.FALSE., Label="ENABLE_GOCART:",      __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCARTdata, Default=.FALSE., Label="ENABLE_GOCART_DATA:", __RC__ )
-    call ESMF_ConfigGetAttribute(myCF,   myState%enable_GOCART2G, Default=.FALSE., Label="ENABLE_GOCART2G:",    __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_GOCART2G,   Default=.FALSE., Label="ENABLE_GOCART2G:",    __RC__ )
+    call ESMF_ConfigGetAttribute(myCF, myState%enable_RRG,        Default=.FALSE., Label="ENABLE_RRG:",         __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_GAAS,       Default=.FALSE., Label="ENABLE_GAAS:",        __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_H2O,        Default=.FALSE., Label="ENABLE_H2O:",         __RC__ )
     call ESMF_ConfigGetAttribute(myCF, myState%enable_STRATCHEM,  Default=.FALSE., Label="ENABLE_STRATCHEM:",   __RC__ )
@@ -254,6 +263,7 @@ contains
     if (myState%enable_GOCART    )      GOCART = MAPL_AddChild(GC, NAME=      'GOCART', SS=GOCART_SetServices,    __RC__)
     if (myState%enable_GOCARTdata)  GOCARTdata = MAPL_AddChild(GC, NAME= 'GOCART.data', SS=GOCART_SetServices,    __RC__)
     if (myState%enable_GOCART2G  )    GOCART2G = MAPL_AddChild(GC, NAME=    'GOCART2G', SS=GOCART2G_SetServices,  __RC__)
+    if (myState%enable_RRG       )         RRG = MAPL_AddChild(GC, NAME=         'RRG', SS=RRG_SetServices,       __RC__)
     if (myState%enable_GAAS      )        GAAS = MAPL_AddChild(GC, NAME=        'GAAS', SS=GAAS_SetServices,      __RC__)
     if (myState%enable_H2O       )         H2O = MAPL_AddChild(GC, NAME=         'H2O', SS=H2O_SetServices,       __RC__)
     if (myState%enable_STRATCHEM )   STRATCHEM = MAPL_AddChild(GC, NAME=   'STRATCHEM', SS=StratChem_SetServices, __RC__)
@@ -308,6 +318,95 @@ contains
 ! ------------------------------------------------------------
   CALL MAPL_AddExportSpec ( GC, SHORT_NAME = 'H2O_TEND', &
                             CHILD_ID = RATS_PROVIDER, __RC__ )
+
+! Allow setting individual RAT sources via AGCM.rc
+  DO i = 1, numRATs
+     write(RATsLabel,'(a)') trim(speciesName(i))//'_PROVIDER:'
+     call ESMF_ConfigGetAttribute(CF, providerName, Default='none', Label=RATsLabel, __RC__)
+     call ESMF_ConfigFindLabel( CF,RATsLabel,rc=RC ) ! Godda reset!
+     n = ESMF_ConfigGetLen(CF,label=RATsLabel,rc=status)
+     if (ESMF_UtilStringLowerCase(trim(ProviderName)) .ne. 'none' .and. n .gt. 0) then ! If *_PROVIDER looks like a valid GridComp tag
+        call GetProvider_(CF, Label=trim(RATsLabel), ID=RATsProviderNumber(i), Name=providerName, Default=trim(RATsProviderName(i)), __RC__) !
+        RATsProviderName(i) = trim(ProviderName)
+        if (MAPL_am_I_Root()) write(*,*) '<<>>: ', trim(speciesName(i))," Provider: ",trim(RATsProviderName(i))
+     endif ! Else, don't change PROVIDER info set by RATS_PROVIDER
+  END DO
+
+! CO2 is not listed as a RAT, so add it here outside of the RATs code logic
+  ! -- get info from AGCM.rc
+  call ESMF_ConfigGetAttribute(CF, providerName, Default='None', &
+                               Label="CO2_PROVIDER:", __RC__ )
+
+  str = trim(providerName)
+  str = ESMF_UtilStringLowerCase(str, __RC__)
+
+  ! -- Make sure, if label is there, that it is an approved name.
+  if (trim(providerName) .ne. 'GOCART' .and. trim(str) .ne. 'none' .and. trim(providerName) .ne. 'RRG' .and. len_trim(providerName) .ne. 0) then
+     write(*,*) 'CHEM ERROR: CO2_PROVIDER can only be None, GOCART or RRG. It is ',trim(providerName)
+     RC = -1
+     return
+
+  ! -- else, if 'None', do nothing.
+  else if (trim(str) .eq. 'none') then
+     if (MAPL_am_I_root()) write(*,*) 'CHEM: CO2 is not added as a RAT from GOCART or RRG.' 
+
+  ! -- else, if GOCART or RRG, set up export
+  else if (trim(providerName) .eq. 'GOCART') then
+     CALL MAPL_AddExportSpec( GC, SHORT_NAME = 'CO2', &
+                              CHILD_ID = GOCART, __RC__ )
+  else if (trim(providerName) .eq. 'RRG'   ) then
+     CALL MAPL_AddExportSpec( GC, SHORT_NAME = 'CO2', &
+                              CHILD_ID = RRG, __RC__ )
+  endif
+
+  call ESMF_ConfigFindLabel(CF, 'RATS_DIAGNOSTICS:', RC=STATUS) ! Use STATUS to test if label was found
+  
+  IF (STATUS .eq. ESMF_SUCCESS) THEN 
+     n = ESMF_ConfigGetLen(CF,label='RATS_DIAGNOSTICS:',RC=STATUS)
+     VERIFY_(STATUS)
+  ENDIF
+  
+  ! No error thrown. Just go around this if nothing learnable from config.
+  IF (STATUS .eq. ESMF_SUCCESS .and. n .ne. 0 ) THEN ! if the label was found...
+     
+     ! Get number of words in config line
+     n = ESMF_ConfigGetLen(CF,label='RATS_DIAGNOSTICS:',RC=STATUS)
+     VERIFY_(STATUS)
+     
+     allocate(nameRATS(n), STAT=STATUS)
+     VERIFY_(STATUS)
+
+     ! Put the cursor at the label
+     call ESMF_ConfigFindLabel(CF, 'RATS_DIAGNOSTICS:', RC=STATUS)
+     VERIFY_(STATUS)
+     
+     ! Loop over RATS in list
+     DO i=1,n
+        call ESMF_ConfigGetAttribute(CF,gen_str,RC=STATUS)
+        VERIFY_(STATUS)
+        nameRATS(i) = trim(gen_str)
+     ENDDO
+
+     DO i=1,n
+
+        if (trim(nameRATs(i)) .eq. 'CO2') cycle ! Since CO2 isn't listed as a RAT in the species list
+        getout = .false.
+        DO j=1,numRATs
+           if (index(trim(speciesName(j)),trim(nameRATs(i))).gt.0) getout = .true.
+        ENDDO
+        if (getout) cycle
+
+        CALL MAPL_AddExportSpec( GC, &
+             SHORT_NAME  = trim(nameRATs(i)),      &
+             CHILD_ID    = RRG, RC=STATUS    )
+        VERIFY_(STATUS)
+
+     ENDDO
+     
+     deallocate(nameRATs, STAT=STATUS)
+     VERIFY_(STATUS)
+
+  ENDIF
 
 ! Priority for first three RATs, OX, O3 and O3PPMV, goes to the ANALYSIS_OX_PROVIDER.
 ! -----------------------------------------------------------------------------------
@@ -448,6 +547,15 @@ contains
      CALL MAPL_AddConnectivity ( GC, &
           SHORT_NAME  = (/'DELP    ', 'AIRDENS ', 'NCN_PRCP' /), &
           DST_ID = GOCART2G, SRC_ID = CHEMENV, __RC__  )
+  ENDIF
+
+  IF(myState%enable_RRG) then
+     CALL MAPL_AddConnectivity ( GC, &
+          SHORT_NAME  = (/'DELP    ', 'AIRDENS ', 'NCN_PRCP', 'QTOT ' /), &
+          DST_ID = RRG, SRC_ID = CHEMENV, __RC__  )
+     CALL MAPL_AddConnectivity ( GC, &
+          SHORT_NAME  = (/'O3'/), &
+          DST_ID = RRG, SRC_ID = PCHEM, __RC__  )
   ENDIF
 
   IF(myState%enable_GAAS) then
@@ -1455,6 +1563,8 @@ contains
                                     ID = TR
            case ('DNA')
                                     ID = DNA
+           case ('RRG')
+                                    ID = RRG
            case DEFAULT
 
               message = "unknown provider "//trim(name)
