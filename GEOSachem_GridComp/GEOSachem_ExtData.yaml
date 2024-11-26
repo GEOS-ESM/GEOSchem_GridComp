@@ -7,7 +7,7 @@ Collections:
     template: ExtData/chemistry/GEIA/v0.0.0/sfc/GEIA.emis_NH3.ocean.x576_y361.t12.20080715_12z.nc4
   GEOSachem_MERRA2_GMI.tavg24_3d_dac_Nv.x576_y361_t12.%y4.nc4:
     template: ExtData/chemistry/MERRA2GMI/v0.0.0/L72/MERRA2_GMI.tavg24_3d_dac_Nv.x576_y361_t12.%y4.nc4
-  c48_CFv2.chm_inst_1hr_glo_L180x91_v72.%y4%m2%d2_%h2%n2z.nc4:
+  GEOSachem_c48_CFv2.chm_inst_1hr_glo_L180x91_v72.%y4%m2%d2_%h2%n2z.nc4:
     template: ExtData/c48_CFv2/holding/chm_inst_1hr_glo_L180x91_v72/c48_CFv2.chm_inst_1hr_glo_L180x91_v72.%y4%m2%d2_%h200z.nc4
     freq: PT01H
   GEOSachem_SOAG.emiss.x144_y91_t12.1990.nc4:
@@ -102,7 +102,7 @@ Exports:
     collection: GEOSachem_MERRA2_GMI.tavg24_3d_dac_Nv.x576_y361_t12.%y4.nc4
     variable: no3
   OH:
-    collection: c48_CFv2.chm_inst_1hr_glo_L180x91_v72.%y4%m2%d2_%h2%n2z.nc4
+    collection: GEOSachem_c48_CFv2.chm_inst_1hr_glo_L180x91_v72.%y4%m2%d2_%h2%n2z.nc4
     regrid: CONSERVE
     sample: GEOSachem_1hr
     variable: OH
