@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+
+- Added the RRG child component as a refactor of an instance-based system for GHG modeling
+- Added the ability to specify RATS providers individually, including for CO2 (via CO2_PROVIDER)
+
 ### Removed
 ### Changed
 
