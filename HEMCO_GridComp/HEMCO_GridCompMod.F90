@@ -592,8 +592,20 @@ CONTAINS
 ! LOCAL VARIABLES:
 !  
     TYPE(Instance), POINTER  :: ThisInst => NULL()
+    type(MAPL_MetaComp), pointer :: MAPL
+    type(ESMF_Alarm)             :: ALARM
+    logical                      :: timeToDoWork
 
     __Iam__('Run1')
+
+    call MAPL_GetObjectFromGC ( GC, MAPL, _RC)
+!  Get RUN_DT alarn from MAPL
+!  --------------------------
+    call MAPL_Get(MAPL, RUNALARM=ALARM, _RC)
+    timeToDoWork = ESMF_AlarmIsRinging (ALARM, _RC)
+    if (.not. timeToDoWork) then
+       _RETURN(ESMF_SUCCESS)
+    end if
 
     !=======================================================================
     ! Run1 begins here!

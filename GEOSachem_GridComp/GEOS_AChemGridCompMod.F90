@@ -1327,16 +1327,9 @@ contains
 !  -----------------------------------
    call MAPL_GetObjectFromGC(GC, mgState, __RC__)
 
-   call MAPL_TimerOn(mgState, 'TOTAL', __RC__)
-   call MAPL_TimerOn(mgState, 'RUN',   __RC__)
-
-!  Get parameters from generic state
-!  ----------------------------------
-   call MAPL_Get(mgState, LONS=lons, LATS=lats, RunAlarm=run_alarm, __RC__)
-
-
 !  If it is time, update AChem state
 !  ---------------------------------
+   call MAPL_Get(mgState, runAlarm=run_alarm, _RC)
    run_alarm_ringing = ESMF_AlarmIsRinging(run_alarm, __RC__)
 
    if (run_alarm_ringing) then
@@ -1345,6 +1338,12 @@ contains
        RETURN_(ESMF_SUCCESS)
    endif
 
+   call MAPL_TimerOn(mgState, 'TOTAL', __RC__)
+   call MAPL_TimerOn(mgState, 'RUN',   __RC__)
+
+!  Get parameters from generic state
+!  ----------------------------------
+   call MAPL_Get(mgState, LONS=lons, LATS=lats, _RC)
 
 !  Extract relevant runtime information
 !  ------------------------------------
