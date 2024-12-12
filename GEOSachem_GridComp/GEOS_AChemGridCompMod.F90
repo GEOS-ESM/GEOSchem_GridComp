@@ -1345,14 +1345,6 @@ contains
 !  ----------------------------------
    call MAPL_Get(mgState, LONS=lons, LATS=lats, _RC)
 
-   call MAPL_TimerOn(mgState, 'TOTAL', __RC__)
-   call MAPL_TimerOn(mgState, 'RUN',   __RC__)
-
-!  Get parameters from generic state
-!  ----------------------------------
-   call MAPL_Get(mgState, LONS=lons, LATS=lats, _RC)
-
-
 !  Extract relevant runtime information
 !  ------------------------------------
    call extract_(GC, CLOCK, self, GRID, CF, i1, i2, im, j1, j2, jm, km, nymd, nhms, cdt, __RC__)
