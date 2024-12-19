@@ -1314,12 +1314,13 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
           VERIFY_(STATUS)
        end if
 
+       call MAPL_TimerOff(MAPL,"RUN"  )
+
        if ( ESMF_AlarmIsRinging( PCHEM_ALARM ) ) then
 
           call ESMF_AlarmRingerOff(PCHEM_ALARM, RC=STATUS)
           VERIFY_(STATUS)
 
-          call MAPL_TimerOff(MAPL,"RUN"  )
           call MAPL_TimerOn (MAPL,"-Read Species"  )
           call MAPL_GetResource(MAPL, PCHEMFILE,'pchem_clim:' ,DEFAULT='pchem_clim.dat', RC=STATUS )
           VERIFY_(STATUS)
@@ -1484,7 +1485,6 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
           ENDIF
 
           call MAPL_TimerOff (MAPL,"-Read Species"  )
-          call MAPL_TimerOn  (MAPL,"RUN"  )
 
           call ESMF_TimeIntervalSet(oneMonth, MM = 1, RC=STATUS )
           VERIFY_(STATUS)
@@ -1509,6 +1509,8 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 #endif
 
        endif
+
+       call MAPL_TimerOn  (MAPL,"RUN"  )
 
 ! Verify INDX1 and INDX2 once a day
 ! ---------------------------------
@@ -1587,11 +1589,11 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 
        do L=1,LM
 
-! Eliminate mesospheric ozone when sun is out
-!--------------------------------------------
+! Eliminate mesospheric ozone (above 3hPa) when sun is out
+!---------------------------------------------------------
 
-          where(PL(:,:,L) < 100.0 .and. ZTH > 0.0)
-             O3VMR = OX(:,:,L)*exp(-1.5*(log10(PL(:,:,L))-2.0)**2)
+          where(PL(:,:,L) < 1000 .and. ZTH > 0.0)
+             O3VMR = OX(:,:,L)*exp(-1.5*(log10(PL(:,:,L)/10.0)-2.0)**4)
           elsewhere
              O3VMR = OX(:,:,L)
           end where
@@ -1779,10 +1781,10 @@ contains
           end do
           deallocate(WRK)
        elseif(trim(NAME)=="OX") then
-          call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=15000. ,RC=STATUS)
+          call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=10000. ,RC=STATUS)
           VERIFY_(STATUS)
           do L=1,LM
-             ! strongly constrained (TAU=DT) below the 150hPa
+             ! strongly constrained (TAU=DT) below the 100hPa
              LOSS_INT(:,:,L) = (1./TAU) * (      max( min( (PCRIT-PL(:,:,L))/DELP, 1.0), 0.0)) + &
                                (1./DT ) * (1.0 - max( min( (PCRIT-PL(:,:,L))/DELP, 1.0), 0.0)) 
           end do
