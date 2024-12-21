@@ -1556,20 +1556,6 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 
     endif
 
-! WMP clear out everything radiatively active near the sponge layer
-!------------------------------------------------------------------
-    where(PL < 100)
-      OX  = OX *exp(-1.5*(log10(PL/100.0)-2.0)**4)
-      CH4 = CH4*exp(-1.5*(log10(PL/100.0)-2.0)**4)
-      N2O = N2O*exp(-1.5*(log10(PL/100.0)-2.0)**4)
-      H2O = H2O*exp(-1.5*(log10(PL/100.0)-2.0)**4)
-    elsewhere
-      OX  = OX 
-      CH4 = CH4
-      N2O = N2O
-      H2O = H2O
-    end where
-
 ! Ozone
 !------
 
