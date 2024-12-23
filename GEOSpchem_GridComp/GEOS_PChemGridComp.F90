@@ -1592,8 +1592,8 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 ! Eliminate mesospheric ozone (above 3hPa) when sun is out
 !---------------------------------------------------------
 
-          where(PL(:,:,L) < 1000 .and. ZTH > 0.0)
-             O3VMR = OX(:,:,L)*exp(-1.5*(log10(PL(:,:,L)/10.0)-2.0)**4)
+          where(PL(:,:,L) < 100 .and. ZTH > 0.0)
+             O3VMR = OX(:,:,L)*exp(-1.5*(log10(PL(:,:,L))-2.0)**2)
           elsewhere
              O3VMR = OX(:,:,L)
           end where
