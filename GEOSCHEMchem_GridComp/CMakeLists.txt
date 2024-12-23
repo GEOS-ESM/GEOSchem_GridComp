@@ -115,8 +115,9 @@ install(
 
 file (GLOB resource_files1 CONFIGURE_DEPENDS 
       "@geos-chem/run/GEOS/*.rc"
-      "@geos-chem/run/GEOS/*.yml"
-      "@geos-chem/run/GEOS/*.yaml"
+      "@geos-chem/run/GEOS/geos*.yml"
+      "@geos-chem/run/GEOS/geos*.yaml"
+      "@geos-chem/run/shared/species*.yml"
       )
 
 install(
