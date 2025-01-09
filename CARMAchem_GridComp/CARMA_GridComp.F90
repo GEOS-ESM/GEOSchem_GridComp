@@ -1088,7 +1088,7 @@ CONTAINS
 ! This is set in the internal_spec but possibly is bootstrapped.
 ! If bootstrapped set to current temperature.
   n = nCARMAbegin + reg%NBIN*reg%NELEM + reg%NGAS
-  if(qa(n)%data3d(i1,j2,km) < 0.) qa(n)%data3d = tmpu
+  if(qa(n)%data3d(i1,j2,km) <= 0.) qa(n)%data3d = tmpu
 ! And same for gases -- first, initialize water vapor to current
   do igas = 1, reg%NGAS
    n  = nCARMAbegin + reg%NBIN*reg%NELEM - 1 + igas
