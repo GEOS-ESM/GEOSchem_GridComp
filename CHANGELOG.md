@@ -10,13 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Added Cloud-J subdirectory and CMake updates for Cloud-J repository
-- Added HETP subdirectory and CMake updates for HETP repository
+- Added HETP subdirectory and CMake updates for new HETP submodule
 
 ### Removed
 
 ### Changed
 - Removed variable WLI from HEMCO grid comp module for compatibility with HEMCO v3.8
 - Updating CMakeLists in GEOSCHEMchem to copy all rc and yaml files to install/etc needed to run GEOS with GEOS-Chem
+- Updated subroutine call in HEMCO_GridCompMod.F90 for compatibility with HEMCO 3.10.1
+- Updated CMakeLists.txt for Cloud-J for compatibility with Cloud-J 8.0.1
 
 ### Fixed
 
