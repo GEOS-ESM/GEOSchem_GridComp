@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 ### Changed
+### Fixed
+### Deprecated
+
+
+## [1.15.0] - 2025-01-16
+### Added
+### Removed
+### Changed
 
 - The file path was changed for anthropogenic CO emissions that are used by achem. Note that the previous version of the emissions have an incorrect seasonal cycle.
 - Update ESMF CMake target to `ESMF::ESMF`
