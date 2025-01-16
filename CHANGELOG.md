@@ -14,6 +14,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 
 
+## [1.15.0] - 2025-01-16
+### Added
+### Removed
+### Changed
+
+- The file path was changed for anthropogenic CO emissions that are used by achem. Note that the previous version of the emissions have an incorrect seasonal cycle.
+- Update ESMF CMake target to `ESMF::ESMF`
+- Overhauled the Lopez lightning scheme, and made it the default scheme; note that lightning is used by GMI for computing NOx emissions; PCHEM does not use lightning
+
+### Fixed
+
+- Updated GAAS_Gridcomp_Extdata.yaml in AMIP/ to avoid the model to crash when GAAS is turned on and AMIP emissions chosen.
+
+### Deprecated
+
+
 ## [1.14.0] - 2024-06-21
 
 ### Added
@@ -24,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Update CI to use Baselibs default from the CircleCI orb
+- Update CI to use v2 orb
 
 ### Fixed
 
@@ -87,7 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Instead of importing a set of QQK diagnostic fields for chemical loss of stOX, TR now imports a single field: stOX_loss
-- For OPS configuration: removal of links, change of QFED paths from vNRT/ to v2.5r1-nrt/ 
+- For OPS configuration: removal of links, change of QFED paths from vNRT/ to v2.5r1-nrt/
 - For AMIP configuration: update of QFED from v2.5r1 to v2.6r1 (most recent collection)
 - Moved to GitHub Actions for label enforcement
 - Update CircleCI to use Baselibs 7.7.0
@@ -135,7 +151,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updates to emissions from galactic cosmic rays in GMI
 - Minor improvement to Runtime_Registry module.
-- Broke away the GMI contents from Chem_Registry.rc, into a separate file 
+- Broke away the GMI contents from Chem_Registry.rc, into a separate file
 
 ## [1.10.1] - 2022-08-30
 
@@ -191,7 +207,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix YAML typo in `GEOSachem_GridComp/GEOSachem_ExtData.yaml`
 
-## [1.9.4] - 2022-05-31 
+## [1.9.4] - 2022-05-31
 
 ### Fixed
 
