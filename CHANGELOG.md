@@ -7,16 +7,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
 ### Added
+- in CARMA: Added 'microfast parameterization'
+- in CARMA: Added a routine to normalize dmdt (prevent gas overshoot)
+- in CARMA: Added a NULL option for vapor pressure equation
+- Added SO4REFF connectivity from CARMA to GMI
+- Added connectivity (OH, H2O2, NO3) from GMI to GOCART
+
 ### Removed
+
 ### Changed
+- in CARMA: In a few routines removed initialization of 'rc'
+- in CARMA: Changed the test for bootstrapping temperature
+
 ### Fixed
+
 ### Deprecated
 
 
 ## [1.15.0] - 2025-01-16
-### Added
-### Removed
+
 ### Changed
 
 - The file path was changed for anthropogenic CO emissions that are used by achem. Note that the previous version of the emissions have an incorrect seasonal cycle.
@@ -26,8 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Updated GAAS_Gridcomp_Extdata.yaml in AMIP/ to avoid the model to crash when GAAS is turned on and AMIP emissions chosen.
-
-### Deprecated
 
 
 ## [1.14.0] - 2024-06-21
