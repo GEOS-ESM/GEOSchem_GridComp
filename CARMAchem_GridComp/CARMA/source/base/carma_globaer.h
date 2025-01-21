@@ -145,6 +145,7 @@
 #define do_print_init carma%f_do_print_init
 #define do_step       carma%f_do_step
 #define do_substep    carma%f_do_substep
+#define do_pfast      carma%f_do_pfast
 #define do_thermo     carma%f_do_thermo
 #define do_vdiff      carma%f_do_vdiff
 #define do_vtran      carma%f_do_vtran

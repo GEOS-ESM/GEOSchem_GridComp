@@ -151,14 +151,17 @@ subroutine microfast(carma, cstate, iz, scale_threshold, rc)
     call downgevapply(carma, cstate, iz, rc)
     if (rc < RC_OK) return
 
+    ! If this is a parameterized timestep, scale bin values to prevent gas overshoot
+    if (rc == RC_WARNING_PFAST) call pfastdmdt(carma, cstate, iz, rc)
+
     call gsolve(carma, cstate, iz, previous_ice, previous_liquid, scale_threshold, rc)
-    if (rc /=RC_OK) return
+    if (rc /= RC_OK .and. rc /= RC_WARNING_PFAST) return
   endif
 
   ! Update temperature if thermal processes requested
   if (do_thermo) then
     call tsolve(carma, cstate, iz, scale_threshold, rc)
-    if (rc /= RC_OK) return
+    if (rc /= RC_OK .and. rc /= RC_WARNING_PFAST) return
   endif
 
   !  Update saturation ratios

@@ -76,7 +76,9 @@ subroutine freezaerl_mohler2010(carma, cstate, iz, rc)
   real(kind=f)                         :: fkelvi
 
 
-  rc = RC_OK
+  ! PAC: Assuming success inside of a subroutine is a problem, any errors
+  !       are erased by this.
+  !rc = RC_OK
   
   !  Aerosol freezing limited to T < 240K
   if (t(iz) <= 240._f) then
