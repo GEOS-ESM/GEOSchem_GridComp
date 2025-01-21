@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added Cloud-J subdirectory and CMake updates for Cloud-J repository
 - Added HETP subdirectory and CMake updates for new HETP submodule
+- Copy GEOS-Chem *.yaml and *.yml files to build directory
 
 ### Removed
 
