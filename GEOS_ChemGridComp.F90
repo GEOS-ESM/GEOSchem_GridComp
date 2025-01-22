@@ -361,6 +361,7 @@ contains
 
   call ESMF_ConfigFindLabel(CF, 'RATS_DIAGNOSTICS:', RC=STATUS) ! Use STATUS to test if label was found
   
+  n = 0
   IF (STATUS .eq. ESMF_SUCCESS) THEN 
      n = ESMF_ConfigGetLen(CF,label='RATS_DIAGNOSTICS:',RC=STATUS)
      VERIFY_(STATUS)
@@ -553,9 +554,6 @@ contains
      CALL MAPL_AddConnectivity ( GC, &
           SHORT_NAME  = (/'DELP    ', 'AIRDENS ' /), &
           DST_ID = RRG, SRC_ID = CHEMENV, __RC__  )
-     CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'O3'/), &
-          DST_ID = RRG, SRC_ID = PCHEM, __RC__  )
   ENDIF
 
   IF(myState%enable_GAAS) then
