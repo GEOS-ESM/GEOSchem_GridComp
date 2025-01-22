@@ -554,6 +554,9 @@ contains
      CALL MAPL_AddConnectivity ( GC, &
           SHORT_NAME  = (/'DELP    ', 'AIRDENS ' /), &
           DST_ID = RRG, SRC_ID = CHEMENV, __RC__  )
+     CALL MAPL_AddConnectivity ( GC, &
+          SHORT_NAME  = (/'O3'/), &
+          DST_ID = RRG, SRC_ID = PCHEM, __RC__  )
   ENDIF
 
   IF(myState%enable_GAAS) then
