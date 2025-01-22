@@ -319,6 +319,10 @@ contains
   CALL MAPL_AddExportSpec ( GC, SHORT_NAME = 'H2O_TEND', &
                             CHILD_ID = RATS_PROVIDER, __RC__ )
 
+! Priority for first three RATs, OX, O3 and O3PPMV, goes to the ANALYSIS_OX_PROVIDER.
+! -----------------------------------------------------------------------------------
+  call GetProvider_(CF, Label='ANALYSIS_OX_PROVIDER:', ID=i, Name=providerName, Default='PCHEM', __RC__)
+
 ! Allow setting individual RAT sources via AGCM.rc
   DO i = 1, numRATs
      write(RATsLabel,'(a)') trim(speciesName(i))//'_PROVIDER:'
@@ -408,10 +412,6 @@ contains
      VERIFY_(STATUS)
 
   ENDIF
-
-! Priority for first three RATs, OX, O3 and O3PPMV, goes to the ANALYSIS_OX_PROVIDER.
-! -----------------------------------------------------------------------------------
-  call GetProvider_(CF, Label='ANALYSIS_OX_PROVIDER:', ID=i, Name=providerName, Default='PCHEM', __RC__)
 
   RATsProviderNumber(1:3) = i
   RATsProviderName(1:3)   = trim(providerName)
