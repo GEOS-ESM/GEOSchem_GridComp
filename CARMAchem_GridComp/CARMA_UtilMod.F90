@@ -310,12 +310,8 @@ CONTAINS
 !    In this implementation we compute f(u,v,...) in a separate routine
 !    and do the rest here.
 
-!    Read dust source function from file if not already allocated
-     if( .not. associated(gcCARMA%dust_source)) then
-      allocate(gcCARMA%dust_source(i1:i2,j1:j2),__STAT__)
-      gcCARMA%dust_source = 0.
-      call MAPL_GetPointer( impChem, gcCARMA%dust_source, 'CARMA_DU_SRC', __RC__)
-     endif
+!    Read dust source function from file
+     call MAPL_GetPointer( impChem, gcCARMA%dust_source, 'CARMA_DU_SRC', __RC__)
 
 !    Do the emission calculation
 !    The DEAD emission calculation occurs outside the size bins, returning

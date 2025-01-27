@@ -188,16 +188,29 @@ subroutine newstate_calc(carma, cstate, scale_threshold, rc)
               nretries = nretries + 1
               
               if (nretries > maxretries) then
-                if (do_print) write(LUNOPRT,1) iz, isubstep, ntsubsteps, nretries - 1._f
-                rc = RC_ERROR
-                exit
+                if (do_pfast) then
+                    if (nretries > maxretries+1) then
+                        if (do_print) write(LUNOPRT,1) iz, isubstep, ntsubsteps, -1._f*nretries
+                        rc = RC_ERROR
+                        exit
+                    endif
+                    rc = RC_WARNING_PFAST
+                else
+                    if (do_print) write(LUNOPRT,1) iz, isubstep, ntsubsteps, nretries - 1._f
+                    rc = RC_ERROR
+                    exit
+                end if
               end if
             
               ! Try twice the substeps
               !
               ! NOTE: We are going to rely upon retries, so don't clutter the log
               ! with retry print statements. They slow down the run.
-              ntsubsteps = ntsubsteps * 2
+              if (rc == RC_WARNING_PFAST) then
+                  ntsubsteps = minsubsteps
+              else
+                  ntsubsteps = ntsubsteps * 2
+              endif
               
 !              if (do_print) write(LUNOPRT,*) "newstate::WARNING - Substep failed, retrying with ", ntsubsteps, " substeps."
   
@@ -213,7 +226,7 @@ subroutine newstate_calc(carma, cstate, scale_threshold, rc)
                 if (rc < RC_OK) return
               end do
               
-              rc = RC_OK
+              if (rc == RC_WARNING_RETRY) rc = RC_OK
               takeSteps = .true.
               exit
               
@@ -238,6 +251,8 @@ subroutine newstate_calc(carma, cstate, scale_threshold, rc)
       nsubstep = nsubstep + ntsubsteps
       nretry   = nretry   + nretries
       
+      if (rc == RC_WARNING_PFAST) rc = RC_OK
+
       if (do_substep) zsubsteps(iz) = ntsubsteps
     end do
   

@@ -987,7 +987,6 @@ CONTAINS
 
 !  Destroy emissions
 !  -----------------
-   if(associated(gcCARMA%dust_source))       deallocate( gcCARMA%dust_source, __STAT__)
    if(associated(gcCARMA%vLat))              deallocate( gcCARMA%vLat, __STAT__)
    if(associated(gcCARMA%vLon))              deallocate( gcCARMA%vLon, __STAT__)
    if(associated(gcCARMA%vSO2))              deallocate( gcCARMA%vSO2, __STAT__)

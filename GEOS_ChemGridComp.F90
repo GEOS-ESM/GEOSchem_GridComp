@@ -603,8 +603,8 @@ contains
       endif
       if(myState%enable_GMICHEM .AND. TRIM(providerName) == "CARMA") then
          CALL MAPL_AddConnectivity ( GC, &
-              SRC_NAME  = (/ 'CARMA_SUSAREA '/), &
-              DST_NAME  = (/ 'SO4SAREA      '/), &
+              SRC_NAME  = (/ 'CARMA_SUSAREA ', 'CARMA_SUREFF  '/), &
+              DST_NAME  = (/ 'SO4SAREA      ', 'SO4REFF       '/), &
               DST_ID = GMICHEM, SRC_ID = CARMA, __RC__)
       endif
       if(myState%enable_STRATCHEM .AND. TRIM(providerName) == "CARMA") then
@@ -776,12 +776,20 @@ contains
 ! ---------------------------------
   IF(myState%enable_GMICHEM .AND. TRIM(providerName) == "GOCART2G") THEN
 
-   IF(myState%enable_GOCART2G) &
+   IF(myState%enable_GOCART2G) THEN
 
     CALL MAPL_AddConnectivity ( GC, &
          SHORT_NAME  = (/'AERO'/),                &
          DST_ID = GMICHEM, SRC_ID = GOCART2G, __RC__  )
 
+    !  ... For GOCART::SU,NI
+    !  ---------------------
+    CALL MAPL_AddConnectivity ( GC, &
+         SRC_NAME  = (/ "OH  ", "H2O2", "NO3 " /), &
+         DST_NAME  = (/ "GMI_OH  ", "GMI_H2O2", "GMI_NO3 " /), &
+         DST_ID=GOCART2G, SRC_ID=GMICHEM, __RC__)
+
+   END IF
   END IF
 
 ! GOCART.data <=> GMICHEM coupling ...

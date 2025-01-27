@@ -333,7 +333,7 @@ contains
   !!  @version Feb-2009 
   !!  @author  Chuck Bardeen 
   subroutine CARMA_Initialize(carma, rc, do_cnst_rlh, do_coag, do_detrain, do_fixedinit, &
-      do_grow, do_incloud, do_explised, do_print_init, do_substep, do_thermo, do_vdiff, &
+          do_grow, do_incloud, do_explised, do_print_init, do_substep, do_pfast, do_thermo, do_vdiff, &
       do_vtran, do_drydep, vf_const, minsubsteps, maxsubsteps, maxretries, conmax, &
       do_pheat, do_pheatatm, dt_threshold, cstick, gsticki, gstickl, tstick, do_clearsky, &
       do_partialinit)
@@ -348,6 +348,7 @@ contains
     logical, intent(in), optional       :: do_incloud    !! do incloud growth and coagulation?
     logical, intent(in), optional       :: do_explised   !! do sedimentation with substepping
     logical, intent(in), optional       :: do_substep    !! do substepping
+    logical, intent(in), optional       :: do_pfast      !! do parameterized microfast
     logical, intent(in), optional       :: do_print_init !! do prinit initializtion information
     logical, intent(in), optional       :: do_thermo     !! do thermodynamics
     logical, intent(in), optional       :: do_vdiff      !! do Brownian diffusion
@@ -384,6 +385,7 @@ contains
     carma%f_do_pheatatm   = .FALSE.
     carma%f_do_print_init = .FALSE.
     carma%f_do_substep    = .FALSE.
+    carma%f_do_pfast      = .FALSE.
     carma%f_do_thermo     = .FALSE.
     carma%f_do_vdiff      = .FALSE.
     carma%f_do_vtran      = .FALSE.
@@ -408,6 +410,7 @@ contains
     if (present(do_pheatatm))   carma%f_do_pheatatm   = do_pheatatm
     if (present(do_print_init)) carma%f_do_print_init = (do_print_init .and. carma%f_do_print)
     if (present(do_substep))    carma%f_do_substep    = do_substep
+    if (present(do_pfast))      carma%f_do_pfast      = do_pfast
     if (present(do_thermo))     carma%f_do_thermo     = do_thermo
     if (present(do_vdiff))      carma%f_do_vdiff      = do_vdiff
     if (present(do_vtran))      carma%f_do_vtran      = do_vtran 

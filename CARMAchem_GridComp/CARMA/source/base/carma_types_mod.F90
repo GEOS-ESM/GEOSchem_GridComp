@@ -353,6 +353,7 @@ module carma_types_mod
     !   do_print_init If .true. then do print initializtion info          {init}
     !   do_step     if .true. then varstepping succeeded                  {init}
     !   do_substep  if .true. then use substepping                        {init}
+    !   do_pfast    if .true. then use microfast parameterization         {init}
     !   do_thermo   if .true. then do solve thermodynamic equation        {init}
     !   do_vdiff    If .true. then do Brownian diffusion                  {init}
     !   do_vtran    If .true. then do vertical transport                  {init}
@@ -394,6 +395,7 @@ module carma_types_mod
     logical                                       :: f_do_print_init
     logical                                       :: f_do_step
     logical                                       :: f_do_substep
+    logical                                       :: f_do_pfast
     logical                                       :: f_do_thermo
     logical                                       :: f_do_cnst_rlh
     logical, allocatable, dimension(:,:)          :: f_if_nuc       !(NELEM,NELEM)
