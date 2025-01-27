@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added the RRG child component as a refactor of an instance-based system for GHG modeling
+- Added the ability to specify RATS providers individually, including for CO2 (via CO2_PROVIDER)
 - Added SO4REFF connectivity from CARMA to GMI
 - Added connectivity (OH, H2O2, NO3) from GMI to GOCART
 
