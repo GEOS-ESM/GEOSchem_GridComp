@@ -144,7 +144,7 @@ contains
 
    type (ESMF_GridComp), pointer :: GCS(:)
 
-    integer                    :: I, J, RATS_PROVIDER, AERO_PROVIDER
+    integer                    :: I, J, RATS_PROVIDER, AERO_PROVIDER, OX_ID
     type (ESMF_Config), target :: CF, myCF
 
     integer                    :: n, id
@@ -321,7 +321,10 @@ contains
 
 ! Priority for first three RATs, OX, O3 and O3PPMV, goes to the ANALYSIS_OX_PROVIDER.
 ! -----------------------------------------------------------------------------------
-  call GetProvider_(CF, Label='ANALYSIS_OX_PROVIDER:', ID=i, Name=providerName, Default='PCHEM', __RC__)
+  call GetProvider_(CF, Label='ANALYSIS_OX_PROVIDER:', ID=OX_ID, Name=providerName, Default='PCHEM', __RC__)
+
+  RATsProviderNumber(1:3) = OX_ID
+  RATsProviderName(1:3)   = trim(providerName)
 
 ! Allow setting individual RAT sources via AGCM.rc
   DO i = 1, numRATs
@@ -412,9 +415,6 @@ contains
      VERIFY_(STATUS)
 
   ENDIF
-
-  RATsProviderNumber(1:3) = i
-  RATsProviderName(1:3)   = trim(providerName)
 
 ! Add export specs for the RATs ...
 ! ---------------------------------
