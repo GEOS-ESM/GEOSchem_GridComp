@@ -80,7 +80,17 @@ BEGIN SECTION BASE EMISSIONS
 108  CLM4_PFT_C4_GRSS             /dev/null                      PFT_C4_GRSS             2000/1/1/0    C xy 1        * - 1 1
 108  CLM4_PFT_CROP                /dev/null                      PFT_CROP                2000/1/1/0    C xy 1        * - 1 1
 108  MEGAN_ORVC                   /dev/null                      OCPI                    1990/1-12/1/0 C xy kgC/m2/s * - 1 1
-
+0 GOCART_SU_ANTHROL1  /see/ExtData.yaml  so2_nonenergy  2000-2019/1-12/1-31/0  C xy kg/m2/s SO2  206/216 1 1
+0 GOCART_SU_ANTHROL2  /see/ExtData.yaml  so2_energy     2000-2019/1-12/1-31/0  C xy kg/m2/s SO2  202/212 2 1
+0 GOCART_SU_SHIPSO2   /see/ExtData.yaml  so2_shipping   2000-2019/1-12/1-31/0  C xy kg/m2/s SO2  - 3 1
+0 GOCART_SU_SHIPSO4   /see/ExtData.yaml  so4_shipping   2000-2019/1-12/1-31/0  C xy kg/m2/s SO4  - 3 1
+0 GOCART_OC_ANTEOC1   /see/ExtData.yaml  oc_nonenergy   2000-2019/1-12/1-31/0  C xy kg/m2/s OC   206/216 1 1
+0 GOCART_OC_ANTEOC2   /see/ExtData.yaml  oc_energy      2000-2019/1-12/1-31/0  C xy kg/m2/s OC   202/212 2 1
+0 GOCART_OC_SHIP      /see/ExtData.yaml  oc_shipping    2000-2019/1-12/1-31/0  C xy kg/m2/s OC   - 3 1
+0 GOCART_BC_ANTEBC1   /see/ExtData.yaml  bc_nonenergy   2000-2019/1-12/1-31/0  C xy kg/m2/s BC   206/216 1 1
+0 GOCART_BC_ANTEBC2   /see/ExtData.yaml  bc_energy      2000-2019/1-12/1-31/0  C xy kg/m2/s BC   202/212 2 1
+0 GOCART_BC_SHIP      /see/ExtData.yaml  bc_shipping    2000-2019/1-12/1-31/0  C xy kg/m2/s BC   - 3 1
+0 GOCART_EMI_NH3_EN   /see/ExtData.yaml  nh3            2000-2019/1-12/1-31/0  C xy kg/m2/s NH3  - 1 1
 #==============================================================================
 # --- time zones (offset to UTC) ---
 #==============================================================================

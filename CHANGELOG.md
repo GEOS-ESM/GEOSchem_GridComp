@@ -6,9 +6,12 @@ after October 2021. For earlier changes, consult file ChangeLog.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] - 2025-003-07
 ### Added
+-Connectivity added between GOCART2G and HEMCO for anthropogenic OC, BC, SO2, SO4, and NH3 in GEOS_ChemGridComp.F90. These species are now added in HEMCOgocart2g* files with diurnal and day of week scaling implemented.
+-ExtData2G is used to persist anthropogenic emissions for the year 2019 after the available emissions data set ends.
 ### Removed
+-Removed HEMCOgocart2g_ExtData.rc to avoid confusion as that file became deprecated with ExtData2G
 ### Changed
 ### Fixed
 ### Deprecated
