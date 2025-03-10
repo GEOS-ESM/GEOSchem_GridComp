@@ -7,56 +7,38 @@ Collections:
     template: ExtData/chemistry/HEMCO/v0.0.0/sfc/NVOC.geos.1x1.esmf.nc
   HEMCOgocart2g_BC-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4:
     template: ExtData/chemistry/CEDS/v2021-04-21-revised/sfc/BC-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4
-    valid_range: "1979-01-15T12:00/2019-12-15T12:00"
   HEMCOgocart2g_BC-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4:
     template: ExtData/chemistry/CEDS/v2021-04-21-revised/sfc/BC-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4
-    valid_range: "1979-01-15T12:00/2019-12-15T12:00"
   HEMCOgocart2g_BC-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4:
     template: ExtData/chemistry/CEDS/v2021-04-21-revised/sfc/BC-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4
-    valid_range: "1979-01-15T12:00/2019-12-15T12:00"
   HEMCOgocart2g_OC-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4:
     template: ExtData/chemistry/CEDS/v2021-04-21-revised/sfc/OC-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4
-    valid_range: "1979-01-15T12:00/2019-12-15T12:00"
   HEMCOgocart2g_OC-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4:
     template: ExtData/chemistry/CEDS/v2021-04-21-revised/sfc/OC-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4
-    valid_range: "1979-01-15T12:00/2019-12-15T12:00"
   HEMCOgocart2g_OC-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4:
     template: ExtData/chemistry/CEDS/v2021-04-21-revised/sfc/OC-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4
-    valid_range: "1979-01-15T12:00/2019-12-15T12:00"
   HEMCOgocart2g_SO2-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4:
     template: ExtData/chemistry/CEDS/v2021-04-21-revised/sfc/SO2-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4
-    valid_range: "1979-01-15T12:00/2019-12-15T12:00"
   HEMCOgocart2g_SO2-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4:
     template: ExtData/chemistry/CEDS/v2021-04-21-revised/sfc/SO2-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4
-    valid_range: "1979-01-15T12:00/2019-12-15T12:00"
   HEMCOgocart2g_SO2-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4:
     template: ExtData/chemistry/CEDS/v2021-04-21-revised/sfc/SO2-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4
-    valid_range: "1979-01-15T12:00/2019-12-15T12:00"
   HEMCOgocart2g_SO4-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4:
     template: ExtData/chemistry/CEDS/v2021-04-21-revised/sfc/SO4-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4
-    valid_range: "1979-01-15T12:00/2019-12-15T12:00"
   HEMCOgocart2g_NH3-em-anthro_CMIP_CEDS_gn.x2304_y1441_t12.%y4.nc4:
     template: ExtData/chemistry/CEDS/v2021-04-21-revised/sfc/NH3-em-anthro_CMIP_CEDS_gn.x2304_y1441_t12.%y4.nc4
-    valid_range: "1979-01-15T12:00/2019-12-15T12:00"
 
 Samplings:
   HEMCOgocart2g_sample_0:
     extrapolation: persist_closest
-  c_sample_1:
+  HEMCOgocart2g_sample_1:
     extrapolation: clim
     update_frequency: P1M
     update_reference_time: '0'
   HEMCOgocart2g_sample_2:
-    extrapolation: clim
     update_frequency: PT24H
     update_offset: PT12H
     update_reference_time: '0'
-  HEMCOgocart2g_sample_3:
-    extrapolation: clim
-    update_frequency: PT24H
-    update_offset: PT12H
-    update_reference_time: '0'
-    source_time: "2019-01-15T12:00/2019-12-15T00:00:00"
 
 Exports:
   CLM4_PFT_BARE:
@@ -164,36 +146,58 @@ Exports:
     sample: HEMCOgocart2g_sample_1
     variable: OCPI
   GOCART_BC_ANTEBC1:
-    - {starting: "1979-01-15T12:00", collection: HEMCOgocart2g_BC-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4, sample: HEMCOgocart2g_sample_2, regrid: CONSERVE, variable: bc_nonenergy}
-    - {starting: "2019-12-15T12:00", collection: HEMCOgocart2g_BC-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4, regrid: CONSERVE, sample:HEMCOgocart2g_sample_3, variable: bc_nonenergy}
+    collection: HEMCOgocart2g_BC-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_2
+    variable: bc_nonenergy
   GOCART_BC_ANTEBC2:
-    - {starting: "1979-01-15T12:00", collection: HEMCOgocart2g_BC-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4, sample: HEMCOgocart2g_sample_2, regrid: CONSERVE, variable: bc_energy}
-    - {starting: "2019-12-15T12:00", collection: HEMCOgocart2g_BC-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4, regrid: CONSERVE, sample: HEMCOgocart2g_sample_3, variable: bc_energy}
+    collection: HEMCOgocart2g_BC-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_2
+    variable: bc_energy
   GOCART_BC_SHIP:
-    - {starting: "1979-01-15T12:00", collection: HEMCOgocart2g_BC-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4, sample: HEMCOgocart2g_sample_2, regrid: CONSERVE, variable: bc_shipping}
-    - {starting: "2019-12-15T12:00", collection: HEMCOgocart2g_BC-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4, regrid: CONSERVE, sample: HEMCOgocart2g_sample_3, variable: bc_shipping}
+    collection: HEMCOgocart2g_BC-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_2
+    variable: bc_shipping
   GOCART_OC_ANTEOC1:
-    - {starting: "1979-01-15T12:00", collection: HEMCOgocart2g_OC-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4, sample: HEMCOgocart2g_sample_2, regrid: CONSERVE, variable: oc_nonenergy}
-    - {starting: "2019-12-15T12:00", collection: HEMCOgocart2g_OC-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4, regrid: CONSERVE, sample: HEMCOgocart2g_sample_3, variable: oc_nonenergy}
+    collection: HEMCOgocart2g_OC-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_2
+    variable: oc_nonenergy
   GOCART_OC_ANTEOC2:
-    - {starting: "1979-01-15T12:00", collection: HEMCOgocart2g_OC-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4, regrid: CONSERVE, variable: oc_energy}
-    - {starting: "2019-12-15T12:00", collection: HEMCOgocart2g_OC-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4, regrid: CONSERVE, sample: HEMCOgocart2g_sample_3, variable: oc_energy}
+    collection: HEMCOgocart2g_OC-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_2
+    variable: oc_energy
   GOCART_OC_SHIP:
-    - {starting: "1979-01-15T12:00", collection: HEMCOgocart2g_OC-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4, sample: HEMCOgocart2g_sample_2, regrid: CONSERVE, variable: oc_shipping}
-    - {starting: "2019-12-15T12:00", collection: HEMCOgocart2g_OC-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4, regrid: CONSERVE, sample: HEMCOgocart2g_sample_3, variable: oc_shipping}
+    collection: HEMCOgocart2g_OC-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_2
+    variable: oc_shipping
   GOCART_SU_ANTHROL1:
-    - {starting: "1979-01-15T12:00", collection: HEMCOgocart2g_SO2-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4, sample: HEMCOgocart2g_sample_2, regrid: CONSERVE, variable: so2_nonenergy}
-    - {starting: "2019-12-15T12:00", collection: HEMCOgocart2g_SO2-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4, regrid: CONSERVE, sample: HEMCOgocart2g_sample_3, variable: so2_nonenergy}
+    collection: HEMCOgocart2g_SO2-em-anthro_CMIP_CEDS_gn_nonenergy.x2304_y1441_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_2
+    variable: so2_nonenergy
   GOCART_SU_ANTHROL2:
-    - {starting: "1979-01-15T12:00", collection: HEMCOgocart2g_SO2-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4, sample: HEMCOgocart2g_sample_2, regrid: CONSERVE, variable: so2_energy}
-    - {starting: "2019-12-15T12:00", collection: HEMCOgocart2g_SO2-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4, regrid: CONSERVE, sample: HEMCOgocart2g_sample_3, variable: so2_energy}
+    collection: HEMCOgocart2g_SO2-em-anthro_CMIP_CEDS_gn_energy.x2304_y1441_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_2
+    variable: so2_energy
   GOCART_EMI_NH3_EN:
-    - {starting: "1979-01-15T12:00", collection: HEMCOgocart2g_NH3-em-anthro_CMIP_CEDS_gn.x2304_y1441_t12.%y4.nc4, sample: HEMCOgocart2g_sample_2, regrid: CONSERVE, variable: nh3}
-    - {starting: "2019-12-15T12:00", collection: HEMCOgocart2g_NH3-em-anthro_CMIP_CEDS_gn.x2304_y1441_t12.%y4.nc4, regrid: CONSERVE, sample: HEMCOgocart2g_sample_3, variable: nh3}
+    collection: HEMCOgocart2g_NH3-em-anthro_CMIP_CEDS_gn.x2304_y1441_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_2
+    variable: nh3
   GOCART_SU_SHIPSO2:
-    - {starting: "1979-01-15T12:00", collection: HEMCOgocart2g_SO2-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4, sample: HEMCOgocart2g_sample_2, regrid: CONSERVE, variable: so2_shipping}
-    - {starting: "2019-12-15T12:00", collection: HEMCOgocart2g_SO2-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4, regrid: CONSERVE, sample: HEMCOgocart2g_sample_3, variable: so2_shipping}
+    collection: HEMCOgocart2g_SO2-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_2
+    variable: so2_shipping
   GOCART_SU_SHIPSO4:
-    - {starting: "1979-01-15T12:00", collection: HEMCOgocart2g_SO4-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4, sample: HEMCOgocart2g_sample_2, regrid: CONSERVE, variable: so4_shipping}
-    - {starting: "2019-12-15T12:00", collection: HEMCOgocart2g_SO4-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4, regrid: CONSERVE, sample: HEMCOgocart2g_sample_3, variable: so4_shipping}
+    collection: HEMCOgocart2g_SO4-em-anthro_CMIP_CEDS_gn_shipping.x2304_y1441_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: HEMCOgocart2g_sample_2
+    variable: so4_shipping
 
