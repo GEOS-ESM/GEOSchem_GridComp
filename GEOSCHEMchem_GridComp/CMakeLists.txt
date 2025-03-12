@@ -76,7 +76,7 @@ endif ()
 
 esma_add_library (${this}
    SRCS ${srcs}
-   DEPENDENCIES MAPL MAPL_cfio_r4 Chem_Base Chem_Shared HEMCO Cloud-J
+   DEPENDENCIES MAPL MAPL_cfio_r4 Chem_Base Chem_Shared HEMCO Cloud-J HETP
                 OpenMP::OpenMP_Fortran esmf NetCDF::NetCDF_Fortran
    )
 
@@ -115,8 +115,9 @@ install(
 
 file (GLOB resource_files1 CONFIGURE_DEPENDS 
       "@geos-chem/run/GEOS/*.rc"
-      "@geos-chem/run/GEOS/*.yml"
-      "@geos-chem/run/GEOS/*.yaml"
+      "@geos-chem/run/GEOS/geos*.yml"
+      "@geos-chem/run/GEOS/geos*.yaml"
+      "@geos-chem/run/shared/species*.yml"
       )
 
 install(

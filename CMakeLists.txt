@@ -1,6 +1,6 @@
 esma_set_this ()
 
-esma_add_subdirectories(Shared GOCART Cloud-J)
+esma_add_subdirectories(Shared GOCART Cloud-J HETP)
 
 set (alldirs
   GEOSpchem_GridComp

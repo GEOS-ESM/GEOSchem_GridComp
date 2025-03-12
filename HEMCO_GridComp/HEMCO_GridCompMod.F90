@@ -807,6 +807,7 @@ CONTAINS
     REAL(ESMF_KIND_R8)              :: s_r8
 
     INTEGER                         :: HCRC
+    INTEGER                         :: LUN
 
     ! For MAPL/ESMF error handling (defined Iam and STATUS)
     __Iam__('HEMCOinit_ (GEOS_EmisGridComp.F90)') 
@@ -820,7 +821,7 @@ CONTAINS
     ! ------------------------------------------------------------------
 
     IF ( MAPL_Am_I_Root() ) THEN
-       CALL HCO_LogFile_Open( Inst%HcoConfig%Err, RC = HCRC )
+       CALL HCO_LogFile_Open( Inst%HcoConfig%Err, .true., HCRC, LUN )
        _ASSERT(HCRC==HCO_SUCCESS,'needs informative message')
     ENDIF
 
