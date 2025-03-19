@@ -251,7 +251,7 @@ contains
 
     call MAPL_AddImportSpec(GC,                                         &
          SHORT_NAME = 'PFI_CN',                                         &
-         LONG_NAME  = 'ice_convective_precipitation',                   &
+         LONG_NAME  = '3D_flux_of_ice_convective_precipitation',                   &
          UNITS      = 'kg m-2 s-1',                                     &
          DIMS       = MAPL_DimsHorzVert,                                &
          VLOCATION  = MAPL_VLocationEdge,                        __RC__ )
@@ -393,6 +393,24 @@ contains
          RESTART    = MAPL_RestartSkip,                                 &
          DIMS       = MAPL_DimsHorzOnly,                                & 
          VLOCATION  = MAPL_VLocationNone,                         __RC__)
+
+
+    call MAPL_AddImportSpec(GC,                               &
+         SHORT_NAME='ZLCL',                                        &
+         LONG_NAME ='lifting_condensation_level',                  &
+         UNITS     ='m'  ,                                         &
+         DIMS      = MAPL_DimsHorzOnly,                            &
+         VLOCATION = MAPL_VLocationNone,                RC=STATUS  )
+    VERIFY_(STATUS)
+  
+    call MAPL_AddImportSpec(GC,                               &
+         SHORT_NAME='ZLFC',                                        &
+         LONG_NAME ='level_of_free_convection',                    &
+         UNITS     ='m'  ,                                         &
+         DIMS      = MAPL_DimsHorzOnly,                            &
+         VLOCATION = MAPL_VLocationNone,                RC=STATUS  )
+    VERIFY_(STATUS)
+
 
 
 ! !EXPORT STATE:
@@ -825,6 +843,9 @@ contains
   real, pointer, dimension(:,:)   ::         LWI => null()
   real, pointer, dimension(:,:)   ::        PBLH => null()
 
+  real, pointer, dimension(:,:)   ::          ZLFC => null()
+  real, pointer, dimension(:,:)   ::          ZLCL => null()
+
   real, pointer, dimension(:,:)   ::          TS => null()
   real, pointer, dimension(:,:)   ::     FROCEAN => null()
   real, pointer, dimension(:,:)   ::      FRLAND => null()
@@ -940,7 +961,7 @@ contains
     call MAPL_GetPointer ( IMPORT, CNV_MFD,     'CNV_MFD', __RC__ )
     call MAPL_GetPointer ( IMPORT, CN_PRCP,     'CN_PRCP', __RC__ )
     call MAPL_GetPointer ( IMPORT, PHIS,        'PHIS',    __RC__ )
-    call MAPL_GetPointer ( IMPORT, PFI_CN,      'PFI_CN', ALLOC=.TRUE., __RC__  )     !  ??
+    call MAPL_GetPointer ( IMPORT, PFI_CN,      'PFI_CN',   __RC__ )
 
     call MAPL_GetPointer ( IMPORT, T,           'T',        __RC__ )
     call MAPL_GetPointer ( IMPORT, TH,          'TH',       __RC__ )
@@ -957,6 +978,10 @@ contains
     call MAPL_GetPointer ( IMPORT,  CAPE_PRECON, 'CAPE',    __RC__ )
     call MAPL_GetPointer ( IMPORT,  INHB_PRECON, 'INHB',    __RC__ )
     call MAPL_GetPointer ( IMPORT, BYNCY_PRECON, 'BYNCY',   __RC__ )
+
+    call MAPL_GetPointer ( IMPORT, ZLFC, 'ZLFC',   __RC__ )
+    call MAPL_GetPointer ( IMPORT, ZLCL, 'ZLCL',   __RC__ )
+
 
               BYNCY(:,:,:) = real(0)
                CAPE(:,:)   = real(0)
@@ -986,7 +1011,7 @@ contains
                 minDeepCloudTop, lightNOampFactor, numberNOperFlash, &
                 MOIST_flashFactor, FIT_flashFactor, HEMCO_flashFactor, LOPEZ_flashFactor, &
                 CNV_MFD, usePreconCape, CAPE_PRECON, INHB_PRECON, BYNCY_PRECON, &
-                CAPE, BYNCY, LFR, LIGHT_NO_PROD, PHIS, &
+                CAPE, BYNCY, ZLFC, ZLCL, LFR, LIGHT_NO_PROD, PHIS, &
                 __RC__)
 
 !   call pmaxmin('LFR', LFR, flashRateMin, flashRateMax, nc, 1, 1.)
