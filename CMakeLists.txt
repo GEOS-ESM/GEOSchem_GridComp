@@ -1,18 +1,14 @@
 esma_set_this ()
 
-esma_add_subdirectories(Shared GOCART TR GMI StratChem)
+esma_add_subdirectories(Shared GOCART TR GMI StratChem MAM MATRIX CARMA GAAS ACHEM)
 
 set (alldirs
   GEOSpchem_GridComp
-  CARMAchem_GridComp
   GEOSCHEMchem_GridComp
-  MATRIXchem_GridComp
-  MAMchem_GridComp
-  GAAS_GridComp
   H2O_GridComp
-  GEOSachem_GridComp
   DNA_GridComp
   HEMCO_GridComp
+  RRG
   )
 
 set (srcs
@@ -25,7 +21,7 @@ set (srcs
 esma_add_library (${this}
   SRCS ${srcs}
   SUBCOMPONENTS ${alldirs}
-  DEPENDENCIES MAPL Chem_Shared Chem_Base GOCART_GridComp GOCART2G_GridComp TR GMI StratChem ESMF::ESMF)
+  DEPENDENCIES MAPL Chem_Shared Chem_Base GOCART_GridComp GOCART2G_GridComp TR GMI StratChem MAM MATRIX CARMA GAAS ACHEM RRG ESMF::ESMF)
 
 install(
    FILES GEOS_ChemGridComp.rc ChemEnv_ExtData.rc  ChemEnv.rc ChemEnv_ExtData.yaml
