@@ -14,9 +14,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 
 
-## [1.15.0] - 2025-01-16
+## [1.16.0 - 2025-02-18]
+
 ### Added
+
+- Added the RRG child component as a refactor of an instance-based system for GHG modeling
+- Added the ability to specify RATS providers individually, including for CO2 (via CO2_PROVIDER)
+- Added SO4REFF connectivity from CARMA to GMI
+- Added connectivity (OH, H2O2, NO3) from GMI to GOCART
+
 ### Removed
+
+- Removed `MAMchem_GridComp`, `MATRIXchem_GridComp`, `CARMAchem_GridComp`, `GAAS_GridComp`, and `GEOSachem_GridComp` as these are now in separate repos
+   - `MAMchem_GridComp` → [MAM](https://github.com/GEOS-ESM/MAM)
+   - `MATRIXchem_GridComp` → [MATRIX](https://github.com/GEOS-ESM/MATRIX)
+   - `CARMAchem_GridComp` → [CARMA](https://github.com/GEOS-ESM/CARMA)
+   - `GAAS_GridComp` → [GAAS](https://github.com/GEOS-ESM/GAAS)
+   - `GEOSachem_GridComp` → [ACHEM](https://github.com/GEOS-ESM/ACHEM)
+
+
+## [1.15.0] - 2025-01-16
+
 ### Changed
 
 - The file path was changed for anthropogenic CO emissions that are used by achem. Note that the previous version of the emissions have an incorrect seasonal cycle.
@@ -26,8 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Updated GAAS_Gridcomp_Extdata.yaml in AMIP/ to avoid the model to crash when GAAS is turned on and AMIP emissions chosen.
-
-### Deprecated
 
 
 ## [1.14.0] - 2024-06-21

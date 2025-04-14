@@ -8,10 +8,6 @@
 
 # The Aerosol Team is CODEOWNER of some directories along with Chem Gatekeepers
 DNA_GridComp/            @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
-GAAS_GridComp/           @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
-GEOSachem_GridComp/      @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
-MAMchem_GridComp/        @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
-MATRIXchem_GridComp/     @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
 
 Shared/Chem_Base/        @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
 Shared/Chem_Shared/      @GEOS-ESM/aerosol-team      @GEOS-ESM/chemistry-gatekeepers
