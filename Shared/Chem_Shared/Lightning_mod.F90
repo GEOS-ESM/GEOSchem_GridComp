@@ -176,7 +176,7 @@ subroutine getLightning (GC, ggState, CLOCK, &
   ! edge vars  (vertical indices: 1 to LM+1)
   real, dimension(:,:,:),   intent(in)  :: CNV_MFC  ! cumulative mass flux (kg m-2 s-1)   [top-down]
   real, dimension(:,:,:),   intent(in)  :: PLE      ! edge pressures (Pa)
-  real, dimension(:,:,:),   intent(in)  :: ZLE      ! geopotential height (m)             [top-down]
+  real, dimension(:,:,:),   intent(in)  :: ZLE      ! edge heights (m) above sea-level    [top-down]
 
   real, dimension(:,:,:),   intent(in)  :: PFICU    ! flux of ice in convective updrafts (kg m-2 s-1)
   real, dimension(:,:,:),   intent(in)  :: T        ! air temperature (K)                 [top-down]
@@ -298,57 +298,13 @@ subroutine getLightning (GC, ggState, CLOCK, &
      ALLOCATE(         QSS(IM, JM, 1:LM),   __STAT__ )
      ALLOCATE(        DZET(IM, JM, 1:LM),   __STAT__ )
      ALLOCATE(     ZL_ZERO(IM, JM, 1:LM),   __STAT__ )
-!    ALLOCATE(          PK(IM, JM, 1:LM),   __STAT__ )
-!    ALLOCATE(         THV(IM, JM, 1:LM),   __STAT__ )
-!    ALLOCATE(         ZLO(IM, JM, 1:LM),   __STAT__ )
-!    ALLOCATE(          DZ(IM, JM, 1:LM),   __STAT__ )
 
      ! on gridbox edges:
      ALLOCATE(    ZLE_ZERO(IM, JM, 0:LM),   __STAT__ )
-!    ALLOCATE(         PKE(IM, JM, 0:LM),   __STAT__ )
-!    ALLOCATE(        ZLE2(IM, JM, 0:LM),   __STAT__ )
 
      PLmb = 0.5*(PLE(:,:,K0:KM-1) +  PLE(:,:,K0+1:KM  ) )*0.01
-!    PKE(:,:,0:LM) = (PLE(:,:,K0:KM)*(1.0/MAPL_P00))**(MAPL_RGAS/MAPL_CP)
 
-!    PK       = (PLmb*(100.0/MAPL_P00))**(MAPL_RGAS/MAPL_CP)
-
-!    DQS = GEOS_DQSAT (TH*PK, PLmb, qsat=QSS)     ! Try replacing TH*PK with T instead
-     DQS = GEOS_DQSAT (T,     PLmb, qsat=QSS)     ! Try replacing TH*PK with T instead
-
-!    THV(:,:,:) = TH(:,:,:) * (1.+MAPL_VIREPS*Q(:,:,:))
-
-!! Here it looks like we are computing ZLE in terms of TH, Q and PLE
-!! Why?
-!! Is the ZLE field that is passed in to this routine somehow inconsistent w/ TH, Q and PLE?
-
-!    ZLE2(:,:,LM) = 0.               !   ORIGINAL FORMULATION - does Saulo need this?
-!    ZLE2(:,:,LM) = PHIS/MAPL_GRAV   ! Better match for archived ZLE
-!    do L=LM,1,-1
-!        ZLO(:,:,L  ) = ZLE2(:,:,L) + (MAPL_CP/MAPL_GRAV)*( PKE(:,:,L)-PK (:,:,L  ) ) * THV(:,:,L)
-!        DZ (:,:,L  ) =               (MAPL_CP/MAPL_GRAV)*( PKE(:,:,L)-PKE(:,:,L-1) ) * THV(:,:,L)
-!       ZLE2(:,:,L-1) = ZLE2(:,:,L) + DZ(:,:,L)
-!!      ZLE2(:,:,L-1) = ZLE2(:,:,L) + (MAPL_CP/MAPL_GRAV)*( PKE(:,:,L)-PKE(:,:,L-1) ) * THV(:,:,L)
-!    end do
-
-! NOTE - ZLE and ZLE2 are nearly duplicates
-!        although the indices are mismatched (ZLE starts at 1, ZLE2 starts at 0)
-!  IF(MAPL_AM_I_ROOT()) THEN
-!    DO i=K0,KM
-!      PRINT *,'ZLE, ZLE2:', i, ZLE(1,1,i), ZLE2(1,1,i-1), ZLE(1,1,i)-ZLE2(1,1,i-1)
-!    ENDDO
-!  ENDIF
-
-!      IF(MAPL_AM_I_ROOT()) THEN
-!        PRINT*,' ZLE vert: ', LBOUND(ZLE, 3), UBOUND(ZLE, 3)
-!        PRINT*,'ZLE2 vert: ', LBOUND(ZLE2,3), UBOUND(ZLE2,3)
-!        PRINT*,' PLE vert: ', LBOUND(PLE, 3), UBOUND(PLE, 3)
-!   
-!   !  ZLE vert:            1          73
-!   ! ZLE2 vert:            0          72
-!   !  PLE vert:            1          73
-!   
-!      ENDIF
+     DQS = GEOS_DQSAT (T, PLmb, qsat=QSS)
 
 !!   In order to compute Buoyancy as done in MOIST, we want mid-level heights above surface, not above sea-level
 !!   Compute as done in MOIST (KROK)
@@ -359,10 +315,8 @@ subroutine getLightning (GC, ggState, CLOCK, &
      END DO
      ZL_ZERO = 0.5*(ZLE_ZERO(:,:,0:LM-1) + ZLE_ZERO(:,:,1:LM) ) ! Layer Height (m) above the surface
      DZET    =     (ZLE_ZERO(:,:,0:LM-1) - ZLE_ZERO(:,:,1:LM) ) ! Layer thickness (m)
-!!
 
-
-     ! ALL SET to call BUOYANCY (T, Q, QSS, DQS, DZ, ZLO, BYNCY, CAPE, INHB)
+     ! ALL SET to call BUOYANCY (T, Q, QSS, DQS, DZET, ZL_ZERO, BYNCY, CAPE, INHB)
 
      ! DEALLOCATE vars at the end
 
@@ -374,8 +328,6 @@ subroutine getLightning (GC, ggState, CLOCK, &
   ! Lopez (2016?) flash rate from ECMWF
   !-----------------------------------------------------------------------         
   if (flash_source_enum == FLASH_SOURCE_LOPEZ) then
-
-     ! callLopezCalcuations() put above end subroutine getLightning
 
      ! usePreconCape - in GCM this means to use the values from MOIST
      ! usePreconCape - in CTM this means to use the values from ExtData or CtmEnv
@@ -431,10 +383,8 @@ subroutine getLightning (GC, ggState, CLOCK, &
      end if
 
 
-
      ALLOCATE( flashRateLopez(IM, JM),   STAT=STATUS); VERIFY_(STATUS)
      flashRateLopez = real(0)
-!    flashRateLopez(:,:) = 0.01
 
      call LOPEZ_FlashRate(ggState, IM, JM, LM, FROCEAN, PBLH, CAPE, DZET, PFICU, &
            CNV_QC, T, PLmb, LFC, ZLCL, LOPEZ_flashFactor, flashRateLopez, __RC__ )
@@ -457,16 +407,6 @@ subroutine getLightning (GC, ggState, CLOCK, &
   ! HEMCO flash rate
   !-----------------------------------------------------------------------
   else if (flash_source_enum == FLASH_SOURCE_HEMCO) then
-
-!    The HEMCO flash routine may use BYNCY in the future
-!    if (usePreconCape) then
-!      CAPE  =  CAPE_PRECON
-!      INHB  =  INHB_PRECON
-!      BYNCY = BYNCY_PRECON
-!    else
-!      call BUOYANCY (T, Q, QSS, DQS, DZ, ZLO, BYNCY, CAPE, INHB)
-!    end if
-
 
      call HEMCO_FlashRate (cellArea, LWI, LONSLOCAL, LATSLOCAL, T, PLE, &
           ZLE, CNV_MFC, HEMCO_flashFactor, flashRate, __RC__ )
