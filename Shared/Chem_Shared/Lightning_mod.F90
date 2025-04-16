@@ -208,18 +208,16 @@ subroutine getLightning (GC, ggState, CLOCK, &
 ! type (ESMF_Grid)  :: esmfGrid
 
   ! Lopez calculation; TODO these variables can be contained within a contains block
-  real, allocatable :: PLO(:,:,:)     !  pressure at middle of gridbox [hPa]
-  real, allocatable :: PKE(:,:,:)
-  real, allocatable :: PK(:,:,:)      
+  real, allocatable :: PLmb(:,:,:)     !  pressure at middle of gridbox [hPa]
   real, allocatable :: QSS(:,:,:)     !  saturation specific humidity
   real, allocatable :: DQS(:,:,:)     !  derivative of satuation specific humidity wrt temperature
-  real, allocatable :: DZ(:,:,:)
+  real, allocatable :: DZET(:,:,:)
   real, allocatable :: DM(:,:,:)
-  real, allocatable :: THV(:,:,:)
-  real, allocatable :: ZLO(:,:,:)
-  real, allocatable :: ZLE2(:,:,:)
+  real, allocatable :: ZLE_ZERO(:,:,:)  ! Edge heights (m) above surface  (equals zero at ground level)
+  real, allocatable ::  ZL_ZERO(:,:,:)  ! Mid-point heights (m) above surface
   real, allocatable :: CAPE_MERRA2(:,:)
   real, allocatable :: INHB(:,:)
+  real, allocatable ::  LFC(:,:)        ! Level of Free Convection (m) - compute using the BYNCY of choice
 
   integer, allocatable :: LWI_INT(:,:)
   real*8, allocatable :: LFR_R8(:,:)
@@ -256,6 +254,10 @@ subroutine getLightning (GC, ggState, CLOCK, &
   character(len=80) :: cNym
   character(len=3)  :: binName
 
+  integer :: KLFC       ! index of Level of Free Convection
+  integer :: KLNB       ! index of Level of Neutral Buoyancy, computed but not used
+  logical :: aboveLFC
+
   character(len=*), parameter :: Iam = "getLightning" ! can be moduleName // getLightning TODO
 
   if (PRESENT(RC)) RC = ESMF_SUCCESS
@@ -288,40 +290,48 @@ subroutine getLightning (GC, ggState, CLOCK, &
   IF ( need_cape ) THEN
 
      ALLOCATE(        INHB(IM, JM),         __STAT__ )
+     ALLOCATE(         LFC(IM, JM),         __STAT__ )
 
      ! on gridbox centers:
-     ALLOCATE(         PLO(IM, JM, 1:LM),   __STAT__ )
-     ALLOCATE(          PK(IM, JM, 1:LM),   __STAT__ )
+     ALLOCATE(        PLmb(IM, JM, 1:LM),   __STAT__ )
      ALLOCATE(         DQS(IM, JM, 1:LM),   __STAT__ )
      ALLOCATE(         QSS(IM, JM, 1:LM),   __STAT__ )
-     ALLOCATE(          DZ(IM, JM, 1:LM),   __STAT__ )
-     ALLOCATE(         THV(IM, JM, 1:LM),   __STAT__ )
-     ALLOCATE(         ZLO(IM, JM, 1:LM),   __STAT__ )
+     ALLOCATE(        DZET(IM, JM, 1:LM),   __STAT__ )
+     ALLOCATE(     ZL_ZERO(IM, JM, 1:LM),   __STAT__ )
+!    ALLOCATE(          PK(IM, JM, 1:LM),   __STAT__ )
+!    ALLOCATE(         THV(IM, JM, 1:LM),   __STAT__ )
+!    ALLOCATE(         ZLO(IM, JM, 1:LM),   __STAT__ )
+!    ALLOCATE(          DZ(IM, JM, 1:LM),   __STAT__ )
 
      ! on gridbox edges:
-     ALLOCATE(         PKE(IM, JM, 0:LM),   __STAT__ )
-     ALLOCATE(        ZLE2(IM, JM, 0:LM),   __STAT__ )
+     ALLOCATE(    ZLE_ZERO(IM, JM, 0:LM),   __STAT__ )
+!    ALLOCATE(         PKE(IM, JM, 0:LM),   __STAT__ )
+!    ALLOCATE(        ZLE2(IM, JM, 0:LM),   __STAT__ )
 
+     PLmb = 0.5*(PLE(:,:,K0:KM-1) +  PLE(:,:,K0+1:KM  ) )*0.01
+!    PKE(:,:,0:LM) = (PLE(:,:,K0:KM)*(1.0/MAPL_P00))**(MAPL_RGAS/MAPL_CP)
 
-     PLO = 0.5*(PLE(:,:,K0:KM-1) +  PLE(:,:,K0+1:KM  ) )*0.01
-     PKE(:,:,0:LM) = (PLE(:,:,K0:KM)*(1.0/MAPL_P00))**(MAPL_RGAS/MAPL_CP)
+!    PK       = (PLmb*(100.0/MAPL_P00))**(MAPL_RGAS/MAPL_CP)
 
-     PK       = (PLO*(100.0/MAPL_P00))**(MAPL_RGAS/MAPL_CP)
+!    DQS = GEOS_DQSAT (TH*PK, PLmb, qsat=QSS)     ! Try replacing TH*PK with T instead
+     DQS = GEOS_DQSAT (T,     PLmb, qsat=QSS)     ! Try replacing TH*PK with T instead
 
-     DQS = GEOS_DQSAT (TH*PK, PLO, qsat=QSS)
+!    THV(:,:,:) = TH(:,:,:) * (1.+MAPL_VIREPS*Q(:,:,:))
 
-     THV(:,:,:) = TH(:,:,:) * (1.+MAPL_VIREPS*Q(:,:,:))
+!! Here it looks like we are computing ZLE in terms of TH, Q and PLE
+!! Why?
+!! Is the ZLE field that is passed in to this routine somehow inconsistent w/ TH, Q and PLE?
 
-     ZLE2(:,:,LM) = 0.               !   ORIGINAL FORMULATION - does Saulo need this?
-     ZLE2(:,:,LM) = PHIS/MAPL_GRAV   ! Better match for archived ZLE
-     do L=LM,1,-1
-         ZLO(:,:,L  ) = ZLE2(:,:,L) + (MAPL_CP/MAPL_GRAV)*( PKE(:,:,L)-PK (:,:,L  ) ) * THV(:,:,L)
-         DZ (:,:,L  ) =               (MAPL_CP/MAPL_GRAV)*( PKE(:,:,L)-PKE(:,:,L-1) ) * THV(:,:,L)
-        ZLE2(:,:,L-1) = ZLE2(:,:,L) + DZ(:,:,L)
-!       ZLE2(:,:,L-1) = ZLE2(:,:,L) + (MAPL_CP/MAPL_GRAV)*( PKE(:,:,L)-PKE(:,:,L-1) ) * THV(:,:,L)
-     end do
+!    ZLE2(:,:,LM) = 0.               !   ORIGINAL FORMULATION - does Saulo need this?
+!    ZLE2(:,:,LM) = PHIS/MAPL_GRAV   ! Better match for archived ZLE
+!    do L=LM,1,-1
+!        ZLO(:,:,L  ) = ZLE2(:,:,L) + (MAPL_CP/MAPL_GRAV)*( PKE(:,:,L)-PK (:,:,L  ) ) * THV(:,:,L)
+!        DZ (:,:,L  ) =               (MAPL_CP/MAPL_GRAV)*( PKE(:,:,L)-PKE(:,:,L-1) ) * THV(:,:,L)
+!       ZLE2(:,:,L-1) = ZLE2(:,:,L) + DZ(:,:,L)
+!!      ZLE2(:,:,L-1) = ZLE2(:,:,L) + (MAPL_CP/MAPL_GRAV)*( PKE(:,:,L)-PKE(:,:,L-1) ) * THV(:,:,L)
+!    end do
 
-! TODO - decide if we can remove ZLE or ZLE2 since they are nearly duplicates
+! NOTE - ZLE and ZLE2 are nearly duplicates
 !        although the indices are mismatched (ZLE starts at 1, ZLE2 starts at 0)
 !  IF(MAPL_AM_I_ROOT()) THEN
 !    DO i=K0,KM
@@ -340,6 +350,18 @@ subroutine getLightning (GC, ggState, CLOCK, &
 !   
 !      ENDIF
 
+!!   In order to compute Buoyancy as done in MOIST, we want mid-level heights above surface, not above sea-level
+!!   Compute as done in MOIST (KROK)
+!!   Note: ZLE      is height above sea level, z-index 1..73
+!!         ZLE_ZERO is height above surface,   z-index 0..72
+     DO L=0,LM
+        ZLE_ZERO(:,:,L)= ZLE(:,:,L+1) - ZLE(:,:,LM+1)   ! Edge Height (m) above the surface
+     END DO
+     ZL_ZERO = 0.5*(ZLE_ZERO(:,:,0:LM-1) + ZLE_ZERO(:,:,1:LM) ) ! Layer Height (m) above the surface
+     DZET    =     (ZLE_ZERO(:,:,0:LM-1) - ZLE_ZERO(:,:,1:LM) ) ! Layer thickness (m)
+!!
+
+
      ! ALL SET to call BUOYANCY (T, Q, QSS, DQS, DZ, ZLO, BYNCY, CAPE, INHB)
 
      ! DEALLOCATE vars at the end
@@ -355,20 +377,67 @@ subroutine getLightning (GC, ggState, CLOCK, &
 
      ! callLopezCalcuations() put above end subroutine getLightning
 
+     ! usePreconCape - in GCM this means to use the values from MOIST
+     ! usePreconCape - in CTM this means to use the values from ExtData or CtmEnv
      if (usePreconCape) then
        CAPE  =  CAPE_PRECON
        INHB  =  INHB_PRECON
        BYNCY = BYNCY_PRECON
+       LFC   = ZLFC        ! MOIST returns LFC from the 'surface based' computation of CAPE
      else
-       call BUOYANCY (T, Q, QSS, DQS, DZ, ZLO, BYNCY, CAPE, INHB)
+       call BUOYANCY (T, Q, QSS, DQS, DZET, ZL_ZERO, BYNCY, CAPE, INHB)
+
+       !!!  Derive LFC for two reasons:
+       !!!  1) In GCM it is computed using a different Buoyancy field (8% avg difference)
+       !!!  2) In CTM it is not available
+       !!!  Adapted from RETURN_CAPE_CIN in the MOIST GridComp (4.15.25)
+
+       DO i=1,IM
+       DO j=1,JM
+
+         ! if surface parcel immediately buoyant, scan upward to find first elevated
+         ! B>0 level above a B<0 level, label it LFC.  If no such level, set LFC at surface.
+         KLFC = LM
+         KLNB = LM
+         aboveLFC = .false.
+         if (BYNCY(i,j,LM-1).gt.0.) then
+            do L = LM-2,1,-1   ! scan up to find elevated LFC
+               if (BYNCY(i,j,L).gt.0. .and. BYNCY(i,j,L+1).le.0.) then
+                  KLFC = L
+                  aboveLFC = .true.
+               end if
+               if (aboveLFC .and. BYNCY(i,j,L).lt.0. ) then
+                  KLNB = L
+                  exit
+               end if
+            end do
+         else   ! if surface parcel not immediately buoyant, LFC is first B>0 level
+            do L = LM-1,1,-1
+               if (BYNCY(i,j,L).gt.0. .and. .not.aboveLFC) then
+                  KLFC = L
+                  aboveLFC = .true.
+               end if
+               if (aboveLFC .and. BYNCY(i,j,L).lt.0.) then
+                  KLNB = L
+                  exit
+               end if
+            end do
+         end if
+         LFC(i,j) = ZL_ZERO(i,j,KLFC)    ! level of free convection
+!        LNB(i,j) = ZL_ZERO(i,j,KLNB)    ! level of neutral buoyancy
+
+       END DO
+       END DO
      end if
+
+
 
      ALLOCATE( flashRateLopez(IM, JM),   STAT=STATUS); VERIFY_(STATUS)
      flashRateLopez = real(0)
 !    flashRateLopez(:,:) = 0.01
 
-     call LOPEZ_FlashRate(ggState, IM, JM, LM, FROCEAN, PBLH, CAPE, ZLE2, PFICU, &
-           CNV_QC, T, PLO, ZLFC, ZLCL, LOPEZ_flashFactor, flashRateLopez, __RC__ )
+     call LOPEZ_FlashRate(ggState, IM, JM, LM, FROCEAN, PBLH, CAPE, DZET, PFICU, &
+           CNV_QC, T, PLmb, LFC, ZLCL, LOPEZ_flashFactor, flashRateLopez, __RC__ )
 
 !print*, "min/max LFR LOPEZ: ", minval(flashRateLopez), maxval(flashRateLopez)
            
@@ -436,7 +505,7 @@ subroutine getLightning (GC, ggState, CLOCK, &
        end where
 
      else
-       call BUOYANCY (T, Q, QSS, DQS, DZ, ZLO, BYNCY, CAPE, INHB, &
+       call BUOYANCY (T, Q, QSS, DQS, DZET, ZL_ZERO, BYNCY, CAPE, INHB, &
                       DM=DM, CAPE_MERRA2=CAPE_MERRA2)
      end if
 
@@ -528,7 +597,7 @@ subroutine getLightning (GC, ggState, CLOCK, &
   endif
 
   IF ( need_cape ) THEN
-     DEALLOCATE( INHB, PLO, PK, DQS, QSS, DZ, THV, ZLO, PKE, ZLE2,  __STAT__ )
+     DEALLOCATE( INHB, LFC, PLmb, DQS, QSS, ZLE_ZERO, ZL_ZERO, DZET,  __STAT__ )
   END IF
 
 !print*, "min/max Final LFR: ", minval(flashRate), maxval(flashRate)
@@ -774,7 +843,7 @@ end subroutine read_lightning_config
 ! 1 Nov 2019 Damon       Bringing routine to GEOS_Shared
 !EOP
 !-----------------------------------------------------------------------
-  subroutine BUOYANCY( T, Q, QS, DQS, DZ, ZLO, BUOY, CAPE, INHB, DM, CAPE_MERRA2)
+  subroutine BUOYANCY( T, Q, QS, DQS, DZ, ZL_ZERO, BUOY, CAPE, INHB, DM, CAPE_MERRA2)
 
 
     ! !DESCRIPTION: Computes the buoyancy $ g \frac{T_c-T_e}{T_e} $ at each level
@@ -785,8 +854,8 @@ end subroutine read_lightning_config
     real, dimension(:,:,:),   intent(in)            :: Q        ! specific humidity (kg kg-1)         [top-down]
     real, dimension(:,:,:),   intent(in)            :: QS       !  saturation specific humidity
     real, dimension(:,:,:),   intent(in)            :: DQS      !  derivative of satuation specific humidity wrt temperature
-    real, dimension(:,:,:),   intent(in)            :: DZ       !  gridbox height
-    real, dimension(:,:,:),   intent(in)            :: ZLO      !  geopotential height at center of gridbox
+    real, dimension(:,:,:),   intent(in)            :: DZ       !  gridbox height (delta-Z)
+    real, dimension(:,:,:),   intent(in)            :: ZL_ZERO  !  height above surface (center of gridbox)
 
     real, dimension(:,:,:),   intent(out)           :: BUOY         !  [m/s/s]
     real, dimension(:,:),     intent(out)           :: CAPE         !  [J/kg]
@@ -799,10 +868,10 @@ end subroutine read_lightning_config
 
     LM = size(T,3)
 
-    BUOY(:,:,LM) =  T(:,:,LM) + (MAPL_GRAV/MAPL_CP)*ZLO(:,:,LM) + (MAPL_ALHL/MAPL_CP)*Q(:,:,LM)
+    BUOY(:,:,LM) =  T(:,:,LM) + (MAPL_GRAV/MAPL_CP)*ZL_ZERO(:,:,LM) + (MAPL_ALHL/MAPL_CP)*Q(:,:,LM)
 
     do L=LM-1,1,-1
-       BUOY(:,:,L) = BUOY(:,:,LM) - (T(:,:,L) + (MAPL_GRAV/MAPL_CP)*ZLO(:,:,L) + (MAPL_ALHL/MAPL_CP)*QS(:,:,L))
+       BUOY(:,:,L) = BUOY(:,:,LM) - (T(:,:,L) + (MAPL_GRAV/MAPL_CP)*ZL_ZERO(:,:,L) + (MAPL_ALHL/MAPL_CP)*QS(:,:,L))
        BUOY(:,:,L) = MAPL_GRAV*BUOY(:,:,L) / ( (1.+ (MAPL_ALHL/MAPL_CP)*DQS(:,:,L))*T(:,:,L) )
     enddo
 
@@ -1529,16 +1598,16 @@ end subroutine read_lightning_config
 
 
     subroutine LOPEZ_FlashRate(STATE, IM, JM, LM, FROCEAN, ZKBCON, CAPE,  &
-                               ZLE, PFI_CN_GF, CNV_QC, TE, PLO, ZLFC, ZLCL, LOPEZ_flashFactor, &
+                               DELZ, PFI_CN_GF, CNV_QC, TE, PLmb, ZLFC, ZLCL, LOPEZ_flashFactor, &
                                LFR_Lopez, RC)
      implicit none 
      TYPE(MAPL_MetaComp), POINTER :: STATE ! Internal MAPL_Generic state
      integer ,intent(in)  :: im,jm,lm
-     real,    intent(in), dimension(im,jm,0:lm) ::  ZLE          ! layer depths [m]
      real,    intent(in), dimension(im,jm,0:lm) ::  PFI_CN_GF    ! 3d_ice_precipitation_flux_GF_CONVECTIVE [kg/m2/s]  in updrafts
 
+     real,    intent(in), dimension(im,jm,lm) ::  DELZ           ! layer depths [m]
      real,    intent(in), dimension(im,jm,lm) ::  TE             ! air temp [K]
-     real,    intent(in), dimension(im,jm,lm) ::  PLO            ! press (hPa)
+     real,    intent(in), dimension(im,jm,lm) ::  PLmb           ! press (hPa)
      real,    intent(in), dimension(im,jm,lm) ::  CNV_QC         ! grid_mean_convective_condensate [kg/kg]
 
 
@@ -1586,7 +1655,7 @@ end subroutine read_lightning_config
     
     integer :: i,j,k, k_initial, k_final                          
     real    :: tdif, td2
-    real    :: Q_R, z_base,beta,prec_flx_fr,dz
+    real    :: Q_R, z_base,beta,prec_flx_fr
     real,    dimension(1:lm) :: q_graup,q_snow,rho
 
 !   REAL :: f_oc_thresh
@@ -1607,10 +1676,10 @@ end subroutine read_lightning_config
 !    print*, "im, jm, lm: ", im, jm, lm
 !    print*, "FRLAND: ", minval(FRLAND), maxval(FRLAND)
 !    print*, "CAPE: ", minval(CAPE), maxval(CAPE)
-!    print*, "ZLE: ", minval(ZLE), maxval(ZLE)
+!    print*, "DELZ: ", minval(DELZ), maxval(DELZ)
 !    print*, "PFI_CN_GF ", minval(PFI_CN_GF), maxval(PFI_CN_GF)
 !    print*, "TE: ", minval(TE), maxval(TE)
-!    print*, "PLO: ", minval(PLO), maxval(PLO)
+!    print*, "PLmb: ", minval(PLmb), maxval(PLmb)
 !    print*, "CNV_QC: ", minval(CNV_QC), maxval(CNV_QC)
 !    print*, "zkbcon: ", minval(zkbcon), maxval(zkbcon)
 !!!
@@ -1657,7 +1726,7 @@ end subroutine read_lightning_config
            q_snow (:) = 0. 
 
            do k=1,lm
-                rho(k) =  100.*PLO(i,j,k) / (MAPL_RGAS*TE(i,j,k) )
+                rho(k) =  100.*PLmb(i,j,k) / (MAPL_RGAS*TE(i,j,k) )
                 prec_flx_fr = (( PFI_CN_GF(i,j,k  )                      +    &
                                  PFI_CN_GF(i,j,k-1)                      ) * 0.5 ) / rho(k)
 
@@ -1696,10 +1765,7 @@ end subroutine read_lightning_config
 
           Q_R = 0.0
           do k = k_final, k_initial
-             
-             dz  = zle(i,j,k-1)-zle(i,j,k)  
-
-             Q_R = Q_R + dz*rho(k)*(q_graup(k)*(CNV_QC(i,j,k)+q_snow(k)))
+             Q_R = Q_R + DELZ(i,j,k)*rho(k)*(q_graup(k)*(CNV_QC(i,j,k)+q_snow(k)))
          enddo
 
 
