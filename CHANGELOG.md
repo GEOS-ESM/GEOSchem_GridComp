@@ -8,8 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+
+- Added the capability to compute LFC in Lightning module, needed for CTM
+
 ### Removed
 ### Changed
+
+- Slight refactoring of LOPEZ lightning scheme, minor numerical difference
+- Renamed lightning option 'usePreconCape' to 'useImportedCape' in order to cover both GCM and CTM
+
 ### Fixed
 ### Deprecated
 
