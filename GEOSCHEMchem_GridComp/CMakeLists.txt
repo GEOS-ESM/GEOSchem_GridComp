@@ -114,10 +114,10 @@ install(
    )
 
 file (GLOB resource_files1 CONFIGURE_DEPENDS 
-      "@geos-chem/run/GEOS/*.rc"
-      "@geos-chem/run/GEOS/geos*.yml"
-      "@geos-chem/run/GEOS/geos*.yaml"
-      "@geos-chem/run/shared/species*.yml"
+      "${geos_chem_dir}/run/GEOS/*.rc"
+      "${geos_chem_dir}/run/GEOS/*.yml"
+      "${geos_chem_dir}/run/GEOS/*.yaml"
+      "${geos_chem_dir}/run/shared/species*.yml"
       )
 
 install(
@@ -126,9 +126,9 @@ install(
    )
 
 file (GLOB resource_files2 CONFIGURE_DEPENDS 
-      "@geos-chem/run/GEOS/TransportTracers/*.rc"
-      "@geos-chem/run/GEOS/TransportTracers/*.yml"
-      "@geos-chem/run/GEOS/TransportTracers/*.yaml"
+      "${geos_chem_dir}/run/GEOS/TransportTracers/*.rc"
+      "${geos_chem_dir}/run/GEOS/TransportTracers/*.yml"
+      "${geos_chem_dir}/run/GEOS/TransportTracers/*.yaml"
       )
 
 install(
