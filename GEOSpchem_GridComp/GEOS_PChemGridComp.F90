@@ -1534,6 +1534,8 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 ! Update
 !-------
 
+    call MAPL_TimerOn(MAPL,"--UPDATE"  )
+
     call UPDATE(PCHEM_STATE%CH4,    'CH4',    CH4   ) ! CH4=   1.75e-6
     call UPDATE(PCHEM_STATE%N2O,    'N2O',    N2O   ) ! N2O=   0.28e-6
     call UPDATE(PCHEM_STATE%CFC11,  'CFC11',  CFC11 ) ! CFC11= 0.30e-9 
@@ -1541,16 +1543,22 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
     call UPDATE(PCHEM_STATE%HCFC22, 'HCFC22', HCFC22) ! HCFC22= 0.20e-9 
     call UPDATE(PCHEM_STATE%OX,     'OX',     OX    )
 
+    call MAPL_TimerOff(MAPL,"--UPDATE"  )
+
 ! Water
 !------
 
     if(MAPL_VerifyFriendly(IMPORT,'Q','CHEMISTRY')) then
+
+     call MAPL_TimerOn(MAPL,"--H2O"  )
 
      IF (USE_H2O_ProdLoss) THEN
        call UPDATE_H2O_PL('H2O'  ,H2O  )
      ELSE
        call UPDATE(PCHEM_STATE%H2O,     'H2O',     H2O    )
      ENDIF
+
+     call MAPL_TimerOff(MAPL,"--H2O"  )
 
     endif
 
@@ -1567,6 +1575,8 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
     VERIFY_(STATUS)
 
     if(associated(O3) .or. associated(O3PPMV)) then
+
+       call MAPL_TimerOn(MAPL,"--OZONE"  )
 
        allocate(  ZTH(IM,JM),stat=STATUS)
        VERIFY_(STATUS)
@@ -1625,6 +1635,8 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
        deallocate(O3VMR)
        deallocate(WRK)
        deallocate(WGT)
+
+       call MAPL_TimerOff(MAPL,"--OZONE"  )
 
     end if
 
