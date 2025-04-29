@@ -49,7 +49,7 @@ module GEOS_ChemEnvGridCompMod
   real                       :: FIT_flashFactor
   real                       :: HEMCO_flashFactor
   real                       :: LOPEZ_flashFactor
-  logical                    :: usePreconCape       ! use CAPE, INHB and BYNCY from MOIST
+  logical                    :: useImportedCape     ! use CAPE, INHB and BYNCY from Import State
 
   ! May change during the course of the run:
   integer                    :: year_for_ratio = 0
@@ -777,7 +777,7 @@ contains
                                  numberNOperFlash,                     &
                                  MOIST_flashFactor, FIT_flashFactor,   &
                                  HEMCO_flashFactor, LOPEZ_flashFactor, &
-                                 usePreconCape,                        &
+                                 useImportedCape,                      &
                                  __RC__ )
 
     IF(MAPL_AM_I_ROOT()) THEN
@@ -786,7 +786,7 @@ contains
       if ( flash_source_enum == FLASH_SOURCE_HEMCO ) PRINT*,'HEMCO_flashFactor is ', HEMCO_flashFactor
       if ( flash_source_enum == FLASH_SOURCE_LOPEZ ) PRINT*,'LOPEZ_flashFactor is ', LOPEZ_flashFactor
 
-                                                     PRINT*,'usePreconCape = ', usePreconCape
+                                                     PRINT*,'useImportedCape = ', useImportedCape
     ENDIF
 
     RETURN_(ESMF_SUCCESS)
@@ -856,9 +856,9 @@ contains
   real, pointer, dimension(:,:,:) ::      PFI_CN => null()
   real, pointer, dimension(:,:,:) ::      CNV_QC => null()
 
-  real, pointer, dimension(:,:)   ::       CAPE_PRECON => null()
-  real, pointer, dimension(:,:)   ::       INHB_PRECON => null()
-  real, pointer, dimension(:,:,:) ::      BYNCY_PRECON => null()
+  real, pointer, dimension(:,:)   ::       CAPE_IMPORT => null()
+  real, pointer, dimension(:,:)   ::       INHB_IMPORT => null()
+  real, pointer, dimension(:,:,:) ::      BYNCY_IMPORT => null()
 
 ! Exports
   real,   pointer, dimension(:,:,:)  ::           delp => null()
@@ -975,9 +975,9 @@ contains
     call MAPL_GetPointer ( IMPORT, CNV_QC,      'CNV_QC',   __RC__ )
     call MAPL_GetPointer ( IMPORT, cellArea,    'AREA',     __RC__ )
 
-    call MAPL_GetPointer ( IMPORT,  CAPE_PRECON, 'CAPE',    __RC__ )
-    call MAPL_GetPointer ( IMPORT,  INHB_PRECON, 'INHB',    __RC__ )
-    call MAPL_GetPointer ( IMPORT, BYNCY_PRECON, 'BYNCY',   __RC__ )
+    call MAPL_GetPointer ( IMPORT,  CAPE_IMPORT, 'CAPE',    __RC__ )
+    call MAPL_GetPointer ( IMPORT,  INHB_IMPORT, 'INHB',    __RC__ )
+    call MAPL_GetPointer ( IMPORT, BYNCY_IMPORT, 'BYNCY',   __RC__ )
 
     call MAPL_GetPointer ( IMPORT, ZLFC, 'ZLFC',   __RC__ )
     call MAPL_GetPointer ( IMPORT, ZLCL, 'ZLCL',   __RC__ )
@@ -1010,7 +1010,7 @@ contains
                 TS, CNV_MFC, CNV_QC, T, TH, PFI_CN, PLE, Q, ZLE,   &
                 minDeepCloudTop, lightNOampFactor, numberNOperFlash, &
                 MOIST_flashFactor, FIT_flashFactor, HEMCO_flashFactor, LOPEZ_flashFactor, &
-                CNV_MFD, usePreconCape, CAPE_PRECON, INHB_PRECON, BYNCY_PRECON, &
+                CNV_MFD, useImportedCape, CAPE_IMPORT, INHB_IMPORT, BYNCY_IMPORT, &
                 CAPE, BYNCY, ZLFC, ZLCL, LFR, LIGHT_NO_PROD, PHIS, &
                 __RC__)
 

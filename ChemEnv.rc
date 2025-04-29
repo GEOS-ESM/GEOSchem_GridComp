@@ -37,4 +37,10 @@ lightNOampFactor: 1.07
 numberNOperFlash: 1.50e+26
 minDeepCloudTop: 7.0
 
-usePreconCape: TRUE
+#  originally called usePreconCape
+# IF TRUE:  CHEM should use the IMPORT state for CAPE, INHB, BYNCY, LFC
+#           for GMI, imports come from MOIST and reflect the state prior to convective transport
+#           for CTM, imports come from ExtData or CTMenv (currently these fields are not supported)
+# IF FALSE: compute CAPE, INHB, BYNCY, LFC in the CHEM module
+            use the FALSE setting for CTM
+useImportedCape: TRUE
