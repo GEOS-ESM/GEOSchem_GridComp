@@ -164,6 +164,14 @@ contains
          DIMS       = MAPL_DimsHorzVert,                                &
          VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
+     ! Sourish Basu : Needed to compute QTOT later
+     call MAPL_AddImportSpec(GC,                             &
+        SHORT_NAME = 'QCTOT',                                     &
+        LONG_NAME  = 'mass_fraction_of_condensed_water',              &
+        UNITS      = 'kg kg-1',                                   &
+        DIMS       = MAPL_DimsHorzVert,                           &
+        VLOCATION  = MAPL_VLocationCenter,             __RC__     ) 
+
 !   Geopotential Height
 !   -------------------
     call MAPL_AddImportSpec(GC,                                         &
@@ -389,6 +397,16 @@ contains
          UNITS      = 'kg dry m-3 tot',                                 &
          DIMS       = MAPL_DimsHorzVert,                                &
          VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
+
+! Sourish Basu
+!    Mass mixing ratio of water (all phases)
+!    ----------------------------------
+     call MAPL_AddExportSpec(GC,                             &
+        SHORT_NAME         = 'QTOT',                         &
+        LONG_NAME          = 'mass_fraction_of_all_water',   &
+        UNITS              = 'kg kg-1',                      &
+        DIMS               = MAPL_DimsHorzVert,              &
+        VLOCATION          = MAPL_VLocationCenter,    __RC__ )
 
 !    DELP (This should be wired from DYN)
 !    ------------------------------------
@@ -1299,10 +1317,12 @@ contains
   real, pointer, dimension(:,:,:)      :: PLE => null()
   real, pointer, dimension(:,:,:)      :: th => null()
   real, pointer, dimension(:,:,:)      :: q  => null()
+  real, pointer, dimension(:,:,:)      :: qc => null() ! Sourish
 
 ! Exports
   real, pointer, dimension(:,:,:)      :: rho => null()
   real, pointer, dimension(:,:,:)      :: rhoDry => null()
+  real, pointer, dimension(:,:,:)      ::   qtot => null() ! Sourish
 
 ! Error handling
   character(len=ESMF_MAXSTR)           :: IAm = 'Airdens'
@@ -1327,11 +1347,13 @@ contains
     call MAPL_GetPointer ( IMPORT,  PLE,  'PLE', __RC__ )
     call MAPL_GetPointer ( IMPORT,  th,  'TH',  __RC__ )
     call MAPL_GetPointer ( IMPORT,   q,  'Q',   __RC__ )
+    call MAPL_GetPointer ( IMPORT,  qc,  'QCTOT', __RC__ ) ! Sourish
 
 !   Get to the exports...
 !   ---------------------
     call MAPL_GetPointer ( EXPORT, rho,    'AIRDENS',      __RC__ )
     call MAPL_GetPointer ( EXPORT, rhoDry, 'AIRDENS_DRYP', __RC__ )
+    call MAPL_GetPointer ( EXPORT,   qtot, 'QTOT',         __RC__ ) ! Sourish
 
 !   Compute air density
 !   -------------------
@@ -1373,6 +1395,11 @@ contains
     END DO
 
     deallocate(npk)
+
+! Sourish Basu
+!   Compute qtot from q and qctot
+!   -----------------------------
+    IF(ASSOCIATED(qtot)) qtot = q + qc
 
 !   All Done
 !   --------
