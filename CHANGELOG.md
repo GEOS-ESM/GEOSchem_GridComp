@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- anthropogenic emissions were added to HEMCO with connectivity to GOCART
 ### Removed
 ### Changed
 ### Fixed
