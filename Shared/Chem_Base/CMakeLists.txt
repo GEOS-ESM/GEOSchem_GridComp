@@ -22,10 +22,10 @@ ecbuild_add_executable(TARGET gogo.x SOURCES gogo.F90 LIBS ${this})
 include_directories (${esma_include}/${this})
 
 if (USE_F2PY)
-   find_package(F2PY2)
-   if (F2PY2_FOUND)
-      add_f2py2_module(MieObs_ SOURCES MieObs_py.F90
-         DESTINATION lib/Python2
+   find_package(F2PY3)
+   if (F2PY3_FOUND)
+      add_f2py3_module(MieObs_ SOURCES MieObs_py.F90
+         DESTINATION lib/Python
          LIBRARIES Chem_Base MAPL GMAO_mpeu ${ESMF_LIBRARY}
          INCLUDEDIRS ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR}/lib ${include_${this}}
          USE_MPI USE_NETCDF

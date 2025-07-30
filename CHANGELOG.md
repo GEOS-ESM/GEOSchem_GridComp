@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Slight refactoring of LOPEZ lightning scheme, minor numerical difference
 - Renamed lightning option 'usePreconCape' to 'useImportedCape' in order to cover both GCM and CTM
+- Moved from `f2py2` to `f2py3` to enable removal of Python 2 support
 
 ### Fixed
 ### Deprecated
