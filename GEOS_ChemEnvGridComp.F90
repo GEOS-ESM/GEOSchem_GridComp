@@ -849,7 +849,6 @@ contains
   real, pointer, dimension(:,:)   ::          TS => null()
   real, pointer, dimension(:,:)   ::     FROCEAN => null()
   real, pointer, dimension(:,:)   ::      FRLAND => null()
-  real, pointer, dimension(:,:)   ::     CN_PRCP => null()
   real, pointer, dimension(:,:)   ::        PHIS => null()
   real, pointer, dimension(:,:,:) ::     CNV_MFC => null()
   real, pointer, dimension(:,:,:) ::     CNV_MFD => null()
@@ -860,12 +859,19 @@ contains
   real, pointer, dimension(:,:)   ::       INHB_IMPORT => null()
   real, pointer, dimension(:,:,:) ::      BYNCY_IMPORT => null()
 
+  real, pointer, dimension(:,:)   ::          pr_total => null()
+  real, pointer, dimension(:,:)   ::          pr_conv  => null()
+
 ! Exports
   real,   pointer, dimension(:,:,:)  ::           delp => null()
   real,   pointer, dimension(:,:)    ::            LFR => null()
   real,   pointer, dimension(:,:,:)  ::          BYNCY => null()
   real,   pointer, dimension(:,:)    ::           CAPE => null()
   real*4, pointer, dimension(:,:,:)  ::  LIGHT_NO_PROD => null()
+
+  real,   pointer, dimension(:,:)      ::    tprec => null()
+  real,   pointer, dimension(:,:)      ::  cn_prcp => null()
+  real,   pointer, dimension(:,:)      :: ncn_prcp => null()
 
 !=============================================================================
  
@@ -941,6 +947,21 @@ contains
        end do
     end if
 
+!   Import total precip from SURFACE (either model or observed precip)
+!     When running CTM, use fields such that (total - convective) >= 0.0
+!   Export total, convective and non-convective precipitation.
+!   --------------------------------------------------------------------
+    call MAPL_GetPointer ( EXPORT,    tprec,    'TPREC',  __RC__ )
+    call MAPL_GetPointer ( EXPORT,  cn_prcp,  'CN_PRCP',  __RC__ )
+    call MAPL_GetPointer ( EXPORT, ncn_prcp, 'NCN_PRCP',  __RC__ )
+
+    call MAPL_GetPointer ( IMPORT, pr_total,  'PRECTOT',  __RC__ )
+    call MAPL_GetPointer ( IMPORT, pr_conv,   'CN_PRCP',  __RC__ )
+
+    if (associated(   tprec))    tprec =  pr_total
+    if (associated( cn_prcp))  cn_prcp =  pr_conv
+    if (associated(ncn_prcp)) ncn_prcp = (pr_total - pr_conv)
+
 
     !------------------------------------------------
     ! Flash Rate (LFR) for Lighting Parameterization
@@ -959,7 +980,6 @@ contains
 
     call MAPL_GetPointer ( IMPORT, CNV_MFC,     'CNV_MFC',  __RC__ )
     call MAPL_GetPointer ( IMPORT, CNV_MFD,     'CNV_MFD',  __RC__ )
-    call MAPL_GetPointer ( IMPORT, CN_PRCP,     'CN_PRCP',  __RC__ )
     call MAPL_GetPointer ( IMPORT, PHIS,        'PHIS',     __RC__ )
     call MAPL_GetPointer ( IMPORT, PFI_CN,      'PFI_CN',   __RC__ )
 
@@ -991,7 +1011,7 @@ contains
       LIGHT_NO_PROD(:,:,:) = REAL(0)
     end if
 
-! print*,'ENV MOIST CN_PRCP ', MINVAL(CN_PRCP), MAXVAL(CN_PRCP)
+! print*,'ENV MOIST CN_PRCP ', MINVAL(pr_conv), MAXVAL(pr_conv)
 ! print*,'ENV MOIST FROCEAN ', MINVAL(FROCEAN), MAXVAL(FROCEAN)
 ! print*,'ENV MOIST TS      ', MINVAL(TS     ), MAXVAL(TS     )
 ! print*,'ENV MOIST CNV_MFC ', MINVAL(CNV_MFC), MAXVAL(CNV_MFC)
@@ -1005,7 +1025,7 @@ contains
 
     call getLightning ( GC, ggState, CLOCK, &
                 flash_source_enum, ratioGlobalLight, DT, &
-                LONSLOCAL, LATSLOCAL, CN_PRCP, FRLAND, FROCEAN, LWI,   &
+                LONSLOCAL, LATSLOCAL, pr_conv, FRLAND, FROCEAN, LWI,   &
                 PBLH, mcor, cellArea, MIDLAT_ADJ, RATIO_LOCAL,   &
                 TS, CNV_MFC, CNV_QC, T, TH, PFI_CN, PLE, Q, ZLE,   &
                 minDeepCloudTop, lightNOampFactor, numberNOperFlash, &
@@ -1133,18 +1153,17 @@ contains
        end do
     end if
 
-! Import total precip from SURFACE (either model or observed precip)
-! Export total, convective and non-convective precipitation.
-!--------------------------------------------------------------
+!   Import total precip from SURFACE (either model or observed precip)
+!     When running CTM, use fields such that (total - convective) >= 0.0
+!   Export total, convective and non-convective precipitation.
+!   --------------------------------------------------------------------
     call MAPL_GetPointer ( EXPORT,    tprec,    'TPREC',  __RC__ )
     call MAPL_GetPointer ( EXPORT,  cn_prcp,  'CN_PRCP',  __RC__ )
     call MAPL_GetPointer ( EXPORT, ncn_prcp, 'NCN_PRCP',  __RC__ )
 
-
-    call MAPL_GetPointer ( IMPORT, pr_total, 'PRECTOT', __RC__ )
-    call MAPL_GetPointer ( IMPORT, pr_conv,  'CN_PRCP', __RC__ )
+    call MAPL_GetPointer ( IMPORT, pr_total,  'PRECTOT',  __RC__ )
+    call MAPL_GetPointer ( IMPORT, pr_conv,   'CN_PRCP',  __RC__ )
  
-
     if (associated(   tprec))    tprec =  pr_total
     if (associated( cn_prcp))  cn_prcp =  pr_conv
     if (associated(ncn_prcp)) ncn_prcp = (pr_total - pr_conv)

@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved from `f2py2` to `f2py3` to enable removal of Python 2 support
 
 ### Fixed
+
+- ChemEnv now updates the precip exports (total, conv, non-conv) as part of Run1 (not just Run2).
+
 ### Deprecated
 
 
