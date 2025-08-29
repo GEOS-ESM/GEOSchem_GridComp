@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed lightning option 'usePreconCape' to 'useImportedCape' in order to cover both GCM and CTM
 
 ### Fixed
+
+- ChemEnv now updates the precip exports (total, conv, non-conv) as part of Run1 (not just Run2).
+
 ### Deprecated
 
 
