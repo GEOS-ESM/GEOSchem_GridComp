@@ -388,6 +388,13 @@ contains
       call MAPL_AddExportSpec ( GC, SHORT_NAME = 'AERO',    &
                                 CHILD_ID = AERO_PROVIDER, __RC__  )
 
+
+      call MAPL_AddExportSpec ( GC, SHORT_NAME = 'TOTABCKTOA', &
+                                CHILD_ID = AERO_PROVIDER, __RC__ )
+
+      call MAPL_AddExportSpec ( GC, SHORT_NAME = 'TOTABCKSFC', &
+                                CHILD_ID = AERO_PROVIDER, __RC__ )
+
 #ifdef ENABLE_AERO_ACI
       ! IMPORTANT: This feature is currently disabled in Physics above,
       !            waiting for patches in the ESMF. Exporting state
