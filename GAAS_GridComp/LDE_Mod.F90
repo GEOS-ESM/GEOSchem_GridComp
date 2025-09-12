@@ -128,7 +128,9 @@ CONTAINS
 
 !    Get VM for later
 !    ----------------
-     call ESMF_VMGetGlobal(self%VM,__RC__)
+!    call ESMF_VMGetGlobal(self%VM,__RC__)
+! change suggested by Matt Thompson 2025-02-03 for the GCM hanging problem.
+     call ESMF_VMGetCurrent(self%VM,__RC__)
 
 !    Set Ensemble indices on root PE
 !    -------------------------------
