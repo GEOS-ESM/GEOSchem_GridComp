@@ -3,7 +3,7 @@ from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Float, FloatField, Int
 from ndsl.stencils.testing.translate import TranslateFortranData2Py
 from ndsl.utils import safe_assign_array
-from pyChem.pchem import PChem
+from pyChem.PChem.pchem import PChem
 
 # from pyChem.PChem.config import PChemConfiguration
 
