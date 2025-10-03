@@ -4,8 +4,7 @@ from ndsl.dsl.typing import Float, FloatField, Int
 from ndsl.stencils.testing.translate import TranslateFortranData2Py
 from ndsl.utils import safe_assign_array
 from pyChem.PChem.pchem import PChem
-
-# from pyChem.PChem.config import PChemConfiguration
+from pyChem.PChem.config import PChemConfiguration
 
 
 class TranslateUpdate(TranslateFortranData2Py):
@@ -30,7 +29,7 @@ class TranslateUpdate(TranslateFortranData2Py):
 
         # Float/Int Inputs
         self.in_vars["parameters"] = [
-            "NN",
+            "NN_CH4",
             "clim_years",
             "delp",
             "fac",
@@ -41,7 +40,7 @@ class TranslateUpdate(TranslateFortranData2Py):
 
         # FloatField Outputs
         self.out_vars = {
-            "CH4": self.grid.compute_dict(),
+            "XX_CH4": self.grid.compute_dict(),
         }
 
     def make_ijk_field(self, data, dtype=FloatField) -> Quantity:
@@ -50,21 +49,21 @@ class TranslateUpdate(TranslateFortranData2Py):
         return qty
 
     def compute(self, inputs):
-        # self.pchem_config = PChemConfiguration(Int(inputs["NN"]), Int(inputs["clim_years"]))
+        self.pchem_config = PChemConfiguration(
+            Int(inputs["clim_years"]), Float(inputs["tau"])
+        )
 
         pchem = PChem(
             self.stencil_factory,
             self.grid.quantity_factory,
-            # self.pchem_config,
+            self.pchem_config,
         )
 
         # Float/Int Inputs
-        NN = Int(inputs["NN"])
-        clim_years = Int(inputs["clim_years"])
+        NN_CH4 = Int(inputs["NN_CH4"])
         delp = Float(inputs["delp"])
         fac = Float(inputs["fac"])
         pcrit = Float(inputs["pcrit"])
-        tau = Float(inputs["tau"])
         dt = Float(inputs["dt"])
 
         # Field inputs
@@ -86,14 +85,13 @@ class TranslateUpdate(TranslateFortranData2Py):
         safe_assign_array(prod.view[:, :], inputs["prod"])
 
         # FloatFields
-        xx = QuantityFactory.zeros(
+        xx_CH4 = QuantityFactory.zeros(
             self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
         )
 
         pchem(
             # Field inputs
-            NN=NN,
-            clim_years=clim_years,
+            NN=NN_CH4,
             pl=pl,
             XX_in=xx_in,
             delp=delp,
@@ -102,12 +100,11 @@ class TranslateUpdate(TranslateFortranData2Py):
             pcrit=pcrit,
             prod=prod,
             prod_int=prod_int,
-            tau=tau,
             dt=dt,
             # Outputs
-            XX=xx,
+            XX=xx_CH4,
         )
 
         return {
-            "CH4": xx.view[:],
+            "XX_CH4": xx_CH4.view[:],
         }
