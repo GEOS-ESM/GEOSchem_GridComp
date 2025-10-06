@@ -1,1 +1,1 @@
-from .translate_interp import TranslateInterp
+from .translate_pchem import TranslateUpdate

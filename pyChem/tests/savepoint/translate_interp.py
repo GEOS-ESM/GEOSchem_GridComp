@@ -3,7 +3,8 @@ from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import FloatField
 from ndsl.stencils.testing.translate import TranslateFortranData2Py
 from ndsl.utils import safe_assign_array
-from pyChem.PChem.interp_no_extrap import Interp
+
+# from pyChem.MAPL.interp_no_extrap import Interp
 import numpy as np
 
 
@@ -20,10 +21,11 @@ class TranslateInterp(TranslateFortranData2Py):
 
         # FloatField Inputs
         self.in_vars["data_vars"] = {
+            "LATS": {},
+            "PCHEM_LATS": {},
             "PL": {},
             "PCHEM_LEVS": {},
-            "PROD1": {},
-            "PROD2": {},
+            "Prod1": {},
         }
 
         # FloatField Outputs
@@ -44,22 +46,27 @@ class TranslateInterp(TranslateFortranData2Py):
         )
         safe_assign_array(PL.view[:, :, :], inputs["PL"])
 
-        PROD1 = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
-        safe_assign_array(PROD1.view[:, :, :], inputs["PROD1"])
-
-        PROD2 = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Z_DIM], units="n/a"
-        )
-        safe_assign_array(PROD2.view[:, :], inputs["PROD2"])
+        Prod1 = np.zeros(shape=(91, 72))
+        safe_assign_array(Prod1[:, :], inputs["Prod1"])
 
         PCHEM_LEVS = QuantityFactory.zeros(
             self.quantity_factory, dims=[Z_DIM], units="n/a"
         )
         safe_assign_array(PCHEM_LEVS.view[:], inputs["PCHEM_LEVS"])
 
+        PCHEM_LATS = np.zeros(shape=[91])
+        safe_assign_array(PCHEM_LATS[:], inputs["PCHEM_LATS"])
+
+        LATS = QuantityFactory.zeros(
+            self.quantity_factory, dims=[X_DIM, Y_DIM], units="n/a"
+        )
+        safe_assign_array(LATS.view[:, :], inputs["LATS"])
+
         # FloatFields
+        PROD = QuantityFactory.zeros(
+            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
+        )
+
         PROD_INT = QuantityFactory.zeros(
             self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
         )
@@ -73,59 +80,19 @@ class TranslateInterp(TranslateFortranData2Py):
         #     PROD_INT=PROD_INT,
         # )
 
-        def mapl_interp(OX, IY, IX):
-            """
-            Python version of INTERP_LIN_0011_1.
-            """
-            # Find the interval index J such that IX[J] <= OX <= IX[J+1]
-            J = min(max(np.count_nonzero(IX <= OX), 1), IX.size - 1) - 1
-            # print(J)
+        im, jm, n_levs = 24, 24, 72
 
-            # Linear interpolation
-            if IX[J + 1] != IX[J]:
-                OY = IY[J] + ((OX - IX[J]) / (IX[J + 1] - IX[J])) * (IY[J + 1] - IY[J])
-
-            else:
-                OY = IY[J]
-
-            return OY
-
-        def mapl_interp_1111_1(OX_list, IY, IX):
-            """
-            Python version of INTERP_LIN_1111_1.
-            """
-            OY = []
-            for ox in OX_list:
-                oy = mapl_interp(ox, IY, IX)
-                OY.append(oy)
-
-            return OY
-
-        def interp_no_extrap(OX_list, IY, IX):
-            """
-            Python version of INTERP_NO_EXTRAP.
-            """
-            max_index = len(IX)
-
-            OY = mapl_interp_1111_1(OX_list, IY, IX)
-
-            # If OX is below the first IX, clamp to the first value
-            for i in range(0, max_index):
-                if OX_list[i] <= IX[0]:
-                    OY[i] = IY[0]
-
-                if OX_list[i] >= IX[max_index - 1]:
-                    OY[i] = IY[max_index - 1]
-
-            return OY
-
-        n_lat, n_lon = 24, 24
-
-        for i in range(n_lat):
-            for j in range(n_lon):
+        for j in range(jm):
+            for k in range(n_levs):
+                PROD.field[:, j, k] = interp_no_extrap(
+                    OX_list=LATS.field[:, j],
+                    IY=Prod1[:, k],
+                    IX=PCHEM_LATS[:],
+                )
+            for i in range(im):
                 PROD_INT.field[i, j, :] = interp_no_extrap(
                     OX_list=PL.field[i, j, :],
-                    IY=PROD1.field[i, j, :],
+                    IY=PROD.field[i, j, :],
                     IX=PCHEM_LEVS.field[:],
                 )
 

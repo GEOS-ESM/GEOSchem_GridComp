@@ -13,9 +13,9 @@ export FV3_DACEMODE=Python
 #export GT4PY_EXTRA_COMPILE_OPT_FLAGS='-fconstexpr-ops-limit=1000000000'
 python -m pytest -s -v --disable-warnings --multimodal_metric \
     --data_path=/Users/kfandric/netcdf \
-    --backend=dace:cpu\
+    --backend=debug \
     --which_rank=0 \
-    --which_savepoint=0\
+    --which_savepoint=0 \
     --which_modules=Update \
     --grid=default \
     ..

@@ -8,6 +8,7 @@ from ndsl.dsl.typing import (
 
 from pyChem.PChem.config import PChemConfiguration
 import pyChem.PChem.stencils as stencils
+import pyChem.MAPL.interp_no_extrap as interp
 
 
 class PChem:
