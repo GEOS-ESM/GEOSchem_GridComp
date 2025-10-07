@@ -8,23 +8,15 @@ from ndsl.dsl.typing import (
     Float,
     FloatField,
     Int,
-    FloatFieldK,
+    FloatFieldIJ,
 )
 
+import pyChem.constants as constants
 
-def update(
+
+def update1(
     # Inputs
-    NN: Int,
-    pl: FloatField,
     XX_in: FloatField,
-    delp: Float,
-    fac: Float,
-    # mncv: FloatField,  # Fix this (shape=[91,72,7,2])
-    pcrit: Float,
-    prod: FloatField,
-    prod_int: FloatField,
-    tau: Float,
-    dt: Float,
     # Outputs
     XX: FloatField,
 ):
@@ -64,56 +56,47 @@ def update(
         # call MAPL_GetPointer ( EXPORT, XX_LOSS, trim(NAME)//'_LOSS', RC=STATUS )
         # VERIFY_(STATUS)
 
+
+def update2(
+    # Inputs
+    NN: Int,
+    tau: Float,
+    pl: FloatField,
+    delp: Float,
+    pcrit: Float,
+    prod_int: FloatField,
+    dt: Float,
+    tropp: FloatFieldIJ,
+    # In/Outs
+    XX: FloatField,
+):
     with computation(PARALLEL), interval(...):
-        # if tau <= 0.0:  # By convention this is the prod(index 1) and loss(index 2) case
-        #     prod1 = mnpl(:,:,NN,1,1)*fac + mnpl(:,:,NN,1,2)*(1.-fac)
-        #     loss1 = mnpl(:,:,NN,2,1)*fac + mnpl(:,:,NN,2,2)*(1.-fac)
+        # call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
+        # VERIFY_(STATUS)
+        # delp = max(delp, 1.0e-16)
 
-        #     prod = interp_no_extrap( prod(:,L), lat(:,J), prod1(:,L), pchem_lats)
-        #     loss = interp_no_extrap( loss(:,L), lats(:,J), loss1(:,L), pchem_lats)
-
-        #     prod_int = interp_no_extrap( prod_int(i,j,:), pl(i,j,:), prod(i,:), pchem_levs)
-        #     loss_int = interp_no_extrap( loss_int(i,j,:), pl(i,j,:), loss(i,:), pchem_levs)
-
-        #     XX = (XX + dt*prod_int) / (1.0 + dt*loss_int)
-
-        if tau > 0.0:
-
-            # prod1 = mncv.at(K=NN - 1, ddim=0) * fac + mncv.at(K=NN - 1, ddim=1) * (
-            #     1.0 - fac
-            # )
-
-            # prod = interp_no_extrap( prod(:,L), lats(:,J), prod1(:,L), pchem_lats)
-            # prod_int = interp_no_extrap( prod_int(i,j,:), pl(i,j,:), prod(i,:), pchem_levs)
-
-            # call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
-            # VERIFY_(STATUS)
-
-            # delp = max(delp, 1.0e-16)
-
-            # if NN == 7:
+        if NN == 7:
             # call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=20000. ,RC=STATUS)
             # VERIFY_(STATUS)
             # allocate(WRK(IM,JM),stat=STATUS)
             # VERIFY_(STATUS)
-            # where (TROPP==MAPL_UNDEF)
-            #     WRK = PCRIT
-            # elsewhere
-            #     WRK = TROPP
+            if tropp == constants.MAPL_UNDEF:
+                wrk = pcrit
+            else:
+                wrk = tropp
 
-            # WRK = min(WRK, PCRIT)
+            wrk = 0.9  # min(wrk, pcrit)
 
-            # LOSS_INT(:,:,L) = (1./TAU) * max( min( (WRK-PL(:,:,L))/DELP, 1.0), 0.0)
+            loss_int = (1.0 / tau) * max(min(wrk - pl / delp, 1.0), 0.0)
 
-            # deallocate(WRK)
-            if NN != 7:
-                # call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=1.e+16 ,RC=STATUS)
-                # VERIFY_(STATUS)
-                loss_int = (1.0 / tau) * max(min((pcrit - pl) / delp, 1.0), 0.0)
+        if NN != 7:
+            # call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=1.e+16 ,RC=STATUS)
+            # VERIFY_(STATUS)
+            loss_int = 1.0 / tau * max(min((pcrit - pl) / delp, 1.0), 0.0)
 
-                prod_int = loss_int * prod_int
+        prod_int = loss_int * prod_int
 
-                XX = (XX + dt * prod_int) / (1.0 + dt * loss_int)
+        XX = (XX + dt * prod_int) / (1.0 + dt * loss_int)
 
         # if(associated(XX_PROD)) XX_PROD =  PROD_INT
         # if(associated(XX_LOSS)) XX_LOSS = -LOSS_INT*XX

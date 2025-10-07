@@ -1,10 +1,11 @@
 from ndsl import Namelist, Quantity, QuantityFactory, StencilFactory
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.dsl.typing import Float, FloatField, Int
 from ndsl.stencils.testing.translate import TranslateFortranData2Py
 from ndsl.utils import safe_assign_array
 from pyChem.PChem.pchem import PChem
 from pyChem.PChem.config import PChemConfiguration
+import numpy as np
 
 
 class TranslateUpdate(TranslateFortranData2Py):
@@ -20,11 +21,13 @@ class TranslateUpdate(TranslateFortranData2Py):
 
         # FloatField Inputs
         self.in_vars["data_vars"] = {
-            "PL": {},
+            "LATS": {},
+            "PCHEM_LATS": {},
+            "PCHEM_LEVS": {},
+            "PLE": {},
             "XX_in": {},
             "mncv": {},
-            "prod": {},
-            "prod_int": {},
+            "TROPP": {},
         }
 
         # Float/Int Inputs
@@ -49,9 +52,7 @@ class TranslateUpdate(TranslateFortranData2Py):
         return qty
 
     def compute(self, inputs):
-        self.pchem_config = PChemConfiguration(
-            Int(inputs["clim_years"]), Float(inputs["tau"])
-        )
+        self.pchem_config = PChemConfiguration(Int(inputs["clim_years"]))
 
         pchem = PChem(
             self.stencil_factory,
@@ -65,42 +66,73 @@ class TranslateUpdate(TranslateFortranData2Py):
         fac = Float(inputs["fac"])
         pcrit = Float(inputs["pcrit"])
         dt = Float(inputs["dt"])
+        tau = Float(inputs["tau"])
 
         # Field inputs
-        pl = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
+        ple = QuantityFactory.zeros(
+            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM], units="n/a"
         )
-        safe_assign_array(pl.view[:, :, :], inputs["PL"])
+        safe_assign_array(ple.view[:, :, :], inputs["PLE"])
         xx_in = QuantityFactory.zeros(
             self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
         )
         safe_assign_array(xx_in.view[:, :, :], inputs["XX_in"])
-        prod_int = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
+
+        PCHEM_LEVS = QuantityFactory.zeros(
+            self.quantity_factory, dims=[Z_DIM], units="n/a"
         )
-        safe_assign_array(prod_int.view[:, :, :], inputs["prod_int"])
-        prod = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Z_DIM], units="n/a"
+        safe_assign_array(PCHEM_LEVS.view[:], inputs["PCHEM_LEVS"])
+
+        PCHEM_LATS = np.zeros(shape=[91])
+        safe_assign_array(PCHEM_LATS[:], inputs["PCHEM_LATS"])
+
+        LATS = QuantityFactory.zeros(
+            self.quantity_factory, dims=[X_DIM, Y_DIM], units="n/a"
         )
-        safe_assign_array(prod.view[:, :], inputs["prod"])
+        safe_assign_array(LATS.view[:, :], inputs["LATS"])
+
+        mncv = np.zeros(shape=(91, 72, 7, 2))
+        safe_assign_array(mncv[:, :, :, :], inputs["mncv"])
+
+        tropp = QuantityFactory.zeros(
+            self.quantity_factory, dims=[X_DIM, Y_DIM], units="n/a"
+        )
+        safe_assign_array(tropp.view[:, :], inputs["TROPP"])
 
         # FloatFields
         xx_CH4 = QuantityFactory.zeros(
             self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
         )
 
+        PROD = QuantityFactory.zeros(
+            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
+        )
+
+        PROD_INT = QuantityFactory.zeros(
+            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
+        )
+        PL = QuantityFactory.zeros(
+            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
+        )
+
         pchem(
             # Field inputs
             NN=NN_CH4,
-            pl=pl,
+            ple=ple,
             XX_in=xx_in,
             delp=delp,
             fac=fac,
-            # mncv=mncv, Need to revisit this 4D field
+            mncv=mncv,
             pcrit=pcrit,
-            prod=prod,
-            prod_int=prod_int,
             dt=dt,
+            tau=tau,
+            prod=PROD,
+            prod_int=PROD_INT,
+            pl=PL,
+            lats=LATS,
+            pchem_lats=PCHEM_LATS,
+            pchem_levs=PCHEM_LEVS,
+            tropp=tropp,
             # Outputs
             XX=xx_CH4,
         )
