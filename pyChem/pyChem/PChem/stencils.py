@@ -1,9 +1,12 @@
 from gt4py.cartesian.gtscript import (
     PARALLEL,
+    FORWARD,
     computation,
     interval,
+    int32,
+    float32,
 )
-import gt4py.cartesian.gtscript as gtscript
+
 from ndsl.dsl.typing import (
     Float,
     FloatField,
@@ -15,19 +18,17 @@ import pyChem.constants as constants
 
 
 def update1(
-    # Inputs
+    # In
     XX_in: FloatField,
-    # Outputs
+    # Out
     XX: FloatField,
 ):
     """
-    Function that updates species (e.g., CH4, N20, CFC 11, etc.) accoridng to tabulated production
+    Stencil that updates species (e.g., CH4, N20, CFC 11, etc.) accoridng to tabulated production
     and loss rates.
 
-    TODO: This was a first attemp at porting the 'update' subroutine of PChem. There is still much
-    to do. Anything commented out needs to still be ported. MNCV (shape=[91, 72, 7, 2]) needs to be
-    revisited. There is also alot of MAPL calls that need to be revisited. interp_no_extrap needs
-    to be ported as well.
+    TODO: This was a first attemp at porting the 'Update' portion of PChem. There is still more
+    to do - MAPL calls need to be revisited.
     """
 
     with computation(PARALLEL), interval(...):
@@ -58,7 +59,7 @@ def update1(
 
 
 def update2(
-    # Inputs
+    # In
     NN: Int,
     tau: Float,
     pl: FloatField,
@@ -67,10 +68,11 @@ def update2(
     prod_int: FloatField,
     dt: Float,
     tropp: FloatFieldIJ,
-    # In/Outs
+    # In/Out
     XX: FloatField,
 ):
-    with computation(PARALLEL), interval(...):
+
+    with computation(FORWARD), interval(...):
         # call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
         # VERIFY_(STATUS)
         # delp = max(delp, 1.0e-16)
@@ -80,14 +82,17 @@ def update2(
             # VERIFY_(STATUS)
             # allocate(WRK(IM,JM),stat=STATUS)
             # VERIFY_(STATUS)
+            pcrit_H2O = float32(20000)
+
             if tropp == constants.MAPL_UNDEF:
-                wrk = pcrit
+                wrk_H2O = pcrit_H2O
             else:
-                wrk = tropp
+                wrk_H2O = tropp
 
-            wrk = 0.9  # min(wrk, pcrit)
+            wrk_H2O = min(wrk_H2O, pcrit_H2O)
+            loss_int = (1.0 / tau) * max(min((wrk_H2O - pl) / delp, 1.0), 0.0)
 
-            loss_int = (1.0 / tau) * max(min(wrk - pl / delp, 1.0), 0.0)
+    with computation(PARALLEL), interval(...):
 
         if NN != 7:
             # call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=1.e+16 ,RC=STATUS)
