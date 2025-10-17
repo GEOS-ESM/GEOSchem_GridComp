@@ -1,1 +1,1 @@
-from .translate_pchem import TranslateUpdate
+from .translate_pchem import TranslatePChem

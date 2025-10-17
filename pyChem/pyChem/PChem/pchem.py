@@ -48,6 +48,16 @@ class PChem:
             compute_dims=[X_DIM, Y_DIM, Z_DIM],
         )
 
+        self._update_ozone = self.stencil_factory.from_dims_halo(
+            func=stencils.update_ozone,
+            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+        )
+
+        self._age_of_air = self.stencil_factory.from_dims_halo(
+            func=stencils.age_of_air,
+            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+        )
+
     def __call__(
         self,
         # In
@@ -75,20 +85,30 @@ class PChem:
         XX_HCFC22_in: FloatField,
         XX_OX_in: FloatField,
         XX_H2O_in: FloatField,
+        AOA_in: FloatField,
+        O3_pointer: Int,
+        O3PPMV_pointer: Int,
+        TO3_pointer: Int,
+        TTO3_pointer: Int,
+        O3VMR: FloatFieldIJ,
+        OX: FloatField,
+        ZTH: FloatFieldIJ,
         # Out
         CH4: FloatField,
         N2O: FloatField,
         CFC11: FloatField,
         CFC12: FloatField,
         HCFC22: FloatField,
-        OX: FloatField,
         H2O: FloatField,
+        O3: FloatField,
+        O3PPMV: FloatField,
+        AOA: FloatField,
     ):
         """
         PChem Driver
 
-        Updates 7 chemical species (CH4, N2O, CFC11, CFC12, HCFC22, OX, H2O) based on production
-        and loss rates.
+        Updates 7 chemical species (CH4, N2O, CFC11, CFC12, HCFC22, OX, H2O) and O3 based on
+        production and loss rates.
         """
         lm = 73
         self.temporaries.PL.view[:, :, :] = 0.5 * (
@@ -159,3 +179,27 @@ class PChem:
 
         for species, XX in zip(species_list, XX_list):
             species.view[:] = XX
+
+        if TO3_pointer or TTO3_pointer == 1:
+            raise NotImplementedError(f"Warning: This code has not been ported!!")
+
+        self._update_ozone(
+            # In
+            O3_pointer=O3_pointer,
+            O3PPMV_pointer=O3PPMV_pointer,
+            O3VMR=O3VMR,
+            OX=OX,
+            PL=self.temporaries.PL,
+            ZTH=ZTH,
+            # Out
+            O3=O3,
+            O3PPMV=O3PPMV,
+        )
+
+        self._age_of_air(
+            # In
+            AOA_in=AOA_in,
+            dt=dt,
+            # Out
+            AOA=AOA,
+        )

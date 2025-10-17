@@ -5,6 +5,9 @@ from gt4py.cartesian.gtscript import (
     interval,
     int32,
     float32,
+    log10,
+    exp,
+    K,
 )
 
 from ndsl.dsl.typing import (
@@ -23,39 +26,10 @@ def update1(
     # Out
     XX: FloatField,
 ):
-    """
-    Stencil that updates species (e.g., CH4, N20, CFC 11, etc.) accoridng to tabulated production
-    and loss rates.
-
-    TODO: This was a first attemp at porting the 'Update' portion of PChem. There is still more
-    to do - MAPL calls need to be revisited.
-    """
 
     with computation(PARALLEL), interval(...):
-        # if (trim(NAME) == "H2O") then
-        #    call MAPL_GetPointer ( IMPORT,   XX,  'Q', RC=STATUS )
-        #    VERIFY_(STATUS)
-        #    _ASSERT(associated(XX),'needs informative message')
-        # else
-        #    call MAPL_GetPointer ( INTERNAL, XX, NAME, RC=STATUS )
-        #    VERIFY_(STATUS)
-        #    _ASSERT(associated(XX),'needs informative message')
-        #    call MAPL_GetResource(MAPL, VALUE,LABEL=trim(NAME)//"_FIXED_VALUE:", default=-1., RC=STATUS)
-        #    VERIFY_(STATUS)
-        #    if(VALUE>=0.0) then
-        #       XX = VALUE
-        #       return
-        #    end if
-        # endif
-
+        # Load in concentration levels
         XX = XX_in
-
-        # call MAPL_GetResource(MAPL,   TAU,LABEL=trim(NAME)//"_RELAXTIME:", DEFAULT=0.0 ,RC=STATUS)
-        # VERIFY_(STATUS)
-        # call MAPL_GetPointer ( EXPORT, XX_PROD, trim(NAME)//'_PROD', RC=STATUS )
-        # VERIFY_(STATUS)
-        # call MAPL_GetPointer ( EXPORT, XX_LOSS, trim(NAME)//'_LOSS', RC=STATUS )
-        # VERIFY_(STATUS)
 
 
 def update2(
@@ -73,15 +47,7 @@ def update2(
 ):
 
     with computation(FORWARD), interval(...):
-        # call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
-        # VERIFY_(STATUS)
-        # delp = max(delp, 1.0e-16)
-
         if NN == 7:
-            # call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=20000. ,RC=STATUS)
-            # VERIFY_(STATUS)
-            # allocate(WRK(IM,JM),stat=STATUS)
-            # VERIFY_(STATUS)
             pcrit_H2O = float32(20000)
 
             if tropp == constants.MAPL_UNDEF:
@@ -95,25 +61,47 @@ def update2(
     with computation(PARALLEL), interval(...):
 
         if NN != 7:
-            # call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=1.e+16 ,RC=STATUS)
-            # VERIFY_(STATUS)
             loss_int = 1.0 / tau * max(min((pcrit - pl) / delp, 1.0), 0.0)
 
         prod_int = loss_int * prod_int
 
         XX = (XX + dt * prod_int) / (1.0 + dt * loss_int)
 
-        # if(associated(XX_PROD)) XX_PROD =  PROD_INT
-        # if(associated(XX_LOSS)) XX_LOSS = -LOSS_INT*XX
 
-        # if(trim(NAME)=='OX') then
-        #    call MAPL_GetPointer ( EXPORT, OX_TEND, 'OX_TEND', RC=STATUS )
-        #    VERIFY_(STATUS)
-        #    if(associated(OX_TEND)) OX_TEND = (PROD_INT - LOSS_INT*XX)
-        # end if
+def update_ozone(
+    # In
+    O3_pointer: Int,
+    O3PPMV_pointer: Int,
+    O3VMR: FloatFieldIJ,
+    OX: FloatField,
+    PL: FloatField,
+    ZTH: FloatFieldIJ,
+    # Out
+    O3: FloatField,
+    O3PPMV: FloatField,
+):
 
-        # if(trim(NAME)=='H2O') then
-        #    call MAPL_GetPointer ( EXPORT, H2O_TEND, 'H2O_TEND', RC=STATUS )
-        #    VERIFY_(STATUS)
-        #    if(associated(H2O_TEND)) H2O_TEND = (PROD_INT - LOSS_INT*XX)
-        # end if
+    with computation(FORWARD), interval(...):
+        if PL < 100.0 and ZTH > 0.0:
+            O3VMR = OX * exp(-1.5 * (log10(PL) - 2.0) ** 2)
+        else:
+            O3VMR = OX
+
+        if O3_pointer == 1:
+            O3 = O3VMR * (constants.MAPL_O3MW / constants.MAPL_AIRMW)
+        if O3PPMV_pointer == 1:
+            O3PPMV = O3VMR * 1.0e6
+
+
+def age_of_air(
+    AOA_in: FloatField,
+    dt: Float,
+    AOA: FloatField,
+):
+    from __externals__ import k_end
+
+    with computation(PARALLEL), interval(...):
+        AOA = AOA_in + (dt / 86400.0)
+
+        if K == k_end:
+            AOA = 0.0

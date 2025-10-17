@@ -8,7 +8,7 @@ from pyChem.PChem.config import PChemConfiguration
 import numpy as np
 
 
-class TranslateUpdate(TranslateFortranData2Py):
+class TranslatePChem(TranslateFortranData2Py):
     def __init__(
         self,
         grid,
@@ -34,6 +34,10 @@ class TranslateUpdate(TranslateFortranData2Py):
             "XX_H2O_in": {},
             "mncv": {},
             "TROPP": {},
+            "OX": {},
+            "O3VMR": {},
+            "ZTH": {},
+            "AOA": {},
         }
 
         # Float/Int Inputs
@@ -52,6 +56,10 @@ class TranslateUpdate(TranslateFortranData2Py):
             "tau",
             "dt",
             "USE_H2O_ProdLoss",
+            "O3_pointer",
+            "O3PPMV_pointer",
+            "TO3_pointer",
+            "TTO3_pointer",
         ]
 
         # FloatField Outputs
@@ -63,6 +71,9 @@ class TranslateUpdate(TranslateFortranData2Py):
             "XX_HCFC22": self.grid.compute_dict(),
             "XX_OX": self.grid.compute_dict(),
             "XX_H2O": self.grid.compute_dict(),
+            "O3": self.grid.compute_dict(),
+            "O3PPMV": self.grid.compute_dict(),
+            "AOA": self.grid.compute_dict(),
         }
 
     def compute(self, inputs):
@@ -90,6 +101,10 @@ class TranslateUpdate(TranslateFortranData2Py):
         fac = Float(inputs["fac"])
         pcrit = Float(inputs["pcrit"])
         dt = Float(inputs["dt"])
+        O3_pointer = Int(inputs["O3_pointer"])
+        O3PPMV_pointer = Int(inputs["O3PPMV_pointer"])
+        TO3_pointer = Int(inputs["TO3_pointer"])
+        TTO3_pointer = Int(inputs["TTO3_pointer"])
 
         # Field inputs
         ple = QuantityFactory.zeros(
@@ -152,6 +167,24 @@ class TranslateUpdate(TranslateFortranData2Py):
             self.quantity_factory, dims=[X_DIM, Y_DIM], units="n/a"
         )
         safe_assign_array(tropp.view[:, :], inputs["TROPP"])
+        O3VMR = QuantityFactory.zeros(
+            self.quantity_factory, dims=[X_DIM, Y_DIM], units="n/a"
+        )
+        safe_assign_array(O3VMR.view[:, :], inputs["O3VMR"])
+
+        OX = QuantityFactory.zeros(
+            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
+        )
+        safe_assign_array(OX.view[:, :, :], inputs["OX"])
+
+        ZTH = QuantityFactory.zeros(
+            self.quantity_factory, dims=[X_DIM, Y_DIM], units="n/a"
+        )
+        safe_assign_array(ZTH.view[:, :], inputs["ZTH"])
+        AOA_in = QuantityFactory.zeros(
+            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
+        )
+        safe_assign_array(AOA_in.view[:, :, :], inputs["AOA"])
 
         CH4 = QuantityFactory.zeros(
             self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
@@ -178,6 +211,16 @@ class TranslateUpdate(TranslateFortranData2Py):
         )
 
         H2O = QuantityFactory.zeros(
+            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
+        )
+        O3 = QuantityFactory.zeros(
+            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
+        )
+
+        O3PPMV = QuantityFactory.zeros(
+            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
+        )
+        AOA = QuantityFactory.zeros(
             self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
         )
 
@@ -207,14 +250,24 @@ class TranslateUpdate(TranslateFortranData2Py):
             XX_HCFC22_in=XX_HCFC22_in,
             XX_OX_in=XX_OX_in,
             XX_H2O_in=XX_H2O_in,
+            AOA_in=AOA_in,
+            O3_pointer=O3_pointer,
+            O3PPMV_pointer=O3PPMV_pointer,
+            TO3_pointer=TO3_pointer,
+            TTO3_pointer=TTO3_pointer,
+            O3VMR=O3VMR,
+            OX=OX,
+            ZTH=ZTH,
             # Out
             CH4=CH4,
             N2O=N2O,
             CFC11=CFC11,
             CFC12=CFC12,
             HCFC22=HCFC22,
-            OX=OX,
             H2O=H2O,
+            O3=O3,
+            O3PPMV=O3PPMV,
+            AOA=AOA,
         )
 
         return {
@@ -225,4 +278,7 @@ class TranslateUpdate(TranslateFortranData2Py):
             "XX_HCFC22": HCFC22.view[:],
             "XX_OX": OX.view[:],
             "XX_H2O": H2O.view[:],
+            "O3": O3.view[:],
+            "O3PPMV": O3PPMV.view[:],
+            "AOA": AOA.view[:],
         }

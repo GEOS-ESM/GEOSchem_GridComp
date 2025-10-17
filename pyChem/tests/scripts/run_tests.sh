@@ -16,6 +16,6 @@ python -m pytest -s -v --disable-warnings --multimodal_metric \
     --backend=debug \
     --which_rank=0 \
     --which_savepoint=0 \
-    --which_modules=Update \
+    --which_modules=PChem \
     --grid=default \
     ..
