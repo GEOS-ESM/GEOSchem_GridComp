@@ -1,7 +1,7 @@
 default_language_version:
   python: python3
 
-files: pyMoist
+files: pyChem
 
 repos:
 -   repo: https://github.com/psf/black
@@ -21,7 +21,7 @@ repos:
     rev: v1.4.1
     hooks:
     - id: mypy
-      name: mypy-pyMoist
+      name: mypy-pyChem
       args: [
         --ignore-missing-imports,
         "--follow-imports=normal",
@@ -31,7 +31,7 @@ repos:
         --explicit-package-bases,
       ]
       additional_dependencies: [types-PyYAML]
-      files: pyMoist
+      files: pyChem
 
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.3.0

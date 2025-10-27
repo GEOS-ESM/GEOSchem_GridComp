@@ -1,23 +1,7 @@
-from gt4py.cartesian.gtscript import (
-    PARALLEL,
-    FORWARD,
-    computation,
-    interval,
-    int32,
-    float32,
-    log10,
-    exp,
-    K,
-)
-
-from ndsl.dsl.typing import (
-    Float,
-    FloatField,
-    Int,
-    FloatFieldIJ,
-)
+from gt4py.cartesian.gtscript import FORWARD, PARALLEL, K, computation, exp, float32, interval, log10
 
 import pyChem.constants as constants
+from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, Int
 
 
 def update1(
@@ -26,7 +10,6 @@ def update1(
     # Out
     XX: FloatField,
 ):
-
     with computation(PARALLEL), interval(...):
         # Load in concentration levels
         XX = XX_in
@@ -45,7 +28,6 @@ def update2(
     # In/Out
     XX: FloatField,
 ):
-
     with computation(FORWARD), interval(...):
         if NN == 7:
             pcrit_H2O = float32(20000)
@@ -59,7 +41,6 @@ def update2(
             loss_int = (1.0 / tau) * max(min((wrk_H2O - pl) / delp, 1.0), 0.0)
 
     with computation(PARALLEL), interval(...):
-
         if NN != 7:
             loss_int = 1.0 / tau * max(min((pcrit - pl) / delp, 1.0), 0.0)
 
@@ -80,7 +61,6 @@ def update_ozone(
     O3: FloatField,
     O3PPMV: FloatField,
 ):
-
     with computation(FORWARD), interval(...):
         if PL < 100.0 and ZTH > 0.0:
             O3VMR = OX * exp(-1.5 * (log10(PL) - 2.0) ** 2)

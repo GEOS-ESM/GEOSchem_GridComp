@@ -1,7 +1,5 @@
 """File containing all constants used for pyChem"""
 
-import numpy as np
-
 from ndsl.dsl.typing import Float
 
 

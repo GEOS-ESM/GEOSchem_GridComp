@@ -1,11 +1,12 @@
+import numpy as np
+
 from ndsl import Namelist, QuantityFactory, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.dsl.typing import Float, Int
 from ndsl.stencils.testing.translate import TranslateFortranData2Py
 from ndsl.utils import safe_assign_array
-from pyChem.PChem.pchem import PChem
 from pyChem.PChem.config import PChemConfiguration
-import numpy as np
+from pyChem.PChem.pchem import PChem
 
 
 class TranslatePChem(TranslateFortranData2Py):
@@ -107,122 +108,72 @@ class TranslatePChem(TranslateFortranData2Py):
         TTO3_pointer = Int(inputs["TTO3_pointer"])
 
         # Field inputs
-        ple = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM], units="n/a"
-        )
+        ple = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM], units="n/a")
         safe_assign_array(ple.view[:, :, :], inputs["PLE"])
 
-        XX_CH4_in = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        XX_CH4_in = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
         safe_assign_array(XX_CH4_in.view[:, :, :], inputs["XX_CH4_in"])
 
-        XX_N2O_in = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        XX_N2O_in = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
         safe_assign_array(XX_N2O_in.view[:, :, :], inputs["XX_N2O_in"])
 
-        XX_CFC11_in = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        XX_CFC11_in = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
         safe_assign_array(XX_CFC11_in.view[:, :, :], inputs["XX_CFC11_in"])
 
-        XX_CFC12_in = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        XX_CFC12_in = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
         safe_assign_array(XX_CFC12_in.view[:, :, :], inputs["XX_CFC12_in"])
 
-        XX_HCFC22_in = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        XX_HCFC22_in = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
         safe_assign_array(XX_HCFC22_in.view[:, :, :], inputs["XX_HCFC22_in"])
 
-        XX_OX_in = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        XX_OX_in = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
         safe_assign_array(XX_OX_in.view[:, :, :], inputs["XX_OX_in"])
 
-        XX_H2O_in = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        XX_H2O_in = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
         safe_assign_array(XX_H2O_in.view[:, :, :], inputs["XX_H2O_in"])
 
-        PCHEM_LEVS = QuantityFactory.zeros(
-            self.quantity_factory, dims=[Z_DIM], units="n/a"
-        )
+        PCHEM_LEVS = QuantityFactory.zeros(self.quantity_factory, dims=[Z_DIM], units="n/a")
         safe_assign_array(PCHEM_LEVS.view[:], inputs["PCHEM_LEVS"])
 
         PCHEM_LATS = np.zeros(shape=[91])
         safe_assign_array(PCHEM_LATS[:], inputs["PCHEM_LATS"])
 
-        LATS = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM], units="n/a"
-        )
+        LATS = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM], units="n/a")
         safe_assign_array(LATS.view[:, :], inputs["LATS"])
 
         mncv = np.zeros(shape=(91, 72, 7, 2))
         safe_assign_array(mncv[:, :, :, :], inputs["mncv"])
 
-        tropp = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM], units="n/a"
-        )
+        tropp = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM], units="n/a")
         safe_assign_array(tropp.view[:, :], inputs["TROPP"])
-        O3VMR = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM], units="n/a"
-        )
+        O3VMR = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM], units="n/a")
         safe_assign_array(O3VMR.view[:, :], inputs["O3VMR"])
 
-        OX = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        OX = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
         safe_assign_array(OX.view[:, :, :], inputs["OX"])
 
-        ZTH = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM], units="n/a"
-        )
+        ZTH = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM], units="n/a")
         safe_assign_array(ZTH.view[:, :], inputs["ZTH"])
-        AOA_in = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        AOA_in = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
         safe_assign_array(AOA_in.view[:, :, :], inputs["AOA"])
 
-        CH4 = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        CH4 = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
 
-        N2O = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        N2O = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
 
-        CFC11 = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        CFC11 = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
 
-        CFC12 = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        CFC12 = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
 
-        HCFC22 = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        HCFC22 = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
 
-        OX = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        OX = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
 
-        H2O = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
-        O3 = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        H2O = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
+        O3 = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
 
-        O3PPMV = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
-        AOA = QuantityFactory.zeros(
-            self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a"
-        )
+        O3PPMV = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
+        AOA = QuantityFactory.zeros(self.quantity_factory, dims=[X_DIM, Y_DIM, Z_DIM], units="n/a")
 
         pchem(
             # In
