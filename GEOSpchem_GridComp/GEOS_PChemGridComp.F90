@@ -113,7 +113,9 @@ module GEOS_PChemGridCompMod
   use MAPL
   use Chem_Mod
   use netcdf
-
+#ifdef PYCHEM_INTEGRATION
+  use pychem_interface_f
+#endif
   
   implicit none
   private
@@ -1521,6 +1523,12 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
          PCHEM_STATE%dayOFMonth = DD
        END IF
 
+#ifdef PYCHEM_INTEGRATION
+    if (init_pychem_integration) then
+        call pychem_f_init(clim_years, TAU=???, USE_H2O_ProdLoss)
+    endif
+    call pychem_f_pchem(...)
+#else
 ! Obtain GEOS5 mid-layer pressures from layer edge pressures (Pa).
 !-----------------------------------------------------------------
     
@@ -1641,6 +1649,7 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 
     PCHEM_STATE%lastTimeHere = currTime
 
+#endif
 
 ! Clean-up
 !---------

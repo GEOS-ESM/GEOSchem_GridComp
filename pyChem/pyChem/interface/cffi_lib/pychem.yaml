@@ -1,0 +1,52 @@
+type: py_ftn_interface
+name: pychem
+functions:
+    init:
+        inputs:
+            clim_years: int
+            tau: float
+            USE_H2O_ProdLoss: int
+    pchem:
+        inputs:
+            NN_CH4 : int
+            NN_N20 : int
+            NN_CFC11 : int
+            NN_CFC12 : int
+            NN_HCFC22 : int
+            NN_OX : int
+            NN_H2O : int
+            ple: array_float
+            delp: float
+            fac: float
+            mncv: array_float
+            pcrit: float
+            lats: array_float
+            pchem_levs: array_float
+            pchem_lats: array_float
+            dt: float
+            tropp: array_float
+            XX_CH4_in: array_float
+            XX_N2O_in: array_float
+            XX_CFC11_in: array_float
+            XX_CFC12_in: array_float
+            XX_HCFC22_in: array_float
+            XX_OX_in: array_float
+            XX_H2O_in: array_float
+            AOA_in: array_float
+            O3_pointer: int
+            O3PPMV_pointer: int
+            TO3_pointer: int
+            TTO3_pointer: int
+            O3VMR: array_float
+            OX: array_float
+            ZTH: array_float
+        outputs:
+            CH4: array_float
+            N2O: array_float
+            CFC11: array_float
+            CFC12: array_float
+            HCFC22: array_float
+            H2O: array_float
+            O3: array_float
+            O3PPMV: array_float
+            AOA: array_float
