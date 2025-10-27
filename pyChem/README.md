@@ -1,14 +1,11 @@
-# pyMoist
+# pyChem
 
-`pyMoist` is the [NDSL](https://github.com/NOAA-GFDL/NDSL) version of the NASA GMAO's GEOS Moist physics and it's required interface to GEOS.
+`pyChem` is the [NDSL](https://github.com/NOAA-GFDL/NDSL) version of the NASA GMAO's Chemistryphysics and it's required interface to GEOS.
 
-|  *Model code*   |                  |   Numerical    | Integration | Scientific |      Orchestration      |                 CPU                 | GPU |
-| :-------------: | :--------------: | :------------: | :---------: | :--------: | :---------------------: | :---------------------------------: | --- |
-|  GFDL_1M  |                  |       🟢       |     🟢      |            |            ❌ (doesn't validate)            |                                     |     |    |
-|                 |      Driver      |       🟢       |     N/A     |    N/A     |           🟢            |   📈 1.2 (c24)   |     |
-|    UW     |                  |       🟢       |     🟢      |     🟢     |           🟢            | 📉 *0.67 (c24)* |     |     |
-|    GF     |                  |       *Ongoing*       |             |            |                         |                                     |     |     |
-| Chemistry PCHEM |                  |       *Ongoing*       |             |            |                         |                                     |     |
+|  *Model code*   |   Numerical    | Integration | Scientific |      Orchestration      |                 CPU                 | GPU |
+| :-------------: | :------------: | :---------: | :--------: | :---------------------: | :---------------------------------: | --- |
+|  PCHEM          |       🟢       |             |            |                         |                                     |     |
+|  TR             |    *next*      |             |            |                         |                                     |     |
 
 Legend:
 
