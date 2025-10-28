@@ -49,6 +49,10 @@ class PChem:
             compute_dims=[X_DIM, Y_DIM, Z_DIM],
         )
 
+        self._init_pl = self.stencil_factory.from_dims_halo(
+            func=stencils.init_pl, compute_dims=[X_DIM, Y_DIM, Z_DIM]
+        )
+
     def __call__(
         self,
         # In
@@ -94,17 +98,17 @@ class PChem:
         O3: FloatField,
         O3PPMV: FloatField,
         AOA: FloatField,
-    ):
+    ) -> None:
         """
         PChem Driver
 
         Updates 7 chemical species (CH4, N2O, CFC11, CFC12, HCFC22, OX, H2O) and O3 based on
         production and loss rates.
         """
-        lm = 73
-        self.temporaries.PL.field[:, :, :] = 0.5 * (ple.field[:, :, 0 : lm - 1] + ple.field[:, :, 1:lm])
+        self._init_pl(self.temporaries.PL, ple)
 
         state = [NN_CH4, NN_N2O, NN_CFC11, NN_CFC12, NN_HCFC22, NN_OX, NN_H2O]
+        species_list = [CH4, N2O, CFC11, CFC12, HCFC22, OX, H2O]
         species = [
             XX_CH4_in,
             XX_N2O_in,
@@ -114,9 +118,8 @@ class PChem:
             XX_OX_in,
             XX_H2O_in,
         ]
-        XX_list: list[Quantity] = []
 
-        for NN, XX_in in zip(state, species):
+        for NN, species, XX_in in zip(state, species_list, species):
             self._update1(
                 # In
                 XX_in=XX_in,
@@ -157,12 +160,7 @@ class PChem:
                 XX=self.temporaries.XX,
             )
 
-            XX_list.append(self.temporaries.XX.field[:].copy())
-
-        species_list = [CH4, N2O, CFC11, CFC12, HCFC22, OX, H2O]
-
-        for species, XX in zip(species_list, XX_list):
-            species.field[:] = XX.field[:]  # type: ignore
+            species.field[:] = self.temporaries.XX.field[:]  # type: ignore
 
         if TO3_pointer or TTO3_pointer == 1:
             raise NotImplementedError("Warning: This code has not been ported!!")

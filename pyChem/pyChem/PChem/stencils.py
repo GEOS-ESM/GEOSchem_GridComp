@@ -77,11 +77,16 @@ def age_of_air(
     AOA_in: FloatField,
     dt: Float,
     AOA: FloatField,
-):
-    from __externals__ import k_end
-
-    with computation(PARALLEL), interval(...):
+) -> None:
+    with computation(PARALLEL), interval(0, -1):
         AOA = AOA_in + (dt / 86400.0)
+    with computation(PARALLEL), interval(-1, None):
+        AOA = 0.0
 
-        if K == k_end:
-            AOA = 0.0
+
+def init_pl(
+    pl: FloatField,
+    ple: FloatField,
+) -> None:
+    with computation(PARALLEL), interval(...):
+        pl = 0.5 * (ple + ple[K + 1])
