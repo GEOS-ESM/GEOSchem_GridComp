@@ -1,6 +1,6 @@
 import cffi
-import os
 from mpi4py import MPI
+
 
 TMPFILEBASE = "pychem_interface"
 
@@ -29,24 +29,24 @@ def pychem_py_init(
       clim_years:int,
       tau:float,
       USE_H2O_ProdLoss:int,
-      
+
       # inputs-outputs
-      
+
       # outputs
-      
+
     ) -> int:
 
     # Transform init code
-    
+
 
     pychem.init(
-        
+
       clim_years=clim_years,
       tau=tau,
       USE_H2O_ProdLoss=USE_H2O_ProdLoss,
-      
-      
-      
+
+
+
     )
 
 @ffi.def_extern()
@@ -118,9 +118,9 @@ def pychem_py_pchem(
       ZTH:'cffi.FFI.CData',
       ZTH_dim_sizes:'cffi.FFI.CData',
       ZTH_rank:int,
-      
+
       # inputs-outputs
-      
+
       # outputs
       CH4:'cffi.FFI.CData',
       CH4_dim_sizes:'cffi.FFI.CData',
@@ -149,14 +149,14 @@ def pychem_py_pchem(
       AOA:'cffi.FFI.CData',
       AOA_dim_sizes:'cffi.FFI.CData',
       AOA_rank:int,
-      
+
     ) -> int:
 
     # Transform init code
-    
+
 
     pychem.pchem(
-        
+
       NN_CH4=NN_CH4,
       NN_N20=NN_N20,
       NN_CFC11=NN_CFC11,
@@ -223,8 +223,8 @@ def pychem_py_pchem(
       ZTH=ZTH,
       ZTH_dim_sizes=ZTH_dim_sizes,
       ZTH_rank=ZTH_rank,
-      
-      
+
+
       CH4=CH4,
       CH4_dim_sizes=CH4_dim_sizes,
       CH4_rank=CH4_rank,
@@ -252,7 +252,7 @@ def pychem_py_pchem(
       AOA=AOA,
       AOA_dim_sizes=AOA_dim_sizes,
       AOA_rank=AOA_rank,
-      
+
     )
 
 
