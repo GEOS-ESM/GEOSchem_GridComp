@@ -1,10 +1,11 @@
 import pyChem.PChem.stencils as stencils
-import pyChem.Shared.interp_no_extrap as interp
 from ndsl import Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, Int
 from pyChem.PChem.config import PChemConfiguration
 from pyChem.PChem.temporaries import Temporaries
+from pyChem.PChem.species_interpolate import PChemSpeciesInterpolate
+from ndsl.stencils.basic_operations import copy_defn
 
 
 class PChem:
@@ -21,7 +22,9 @@ class PChem:
 
         # Raise an error if clim_years > 1 and tau < 0
         if self.pchem_config.clim_years > 1 and self.pchem_config.tau < 0:
-            raise NotImplementedError("Cannot run PCHEM in P & L mode with climYears > 1.")
+            raise NotImplementedError(
+                "Cannot run PCHEM in P & L mode with climYears > 1."
+            )
         # Raise error if UPDATE_H2O_PL is triggered
         if self.pchem_config.USE_H2O_ProdLoss != 0:
             raise NotImplementedError("Warning: This code has not been ported!!")
@@ -51,6 +54,14 @@ class PChem:
 
         self._init_pl = self.stencil_factory.from_dims_halo(
             func=stencils.init_pl, compute_dims=[X_DIM, Y_DIM, Z_DIM]
+        )
+
+        self._interpolate = PChemSpeciesInterpolate(
+            stencil_factory, [X_DIM, Y_DIM, Z_DIM]
+        )
+
+        self._copy = self.stencil_factory.from_dims_halo(
+            copy_defn, [X_DIM, Y_DIM, Z_DIM]
         )
 
     def __call__(
@@ -127,24 +138,18 @@ class PChem:
                 XX=self.temporaries.XX,
             )
 
-            im, jm, n_levs = 24, 24, 72
-
             if self.pchem_config.tau > 0.0:
-                prod1 = mncv[:, :, NN - 1, 0] * fac + mncv[:, :, NN - 1, 1] * (1.0 - fac)
-
-                for j in range(jm):
-                    for k in range(n_levs):
-                        self.temporaries.PROD.field[:, j, k] = interp.interp_no_extrap(
-                            OX_list=lats.field[:, j],
-                            IY=prod1[:, k],
-                            IX=pchem_lats[:],
-                        )
-                    for i in range(im):
-                        self.temporaries.PROD_INT.field[i, j, :] = interp.interp_no_extrap(
-                            OX_list=self.temporaries.PL.field[i, j, :],
-                            IY=self.temporaries.PROD.field[i, j, :],
-                            IX=pchem_levs.field[:],
-                        )
+                self._interpolate(
+                    mncv_offgrid=mncv,
+                    species_index=NN,
+                    fac=fac,
+                    lats_IJ=lats,
+                    pchem_lats_K_offgrid=pchem_lats,
+                    pchem_levs_K=pchem_levs,
+                    prod=self.temporaries.PROD,
+                    pl=self.temporaries.PL,
+                    prod_int=self.temporaries.PROD_INT,
+                )
 
             self._update2(
                 # In
@@ -160,7 +165,7 @@ class PChem:
                 XX=self.temporaries.XX,
             )
 
-            species.field[:] = self.temporaries.XX.field[:]  # type: ignore
+            self._copy(self.temporaries.XX, species)
 
         if TO3_pointer or TTO3_pointer == 1:
             raise NotImplementedError("Warning: This code has not been ported!!")
