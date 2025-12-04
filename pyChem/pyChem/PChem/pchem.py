@@ -1,5 +1,5 @@
 import pyChem.PChem.stencils as stencils
-from ndsl import Quantity, QuantityFactory, StencilFactory
+from ndsl import Quantity, QuantityFactory, StencilFactory, NDSLRuntime
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, Int
 from pyChem.PChem.config import PChemConfiguration
@@ -8,13 +8,15 @@ from pyChem.PChem.species_interpolate import PChemSpeciesInterpolate
 from ndsl.stencils.basic_operations import copy_defn
 
 
-class PChem:
+class PChem(NDSLRuntime):
     def __init__(
         self,
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
         pchem_config: PChemConfiguration,
     ) -> None:
+        super().__init__(stencil_factory)
+
         self.pchem_config = pchem_config
         self.temporaries = Temporaries.make(quantity_factory)
         self.stencil_factory = stencil_factory
@@ -63,6 +65,57 @@ class PChem:
         self._copy = self.stencil_factory.from_dims_halo(
             copy_defn, [X_DIM, Y_DIM, Z_DIM]
         )
+
+    def _update_species(
+        self,
+        species_in,
+        species_index,
+        species_out,
+        mncv,
+        fac,
+        lats,
+        pchem_lats,
+        pchem_levs,
+        delp,
+        pcrit,
+        dt,
+        tropp,
+    ):
+        self._update1(
+            # In
+            XX_in=species_in,
+            # Out
+            XX=self.temporaries.XX,
+        )
+
+        if self.pchem_config.tau > 0.0:
+            self._interpolate(
+                mncv_offgrid=mncv,
+                species_index=species_index,
+                fac=fac,
+                lats_IJ=lats,
+                pchem_lats_K_offgrid=pchem_lats,
+                pchem_levs_K=pchem_levs,
+                prod=self.temporaries.PROD,
+                pl=self.temporaries.PL,
+                prod_int=self.temporaries.PROD_INT,
+            )
+
+        self._update2(
+            # In
+            NN=species_index,
+            tau=self.pchem_config.tau,
+            pl=self.temporaries.PL,
+            delp=delp,
+            pcrit=pcrit,
+            prod_int=self.temporaries.PROD_INT,
+            dt=dt,
+            tropp=tropp,
+            # In/Out
+            XX=self.temporaries.XX,
+        )
+
+        self._copy(self.temporaries.XX, species_out)
 
     def __call__(
         self,
@@ -118,54 +171,104 @@ class PChem:
         """
         self._init_pl(self.temporaries.PL, ple)
 
-        state = [NN_CH4, NN_N2O, NN_CFC11, NN_CFC12, NN_HCFC22, NN_OX, NN_H2O]
-        species_list = [CH4, N2O, CFC11, CFC12, HCFC22, OX, H2O]
-        species = [
-            XX_CH4_in,
-            XX_N2O_in,
-            XX_CFC11_in,
-            XX_CFC12_in,
-            XX_HCFC22_in,
-            XX_OX_in,
-            XX_H2O_in,
-        ]
-
-        for NN, species, XX_in in zip(state, species_list, species):
-            self._update1(
-                # In
-                XX_in=XX_in,
-                # Out
-                XX=self.temporaries.XX,
-            )
-
-            if self.pchem_config.tau > 0.0:
-                self._interpolate(
-                    mncv_offgrid=mncv,
-                    species_index=NN,
-                    fac=fac,
-                    lats_IJ=lats,
-                    pchem_lats_K_offgrid=pchem_lats,
-                    pchem_levs_K=pchem_levs,
-                    prod=self.temporaries.PROD,
-                    pl=self.temporaries.PL,
-                    prod_int=self.temporaries.PROD_INT,
-                )
-
-            self._update2(
-                # In
-                NN=NN,
-                tau=self.pchem_config.tau,
-                pl=self.temporaries.PL,
-                delp=delp,
-                pcrit=pcrit,
-                prod_int=self.temporaries.PROD_INT,
-                dt=dt,
-                tropp=tropp,
-                # In/Out
-                XX=self.temporaries.XX,
-            )
-
-            self._copy(self.temporaries.XX, species)
+        self._update_species(
+            species_index=NN_CH4,
+            species_in=XX_CH4_in,
+            species_out=CH4,
+            mncv=mncv,
+            fac=fac,
+            lats=lats,
+            pchem_lats=pchem_lats,
+            pchem_levs=pchem_levs,
+            delp=delp,
+            pcrit=pcrit,
+            dt=dt,
+            tropp=tropp,
+        )
+        self._update_species(
+            species_index=NN_N2O,
+            species_in=XX_N2O_in,
+            species_out=N2O,
+            mncv=mncv,
+            fac=fac,
+            lats=lats,
+            pchem_lats=pchem_lats,
+            pchem_levs=pchem_levs,
+            delp=delp,
+            pcrit=pcrit,
+            dt=dt,
+            tropp=tropp,
+        )
+        self._update_species(
+            species_index=NN_CFC11,
+            species_in=XX_CFC11_in,
+            species_out=CFC11,
+            mncv=mncv,
+            fac=fac,
+            lats=lats,
+            pchem_lats=pchem_lats,
+            pchem_levs=pchem_levs,
+            delp=delp,
+            pcrit=pcrit,
+            dt=dt,
+            tropp=tropp,
+        )
+        self._update_species(
+            species_index=NN_CFC12,
+            species_in=XX_CFC12_in,
+            species_out=CFC12,
+            mncv=mncv,
+            fac=fac,
+            lats=lats,
+            pchem_lats=pchem_lats,
+            pchem_levs=pchem_levs,
+            delp=delp,
+            pcrit=pcrit,
+            dt=dt,
+            tropp=tropp,
+        )
+        self._update_species(
+            species_index=NN_HCFC22,
+            species_in=XX_HCFC22_in,
+            species_out=HCFC22,
+            mncv=mncv,
+            fac=fac,
+            lats=lats,
+            pchem_lats=pchem_lats,
+            pchem_levs=pchem_levs,
+            delp=delp,
+            pcrit=pcrit,
+            dt=dt,
+            tropp=tropp,
+        )
+        self._update_species(
+            species_index=NN_OX,
+            species_in=XX_OX_in,
+            species_out=OX,
+            mncv=mncv,
+            fac=fac,
+            lats=lats,
+            pchem_lats=pchem_lats,
+            pchem_levs=pchem_levs,
+            delp=delp,
+            pcrit=pcrit,
+            dt=dt,
+            tropp=tropp,
+        )
+        self._update_species(
+            species_index=NN_H2O,
+            species_in=XX_H2O_in,
+            species_out=H2O,
+            mncv=mncv,
+            fac=fac,
+            lats=lats,
+            pchem_lats=pchem_lats,
+            pchem_levs=pchem_levs,
+            delp=delp,
+            pcrit=pcrit,
+            dt=dt,
+            tropp=tropp,
+        )
 
         if TO3_pointer or TTO3_pointer == 1:
             raise NotImplementedError("Warning: This code has not been ported!!")
