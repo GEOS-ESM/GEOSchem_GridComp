@@ -8,10 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+### Removed
+### Changed
+### Fixed
+### Deprecated
+
+## [1.16.1] - 2025-12-16
+
+### Added
 
 - Added the capability to compute LFC in Lightning module, needed for CTM
 
-### Removed
 ### Changed
 
 - Slight refactoring of LOPEZ lightning scheme, minor numerical difference
@@ -21,8 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - ChemEnv now updates the precip exports (total, conv, non-conv) as part of Run1 (not just Run2).
-
-### Deprecated
 
 
 ## [1.16.0 - 2025-02-18]
