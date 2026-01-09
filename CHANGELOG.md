@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+
+- Added Chem_Settling2 routine, a version of Chem_Settling that does not require w_c (Chem_Bundle)
+
 ### Removed
 ### Changed
 ### Fixed
