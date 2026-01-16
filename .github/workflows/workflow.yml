@@ -21,13 +21,13 @@ jobs:
       matrix:
         compiler: [ifort, gfortran-14, gfortran-15]
         build-type: [Debug]
+      fail-fast: false
     uses: GEOS-ESM/CI-workflows/.github/workflows/geosgcm_build_tests.yml@project/geosgcm
     with:
       compiler: ${{ matrix.compiler }}
       cmake-build-type: ${{ matrix.build-type }}
       fixture-repo: GEOS-ESM/GEOSgcm
       fixture-ref: feature/sdrabenh/gcm_v12
-      fail-fast: false
 
   spack_build:
     uses: GEOS-ESM/CI-workflows/.github/workflows/spack_gcc_build.yml@project/geosgcm
