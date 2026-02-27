@@ -1589,11 +1589,11 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 
        do L=1,LM
 
-! Eliminate mesospheric ozone (above 3hPa) when sun is out
-!---------------------------------------------------------
+! Eliminate mesospheric ozone when sun is out
+!--------------------------------------------
 
-          where(PL(:,:,L) < 1000 .and. ZTH > 0.0)
-             O3VMR = OX(:,:,L)*exp(-1.5*(log10(PL(:,:,L)/10.0)-2.0)**4)
+          where(PL(:,:,L) < 100.0 .and. ZTH > 0.0)
+             O3VMR = OX(:,:,L)*exp(-1.5*(log10(PL(:,:,L))-2.0)**2)
           elsewhere
              O3VMR = OX(:,:,L)
           end where
@@ -1751,10 +1751,6 @@ contains
 
        PROD1 = PCHEM_STATE%MNCV(:,:,NN,1)*FAC + PCHEM_STATE%MNCV(:,:,NN,2)*(1.-FAC)
 
-       call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
-       VERIFY_(STATUS)
-       DELP = max(DELP, 1.e-16) ! avoid division by zero
-
        do j=1,jm
           do l=1,nlevs
              call INTERP_NO_EXTRAP( PROD(:,L), LATS(:,J), Prod1(:,L), PCHEM_STATE%LATS)
@@ -1763,6 +1759,11 @@ contains
              call INTERP_NO_EXTRAP( PROD_INT(i,j,:), PL(i,j,:), PROD(i,:), PCHEM_STATE%LEVS)
           enddo
        end do
+
+       call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
+       VERIFY_(STATUS)
+
+       DELP = max(DELP, 1.e-16) ! avoid division by zero
 
        if(trim(NAME)=="H2O") then
           call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=20000. ,RC=STATUS)
@@ -1780,14 +1781,6 @@ contains
              LOSS_INT(:,:,L) = (1./TAU) * max( min( (WRK-PL(:,:,L))/DELP, 1.0), 0.0)
           end do
           deallocate(WRK)
-       elseif(trim(NAME)=="OX") then
-          call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=10000. ,RC=STATUS)
-          VERIFY_(STATUS)
-          do L=1,LM
-             ! strongly constrained (TAU=DT) below the 100hPa
-             LOSS_INT(:,:,L) = (1./TAU) * (      max( min( (PCRIT-PL(:,:,L))/DELP, 1.0), 0.0)) + &
-                               (1./DT ) * (1.0 - max( min( (PCRIT-PL(:,:,L))/DELP, 1.0), 0.0)) 
-          end do
        else
           ! relaxed by TAU everywhere
           call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=1.e+16 ,RC=STATUS)
