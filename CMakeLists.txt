@@ -9,6 +9,7 @@ set (alldirs
   DNA_GridComp
   HEMCO_GridComp
   RRG
+  GOCART2G_ExtData
   )
 
 set (srcs
@@ -16,7 +17,7 @@ set (srcs
   GEOS_ChemEnvGridComp.F90
   )
 
-# Note: GOCART_GridComp is added specifically as it is not longer
+# Note: GOCART_GridComp is added specifically as it is no longer
 #       automatically a dependence through alldirs
 esma_add_library (${this}
   SRCS ${srcs}
