@@ -1,6 +1,6 @@
 esma_set_this ()
 
-esma_add_subdirectories(Shared GOCART TR GMI StratChem MAM MATRIX CARMA GAAS ACHEM)
+esma_add_subdirectories(Shared GOCART TR GMI StratChem MAM MATRIX CARMA GAAS ACHEM GOCART2G_ExtData)
 
 set (alldirs
   GEOSpchem_GridComp
@@ -9,7 +9,6 @@ set (alldirs
   DNA_GridComp
   HEMCO_GridComp
   RRG
-  GOCART2G_ExtData
   )
 
 set (srcs
