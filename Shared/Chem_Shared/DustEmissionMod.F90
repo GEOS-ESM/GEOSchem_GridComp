@@ -16,7 +16,7 @@
    use Chem_Mod
    use Chem_ConstMod, only: grav        ! Constants !
    use Chem_UtilMod
-   use MAPL_ConstantsMod, only : MAPL_PI
+   use MAPL_Constants, only : MAPL_PI
 
    use m_mpout
 
@@ -35,7 +35,7 @@
    PUBLIC  DustEmissionSimple
    PUBLIC  MAM_DustEmissionGOCART
    PUBLIC  MAM_DustEmission
-   PUBLIC  KokSizeDistribution    
+   PUBLIC  KokSizeDistribution
 
 
   real, parameter :: OCEAN=0.0, LAND = 1.0, SEA_ICE = 2.0
@@ -55,7 +55,7 @@ CONTAINS
 !
 ! DEAD-based dust emission scheme (Zender et al., JGR, 2003)
 ! Pass in a grid of wind speeds and surface characteristics and
-! returns the total dust emission mass flux [kg m-2 s-1].  
+! returns the total dust emission mass flux [kg m-2 s-1].
 ! Emissions need to be scaled by source function (ie., fraction of
 ! grid cell emitting) and distributed over a particle size distribution.
 !
@@ -82,7 +82,7 @@ CONTAINS
    real     ::  emissions(i1:i2,j1:j2)             ! Local emission
    integer, intent(out)             :: rc          ! Error return code:
                                                    !  0 - all is well
-                                                   !  1 - 
+                                                   !  1 -
    character(len=*), parameter :: myname = 'DustEmissionsDEAD'
 
 ! !DESCRIPTION: Computes the dust emissions for one time step
@@ -131,7 +131,7 @@ CONTAINS
 !  --------------------------
    emissions(:,:) = 0.
 
-!  Calculate drag partitioning efficiency to represent sink of atmos momentum 
+!  Calculate drag partitioning efficiency to represent sink of atmos momentum
 !  to nonerodible roughness elements
 !  Assumes constant smooth roughness length zoms and constant roughness
 !  length for momentum transfer zom
@@ -183,24 +183,24 @@ CONTAINS
 !    Zender 2003 eq. 6
      if (gwettop(i,j) <= wt) then
        fw = 1.0
-     else       
+     else
        fw = sqrt( 1. + 1.21 * (100. * (gwettop(i,j)-wt) )**0.68)
      endif
-     u_thresh_drag_water = u_thresh_drag*fw 
-       
+     u_thresh_drag_water = u_thresh_drag*fw
+
 !    Modify friction velocity for Owen Effect
 !    Assumption of stable atmospheric profile to go from saltation
 !    wind speed to equivalent threshold at z = 10m
 !    Gillette et al. [1998] eq. 3
-     wt10m = u_thresh_drag_water/k_z 
+     wt10m = u_thresh_drag_water/k_z
      if (w10m >= wt10m) then
-       ustars = ustar(i,j) + 0.003*((w10m-wt10m)**2)  
+       ustars = ustar(i,j) + 0.003*((w10m-wt10m)**2)
      else
        ustars = ustar(i,j)
-     endif 
-      
+     endif
+
 !    Calculate the horizontal mass flux of dust [kg m-1 s-1]
-!    Marticorena et al. 1997 eq. 5 
+!    Marticorena et al. 1997 eq. 5
 !    Note: differs from Zender et al. 2003 eq. 10
      rat = u_thresh_drag_water / ustars
      if (rat < 1.0) then
@@ -228,7 +228,7 @@ CONTAINS
 !
 ! GOCART-based dust emission scheme (modified from Ginoux et al., JGR, 2001)
 ! Pass in a grid of wind speeds, surface characteristics, and an aerosol
-! particle radius and returns the total dust emission mass flux [kg m-2 s-1].  
+! particle radius and returns the total dust emission mass flux [kg m-2 s-1].
 ! Emissions need to be scaled by source function (ie., fraction of
 ! grid cell emitting), tuning factor, and fractional soil content of particle
 ! size.
@@ -257,7 +257,7 @@ CONTAINS
    real     ::  emissions(i1:i2,j1:j2)             ! Local emission
    integer, intent(out)             :: rc          ! Error return code:
                                                    !  0 - all is well
-                                                   !  1 - 
+                                                   !  1 -
    character(len=*), parameter :: myname = 'DustEmissionsGOCART'
 
 ! !DESCRIPTION: Computes the dust emissions for one time step
@@ -288,7 +288,7 @@ CONTAINS
 
 !  Calculate the threshold velocity of wind erosion [m/s] for each radius
 !  for a dry soil, as in Marticorena et al. [1997].
-!  The parameterization includes the air density which is assumed 
+!  The parameterization includes the air density which is assumed
 !  = 1.25 kg m-3 to speed the calculation.  The error in air density is
 !  small compared to errors in other parameters.
    diameter = 2. * radius
@@ -320,7 +320,7 @@ CONTAINS
       u_thresh = amax1(0.,u_thresh0* &
        (1.2+0.2*alog10(max(1.e-3,gwettop(i,j)))))
 
-       if(w10m .gt. u_thresh) then     
+       if(w10m .gt. u_thresh) then
 !       Emission of dust [kg m-2 s-1]
         emissions(i,j) = &
             (1.-fraclake(i,j)) * w10m**2. * (w10m-u_thresh)
@@ -369,7 +369,7 @@ CONTAINS
    real                          :: emissions(i1:i2,j1:j2)  ! Local emission [kg m-2 s-1]
    integer, intent(out)          :: rc          ! Error return code:
                                                 !  0 - all is well
-                                                !  1 - 
+                                                !  1 -
    character(len=*), parameter :: myname = 'DustEmissionsSimple'
 
 ! !DESCRIPTION: Computes the dust emissions for one time step
@@ -404,7 +404,7 @@ CONTAINS
       ut = max(0.0, ut0 * (1.2 + 0.2*alog10(max(1.0e-3, gwettop(i,j)))) / &
                           (1.2 + 0.2*alog10(1.0e-3)))
 
-       if(w(i,j) .gt. ut) then     
+       if(w(i,j) .gt. ut) then
 !       Emission of dust [kg m-2 s-1]
         emissions(i,j) = &
             (1.-fraclake(i,j)) * w(i,j)**2. * (w(i,j)-ut)
@@ -438,7 +438,7 @@ CONTAINS
    real, intent(inout)  :: emission_total(i1:i2,j1:j2)  ! Local emission
    integer, intent(out) :: rc    ! Error return code:
                                  !  0 - all is well
-                                 !  1 - 
+                                 !  1 -
 
    character(len=*), parameter :: myname = 'MAM_DustEmissionGOCART'
 
@@ -446,7 +446,7 @@ CONTAINS
 !
 ! !REVISION HISTORY:
 !
-!  11Oct2011, Darmenov - For now use the GOCART emission scheme to 
+!  11Oct2011, Darmenov - For now use the GOCART emission scheme to
 !                        calculate the total emission
 !
 !EOP
@@ -499,7 +499,7 @@ CONTAINS
    real, intent(inout)  :: emission_num (i1:i2, j1:j2)
    integer, intent(out) :: rc    ! Error return code:
                                  !  0 - all is well
-                                 !  1 - 
+                                 !  1 -
 
    character(len=*), parameter :: myname = 'MAM_DustEmission'
 
@@ -522,18 +522,18 @@ CONTAINS
 !  real, parameter    :: sigma_g(nmodes) = (/2.1, 1.9, 1.6/)           ! geometric standard deviation
 !  real, parameter    :: weight_mass(nmodes) = (/0.036, 0.957, 0.007/) ! mass weights
 
-!! Initial size distribution of dust, Claquin[1999]  
+!! Initial size distribution of dust, Claquin[1999]
 !  integer, parameter :: nmodes = 3
 !  real, parameter    :: MMD(nmodes) = (/0.011, 2.54, 42.10/) * 1e-6   ! mass median diameter, [m]
 !  real, parameter    :: sigma_g(nmodes) = (/1.89, 2.0, 2.13/)         ! geometric standard deviation
 !  real, parameter    :: weight_mass(nmodes) = (/2.6e-6, 0.78, 0.22/)  ! mass weights
 
-!! Initial size distribution of dust, Alfaro and Gomes[2001], and Foret et al[2006] 
+!! Initial size distribution of dust, Alfaro and Gomes[2001], and Foret et al[2006]
    integer, parameter :: nmodes = 3
    real, parameter    :: MMD(nmodes) = (/1.5, 6.7, 14.2/) * 1e-6       ! mass median diameter, [m]
    real, parameter    :: sigma_g(nmodes) = (/1.7, 1.6, 1.5/)           ! geometric standard deviation
    real, parameter    :: weight_mass(nmodes) = (/0.02, 0.27, 0.71/)    ! mass weights
-   
+
    real, parameter    :: soil_density = 2650.0  ! km m-3
 
    real               :: NMD(nmodes)
@@ -553,17 +553,17 @@ CONTAINS
    w_n = weight_mass / (pi/6 * soil_density * NMD**3 * exp(4.5*log(sigma_g)**2))
    weight_number = w_n / sum(w_n)
 
-   ! compute the size distribution integrals 
+   ! compute the size distribution integrals
    do n = 1, nmodes
        integral_mass(n)   = lognormal_integral(2*rLow, 2*rUp, MMD(n), sigma_g(n))
        integral_number(n) = lognormal_integral(2*rLow, 2*rUp, NMD(n), sigma_g(n))
    end do
-    
+
    emission_mass = emission_bulk * sum(weight_mass * integral_mass)
    emission_num  = emission_bulk * sum(w_n * integral_number)
 
 !  emission_mass(:,:) = 0.0
-!  emission_num (:,:) = 0.0 
+!  emission_num (:,:) = 0.0
 !
 !  do n = 1, nmodes
 !      emission_mass = emission_mass + emission_bulk * weight_mass(n) * integral_mass(n)
@@ -615,7 +615,7 @@ CONTAINS
    real, intent(out), dimension(:) :: dm            ! mass fraction of each bin
    real, intent(out), dimension(:), optional :: dn  ! number fraction of each bin
 
-! !DESCRIPTION: Compute the dust emission mass fraction per size bin based on 
+! !DESCRIPTION: Compute the dust emission mass fraction per size bin based on
 !               Kok PNAS (2011) brittle fragmentation theory
 !
 ! !REVISION HISTORY:
@@ -706,4 +706,4 @@ if(MAPL_AM_I_ROOT()) print *, 'DUST USING THESE BIN MASS FRACTIONS:', ibin, r(ib
 
    end subroutine KokSizeDistribution
 
-end module 
+end module
