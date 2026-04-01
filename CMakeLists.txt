@@ -1,8 +1,9 @@
 esma_set_this ()
 
-# Keep Shared (Chem_Base, Chem_Shared) and GOCART (for GOCART2G_GridComp).
-# Remaining subdirs not yet ported to MAPL3 - restore each when ported:
-esma_add_subdirectories(Shared GOCART)
+# Only GOCART is needed on release/MAPL-v3 (for GOCART2G_GridComp).
+# Shared (Chem_Base, Chem_Shared, HEMCO) is not required by any ported component.
+# Restore subdirs as components are ported to MAPL3.
+esma_add_subdirectories(GOCART)
 # esma_add_subdirectories(Shared GOCART TR GMI StratChem MAM MATRIX CARMA GAAS ACHEM)
 
 # Temporarily bypass GEOSchem top-level library: GEOS_ChemGridComp.F90
