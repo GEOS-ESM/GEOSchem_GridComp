@@ -1,6 +1,6 @@
 esma_set_this ()
 
-esma_add_subdirectories(Shared GOCART TR GMI StratChem MAM MATRIX CARMA GAAS ACHEM)
+esma_add_subdirectories(Shared GOCART TR GMI StratChem MAM MATRIX CARMA GAAS ACHEM Aerosol_ExtData)
 
 set (alldirs
   GEOSpchem_GridComp
@@ -16,7 +16,7 @@ set (srcs
   GEOS_ChemEnvGridComp.F90
   )
 
-# Note: GOCART_GridComp is added specifically as it is not longer
+# Note: GOCART_GridComp is added specifically as it is no longer
 #       automatically a dependence through alldirs
 esma_add_library (${this}
   SRCS ${srcs}
