@@ -1319,7 +1319,6 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
           call ESMF_AlarmRingerOff(PCHEM_ALARM, RC=STATUS)
           VERIFY_(STATUS)
 
-          call MAPL_TimerOff(MAPL,"RUN"  )
           call MAPL_TimerOn (MAPL,"-Read Species"  )
           call MAPL_GetResource(MAPL, PCHEMFILE,'pchem_clim:' ,DEFAULT='pchem_clim.dat', RC=STATUS )
           VERIFY_(STATUS)
@@ -1484,7 +1483,6 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
           ENDIF
 
           call MAPL_TimerOff (MAPL,"-Read Species"  )
-          call MAPL_TimerOn  (MAPL,"RUN"  )
 
           call ESMF_TimeIntervalSet(oneMonth, MM = 1, RC=STATUS )
           VERIFY_(STATUS)
@@ -1679,7 +1677,6 @@ contains
     character(len=*), intent(IN) :: NAME
     real, pointer                :: XX(:,:,:)
 
-
     real, pointer, dimension(:,:,:)   :: XX_PROD
     real, pointer, dimension(:,:,:)   :: XX_LOSS
     real, pointer, dimension(:,:,:)   :: OX_TEND
@@ -1689,6 +1686,13 @@ contains
     real                              :: PCRIT
     real                              :: DELP
     integer                           :: I,J,L
+    
+    ! New local variables for optimization
+    real    :: wrk_val, loss_val, prod_val, xx_val
+    real    :: inv_tau, inv_dt
+    logical :: has_prod, has_loss, has_ox_tend, has_h2o_tend
+
+    call MAPL_TimerOn (MAPL, "-UPDATES_" // trim(NAME))
 
     if (trim(NAME) == "H2O") then
        call MAPL_GetPointer ( IMPORT,   XX,  'Q', RC=STATUS )
@@ -1720,10 +1724,29 @@ contains
      VERIFY_(STATUS)
     END IF
 
+    ! Get EXPORT Pointers up front so we can populate them in the fused loops
     call MAPL_GetPointer ( EXPORT, XX_PROD, trim(NAME)//'_PROD', RC=STATUS )
     VERIFY_(STATUS)
     call MAPL_GetPointer ( EXPORT, XX_LOSS, trim(NAME)//'_LOSS', RC=STATUS )
     VERIFY_(STATUS)
+    
+    has_prod = associated(XX_PROD)
+    has_loss = associated(XX_LOSS)
+    
+    has_ox_tend = .false.
+    if(trim(NAME) == 'OX') then
+       call MAPL_GetPointer ( EXPORT, OX_TEND, 'OX_TEND', RC=STATUS )
+       VERIFY_(STATUS)
+       has_ox_tend = associated(OX_TEND)
+    end if
+
+    has_h2o_tend = .false.
+    if(trim(NAME) == 'H2O') then
+       call MAPL_GetPointer ( EXPORT, H2O_TEND, 'H2O_TEND', RC=STATUS )
+       VERIFY_(STATUS)
+       has_h2o_tend = associated(H2O_TEND)
+    end if
+
 
     if (TAU<=0.0) then  ! By convention this is the prod(index 1) and loss(index 2) case
 
@@ -1743,77 +1766,111 @@ contains
           enddo
        end do
 
-       XX = (XX + DT*PROD_INT) / (1.0 + DT*LOSS_INT)
+       ! Fused array update and export assignment
+       !$OMP parallel do default(none) &
+       !$OMP shared(IM, JM, LM, XX, PROD_INT, LOSS_INT, DT, has_prod, has_loss, XX_PROD, XX_LOSS) &
+       !$OMP private(I, J, L, prod_val, loss_val, xx_val)
+       do L=1,LM
+          do J=1,JM
+             do I=1,IM
+                prod_val = PROD_INT(I,J,L)
+                loss_val = LOSS_INT(I,J,L)
+                xx_val   = XX(I,J,L)
+                
+                xx_val   = (xx_val + DT*prod_val) / (1.0 + DT*loss_val)
+                XX(I,J,L) = xx_val
+                
+                if(has_prod) XX_PROD(I,J,L) = prod_val
+                if(has_loss) XX_LOSS(I,J,L) = -loss_val * xx_val
+             enddo
+          enddo
+       enddo
 
     else ! If the relaxation time is positive, relax to climatology.
-
-       PROD1 = PCHEM_STATE%MNCV(:,:,NN,1)*FAC + PCHEM_STATE%MNCV(:,:,NN,2)*(1.-FAC)
 
        call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
        VERIFY_(STATUS)
        DELP = max(DELP, 1.e-16) ! avoid division by zero
 
+       ! 1. Time-interpolate the climatology
+       PROD1 = PCHEM_STATE%MNCV(:,:,NN,1)*FAC + PCHEM_STATE%MNCV(:,:,NN,2)*(1.-FAC)
+       
+       ! 2. Spatial interpolation (Threaded over J)
+       !$OMP parallel do default(none) &
+       !$OMP shared(jm, nlevs, im, LATS, PCHEM_STATE, Prod1, PL, PROD_INT) &
+       !$OMP private(j, l, i, PROD)
        do j=1,jm
+          ! A. Interpolate in Latitude (Fills the private 2D IM x NLEVS slice for this J)
           do l=1,nlevs
              call INTERP_NO_EXTRAP( PROD(:,L), LATS(:,J), Prod1(:,L), PCHEM_STATE%LATS)
           enddo
+          ! B. Interpolate in Vertical (Maps the 2D slice onto the 3D model pressure levels)
           do i=1,im
              call INTERP_NO_EXTRAP( PROD_INT(i,j,:), PL(i,j,:), PROD(i,:), PCHEM_STATE%LEVS)
           enddo
        end do
 
+       ! Retrieve resource thresholds outside the OpenMP loop
        if(trim(NAME)=="H2O") then
           call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=20000. ,RC=STATUS)
-          VERIFY_(STATUS)
-          allocate(WRK(IM,JM),stat=STATUS)
-          VERIFY_(STATUS)
-          where (TROPP==MAPL_UNDEF)
-             WRK = PCRIT
-          elsewhere
-             WRK = TROPP
-          end where
-          WRK = min(WRK, PCRIT)
-          do L=1,LM
-             ! only contrained above the troposphere
-             LOSS_INT(:,:,L) = (1./TAU) * max( min( (WRK-PL(:,:,L))/DELP, 1.0), 0.0)
-          end do
-          deallocate(WRK)
        elseif(trim(NAME)=="OX") then
           call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=15000. ,RC=STATUS)
-          VERIFY_(STATUS)
-          do L=1,LM
-             ! strongly constrained (TAU=DT) below the 150hPa
-             LOSS_INT(:,:,L) = (1./TAU) * (      max( min( (PCRIT-PL(:,:,L))/DELP, 1.0), 0.0)) + &
-                               (1./DT ) * (1.0 - max( min( (PCRIT-PL(:,:,L))/DELP, 1.0), 0.0)) 
-          end do
        else
-          ! relaxed by TAU everywhere
           call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=1.e+16 ,RC=STATUS)
-          VERIFY_(STATUS)
-          LOSS_INT = (1./TAU) * max( min( (PCRIT   -PL)/DELP, 1.0), 0.0)
        endif
-
-       PROD_INT = LOSS_INT*PROD_INT
-
-       XX = (XX + DT*PROD_INT) / (1.0 + DT*LOSS_INT)
-
-    end if
-
-
-    if(associated(XX_PROD)) XX_PROD =  PROD_INT
-    if(associated(XX_LOSS)) XX_LOSS = -LOSS_INT*XX
-
-    if(trim(NAME)=='OX') then
-       call MAPL_GetPointer ( EXPORT, OX_TEND, 'OX_TEND', RC=STATUS )
        VERIFY_(STATUS)
-       if(associated(OX_TEND)) OX_TEND = (PROD_INT - LOSS_INT*XX)
+
+       inv_tau = 1.0 / TAU
+       inv_dt  = 1.0 / DT
+
+       ! Fused scalar math, array update, and export assignments
+       !$OMP parallel do default(none) &
+       !$OMP shared(IM, JM, LM, NAME, PCRIT, DELP, TROPP, PL, &
+       !$OMP        LOSS_INT, PROD_INT, XX, DT, inv_tau, inv_dt, &
+       !$OMP        has_prod, has_loss, has_ox_tend, has_h2o_tend, &
+       !$OMP        XX_PROD, XX_LOSS, OX_TEND, H2O_TEND) &
+       !$OMP private(I, J, L, wrk_val, loss_val, prod_val, xx_val)
+       do L=1,LM
+          do J=1,JM
+             do I=1,IM
+                
+                ! Calculate LOSS_INT scalar
+                if (trim(NAME) == "H2O") then
+                   wrk_val = TROPP(I,J)
+                   if (wrk_val == MAPL_UNDEF) wrk_val = PCRIT
+                   wrk_val = min(wrk_val, PCRIT)
+                   loss_val = inv_tau * max(min((wrk_val - PL(I,J,L)) / DELP, 1.0), 0.0)
+                elseif (trim(NAME) == "OX") then
+                   loss_val = inv_tau * max(min((PCRIT - PL(I,J,L)) / DELP, 1.0), 0.0) + &
+                              inv_dt  * (1.0 - max(min((PCRIT - PL(I,J,L)) / DELP, 1.0), 0.0))
+                else
+                   loss_val = inv_tau * max(min((PCRIT - PL(I,J,L)) / DELP, 1.0), 0.0)
+                endif
+                
+                LOSS_INT(I,J,L) = loss_val
+
+                ! Scale PROD_INT
+                prod_val = loss_val * PROD_INT(I,J,L)
+                PROD_INT(I,J,L) = prod_val
+
+                ! Update XX
+                xx_val = XX(I,J,L)
+                xx_val = (xx_val + DT * prod_val) / (1.0 + DT * loss_val)
+                XX(I,J,L) = xx_val
+
+                ! Assign to exports
+                if (has_prod)     XX_PROD(I,J,L)  = prod_val
+                if (has_loss)     XX_LOSS(I,J,L)  = -loss_val * xx_val
+                if (has_ox_tend)  OX_TEND(I,J,L)  = prod_val - (loss_val * xx_val)
+                if (has_h2o_tend) H2O_TEND(I,J,L) = prod_val - (loss_val * xx_val)
+
+             enddo
+          enddo
+       enddo
+
     end if
 
-    if(trim(NAME)=='H2O') then
-       call MAPL_GetPointer ( EXPORT, H2O_TEND, 'H2O_TEND', RC=STATUS )
-       VERIFY_(STATUS)
-       if(associated(H2O_TEND)) H2O_TEND = (PROD_INT - LOSS_INT*XX)
-    end if
+    call MAPL_TimerOff (MAPL, "-UPDATES_" // trim(NAME))
 
     return
   end subroutine UPDATE
@@ -1834,6 +1891,12 @@ contains
     real                              :: DELP
     integer                           :: I,J,L
 
+    ! New local variables for optimization
+    real    :: wrk_val, loss_swv_val, prod_val, loss_val, xx_val
+    logical :: has_prod, has_loss, has_h2o_tend
+
+    call MAPL_TimerOn (MAPL, "-UPDATE_PL_" // trim(NAME))
+
     call MAPL_GetPointer ( IMPORT,   XX,  'Q', RC=STATUS )
     VERIFY_(STATUS)
     ASSERT_(associated(XX))
@@ -1846,50 +1909,87 @@ contains
     call MAPL_GetPointer ( EXPORT, XX_LOSS, trim(NAME)//'_LOSS', RC=STATUS )
     VERIFY_(STATUS)
 
+    ! 1. Time-interpolate the climatology (Usually small arrays, safe to leave as-is)
     PROD1 = PCHEM_STATE%H2OprRate(:,:,1)*FAC + PCHEM_STATE%H2OprRate(:,:,2)*(1.-FAC)
     LOSS1 = PCHEM_STATE%H2OlsRate(:,:,1)*FAC + PCHEM_STATE%H2OlsRate(:,:,2)*(1.-FAC)
 
+    ! 2. Spatial interpolation (Threaded over J)
+    !$OMP parallel do default(none) &
+    !$OMP shared(jm, nlevs, im, LATS, PCHEM_STATE, Prod1, Loss1, PL, PROD_INT, LOSS_INT) &
+    !$OMP private(j, l, i, PROD, LOSS)
     do j=1,jm
+       
+       ! A. Interpolate in Latitude (Fills the private 2D IM x NLEVS slice for this J)
        do l=1,nlevs
           call INTERP_NO_EXTRAP( PROD(:,L), LATS(:,J), Prod1(:,L), PCHEM_STATE%LATS)
           call INTERP_NO_EXTRAP( LOSS(:,L), LATS(:,J), Loss1(:,L), PCHEM_STATE%LATS)
        enddo
+       
+       ! B. Interpolate in Vertical (Maps the 2D slice onto the 3D model pressure levels)
        do i=1,im
           call INTERP_NO_EXTRAP( PROD_INT(i,j,:), PL(i,j,:), PROD(i,:), PCHEM_STATE%LEVS)
           call INTERP_NO_EXTRAP( LOSS_INT(i,j,:), PL(i,j,:), LOSS(i,:), PCHEM_STATE%LEVS)
        enddo
+       
     end do
 
     call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=1.e-16 ,RC=STATUS)
     VERIFY_(STATUS)
     call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=20000. ,RC=STATUS)
     VERIFY_(STATUS)
-    allocate(WRK(IM,JM),stat=STATUS)
-    VERIFY_(STATUS)
-    where (TROPP==MAPL_UNDEF)
-       WRK = PCRIT
-    elsewhere
-       WRK = TROPP
-    end where
-    WRK = min(WRK, PCRIT)
-!!! loss_swv is 1 for stratosphere and 0 for troposhere
-    do L=1,LM
-       LOSS_SWV(:,:,L) = max( min( (WRK-PL(:,:,L))/DELP, 1.0), 0.0)
-    end do
 
-    PROD_INT = LOSS_SWV*PROD_INT
-    LOSS_INT = LOSS_SWV*LOSS_INT
-    XX = (XX + DT*PROD_INT) / (1.0 + LOSS_INT*DT)
-    deallocate(WRK)
-
-    if(associated(XX_PROD)) XX_PROD =  PROD_INT
-    if(associated(XX_LOSS)) XX_LOSS = -LOSS_INT*XX
-
+    ! Setup export pointers/flags outside the OpenMP loop
+    has_prod = associated(XX_PROD)
+    has_loss = associated(XX_LOSS)
+    
+    has_h2o_tend = .false.
     if(trim(NAME)=='H2O') then
        call MAPL_GetPointer ( EXPORT, H2O_TEND, 'H2O_TEND', RC=STATUS )
        VERIFY_(STATUS)
-       if(associated(H2O_TEND)) H2O_TEND = (PROD_INT - LOSS_INT*XX)
+       has_h2o_tend = associated(H2O_TEND)
     end if
+
+    ! Fused OpenMP Loop: Calc WRK, LOSS_SWV, Scale PROD/LOSS, Update XX & Exports
+    !$OMP parallel do default(none) &
+    !$OMP shared(IM, JM, LM, TROPP, PCRIT, PL, DELP, LOSS_SWV, &
+    !$OMP        PROD_INT, LOSS_INT, XX, DT, has_prod, has_loss, has_h2o_tend, &
+    !$OMP        XX_PROD, XX_LOSS, H2O_TEND) &
+    !$OMP private(I, J, L, wrk_val, loss_swv_val, prod_val, loss_val, xx_val)
+    do L=1,LM
+       do J=1,JM
+          do I=1,IM
+             
+             ! 1. Replaces the expensive ALLOCATE(WRK) and WHERE construct
+             wrk_val = TROPP(I,J)
+             if (wrk_val == MAPL_UNDEF) wrk_val = PCRIT
+             wrk_val = min(wrk_val, PCRIT)
+
+             ! 2. loss_swv is 1 for stratosphere and 0 for troposphere
+             loss_swv_val = max( min( (wrk_val - PL(I,J,L))/DELP, 1.0), 0.0)
+             LOSS_SWV(I,J,L) = loss_swv_val
+
+             ! 3. Scale PROD_INT and LOSS_INT
+             prod_val = loss_swv_val * PROD_INT(I,J,L)
+             loss_val = loss_swv_val * LOSS_INT(I,J,L)
+             
+             PROD_INT(I,J,L) = prod_val
+             LOSS_INT(I,J,L) = loss_val
+
+             ! 4. Update the state XX
+             xx_val = XX(I,J,L)
+             xx_val = (xx_val + DT * prod_val) / (1.0 + loss_val * DT)
+             XX(I,J,L) = xx_val
+
+             ! 5. Assign to optional Exports (Fused from bottom of routine)
+             if (has_prod)     XX_PROD(I,J,L)  = prod_val
+             if (has_loss)     XX_LOSS(I,J,L)  = -loss_val * xx_val
+             if (has_h2o_tend) H2O_TEND(I,J,L) = prod_val - (loss_val * xx_val)
+
+          end do
+       end do
+    end do
+
+    call MAPL_TimerOff (MAPL, "-UPDATE_PL_" // trim(NAME))
 
     return
   end subroutine UPDATE_H2O_PL
