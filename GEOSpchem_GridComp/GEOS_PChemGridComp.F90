@@ -1172,9 +1172,6 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 ! Start timer
 !------------
 
-    call MAPL_TimerOn (MAPL,"TOTAL")
-    call MAPL_TimerOn (MAPL,"RUN"  )
- 
 ! Get RUN_ALARM from MAPL
 !------------------------
 
@@ -1185,6 +1182,9 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
        _RETURN(ESMF_SUCCESS)
     end if
 
+    call MAPL_TimerOn (MAPL,"TOTAL")
+    call MAPL_TimerOn (MAPL,"RUN"  )
+ 
 ! Get the time step from the RUN_ALARM
 ! ------------------------------------
 
