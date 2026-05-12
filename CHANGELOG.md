@@ -8,7 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Removed
+
+- Removed `DOING_GEOS5` option in `Shared/Chem_Shared/CMakeLists.txt`
+- Removed `Shared/Chem_Shared/Chem_UtilMod_geos4.F90`
+- Removed code in `Shared/Chem_Shared/Chem_UtilMod.F90` guarded with `#ifdef USE_MAPL_MPREAD`
+
 ### Changed
+
+- Added the files previously under the `DOING_GEOS5` option to the main list of sources in `Chem_Shared/CMakeLists.txt`
+
 ### Fixed
 ### Deprecated
 
