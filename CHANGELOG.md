@@ -7,10 +7,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Removed
 ### Changed
+### Removed
 ### Fixed
 ### Deprecated
+
+## [2.0.0] - 2026-05-28
+
+### Changed
+
+- HEMCO Run1 now checks the `RUN_DT` alarm and skips work when the alarm is not ringing
+- Moved `DELP` resource read to before the interpolation loop in PChemGridComp relaxation
+- `OX` (ozone) relaxation in PCHEM now uses a strongly-constrained (instantaneous) relaxation
+  below the tropopause (~150 hPa) and a weak TAU-based relaxation above it, via a new
+  `OX_PCRIT` resource (default 15000 Pa / 150 hPa)
 
 ## [1.16.2] - 2026-01-22
 
