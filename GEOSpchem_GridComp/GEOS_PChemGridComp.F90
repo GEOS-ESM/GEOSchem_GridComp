@@ -1749,6 +1749,10 @@ contains
 
        PROD1 = PCHEM_STATE%MNCV(:,:,NN,1)*FAC + PCHEM_STATE%MNCV(:,:,NN,2)*(1.-FAC)
 
+       call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
+       VERIFY_(STATUS)
+       DELP = max(DELP, 1.e-16) ! avoid division by zero
+
        do j=1,jm
           do l=1,nlevs
              call INTERP_NO_EXTRAP( PROD(:,L), LATS(:,J), Prod1(:,L), PCHEM_STATE%LATS)
@@ -1757,11 +1761,6 @@ contains
              call INTERP_NO_EXTRAP( PROD_INT(i,j,:), PL(i,j,:), PROD(i,:), PCHEM_STATE%LEVS)
           enddo
        end do
-
-       call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
-       VERIFY_(STATUS)
-
-       DELP = max(DELP, 1.e-16) ! avoid division by zero
 
        if(trim(NAME)=="H2O") then
           call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=20000. ,RC=STATUS)
@@ -1775,10 +1774,20 @@ contains
           end where
           WRK = min(WRK, PCRIT)
           do L=1,LM
+             ! only contrained above the troposphere
              LOSS_INT(:,:,L) = (1./TAU) * max( min( (WRK-PL(:,:,L))/DELP, 1.0), 0.0)
           end do
           deallocate(WRK)
+       elseif(trim(NAME)=="OX") then
+          call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=15000. ,RC=STATUS)
+          VERIFY_(STATUS)
+          do L=1,LM
+             ! strongly constrained (TAU=DT) below the 150hPa
+             LOSS_INT(:,:,L) = (1./TAU) * (      max( min( (PCRIT-PL(:,:,L))/DELP, 1.0), 0.0)) + &
+                               (1./DT ) * (1.0 - max( min( (PCRIT-PL(:,:,L))/DELP, 1.0), 0.0)) 
+          end do
        else
+          ! relaxed by TAU everywhere
           call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=1.e+16 ,RC=STATUS)
           VERIFY_(STATUS)
           LOSS_INT = (1./TAU) * max( min( (PCRIT   -PL)/DELP, 1.0), 0.0)
