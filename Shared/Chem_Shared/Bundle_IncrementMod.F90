@@ -132,57 +132,57 @@ CONTAINS
     end if
 
     call ESMF_GridCompGet ( GC, config=cf, RC=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call ESMF_ConfigGetDim (cf, NQ, nCols, label=(trim(inc_bundle)//'_increments::'), rc=STATUS)
 
     if (NQ > 0) then
       call ESMF_ConfigFindLabel (cf, (trim(inc_bundle)//'_increments::'), rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       allocate (NAMES(NQ), stat=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       do i = 1, NQ
         call ESMF_ConfigNextLine(cf, rc=STATUS)
-        VERIFY_(STATUS)
+        _VERIFY(STATUS)
         call ESMF_ConfigGetAttribute(cf, NAMES(i), rc=STATUS)
-        VERIFY_(STATUS)
+        _VERIFY(STATUS)
       enddo
 
 ! Fill the increments bundle with fields from "parent" bundle 
 !------------------------------------------------------------------
       call ESMF_StateGet(state1, org_bundle, BUNDLE,   rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_StateGet(state2, inc_bundle, BUNDLEi, rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
   
       if (IncType == CHMinc) then
         call ESMF_StateGet(state2, incEmiss_bundle, BUNDLEemiss, rc=STATUS)
-        VERIFY_(STATUS)
+        _VERIFY(STATUS)
       end if
 
       do i = 1, NQ
         call ESMF_FieldBundleGet (BUNDLE, NAMES(i), field=field, rc=status)
         if (status/=0) then
           if (mapl_am_i_root()) print*, trim(NAMES(i)),' is not valid. It likely does not exist in ',trim(org_bundle)
-          VERIFY_(23) 
+          _VERIFY(23) 
         end if
 
         call ESMF_FieldGet (field, name=fieldname, RC=STATUS)
-        VERIFY_(STATUS)
+        _VERIFY(STATUS)
 
         TempField = MAPL_FieldCreate (field, name=(trim(fieldname)//suffix) ,DoCopy=.true., rc=status)
-        VERIFY_(STATUS)
+        _VERIFY(STATUS)
         call MAPL_FieldBundleAdd (BUNDLEi, TempField, rc=status)
-        VERIFY_(STATUS)
+        _VERIFY(STATUS)
      
         if (IncType == CHMinc) then
           TempField = MAPL_FieldCreate (field, name=(trim(fieldname)//suffix//'emiss') ,DoCopy=.true., rc=status)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
           call MAPL_FieldBundleAdd (BUNDLEemiss, TempField, rc=status)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
         end if
       end do
 
@@ -194,51 +194,51 @@ CONTAINS
         .OR. (IncType == MTRIincCTM) .OR. (IncType == TRIincCTM)) then
         do i = 1, NQ
           call ESMF_FieldBundleGet (BUNDLEi, fieldIndex=i, field=field, rc=STATUS )
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
           call ESMF_FieldGet (field, name=fieldname, RC=STATUS)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
  
           if (fieldname==('AOADAYS'//suffix)) then
             call ESMF_AttributeSET (field, name='UNITS', value='days s-1', rc=status)
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
           else
             call ESMF_AttributeGET (field, name='UNITS', value=valueOld, rc=status)
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
             call ESMF_AttributeSET (field, name='UNITS', value=trim(valueOld)//' s-1', rc=status)
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
           end if
 
           ppos = len(trim(fieldname))
           call ESMF_AttributeSET (field, name='LONG_NAME', value=('tendency_of_'//fieldname(1:ppos-2)//trim(longname)), rc=status)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
         end do
       end if
 
       if (IncType == CHMinc) then
         do i = 1, NQ
           call ESMF_FieldBundleGet (BUNDLEemiss, fieldIndex=i, field=field, rc=STATUS )
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
           call ESMF_FieldGet (field, name=fieldname, RC=STATUS)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
 
           if (fieldname==('AOADAYS'//suffix//'emiss')) then
             call ESMF_AttributeSET (field, name='UNITS', value='days s-1', rc=status)
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
           else
             call ESMF_AttributeGET (field, name='UNITS', value=valueOld, rc=status)
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
             call ESMF_AttributeSET (field, name='UNITS', value=trim(valueOld)//' s-1', rc=status)
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
           end if
 
           ppos = len(trim(fieldname))
           call ESMF_AttributeSET (field, name='LONG_NAME', value=('chemistry_tendency_of_'//fieldname(1:ppos-7)//'_from_emissions'), rc=status)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
         end do
       end if ! (IncType == 'CHMinc')
     end if ! NQ > 0
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
  END SUBROUTINE Initialize_IncBundle_init
 !==============================================================================================================
 
@@ -301,40 +301,40 @@ CONTAINS
 !  !Initialize increment bundle in Run method before the child is called
 !  !--------------------------------------------------------------------
     call ESMF_StateGet (state2, inc_bundle, BUNDLEi, rc=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call ESMF_StateGet (state1, org_bundle, BUNDLE, rc=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call ESMF_FieldBundleGet (BUNDLEi, fieldCount=NQ, rc=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 !  !Check if there is anything in the bundle.
     if (NQ > 0) then
       allocate (NAMES(NQ), stat=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_FieldBundleGet(BUNDLEi, fieldNameList=NAMES, rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 !    !Get increment data pointer and initialize value
       do i = 1, NQ
         ppos = len(trim(NAMES(i)))
         if (IncType == CHMinc) then
           call ESMFL_BundleGetPointerToData (BUNDLE, trim(NAMES(i)(1:ppos-7)), org_ptr, rc=status)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
         else
           call ESMFL_BundleGetPointerToData (BUNDLE, trim(NAMES(i)(1:ppos-2)), org_ptr, rc=status)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
         end if
 
         call ESMFL_BundleGetPointerToData (BUNDLEi, trim(NAMES(i)), inc_ptr, rc=status)
-        VERIFY_(STATUS)
+        _VERIFY(STATUS)
 
         inc_ptr = org_ptr
       end do
       deallocate(NAMES)
     end if ! NQ > 0
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
  END SUBROUTINE Initialize_IncBundle_run
 !=======================================================================================
 !
@@ -394,49 +394,49 @@ CONTAINS
     end if
 
     call ESMF_StateGet (state2, inc_bundle, BUNDLEi, rc=STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     call ESMF_FieldBundleGet (BUNDLEi, fieldCount=NQ, rc=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 !  !Check if there is anything in the bundle.
     if (NQ > 0) then
       call ESMF_StateGet (state1, org_bundle, BUNDLE, rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       if (IncType == CHMincR2) then
         call ESMF_StateGet (state2, inc_emiss_bundle, BUNDLEemiss, rc=STATUS)
-        VERIFY_(STATUS)
+        _VERIFY(STATUS)
       end if
 
       call MAPL_GetResource(META, DT, label="RUN_DT:", RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
       allocate (NAMES(NQ), stat=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       call ESMF_FieldBundleGet(BUNDLEi, fieldNameList=NAMES, rc=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
 !    !Get pointers to data
       do i = 1, NQ
         ppos = len(trim(NAMES(i)))
         if (IncType == CHMinc) then
           call ESMFL_BundleGetPointerToData (BUNDLE, trim(NAMES(i)(1:ppos-7)), org_ptr, rc=status)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
           call ESMFL_BundleGetPointerToData (BUNDLEi, trim(NAMES(i)), inc_ptr, rc=status)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
 !        end if
         else if (IncType == CHMincR2) then
           call ESMFL_BundleGetPointerToData (BUNDLEemiss, trim(NAMES(i))//'emiss', inc_emiss_ptr, rc=status)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
           call ESMFL_BundleGetPointerToData (BUNDLE, trim(NAMES(i)(1:ppos-2)), org_ptr, rc=status)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
           call ESMFL_BundleGetPointerToData (BUNDLEi, trim(NAMES(i)), inc_ptr, rc=status)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
         else
           call ESMFL_BundleGetPointerToData (BUNDLE, trim(NAMES(i)(1:ppos-2)), org_ptr, rc=status)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
           call ESMFL_BundleGetPointerToData (BUNDLEi, trim(NAMES(i)), inc_ptr, rc=status)
-          VERIFY_(STATUS)
+          _VERIFY(STATUS)
         end if
 
 !      !Compute increment and update pointer
@@ -449,7 +449,7 @@ CONTAINS
       deallocate(NAMES)
     end if ! NQ > 0
  
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
  END SUBROUTINE Compute_IncBundle
 
 

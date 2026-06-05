@@ -383,7 +383,7 @@ subroutine getLightning (GC, ggState, CLOCK, &
      end if
 
 
-     ALLOCATE( flashRateLopez(IM, JM),   STAT=STATUS); VERIFY_(STATUS)
+     ALLOCATE( flashRateLopez(IM, JM),   STAT=STATUS); _VERIFY(STATUS)
      flashRateLopez = real(0)
 
      call LOPEZ_FlashRate(ggState, IM, JM, LM, FROCEAN, PBLH, CAPE, DZET, PFICU, &
@@ -533,7 +533,7 @@ subroutine getLightning (GC, ggState, CLOCK, &
      print*, "Flashrate source not supported!"
      print*, ""
      STATUS=88
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
   endif
 
   IF ( need_cape ) THEN
@@ -624,7 +624,7 @@ subroutine read_flash_source ( rcfilen, flash_source_enum, RC )
   IF ( flash_source_enum == FLASH_SOURCE_UNDEFINED ) THEN
     print*,'Invalid Flash Source: '//TRIM(flashSource)//' from '//TRIM(rcfilen)
     STATUS = 101
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
   END IF
 
   call ESMF_ConfigDestroy(esmfConfig, __RC__)
@@ -1791,18 +1791,18 @@ endif
   IF(ampFactor <= 0.00) THEN
    IF(MAPL_AM_I_ROOT()) PRINT *,TRIM(IAm)//": Invalid ampFactor ",ampFactor
    status = 1
-   VERIFY_(status)
+   _VERIFY(status)
   END IF
   IF(numberNOperFlash <= 0.00) THEN
    IF(MAPL_AM_I_ROOT()) PRINT *,TRIM(IAm)//": Invalid numberNOperFlash ",numberNOperFlash
    status = 1
-   VERIFY_(status)
+   _VERIFY(status)
   END IF
 
 ! Grab some memory
 ! ----------------
   ALLOCATE(pNOx2D(i1:i2, j1:j2),STAT=status)
-  VERIFY_(status)
+  _VERIFY(status)
   pNOx2D(:,:) = 0.00
 
 ! Calculate the NOx produdction rate [molecules NO m^{-2} s^{-1}]
@@ -1832,7 +1832,7 @@ endif
 ! Clean up
 ! --------
   DEALLOCATE(pNOx2D,STAT=status)
-  VERIFY_(status)
+  _VERIFY(status)
 
   RETURN
  END SUBROUTINE emiss_lightning
@@ -1898,7 +1898,7 @@ endif
 ! Deep convection is arbitrarily assigned when the cloud top is greater than 7 km.
 ! --------------------------------------------------------------------------------
    ALLOCATE(r(numKm,3),STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
 ! Deep convection, continental
 ! ----------------------------
@@ -2023,7 +2023,7 @@ endif
 ! Clean up
 ! --------
    DEALLOCATE(r,STAT=status)
-   VERIFY_(status)
+   _VERIFY(status)
 
   RETURN
  END SUBROUTINE partition
@@ -2426,7 +2426,7 @@ endif
         if (ierr /= 0) then
            err_msg = 'Failed to OPEN '//TRIM(light_ratioGlobal_infile_name)
            STATUS=99
-           VERIFY_(STATUS)
+           _VERIFY(STATUS)
         end if
 
         ratioGlobalLight = 0.0

@@ -201,7 +201,7 @@ contains
 !   Load the Chemistry Registry
 !   ---------------------------
     chemReg = Chem_RegistryCreate ( STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 ! Register services for this component
 ! ------------------------------------
@@ -212,7 +212,7 @@ contains
 !   Store private state in GC
 !   -------------------------
     call ESMF_UserCompSetInternalState ( GC, 'GEOSchem_GridComp_State', wrap, STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     call ESMF_ConfigGetAttribute(cf, chem_gridcomp_rc_file, label = "GEOS_ChemGridComp_RC_File:", &
          default = "GEOS_ChemGridComp.rc", __RC__)
@@ -371,7 +371,7 @@ contains
   n = 0
   IF (STATUS .eq. ESMF_SUCCESS) THEN
      n = ESMF_ConfigGetLen(CF,label='RATS_DIAGNOSTICS:',RC=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
   ENDIF
 
   ! No error thrown. Just go around this if nothing learnable from config.
@@ -379,19 +379,19 @@ contains
 
      ! Get number of words in config line
      n = ESMF_ConfigGetLen(CF,label='RATS_DIAGNOSTICS:',RC=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      allocate(nameRATS(n), STAT=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      ! Put the cursor at the label
      call ESMF_ConfigFindLabel(CF, 'RATS_DIAGNOSTICS:', RC=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
      ! Loop over RATS in list
      DO i=1,n
         call ESMF_ConfigGetAttribute(CF,gen_str,RC=STATUS)
-        VERIFY_(STATUS)
+        _VERIFY(STATUS)
         nameRATS(i) = trim(gen_str)
      ENDDO
 
@@ -407,12 +407,12 @@ contains
         CALL MAPL_AddExportSpec( GC, &
              SHORT_NAME  = trim(nameRATs(i)),      &
              CHILD_ID    = RRG, RC=STATUS    )
-        VERIFY_(STATUS)
+        _VERIFY(STATUS)
 
      ENDDO
 
      deallocate(nameRATs, STAT=STATUS)
-     VERIFY_(STATUS)
+     _VERIFY(STATUS)
 
   ENDIF
 
@@ -1006,7 +1006,7 @@ contains
         PRINT*,'Inconsistency --- HEMCO GMI instance  = ', GMI_instance_of_HEMCO
         PRINT*,'              --- GMI:doMEGANviaHEMCO = ', doMEGANviaHEMCO
         STATUS=98
-        VERIFY_(STATUS)
+        _VERIFY(STATUS)
      END IF
 
      ! make sure we don't have inconsistent MEGAN flags
@@ -1014,7 +1014,7 @@ contains
           ( doMEGANemission .eqv. .FALSE. ) ) THEN
         PRINT*,'Inconsistent GMI flags: doMEGANviaHEMCO==T, doMEGANemission==F'
         STATUS=99
-        VERIFY_(STATUS)
+        _VERIFY(STATUS)
      END IF
 
      ! connect HEMCO isoprene to GMI if doMEGANviaHEMCO is true
@@ -1030,7 +1030,7 @@ contains
 ! -------------------------
   call MAPL_GenericSetServices ( GC, __RC__ )
 
-  RETURN_(ESMF_SUCCESS)
+  _RETURN(ESMF_SUCCESS)
 
   end subroutine SetServices
 
@@ -1088,7 +1088,7 @@ contains
 !   Get my internal state
 !   ---------------------
     call ESMF_UserCompGetInternalState(gc, 'GEOSchem_GridComp_State', WRAP, STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     myState => wrap%ptr
 
 !   Call GenericInitialize for every Child
@@ -1174,7 +1174,7 @@ contains
 
 !   All Done
 !   --------
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
   end subroutine Init
 
@@ -1233,14 +1233,14 @@ contains
 !-------------------------------------------------------------------
 
    call MAPL_GetObjectFromGC ( GC, MAPL, RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    call MAPL_Get(MAPL, RUNALARM = ALARM, RC=STATUS )
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
 
 !  Get my internal state
 !  ---------------------
    call ESMF_UserCompGetInternalState(GC, 'GEOSchem_GridComp_State', WRAP, STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    myState => wrap%ptr
 
 !  Start timers
@@ -1252,7 +1252,7 @@ contains
       ! Don't turn alarm off in phase 1, otherwise phase 2 will not be
       ! executed!
 !      call ESMF_AlarmRingerOff(ALARM, RC=STATUS)
-!      VERIFY_(STATUS)
+!      _VERIFY(STATUS)
 
       ! Get the target components name and set-up traceback handle.
       ! -----------------------------------------------------------
@@ -1269,7 +1269,7 @@ contains
             write(*,*) '***********************************************************************'
          endif
          CALL MAPL_TimerOff( MAPL, "TOTAL" )
-         RETURN_(ESMF_SUCCESS)
+         _RETURN(ESMF_SUCCESS)
       endif
 
       ! Call Run phase 1 for every child with two phases
@@ -1334,7 +1334,7 @@ contains
 
 !   All Done
 !   --------
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
  end subroutine Run1
 
@@ -1399,13 +1399,13 @@ contains
 !-------------------------------------------------------------------
 
    call MAPL_GetObjectFromGC ( GC, MAPL, RC=STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    call MAPL_Get(MAPL, RUNALARM = ALARM, __RC__ )
 
 !  Get my internal state
 !  ---------------------
    call ESMF_UserCompGetInternalState(GC, 'GEOSchem_GridComp_State', WRAP, STATUS)
-   VERIFY_(STATUS)
+   _VERIFY(STATUS)
    myState => wrap%ptr
 
 !  Start timers
@@ -1416,7 +1416,7 @@ contains
    ! --------------
    if ( ESMF_AlarmIsRinging   (ALARM, RC=STATUS) ) then
       call ESMF_AlarmRingerOff(ALARM, RC=STATUS)
-      VERIFY_(STATUS)
+      _VERIFY(STATUS)
 
       ! Get the target components name and set-up traceback handle.
       ! -----------------------------------------------------------
@@ -1511,7 +1511,7 @@ contains
 
 !   All Done
 !   --------
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
  end subroutine Run2
 

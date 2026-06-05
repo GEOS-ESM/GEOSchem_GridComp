@@ -131,7 +131,7 @@ contains
 !   Store internal state in GC
 !   --------------------------
     call ESMF_UserCompSetInternalState(GC, 'DNA_State', wrap, STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
   
 !                         ------------------
 !                         MAPL Data Services
@@ -254,7 +254,7 @@ contains
 !   All done
 !   --------
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
   end subroutine SetServices
 
@@ -437,7 +437,7 @@ contains
 
 !  All done
 !  --------
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
    end subroutine Initialize_
 
@@ -555,7 +555,7 @@ contains
    if (run_alarm_ringing) then
        call ESMF_AlarmRingerOff(run_alarm, __RC__)
    else
-       RETURN_(ESMF_SUCCESS)
+       _RETURN(ESMF_SUCCESS)
    endif
 
 
@@ -599,7 +599,7 @@ contains
 
 !  All done
 !  --------
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
    end subroutine Run_
 
@@ -676,7 +676,7 @@ contains
 
 !  All done
 !  --------
-   RETURN_(ESMF_SUCCESS)
+   _RETURN(ESMF_SUCCESS)
 
  end SUBROUTINE Finalize_
 
@@ -755,7 +755,7 @@ contains
   end if
 
 
-  RETURN_(ESMF_SUCCESS)
+  _RETURN(ESMF_SUCCESS)
 
  end subroutine aerosol_optics
 
@@ -819,7 +819,7 @@ contains
 !   Get my internal state
 !   ---------------------
     call ESMF_UserCompGetInternalState(GC, 'DNA_State', wrap, STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     myState => wrap%ptr
 
 !   Get the configuration
@@ -864,7 +864,7 @@ contains
     km = dims(3)
 
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
  end subroutine extract_
 

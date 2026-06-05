@@ -193,35 +193,35 @@ CONTAINS
 ! Deallocate whatever has been allocated
 ! --------------------------------------
   if ( associated(this%lambda) ) deallocate(this%lambda, stat=rc)
-  VERIFY_(rc)
+  _VERIFY(rc)
   if ( associated(this%rh) )     deallocate(this%rh, stat=rc)
-  VERIFY_(rc)
+  _VERIFY(rc)
   if ( associated(this%reff) )   deallocate(this%reff, stat=rc)
-  VERIFY_(rc)
+  _VERIFY(rc)
   if ( associated(this%bext) )   deallocate(this%bext, stat=rc)
-  VERIFY_(rc)
+  _VERIFY(rc)
   if ( associated(this%bsca) )   deallocate(this%bsca, stat=rc)
-  VERIFY_(rc)
+  _VERIFY(rc)
   if ( associated(this%bbck) )   deallocate(this%bbck, stat=rc)
-  VERIFY_(rc)
+  _VERIFY(rc)
   if ( associated(this%g) )      deallocate(this%g, stat=rc)
-  VERIFY_(rc)
+  _VERIFY(rc)
   if ( associated(this%pmom) )   deallocate(this%pmom, stat=rc)
-  VERIFY_(rc)
+  _VERIFY(rc)
   if ( associated(this%gf) )    deallocate(this%gf, stat=rc)
-  VERIFY_(rc)
+  _VERIFY(rc)
   if ( associated(this%rhop) )  deallocate(this%rhop, stat=rc)
-  VERIFY_(rc)
+  _VERIFY(rc)
   if ( associated(this%rhod) )  deallocate(this%rhod, stat=rc)
-  VERIFY_(rc)
+  _VERIFY(rc)
   if ( associated(this%vol) )   deallocate(this%vol, stat=rc)
-  VERIFY_(rc)
+  _VERIFY(rc)
   if ( associated(this%area) )  deallocate(this%area, stat=rc)
-  VERIFY_(rc)
+  _VERIFY(rc)
   if ( associated(this%refr) )  deallocate(this%refr, stat=rc)
-  VERIFY_(rc)
+  _VERIFY(rc)
   if ( associated(this%refi) )  deallocate(this%refi, stat=rc)
-  VERIFY_(rc)
+  _VERIFY(rc)
 
 end subroutine Chem_MieTableDestroy 
 
@@ -298,45 +298,45 @@ end subroutine Chem_MieTableDestroy
       IF ( rc /= ESMF_SUCCESS ) THEN
         print *, 'nf_open '//this%mietablename//'  RETURN CODE=', rc
       END IF
-      VERIFY_(rc)
+      _VERIFY(rc)
 
 !     RH
 !     --
       rc = nf_inq_dimid(ncid,'rh',idimid)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_inq_dimlen(ncid,idimid,nrh_table)
-      VERIFY_(rc)
+      _VERIFY(rc)
 
 !     Channels
 !     --------
       rc = nf_inq_dimid(ncid,'lambda',idimid)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_inq_dimlen(ncid,idimid,nch_table)
-      VERIFY_(rc)
+      _VERIFY(rc)
 
 !     Dry Effective radius
 !     --------------------
       rc = nf_inq_dimid(ncid,'radius',idimid)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_inq_dimlen(ncid,idimid,nbin_table)
-      VERIFY_(rc)
+      _VERIFY(rc)
 
 !     Moments of phase function
 !     -------------------------
       if ( nmom_ > 0 ) then
          rc = nf_inq_dimid(ncid,'nMom',idimid)
-         VERIFY_(rc)
+         _VERIFY(rc)
          rc = nf_inq_dimlen(ncid,idimid,nmom_table)
-         VERIFY_(rc)
+         _VERIFY(rc)
          if ( nmom_ > nmom_table ) then
             rc = 99
-            VERIFY_(rc)
+            _VERIFY(rc)
             return
          end if
          rc = nf_inq_dimid(ncid,'nPol',idimid)
-         VERIFY_(rc)
+         _VERIFY(rc)
          rc = nf_inq_dimlen(ncid,idimid,nPol_table)
-         VERIFY_(rc)
+         _VERIFY(rc)
       endif
 
 
@@ -350,70 +350,70 @@ end subroutine Chem_MieTableDestroy
 !                g_table(nch_table,nrh_table,nbin_table), stat = rc )
 
       allocate(channels_table(nch_table),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate(rh_table(nrh_table),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate(reff_table(nrh_table,nbin_table),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate(bext_table(nch_table,nrh_table,nbin_table),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate(bsca_table(nch_table,nrh_table,nbin_table),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate(bbck_table(nch_table,nrh_table,nbin_table), stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate(g_table(nch_table,nrh_table,nbin_table), stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate(pback_table(nch_table,nrh_table,nbin_table,nPol_table), stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate(gf_table(nrh_table,nbin_table),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate(rhop_table(nrh_table,nbin_table),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate(rhod_table(nrh_table,nbin_table),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate(vol_table(nrh_table,nbin_table),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate(area_table(nrh_table,nbin_table),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate(refr_table(nch_table,nrh_table,nbin_table), stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate(refi_table(nch_table,nrh_table,nbin_table), stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
 
       if ( nmom_ > 0 ) then
          allocate(pmom_table(nch_table,nrh_table,nbin_table,nmom_table,nPol_table), stat = rc )
-         VERIFY_(rc)
+         _VERIFY(rc)
       end if
 
 
       rc = nf_inq_varid(ncid,'lambda',ivarid)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_get_var_double(ncid,ivarid,channels_table)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_inq_varid(ncid,'rEff',ivarid)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_get_var_double(ncid,ivarid,reff_table)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_inq_varid(ncid,'bext',ivarid)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_get_var_double(ncid,ivarid,bext_table)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_inq_varid(ncid,'bsca',ivarid)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_get_var_double(ncid,ivarid,bsca_table)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_inq_varid(ncid,'bbck',ivarid)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_get_var_double(ncid,ivarid,bbck_table)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_inq_varid(ncid,'g',ivarid)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_get_var_double(ncid,ivarid,g_table)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_inq_varid(ncid,'rh',ivarid)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_get_var_double(ncid,ivarid,rh_table)
-      VERIFY_(rc)
+      _VERIFY(rc)
 
 !     Get the backscatter phase function values
       rc = nf_inq_varid(ncid,'pback',ivarid)
@@ -421,14 +421,14 @@ end subroutine Chem_MieTableDestroy
         pback_table = 1.
       else
         rc = nf_get_var_double(ncid,ivarid,pback_table)
-        VERIFY_(rc)
+        _VERIFY(rc)
       endif
 
       if ( nmom_ > 0 ) then
          rc = nf_inq_varid(ncid,'pmom',ivarid)
-         VERIFY_(rc)
+         _VERIFY(rc)
          rc = nf_get_var_double(ncid,ivarid,pmom_table)
-         VERIFY_(rc)
+         _VERIFY(rc)
       end if
 
 !     Aerosol optical properties not necessarily stored in all versions of the tables
@@ -439,7 +439,7 @@ end subroutine Chem_MieTableDestroy
         gf_table = -999.
       else
         rc = nf_get_var_double(ncid,ivarid,gf_table)
-        VERIFY_(rc)
+        _VERIFY(rc)
       endif
 
 !     Wet particle density
@@ -448,7 +448,7 @@ end subroutine Chem_MieTableDestroy
         rhop_table = -999.
       else
         rc = nf_get_var_double(ncid,ivarid,rhop_table)
-        VERIFY_(rc)
+        _VERIFY(rc)
       endif
 
 !     Dry particle density (will be pulled from wet particle radius)
@@ -460,7 +460,7 @@ end subroutine Chem_MieTableDestroy
         do i = 1, nrh_table
           rhod_table(i,:) = rhod_table(1,:)
         enddo
-        VERIFY_(rc)
+        _VERIFY(rc)
       endif
 
 !     Wet particle real part of refractive index
@@ -469,7 +469,7 @@ end subroutine Chem_MieTableDestroy
         refr_table = -999.
       else
         rc = nf_get_var_double(ncid,ivarid,refr_table)
-        VERIFY_(rc)
+        _VERIFY(rc)
       endif
 
 !     Wet particle imaginary part of refractive index (ensure positive)
@@ -478,7 +478,7 @@ end subroutine Chem_MieTableDestroy
         refi_table = -999.
       else
         rc = nf_get_var_double(ncid,ivarid,refi_table)
-        VERIFY_(rc)
+        _VERIFY(rc)
         refi_table = abs(refi_table)
       endif
 
@@ -493,7 +493,7 @@ end subroutine Chem_MieTableDestroy
 !     Close the table file
 !     -------------------------------------
       rc = nf_close(ncid)
-      VERIFY_(rc)
+      _VERIFY(rc)
 
 !     Setup the table to be returned
 !     -------------------------------------
@@ -512,39 +512,39 @@ end subroutine Chem_MieTableDestroy
 !                 stat = rc )
 
       allocate (this%lambda(this%nLambda),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate (this%rh(this%nrh),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate (this%reff(this%nrh,this%nbin),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate (this%bext(this%nrh,this%nLambda,this%nbin),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate (this%bsca(this%nrh,this%nLambda,this%nbin),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate (this%bbck(this%nrh,this%nLambda,this%nbin),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate (this%g(this%nrh,this%nLambda,this%nbin),   stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate (this%pback(this%nrh,this%nLambda,this%nbin,this%nPol),   stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       if ( nmom_ > 0 ) then
          allocate (this%pmom(this%nrh,this%nLambda,this%nbin,this%nMom,this%nPol),   stat = rc )
-         VERIFY_(rc)
+         _VERIFY(rc)
       end if
       allocate (this%gf(this%nrh,this%nbin),   stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate (this%rhop(this%nrh,this%nbin),   stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate (this%rhod(this%nrh,this%nbin),   stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate (this%vol(this%nrh,this%nbin),   stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate (this%area(this%nrh,this%nbin),   stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate (this%refr(this%nrh,this%nLambda,this%nbin),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       allocate (this%refi(this%nrh,this%nLambda,this%nbin),stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
 
 !     Preserve the full RH structure of the input table
       this%rh(:) = rh_table(:)
@@ -630,39 +630,39 @@ end subroutine Chem_MieTableDestroy
 !                  bbck_table, g_table, stat = rc )
 
       deallocate (channels_table, stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       deallocate (rh_table, stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       deallocate (reff_table, stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       deallocate (bext_table, stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       deallocate (bsca_table, stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       deallocate (bbck_table, stat = rc )
-      VERIFY_(rc) 
+      _VERIFY(rc) 
       deallocate (g_table, stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       deallocate (pback_table, stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       if ( nmom_ > 0 ) then
          deallocate (pmom_table, stat = rc )
-         VERIFY_(rc)
+         _VERIFY(rc)
       endif
       deallocate (gf_table, stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       deallocate (rhop_table, stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       deallocate (rhod_table, stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       deallocate (vol_table, stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       deallocate (area_table, stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       deallocate (refr_table, stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
       deallocate (refi_table, stat = rc )
-      VERIFY_(rc)
+      _VERIFY(rc)
 
 return
 
@@ -764,28 +764,28 @@ END SUBROUTINE Chem_MieTableRead
 !     Open the table and get the dimensions
 !     -------------------------------------
       rc = nf_open(mietablename, NF_NOWRITE, ncid)
-      VERIFY_(rc)
+      _VERIFY(rc)
 
 !     RH
 !     --
       rc = nf_inq_dimid(ncid,'rh',idimid)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_inq_dimlen(ncid,idimid,nrh_table)
-      VERIFY_(rc)
+      _VERIFY(rc)
 
 !     Channels
 !     --------
       rc = nf_inq_dimid(ncid,'lambda',idimid)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_inq_dimlen(ncid,idimid,nch_table)
-      VERIFY_(rc)
+      _VERIFY(rc)
 
 !     Effective radius
 !     ----------------
       rc = nf_inq_dimid(ncid,'radius',idimid)
-      VERIFY_(rc)
+      _VERIFY(rc)
       rc = nf_inq_dimlen(ncid,idimid,nbin_table)
-      VERIFY_(rc)
+      _VERIFY(rc)
 
 !     Moments of phase function
 !     -------------------------
@@ -796,11 +796,11 @@ END SUBROUTINE Chem_MieTableRead
            rc = 0
       else
          rc = nf_inq_dimlen(ncid,idimid,nmom_table)
-         VERIFY_(rc)
+         _VERIFY(rc)
          rc = nf_inq_dimid(ncid,'nPol',idimid)
-         VERIFY_(rc)
+         _VERIFY(rc)
          rc = nf_inq_dimlen(ncid,idimid,nPol_table)
-         VERIFY_(rc)
+         _VERIFY(rc)
       end if
 
     END SUBROUTINE Chem_MieTableGetDims

@@ -121,7 +121,7 @@ contains
     ! Wrap internal state for storing in GC; rename legacyState
     ! -------------------------------------
     allocate ( state, stat=STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     wrap%ptr => state
 
 
@@ -135,7 +135,7 @@ contains
     !-----------------------------------------------------
 
     call ESMF_UserCompSetInternalState ( GC, 'ChemEnv', wrap, STATUS )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     state%OVP_setup_done = .FALSE.
 
 !BOS
@@ -201,7 +201,7 @@ contains
 !      DIMS  = MAPL_DimsHorzOnly,                                  &
 !      VLOCATION  = MAPL_VLocationNone,                            &
 !         RC=STATUS  )
-!   VERIFY_(STATUS)
+!   _VERIFY(STATUS)
 
 !!  NEEDED?:
 !    call MAPL_AddImportSpec(GC,				   &
@@ -401,7 +401,7 @@ contains
          UNITS     ='m'  ,                                         &
          DIMS      = MAPL_DimsHorzOnly,                            &
          VLOCATION = MAPL_VLocationNone,                RC=STATUS  )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
   
     call MAPL_AddImportSpec(GC,                               &
          SHORT_NAME='ZLFC',                                        &
@@ -409,7 +409,7 @@ contains
          UNITS     ='m'  ,                                         &
          DIMS      = MAPL_DimsHorzOnly,                            &
          VLOCATION = MAPL_VLocationNone,                RC=STATUS  )
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
 
 
@@ -683,7 +683,7 @@ contains
 ! -----------------------------------------------------------------
     call MAPL_GenericSetServices    ( GC, __RC__ )
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
   
   end subroutine SetServices
 
@@ -789,7 +789,7 @@ contains
                                                      PRINT*,'useImportedCape = ', useImportedCape
     ENDIF
 
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
   
   end subroutine Initialize_
 
@@ -1041,7 +1041,7 @@ contains
 
 !   All Done
 !   --------
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
  end subroutine Run1
 
@@ -1123,7 +1123,7 @@ contains
     ! Get my private state from the component
     !----------------------------------------
     call ESMF_UserCompGetInternalState(gc, 'ChemEnv', WRAP, STATUS)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     ChemEnv_STATE => WRAP%PTR
 
@@ -1350,7 +1350,7 @@ contains
 
 !   All Done
 !   --------
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
  end subroutine Run2
 
@@ -1422,7 +1422,7 @@ contains
     k0  = 1-lbound(PLE,3)
 
     allocate(npk(iml,jml,nl+1),stat=STATUS) ! work space
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
 
     eps = MAPL_RVAP / MAPL_RGAS - 1.0
 
@@ -1457,7 +1457,7 @@ contains
 
 !   All Done
 !   --------
-    RETURN_(ESMF_SUCCESS)
+    _RETURN(ESMF_SUCCESS)
 
  end subroutine Airdens
 

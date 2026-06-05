@@ -7,9 +7,9 @@
 #define MAX(x,y) AMAX(real(x),real(y))
 #endif
 
-#define DEALOC_(A) if(associated(A)) then; A=0; call MAPL_DeAllocNodeArray(A,rc=STATUS); if(STATUS==MAPL_NoShm) deallocate(A, stat=STATUS); VERIFY_(STATUS); NULLIFY(A); endif
+#define DEALOC_(A) if(associated(A)) then; A=0; call MAPL_DeAllocNodeArray(A,rc=STATUS); if(STATUS==MAPL_NoShm) deallocate(A, stat=STATUS); _VERIFY(STATUS); NULLIFY(A); endif
 
-#define DEALOC2_(A) if(associated(A)) then; deallocate(A, stat=STATUS); VERIFY_(STATUS); NULLIFY(A); endif
+#define DEALOC2_(A) if(associated(A)) then; deallocate(A, stat=STATUS); _VERIFY(STATUS); NULLIFY(A); endif
 
 !-------------------------------------------------------------------------
 !         NASA/GSFC, Data Assimilation Office, Code 910.3, GEOS/DAS      !
@@ -1064,24 +1064,24 @@ END SUBROUTINE Chem_UtilExtractIntegers
 !      ---------------------------------------
        if ( .not. associated(lons) ) then
             allocate(lons(IM_WORLD), stat=STATUS)
-            VERIFY_(status)
+            _VERIFY(status)
        else
             if(size(LONS,1) /= IM_WORLD) STATUS = 1
-            VERIFY_(status)
+            _VERIFY(status)
        end if
        if ( .not. associated(lats) ) then
             allocate(lats(JM_WORLD), stat=STATUS)
-            VERIFY_(status)
+            _VERIFY(status)
        else
             if(size(LATS,1) /= JM_WORLD) STATUS = 1
-            VERIFY_(status)
+            _VERIFY(status)
        end if
 
 !      Local work space
 !      ----------------
        allocate(LONS2d(IM_WORLD,JM_WORLD), LATS2d(IM_WORLD,JM_WORLD), &
                 STAT=status)             
-       VERIFY_(status)
+       _VERIFY(status)
        LONS2d=0
        LATS2d=0
 
@@ -1093,7 +1093,7 @@ END SUBROUTINE Chem_UtilExtractIntegers
              farrayPtr=R8D2, rc=status)
 
        allocate(LONSLOCAL(size(R8D2,1),size(R8D2,2)), STAT=status)             
-       VERIFY_(status)
+       _VERIFY(status)
 
        LONSLOCAL = R8D2*(180/MAPL_PI)
 
@@ -1107,12 +1107,12 @@ END SUBROUTINE Chem_UtilExtractIntegers
              farrayPtr=R8D2, rc=status)
 
        allocate(LATSLOCAL(size(R8D2,1),size(R8D2,2)), STAT=status)             
-       VERIFY_(status)
+       _VERIFY(status)
 
        LATSlocal = R8D2*(180/MAPL_PI)
 
        call ArrayGather(LATSLOCAL, LATS2D, GRID, RC=STATUS)
-       VERIFY_(STATUS)
+       _VERIFY(STATUS)
 
 !      Return 1D arrays
 !      ----------------

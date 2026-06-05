@@ -1202,21 +1202,21 @@ CONTAINS
 !   Anthropogenic emissions
 !   -----------------------
     call MAPL_GetPointer(impChem,ptr2d,"SU_ANTHROL1"//trim(iName),rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     so2anthro_l1_src = ptr2d
 
     call MAPL_GetPointer(impChem,ptr2d,"SU_ANTHROL2"//trim(iName),rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     so2anthro_l2_src = ptr2d
 
 !   Ship based emissions of SO2 and SO4
 !   -----------------------------------
     call MAPL_GetPointer(impChem,ptr2d,"SU_SHIPSO2"//trim(iName),rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     so2ship_src = ptr2d
 
     call MAPL_GetPointer(impChem,ptr2d,"SU_SHIPSO4"//trim(iName),rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     so4ship_src = ptr2d
 
 ! Update emissions/production if necessary (daily)
@@ -1238,27 +1238,27 @@ CONTAINS
 !   DMS concentrations (from climatology)
 !   -------------------------------------
     call MAPL_GetPointer(impChem,ptr2d,"SU_DMSO"//trim(iName),rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     dmso_conc = ptr2d
 
 !   Aircraft fuel source
 !   --------------------
     call MAPL_GetPointer(impChem,ptr3d,"SU_AIRCRAFT"//trim(iName),rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     aircraft_fuel_src = ptr3d
 
 !   Aviation-LTO emissions
 !   ----------------------
     call MAPL_GetPointer(impChem,ptr2d,'SU_AVIATION_LTO'//iNAME,rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     aviation_lto_src = ptr2d
 
     call MAPL_GetPointer(impChem,ptr2d,'SU_AVIATION_CDS'//iNAME,rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     aviation_cds_src = ptr2d
 
     call MAPL_GetPointer(impChem,ptr2d,'SU_AVIATION_CRS'//iNAME,rc=status)
-    VERIFY_(STATUS)
+    _VERIFY(STATUS)
     aviation_crs_src = ptr2d
 
 
@@ -1413,9 +1413,9 @@ CONTAINS
 !           Handle SO2
 !           ----------
             call MAPL_GetPointer(impChem,ptr2d,'SU_NEI_SRC1',rc=status)
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
             call MAPL_GetPointer(impChem,ptr2d,'SU_NEI_SRC2',rc=status)
-            VERIFY_(STATUS)
+            _VERIFY(STATUS)
 
             WHERE ( (lons.ge.nei_lon(1)) .AND. &
                     (lons.le.nei_lon(2)) .AND. &
