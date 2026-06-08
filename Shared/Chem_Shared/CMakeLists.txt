@@ -23,15 +23,11 @@ set (srcs
   Lightning_mod.F90
   lightning_toolbox_mod.F90
   SZA_from_MAPL_mod.F90
+  mod_diag.F90
+  diaglist.F90
+  Chem_UtilMod.F90
+  Chem_StateMod.F90
   )
-
-if (DOING_GEOS5)
-  list (APPEND srcs mod_diag.F90 diaglist.F90)
-  list (APPEND srcs Chem_UtilMod.F90 Chem_StateMod.F90)
-else ()
-  list (APPEND srcs Chem_UtilMod.F90)
-  list (APPEND srcs Chem_UtilMod_geos4.F90)
-endif ()
 
 esma_add_library(${this}
    SRCS ${srcs}
