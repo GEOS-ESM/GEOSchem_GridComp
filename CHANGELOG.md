@@ -6,8 +6,11 @@ after October 2021. For earlier changes, consult file ChangeLog.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased - working on a CF release]
 ### Added
+
+- Added CF-specific resource files to the set copied from geos-chem into etc/ during build.
+
 ### Removed
 ### Changed
 ### Fixed
