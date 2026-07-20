@@ -1,0 +1,33 @@
+Collections:
+  GAAS_d5294_geosit_jan18.aod_a.sfc.%y4%m2%d2_%h2%n2z.nc4:
+    template: /home/dao_ops/d5294_geosit_jan18/run/.../archive/chem/Y%y4/M%m2/d5294_geosit_jan18.aod_a.sfc.%y4%m2%d2_%h2%n2z.nc4
+    freq: PT3H
+  GAAS_d5294_geosit_jan18.aod_f.sfc.%y4%m2%d2_%h2%n2z.nc4:
+    template: /home/dao_ops/d5294_geosit_jan18/run/.../archive/chem/Y%y4/M%m2/d5294_geosit_jan18.aod_f.sfc.%y4%m2%d2_%h2%n2z.nc4
+    freq: PT3H
+  GAAS_d5294_geosit_jan18.aod_k.sfc.%y4%m2%d2_%h2%n2z.nc4:
+    template: /home/dao_ops/d5294_geosit_jan18/run/.../archive/chem/Y%y4/M%m2/d5294_geosit_jan18.aod_k.sfc.%y4%m2%d2_%h2%n2z.nc4
+    freq: PT3H
+
+Samplings:
+  GAAS_sample_0:
+    update_offset: PT>>>DT<<<S
+    exact: True
+
+Exports:
+  aod_a:
+    collection: GAAS_d5294_geosit_jan18.aod_a.sfc.%y4%m2%d2_%h2%n2z.nc4
+    sample: GAAS_sample_0
+    variable: AOD
+    fail_on_missing_file: false
+  aod_f:
+    collection: GAAS_d5294_geosit_jan18.aod_f.sfc.%y4%m2%d2_%h2%n2z.nc4
+    sample: GAAS_sample_0
+    variable: AOD
+    fail_on_missing_file: false
+  aod_k:
+    collection: GAAS_d5294_geosit_jan18.aod_k.sfc.%y4%m2%d2_%h2%n2z.nc4
+    sample: GAAS_sample_0
+    variable: AOD
+    fail_on_missing_file: false
+
