@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added CF-specific resource files to the set copied from geos-chem into etc/ during build.
+- Moved those same CF-specific resource files to reside under GEOSCHEMchem_GridComp/run/.
 
 ### Removed
 ### Changed
