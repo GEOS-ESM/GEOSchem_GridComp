@@ -1,0 +1,100 @@
+Collections:
+  MiCASA-v1-3hrly: # "days since 1980-01-01", points to 0z of a given day
+#   template: /css/gmao/geos_carb/share/MiCASA/v1/netcdf/3hrly/%y4/%m2/MiCASA_v1_flux_x3600_y1800_3hrly_%y4%m2%d2.nc4
+    template: /discover/nobackup/projects/gmao/geos_carb/share/MiCASA/v1/netcdf/3hrly/%y4/%m2/MiCASA_v1_flux_x3600_y1800_3hrly_%y4%m2%d2.nc4
+    valid_range: "2001-01-01/2024-12-31"
+  MiCASA-v1-daily: # "days since 1980-01-01", points to 0z of a given day
+#   template: /css/gmao/geos_carb/share/MiCASA/v1/netcdf/daily/%y4/%m2/MiCASA_v1_flux_x3600_y1800_daily_%y4%m2%d2.nc4
+    template: /discover/nobackup/projects/gmao/geos_carb/share/MiCASA/v1/netcdf/daily/%y4/%m2/MiCASA_v1_flux_x3600_y1800_daily_%y4%m2%d2.nc4
+    valid_range: "2001-01-01/2024-12-31"
+  MiCASA-vNRT-3hrly: # "days since 1980-01-01", points to 0z of a given day
+#   template: /css/gmao/geos_carb/share/MiCASA/vNRT/netcdf/3hrly/%y4/%m2/MiCASA_vNRT_flux_x3600_y1800_3hrly_%y4%m2%d2.nc4
+    template: /discover/nobackup/projects/gmao/geos_carb/share/MiCASA/vNRT/netcdf/3hrly/%y4/%m2/MiCASA_vNRT_flux_x3600_y1800_3hrly_%y4%m2%d2.nc4
+    valid_range: "2024-10-01/3000-12-31"
+  MiCASA-vNRT-daily: # "days since 1980-01-01", points to 0z of a given day
+#   template: /css/gmao/geos_carb/share/MiCASA/vNRT/netcdf/daily/%y4/%m2/MiCASA_vNRT_flux_x3600_y1800_daily_%y4%m2%d2.nc4
+    template: /discover/nobackup/projects/gmao/geos_carb/share/MiCASA/vNRT/netcdf/daily/%y4/%m2/MiCASA_vNRT_flux_x3600_y1800_daily_%y4%m2%d2.nc4
+    valid_range: "2024-10-01/3000-12-31"
+  ODIAC-v2023: # "days since 1980-01-01", points to 0z on the 1st of each month
+#   template: /css/gmao/geos_carb/share/ODIAC/v2023/converted/odiac2023_x3600_y1800_monthly_%y4.nc4
+    template: /discover/nobackup/projects/gmao/geos_carb/share/ExtData/v2024/CO2/ODIAC/odiac2023_x3600_y1800_monthly_%y4.nc4
+    valid_range: "2000-01-01/2022-12-01"
+  AOML-monthly: # "days since 1980-01-01", points to 0z on the 1st of each month
+    template: /discover/nobackup/projects/gmao/geos_carb/share/ExtData/v2024/CO2/AOML/aoml23_v1_x360_y180_monthly_%y4.nc4
+  TRANSCOM.region_mask.CO2:
+    template: /discover/nobackup/projects/gmao/geos_carb/share/ExtData/v2024/transcom.region_mask.x576_y361.2006.nc
+
+Samplings:
+  CO2_sample_12z:
+    time_interpolation: False
+    update_frequency: PT24H
+    update_offset: PT12H
+    update_reference_time: '0'
+  CO2_sample_0z:
+    time_interpolation: False
+    update_frequency: PT24H
+    update_reference_time: '0'
+  CO2_persist_2022: # for treating 2022 emissions as climatology in successive years
+    time_interpolation: False
+    extrapolation: clim
+    source_time: "2022-01-01T00:00/2022-12-01T00:00"
+
+Exports:
+  CO2_CMS_NEP:
+    - starting: "2001-01-01T00:00"
+      collection: MiCASA-v1-3hrly
+      regrid: CONSERVE
+      variable: NEE
+      sample: {time_interpolation: False}
+    - starting: "2025-01-01T00:00"
+      collection: MiCASA-vNRT-3hrly
+      regrid: CONSERVE
+      variable: NEE
+      sample: {time_interpolation: False}
+  CO2_MiCASA_FIRE:
+    - starting: "2001-01-01T00:00"
+      collection: MiCASA-v1-daily
+      regrid: CONSERVE
+      sample: CO2_sample_0z
+      variable: FIRE
+    - starting: "2025-01-01T00:00"
+      collection: MiCASA-vNRT-daily
+      regrid: CONSERVE
+      sample: CO2_sample_0z
+      variable: FIRE
+  CO2_MiCASA_FUEL:
+    - starting: "2001-01-01T00:00"
+      collection: MiCASA-v1-daily
+      regrid: CONSERVE
+      sample: CO2_sample_0z
+      variable: FUEL
+    - starting: "2025-01-01T00:00"
+      collection: MiCASA-vNRT-daily
+      regrid: CONSERVE
+      sample: CO2_sample_0z
+      variable: FUEL
+  CO2_CMS_FF:
+    - starting: "2000-01-01T00:00"
+      collection: ODIAC-v2023
+      regrid: CONSERVE
+      sample: {time_interpolation: False}
+      variable: fossil
+    - starting: "2022-12-01T00:00"
+      collection: ODIAC-v2023
+      regrid: CONSERVE
+      sample: CO2_persist_2022
+      variable: fossil
+  CO2_CMS_OCN:
+    collection: AOML-monthly
+    regrid: CONSERVE
+    sample: {time_interpolation: False}
+    variable: exchange
+  CO2_regionMask:
+    collection: TRANSCOM.region_mask.CO2
+    regrid: VOTE
+    sample: {extrapolation: persist_closest}
+    variable: REGION_MASK
+
+Derived:
+  CO2_CMS_BIOMASS:
+    function: "CO2_MiCASA_FIRE+CO2_MiCASA_FUEL"

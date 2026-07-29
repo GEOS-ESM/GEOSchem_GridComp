@@ -534,7 +534,7 @@ contains
 ! -------------------------------
   IF(myState%enable_GOCART) then
      CALL MAPL_AddConnectivity ( GC, &
-          SHORT_NAME  = (/'AIRDENS     ','AIRDENS_DRYP', 'DELP        ', 'CN_PRCP     ', 'NCN_PRCP    '/), &
+          SHORT_NAME  = (/'AIRDENS     ','AIRDENS_DRYP', 'DELP        ', 'CN_PRCP     ', 'NCN_PRCP    ', 'QTOT        '/), &
           DST_ID = GOCART, SRC_ID = CHEMENV, __RC__  )
   ENDIF
 
@@ -920,8 +920,17 @@ contains
 ! -----------------------------
   IF(myState%enable_GEOSCHEM .AND. myState%enable_GOCART .AND. chemReg%doing_CO2) then
    CALL MAPL_AddConnectivity ( GC, &
-       SRC_NAME  = (/"GOCART::CO2"/), &
+       SRC_NAME  = (/"CO2BIN001"/), &
        DST_NAME  = (/"GOCART_CO2"/), &
+       DST_ID=GEOSCHEM, SRC_ID=GOCART, __RC__  )
+  ENDIF
+
+! GEOS-Chem import of CH4
+! -----------------------------
+  IF(myState%enable_GEOSCHEM .AND. myState%enable_GOCART .AND. chemReg%doing_CH4) then
+   CALL MAPL_AddConnectivity ( GC, &
+       SRC_NAME  = (/"CH4"/), &
+       DST_NAME  = (/"GOCART_CH4"/), &
        DST_ID=GEOSCHEM, SRC_ID=GOCART, __RC__  )
   ENDIF
 

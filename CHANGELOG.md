@@ -6,11 +6,21 @@ after October 2021. For earlier changes, consult file ChangeLog.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased - Updates from CFv2]
 ### Changed
+- Add verbose option to Chem_Group
+- Add connectivity between GOCART CH4 and GEOS-Chem
+- Add QTOT and QCTOT imports needed by GOCART CH4
+- Updated GCC_Registry.rc
+- Add CH4 and CO2 config files to run folder
+- Add connectivity for QTOT
+- Edit CMakeLists to copy all GEOS-Chem rc and yaml files to run folder
+
 ### Removed
 ### Fixed
 ### Deprecated
+### ToDo
+- Changes to GAAS
 
 ## [2.0.0] - 2026-05-28
 
