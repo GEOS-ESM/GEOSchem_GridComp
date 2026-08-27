@@ -145,6 +145,29 @@ contains
 ! !IMPORT STATE:
 
     call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME ='QILS',                                            &
+         LONG_NAME  ='mass_fraction_of_large_scale_cloud_ice_water',    &
+         UNITS      ='kg kg-1',                                         &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
+
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME ='QICN',                                            &
+         LONG_NAME  ='mass_fraction_of_convective_cloud_ice_water',     &
+         UNITS      ='kg kg-1',                                         &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
+
+
+    call MAPL_AddImportSpec(GC,                                         &
+         SHORT_NAME ='CLCN',                                            &
+         LONG_NAME  ='convective_cloud_volume_fraction',                &
+         UNITS      ='1',                                               &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
+
+
+    call MAPL_AddImportSpec(GC,                                         &
          SHORT_NAME = 'PLE',                                            &
          LONG_NAME  = 'air_pressure',                                   &
          UNITS      = 'Pa',                                             &
@@ -411,9 +434,155 @@ contains
          VLOCATION = MAPL_VLocationNone,                RC=STATUS  )
     VERIFY_(STATUS)
 
+!!! for RI and RL
+    call MAPL_AddImportSpec ( gc,                                  &
+         SHORT_NAME = 'AK',                                        &
+         LONG_NAME  = 'hybrid_sigma_pressure_a',                   &
+         UNITS      = '1',                                         &
+         DIMS       = MAPL_DimsVertOnly,                           &
+         RESTART    = MAPL_RestartSkip,                            &
+         VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+     VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec ( gc,                                  &
+         SHORT_NAME = 'BK',                                        &
+         LONG_NAME  = 'hybrid_sigma_pressure_b',                   &
+         UNITS      = '1',                                         &
+         DIMS       = MAPL_DimsVertOnly,                           &
+         RESTART    = MAPL_RestartSkip,                            &
+         VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+     VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                             &
+         SHORT_NAME = 'U',                                         &
+         LONG_NAME  = 'eastward_wind',                             & 
+         UNITS      = 'm s-1',                                     &
+         DIMS       = MAPL_DimsHorzVert,                           &
+         VLOCATION  = MAPL_VLocationCenter,                        &
+         RESTART    = MAPL_RestartSkip,                            &
+         RC=STATUS  ) 
+    VERIFY_(STATUS) 
+
 
 
 ! !EXPORT STATE:
+
+!!! for RI and RL
+    call MAPL_AddExportSpec(GC,                               &          
+         SHORT_NAME ='RL',                                          &
+         LONG_NAME ='liquid_cloud_particle_effective_radius',      &
+         UNITS     ='m',                                           &
+         DIMS      = MAPL_DimsHorzVert,                            &         
+         VLOCATION = MAPL_VLocationCenter,              RC=STATUS  )
+    VERIFY_(STATUS) 
+    
+    call MAPL_AddExportSpec(GC,                               &
+         SHORT_NAME = 'RI',                                          &
+         LONG_NAME = 'ice_phase_cloud_particle_effective_radius',   &
+         UNITS     = 'm',                                           &      
+         DIMS      = MAPL_DimsHorzVert,                            &
+         VLOCATION = MAPL_VLocationCenter,              RC=STATUS  )
+    VERIFY_(STATUS)
+
+
+!    LIGHTNING diag 7
+!    ------------------------------
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'PFI_CN_COLMAX',                                  &
+         LONG_NAME  = 'max_conv_ice_flux',                              &
+         UNITS      = 'kg m-2 s-1',                                     &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+!    LIGHTNING diag 8
+!    ------------------------------
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'CONV_CLD_HT',                                    &
+         LONG_NAME  = 'convective_cloud_height',                        &
+         UNITS      = 'km',                                             &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+!    LIGHTNING diag 9
+!    ------------------------------
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'T_LAPSE_RATE',                                   &
+         LONG_NAME  = 'temperature_lapse_rate',                         &
+         UNITS      = 'K',                                              &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+!    LIGHTNING diag 9 simpler
+!    ------------------------------
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'T_LAPSE_RATE_v0',                                &
+         LONG_NAME  = 'temperature_lapse_rate_using_nominal_levs',      &
+         UNITS      = 'K',                                              &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+!    LIGHTNING diag 10
+!    ------------------------------
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'CLCN_COLMAX',                                    &
+         LONG_NAME  = 'max_convective_cloud_area_fraction',             &
+         UNITS      = '1',                                              &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+!    LIGHTNING diag 11
+!    ------------------------------
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'MSE_RATIO',                                      &
+         LONG_NAME  = 'moist_static_energy_ratio',                      &
+         UNITS      = '1',                                              &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+!    LIGHTNING diag 11 simpler
+!    ------------------------------
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'MSE_RATIO_v0',                                   &
+         LONG_NAME  = 'moist_static_energy_ratio_using_nominal_levs',   &
+         UNITS      = '1',                                              &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+!    LIGHTNING diag 12
+!    ------------------------------
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'CRH',                                            &
+         LONG_NAME  = 'column_integrated_relative_humidity',            &
+         UNITS      = '1',                                              &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+!    LIGHTNING diag 12 simpler
+!    ------------------------------
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'CRH_v0',                                         &
+         LONG_NAME  = 'column_integrated_relative_humidity_using_nominal_levs',   &
+         UNITS      = '1',                                              &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+!    LIGHTNING diag 13
+!    ------------------------------
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'LCL',                                            &
+         LONG_NAME  = 'lifting_condensation_level',                     &
+         UNITS      = 'm',                                              &
+         DIMS       = MAPL_DimsHorzOnly,                                &
+         VLOCATION  = MAPL_VLocationNone,                        __RC__ )
+
+!    LIGHTNING related - IWC
+!    ------------------------------
+    call MAPL_AddExportSpec(GC,                                         &
+         SHORT_NAME = 'IWC',                                            &
+         LONG_NAME  = 'ice_water_content',                              &
+         UNITS      = 'kg m-3',                                         &
+         DIMS       = MAPL_DimsHorzVert,                                &
+         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
 !    AIRDENS: Provided for Children
 !    ------------------------------
@@ -834,6 +1003,7 @@ contains
   real, pointer, dimension(:,:)   :: RATIO_LOCAL => null()
   real, pointer, dimension(:,:)   ::  MIDLAT_ADJ => null()
 
+  real, pointer, dimension(:,:,:) ::        CLCN => null()
   real, pointer, dimension(:,:,:) ::           T => null()
   real, pointer, dimension(:,:,:) ::          TH => null()
   real, pointer, dimension(:,:,:) ::           Q => null()
@@ -856,6 +1026,9 @@ contains
   real, pointer, dimension(:,:,:) ::      PFI_CN => null()
   real, pointer, dimension(:,:,:) ::      CNV_QC => null()
 
+  real, pointer, dimension(:,:,:) ::        QILS => null()
+  real, pointer, dimension(:,:,:) ::        QICN => null()
+
   real, pointer, dimension(:,:)   ::       CAPE_PRECON => null()
   real, pointer, dimension(:,:)   ::       INHB_PRECON => null()
   real, pointer, dimension(:,:,:) ::      BYNCY_PRECON => null()
@@ -867,9 +1040,64 @@ contains
   real,   pointer, dimension(:,:)    ::           CAPE => null()
   real*4, pointer, dimension(:,:,:)  ::  LIGHT_NO_PROD => null()
 
+  real,   pointer, dimension(:,:)    ::  PFI_CN_COLMAX => null()
+  real,   pointer, dimension(:,:)    ::    CONV_CLD_HT => null()
+  real,   pointer, dimension(:,:)    ::   T_LAPSE_RATE => null()
+  real,   pointer, dimension(:,:)    ::   T_LAPSE_RATE_v0 => null()
+  real,   pointer, dimension(:,:)    ::    CLCN_COLMAX => null()
+  real,   pointer, dimension(:,:)    ::      MSE_RATIO => null()
+  real,   pointer, dimension(:,:)    ::      MSE_RATIO_v0 => null()
+  real,   pointer, dimension(:,:)    ::            CRH => null()
+  real,   pointer, dimension(:,:)    ::            CRH_v0 => null()
+  real,   pointer, dimension(:,:)    ::            LCL => null()
+  real,   pointer, dimension(:,:,:)  ::            IWC => null()
+  real,   pointer, dimension(:,:,:)  ::            PLO => null()
+  real,   pointer, dimension(:,:,:)  ::           TEMP => null()
+
+!!! for RI and RL
+! import
+  real,   pointer, dimension(:)  ::    AK => null()
+  real,   pointer, dimension(:)  ::    BK => null()
+  real,   pointer, dimension(:,:,:)  :: U => null()
+  real                            :: PL
+  real                            :: TE
+! internal
+  real,   pointer, dimension(:)  ::    PREF => null()
+  integer                        ::    edge_lo, edge_hi
+  integer                        ::    levs925
+  real                           ::    tempor
+  real                           ::    RAD_RI, RAD_RL
+! export
+  real,   pointer, dimension(:,:,:)  :: RI => null()
+  real,   pointer, dimension(:,:,:)  :: RL => null()
+
 !=============================================================================
  
-    integer                            :: k, k0
+    integer                            :: i, j, k, k0, imax, jmax, emin, emax  ! k min and max for edge array
+    integer                            ::                                cmax  ! c max is index of layer nearest the surface
+    integer                            :: kfound, e700, e500, e300   ! e700 is edge index where pressure is less than 700 hPa
+    integer                            ::         c700, c500, c300   ! layer indices
+    integer                            :: cnow                       ! layer indices
+    real                               :: ZL_500   ! [m]   geopotential height at 500 hPa
+    real                               :: PL_500   ! [Pa]  pressure at 500 hPa
+    real                               :: TC_500   ! temperature Celsius at 500 hPa
+    real                               :: ZL_now   ! [m]   height
+    real                               :: PL_now   ! [Pa]  pressure
+    real                               :: TC_now   ! temperature Celsius
+    real                               :: mse_surf      ! moist static energy at surface
+    real                               :: mse_sat500    ! saturation moist static energy at 500 hPa
+    real                               :: Qsat          ! saturation counterpart of specific humidity
+    real                               :: iwv           ! integrated water vapor (scaled by g)
+    real                               :: iwv_sat       ! saturated counterpart of integrated water vapor
+    real                               :: delta_p       ! change in pressure
+    real                               :: RHL          ! relative humidity wrt liquid
+    real                               :: Tadj         ! adjusted temperature
+    real                               :: bracket      ! bracket term in LCL calculation
+    real                               :: brace        ! brace term in LCL calculation
+    real                               :: c_pm         ! Air parcel's specific heat capacity at constant pressure
+
+    real, parameter :: r_air = 3.47d-3 !m3 Pa kg-1K-1
+
 
 ! Begin... 
 
@@ -925,6 +1153,8 @@ contains
 !   ------------------
     call MAPL_GetPointer ( IMPORT,  PLE,  'PLE', __RC__ )
 
+!   IF(MAPL_AM_I_ROOT()) PRINT*,'PLE vert bounds in ChemEnv: ', lbound(PLE,3), ubound(PLE,3)
+
 !   Get the exports...
 !   ------------------
     call MAPL_GetPointer ( EXPORT, delp,   'DELP',   ALLOC=.TRUE.,     __RC__ )
@@ -950,6 +1180,19 @@ contains
     call MAPL_GetPointer ( EXPORT, CAPE,           'CAPE',            ALLOC=.TRUE., __RC__ )
     call MAPL_GetPointer ( EXPORT, LIGHT_NO_PROD,  'LIGHT_NO_PROD',                 __RC__ )     ! If not requested, do not compute
 
+    ! for LIGHTNING DIAGs
+    call MAPL_GetPointer ( EXPORT, PFI_CN_COLMAX,  'PFI_CN_COLMAX',   ALLOC=.TRUE., __RC__ )
+    call MAPL_GetPointer ( EXPORT, CONV_CLD_HT,    'CONV_CLD_HT',     ALLOC=.TRUE., __RC__ )
+    call MAPL_GetPointer ( EXPORT, T_LAPSE_RATE,   'T_LAPSE_RATE',    ALLOC=.TRUE., __RC__ )
+    call MAPL_GetPointer ( EXPORT, T_LAPSE_RATE_v0,'T_LAPSE_RATE_v0', ALLOC=.TRUE., __RC__ )
+    call MAPL_GetPointer ( EXPORT, CLCN_COLMAX,    'CLCN_COLMAX',     ALLOC=.TRUE., __RC__ )
+    call MAPL_GetPointer ( EXPORT, MSE_RATIO,      'MSE_RATIO',       ALLOC=.TRUE., __RC__ )
+    call MAPL_GetPointer ( EXPORT, MSE_RATIO_v0,   'MSE_RATIO_v0',    ALLOC=.TRUE., __RC__ )
+    call MAPL_GetPointer ( EXPORT, CRH,            'CRH',             ALLOC=.TRUE., __RC__ )
+    call MAPL_GetPointer ( EXPORT, CRH_v0,         'CRH_v0',          ALLOC=.TRUE., __RC__ )
+    call MAPL_GetPointer ( EXPORT, LCL,            'LCL',             ALLOC=.TRUE., __RC__ )
+    call MAPL_GetPointer ( EXPORT, IWC,            'IWC',             ALLOC=.TRUE., __RC__ )
+
     ! for FIT flashrate option
     if (flash_source_enum == FLASH_SOURCE_FIT) then
       call MAPL_GetPointer ( IMPORT, mcor,        'MCOR',         __RC__ )
@@ -962,6 +1205,8 @@ contains
     call MAPL_GetPointer ( IMPORT, CN_PRCP,     'CN_PRCP',  __RC__ )
     call MAPL_GetPointer ( IMPORT, PHIS,        'PHIS',     __RC__ )
     call MAPL_GetPointer ( IMPORT, PFI_CN,      'PFI_CN',   __RC__ )
+
+    call MAPL_GetPointer ( IMPORT, CLCN,           'CLCN',        __RC__ )
 
     call MAPL_GetPointer ( IMPORT, T,           'T',        __RC__ )
     call MAPL_GetPointer ( IMPORT, TH,          'TH',       __RC__ )
@@ -981,6 +1226,449 @@ contains
 
     call MAPL_GetPointer ( IMPORT, ZLFC, 'ZLFC',   __RC__ )
     call MAPL_GetPointer ( IMPORT, ZLCL, 'ZLCL',   __RC__ )
+
+    call MAPL_GetPointer ( IMPORT, QILS, 'QILS',   __RC__ )
+    call MAPL_GetPointer ( IMPORT, QICN, 'QICN',   __RC__ )
+
+    PFI_CN_COLMAX = MAXVAL(PFI_CN,3)
+      CLCN_COLMAX = MAXVAL(CLCN,3)
+
+    imax =   size(CNV_MFC,1)
+    jmax =   size(CNV_MFC,2)
+    emin = lbound(CNV_MFC,3)  ! edge index
+    emax = ubound(CNV_MFC,3)  ! edge index
+    cmax = ubound(T,3)        ! center index
+
+!
+!   CONV_CLD_HT
+!
+!   do i = 1, imax
+!     do j = 1, jmax
+
+!       ! in this section, k indices are for EDGES
+!       kfound = emax+2
+!       do k = emax, emin, -1
+!         if ( CNV_MFC(i,j,k) > 0.0 ) then
+!           kfound = k+1
+!           exit
+!         end if
+!       end do
+
+!       if (     kfound .EQ. emax+2) then
+!         CONV_CLD_HT(i,j)= -1.0          ! CNV_MFC is zero in the whole column
+!       else if (kfound .EQ. emax+1) then
+!         CONV_CLD_HT(i,j)= -2.0          ! CNV_MFC is positive at the surface edge (should never be!)
+!       else 
+!         CONV_CLD_HT(i,j)= (ZLE(i,j,kfound) - ZLE(i,j,emax))/ 1000.0   ! convert to km
+!       end if 
+
+!     end do
+!   end do
+
+    do i = 1, imax
+      do j = 1, jmax
+
+        ! in this section, k indices are for EDGES
+        kfound = emin-2
+        do k = emin, emax
+          if ( CNV_MFC(i,j,k) > 0.0 ) then
+            kfound = k-1
+            exit
+          end if
+        end do
+
+        if (     kfound .EQ. emin-2) then
+          CONV_CLD_HT(i,j)= MAPL_UNDEF      ! CNV_MFC is zero in the whole column
+        else if (kfound .EQ. emin-1) then
+          CONV_CLD_HT(i,j)= -99.0           ! CNV_MFC is positive at the lid (should never be!)
+        else 
+          CONV_CLD_HT(i,j)= (ZLE(i,j,kfound) - ZLE(i,j,emax))/ 1000.0   ! convert to km
+        end if 
+
+      end do
+    end do
+
+!
+!   T_LAPSE_RATE
+!
+    do i = 1, imax
+      do j = 1, jmax
+
+        ! k index for EDGE values
+        do k = emax, emin, -1
+          if ( PLE(i,j,k) < 70000 ) then
+            e700 = k     !  upper edge of grid-box that includes 700 hPa
+            exit
+          end if
+        end do
+        do k = e700, emin, -1
+          if ( PLE(i,j,k) < 50000 ) then
+            e500 = k     !  upper edge of grid-box that includes 500 hPa
+            exit
+          end if
+        end do
+
+        if ( e700 .EQ. emax ) then
+          T_LAPSE_RATE(i,j) = MAPL_UNDEF
+        else
+          c700 = (cmax+1) - (emax-e700)    !  center index
+          c500 = (cmax+1) - (emax-e500)    !  center index
+          T_LAPSE_RATE(i,j) = T(i,j,c700) - T(i,j,c500)
+        end if
+
+      end do
+    end do
+
+!
+!   T_LAPSE_RATE_v0
+!
+    do i = 1, imax
+      do j = 1, jmax
+
+        c700 = 56    ! nominal level
+        c500 = 50    ! nominal level
+        T_LAPSE_RATE_v0(i,j) = T(i,j,c700) - T(i,j,c500)
+
+      end do
+    end do
+
+!
+!   MSE_RATIO
+!
+    do i = 1, imax
+      do j = 1, jmax
+
+        mse_surf   = MAPL_CPDRY * T(i,j,cmax) + 2.25e+6 * Q(i,j,cmax) + MAPL_GRAV * ZLE(i,j,emax)
+
+        ! k index for EDGE values
+        do k = emax, emin, -1
+          if ( PLE(i,j,k) < 50000 ) then
+            e500 = k     !  index of upper edge of grid-box that includes 500 hPa
+            exit
+          end if
+        end do
+
+        if ( e500 .EQ. emax ) then
+          MSE_RATIO(i,j) = MAPL_UNDEF
+        else
+
+          c500 = (cmax+1) - (emax-e500)    !  center index
+
+          ZL_500 = (ZLE(i,j,e500)+ZLE(i,j,e500+1))/2.0  ! ZL [m]  at midpoint of gridbox that includes 500 hPa
+          PL_500 = (PLE(i,j,e500)+PLE(i,j,e500+1))/2.0  ! PL [Pa] at midpoint of gridbox that includes 500 hPa
+          TC_500 = T(i,j,c500)-273.15                   ! T  [Celsius]  at midpoint of gridbox that includes 500 hPa
+
+          ! 611 Pa is the saturation vapor pressure at 0 C
+          mse_sat500 = MAPL_CPDRY * T(i,j,c500) + 2.25e+6 * 0.622 * (611*exp((17.67*TC_500)/(TC_500+243.5)))/PL_500 + MAPL_GRAV * ZL_500
+
+          MSE_RATIO(i,j) = mse_surf / mse_sat500
+
+        end if
+
+      end do
+    end do
+
+!
+!   MSE_RATIO_v0
+!
+    do i = 1, imax
+      do j = 1, jmax
+
+        mse_surf   = MAPL_CPDRY * T(i,j,cmax) + 2.25e+6 * Q(i,j,cmax) + MAPL_GRAV * ZLE(i,j,emax)
+
+        c500 = 50                   ! center index  (nominal level 50)
+
+        ! is the first edge index 1 or 0 ?
+        if ( emin .EQ. 1 ) then
+          e500 = c500               ! index of upper edge of grid-box
+        else
+          e500 = c500 - 1           ! index of upper edge of grid-box
+        end if
+
+        ZL_500 = (ZLE(i,j,e500)+ZLE(i,j,e500+1))/2.0  ! ZL [m]  at midpoint of gridbox that includes 500 hPa
+        PL_500 = (PLE(i,j,e500)+PLE(i,j,e500+1))/2.0  ! PL [Pa] at midpoint of gridbox that includes 500 hPa
+        TC_500 = T(i,j,c500)-273.15                   ! T  [Celsius]  at midpoint of gridbox that includes 500 hPa
+
+        ! 611 Pa is the saturation vapor pressure at 0 C
+        mse_sat500 = MAPL_CPDRY * T(i,j,c500) + 2.25e+6 * 0.622 * (611*exp((17.67*TC_500)/(TC_500+243.5)))/PL_500 + MAPL_GRAV * ZL_500
+
+        MSE_RATIO_v0(i,j) = mse_surf / mse_sat500
+
+      end do
+    end do
+
+!
+!   CRH (column integrated relative humidity)
+!
+    do i = 1, imax
+      do j = 1, jmax
+
+        ! k index for EDGE values
+        do k = emax, emin, -1
+          if ( PLE(i,j,k) < 30000 ) then
+            e300 = k     !  upper edge of grid-box that includes 300 hPa
+            exit
+          end if
+        end do
+
+        if ( e300 .EQ. emax ) then
+          CRH(i,j) = MAPL_UNDEF
+        else
+
+          iwv     = 0.0
+          iwv_sat = 0.0
+
+          ! k index for EDGE values  (top edge of each box)
+          do k = emax-1, e300, -1
+
+            delta_p = PLE(i,j,k+1) - PLE(i,j,k)   ! Pa
+            cnow = (cmax+1) - (emax-k)    !  center index
+            iwv = iwv + Q(i,j,cnow)/delta_p
+
+            PL_now = (PLE(i,j,k)+PLE(i,j,k+1))/2.0  ! PL at center  [Pa]
+            TC_now = T(i,j,cnow)-273.15             ! T  at center  [Celsius]
+            ! 611 Pa is the saturation vapor pressure at 0 C
+            Qsat = 0.622 * (611*exp((17.67*TC_now)/(TC_now+243.5)))/PL_now
+            iwv_sat = iwv_sat + Qsat/delta_p
+
+          end do
+
+          CRH(i,j) = iwv / iwv_sat
+
+        end if
+
+      end do
+    end do
+
+!
+!   CRH_v0 (column integrated relative humidity)
+!
+    do i = 1, imax
+      do j = 1, jmax
+
+        c300 = 45                   ! center index  (nominal level 45)
+
+        if ( emin .EQ. 1 ) then
+          e300 = c300               ! index of upper edge of grid-box
+        else
+          e300 = c300 - 1           ! index of upper edge of grid-box
+        end if
+
+        iwv     = 0.0
+        iwv_sat = 0.0
+
+        ! k index for EDGE values  (top edge of each box)
+        do k = emax-1, e300, -1
+
+          delta_p = PLE(i,j,k+1) - PLE(i,j,k)   ! Pa
+          cnow = (cmax+1) - (emax-k)    !  center index
+          iwv = iwv + Q(i,j,cnow)/delta_p
+
+          PL_now = (PLE(i,j,k)+PLE(i,j,k+1))/2.0  ! PL at center  [Pa]
+          TC_now = T(i,j,cnow)-273.15             ! T  at center  [Celsius]
+          ! 611 Pa is the saturation vapor pressure at 0 C
+          Qsat = 0.622 * (611*exp((17.67*TC_now)/(TC_now+243.5)))/PL_now
+          iwv_sat = iwv_sat + Qsat/delta_p
+
+        end do
+
+        CRH_v0(i,j) = iwv / iwv_sat
+
+      end do
+    end do
+
+!
+!   RAD_RL
+!
+    call MAPL_GetPointer ( ExPORT, RI, 'RI',   __RC__ )
+    call MAPL_GetPointer ( ExPORT, RL, 'RL',   __RC__ )
+    if ( associated(RI) .or. associated(RL) ) then
+
+      call MAPL_GetPointer ( IMPORT, AK, 'AK',   __RC__ )
+      call MAPL_GetPointer ( IMPORT, BK, 'BK',   __RC__ )
+      call MAPL_GetPointer ( IMPORT,  U,  'U',   __RC__ )
+
+      edge_lo = LBOUND(AK,1)
+      edge_hi = UBOUND(AK,1)
+
+      allocate(PREF(edge_lo:edge_hi), __STAT__ )
+
+      PREF = AK + (BK * MAPL_P00)
+
+      levs925  = max(1,count(PREF < 92500.))
+
+      IF(MAPL_AM_I_ROOT()) THEN
+        PRINT*,'MAPL_P00 :', MAPL_P00
+        PRINT*,'Edge LOW :', edge_lo
+        PRINT*,'Edge HIGH :', edge_hi
+        PRINT*,' '
+        PRINT*,'AK start: ', AK(edge_lo+0), AK(edge_lo+1), AK(edge_lo+2)
+        PRINT*,'BK start: ', BK(edge_lo+0), BK(edge_lo+1), BK(edge_lo+2)
+        PRINT*,'PREF start: ', PREF(edge_lo+0), PREF(edge_lo+1), PREF(edge_lo+2)
+        PRINT*,' '
+        PRINT*,'AK end: ', AK(edge_hi-2), AK(edge_hi-1), AK(edge_hi)
+        PRINT*,'BK end: ', BK(edge_hi-2), BK(edge_hi-1), BK(edge_hi)
+        PRINT*,'PREF end: ', PREF(edge_hi-2), PREF(edge_hi-1), PREF(edge_hi)
+        PRINT*,' '
+        PRINT*,'levs925 :', levs925
+      ENDIF
+
+      do i = 1, imax
+        do j = 1, jmax
+
+          ! as done in GEOS_MoistGridComp.F90  line 6290 (Heracles)
+          tempor = 0.
+          do k = levs925, cmax
+             if (U(i,j,k).gt.4.) tempor = 1.
+          end do
+
+          do k = 1, cmax
+            PL = 0.5*(PLE(i,j,k)+PLE(i,j,k-1))
+            TE = T(i,j,k)
+
+! need MAX_RI
+! need QCiLS
+! need QCiAN
+! need RI_ANV
+
+            RAD_RI = 0.0
+
+!         ! as done in cloudnew.F90  starting at line  3472 (Heracles)
+
+!           if (PL < 150. ) then
+!              RAD_RI = MAX_RI
+!           end if
+!           if (PL >= 150. ) then
+!              RAD_RI = MAX_RI*150./PL
+!           end if
+
+!           !! weigh in a separate R_ice for Anvil Ice according to
+!           !
+!           !       R_net_eff = (q_anv + q_ls) / ( q_anv/R_ice_anv + q_ls/R_ice_ls )
+!           !-------------------------------------------------------------------------
+!           RAD_RI_AN  =  RAD_RI ! 40.0e-6   ! MIN_RI
+
+!           if ( ( QCiLS + QCiAN ) > 0.0 ) then
+!              RAD_RI_AN  = ( QCiLS + QCiAN ) / ( (QCiLS/RAD_RI) + (QCiAN/RI_ANV) )
+!!            RAD_RI_AN  =      CNV_FRACTION *( QCiLS + QCiAN ) / ( (QCiLS/RI_ANV) + (QCiAN/RI_ANV) ) + &
+!!                         (1.0-CNV_FRACTION)*( QCiLS + QCiAN ) / ( (QCiLS/RAD_RI) + (QCiAN/RAD_RI) )
+!           end if
+
+!           RAD_RI = MIN( RAD_RI, RAD_RI_AN )
+
+!           RAD_RI = MAX( RAD_RI, MIN_RI )
+
+            ! Implement ramps for gradual change in effective radius
+            if (PL < 300. ) then
+               RAD_RL = 21.e-6
+            end if
+            if (PL >= 300. ) then
+               RAD_RL = 21.e-6*300./PL
+            end if
+            RAD_RL = MAX( RAD_RL, 10.e-6 )
+
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            ! Thicken low high lat clouds
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+            ! NOTE: Due to how tempor is calculated, it is now calculated in the
+            ! GridComp and passed into progno_cloud
+
+            if ( PL .GE. 775.  .AND. TE .LE.  275. .AND. (tempor.eq.1.) ) then
+               RAD_RL = max(min(-0.1 * PL + 87.5, 10.),5.)*1.e-6
+            end if
+            if ( PL .GE. 825.  .AND. TE .LE.  282. .AND. (tempor.eq.1.) ) then
+               RAD_RL = max(0.71 * TE - 190.25, 5.)*1.e-6
+            end if
+            if ( PL .GE. 775.  .AND. PL .LT. 825. .AND. TE .LE.  282. .AND. TE .GT. 275. .AND. (tempor.eq.1.) ) then
+               RAD_RL = min(-0.1*PL + 0.71 * TE - 107.75, 10.)*1.e-6
+            end if
+            if ( PL .GE. 825.  .AND. TE .LE.  275. .AND. (tempor.eq.1.) ) then
+               RAD_RL = 5.*1.e-6
+            end if
+
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            ! Thin low tropical clouds
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+            if ( PL .GE. 950.  .AND. TE .GE.  285. ) then
+               RAD_RL = min(2.2 * TE - 617., 21.)*1.e-6
+            end if
+            if ( PL .GE. 925.  .AND. TE .GE.  290. ) then
+               RAD_RL = min(0.44 * PL - 397., 21.)*1.e-6
+            end if
+            if ( PL .GE. 925.  .AND. PL .LT. 950. .AND. TE .GT.  285. .AND. TE .LT. 290.) then
+               RAD_RL = max(min(0.44*PL + 2.2 * TE - 1035., 21.),10.)*1.e-6
+            end if
+            if ( PL .GE. 950.  .AND. TE .GE.  290. ) then
+               RAD_RL = 21.*1.e-6
+            end if
+
+            if ( associated(RI) ) RI(i,j,k) = RAD_RI
+            if ( associated(RL) ) RL(i,j,k) = RAD_RL
+
+          end do
+
+
+        end do
+      end do
+
+      deallocate(PREF, __STAT__ )
+
+    end if
+
+!
+!   LCL (lifting condensation level)
+!
+    do i = 1, imax
+      do j = 1, jmax
+
+        ! R_a = 287.04          ;  J kg-1 K-1      (specific gas constant for dry air)  
+        ! R_v = 461             ;  J kg-1 K-1      (specific gas constant for water vapor) 
+        ! c_vv = 1418           ;  J kg-1 K-1      (specific heat capacity of H2Ov at constant volume) 
+        ! c_pv = c_vv + R_v     ;  J kg-1 K-1      (specific heat capacity of H2Ov at constant pressure) 
+        ! c_va = 719            ;  J kg-1 K-1      (specific heat constant for dry air at constant volume) 
+        ! c_pa = c_va + R_a     ;  J kg-1 K-1	   (specific heat capacity  of dry air at constant pressure) 
+
+        !  c_pv:   1879
+        !  c_pa:   1006.04
+
+        c_pm = (1-Q(i,j,cmax))*1006.04 + Q(i,j,cmax)*1879   ! Air parcel's specific heat capacity at constant pressure
+
+        ZL_now = (ZLE(i,j,emax)+ZLE(i,j,emax-1))/2.0  ! ZL [m] at center of layer nearest surface
+        PL_now = (PLE(i,j,emax)+PLE(i,j,emax-1))/2.0  ! PL [Pa] at center of layer nearest surface
+        TC_now = T(i,j,cmax)-273.15                   ! T [Celsius] at center of layer nearest surface
+        ! 611 Pa is the saturation vapor pressure at 0 C
+        Qsat = 0.622 * (611*exp((17.67*TC_now)/(TC_now+243.5)))/PL_now
+        RHL = 0.01 * Q(i,j,cmax)/Qsat
+        RHL = MIN(RHL,1.0)
+
+        Tadj = T(i,j,cmax) - 55                     ! T [K] adjusted by 55
+!       bracket = (1.0/Tadj) - (log10(RHL)/2840)    ! square bracket term in Romps Eq2  ...use natural log instead
+        bracket = (1.0/Tadj) - (  log(RHL)/2840)    ! square bracket term in Romps Eq2
+        brace =  Tadj - 1.0/bracket                 ! curly brace term in Romps Eq2
+!       LCL(i,j) = ZL_now +  (c_pm/MAPL_GRAV) * brace
+        LCL(i,j) =(ZL_now-ZLE(i,j,emax)) +  (c_pm/MAPL_GRAV) * brace
+
+      end do
+    end do
+
+!
+!   IWC (previously computed this way in MOIST)
+!
+
+    ! real, parameter :: r_air = 3.47d-3 !m3 Pa kg-1K-1
+
+      ALLOCATE( PLO(imax,jmax,cmax), __STAT__ )
+      ALLOCATE(TEMP(imax,jmax,cmax), __STAT__ )
+
+      PLO      = 0.5*(PLE(:,:,emin:emax-1)*.01 + PLE(:,:,emin+1:emax)*.01) 
+      TEMP       = TH * ((100.0*PLO/MAPL_P00)**(MAPL_KAPPA))
+      IWC = (QILS+QICN)* (100.*PLO*r_air/TEMP)
+
+      DEALLOCATE(PLO,  __STAT__ )
+      DEALLOCATE(TEMP, __STAT__ )
+
 
 
               BYNCY(:,:,:) = real(0)
