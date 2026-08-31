@@ -1164,7 +1164,6 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 
   logical                    :: USE_H2O_ProdLoss
   integer                    :: H2O_ProdLoss
-  real                       :: h2o_scale
 
 !=============================================================================
 
@@ -1367,44 +1366,11 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
                    stop
                 endif
 
-!-----------------------------------------------------------------------------------------
-! DESCRIPTION OF THE UPPER TROPOSPHERE / LOWER STRATOSPHERE (UTLS) H2O SCALING BLOCK
-!-----------------------------------------------------------------------------------------
-! PURPOSE:
-! Corrects a systemic, globally documented +100% to +150% high-altitude wet bias 
-! present in the input MERRA-2 meteorological reanalysis forcing data. This wet bias
-! forces unphysical sub-grid ice cloud production (cirrus/anvils) around the 200 hPa
-! level, trapping excessive infrared radiation and causing severe cold-pole temperature 
-! biases in the GCM's summer and winter polar tropopause fields.
-!
-! METHODOLOGY:
-! 1. Maintains the necessary base molecular weight conversion from raw volume/mass ratios
-!    to pure mass mixing fraction (MAPL_H2OMW / MAPL_AIRMW).
-! 2. Checks local coordinate grid-cell midpoint pressure [PL(i,j,L)] in Pascals to isolate
-!    the vertical boundaries of the UTLS transition zone.
-! 3. Core Stratosphere (PL <= 10,000 Pa / 100 hPa): Applies a strict, blanket 40% reduction 
-!    factor (scale = 0.60) to align the background humidity profile with satellite-validated 
-!    Aura Microwave Limb Sounder (MLS) observational climatologies.
-! 4. UTLS Buffer Zone (10,000 Pa < PL < 30,000 Pa): Executes a smooth, branchless linear 
-!    ramp calculation from 1.0 (at 300 hPa) down to 0.60 (at 100 hPa). This protects the
-!    model from sharp vertical spatial discontinuities and artificial mathematical shears.
-! 5. Lower Troposphere (PL >= 30,000 Pa / 300 hPa): Completely bypasses scaling (scale = 1.0),
-!    preserving highly authentic, verified convective and boundary-layer meteorological forcing
-!    data assimilated by MERRA-2 near the surface.
-! 6. Updates both standard temporal tracking indices (1=current, 2=next step) in the global 
-!    chemistry state [PCHEM_STATE%MNCV] right before tracer deployment.
-!-----------------------------------------------------------------------------------------
-! Convert H2O to mass fraction and correct MERRA-2 UTLS wet bias
-!-----------------------------------------------------------------------------------------
+! Convert H2O to mass fraction.
+!------------------------------
                 IF(K == PCHEM_STATE%H2O) then
-                   ! Keep your baseline mass-fraction conversion
                    PCHEM_STATE%MNCV(:,:,K,1) = PCHEM_STATE%MNCV(:,:,K,1)*(MAPL_H2OMW/MAPL_AIRMW)
                    PCHEM_STATE%MNCV(:,:,K,2) = PCHEM_STATE%MNCV(:,:,K,2)*(MAPL_H2OMW/MAPL_AIRMW)
-                   ! Apply a flat 0.6 scale factor
-                   h2o_scale = 0.60
-                   ! Apply to both current/next time state indices
-                   PCHEM_STATE%MNCV(:,:,K,1) = PCHEM_STATE%MNCV(:,:,K,1) * h2o_scale
-                   PCHEM_STATE%MNCV(:,:,K,2) = PCHEM_STATE%MNCV(:,:,K,2) * h2o_scale
                 endif
 
 ! Production rates and loss frequencies. If multiple climYears, simply set to zero.
@@ -1732,7 +1698,8 @@ contains
     real                              :: PCRIT
     real                              :: DELP
     integer                           :: I,J,L
-    real                              :: TRANSITION_FAC, TAU_EFF
+    real                              :: strat_frac
+    logical                           :: APPLY_BIAS_CORR
 
     if (trim(NAME) == "H2O") then
        call MAPL_GetPointer ( IMPORT,   XX,  'Q', RC=STATUS )
@@ -1793,10 +1760,6 @@ contains
 
        PROD1 = PCHEM_STATE%MNCV(:,:,NN,1)*FAC + PCHEM_STATE%MNCV(:,:,NN,2)*(1.-FAC)
 
-       call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
-       VERIFY_(STATUS)
-       DELP = max(DELP, 1.e-16) ! avoid division by zero
-
        do j=1,jm
           do l=1,nlevs
              call INTERP_NO_EXTRAP( PROD(:,L), LATS(:,J), Prod1(:,L), PCHEM_STATE%LATS)
@@ -1807,56 +1770,48 @@ contains
        end do
 
        if(trim(NAME)=="H2O") then
-          call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=10000. ,RC=STATUS)
+          call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
           VERIFY_(STATUS)
-          allocate(WRK(IM,JM),stat=STATUS)
+          DELP = max(DELP, 1.e-16) ! avoid division by zero
+          call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=3000. ,RC=STATUS)
           VERIFY_(STATUS)
-          where (TROPP==MAPL_UNDEF)
-             WRK = PCRIT
-          elsewhere
-             WRK = TROPP
-          end where
+          call MAPL_GetResource(MAPL, APPLY_BIAS_CORR, LABEL=trim(NAME)//"_APPLY_BIAS_CORR:", DEFAULT=.TRUE. ,RC=STATUS)
+          VERIFY_(STATUS)
           do L=1,LM
-             do j=1,jm
-                do i=1,im
-                   ! 1. Smooth vertical transition factor (scalar evaluation)
-                   TRANSITION_FAC = max( min( (WRK(i,j)-PL(i,j,L))/DELP, 1.0), 0.0)
-                   ! 2. Calculate pressure-dependent dynamic timescale
-                   TAU_EFF = TAU * (100000.0 / PL(i,j,L)) 
-                   ! 3. Apply the dynamic loss rate cleanly to the 3D target layer array
-                   LOSS_INT(i,j,L) = (1.0 / TAU_EFF) * TRANSITION_FAC
+             ! Smooth transition for main forcing
+             LOSS_INT(:,:,L) = (1./TAU) * 0.5 * (1.0 + tanh((PCRIT - PL(:,:,L))/DELP))
+             if (APPLY_BIAS_CORR) then
+                where (PL(:,:,L) < 1000.0) 
+                   ! Upper stratosphere (< 10 mb): correct 20% moist bias
+                   LOSS_INT(:,:,L) = LOSS_INT(:,:,L) * 0.833
+                else where (PL(:,:,L) < 5000.0) 
+                   ! Lower stratosphere (10-50 mb): correct 55% moist bias
+                   LOSS_INT(:,:,L) = LOSS_INT(:,:,L) * 0.645
+                end where
+             end if
+          end do
+        elseif(trim(NAME)=="OX") then
+          call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
+          VERIFY_(STATUS)
+          DELP = max(DELP, 1.e-16) ! avoid division by zero
+          call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=10000. ,RC=STATUS)  ! 100 mb
+          VERIFY_(STATUS)
+          do L=1,LM
+             do J=1,JM
+                do I=1,IM
+                  ! Smooth stratosphere/troposphere mask (1 = strat, 0 = trop)
+                  strat_frac = 0.5 * (1.0 + tanh((PCRIT - PL(I,J,L))/DELP))
+                  ! Blended forcing: stratospheric (pressure-scaled) + tropospheric (strong)
+                  LOSS_INT(I,J,L) = (1.0 / MAX(43200.0, MIN(2592000.0, TAU * (PL(I,J,L)/100.0)))) * strat_frac + &
+                                    (1.0 / DT) * (1.0 - strat_frac)
                 end do
              end do
           end do
-          deallocate(WRK)
-        elseif(trim(NAME)=="OX") then
-          call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=15000. ,RC=STATUS)
-          VERIFY_(STATUS)
-          
-          ! Grab the dynamic Tropopause pressure (fallback to PCRIT if undefined)
-          allocate(WRK(IM,JM),stat=STATUS)
-          VERIFY_(STATUS)
-          where (TROPP==MAPL_UNDEF)
-             WRK = PCRIT
-          elsewhere
-             WRK = TROPP
-          end where
-          do L=1,LM
-             ! ---------------------------------------------------------
-             ! Dynamic Pressure-Scaled Relaxation for Strat/Mesosphere
-             ! Uses dynamic 2D tropopause (WRK) instead of flat 150 hPa.
-             ! Blends smoothly over DELP (50 hPa) above the tropopause.
-             ! ---------------------------------------------------------
-             LOSS_INT(:,:,L) = &
-                 ! Dynamic TAU applied above the local tropopause
-                 (1.0 / MAX(43200.0, MIN(2592000.0, TAU * (PL(:,:,L)/1000.0)))) * &
-                 (      max( min( (WRK(:,:)-PL(:,:,L))/DELP, 1.0), 0.0)) + &
-                 ! Strongly constrained (TAU=DT) below the local tropopause
-                 (1./DT ) * (1.0 - max( min( (WRK(:,:)-PL(:,:,L))/DELP, 1.0), 0.0))
-          end do
-          deallocate(WRK)
        else
           ! relaxed by TAU everywhere
+          call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
+          VERIFY_(STATUS)
+          DELP = max(DELP, 1.e-16) ! avoid division by zero
           call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=1.e+16 ,RC=STATUS)
           VERIFY_(STATUS)
           LOSS_INT = (1./TAU) * max( min( (PCRIT   -PL)/DELP, 1.0), 0.0)
@@ -1892,6 +1847,7 @@ contains
     character(len=*), intent(IN) :: NAME
     real, pointer                :: XX(:,:,:)
 
+
     real, pointer, dimension(:,:,:)   :: XX_PROD
     real, pointer, dimension(:,:,:)   :: XX_LOSS
     real, pointer, dimension(:,:,:)   :: OX_TEND
@@ -1900,7 +1856,6 @@ contains
     real                              :: VALUE
     real                              :: PCRIT
     real                              :: DELP
-    real                              :: TAU_EFF       ! Dynamic timescale
     integer                           :: I,J,L
 
     call MAPL_GetPointer ( IMPORT,   XX,  'Q', RC=STATUS )
@@ -1929,40 +1884,19 @@ contains
        enddo
     end do
 
-    call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=3000.0 ,RC=STATUS) ! Standardized to 30 hPa
+    call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
     VERIFY_(STATUS)
-    call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=20000. ,RC=STATUS)
+    DELP = max(DELP, 1.e-16) ! avoid division by zero
+    call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=3000. ,RC=STATUS)
     VERIFY_(STATUS)
-    
-    allocate(WRK(IM,JM),stat=STATUS)
-    VERIFY_(STATUS)
-    
-    where (TROPP==MAPL_UNDEF)
-       WRK = PCRIT
-    elsewhere
-       WRK = TROPP
-    end where
-
-!!! loss_swv is 1 for stratosphere and 0 for troposphere
+    !!! loss_swv is 1 for stratosphere and 0 for troposphere
     do L=1,LM
-       ! 1. Compute smooth vertical transition factor across the corrected tropopause
-       LOSS_SWV(:,:,L) = max( min( (WRK(:,:)-PL(:,:,L))/DELP, 1.0), 0.0)
-       ! 2. Compute dynamic, pressure-dependent timescale to prevent grid oscillations
-       ! Scales gently from 1000 hPa surface baseline down to the UTLS layer
-       do j=1,jm
-          do i=1,im
-             TAU_EFF = TAU * (100000.0 / PL(i,j,L))
-             ! 3. Scale loss rate based on the smooth boundary layer mask
-             LOSS_INT(i,j,L) = (1.0 / TAU_EFF) * LOSS_SWV(i,j,L)
-          end do
-       end do
+       LOSS_SWV(:,:,L) = 0.5 * (1.0 + tanh((PCRIT - PL(:,:,L))/DELP))
     end do
 
     PROD_INT = LOSS_SWV*PROD_INT
-    ! LOSS_INT is now explicitly scaled by LOSS_SWV and TAU_EFF above
-    
+    LOSS_INT = LOSS_SWV*LOSS_INT
     XX = (XX + DT*PROD_INT) / (1.0 + LOSS_INT*DT)
-    deallocate(WRK)
 
     if(associated(XX_PROD)) XX_PROD =  PROD_INT
     if(associated(XX_LOSS)) XX_LOSS = -LOSS_INT*XX
