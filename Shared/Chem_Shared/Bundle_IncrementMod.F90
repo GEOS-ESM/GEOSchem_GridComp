@@ -166,7 +166,8 @@ CONTAINS
       do i = 1, NQ
         call ESMF_FieldBundleGet (BUNDLE, NAMES(i), field=field, rc=status)
         if (status/=0) then
-          if (mapl_am_i_root()) print*, trim(NAMES(i)),' is not valid. It likely does not exist in ',trim(org_bundle)
+!         if (mapl_am_i_root()) print*, trim(NAMES(i)),' is not valid. It likely does not exist in ',trim(org_bundle)
+                                print*, trim(NAMES(i)),' is not valid. It likely does not exist in ',trim(org_bundle)
           VERIFY_(23) 
         end if
 

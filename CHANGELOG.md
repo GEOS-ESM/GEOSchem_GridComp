@@ -6,11 +6,23 @@ after October 2021. For earlier changes, consult file ChangeLog.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased - Updates from CFv2]
 ### Changed
+- Added verbose option to Chem_Group UNPACK routine
+- Added connectivity of CH4 from GOCART to GEOS-Chem
+- Added QTOT export from ChemEnv, needed by GOCART CH4
+- Updated the Export Spec and Internal Spec in GCC_Registry.rc
+- Added CH4 and CO2 config files to run folder
+- Edited CMakeLists to copy all GEOS-Chem rc and yaml files into install/etc
+  NOTE: CO2 and CH4 are now 'OFF' by default
+- Connect to GOCART O3 only from the RATS provider
+- Provide for coupling between GEOS-Chem and GAAS
+
 ### Removed
 ### Fixed
 ### Deprecated
+### ToDo
+- Changes to GAAS
 
 ## [2.0.0] - 2026-05-28
 
