@@ -1,0 +1,302 @@
+#
+# This the SC Grid Component Registry. It defines Import,
+# Internal and Export states for this component as well as
+# any
+#
+# !REVISION HISTORY:
+#  16Aug2006  da Silva   First Version
+#  30Mar2012  Nielsen    Updates for running SC on the cubed sphere
+#
+# -----------------------------------------------------------------
+
+  COMP_NAME: StratChem
+
+# Only change the Registry version when major structural changes
+# occurs, not changes in content
+# --------------------------------------------------------------
+  MAPL_REGISTRY_VERSION: 1.00
+
+#				------------
+#				Import State
+#				------------
+
+<ImportSpec name="STRATCHEM", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,norestart,long_name">
+# -------------------|-------------|-----|---|----|---|---|-----|------|----|--------------------------
+#  Short	     |  	   |	 | V |Item|Intervl| Sub | Def  | No |	Long
+#  Name 	     |   Units     | Dim |Loc|Type| R | A |Tiles| ault |Rsrt|	Name
+# -------------------|-------------|-----|---|----|---|---|-----|------|--------------------------
+  DELP		     |	Pa	   | xyz | C |	  |   |   |     |      |    | pressure_thickness
+  PLE		     |	Pa	   | xyz | E |	  |   |   |     |      |    | air_pressure
+  LWI                |  1          | xy  |   |    |   |   |     |      |    | Land-water-ice flags
+  Q		     |	kg kg-1	   | xyz | C |	  |   |   |     |      |    | specific_humidity
+  QCTOT 	     |	kg kg-1	   | xyz | C |	  |   |   |     |      |    | mass_fraction_of_total_cloud_water
+  T		     |  K	   | xyz | C |    |   |   |	|      |    | air_temperature
+  AIRDENS	     |  kg m-3	   | xyz | C |	  |   |   |     |      |    | air_density
+  AIRDENS_DRYP       |  kg m-3     | xyz | C |    |   |   |     |      |    | dry_air_density
+  TROPP  	     |  Pa	   | xy  |   |    |   |   |	|      |    | tropopause_pressure_based_on_blended_estimate
+  AREA  	     |  m^2	   | xy  |   |    |   |   |	|      |    | agrid_cell_area
+  LFR   	     |  km-2 s-1   | xy  |   |    |   |   |	|      |    | lightning_flash_rate
+  CN_PRCP            |  kg m-2 s-1 | xy  |   |    |   |   |     |      |    | convective_precipitation
+  NCN_PRCP           |  kg m-2 s-1 | xy  |   |    |   |   |     |      |    | nonconvective_precipitation 
+  ZPBL               |  m          | xy  |   |    |   |   |     |      |    | PBL_height
+  FCLD               |  1          | xyz | C |    |   |   |     |      |    | Cloud_fraction_for_radiation 
+  ZLE                |  m          | xyz | E |    |   |   |     |      |    | geopotential_height
+  FRLAKE             |  1          | xy  |   |    |   |   |     |      |    | fraction_of_lake
+  FROCEAN            |  1          | xy  |   |    |   |   |     |      |    | fraction_of_ocean
+  FRACI              |  1          | xy  |   |    |   |   |     |      |    | ice_covered_fraction_of_tile
+  CNV_QC             |  kg kg-1    | xyz | C |    |   |   |     |      |    | grid_mean_convective_condensate 
+  CNV_MFC            |  kg m-2 s-1 | xyz | E |    |   |   |     |      |    | cumulative_mass_flux
+  CNV_MFD            |  kg m-2 s-1 | xyz | C |    |   |   |     |      |    | detraining_mass_flux 
+  PFL_LSAN           |  kg m-2 s-1 | xyz | E |    |   |   |     |      |    | 3D_flux_of_liquid_nonconvective_precipitation 
+  PFI_LSAN           |  kg m-2 s-1 | xyz | E |    |   |   |     |      |    | 3D_flux_of_ice_nonconvective_precipitation
+  DQDT               |  s-1        | xyz | C |    |   |   |     |      |    | specific_humidity_tendency_due_to_moist
+  F11FLUX   	     |  kg m-2 s-1 | xy  |   |    |   |   |	|      |  x | flux_of_cfc11
+  F12FLUX            |  kg m-2 s-1 | xy  |   |    |   |   |     |      |  x | flux_of_cfc11
+  F113FLUX           |  kg m-2 s-1 | xy  |   |    |   |   |     |      |  x | flux_of_cfc11
+  MCFFLUX            |  kg m-2 s-1 | xy  |   |    |   |   |     |      |  x | flux_of_ch3ccl3
+  CCL4FLUX           |  kg m-2 s-1 | xy  |   |    |   |   |     |      |  x | flux_of_ccl4
+  HCFC22FLUX         |  kg m-2 s-1 | xy  |   |    |   |   |     |      |  x | flux_of_hcfc22
+  CHBR3FLUX          |  kg m-2 s-1 | xy  |   |    |   |   |     |      |  x | flux_of_chbr3
+  CH2BR2FLUX         |  kg m-2 s-1 | xy  |   |    |   |   |     |      |  x | flux_of_ch2br2
+  OH3DClim           |  molec cm-3 | xyz | C |    |   |   |     |      |  x | hydroxyl_radical
+# -------------------|-------------|-----|---|----|---|---|-----|------|--------------------------
+</ImportSpec>
+
+#				------------
+#				Export State
+#				------------
+
+<ExportSpec name="STRATCHEM", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,long_name">
+# ------------------|----------------|-----|---|----|---|---|-----|---------------------------------
+#  Short	    |		     |     | V |Item|Intervl| Sub |	     Long
+#  Name 	    |   Units	     | Dim |Loc|Type| R | A |Tiles|	     Name
+# ------------------|----------------|-----|---|----|---|---|-----|---------------------------------
+  SZARAD   	    | rad            | xy  |   |    |	|   |	  | solar_zenith_angle
+  SCBASEK   	    | 1              | xy  |   |    |	|   |	  | stratosphere_base_layer
+  N2OFLX   	    | kg s-1         | xy  |   |    |	|   |	  | derived_N2O_surface_flux
+  CH4FLX   	    | kg s-1         | xy  |   |    |	|   |	  | derived_CH4_surface_flux
+  F11FLX   	    | kg s-1         | xy  |   |    |	|   |	  | derived_CFC-11_surface_flux
+  F113FLX   	    | kg s-1         | xy  |   |    |	|   |	  | derived_CFC-113_surface_flux
+  F12FLX   	    | kg s-1         | xy  |   |    |	|   |	  | derived_CFC-12_surface_flux
+  HCFC22FLX   	    | kg s-1         | xy  |   |    |	|   |	  | derived_HCFC22_surface_flux
+  HCFC141BFLX       | kg s-1         | xy  |   |    |   |   |     | derived_HCFC141b_surface_flux
+  HCFC142BFLX       | kg s-1         | xy  |   |    |   |   |     | derived_HCFC142b_surface_flux
+  CCL4FLX   	    | kg s-1         | xy  |   |    |	|   |	  | derived_CCl4_surface_flux
+  MCFFLX   	    | kg s-1         | xy  |   |    |	|   |	  | derived_CH3CCl3_surface_flux
+  CH3CLFLX   	    | kg s-1         | xy  |   |    |	|   |	  | derived_CH3Cl_surface_flux
+  CH3BRFLX   	    | kg s-1         | xy  |   |    |	|   |	  | derived_CH3Br_surface_flux
+  H1211FLX   	    | kg s-1         | xy  |   |    |	|   |	  | derived_H1211_surface_flux
+  H1301FLX   	    | kg s-1         | xy  |   |    |	|   |	  | derived_H1301_surface_flux
+  H1202FLX          | kg s-1         | xy  |   |    |   |   |     | derived_H1202_surface_flux
+  H2402FLX          | kg s-1         | xy  |   |    |   |   |     | derived_H2402_surface_flux
+  SCTO3   	    | dobsons        | xy  |   |    |	|   |	  | total_ozone_from_StratChem
+  SCTTO3   	    | dobsons        | xy  |   |    |	|   |	  | tropospheric_total_ozone_from_StratChem
+  SCTROPP   	    | Pa             | xy  |   |    |	|   |	  | tropopause_pressure_used_in_StratChem
+  AGCMTROPP   	    | Pa             | xy  |   |    |	|   |	  | tropopause_pressure_imported_into_StratChem
+  NATSAD  	    | m-1            | xyz | C |    |	|   |	  | surface_area_density_nitric_acid_trihydrate_PSC
+  ICESAD  	    | m-1            | xyz | C |    |	|   |	  | surface_area_density_water_ice_PSC
+  O3                | kg kg-1        | xyz | C |    |	|   |	  | ozone_mass_mixing_ratio
+  O3PPMV   	    | ppmv           | xyz | C |    |	|   |	  | ozone_volume_mixing_ratio
+  OX_TEND   	    | mol mol-1 s-1  | xyz | C |    |	|   |	  | tendency_of_odd_oxygen_mixing_ratio_due_to_chemistry
+  H2O_TEND   	    | kg kg-1 s-1    | xyz | C |    |	|   |	  | tendency_of_water_vapor_mixing_ratio_due_to_chemistry
+  OX_SCTEND         | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_OX
+  NOX_SCTEND        | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_NOX
+  HNO3_SCTEND       | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_HNO3
+  N2O5_SCTEND       | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_N2O5
+  HO2NO2_SCTEND     | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_HO2NO2
+  CLONO2_SCTEND     | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_CLONO2
+  CLX_SCTEND        | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_CLX
+  HCL_SCTEND        | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_HCL
+  HOCL_SCTEND       | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_HOCL
+  H2O2_SCTEND       | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_H2O2
+  BRX_SCTEND        | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_BRX
+  N2O_SCTEND        | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_N2O
+  CL2_SCTEND        | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_CL2
+  OCLO_SCTEND       | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_OCLO
+  BRCL_SCTEND       | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_BRCL
+  HBR_SCTEND        | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_HBR
+  BRONO2_SCTEND     | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_BRONO2
+  CH4_SCTEND        | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_CH4
+  HOBR_SCTEND       | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_HOBR
+  CH3OOH_SCTEND     | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_CH3OOH
+  CO_SCTEND         | mol mol-1 s-1  | xyz | C |    |	|   |	  | chemical_rate_of_change_CO
+  HNO3COND_SCTEND   | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_HNO3COND
+  CFC11_SCTEND      | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_CFC11
+  CFC12_SCTEND      | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_CFC12
+  CFC113_SCTEND     | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_CFC113
+  CFC114_SCTEND     | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_CFC114
+  CFC115_SCTEND     | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_CFC115
+  HCFC22_SCTEND     | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_HCFC22
+  HCFC141B_SCTEND   | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_HCFC141B
+  HCFC142B_SCTEND   | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_HCFC142B
+  CCL4_SCTEND       | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_CCL4
+  CH3CCL3_SCTEND    | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_CH3CCL3
+  CH3CL_SCTEND      | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_CH3CL
+  CH3BR_SCTEND      | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_CH3BR
+  H1301_SCTEND      | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_H1301
+  H1211_SCTEND      | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_H1211
+  H1202_SCTEND      | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_H1202
+  H2402_SCTEND      | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_H2402
+  CHBR3_SCTEND      | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_bromoform
+  CH2BR2_SCTEND     | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_Dibromomethane
+  CH2BRCL_SCTEND    | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_CH2BRCL
+  CHBRCL2_SCTEND    | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_CHBRCL2
+  CHBR2CL_SCTEND    | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_CHBR2CL
+  HFC23_SCTEND      | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_HFC23
+  HFC32_SCTEND      | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_HFC32
+  HFC125_SCTEND     | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_HFC125
+  HFC134A_SCTEND    | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_HFC134A
+  HFC143A_SCTEND    | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_HFC143A
+  HFC152A_SCTEND    | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_HFC152A
+  CO2_SCTEND        | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_lat-depedent_CO2  
+  SF6_SCTEND        | mol mol-1 s-1  | xyz | C |    |   |   |     | chemical_rate_of_change_SF6
+  AOADAYS_SCTEND    | days s-1       | xyz | C |    |   |   |     | chemical_rate_of_change_AOADAYS
+  QQJ001            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-CFC11
+  QQJ002            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-CFC12
+  QQJ003            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-CFC113
+  QQJ004            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-CCL4
+  QQJ005            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-N2O
+  QQJ006            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-CH3CCL3
+  QQJ007            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-H1301
+  QQJ008            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-H1211
+  QQJ009            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-H1202
+  QQJ010            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-H2402
+  QQJ011            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-HCFC141B
+  QQJ012            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-HCFC142B
+  QQJ013            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-CHBR3
+  QQJ014            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-CH2BR2
+  QQJ015            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-CH2BRCL
+  QQJ016            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-CHBRCL2 
+  QQJ017            | mol mol-1 s-1  | xyz | C |    |   |   |     | J-CHBR2CL
+  QQJ018            | mol mol-1 s-1  | xyz | C |    |   |   |     | QQJ018
+  QQJ019            | mol mol-1 s-1  | xyz | C |    |   |   |     | QQJ019
+  QQJ020            | mol mol-1 s-1  | xyz | C |    |   |   |     | QQJ020
+  QQK001            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-CH4
+  QQK002            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-CH3CCL3
+  QQK003            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-HCFC22
+  QQK004            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-HCFC141B
+  QQK005            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-HCFC142B
+  QQK006            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-CH3CL
+  QQK007            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-CH3BR
+  QQK008            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-CHBR3
+  QQK009            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-CH2BR2
+  QQK010            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-CH2BRCL
+  QQK011            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-CHBRCL2
+  QQK012            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-CHBR2CL
+  QQK013            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-HFC23
+  QQK014            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-HFC32
+  QQK015            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-HFC125
+  QQK016            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-HFC134A
+  QQK017            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-HFC143A
+  QQK018            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-OH-HFC152A
+  QQK019            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-O1D-CFC11
+  QQK020            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-O1D-CFC12
+  QQK021            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-O1D-CFC113
+  QQK022            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-O1D-HCFC22
+  QQK023            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-O1D-HCFC141B
+  QQK024            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-O1D-HCFC142B
+  QQK025            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-O1D-CH4
+  QQK026            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-O1D-N2O
+  QQK027            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-O1D-HFC23
+  QQK028            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-O1D-HFC32
+  QQK029            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-O1D-HFC125
+  QQK030            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-O1D-HFC134A
+  QQK031            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-O1D-HFC143A
+  QQK032            | mol mol-1 s-1  | xyz | C |    |   |   |     | K-O1D-HFC152A
+  QQK033            | mol mol-1 s-1  | xyz | C |    |   |   |     | QQK033
+  QQK034            | mol mol-1 s-1  | xyz | C |    |   |   |     | QQK034
+  QQK035            | mol mol-1 s-1  | xyz | C |    |   |   |     | QQK035
+  OCS_JRATE         | s-1            | xyz | C |    |   |   |     | J-OCS
+  rDryAir           | mol mol-1      | xyz | C |    |   |   |     | ratio_of_dry_air_over_moist_air
+  MCFOCNLOSS        | kg s-1         | xy  |   |    |   |   |     | surface_ocean_loss_rates_of_ch3ccl3
+  CTCOCNLOSS        | kg s-1         | xy  |   |    |   |   |     | surface_ocean_loss_rates_of_ccl4
+  CTCLNDLOSS        | kg s-1         | xy  |   |    |   |   |     | surface_land_loss_rates_of_ccl4
+# ------------------|----------------|-----|---|----|---|---|-----|---------------------------------
+</ExportSpec>
+
+#                               --------------
+#                               Internal State
+#                               --------------
+
+#
+# Note: 1) For friendlies, use "D" for dynamics, "T" for turbulence and "C" for convection; leave blank otherwise
+#       2) If quantity requires no restart, put an 'x' in the No Rst column
+#       3) RO = Alkoxy radical, RO2 = Organic peroxy radical
+
+<InternalSpec name="STRATCHEM", cols="short_name,units,dims,vlocation,stat,refresh_interval,averaging_interval,num_subtiles,default,norestart,halowidth,friendlyto,long_name">
+# --------------|------------|-----|---|----|---|---|-----|------|----|----|---------|---------------------------------
+#  Short        |            |     | V |Item|Intervl| Sub | Def  | No | Ha | Friends |            Long
+#  Name         |   Units    | Dim |Loc|Type| R | A |Tiles| ault | Rst| lo |         |            Name
+# --------------|------------|-----|---|----|---|---|-----|------|----|----|---------|---------------------------------
+  OX            | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | odd_oxygen
+  NOX           | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | odd_nitrogen
+  HNO3          | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | nitric_acid
+  N2O5          | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | dinitrogen_pentoxide
+  HO2NO2        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | peroxynitric_acid
+  CLONO2        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | chlorine_nitrate
+  CLX           | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | odd_chlorine
+  HCL           | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | hydrochloric_acid
+  HOCL          | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | hypochlorous_acid
+  H2O2          | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | hydrogen_peroxide
+  BRX           | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | odd_bromine
+  N2O           | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | nitrous_oxide
+  CL2           | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | molecular_chlorine
+  OCLO          | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | chlorine_dioxide
+  BRCL          | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | bromine_chloride
+  HBR           | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | hydrogen_bromide
+  BRONO2        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | bromine_nitrate
+  CH4           | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | methane
+  HOBR          | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | hypobromous_acid
+  CH3OOH        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | methyl_hydroperoxide
+  CO            | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | carbon_monoxyde
+  HNO3COND      | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | condensed_nitric_acid
+  CFC11         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CFC-11_(CFCl3)
+  CFC12         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CFC-12_(CF2Cl2)
+  CFC113        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CFC-113_(C2Cl3F3)
+  CFC114        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CFC-114_(C2Cl2F4)
+  CFC115        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CFC-115_(C2ClF5)
+  HCFC22        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | HCFC-22_(CHClF2)
+  HCFC141B      | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | HCFC-141b_(CH3CCl2F)
+  HCFC142B      | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | HCFC-142b_(CH3CClF2)
+  CCL4          | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | carbon_tetrachloride
+  CH3CCL3       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | methyl_chloroform
+  CH3CL         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | methyl_chloride
+  CH3BR         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | methyl_bromide
+  H1301         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | halon_1301_(CBrF3)
+  H1211         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | halon_1211_(CBrClF2)
+  H1202         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | halon_1202_(CBr2F2)
+  H2402         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | halon_2402_(C2Br2F4)
+  CHBR3         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | bromoform
+  CH2BR2        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | Dibromomethane
+  CH2BRCL       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CH2BrCl
+  CHBRCL2       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CHBrCl2
+  CHBR2CL       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CHBr2Cl
+  HFC23         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CHF3 
+  HFC32         | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CH2F2
+  HFC125        | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CHF2CF3
+  HFC134A       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CH2FCF3
+  HFC143A       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CF3CH3
+  HFC152A       | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | CH2CHF2
+  CO2           | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | lat-depedent_CO2  
+  SF6           | mol mol-1  | xyz | C |    |   |   |     |      |    |    | D,T,C   | sulfur_hexafluoride 
+  AOADAYS       | days       | xyz | C |    |   |   |     |      |    |    | D,T,C   | age-of-air
+  O3CHEM        | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | ozone_from_chemistry
+  O3P           | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | atomic_oxygen_in_the_ground_state
+  O1D           | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | atomic_oxygen_in_the_first_excited_state
+  N             | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | ground_state_atomic_nitrogen
+  NO            | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | nitric_oxide
+  NO2           | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | nitrogen_dioxide
+  NO3           | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | nitrogen_trioxide
+  HATOMIC       | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | atomic_hydrogen
+  OH            | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | hydroxyl_radical
+  HO2           | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | hydroperoxyl_radical
+  CL            | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | atomic_chlorine
+  CLO           | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | chlorine_monoxide
+  BRO           | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | bromine_monoxide
+  BR            | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | atomic_bromine
+  CL2O2         | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | dichlorine_peroxide
+  CH2O          | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | formaldehyde
+  CH3O2         | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | methyl_peroxide
+  RO3OX         | mol mol-1  | xyz | C |    |   |   |     |      |    |    |         | ozone_odd_oxygen_ratio
+# --------------|------------|-----|---|----|---|---|-----|------|----|----|---------|---------------------------------
+</InternalSpec>

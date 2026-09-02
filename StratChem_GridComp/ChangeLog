@@ -1,0 +1,101 @@
+StratChem ChangeLog
+2019-04-15 <michael.manyin@nasa.gov> Tag: Jason-2_0_MEM
+	* Use MAPL_GRAV consistently in StratChem
+	* Print diagnostics for NOx, CLx and HCL less often
+
+2018-02-27 <michael.manyin@nasa.gov> Tag: Icarus-1_0_p2_MEM_SC-r3
+        * Update from Qing Liang: JPL15 rates
+        * Update from Luke Oman: solar flux now affected by orbital eccentricity
+        * numDens term now accounts for both moist and dry air
+
+2016-09-23 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_3_JEN_SC-v3
+        * Can now disable the Heracles-5_3_JEN_SC-v2 updates by adding -DREDUCED to the USER_FDEFS in 
+          the StratChem GNUmakefile. See usage notes in SC_GridCompMod.F90 for details.
+
+2016-09-13 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_3_JEN_SC-v2
+        * Updates from Qing Liang: Added halons, HCFCs, and VSLSs. Added option to use geospatially
+          resolved surface fluxes of CFC-11, CFC-12, CFC-113, HCFC-22 CH3CCl3, CCl4, CHBr3, and CH2Br2.
+
+2016-05-31 <jon.e.nielsen@nasa.gov> Tag: Heracles-5_1_JEN_SC
+        * Added conditional to sediment.F to detect zero fall speed and prevent division by zero.
+
+2015-08-12 <peter.r.colarco@nasa.gov> Tag: prc+Heracles-4_0_JEN_SC-v6
+	* Incorporate changes to calculate the photolysis rate for OCS,
+	  available as an export called "OCS_JRATE"; requires an updated
+	  photolysis table reflected in SC_GridComp.rc
+	
+2015-07-24 <jon.e.nielsen@nasa.gov> Tag: Heracles-4_0_JEN_SC
+        * Remove references to AERO bundle.
+
+2015-03-26 <jon.e.nielsen@nasa.gov> Tag: Heracles-1_0_UNSTABLE
+        * Import DELP from CHEMENV.
+
+2015-01-15 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_1_JEN_SC
+        * Allow the user to specify separate year number shifting for the GHG and ODS mixing
+          ratio boundary conditions.
+
+2014-06-24 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_0_BETA11_JEN_SC
+        * Implement more efficient memory use when computing species tendencies.
+
+2014-04-29 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_0_BETA8_JEN_SC
+        * Add HNO3COND upper limit test, similar to GMIChem's.
+	* Remove bug in gcSC%climRain.
+
+2014-04-04 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_0_BETA8_JEN_SC
+        * Change TENDENCIES from BUNDLE operation to ALLOCATE to plug memory leak.
+        * Install DOING_TENDENCIES: YES in CF for switchable tendencies computation.  Also in
+          AGCM and PHYSICS on branch b_Ganymed-4_0_jen_scOnly.
+
+2014-02-26 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_0_BETA8_JEN_SC
+        * Experiment with quasi-tropopause-following high-pressure limit for PSCS.
+        * Test SC water ice PSC fall speeds in cloudnew.F90.
+        * SC_GridComp.rc: TRW_NOx from 1250 to 250, JPL 2010, RCP60 GHG and A12014b ODS.
+
+2014-02-19 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_0_BETA8_JEN_SC
+        * Add AERO and AERO_DP export states, but with zero-fill.  Allows testing
+          with STRATCHEM as the AERO provider.
+        * Disable computation of species tendencies while Atanas looks into a
+          possible memory leak.  Turn on by setting doingTendencies = .TRUE. in run.
+
+2014-01-03 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_0_BETA4_JEN_SC
+        * Fix bug with updating H2O_TEND export state.
+	* Limit NO photorate adjustment in meso_phot.F to stratosphere and mesosphere.
+	* Accept PSC limits of 45 degrees latitude (PSClatlim) and 150 hPa (PSCpmax).
+
+2013-11-14 <jon.e.nielsen@nasa.gov> Tag: Ganymed-4_0_BETA4_JEN_SC
+        * Updates for NetCDF parallel I/O.
+        * Incorporate Valentina Aquila's updates for passing aerosol from GOCART as a source
+          of surface area.  Plagarized from Pete Colarco's tag prc+Ganymed-4_0_BETA4.
+
+2013-01-25 <jon.e.nielsen@nasa.gov> Tag: Ganymed-2_0_UNSTABLE_JEN-m1
+        * Generalize bundle reference index for computing tendencies.
+
+2012-12-11 <jon.e.nielsen@nasa.gov> Tag: Ganymed-2_0_UNSTABLE_JEN-m1
+        * Add profiling timers.
+
+2012-11-28 <jon.e.nielsen@nasa.gov> Tag: Ganymed-2_0_UNSTABLE
+        * OX_TEND in mol mol^{-1} s^{-1}.
+
+2012-08-24 <jon.e.nielsen@nasa.gov> Tag: Ganymed-1_0_UNSTABLE_JEN-m4
+        * Add total ozone exports SCTO3 and SCTTO3.
+        * To avoid MAPL_UNDEFs in the imported TROPP, now saving the most recent
+          valid tropopause pressures in w_c%qa(irO3Ox)%data3d(:,:,km), and no longer
+          invoking Chem_UtilTroppFixer.
+
+2012-06-13 <jon.e.nielsen@nasa.gov> Tag: Ganymed-1_0_UNSTABLE_JEN-m3
+        * Add SC_SPLIT for running with chemistry time step length less than or
+          equal to the RUN_DT.
+
+2012-06-05 <jon.e.nielsen@nasa.gov> Tag: Ganymed-1_0_UNSTABLE_JEN-m3
+        * Added SCBASEK to exports.
+
+2012-05-09 <jon.e.nielsen@nasa.gov> Tag: Ganymed-1_0_UNSTABLE_JEN-m2
+        * Wholesale modifications required for running StratChem with FV-cubed.
+	* Photolysis tables and climatological boundary condition files converted to NetCDF.
+        * StratChem-level GNUmakefile invokes mapl_acg.pl to and SC_Registry.rc for
+          import and export specs.
+        * Chemistry tendencies are computed and exported.
+        * Several routines rendered obsolete at the SC_GridComp level and must be deleted
+          from the tag [tag -d TagName] GNUmakefile, fixSSG.F90, interp3OP.F90, listClim.F,
+          listInput.F, listRates.F, listSpecies.F, ratecal.F, rdChemFiles.F, tables_interp.F
+

@@ -1,0 +1,289 @@
+Collections:
+  GMI_CMIP6_BB.emis.x1440_y720_t12.%y4.nc4:
+    template: ExtData/CMIP6/sfc/biomass_burning/CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+  GMI_CMIP6_CEDS.airNOemis.x720_y360_z72_t12.%y4.nc4:
+    template: ExtData/CMIP6/L72/aircraft/CMIP6_CEDS.airNOemis.x720_y360_z72_t12.%y4.nc4
+  GMI_CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4:
+    template: ExtData/CMIP6/sfc/fossil_fuels/CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+  GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc:
+    template: ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+  GMI_OCS_vmr.x360_y181_z72.t12.2016.nc4:
+    template: ExtData/g5chem/L72/OCS_vmr.x360_y181_z72.t12.2016.nc4
+  GMI_acetone_fixed_GMI.x288_y181_z72_t12.2001.nc:
+    template: ExtData/g5chem/L72/acetone_fixed_GMI.x288_y181_z72_t12.2001.nc
+  GMI_fertilizer_GMI.x288_y181_t12.2006.nc:
+    template: ExtData/g5chem/sfc/fertilizer_GMI.x288_y181_t12.2006.nc
+  GMI_lai_x720_y360_v72_t12_2008.nc:
+    template: ExtData/g5chem/sfc/LAI/lai_x720_y360_v72_t12_2008.nc
+  GMI_precipitation_GMI.x288_y181_t12.2006.nc:
+    template: ExtData/g5chem/sfc/precipitation_GMI.x288_y181_t12.2006.nc
+  GMI_sad_wt_CMIP6_288x181x72_%y4.nc:
+    template: ExtData/CMIP6/L72/SAD/sad_wt_CMIP6_288x181x72_%y4.nc
+  GMI_veg_fraction_x720_y360_t12_2008.nc:
+    template: ExtData/g5chem/sfc/LAI/veg_fraction_x720_y360_t12_2008.nc
+
+Samplings:
+  GMI_sample_0:
+    extrapolation: clim
+    update_frequency: PT24H
+    update_offset: PT12H
+    update_reference_time: '0'
+  GMI_sample_1:
+    update_frequency: PT24H
+    update_offset: PT12H
+    update_reference_time: '0'
+  GMI_sample_2:
+    extrapolation: clim
+
+Exports:
+  ACET_FIXED:
+    collection: GMI_acetone_fixed_GMI.x288_y181_z72_t12.2001.nc
+    sample: GMI_sample_0
+    variable: ACET
+  ALD2_biof:
+    collection: /dev/null
+  ALD2_biom:
+    collection: GMI_CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: ALD2_bb
+  ALK4_biof:
+    collection: /dev/null
+  ALK4_biom:
+    collection: GMI_CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: ALK4_bb
+  ALK4_fosf:
+    collection: GMI_CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: ALK4_ff
+  BC1:
+    collection: /dev/null
+  BC2:
+    collection: /dev/null
+  C2H6_biof:
+    collection: /dev/null
+  C2H6_biom:
+    collection: GMI_CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: C2H6_bb
+  C2H6_fosf:
+    collection: GMI_CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: C2H6_ff
+  C3H8_biof:
+    collection: /dev/null
+  C3H8_biom:
+    collection: GMI_CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: C3H8_bb
+  C3H8_fosf:
+    collection: GMI_CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: C3H8_ff
+  CH2O_biof:
+    collection: /dev/null
+  CH2O_biom:
+    collection: GMI_CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: CH2O_bb
+  CH4_aggr:
+    collection: /dev/null
+  CH4_biom:
+    collection: /dev/null
+  CO_biof:
+    collection: /dev/null
+  CO_biom:
+    collection: GMI_CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: CO_bb
+  CO_fosf:
+    collection: GMI_CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: CO_ff
+  LAI_FRAC:
+    collection: GMI_lai_x720_y360_v72_t12_2008.nc
+    sample: GMI_sample_0
+    variable: LAI_FRAC
+  MDUST1:
+    collection: /dev/null
+  MDUST2:
+    collection: /dev/null
+  MDUST3:
+    collection: /dev/null
+  MDUST4:
+    collection: /dev/null
+  MDUST5:
+    collection: /dev/null
+  MDUST6:
+    collection: /dev/null
+  MDUST7:
+    collection: /dev/null
+  MEGAN_ISOP:
+    collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+    regrid: CONSERVE
+    sample: GMI_sample_2
+    variable: BIOGSRCE_AEF_ISOP
+  MEGAN_LAI_001:
+    collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+    sample: GMI_sample_2
+    variable: AVHRR_LAI_001
+  MEGAN_LAI_002:
+    collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+    sample: GMI_sample_2
+    variable: AVHRR_LAI_002
+  MEGAN_LAI_003:
+    collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+    sample: GMI_sample_2
+    variable: AVHRR_LAI_003
+  MEGAN_LAI_004:
+    collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+    sample: GMI_sample_2
+    variable: AVHRR_LAI_004
+  MEGAN_LAI_005:
+    collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+    sample: GMI_sample_2
+    variable: AVHRR_LAI_005
+  MEGAN_LAI_006:
+    collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+    sample: GMI_sample_2
+    variable: AVHRR_LAI_006
+  MEGAN_LAI_007:
+    collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+    sample: GMI_sample_2
+    variable: AVHRR_LAI_007
+  MEGAN_LAI_008:
+    collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+    sample: GMI_sample_2
+    variable: AVHRR_LAI_008
+  MEGAN_LAI_009:
+    collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+    sample: GMI_sample_2
+    variable: AVHRR_LAI_009
+  MEGAN_LAI_010:
+    collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+    sample: GMI_sample_2
+    variable: AVHRR_LAI_010
+  MEGAN_LAI_011:
+    collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+    sample: GMI_sample_2
+    variable: AVHRR_LAI_011
+  MEGAN_LAI_012:
+    collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+    sample: GMI_sample_2
+    variable: AVHRR_LAI_012
+  MEGAN_MBO:
+    collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+    regrid: CONSERVE
+    sample: GMI_sample_2
+    variable: BIOGSRCE_AEF_MBO
+  MEGAN_MPE:
+    collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+    regrid: CONSERVE
+    sample: GMI_sample_2
+    variable: BIOGSRCE_AEF_MPE
+  MEGAN_OVOC:
+    collection: GMI_MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+    regrid: CONSERVE
+    sample: GMI_sample_2
+    variable: BIOGSRCE_AEF_OVC
+  MEK_biof:
+    collection: /dev/null
+  MEK_biom:
+    collection: GMI_CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: MEK_bb
+  MEK_fosf:
+    collection: GMI_CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: MEK_ff
+  NO_air:
+    collection: GMI_CMIP6_CEDS.airNOemis.x720_y360_z72_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: NO_air
+  NO_biof:
+    collection: /dev/null
+  NO_biom:
+    collection: GMI_CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: NO_bb
+  NO_fosf:
+    collection: GMI_CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: NO_ff
+  NO_lgt:
+    collection: /dev/null
+  NO_pwrp:
+    collection: /dev/null
+  NO_ship:
+    collection: /dev/null
+  OC1:
+    collection: /dev/null
+  OC2:
+    collection: /dev/null
+  OCS_CLIMO:
+    collection: GMI_OCS_vmr.x360_y181_z72.t12.2016.nc4
+    sample: GMI_sample_0
+    variable: ocs
+  PRPE_biof:
+    collection: /dev/null
+  PRPE_biom:
+    collection: GMI_CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: PRPE_bb
+  PRPE_fosf:
+    collection: GMI_CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: PRPE_ff
+  SAD:
+    collection: GMI_sad_wt_CMIP6_288x181x72_%y4.nc
+    sample: GMI_sample_1
+    variable: lbssad
+  SHIP_NO:
+    collection: GMI_CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+    regrid: CONSERVE
+    sample: GMI_sample_1
+    variable: NO_shp
+  SO4:
+    collection: /dev/null
+  SO4v:
+    collection: /dev/null
+  SOILFERT:
+    collection: GMI_fertilizer_GMI.x288_y181_t12.2006.nc
+    regrid: CONSERVE
+    sample: GMI_sample_0
+    variable: soilFert
+  SOILPRECIP:
+    collection: GMI_precipitation_GMI.x288_y181_t12.2006.nc
+    sample: GMI_sample_0
+    variable: soilPrecip
+  SS1:
+    collection: /dev/null
+  SS2:
+    collection: /dev/null
+  SS3:
+    collection: /dev/null
+  SS4:
+    collection: /dev/null
+  VEG_FRAC:
+    collection: GMI_veg_fraction_x720_y360_t12_2008.nc
+    sample: GMI_sample_0
+    variable: VEG_FRAC
+
+

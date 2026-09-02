@@ -1,0 +1,168 @@
+#------------------------------------------------------------------------
+#BOP
+#
+# !RESOURCE: GMI_Mech_Registry
+# 
+# !HELP:
+#
+#  The GMI Mechanism Registry resource file provides names and units
+#  for the species in the GMI chemical mechanism. There is a different
+#  file for each different mechanism, and the choice of mechanism
+#  occurs at compile time.
+#
+#  This file is read at run-time.  It provides the list of GMI species
+#  that GEOS will use for the INTERNAL state.  There is a separate,
+#  largely identical list of species that the SMV chemical solver will use,
+#  i.e. the GMI internal list.
+#
+#  The differences between the GEOS list (this file) and the
+#  GMI internal list are as follows:
+#    - AOADAYS is only in the GEOS list
+#    - T2M15d  is only in the GEOS list
+#    - H2O     is only in the GMI internal list
+#
+#  This file has 2 tables:  the GMI table holds the chemical species
+#  that are transported; the XX table holds the non-transported species.
+#
+#  The following assumptions exist in the code:
+#    - AOADAYS is the first entry in the GMI_table
+#    - T2M15d  is the last entry in the XX_table
+#
+# !REVISION HISTORY:
+#
+#  2022-09-15  manyin   Derived this file from Chem_Registry.rc
+#
+#-----------------------------------------------------------------------
+#EOP
+
+GMI_table::
+
+# Name     Units        Long Name
+# -----    ------       --------------------------------
+AOADAYS    days         Age-of-air
+CH2O       'mol mol-1'  Formaldehyde
+CH4        'mol mol-1'  Methane
+CO         'mol mol-1'  Carbon monoxide
+H2         'mol mol-1'  Molecular hydrogen
+HCOOH      'mol mol-1'  Formic acid (CH2O2)
+HNO2       'mol mol-1'  Nitrous acid
+HNO3       'mol mol-1'  Nitric acid
+HNO4       'mol mol-1'  Pernitric acid
+HO2        'mol mol-1'  Perhydroxyl radical
+H2O2       'mol mol-1'  Hydrogen peroxide
+MOH        'mol mol-1'  Methanol
+MP         'mol mol-1'  Methyl hydroperoxide  
+N2O        'mol mol-1'  Nitrous oxide
+NO         'mol mol-1'  Nitric oxide
+NO2        'mol mol-1'  Nitrogen dioxide
+NO3        'mol mol-1'  Nitrogen trioxide
+N2O5       'mol mol-1'  Dinitrogen pentoxide
+OX         'mol mol-1'  Ozone
+OH         'mol mol-1'  Hydroxyl radical
+Br         'mol mol-1'  Ground state atomic bromine (2P3/2)
+BrCl       'mol mol-1'  Bromine chloride
+BrO        'mol mol-1'  Bromine monoxide radical
+BrONO2     'mol mol-1'  Bromine nitrate
+HBr        'mol mol-1'  Hydrogen bromide
+HOBr       'mol mol-1'  Hydrobromous acid
+Cl         'mol mol-1'  Ground state atomic chlorine (2P3/2)
+Cl2        'mol mol-1'  Molecular chlorine
+ClO        'mol mol-1'  Chlorine monoxide radical
+Cl2O2      'mol mol-1'  Chlorine peroxide
+ClONO2     'mol mol-1'  Chlorine nitrate
+HCl        'mol mol-1'  Hydrochloric acid
+HOCl       'mol mol-1'  Hydrochlorous acid
+OClO       'mol mol-1'  Symmetrical chlorine dioxide
+CH3Br      'mol mol-1'  Methyl bromide
+CH3Cl      'mol mol-1'  Methyl chloride
+CH3CCl3    'mol mol-1'  Methyl chloroform
+CCl4       'mol mol-1'  Carbon tetrachloride
+CFC11      'mol mol-1'  CFC11 (CFCl3)
+CFC12      'mol mol-1'  CFC12 (CF2Cl2)
+CFC113     'mol mol-1'  CFC113 (C2Cl3F3)
+CFC114     'mol mol-1'  CFC114 (C2Cl2F4)
+CFC115     'mol mol-1'  CFC115 (C2ClF5)
+HCFC22     'mol mol-1'  HCFC22 (CClF2H)
+HCFC141b   'mol mol-1'  HCFC141b (C2Cl2FH3)
+HCFC142b   'mol mol-1'  HCFC142b (C2ClF2H3)
+CF2Br2     'mol mol-1'  Halon 1202
+CF2ClBr    'mol mol-1'  Halon 1211
+CF3Br      'mol mol-1'  Halon 1301
+H2402      'mol mol-1'  Halon 2402 (C2Br2F4)
+ACTA       'mol mol-1'  Acetic acid (C2H4O2)
+ALD2       'mol mol-1'  Acetaldehyde (C2H4O)
+ALK4       'mol mol-1'  C4-5 alkanes (C4H10 C5H12)
+C2H6       'mol mol-1'  Ethane
+C3H8       'mol mol-1'  Propane
+ETP        'mol mol-1'  Ethylhydroperoxide (C2H6O2) from ETO2
+HAC        'mol mol-1'  Hydroxyacetone (C3H6O2)
+IALD       'mol mol-1'  Hydroxy carbonyl alkenes (C5H8O2) from isoprene
+IAP        'mol mol-1'  Peroxide (C5H10O5) from IAO2
+ISOP       'mol mol-1'  Isoprene (C5H8)
+MACR       'mol mol-1'  Methacrolein (C4H6O)
+MEK        'mol mol-1'  Methyl ethyl ketone (C4H8O)
+MVK        'mol mol-1'  Methyl vinyl ketone (C4H6O)
+PAN        'mol mol-1'  Peroxyacetyl nitrate (C2H3NO5)
+PMN        'mol mol-1'  Peroxymethacryloyl nitrate (C4H5O5N)
+PPN        'mol mol-1'  Peroxypropionyl nitrate (C3H5NO5)
+PRPE       'mol mol-1'  Propene (C3H6)
+R4N2       'mol mol-1'  C4-C5 alkylnitrates (C4H9O3N)
+RCHO       'mol mol-1'  C2 aldehydes (C3H6O)
+RCOOH      'mol mol-1'  C2 organic acids
+N2          cm-3        Molecular nitrogen
+HNO3COND   'mol mol-1'  Condensed nitric acid
+::
+
+XX_table::
+
+# Name     Units        Long Name
+# -----    ------       --------------------------------
+H          'mol mol-1'  Ground state atomic hydrogen (2S)
+MO2        'mol mol-1'  Methylperoxy radical (CH3O2)
+N          'mol mol-1'  Ground state atomic nitrogen
+O          'mol mol-1'  Ground state atomic oxygen (3P)
+O1D        'mol mol-1'  First excited singlet state of atomic oxygen (1D)
+A3O2       'mol mol-1'  Primary RO2 (C3H7O2) from propane
+ATO2       'mol mol-1'  RO2 from acetone (C3H6O3)
+B3O2       'mol mol-1'  Secondary RO2 (C3H7O2) from propane
+EOH        'mol mol-1'  Ethanol
+ETO2       'mol mol-1'  Ethylperoxy radical (C2H5O2)
+GLYC       'mol mol-1'  Glycolaldehyde (Hydroxyacetaldehyde C2H4O2)
+GLYX       'mol mol-1'  Glyoxal (2CHO)
+IAO2       'mol mol-1'  RO2 (C5H9O5) from isoprene oxidation products
+INO2       'mol mol-1'  RO2 (C5H8O3N) from ISOP+NO3
+INPN       'mol mol-1'  Peroxide (C5H8O6N2) from INO2
+ISN1       'mol mol-1'  RO2 (C4H7O4N) from ISN2
+ISNP       'mol mol-1'  Peroxide (C4H7O4N) from ISN1
+KO2        'mol mol-1'  RO2 (C4H7O3) from C3 ketones
+MAN2       'mol mol-1'  RO2 (C4H6O6N) from MACR+NO3
+MAO3       'mol mol-1'  Peroxyacyl (C4H5O3) from MACR and MVK
+MAOP       'mol mol-1'  Peroxide (C4H6O3) from MAO3
+MAP        'mol mol-1'  Peroxyacetic acid (C2H4O3)
+MCO3       'mol mol-1'  Peroxyacetyl radical (C2H3O3)
+MGLY       'mol mol-1'  Methylglyoxal (C3H4O2)
+MRO2       'mol mol-1'  RO2 (C4H7O4) from MACR+OH
+MRP        'mol mol-1'  Peroxide (C4H8O4) from MRO2
+PO2        'mol mol-1'  RO2 (C3H7O3) from propene
+PP         'mol mol-1'  Peroxide (C3H8O3) from PO2
+PRN1       'mol mol-1'  RO2 (C3H6O3N) from propene+NO3
+PRPN       'mol mol-1'  Peroxide (C3H6O3N) from PRN1
+R4N1       'mol mol-1'  RO2 (C4H9O3N) from R4N2
+R4O2       'mol mol-1'  RO2 (C4H9O2) from ALK4
+R4P        'mol mol-1'  Peroxide (C4H10O2) from R4O2
+RA3P       'mol mol-1'  Peroxy propyl alcohol (C3H8O2) from A3O2
+RB3P       'mol mol-1'  Peroxide (C3H8O2) from B3O2
+RCO3       'mol mol-1'  Peroxypropionyl radical (C3H5O3)
+RIO1       'mol mol-1'  RO2 (C5H9O3) from isoprene oxydation products
+RIO2       'mol mol-1'  RO2 (C5H9O3) from isoprene
+RIP        'mol mol-1'  Peroxide (C5H10O3) from RIO2
+ROH        'mol mol-1'  C2 alcohols
+RP         'mol mol-1'  Methacrolein peroxy acid (C4H6O3)
+VRO2       'mol mol-1'  RO2 (C4H7O4) from MVK+OH
+VRP        'mol mol-1'  Peroxide (C4H8O4) from VRO2
+OCSg       'mol mol-1'  Carbonyl sulfide in GMI
+ACET       'mol mol-1'  Acetone
+O2          cm-3        Molecular oxygen
+NUMDENS     cm-3        Total number density
+T2M15d      K           Daily T2M time average
+::

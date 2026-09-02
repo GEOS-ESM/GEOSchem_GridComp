@@ -1,0 +1,100 @@
+#
+
+
+PrimaryExports%%
+# -----------|--------------|-----|---|----------------------|--------|-------|----------------------------------------   
+#  Import    |              |	  |Rgr|_______ Refresh ______|____ Factors ___|___________ External File __________
+#  Name      |     Units    |Clim |Mth|     Time Template    | Offset | Scale |     Variable    |      Template
+# -----------|--------------|-----|---|----------------------|--------|-------|-----------------|----------------------   
+ACET_FIXED       'mol mol-1' 	Y   N	%y4-%m2-%d2T12:00:00	 none	 none  ACET		 ExtData/g5chem/L72/acetone_fixed_GMI.x288_y181_z72_t12.2001.nc
+SAD              'cm+2 cm-3' 	N   N	%y4-%m2-%d2T12:00:00	 none	 none  lbssad            ExtData/CMIP6/L72/SAD/sad_wt_CMIP6_288x181x72_%y4.nc
+VEG_FRAC               'mil' 	Y   N	%y4-%m2-%d2T12:00:00	 none	 none  VEG_FRAC 	 ExtData/g5chem/sfc/LAI/veg_fraction_x720_y360_t12_2008.nc
+LAI_FRAC                 '1' 	Y   N	%y4-%m2-%d2T12:00:00	 none	 none  LAI_FRAC 	 ExtData/g5chem/sfc/LAI/lai_x720_y360_v72_t12_2008.nc
+SOILFERT      'ng N m-2 s-1' 	Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  soilFert 	 ExtData/g5chem/sfc/fertilizer_GMI.x288_y181_t12.2006.nc
+SOILPRECIP          'mm d-1' 	Y   N	%y4-%m2-%d2T12:00:00	 none	 none  soilPrecip	 ExtData/g5chem/sfc/precipitation_GMI.x288_y181_t12.2006.nc
+OCS_CLIMO        'mol mol-1'    Y   N   %y4-%m2-%d2T12:00:00     none    none  ocs               ExtData/g5chem/L72/OCS_vmr.x360_y181_z72.t12.2016.nc4
+#
+ALD2_biom       'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  ALD2_bb           ExtData/CMIP6/sfc/biomass_burning/CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+ALD2_biof       'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  ALD2_bf-UNUSED    /dev/null
+ALK4_biom       'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  ALK4_bb           ExtData/CMIP6/sfc/biomass_burning/CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+ALK4_biof       'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  ALK4_bf-UNUSED    /dev/null
+ALK4_fosf       'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  ALK4_ff           ExtData/CMIP6/sfc/fossil_fuels/CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+C2H6_biom       'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  C2H6_bb           ExtData/CMIP6/sfc/biomass_burning/CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+C2H6_biof       'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  C2H6_bf-UNUSED    /dev/null
+C2H6_fosf       'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  C2H6_ff           ExtData/CMIP6/sfc/fossil_fuels/CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+PRPE_biom       'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  PRPE_bb           ExtData/CMIP6/sfc/biomass_burning/CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+PRPE_biof       'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  PRPE_bf-UNUSED    /dev/null
+PRPE_fosf       'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  PRPE_ff           ExtData/CMIP6/sfc/fossil_fuels/CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+C3H8_biom       'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  C3H8_bb           ExtData/CMIP6/sfc/biomass_burning/CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+C3H8_biof       'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  C3H8-UNUSED       /dev/null
+C3H8_fosf       'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  C3H8_ff           ExtData/CMIP6/sfc/fossil_fuels/CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+CH2O_biom       'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  CH2O_bb           ExtData/CMIP6/sfc/biomass_burning/CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+CH2O_biof       'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  CH2O_bf-UNUSED    /dev/null
+MEK_biom        'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  MEK_bb            ExtData/CMIP6/sfc/biomass_burning/CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+MEK_biof        'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  MEK_bf-UNUSED     /dev/null
+MEK_fosf        'kg m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  MEK_ff            ExtData/CMIP6/sfc/fossil_fuels/CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+CO_biom      'kg CO m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  CO_bb             ExtData/CMIP6/sfc/biomass_burning/CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+CO_biof      'kg CO m-2 s-1'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  CO_bf-UNUSED      /dev/null
+CO_fosf      'kg CO m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  CO_ff             ExtData/CMIP6/sfc/fossil_fuels/CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+NO_biom      'kg NO m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  NO_bb             ExtData/CMIP6/sfc/biomass_burning/CMIP6_BB.emis.x1440_y720_t12.%y4.nc4
+NO_biof      'kg NO m-2 s-1'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  NO_bf-UNUSED      /dev/null
+NO_fosf      'kg NO m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  NO_ff             ExtData/CMIP6/sfc/fossil_fuels/CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+NO_air       'kg NO m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  NO_air            ExtData/CMIP6/L72/aircraft/CMIP6_CEDS.airNOemis.x720_y360_z72_t12.%y4.nc4
+NO_lgt       'kg NO m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  NO_lgt-UNUSED     /dev/null
+NO_pwrp      'kg NO m-2 s-1'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  NO_pp-UNUSED      /dev/null
+NO_ship      'kg NO m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  NO_shp-UNUSED     /dev/null
+SHIP_NO      'kg NO m-2 s-1'    N   Y	%y4-%m2-%d2T12:00:00	 none	 none  NO_shp            ExtData/CMIP6/sfc/fossil_fuels/CMIP6_CEDS.emis.x720_y360_t12.%y4.nc4
+CH4_biom    'kg CH4 m-2 s-1'    N   Y   %y4-%m2-%d2T12:00:00     none    none  CH4_bb-UNUSED     /dev/null
+CH4_aggr    'kg CH4 m-2 s-1'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  CH4_TOT-UNUSED    /dev/null
+MEGAN_ISOP    'mg C m-2 h-1'    Y   Y	-			 none	 none  BIOGSRCE_AEF_ISOP ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+MEGAN_MBO     'mg C m-2 h-1'    Y   Y	-			 none	 none  BIOGSRCE_AEF_MBO  ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+MEGAN_MPE     'mg C m-2 h-1'    Y   Y	-			 none	 none  BIOGSRCE_AEF_MPE  ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+MEGAN_OVOC    'mg C m-2 h-1'    Y   Y	-			 none	 none  BIOGSRCE_AEF_OVC  ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+MEGAN_LAI_001      'cm cm-1'    Y   N	-			 none	 none  AVHRR_LAI_001	 ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+MEGAN_LAI_002      'cm cm-1'    Y   N	-			 none	 none  AVHRR_LAI_002	 ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+MEGAN_LAI_003      'cm cm-1'    Y   N	-			 none	 none  AVHRR_LAI_003	 ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+MEGAN_LAI_004      'cm cm-1'    Y   N	-			 none	 none  AVHRR_LAI_004	 ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+MEGAN_LAI_005      'cm cm-1'    Y   N	-			 none	 none  AVHRR_LAI_005	 ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+MEGAN_LAI_006      'cm cm-1'    Y   N	-			 none	 none  AVHRR_LAI_006	 ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+MEGAN_LAI_007      'cm cm-1'    Y   N	-			 none	 none  AVHRR_LAI_007	 ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+MEGAN_LAI_008      'cm cm-1'    Y   N	-			 none	 none  AVHRR_LAI_008	 ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+MEGAN_LAI_009      'cm cm-1'    Y   N	-			 none	 none  AVHRR_LAI_009	 ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+MEGAN_LAI_010      'cm cm-1'    Y   N	-			 none	 none  AVHRR_LAI_010	 ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+MEGAN_LAI_011      'cm cm-1'    Y   N	-			 none	 none  AVHRR_LAI_011	 ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+MEGAN_LAI_012      'cm cm-1'    Y   N	-			 none	 none  AVHRR_LAI_012	 ExtData/g5chem/sfc/MEGAN_AEF_LAI_Heracles.x288_y181_t12.2008.nc
+BC1                 'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  BC1		 /dev/null
+BC2                 'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  BC2		 /dev/null
+OC1                 'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  OC1		 /dev/null
+OC2                 'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  OC2		 /dev/null
+SS1                 'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  SS1		 /dev/null
+SS2                 'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  SS2		 /dev/null
+SS3                 'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  SS3		 /dev/null
+SS4                 'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  SS4		 /dev/null
+SO4                 'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  SO4		 /dev/null
+SO4v                'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  SO4v		 /dev/null
+MDUST1              'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  MDUST1		 /dev/null
+MDUST2              'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  MDUST2		 /dev/null
+MDUST3              'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  MDUST3		 /dev/null
+MDUST4              'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  MDUST4		 /dev/null
+MDUST5              'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  MDUST5		 /dev/null
+MDUST6              'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  MDUST6		 /dev/null
+MDUST7              'kg m-3'    Y   Y	%y4-%m2-%d2T12:00:00	 none	 none  MDUST7		 /dev/null
+# -----------|--------------|-----|---|----------------------|--------|-------|-----------------|----------------------   
+%%
+
+Masks%%
+# ------------|----------|-------------------------------------------|
+#  Name       |          |       Template File Name                  |
+# ------------|----------|-------------------------------------------|
+#  Import     | Variable | File name                                 |
+#  Name       |          |                                           |
+# ------------|----------|-------------------------------------------|
+%%
+
+DerivedExports%%
+# ---------|---------|--------------------------------------------|
+#  Export  | Primary |_________________ Mask _____________________|
+#  Name    |  Name   |    Name    |           Expression          |    
+# ---------|---------|------------|-------------------------------|
+# ---------|---------|------------|-------------------------------|
+%%

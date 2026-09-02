@@ -1,0 +1,80 @@
+#
+# Resource file for Beryllium-7 tracer
+#
+
+# SHOULD THE TRACER SOURCE BE ADDED FIRST, OR THE SINK APPLIED FIRST
+# ---------------------------
+  first_phase: sink
+
+# SOURCE - MODE:  constant  |  file2d  |  file3d  |  model_field  |  maintain_mixing_ratio
+# ---------------------------
+  src_mode: file3d
+  src_add: TRUE
+# --- Specify SRC_3D_Be7 in TR_ExtData.rc
+# --- ASSUME UNITS: mol/mol/sec
+
+# SOURCE - Horizontal coverage: all  |  lat_zone  |  latlon_box
+# ---------------------------
+  src_horiz: all
+
+# SOURCE - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere
+# ---------------------------
+  src_vert: all
+
+# SINK - MODE:  constant  |  efolding  |  halflife  |  none
+# ---------------------------
+  snk_mode: halflife
+  snk_period: 53.3 days
+
+# SINK - Horizontal coverage:  all  |  lat_zone  |  latlon_box
+# ---------------------------
+  snk_horiz: all
+
+# SINK - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere
+# ---------------------------
+  snk_vert: all
+
+
+# DEPOSITION
+# ---------------------------
+  GMI_dry_deposition: TRUE
+# (as in gmi_aerosol.h)
+  GMI_aerosol_density: 1769.e0
+  GMI_effective_radius: 0.1000e-6
+  GMI_c1: 0.4809e0
+  GMI_c2: 3.082e0
+  GMI_c3: 3.110e-11
+  GMI_c4: -1.428e0
+  GMI_hstar_dry:           0.0e0  # as in setkin_depos.h
+  GMI_delH_298_over_R_dry: 0.0e0  # as in setkin_depos.h
+
+# NOTE: must provide for GMI dry dep and wet dep
+  mw: 7.0
+  GMI_treat_as_aerosol: TRUE     # as in setkin_depos.h
+  GMI_f0:                  0.0e0  # as in setkin_depos.h  (oxidize)
+
+  GMI_wet_removal: TRUE
+  GMI_rel_scav_eff:        1.0e0  # as in gmi_aerosol.h
+  GMI_retention_eff:       0.0e0  # as in setkin_depos.h
+  GMI_treat_as_h2o2:    FALSE
+  GMI_treat_as_hno3:    FALSE
+  GMI_hstar_wet:           0.0e0  # as in setkin_depos.h
+  GMI_delH_298_over_R_wet: 0.0e0  # as in setkin_depos.h
+
+# mw: 7.0
+
+# GOCART_wet_removal: TRUE
+# GOCART_convection:  FALSE
+
+# GOCART_species:     Be7
+# GOCART_aero_flag:   TRUE
+# GOCART_fscav:       0.4    # (what value should be used?)  scavenging efficiency in convective updrafts [km-1]
+# GOCART_fwet:        1.0    # (what value should be used?)  large-scale wet removal efficiency [fraction]
+
+# GOCART_settling:    FALSE
+# GOCART_radius:      0.35e-6  # (what value should be used?)  radius for settling [m]
+# GOCART_rho_p:       1800.0   # (what value should be used?)  density for setting [kg m-3]
+# GOCART_rh_effect:   0        # (what value should be used?)  Flag for RH effects  (0=none, 1=Fitzgerald, 2=Gerber, 3=Ammonium Sulfate, 4=Petters and Kreidenweis)
+
+# GOCART_dry_deposition:    TRUE
+

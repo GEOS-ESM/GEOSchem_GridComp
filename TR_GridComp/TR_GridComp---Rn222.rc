@@ -1,0 +1,91 @@
+#
+# Resource file for Radon 222 tracer
+#
+
+# SHOULD THE TRACER SOURCE BE ADDED FIRST, OR THE SINK APPLIED FIRST
+# ---------------------------
+  first_phase: sink
+
+# SOURCE - MODE:  constant  |  file2d  |  file3d  |  model_field  |  maintain_mixing_ratio
+# ---------------------------
+  src_mode: file2d
+  src_add: TRUE
+# --- Specify SRC_2D_Rn222 in TR_ExtData.rc
+# UNITS = kg/m2/sec
+# be sure to define mw
+
+# SOURCE - Horizontal coverage: all  |  lat_zone  |  latlon_box
+# ---------------------------
+  src_horiz: all
+
+# SOURCE - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere
+# ---------------------------
+  src_vert: surface
+
+# SOURCE - Constraints
+# ---------------------------
+  surface_constraint_count: 0
+
+# Region file is required if any constraints refer to regions; assumptions:
+#  field name = 'REGION_MASK'
+#  index 0 = water
+#  indices 1,2,...,32 = land
+# XXXions_filename: ExtData/g5chem/sfc/RADON.region_mask.x144_y91.2001.nc
+# regions_filename: ExtData/g5chem/sfc/RADON.region_mask.x540_y361.2001.nc
+  regions_ExtData_entry: TR_regionMask
+
+##  surf_con1_mode: scale
+##  surf_con1_regions: WATER
+##  surf_con1_expr: '1.0 - FRACI'   # must have no spaces, or quotes around expr
+
+##  surf_con2_mode: scale
+##  surf_con2_regions: LAND
+##  surf_con2_bool: TSOIL1 < 273.0  # must be FIELD OP SCALAR with space between terms
+##  surf_con2_expr: 0.333
+
+
+# SINK - MODE:  constant  |  efolding  |  halflife  |  none
+# ---------------------------
+  snk_mode: efolding
+  snk_period: 5.5 days
+
+
+# SINK - Horizontal coverage:  all  |  lat_zone  |  latlon_box
+# ---------------------------
+  snk_horiz: all
+
+# SINK - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere
+# ---------------------------
+  snk_vert: all
+
+
+# DEPOSITION
+# ---------------------------
+  GMI_wet_removal: FALSE
+# Values previously used:
+# GMI_rel_scav_eff:       0.0e0  # as in gmi_aerosol.h
+# GMI_hstar_wet:              9.3e-3 # as in setkin_depos.h
+# GMI_delH_298_over_R_wet: 2600.0e0  # as in setkin_depos.h
+# GMI_retention_eff:      0.0e0  # as in setkin_depos.h
+# GMI_treat_as_aerosol: FALSE
+# GMI_treat_as_h2o2:    FALSE
+# GMI_treat_as_hno3:    FALSE
+
+# GOCART_wet_removal: FALSE
+# GOCART_convection:  FALSE
+
+# GOCART_species:     Rn222
+# GOCART_aero_flag:   FALSE
+# GOCART_fscav:       0.0    # (need to set this!)  scavenging efficiency in convective updrafts [km-1]
+# GOCART_fwet:        0.0    # (need to set this!)  large-scale wet removal efficiency [fraction]
+
+# NOTE: must provide mw for dry dep and wet dep, src=file2d, and radioactive decay
+  mw: 222
+
+# GOCART_settling:    FALSE
+# GOCART_radius:      0.35e-6  # (what value should be used?)  radius for settling [m]
+# GOCART_rho_p:       1800.0   # (what value should be used?)  density for setting [kg m-3]
+# GOCART_rh_effect:   0        # (what value should be used?)  Flag for RH effects  (0=none, 1=Fitzgerald, 2=Gerber, 3=Ammonium Sulfate, 4=Petters and Kreidenweis)
+
+# GOCART_dry_deposition:    FALSE
+

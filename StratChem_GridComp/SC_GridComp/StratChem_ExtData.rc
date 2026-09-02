@@ -1,0 +1,35 @@
+PrimaryExports%%
+# -----------|--------------|----|---|----------------------|--------|-------|----------------------------------------   
+#  Export    |              |    |Con|_______ Refresh ______|____ Factors ___|___________ External File __________
+#  Name      |     Units    |Clim|Rgr|     Time Template    | Offset | Scale |     Variable    |      Template
+# -----------|--------------|----|---|----------------------|--------|-------|-----------------|----------------------   
+F11FLUX       'kg m-2 s-1'     Y   N   %y4-%m2-%d2T00:00:00      0.0     1.0  CFC11_emission    ExtData/g5chem/sfc/SC.ODS.Emission.x360_y181.2005.20161025.nc
+F12FLUX       'kg m-2 s-1'     Y   N   %y4-%m2-%d2T00:00:00      0.0     1.0  CFC12_emission    ExtData/g5chem/sfc/SC.ODS.Emission.x360_y181.2005.20161025.nc
+F113FLUX      'kg m-2 s-1'     Y   N   %y4-%m2-%d2T00:00:00      0.0     1.0  CFC113_emission   ExtData/g5chem/sfc/SC.ODS.Emission.x360_y181.2005.20161025.nc
+MCFFLUX       'kg m-2 s-1'     Y   N   %y4-%m2-%d2T00:00:00      0.0     1.0  CH3CCL3_emission  ExtData/g5chem/sfc/SC.ODS.Emission.x360_y181.2005.20161025.nc
+CCL4FLUX      'kg m-2 s-1'     Y   N   %y4-%m2-%d2T00:00:00      0.0     1.0  CCL4_emission     ExtData/g5chem/sfc/SC.ODS.Emission.x360_y181.2005.20161025.nc
+HCFC22FLUX    'kg m-2 s-1'     Y   N   %y4-%m2-%d2T00:00:00      0.0     1.0  HCFC22_emission   ExtData/g5chem/sfc/SC.ODS.Emission.x360_y181.2005.20161025.nc
+CHBR3FLUX     'kg m-2 s-1'     Y   N   %y4-%m2-%d2T00:00:00      0.0     1.0  CHBR3_emission    ExtData/g5chem/sfc/SC.ODS.Emission.x360_y181.2005.20161025.nc
+CH2BR2FLUX    'kg m-2 s-1'     Y   N   %y4-%m2-%d2T00:00:00      0.0     1.0  CH2BR2_emission   ExtData/g5chem/sfc/SC.ODS.Emission.x360_y181.2005.20161025.nc
+OH3DClim      'molec cm-3'     Y   N   %y4-%m2-%d2T00:00:00      0.0     1.0  OH3DClim          ExtData/g5chem/L72/SC.OH3DClimatology.x360_y181_z72_t12.2000.nc
+# -----------|--------------|----|---|----------------------|--------|-------|-----------------|----------------------   
+SO4SAREA       'm2 m-3'        Y   Y   %y4-%m2-%d2t12:00:00     none    none  none              /dev/null
+SO4SAREAvolc   'm2 m-3'        Y   Y   %y4-%m2-%d2t12:00:00     none    none  none              /dev/null
+%%
+
+Masks%%
+# ------------|----------|-------------------------------------------|
+#  Name       |          |       Template File Name                  |
+# ------------|----------|-------------------------------------------|
+#  Import     | Variable | File name                                 |
+#  Name       |          |                                           |
+# ------------|----------|-------------------------------------------|
+%%
+
+DerivedExports%%
+# ---------|---------|--------------------------------------------|
+#  Export  | Primary |_________________ Mask _____________________|
+#  Name    |  Name   |    Name    |           Expression          |    
+# ---------|---------|------------|-------------------------------|
+# ---------|---------|------------|-------------------------------|
+%%

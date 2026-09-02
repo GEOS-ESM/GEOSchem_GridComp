@@ -49,7 +49,6 @@ module GEOS_ChemEnvGridCompMod
   real                       :: FIT_flashFactor
   real                       :: HEMCO_flashFactor
   real                       :: LOPEZ_flashFactor
-  logical                    :: usePreconCape       ! use CAPE, INHB and BYNCY from MOIST
 
   ! May change during the course of the run:
   integer                    :: year_for_ratio = 0
@@ -165,12 +164,13 @@ contains
          DIMS       = MAPL_DimsHorzVert,                                &
          VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
-    call MAPL_AddImportSpec(GC,                                         &
-         SHORT_NAME = 'QCTOT',                                          &
-         LONG_NAME  = 'mass_fraction_of_total_water',                   &
-         UNITS      = 'kg kg-1',                                        &
-         DIMS       = MAPL_DimsHorzVert,                                &
-         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
+     ! Sourish Basu : Needed to compute QTOT later
+     call MAPL_AddImportSpec(GC,                             &
+        SHORT_NAME = 'QCTOT',                                     &
+        LONG_NAME  = 'mass_fraction_of_condensed_water',              &
+        UNITS      = 'kg kg-1',                                   &
+        DIMS       = MAPL_DimsHorzVert,                           &
+        VLOCATION  = MAPL_VLocationCenter,             __RC__     ) 
 
 !   Geopotential Height
 !   -------------------
@@ -377,35 +377,11 @@ contains
          DIMS       = MAPL_DimsHorzOnly,                                &
          VLOCATION  = MAPL_VLocationNone,                         __RC__)
 
-    call MAPL_AddImportSpec(GC,                                         &
-         SHORT_NAME ='BYNCY',                                           &
-         LONG_NAME  ='buoyancy_of surface_parcel',                      &
-         UNITS      ='m s-2',                                           &
-         RESTART    = MAPL_RestartSkip,                                 &
-         DIMS       = MAPL_DimsHorzVert,                                &
-         VLOCATION  = MAPL_VLocationCenter,                       __RC__)
-
-    call MAPL_AddImportSpec(GC,                                         &
-         SHORT_NAME ='CAPE',                                            &
-         LONG_NAME  ='cape_for_surface_parcel',                         &
-         UNITS      ='J kg-1',                                          &
-         RESTART    = MAPL_RestartSkip,                                 &
-         DIMS       = MAPL_DimsHorzOnly,                                &
-         VLOCATION  = MAPL_VLocationNone,                         __RC__)
-       
-    call MAPL_AddImportSpec(GC,                                         &
-         SHORT_NAME ='INHB',                                            &
-         LONG_NAME  ='inhibition_for_surface_parcel',                   &
-         UNITS      ='J kg-1',                                          &
-         RESTART    = MAPL_RestartSkip,                                 &
-         DIMS       = MAPL_DimsHorzOnly,                                & 
-         VLOCATION  = MAPL_VLocationNone,                         __RC__)
-
 
 ! !EXPORT STATE:
 
-!   AIRDENS: Provided for Children
-!   ------------------------------
+!    AIRDENS: Provided for Children
+!    ------------------------------
     call MAPL_AddExportSpec(GC,                                         &
          SHORT_NAME = 'AIRDENS',                                        &
          LONG_NAME  = 'moist_air_density',                              &
@@ -413,8 +389,8 @@ contains
          DIMS       = MAPL_DimsHorzVert,                                &
          VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
-!   Density of dry air
-!   ------------------
+!    Density of dry air
+!    ------------------
     call MAPL_AddExportSpec(GC,                                         &
          SHORT_NAME = 'AIRDENS_DRYP',                                   &
          LONG_NAME  = 'partial_dry_air_density',                        &
@@ -422,17 +398,18 @@ contains
          DIMS       = MAPL_DimsHorzVert,                                &
          VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
 
-!   Mixing ratio of water (all phases; needed for CoDAS)
-!   ----------------------------------------------------
-    call MAPL_AddExportSpec(GC,                                         &
-         SHORT_NAME = 'QTOT',                                           &
-         LONG_NAME  = 'mass_fraction_of_all_water',                     &
-         UNITS      = 'kg kg-1',                                        &
-         DIMS       = MAPL_DimsHorzVert,                                &
-         VLOCATION  = MAPL_VLocationCenter,                      __RC__ )
+! Sourish Basu
+!    Mass mixing ratio of water (all phases)
+!    ----------------------------------
+     call MAPL_AddExportSpec(GC,                             &
+        SHORT_NAME         = 'QTOT',                         &
+        LONG_NAME          = 'mass_fraction_of_all_water',   &
+        UNITS              = 'kg kg-1',                      &
+        DIMS               = MAPL_DimsHorzVert,              &
+        VLOCATION          = MAPL_VLocationCenter,    __RC__ )
 
-!   DELP (This should be wired from DYN)
-!   ------------------------------------
+!    DELP (This should be wired from DYN)
+!    ------------------------------------
     call MAPL_AddExportSpec(GC,                                         &
          SHORT_NAME = 'DELP',                                           &
          LONG_NAME  = 'pressure_thickness',                             &
@@ -449,8 +426,8 @@ contains
          DIMS       = MAPL_DimsHorzOnly,                                &
          VLOCATION  = MAPL_VLocationNone,                        __RC__ )
 
-!   Convective precip
-!   -----------------
+!    Convective precip
+!    -----------------
     call MAPL_AddExportSpec(GC,                                         &
          SHORT_NAME = 'CN_PRCP',                                        &
          LONG_NAME  = 'Convective precipitation',                       &
@@ -458,8 +435,8 @@ contains
          DIMS       = MAPL_DimsHorzOnly,                                &
          VLOCATION  = MAPL_VLocationNone,                        __RC__ )
 
-!   Non-convective precip
-!   ---------------------
+!    Non-convective precip
+!    ---------------------
     call MAPL_AddExportSpec(GC,                                         &
          SHORT_NAME = 'NCN_PRCP',                                       &
          LONG_NAME  = 'Non-convective precipitation',                   &
@@ -775,16 +752,13 @@ contains
                                  numberNOperFlash,                     &
                                  MOIST_flashFactor, FIT_flashFactor,   &
                                  HEMCO_flashFactor, LOPEZ_flashFactor, &
-                                 usePreconCape,                        &
                                  __RC__ )
 
     IF(MAPL_AM_I_ROOT()) THEN
       if ( flash_source_enum == FLASH_SOURCE_MOIST ) PRINT*,'MOIST_flashFactor is ',MOIST_flashFactor
-      if ( flash_source_enum == FLASH_SOURCE_FIT   ) PRINT*,'  FIT_flashFactor is ',  FIT_flashFactor
+      if ( flash_source_enum == FLASH_SOURCE_FIT   ) PRINT*, ' FIT_flashFactor is ',  FIT_flashFactor
       if ( flash_source_enum == FLASH_SOURCE_HEMCO ) PRINT*,'HEMCO_flashFactor is ',HEMCO_flashFactor
       if ( flash_source_enum == FLASH_SOURCE_LOPEZ ) PRINT*,'LOPEZ_flashFactor is ',LOPEZ_flashFactor
-
-                                                     PRINT*,'usePreconCape = ', usePreconCape
     ENDIF
 
     RETURN_(ESMF_SUCCESS)
@@ -850,10 +824,6 @@ contains
   real, pointer, dimension(:,:,:) ::     CNV_MFD => null()
   real, pointer, dimension(:,:,:) ::      PFI_CN => null()
   real, pointer, dimension(:,:,:) ::      CNV_QC => null()
-
-  real, pointer, dimension(:,:)   ::       CAPE_PRECON => null()
-  real, pointer, dimension(:,:)   ::       INHB_PRECON => null()
-  real, pointer, dimension(:,:,:) ::      BYNCY_PRECON => null()
 
 ! Exports
   real,   pointer, dimension(:,:,:)  ::           delp => null()
@@ -970,10 +940,6 @@ contains
     call MAPL_GetPointer ( IMPORT, CNV_QC,      'CNV_QC',   __RC__ )
     call MAPL_GetPointer ( IMPORT, cellArea,    'AREA',     __RC__ )
 
-    call MAPL_GetPointer ( IMPORT,  CAPE_PRECON, 'CAPE',    __RC__ )
-    call MAPL_GetPointer ( IMPORT,  INHB_PRECON, 'INHB',    __RC__ )
-    call MAPL_GetPointer ( IMPORT, BYNCY_PRECON, 'BYNCY',   __RC__ )
-
               BYNCY(:,:,:) = real(0)
                CAPE(:,:)   = real(0)
                 LFR(:,:)   = real(0)
@@ -1001,8 +967,7 @@ contains
                 TS, CNV_MFC, CNV_QC, T, TH, PFI_CN, PLE, Q, ZLE,   &
                 minDeepCloudTop, lightNOampFactor, numberNOperFlash, &
                 MOIST_flashFactor, FIT_flashFactor, HEMCO_flashFactor, LOPEZ_flashFactor, &
-                CNV_MFD, usePreconCape, CAPE_PRECON, INHB_PRECON, BYNCY_PRECON, &
-                CAPE, BYNCY, LFR, LIGHT_NO_PROD, PHIS, &
+                CNV_MFD, CAPE, BYNCY, LFR, LIGHT_NO_PROD, PHIS, &
                 __RC__)
 
 !   call pmaxmin('LFR', LFR, flashRateMin, flashRateMax, nc, 1, 1.)
@@ -1054,11 +1019,6 @@ contains
   real, pointer, dimension(:,:)        ::  cn_prcp => null()
   real, pointer, dimension(:,:)        :: ncn_prcp => null()
 
-! Exports (needed for CoDAS)
-  real, pointer, dimension(:,:,:)      :: q    => null()
-  real, pointer, dimension(:,:,:)      :: qc   => null()
-  real, pointer, dimension(:,:,:)      :: qtot => null()
-
 !=============================================================================
  
     type (MAPL_MetaComp), pointer      :: MAPL
@@ -1105,9 +1065,7 @@ contains
 
 !   Get to the imports...
 !   ---------------------
-    call MAPL_GetPointer ( IMPORT,  PLE,  'PLE',   __RC__ )
-    call MAPL_GetPointer ( IMPORT,    q,  'Q',     __RC__ )
-    call MAPL_GetPointer ( IMPORT,   qc,  'QCTOT', __RC__ )
+    call MAPL_GetPointer ( IMPORT,  PLE,  'PLE', __RC__ )
 
 !   Dimensions of fields with VLOC=center
 !   -------------------------------------
@@ -1118,7 +1076,6 @@ contains
 !   Get to the exports...
 !   ---------------------
     call MAPL_GetPointer ( EXPORT, delp,   'DELP',        __RC__ )
-    call MAPL_GetPointer ( EXPORT, qtot,   'QTOT',        __RC__ )
 
 !   Compute moist (rho) and dry (rhoDry) air density
 !   ------------------------------------------------
@@ -1131,8 +1088,6 @@ contains
           delp(:,:,k) = PLE(:,:,k-k0+1) - PLE(:,:,k-k0)
        end do
     end if
-
-    if ( associated(qtot) ) qtot = q + qc
 
 ! Import total precip from SURFACE (either model or observed precip)
 ! Export total, convective and non-convective precipitation.
@@ -1362,10 +1317,12 @@ contains
   real, pointer, dimension(:,:,:)      :: PLE => null()
   real, pointer, dimension(:,:,:)      :: th => null()
   real, pointer, dimension(:,:,:)      :: q  => null()
+  real, pointer, dimension(:,:,:)      :: qc => null() ! Sourish
 
 ! Exports
   real, pointer, dimension(:,:,:)      :: rho => null()
   real, pointer, dimension(:,:,:)      :: rhoDry => null()
+  real, pointer, dimension(:,:,:)      ::   qtot => null() ! Sourish
 
 ! Error handling
   character(len=ESMF_MAXSTR)           :: IAm = 'Airdens'
@@ -1390,11 +1347,13 @@ contains
     call MAPL_GetPointer ( IMPORT,  PLE,  'PLE', __RC__ )
     call MAPL_GetPointer ( IMPORT,  th,  'TH',  __RC__ )
     call MAPL_GetPointer ( IMPORT,   q,  'Q',   __RC__ )
+    call MAPL_GetPointer ( IMPORT,  qc,  'QCTOT', __RC__ ) ! Sourish
 
 !   Get to the exports...
 !   ---------------------
     call MAPL_GetPointer ( EXPORT, rho,    'AIRDENS',      __RC__ )
     call MAPL_GetPointer ( EXPORT, rhoDry, 'AIRDENS_DRYP', __RC__ )
+    call MAPL_GetPointer ( EXPORT,   qtot, 'QTOT',         __RC__ ) ! Sourish
 
 !   Compute air density
 !   -------------------
@@ -1436,6 +1395,11 @@ contains
     END DO
 
     deallocate(npk)
+
+! Sourish Basu
+!   Compute qtot from q and qctot
+!   -----------------------------
+    IF(ASSOCIATED(qtot)) qtot = q + qc
 
 !   All Done
 !   --------

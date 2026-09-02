@@ -1,0 +1,65 @@
+Collections:
+  StratChem_SC.ODS.Emission.x360_y181.2005.20161025.nc:
+    template: ExtData/g5chem/sfc/SC.ODS.Emission.x360_y181.2005.20161025.nc
+  StratChem_SC.OH3DClimatology.x360_y181_z72_t12.2000.nc:
+    template: ExtData/g5chem/L72/SC.OH3DClimatology.x360_y181_z72_t12.2000.nc
+
+Samplings:
+  StratChem_sample_0:
+    extrapolation: clim
+    update_frequency: PT24H
+    update_reference_time: '0'
+  StratChem_sample_1:
+    extrapolation: clim
+    update_frequency: PT24H
+    update_offset: PT12H
+    update_reference_time: '0'
+
+Exports:
+  CCL4FLUX:
+    collection: StratChem_SC.ODS.Emission.x360_y181.2005.20161025.nc
+    sample: StratChem_sample_0
+    variable: CCL4_emission
+  CH2BR2FLUX:
+    collection: StratChem_SC.ODS.Emission.x360_y181.2005.20161025.nc
+    sample: StratChem_sample_0
+    variable: CH2BR2_emission
+  CHBR3FLUX:
+    collection: StratChem_SC.ODS.Emission.x360_y181.2005.20161025.nc
+    sample: StratChem_sample_0
+    variable: CHBR3_emission
+  F113FLUX:
+    collection: StratChem_SC.ODS.Emission.x360_y181.2005.20161025.nc
+    sample: StratChem_sample_0
+    variable: CFC113_emission
+  F11FLUX:
+    collection: StratChem_SC.ODS.Emission.x360_y181.2005.20161025.nc
+    sample: StratChem_sample_0
+    variable: CFC11_emission
+  F12FLUX:
+    collection: StratChem_SC.ODS.Emission.x360_y181.2005.20161025.nc
+    sample: StratChem_sample_0
+    variable: CFC12_emission
+  HCFC22FLUX:
+    collection: StratChem_SC.ODS.Emission.x360_y181.2005.20161025.nc
+    sample: StratChem_sample_0
+    variable: HCFC22_emission
+  MCFFLUX:
+    collection: StratChem_SC.ODS.Emission.x360_y181.2005.20161025.nc
+    sample: StratChem_sample_0
+    variable: CH3CCL3_emission
+  OH3DClim:
+    collection: StratChem_SC.OH3DClimatology.x360_y181_z72_t12.2000.nc
+    sample: StratChem_sample_0
+    variable: OH3DClim
+  SO4SAREA:
+    collection: /dev/null
+    regrid: CONSERVE
+    sample: StratChem_sample_1
+    variable: none
+  SO4SAREAvolc:
+    collection: /dev/null
+    regrid: CONSERVE
+    sample: StratChem_sample_1
+    variable: none
+

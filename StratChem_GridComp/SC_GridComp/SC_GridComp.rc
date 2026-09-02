@@ -1,0 +1,93 @@
+# --------------------------------
+# Resource file for SC parameters.
+# --------------------------------
+
+# Largest solar zenith angle (degrees) allowed as daytime.
+# --------------------------------------------------------
+  solar_ZA_cutoff: 94.00
+
+# Layer number (1=surface) below which the special treatment of
+# the NO photorate will NOT be applied. (see SUBROUTINE meso_phot).
+# -----------------------------------------------------------------
+   NO_cutoff: 38
+
+# Lightning NOx source strength [sec^{-1}].
+# Legacy value: 1250. Set to zero to turn off.
+# --------------------------------------------
+  TRW_NOx: 250.00
+
+# Include the impacts of Earth eccentricity on the seasonal cycle of solar flux. Present value 0.0167
+# --------------------------------------------------------
+  Eccentricity_SC: 0.0167
+
+# Pole value of high-pressure range limit for PSCs (hPa)
+# ------------------------------------------------------
+  PSCpmax: 350.00
+
+# Low-latitude range limit for PSCs (degrees, absolute value)
+# -----------------------------------------------------------
+  PSClatlim: 45.00
+
+# Enforce a maximum allowable condensed HNO3 (ppbv)
+# -------------------------------------------------
+  HNO3Ice_MAX: 100.00
+
+# ----------------------------------------------
+# Switches (0 = no = .FALSE.,  1 = yes = .TRUE.)
+# ----------------------------------------------
+
+# Set the following switch to 1 if there are no inferred
+# constituents in the initial condition.  Rarely used.
+# ------------------------------------------------------
+    spinup: 0
+
+# Include reactions on polar stratospheric clouds
+# -----------------------------------------------
+    doPSCs: 1
+
+# Include the solar cycle in determination of the photolysis rates.
+# -----------------------------------------------------------------
+ useSolCyc: 0
+
+# Use geospatially resolved surface fluxes for CFC-11,
+# CFC-12, CFC-113, HCFC-22, CH3CCl3, CCl4, CHBr3, and CH2Br2.
+# -----------------------------------------------------------
+ doFlux: 0
+
+# Allow sedimentation of condensed HNO3. If pscs off, ignored.
+# Sedimentation of H2O ice is done by the MOIST grid component.
+# -------------------------------------------------------------
+doSediment: 1
+
+# Debugging switch (1 = on)
+# -------------------------
+   verbose: 0
+
+# Number of years to add or subtract (must be greater than -1000) from the 
+# current year for the surface mixing ratios of greenhouse gases and ozone depleting  
+# depleting substances. To lock-in a specified year, enter the negative of the year number.
+# -----------------------------------------------------------------------------------------
+  GHGYrAdj: 0
+  ODSYrAdj: 0
+
+# Calendar year for sulfate surface area.  Use 0 for current year,
+# or 4-digit year number to set to constant year. Table starts 1979.
+# ------------------------------------------------------------------
+   SO4saYr: 0
+
+# You have the option to bring sulfate surface area density in from GOCART.
+# If desired, set importSulfateSA = 1.  Additionally, you can add the nominal
+# background climatological sulfate area to what is imported (e.g., add
+# background sulfate surface area from climatology file to sulfate perturbation
+# due to geo-engineering or volcanic emissions from a GOCART run).  If desired
+# then set addSAclim = 1.  addSAclim has no effect if importSulfateSA = 0
+# -----------------------------------------------------------------------------
+     importSulfateSA: 0
+           addSAclim: 0
+
+# File names
+# ----------
+KRateTables: ExtData/g5chem/x/SC.K.149.JPL2015
+photolysisFile: ExtData/g5chem/x/SC.J_20_12_79_72_200_45.jpl15.nc4
+climatologiesFile: ExtData/g5chem/L72/SC.clims.newCO2.y181_z72.20161025.nc4
+solarCycleFile: /dev/null

@@ -1,0 +1,78 @@
+#------------------------------------------------------------------------
+#BOP
+#
+# !RESOURCE: TR_Registry --- Passive Tracer Run-time Registry
+# 
+# !HELP:
+#
+#  This Registry lists the TR species to be run.
+#  It includes Name, Units and Long_name for each.
+#  This is sufficient information for calling MAPL_AddInternalSpec.
+#  It is read by routines in Runtime_RegistryMod.F90.
+#  
+#  Each species has an additional list of parameters in its
+#  own specific resource file TR_GridComp---<species_name>.rc
+#
+# !REVISION HISTORY:
+#
+#  2022.08.26  Manyin   First crack
+#  2022.09.12  Manyin   tracer_count is no longer needed;
+#                       all entries in TR_table will be run
+#
+#-----------------------------------------------------------------------
+#EOP
+
+TR_table::
+# Name     Units        Long Name
+# -----    ------       --------------------------------
+aoa          days       'Age of air (uniform source) tracer'
+e90       'mol mol-1'   'Constant burden 90 day tracer'
+Rn222     'kg kg-1'     'Radon-222'
+CH3I      'mol mol-1'   'Methyl iodide'
+::
+
+pre_configured::
+# Name     Units        Long Name
+# -----    ------       --------------------------------
+aoa          days       'Age of air (uniform source) tracer'
+e90       'mol mol-1'   'Constant burden 90 day tracer'
+Rn222     'kg kg-1'     'Radon-222'
+CH3I      'mol mol-1'   'Methyl iodide'
+Pb210     'kg kg-1'     'Lead-210'
+nh_5      'mol mol-1'   'Northern Hemisphere 5 day tracer'
+nh_50     'mol mol-1'   'Northern Hemisphere 50 day tracer'
+aoa_nh       days       'Age of air northern hemisphere tracer'
+st80_25   'mol mol-1'   'Stratospheric source 25 day tracer'
+CO_25     'mol mol-1'   'Anthro CO 25 day tracer'
+CO_50     'mol mol-1'   'Anthro CO 50 day tracer'
+CO_50_ea  'mol mol-1'   'Anthro CO 50 day tracer East Asia'
+CO_50_na  'mol mol-1'   'Anthro CO 50 day tracer North America'
+CO_50_eu  'mol mol-1'   'Anthro CO 50 day tracer Europe'
+CO_50_sa  'mol mol-1'   'Anthro CO 50 day tracer South Asia'
+SF6       'mol mol-1'   'Sulfur Hexafluoride tracer'
+e90_n     'mol mol-1'   'Constant burden 90 day tracer 40N-pole emiss'
+e90_s     'mol mol-1'   'Constant burden 90 day tracer 40S-pole emiss'
+Be7       'kg kg-1'     'Beryllium radionuclide 7(Be)'
+Be10      'kg kg-1'     'Beryllium radionuclide 10(Be)'
+Be7s      'kg kg-1'     'Beryllium radionuclide 7(Be) strat-source'
+Be10s     'kg kg-1'     'Beryllium radionuclide 10(Be) strat-source'
+Pb210s    'kg kg-1'     'Lead-210 strat-source'
+CO_GLB    'mol mol-1'   'CO 50 day tracer Global CMIP6+M2G'
+CO_NAM    'mol mol-1'   'CO 50 day tracer North America CMIP6+M2G'
+CO_EUR    'mol mol-1'   'CO 50 day tracer Europe CMIP6+M2G'
+CO_SAS    'mol mol-1'   'CO 50 day tracer South Asia CMIP6+M2G'
+CO_EAS    'mol mol-1'   'CO 50 day tracer East Asia CMIP6+M2G'
+CO_SEA    'mol mol-1'   'CO 50 day tracer Southeast Asia CMIP6+M2G'
+CO_ANZ    'mol mol-1'   'CO 50 day tracer Australia & New Zealand CMIP6+M2G'
+CO_NAF    'mol mol-1'   'CO 50 day tracer North Africa CMIP6+M2G'
+CO_RAF    'mol mol-1'   'CO 50 day tracer Rest of Africa CMIP6+M2G'
+CO_MDE    'mol mol-1'   'CO 50 day tracer Middle East CMIP6+M2G'
+CO_CAM    'mol mol-1'   'CO 50 day tracer Central America CMIP6+M2G'
+CO_SAM    'mol mol-1'   'CO 50 day tracer South America CMIP6+M2G'
+CO_RBU    'mol mol-1'   'CO 50 day tracer Russia & Belarus & Ukraine CMIP6+M2G'
+CO_CAS    'mol mol-1'   'CO 50 day tracer Central Asia CMIP6+M2G'
+CO_ARC    'mol mol-1'   'CO 50 day tracer Arctic CMIP6+M2G'
+CO_from_CH4 'mol mol-1' 'CO from global average CH4 oxidation'
+stOX      'mol mol-1'   'Strat Ozone with chemical loss'
+aoa_bl       days       'Age of air above boundary layer'
+::

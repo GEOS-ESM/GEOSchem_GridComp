@@ -1,0 +1,231 @@
+Collections:
+  TR_ARCTAS.region_mask.x540_y361.2008.nc:
+    template: ExtData/AeroCom/sfc/ARCTAS.region_mask.x540_y361.2008.nc
+  TR_CMIP6.CO_anthro.x720_y360_t12.nc4:
+    template: ExtData/g5chem/sfc/CMIP6.CO_anthro.x720_y360_t12.nc4
+  TR_CMIP6.CO_anthronmvoc.x720_y360_t12.nc4:
+    template: ExtData/g5chem/sfc/CMIP6.CO_anthronmvoc.x720_y360_t12.nc4
+  TR_CMIP6.CO_bb.x1440_y720_t12.nc4:
+    template: ExtData/g5chem/sfc/CMIP6.CO_bb.x1440_y720_t12.nc4
+  TR_CMIP6.CO_bbnmvoc.x1440_y720_t12.nc4:
+    template: ExtData/g5chem/sfc/CMIP6.CO_bbnmvoc.x1440_y720_t12.nc4
+  TR_EDGAR_IPCC.sf6.x144_y91_t12.2008.nc:
+    template: ExtData/g5chem/sfc/SF6/EDGAR_IPCC.sf6.x144_y91_t12.2008.nc
+  TR_HTAP2.region_map_modified_coastlines.x720_y360.nc4:
+    template: ExtData/g5chem/sfc/HTAP2.region_map_modified_coastlines.x720_y360.nc4
+  TR_Koch.beryllium.x144_y91_z72.nc4:
+    template: ExtData/g5chem/L72/Koch.beryllium.x144_y91_z72.nc4
+  TR_M2G.CO_bionmvoc.x720_y360_t12.nc4:
+    template: ExtData/g5chem/sfc/M2G.CO_bionmvoc.x720_y360_t12.nc4
+  TR_RADON.region_mask.x540_y361.2001.nc:
+    template: ExtData/g5chem/sfc/RADON.region_mask.x540_y361.2001.nc
+  TR_RETRO.co.x144_y91_t12.2000.nc:
+    template: ExtData/g5chem/sfc/RETRO.co.x144_y91_t12.2000.nc
+  TR_Rn222.Zhang_Liu_et_al.x720_y360_t12.nc4:
+    template: ExtData/g5chem/sfc/Rn222.Zhang_Liu_et_al.x720_y360_t12.nc4
+  TR_lai_x720_y360_v72_t12_2008.nc:
+    template: ExtData/g5chem/sfc/LAI/lai_x720_y360_v72_t12_2008.nc
+  TR_unity.x144_y91.nc:
+    template: ExtData/g5chem/sfc/unity.x144_y91.nc
+  TR_veg_fraction_x720_y360_t12_2008.nc:
+    template: ExtData/g5chem/sfc/LAI/veg_fraction_x720_y360_t12_2008.nc
+
+Samplings:
+  TR_sample_0:
+    extrapolation: clim
+    update_frequency: PT24H
+    update_offset: PT12H
+    update_reference_time: '0'
+  TR_sample_1:
+    extrapolation: persist_closest
+  TR_sample_2:
+    update_frequency: PT24H
+    update_offset: PT12H
+    update_reference_time: '0'
+
+Exports:
+  CO_CMIP6_ANTHRO:
+    collection: TR_CMIP6.CO_anthro.x720_y360_t12.nc4
+    regrid: CONSERVE
+    sample: TR_sample_0
+    variable: co_anthro
+  CO_CMIP6_ANTHRO_NMVOC:
+    collection: TR_CMIP6.CO_anthronmvoc.x720_y360_t12.nc4
+    regrid: CONSERVE
+    sample: TR_sample_0
+    variable: co_anthronmvoc
+  CO_CMIP6_BB:
+    collection: TR_CMIP6.CO_bb.x1440_y720_t12.nc4
+    regrid: CONSERVE
+    sample: TR_sample_0
+    variable: co_bb
+  CO_CMIP6_BB_NMVOC:
+    collection: TR_CMIP6.CO_bbnmvoc.x1440_y720_t12.nc4
+    regrid: CONSERVE
+    sample: TR_sample_0
+    variable: co_bbnmvoc
+  CO_M2G_BIOG_NMVOC:
+    collection: TR_M2G.CO_bionmvoc.x720_y360_t12.nc4
+    regrid: CONSERVE
+    sample: TR_sample_0
+    variable: co_bionmvoc
+  DD_OX:
+    collection: /dev/null
+  HTAP2_REGION_MASK_COASTAL_MOD:
+    collection: TR_HTAP2.region_map_modified_coastlines.x720_y360.nc4
+    regrid: VOTE
+    sample: TR_sample_1
+    variable: region_map
+  OX_TR:
+    collection: /dev/null
+  QQK005:
+    collection: /dev/null
+  QQK007:
+    collection: /dev/null
+  QQK027:
+    collection: /dev/null
+  QQK028:
+    collection: /dev/null
+  QQK150:
+    collection: /dev/null
+  QQK170:
+    collection: /dev/null
+  QQK179:
+    collection: /dev/null
+  QQK216:
+    collection: /dev/null
+  QQK235:
+    collection: /dev/null
+  SRC_2D_CH3I:
+    collection: TR_unity.x144_y91.nc
+    linear_transformation:
+      - 0.0
+      - 2.35694e-21
+    sample: TR_sample_1
+    variable: unity_array
+  SRC_2D_CO_25:
+    collection: TR_RETRO.co.x144_y91_t12.2000.nc
+    regrid: CONSERVE
+    sample: TR_sample_0
+    variable: emission_flux
+  SRC_2D_CO_50:
+    collection: TR_RETRO.co.x144_y91_t12.2000.nc
+    regrid: CONSERVE
+    sample: TR_sample_0
+    variable: emission_flux
+  SRC_2D_CO_50_ea:
+    collection: TR_RETRO.co.x144_y91_t12.2000.nc
+    regrid: CONSERVE
+    sample: TR_sample_0
+    variable: emission_flux
+  SRC_2D_CO_50_eu:
+    collection: TR_RETRO.co.x144_y91_t12.2000.nc
+    regrid: CONSERVE
+    sample: TR_sample_0
+    variable: emission_flux
+  SRC_2D_CO_50_na:
+    collection: TR_RETRO.co.x144_y91_t12.2000.nc
+    regrid: CONSERVE
+    sample: TR_sample_0
+    variable: emission_flux
+  SRC_2D_CO_50_sa:
+    collection: TR_RETRO.co.x144_y91_t12.2000.nc
+    regrid: CONSERVE
+    sample: TR_sample_0
+    variable: emission_flux
+  SRC_2D_Rn222:
+    collection: TR_Rn222.Zhang_Liu_et_al.x720_y360_t12.nc4
+    sample: TR_sample_0
+    variable: rnemis
+  SRC_2D_SF6:
+    collection: TR_EDGAR_IPCC.sf6.x144_y91_t12.2008.nc
+    regrid: CONSERVE
+    sample: TR_sample_0
+    variable: sf6
+  SRC_3D_Be10:
+    collection: TR_Koch.beryllium.x144_y91_z72.nc4
+    regrid: CONSERVE
+    sample: TR_sample_1
+    variable: koch_be10_mr
+  SRC_3D_Be10s:
+    collection: TR_Koch.beryllium.x144_y91_z72.nc4
+    regrid: CONSERVE
+    sample: TR_sample_1
+    variable: koch_be10_mr
+  SRC_3D_Be7:
+    collection: TR_Koch.beryllium.x144_y91_z72.nc4
+    regrid: CONSERVE
+    sample: TR_sample_1
+    variable: koch_be7_mr
+  SRC_3D_Be7s:
+    collection: TR_Koch.beryllium.x144_y91_z72.nc4
+    regrid: CONSERVE
+    sample: TR_sample_1
+    variable: koch_be7_mr
+  TR_LAI_FRAC:
+    collection: TR_lai_x720_y360_v72_t12_2008.nc
+    sample: TR_sample_0
+    variable: LAI_FRAC
+  TR_VEG_FRAC:
+    collection: TR_veg_fraction_x720_y360_t12_2008.nc
+    sample: TR_sample_0
+    variable: VEG_FRAC
+  TR_regionMask:
+    collection: TR_RADON.region_mask.x540_y361.2001.nc
+    regrid: VOTE
+    sample: TR_sample_1
+    variable: REGION_MASK
+  TR_regionMask2:
+    collection: TR_ARCTAS.region_mask.x540_y361.2008.nc
+    regrid: VOTE
+    sample: TR_sample_1
+    variable: REGION_MASK
+
+Derived:
+  SRC_2D_CO_ANZ:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_ARC:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_CAM:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_CAS:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_EAS:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_EUR:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_GLB:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_MDE:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_NAF:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_NAM:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_RAF:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_RBU:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_SAM:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_SAS:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+  SRC_2D_CO_SEA:
+    function: CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC
+    sample: TR_sample_2
+
+

@@ -10,16 +10,15 @@
 #  29Mar2007  Nielsen    Name validation, inclusion for GEOS-5
 #  18Nov2009  Colarco    First Crack
 #  23Nov2009  Colarco    Add Control elements to registry
-#  16May2019  Case       Addition of STS/HNO3 options
 #
 # -----------------------------------------------------------------
 
 # CARMA dimensioning parameters
 NBIN:      22
-NGROUP:    1
-NELEM:     1 
+NGROUP:    4
+NELEM:     4 
 NSOLUTE:   0 
-NGAS:      0
+NGAS:      2 
 NWAVE:     0 
 
 # PARTICLES
@@ -33,17 +32,16 @@ NWAVE:     0
 #             if CYLINDER, << 1 for disks, >> 1 for needles
 # FSCAV     = convective scavenging efficiency (fraction km-1) -- deprecated
 # IRHSWELL  = humidifcation type for fall/optics: 0 (I_NO_SWELLING), 1 (I_FITZGERALD), 
-#                                                 2 (I_GERBER), 3 (I_WTPCT_H2SO4),
-#                                                 4 (I_WTPCT_STS)
+#                                                 2 (I_GERBER), 3 (I_WTPCT_H2SO4)
 # IRHSWCOMP = composition swelling flag
-GROUPNAME: dust       seasalt    smoke
-RMRAT:     2.2587828  2.2587828  2.2587828
-RMIN:      5.e-06     5.e-06     5.e-06
-ISHAPE:    1          1          1
-ESHAPE:    1.         1.         1.
-FSCAV:     0.4        0.4        0.4
-IRHSWELL:  0          2          0
-IRHSWCOMP: 0          12         0
+GROUPNAME: sulfate         dust       seasalt    smoke
+RMRAT:     3.7515201       2.2587828  2.2587828  2.2587828
+RMIN:      2.6686863e-8    5.e-06     5.e-06     5.e-06
+ISHAPE:    1               1          1          1
+ESHAPE:    1.              1.         1.         1.
+FSCAV:     0.4             0.4        0.4        0.4
+IRHSWELL:  3               0          2          0
+IRHSWCOMP: 0               0          12         0
 
 # ELEMENTS: Define the aerosol elements (must be at least NELEM entries)
 # IGROUP       = group (above) the element maps to
@@ -52,31 +50,30 @@ IRHSWCOMP: 0          12         0
 # ITYPE        = element type: 1 (I_INVOLATILE), 2 (I_VOLATILE), 3 (I_COREMASS)
 #                              4 (I_VOLCORE), 5 (I_CORE2MOM)
 # ICOMPOSITION = 
-IGROUP:       1       2       3
-RHOP:         2.65    2.20   1.35
-ELEMNAME:     pc      pc     pc
-ITYPE:        1       1      1
-ICOMPOSITION: 1       2      3
+IGROUP:       1       2       3      4
+RHOP:         1.923   2.65    2.20   1.35
+ELEMNAME:     pc      pc      pc     pc
+ITYPE:        2       1       1      1
+ICOMPOSITION: 0       1       2      3
 
 # GASES
 # -----
 # Define the gas properties (must be at least NGAS entries)
 # GASNAME  = name
-# IGCOMP   = gas composition: 1 (I_GCOMP_H2O), 2 (I_GCOMP_H2SO4), 3 (I_GCOMP_SO2),
-#                             4 (I_GCOMP_HNO3)
+# IGCOMP   = gas composition: 1 (I_GCOMP_H2O), 2 (I_GCOMP_H2SO4), 3 (I_GCOMP_SO2)
 # IGVAPREQ = vapor pressure equation: 1 (I_VAPRTN_H2O_BUCK1981), 2 (I_VAPRTN_H2O_MURPHY2005)
 #                                     3 (I_VAPRTN_H2O_GOFF1946), 4 (I_VAPRTN_H2SO4_AYERS1980)
-GASNAME:      H2O     H2SO4   HNO3
-IGCOMP:       1       2       4
-IGVAPREQ:     2       4       -1
+GASNAME:      H2O     H2SO4
+IGCOMP:       1       2
+IGVAPREQ:     2       4
 
 
 # Microphysical process control
 # Logical (0 or 1)
-DO_COAG:     0 
-DO_GROW:     0 
-DO_SUBSTEP:  0 
-DO_THERMO:   0 
+DO_COAG:     1 
+DO_GROW:     1 
+DO_SUBSTEP:  1 
+DO_THERMO:   1 
 DO_VDIFF:    0 
 DO_VTRAN:    1 
 DO_FIXEDINIT:1
@@ -108,28 +105,15 @@ fraction_terpene_to_organic_carbon:     0.1
 # Point-wise sulfate source
 point_emissions_srcfilen_sulfate: /dev/null
 
-# Monochromatic (diagnostic) optical properties
+# Mie Table Information
   n_channels: 4
   n_moments:  0
   r_channels: 4.7e-7 5.5e-7 6.7e-7 8.7e-7
-  filename_optical_properties_DU:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_DU.v15.nbin=22.nc
-  filename_optical_properties_SS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SS.v3_3.nbin=22.nc
-  filename_optical_properties_BC:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SU.v1.nbin=22.nc
-  filename_optical_properties_SM:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SM.v1.nbin=22.nc
-  filename_optical_properties_SU:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SU.v1.nbin=22.nc
-
-# Band optical properties
-# Current is a place holder...need CARMA tables for RRTMG, these are just
-# GOCART tables made to cause code not to crash (although it will if CARMA is
-# AeroProvider)
-  NUM_BANDS: 30
-  DU_OPTICS: ExtData/chemistry/AerosolOptics/v0.0.0/x/opticsBands_DU.v15_3.RRTMG.nc
-  SS_OPTICS: ExtData/chemistry/AerosolOptics/v0.0.0/x/opticsBands_DU.v15_3.RRTMG.nc
-  SU_OPTICS: ExtData/chemistry/AerosolOptics/v0.0.0/x/opticsBands_DU.v15_3.RRTMG.nc
-  OC_OPTICS: ExtData/chemistry/AerosolOptics/v0.0.0/x/opticsBands_DU.v15_3.RRTMG.nc
-  BC_OPTICS: ExtData/chemistry/AerosolOptics/v0.0.0/x/opticsBands_DU.v15_3.RRTMG.nc
-  BRC_OPTICS: ExtData/chemistry/AerosolOptics/v0.0.0/x/opticsBands_DU.v15_3.RRTMG.nc
-  NI_OPTICS: ExtData/chemistry/AerosolOptics/v0.0.0/x/opticsBands_DU.v15_3.RRTMG.nc
+  DU_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_DU.v15.nbin=22.nc
+  SS_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SS.v3_3.nbin=22.nc
+  BC_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SU.v1.nbin=22.nc
+  SM_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SM.v1.nbin=22.nc
+  SU_OPTICS:  /discover/nobackup/pcolarco/fvInput/AeroCom/x/carma_optics_SU.v6.nbin=22.nc
 
 # The following code is the initial registry
   COMP_NAME: CARMA
@@ -150,7 +134,6 @@ point_emissions_srcfilen_sulfate: /dev/null
 # -------------------|-------------|-----|---|----|---|---|-----|------|--------------------------
   ZLE                | m           | xyz | E |    |   |   |     |      | Layer interface geopot height
   PLE                | Pa          | xyz | E |    |   |   |     |      | Layer interface pressure
-  TROPP              | Pa          | xy  |   |    |   |   |     |      | Tropopause pressure (blended estimate)
   Q                  | kg kg-1     | xyz | C |    |   |   |     |      | Specific Humidity
   RH2                | 1           | xyz | C |    |   |   |     |      | Relative Humidity after Moist
   T                  | K           | xyz | C |    |   |   |     |      | Air Temperature (from Dynamics)
@@ -185,11 +168,9 @@ point_emissions_srcfilen_sulfate: /dev/null
   CARMA_SM_ANTEOC2   | 1           | xy  |   |    |   |   |     |      | smoke anthro (2)
   CARMA_SM_SHIP      | 1           | xy  |   |    |   |   |     |      | smoke ship
   CARMA_OC_TERPENE   | kg m-2 s-1  | xy  |   |    |   |   |     |      | monoterpene emissions
-  CARMA_PSOA_ANTHRO_VOC    | kg m-3 s-1  | xyz | C |    |   |   |     |      | SOA production anthropogenic VOC
-  CARMA_PSOA_BIOB_VOC      | kg m-3 s-1  | xyz | C |    |   |   |     |      | SOA production biomass burning VOC
-  CARMA_PSO4TOT            | kg m-2 s-1  | xyz | C |    |   |   |     |      | so4- production from chemistry
-  CARMA_HNO3               | mol mol-1   | xyz | C |    |   |   |     |      | nitric acid
-  CARMA_H2SO4              | mol mol-1   | xyz | C |    |   |   |     |      | sulfuric acid
+  pSOA_ANTHRO_VOC    | kg m-3 s-1  | xyz | C |    |   |   |     |      | SOA production anthropogenic VOC
+  pSOA_BIOB_VOC      | kg m-3 s-1  | xyz | C |    |   |   |     |      | SOA production biomass burning VOC
+  PSO4TOT            | kg m-2 s-1  | xyz | C |    |   |   |     |      | so4- production from chemistry
 # -------------------|-------------|-----|---|----|---|---|-----|------|--------------------------
 </ImportSpec>
 
@@ -265,9 +246,6 @@ point_emissions_srcfilen_sulfate: /dev/null
   CARMA_ASHFLUXV    | kg m-1 s-1  | xy  |   |    |   |   |     |      | Ash column v-wind mass flux
   CARMA_ASHMASS     | kg kg-1     | xyz | C |    |   |   |     |      | Ash Mass Mixing Ratio 
   CARMA_ASHCONC     | kg m-3      | xyz | C |    |   |   |     |      | Ash Mass Concentration
-  CARMA_ASHSAREA    | m-2 m-3     | xyz | C |    |   |   |     |      | Ash Total Surace Area Density
-  CARMA_ASHNUMD     | m-3         | xyz | C |    |   |   |     |      | Ash Total Number Density
-  CARMA_ASHREFF     | m           | xyz | C |    |   |   |     |      | Ash Particle Effective Radius 
   CARMA_MXASHEM     | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Ash emission flux
   CARMA_MXASHDP     | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Ash deposition flux
   CARMA_MXASHSD     | kg m-2 s-1  | xy  |   |    |   |   |     |      | Mixed Ash sedimentation flux
@@ -321,8 +299,6 @@ point_emissions_srcfilen_sulfate: /dev/null
   CARMA_SUSMASS     | kg m-3      | xy  |   |    |   |   |     |      | Sulfate surface mass concentration
   CARMA_SUEXTTAU    | 1           | xy  |   |    |   |   |     |      | Sulfate 550-nm extinction AOT
   CARMA_SUSCATAU    | 1           | xy  |   |    |   |   |     |      | Sulfate 550-nm scattering AOT
-  CARMA_SUSTRATEXTTAU    | 1           | xy  |   |    |   |   |     |      | Stratospheric Sulfate 550-nm extinction AOT
-  CARMA_SUSTRATSCATAU    | 1           | xy  |   |    |   |   |     |      | Stratospheric Sulfate 550-nm scattering AOT
   CARMA_SUANGSTR    | 1           | xy  |   |    |   |   |     |      | Sulfate 470-870 nm Angstrom parameter
   CARMA_SUFLUXU     | kg m-1 s-1  | xy  |   |    |   |   |     |      | Sulfate column u-wind mass flux
   CARMA_SUFLUXV     | kg m-1 s-1  | xy  |   |    |   |   |     |      | Sulfate column v-wind mass flux

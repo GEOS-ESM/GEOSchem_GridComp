@@ -1,0 +1,337 @@
+#==================================
+# Resource file for GMI parameters.
+#==================================
+
+        #############################
+        # Where is the GMI mechanism?
+        #############################
+
+kineticsTextFile: setkin_chem_mech.txt___.rc
+
+        #############################
+        # GMI Chemical Mechanism Name
+        #############################
+
+chem_mecha: strat_trop
+
+        #############################
+        # MetFields Related Variables
+        #############################
+
+met_opt: 3
+metdata_name_org: GMAO
+metdata_name_model: GEOS-5
+
+        #############################################
+        # Should BC files have current date and time?
+        # Useful for mission support and replays.
+        #############################################
+
+BCRealTime: F
+
+        #############################################################
+        # Import predicted dust and aerosols from GOCART. Switches 
+        # are independent. Set all F if GMICHEM or GOCART.data is
+	# the AERO_PROVIDER.
+        #############################################################
+
+usingGOCART_BC: T
+usingGOCART_DU: T
+usingGOCART_OC: T
+usingGOCART_SS: T
+usingGOCART_SU: T
+
+        ##################################################################
+        # What is the name of the importrestart file? If this file does
+        # not exist, species will "freewheel" through the first time step.
+        ##################################################################
+
+importRestartFile: gmichem_import_rst
+
+        #############################
+        # Advection related variables
+        #############################
+
+trans_opt: 0
+# for aerosols:
+do_grav_set: F
+
+
+        #########################################
+        # Species Concentration related variables
+        #########################################
+
+const_opt: 2
+fixedConcentrationSpeciesNames::
+ACET
+::
+
+        #############################
+        # Tracer related variables
+        #############################
+
+tracer_opt: 0
+
+        ###############################
+        # Diagnostics related variables
+        ###############################
+
+verbose: F
+pr_dry_depos: T
+pr_wet_depos: T
+pr_diag: F
+pr_const: T
+pr_surf_emiss: T
+pr_emiss_3d: T
+# only set TRUE if you need QJ, QQJ, QK, QQK exports:
+pr_qqjk: T
+pr_noon: F
+pr_local: F
+do_ftiming: F
+pr_qj_o3_o1d: F
+pr_qj_opt_depth: F
+pr_smv2: F
+do_aerocom: F
+pr_scav: T
+pr_sulf_src: F
+pr_nc_period: -1.00
+
+        #############################
+        # Restart related variables
+        #############################
+
+rd_restart: T
+
+        ##############################
+        # Deposition related variables
+        ##############################
+
+do_drydep: T
+do_wetdep: T
+do_simpledep: F
+
+        ##############################
+        # Emission related variables
+	#   NOTE:  PRPE <=> C3H6
+        ##############################
+
+do_emission: T
+do_dust_emiss: F
+Diurnal_Emission_Species: 9
+
+        ##################################################################################
+        # Are emissions provided per m^2 (by area) or per gridbox?  Default: by area = T
+        ##################################################################################
+clim_emiss_by_area: T
+
+        #############################################################################
+        # By listing a species below, we cause it to be read using Ext Data.
+        # Note that it also must have been listed in GMI_Registry.rc at compile time.
+        #############################################################################
+emiss_opt: 2
+emiss_in_opt: 2
+emiss_conv_flag: 0
+semiss_inchem_flag: 0
+
+# took out  NO_lgt  since we are using the lightning parameterization
+
+emissionSpeciesNames::
+ALD2_biom
+ALK4_biom
+C2H6_biom
+PRPE_biom
+C3H8_biom
+CH2O_biom
+MEK_biom
+CO_biom
+NO_biom
+NO_air
+ALD2_biof
+ALK4_fosf
+ALK4_biof
+C2H6_fosf
+C2H6_biof
+PRPE_fosf
+PRPE_biof
+C3H8_fosf
+C3H8_biof
+CH2O_biof
+MEK_fosf
+MEK_biof
+CO_fosf
+CO_biof
+NO_fosf
+NO_biof
+::
+
+emissionSpeciesLayers::
+1
+1
+1
+1
+1
+1
+1
+1
+1
+72
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+::
+
+do_ShipEmission: F
+doMEGANemission: T
+
+isop_scale::
+1.0d0
+1.0d0
+1.0d0
+1.0d0
+1.0d0
+1.0d0
+1.0d0
+1.0d0
+1.0d0
+1.0d0
+1.0d0
+1.0d0
+::
+
+soil_infile_name:      /discover/nobackup/projects/gmao/share/dasilva/fvInput/g5chem/x/GMI_SoilType.asc
+isopconv_infile_name:  /discover/nobackup/projects/gmao/share/dasilva/fvInput/g5chem/x/GMI_ISOP_convTable.asc
+monotconv_infile_name: /discover/nobackup/projects/gmao/share/dasilva/fvInput/g5chem/x/GMI_MONOT_convTable.asc
+
+do_gcr: F
+do_solar_cycle: T
+sc_infile_name: /discover/nobackup/ldoman/fvInput/solar_cycle_NRL_1882_2014_fill2100.asc
+
+        ######################################
+        #     Lightning related variables
+        # 0: NO_lgt, 1: Parameterized, 2: None
+        ######################################
+
+#
+#  MANYIN 2/2/2016  Restored the value of NO per flash to 1.5, as in CCMI runs
+#                   Changed the amplification factor, made it 18% higher, to account for a
+#                   lower lightning flash rate in Heracles 4.3
+#
+
+lightning_opt: 1
+#
+# NOW in ChemEnv.rc :
+#
+# #lightNOampFactor: 0.944
+# lightNOampFactor: 3.5
+# numberNOperFlash: 1.50E+26
+# minDeepCloudTop: 7.0
+
+        ##############################
+        # Chemistry related variables
+        ##############################
+
+do_full_chem: T
+do_qqjk_inchem: F
+do_synoz: F
+chem_opt: 2
+dehyd_opt: 0
+do_chem_grp: T
+synoz_threshold: 150.0d-9
+chem_cycle: 1.0d0
+do_smv_reord: F
+do_wetchem: F
+loss_opt: 0
+do_AerDust_Calc: T
+AerDust_Effect_opt: 0
+
+        ###########################################################
+        # GHG and ODS surface source gases
+        # forc_bc_opt: 1=Time slice, 2=Time-dependent, 3=Calculated
+        ###########################################################
+
+forc_bc_opt: 2
+forc_bc_years: 151
+forc_bc_start_num: 1950
+forc_bc_kmin: 1
+forc_bc_kmax: 2
+## infile name: ExtData/g5chem/sfc/wmo2002_GHGODS.y19_t1200.1970-2069.asc
+##  infilename: /gpfsm/dnb52/projects/p10/dasilva/fvInput/g5chem/sfc/wmo2002_GHGODS.y19_t1200.1970-2069.asc
+forc_bc_infile_name: /discover/nobackup/ldoman/fvInput/RCP8.5_5BrWMO2014_ch4latvar_1950_2100.asc
+
+forcedBcSpeciesNames:: 
+CFCl3
+CF2Cl2
+CFC113
+CFC114
+CFC115
+CCl4
+CH3CCl3
+HCFC22
+HCFC141b
+HCFC142b
+CF2ClBr
+CF2Br2
+CF3Br
+H2402
+CH3Br
+CH3Cl
+CH4
+N2O
+::
+
+h2oclim_opt: 3
+sad_opt: 2
+lbssad_opt: 4
+
+        ##############################
+        # Photolysis related variables
+        ##############################
+
+phot_opt: 3
+ #####
+ # fastj_opt: 0 - FastJ
+ #            1 - FastJX       (supported)
+ #            2 - FastJX 5.3b
+ #            3 - FastJX 5.3c
+ #            4 - FastJX 6.5   (supported)
+ #####
+fastj_opt: 4
+do_clear_sky: F
+uvalbedo_opt: 2
+sfalbedo_opt: 3
+# For FastJX & JPL02
+# cross section file: /discover/nobackup/projects/gmao/share/dasilva/fvInput/g5chem/x/xsec_jx_06a.dat
+# For FastJX & JPL10
+# cross section file: /discover/nobackup/ldoman/fvInput/xsec_jx_jpl10update2_JNOx1_0.dat
+# For FastJX 6.5 & JPL10
+cross_section_file: /discover/nobackup/ldoman/fvInput/fastjx/65/xsec_jx65_jpl10update2_JNOx1_0.dat
+Prather_jNO_factor: 1.0
+#rate_file: /discover/nobackup/projects/gmao/share/dasilva/fvInput/g5chem/x/ratec_124spc_jx_gmiv2.dat
+rate_file: /discover/nobackup/mmanyin/CCM/fvInput/fastjx/ratec_119spc_jx_gmiv3.dat
+T_O3_climatology_file: /discover/nobackup/projects/gmao/share/dasilva/fvInput/g5chem/x/atms_jx_o3andtemp.dat
+do_ozone_inFastJX: F
+
+ #####################################################
+ #    PSC related variables controlling HNO3COND
+ #####################################################
+
+NoPSCZone: 45
+PSC_Max_P_hPa: 175
+# Upper limit for HNO3COND [integer, ppbv]
+old_HNO3_limit: 15
+Condensed_HNO3_limit: 25
+# Upper limit for HCl [real, ppbv]
+HCl_limit: 5.0

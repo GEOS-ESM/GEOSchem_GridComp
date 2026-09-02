@@ -1,0 +1,78 @@
+#
+PrimaryExports%%
+# -------------------|--------------|----|---|----------------------|--------|-----------|-----------------------------------------   
+#  Export            |              |    |Con|_______ Refresh ______|____ Factors _______|____________ External File __________
+#  Name              |     Units    |Clim|Rgr|     Time Template    | Offset |   Scale   |     Variable     |      Template
+# -------------------|--------------|----|---|----------------------|--------|-----------|------------------|----------------------   
+#
+# CO as specified for CCMI  (regional sources specified as lat/lon boxes)
+SRC_2D_CO_25         'kg m-2 s-1'    Y    Y   %y4-%m2-%d2t12:00:00    none      none      emission_flux     ExtData/g5chem/sfc/RETRO.co.x144_y91_t12.2000.nc
+SRC_2D_CO_50         'kg m-2 s-1'    Y    Y   %y4-%m2-%d2t12:00:00    none      none      emission_flux     ExtData/g5chem/sfc/RETRO.co.x144_y91_t12.2000.nc
+SRC_2D_CO_50_na      'kg m-2 s-1'    Y    Y   %y4-%m2-%d2t12:00:00    none      none      emission_flux     ExtData/g5chem/sfc/RETRO.co.x144_y91_t12.2000.nc
+SRC_2D_CO_50_eu      'kg m-2 s-1'    Y    Y   %y4-%m2-%d2t12:00:00    none      none      emission_flux     ExtData/g5chem/sfc/RETRO.co.x144_y91_t12.2000.nc
+SRC_2D_CO_50_ea      'kg m-2 s-1'    Y    Y   %y4-%m2-%d2t12:00:00    none      none      emission_flux     ExtData/g5chem/sfc/RETRO.co.x144_y91_t12.2000.nc
+SRC_2D_CO_50_sa      'kg m-2 s-1'    Y    Y   %y4-%m2-%d2t12:00:00    none      none      emission_flux     ExtData/g5chem/sfc/RETRO.co.x144_y91_t12.2000.nc
+#
+# CO as specified for CMIP6 (these components are combined in the DerivedExports section)  (regional sources done using HTAP2 Mask file)
+CO_CMIP6_ANTHRO       'kg m-2 s-1'    Y    Y   %y4-%m2-%d2t12:00:00    none      none      co_anthro         ExtData/g5chem/sfc/CMIP6.CO_anthro.x720_y360_t12.nc4
+CO_CMIP6_ANTHRO_NMVOC 'kg m-2 s-1'    Y    Y   %y4-%m2-%d2t12:00:00    none      none      co_anthronmvoc    ExtData/g5chem/sfc/CMIP6.CO_anthronmvoc.x720_y360_t12.nc4
+CO_CMIP6_BB           'kg m-2 s-1'    Y    Y   %y4-%m2-%d2t12:00:00    none      none      co_bb             ExtData/g5chem/sfc/CMIP6.CO_bb.x1440_y720_t12.nc4
+CO_CMIP6_BB_NMVOC     'kg m-2 s-1'    Y    Y   %y4-%m2-%d2t12:00:00    none      none      co_bbnmvoc        ExtData/g5chem/sfc/CMIP6.CO_bbnmvoc.x1440_y720_t12.nc4
+CO_M2G_BIOG_NMVOC     'kg m-2 s-1'    Y    Y   %y4-%m2-%d2t12:00:00    none      none      co_bionmvoc       ExtData/g5chem/sfc/M2G.CO_bionmvoc.x720_y360_t12.nc4
+#
+SRC_2D_SF6            'kg m-2 s-1'    Y    Y   %y4-%m2-%d2t12:00:00    none      none      sf6               ExtData/g5chem/sfc/SF6/EDGAR_IPCC.sf6.x144_y91_t12.2008.nc
+#SRC_2D_Rn222         'kg m-2 s-1'    N    Y          -                none      none      Rn222_emissions   ExtData/g5chem/sfc/Rn222_Jacob_et_al.x540_y361.nc
+SRC_2D_Rn222          'kg m-2 s-1'    Y    N   %y4-%m2-%d2t12:00:00    none      none      rnemis            ExtData/g5chem/sfc/Rn222.Zhang_Liu_et_al.x720_y360_t12.nc4
+SRC_2D_CH3I           'kg m-2 s-1'    N    N          -                none   2.35694e-21  unity_array       ExtData/g5chem/sfc/unity.x144_y91.nc
+#
+SRC_3D_Be7            'mol mol-1 s-1' N    Y          -                none      none      koch_be7_mr       ExtData/g5chem/L72/Koch.beryllium.x144_y91_z72.nc4
+SRC_3D_Be7s           'mol mol-1 s-1' N    Y          -                none      none      koch_be7_mr       ExtData/g5chem/L72/Koch.beryllium.x144_y91_z72.nc4
+SRC_3D_Be10           'mol mol-1 s-1' N    Y          -                none      none      koch_be10_mr      ExtData/g5chem/L72/Koch.beryllium.x144_y91_z72.nc4
+SRC_3D_Be10s          'mol mol-1 s-1' N    Y          -                none      none      koch_be10_mr      ExtData/g5chem/L72/Koch.beryllium.x144_y91_z72.nc4
+#
+# For tracers using dry deposition:
+TR_VEG_FRAC                'mil'      Y    N   %y4-%m2-%d2t12:00:00    none      none      VEG_FRAC          ExtData/g5chem/sfc/LAI/veg_fraction_x720_y360_t12_2008.nc
+TR_LAI_FRAC                 '1'       Y    N   %y4-%m2-%d2t12:00:00    none      none      LAI_FRAC          ExtData/g5chem/sfc/LAI/lai_x720_y360_v72_t12_2008.nc
+#
+TR_regionMask               NA        N    V          -                none      none      REGION_MASK       ExtData/g5chem/sfc/RADON.region_mask.x540_y361.2001.nc
+TR_regionMask2              NA        N    V          -                none      none      REGION_MASK       ExtData/AeroCom/sfc/ARCTAS.region_mask.x540_y361.2008.nc
+#HTAP2_REGION_MASK          NA        N    V          -                none      none      region_map        ExtData/g5chem/sfc/HTAP2.region_map.x720_y360.nc4
+HTAP2_REGION_MASK_COASTAL_MOD  NA     N    V          -                none      none      region_map        ExtData/g5chem/sfc/HTAP2.region_map_modified_coastlines.x720_y360.nc4
+# In case GMI is not running; this is a temporary fix:
+OX_TR                    'none'       N    N          -                none      none      NA                /dev/null
+QQK007                   'none'       N    N          -                none      none      NA                /dev/null
+QQK027                   'none'       N    N          -                none      none      NA                /dev/null
+QQK028                   'none'       N    N          -                none      none      NA                /dev/null
+DD_OX                    'none'       N    N          -                none      none      NA                /dev/null
+QQK005                   'none'       N    N          -                none      none      NA                /dev/null
+QQK235                   'none'       N    N          -                none      none      NA                /dev/null
+QQK170                   'none'       N    N          -                none      none      NA                /dev/null
+QQK216                   'none'       N    N          -                none      none      NA                /dev/null
+QQK179                   'none'       N    N          -                none      none      NA                /dev/null
+QQK150                   'none'       N    N          -                none      none      NA                /dev/null
+#
+# -------------|--------------|-----|----|----|---|----------------------|--------|-----------|------------------|----------------------   
+%%
+
+DerivedExports%%
+# ---------|---------|--------------------------------------------|
+#  Export  | Primary |_________________ Mask _____________________|
+#  Name    |  Name   |    Name    |           Expression          |    
+# ---------|---------|------------|-------------------------------|
+# ---------|---------|------------|-------------------------------|
+SRC_2D_CO_GLB    CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC     %y4-%m2-%d2t12:00:00
+SRC_2D_CO_NAM    CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC     %y4-%m2-%d2t12:00:00
+SRC_2D_CO_EUR    CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC     %y4-%m2-%d2t12:00:00
+SRC_2D_CO_SAS    CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC     %y4-%m2-%d2t12:00:00
+SRC_2D_CO_EAS    CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC     %y4-%m2-%d2t12:00:00
+SRC_2D_CO_SEA    CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC     %y4-%m2-%d2t12:00:00
+SRC_2D_CO_ANZ    CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC     %y4-%m2-%d2t12:00:00
+SRC_2D_CO_NAF    CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC     %y4-%m2-%d2t12:00:00
+SRC_2D_CO_RAF    CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC     %y4-%m2-%d2t12:00:00
+SRC_2D_CO_MDE    CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC     %y4-%m2-%d2t12:00:00
+SRC_2D_CO_CAM    CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC     %y4-%m2-%d2t12:00:00
+SRC_2D_CO_SAM    CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC     %y4-%m2-%d2t12:00:00
+SRC_2D_CO_RBU    CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC     %y4-%m2-%d2t12:00:00
+SRC_2D_CO_CAS    CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC     %y4-%m2-%d2t12:00:00
+SRC_2D_CO_ARC    CO_CMIP6_ANTHRO+CO_CMIP6_ANTHRO_NMVOC+CO_CMIP6_BB+CO_CMIP6_BB_NMVOC+CO_M2G_BIOG_NMVOC     %y4-%m2-%d2t12:00:00
+%%
