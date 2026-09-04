@@ -493,6 +493,13 @@ contains
                                                        RC=STATUS  )
      VERIFY_(STATUS)
 
+     call MAPL_AddExportSpec(GC, &
+        SHORT_NAME = 'OX_PCRIT', & 
+        LONG_NAME  = 'OX relaxation critical pressure', & 
+        UNITS      = 'Pa', & 
+        DIMS       = MAPL_DimsHorzOnly, & 
+        RC         = STATUS)
+
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'H2O_TEND',                          &
         LONG_NAME          = 'tendency_of_water_vapor_mixing_ratio_due_to_chemistry', &
@@ -501,6 +508,13 @@ contains
         VLOCATION          = MAPL_VLocationCenter,                &
                                                        RC=STATUS  )
      VERIFY_(STATUS)
+
+     call MAPL_AddExportSpec(GC, &
+        SHORT_NAME = 'H2O_PCRIT', &
+        LONG_NAME  = 'H2O relaxation critical pressure', &
+        UNITS      = 'Pa', &
+        DIMS       = MAPL_DimsHorzOnly, &
+        RC         = STATUS)
 
      call MAPL_AddExportSpec(GC,                             &
         SHORT_NAME         = 'OX_PROD',                           &
@@ -1698,8 +1712,9 @@ contains
     real                              :: PCRIT
     real                              :: DELP
     integer                           :: I,J,L
-    real                              :: strat_frac
-    logical                           :: APPLY_BIAS_CORR
+    real                              :: TROPP_OFFSET, strat_frac, FRAC, TAU_LOCAL
+    real, allocatable, dimension(:,:) :: PCRIT_LOCAL, DELP_LOCAL
+    real, pointer, dimension(:,:)     :: PCRIT_PTR
 
     if (trim(NAME) == "H2O") then
        call MAPL_GetPointer ( IMPORT,   XX,  'Q', RC=STATUS )
@@ -1770,43 +1785,94 @@ contains
        end do
 
        if(trim(NAME)=="H2O") then
-          call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
-          VERIFY_(STATUS)
-          DELP = max(DELP, 1.e-16) ! avoid division by zero
-          call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=3000. ,RC=STATUS)
-          VERIFY_(STATUS)
-          call MAPL_GetResource(MAPL, APPLY_BIAS_CORR, LABEL=trim(NAME)//"_APPLY_BIAS_CORR:", DEFAULT=.TRUE. ,RC=STATUS)
-          VERIFY_(STATUS)
-          do L=1,LM
-             ! Smooth transition for main forcing
-             LOSS_INT(:,:,L) = (1./TAU) * 0.5 * (1.0 + tanh((PCRIT - PL(:,:,L))/DELP))
-             if (APPLY_BIAS_CORR) then
-                where (PL(:,:,L) < 1000.0) 
-                   ! Upper stratosphere (< 10 mb): correct 20% moist bias
-                   LOSS_INT(:,:,L) = LOSS_INT(:,:,L) * 0.833
-                else where (PL(:,:,L) < 5000.0) 
-                   ! Lower stratosphere (10-50 mb): correct 55% moist bias
-                   LOSS_INT(:,:,L) = LOSS_INT(:,:,L) * 0.645
-                end where
-             end if
-          end do
+           call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
+           VERIFY_(STATUS)
+           DELP = max(DELP, 1.e-16) ! avoid division by zero
+           if (DELP .eq. 5000.0) then
+              call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=20000. ,RC=STATUS)
+              VERIFY_(STATUS)
+              allocate(WRK(IM,JM),stat=STATUS)
+              VERIFY_(STATUS)
+              where (TROPP==MAPL_UNDEF)
+                 WRK = PCRIT
+              elsewhere
+                 WRK = TROPP
+              end where
+              WRK = min(WRK, PCRIT)
+              do L=1,LM
+                 LOSS_INT(:,:,L) = (1./TAU) * max( min( (WRK-PL(:,:,L))/DELP, 1.0), 0.0)
+              end do
+              deallocate(WRK)
+           else
+              call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=20000. ,RC=STATUS)
+              VERIFY_(STATUS)
+              allocate(WRK(IM,JM),stat=STATUS)
+              VERIFY_(STATUS)
+              where (TROPP==MAPL_UNDEF)
+                 WRK = PCRIT
+              elsewhere
+                 WRK = TROPP
+              end where
+              WRK = min(WRK, PCRIT)
+              do L=1,LM
+                 do J=1,JM
+                    do I=1,IM
+                       ! Fraction from TROPP (0.0) to PCRIT (1.0)
+                       FRAC = max( min( (WRK(I,J)-PL(I,J,L))/DELP, 1.0), 0.0)
+                       ! TAU varies from 3*TAU at TROPP to TAU at PCRIT
+                       TAU_LOCAL = 3.0*TAU - FRAC * (2.0*TAU)
+                       ! Relaxation coefficient
+                       LOSS_INT(I,J,L) = (1./TAU_LOCAL) * FRAC
+                    end do
+                 end do
+              end do
+              deallocate(WRK)
+           endif
         elseif(trim(NAME)=="OX") then
-          call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
-          VERIFY_(STATUS)
-          DELP = max(DELP, 1.e-16) ! avoid division by zero
-          call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=10000. ,RC=STATUS)  ! 100 mb
-          VERIFY_(STATUS)
-          do L=1,LM
-             do J=1,JM
-                do I=1,IM
-                  ! Smooth stratosphere/troposphere mask (1 = strat, 0 = trop)
-                  strat_frac = 0.5 * (1.0 + tanh((PCRIT - PL(I,J,L))/DELP))
-                  ! Blended forcing: stratospheric (pressure-scaled) + tropospheric (strong)
-                  LOSS_INT(I,J,L) = (1.0 / MAX(43200.0, MIN(2592000.0, TAU * (PL(I,J,L)/100.0)))) * strat_frac + &
-                                    (1.0 / DT) * (1.0 - strat_frac)
-                end do
-             end do
-          end do
+           call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT= 5000. ,RC=STATUS)
+           VERIFY_(STATUS)
+           DELP = max(DELP, 1.e-16) ! avoid division by zero
+           if (DELP .eq. 5000.0) then
+              call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=1.e+16 ,RC=STATUS)
+              VERIFY_(STATUS)
+              LOSS_INT = (1./TAU) * max( min( (PCRIT   -PL)/DELP, 1.0), 0.0)
+           else
+              call MAPL_GetResource(MAPL, TROPP_OFFSET, LABEL=trim(NAME)//"_TROPP_OFFSET:", DEFAULT= 0.25 ,RC=STATUS)
+              VERIFY_(STATUS)
+              ! Calculate local critical pressure: 100 mb above tropopause
+              ! Handle undefined tropopause gracefully
+              allocate(PCRIT_LOCAL(IM,JM), stat=STATUS)
+              VERIFY_(STATUS)
+              allocate(DELP_LOCAL(IM,JM), stat=STATUS)
+              VERIFY_(STATUS)
+              do J=1,JM
+                 do I=1,IM
+                    if (TROPP(I,J) == MAPL_UNDEF) then
+                      ! If tropopause undefined, use default (75 mb)
+                      PCRIT_LOCAL(I,J) = 7500.0
+                    else
+                      PCRIT_LOCAL(I,J) = MIN(25000.0,MAX(7500.0,TROPP(I,J) * TROPP_OFFSET))
+                    end if
+                    DELP_LOCAL(i,j) = PCRIT_LOCAL(I,J)*DELP   
+                 end do
+              end do
+              call MAPL_GetPointer ( EXPORT, PCRIT_PTR, trim(NAME)//"_PCRIT", RC=STATUS )
+              VERIFY_(STATUS)
+              if(associated(PCRIT_PTR)) PCRIT_PTR = PCRIT_LOCAL
+              do L=1,LM
+                 do J=1,JM
+                    do I=1,IM
+                      ! Smooth stratosphere/troposphere mask
+                      strat_frac = 0.5 * (1.0 + tanh((PCRIT_LOCAL(I,J) - PL(I,J,L))/DELP_LOCAL(I,J)))
+                      ! Blended forcing: stratospheric (pressure-scaled) + tropospheric (strong)
+                      LOSS_INT(I,J,L) = (1.0 / MAX(43200.0, MIN(2592000.0, TAU * (PL(I,J,L)/100.0)))) * strat_frac + &
+                                        (1.0 / DT) * (1.0 - strat_frac)
+                    end do
+                 end do
+              end do
+              deallocate(PCRIT_LOCAL)
+              deallocate(DELP_LOCAL)
+           endif
        else
           ! relaxed by TAU everywhere
           call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
@@ -1857,6 +1923,9 @@ contains
     real                              :: PCRIT
     real                              :: DELP
     integer                           :: I,J,L
+    real                              :: TROPP_OFFSET
+    real, allocatable, dimension(:,:) :: PCRIT_LOCAL, DELP_LOCAL
+    real, pointer, dimension(:,:)     :: PCRIT_PTR
 
     call MAPL_GetPointer ( IMPORT,   XX,  'Q', RC=STATUS )
     VERIFY_(STATUS)
@@ -1884,16 +1953,41 @@ contains
        enddo
     end do
 
-    call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
+    call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT= 0.75 ,RC=STATUS)
     VERIFY_(STATUS)
     DELP = max(DELP, 1.e-16) ! avoid division by zero
-    call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=3000. ,RC=STATUS)
+    call MAPL_GetResource(MAPL, TROPP_OFFSET, LABEL=trim(NAME)//"_TROPP_OFFSET:", DEFAULT= 0.25 ,RC=STATUS)
     VERIFY_(STATUS)
-    !!! loss_swv is 1 for stratosphere and 0 for troposphere
+    ! Allocate local critical pressure array
+    allocate(PCRIT_LOCAL(IM,JM), stat=STATUS)
+    VERIFY_(STATUS)
+    allocate(DELP_LOCAL(IM,JM), stat=STATUS)
+    VERIFY_(STATUS)
+    ! Calculate critical pressure for each grid point
+    do J=1,JM
+      do I=1,IM
+        if (TROPP(I,J) == MAPL_UNDEF) then
+          ! If tropopause undefined, use default (75 mb)
+          PCRIT_LOCAL(I,J) = 7500.0
+        else
+          ! Critical pressure is TROPP_OFFSET above tropopause
+          PCRIT_LOCAL(I,J) = MIN(25000.0,MAX(7500.0,TROPP(I,J) * TROPP_OFFSET))
+        end if
+        DELP_LOCAL(i,j) = PCRIT_LOCAL(I,J)*DELP 
+      end do
+    end do
+    call MAPL_GetPointer ( EXPORT, PCRIT_PTR, trim(NAME)//"_PCRIT", RC=STATUS )
+    VERIFY_(STATUS)
+    if(associated(PCRIT_PTR)) PCRIT_PTR = PCRIT_LOCAL
+    ! ============================================================
+    ! Create stratosphere/troposphere mask
+    ! LOSS_SWV = 1 in stratosphere, 0 in troposphere
+    ! ============================================================
     do L=1,LM
-       LOSS_SWV(:,:,L) = 0.5 * (1.0 + tanh((PCRIT - PL(:,:,L))/DELP))
+      LOSS_SWV(:,:,L) = 0.5 * (1.0 + tanh((PCRIT_LOCAL(:,:) - PL(:,:,L))/DELP_LOCAL(:,:)))
     end do
 
+    ! Apply mask to production and loss rates
     PROD_INT = LOSS_SWV*PROD_INT
     LOSS_INT = LOSS_SWV*LOSS_INT
     XX = (XX + DT*PROD_INT) / (1.0 + LOSS_INT*DT)
