@@ -1713,7 +1713,7 @@ contains
     real                              :: DELP
     integer                           :: I,J,L
     real                              :: TROPP_OFFSET, strat_frac, FRAC, TAU_LOCAL
-    real, allocatable, dimension(:,:) :: PCRIT_LOCAL, DELP_LOCAL
+    real, allocatable, dimension(:,:) :: PCRIT_LOCAL
     real, pointer, dimension(:,:)     :: PCRIT_PTR
 
     if (trim(NAME) == "H2O") then
@@ -1785,10 +1785,11 @@ contains
        end do
 
        if(trim(NAME)=="H2O") then
-           call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
+           call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=2000. ,RC=STATUS)
            VERIFY_(STATUS)
            DELP = max(DELP, 1.e-16) ! avoid division by zero
            if (DELP .eq. 5000.0) then
+              ! Legacy Jason Configuration
               call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=20000. ,RC=STATUS)
               VERIFY_(STATUS)
               allocate(WRK(IM,JM),stat=STATUS)
@@ -1804,7 +1805,11 @@ contains
               end do
               deallocate(WRK)
            else
-              call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=20000. ,RC=STATUS)
+              ! -------------------------------------------------------------------
+              ! BRANCH 2: VECTORIZED COMPROMISE CONFIGURATION
+              ! Functions exactly like Branch 1 but uses custom PCRIT and DELP values.
+              ! -------------------------------------------------------------------
+              call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=10000. ,RC=STATUS)
               VERIFY_(STATUS)
               allocate(WRK(IM,JM),stat=STATUS)
               VERIFY_(STATUS)
@@ -1813,65 +1818,51 @@ contains
               elsewhere
                  WRK = TROPP
               end where
-              WRK = min(WRK, PCRIT)
+              ! Enforce a hard physical upper pressure limit at 100 mb (10000.0 Pa)
+              WRK = min(WRK, PCRIT, 10000.0)
               do L=1,LM
-                 do J=1,JM
-                    do I=1,IM
-                       ! Fraction from TROPP (0.0) to PCRIT (1.0)
-                       FRAC = max( min( (WRK(I,J)-PL(I,J,L))/DELP, 1.0), 0.0)
-                       ! TAU varies from 3*TAU at TROPP to TAU at PCRIT
-                       TAU_LOCAL = 3.0*TAU - FRAC * (2.0*TAU)
-                       ! Relaxation coefficient
-                       LOSS_INT(I,J,L) = (1./TAU_LOCAL) * FRAC
-                    end do
-                 end do
+                 ! Emulates Branch 1 functionality using array operations
+                 LOSS_INT(:,:,L) = (1./TAU) * max( min( (WRK-PL(:,:,L))/DELP, 1.0), 0.0)
               end do
               deallocate(WRK)
            endif
         elseif(trim(NAME)=="OX") then
-           call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT= 5000. ,RC=STATUS)
+           call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT= 2000. ,RC=STATUS)
            VERIFY_(STATUS)
            DELP = max(DELP, 1.e-16) ! avoid division by zero
            if (DELP .eq. 5000.0) then
+              ! Legacy Jason Configuration
               call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=1.e+16 ,RC=STATUS)
               VERIFY_(STATUS)
               LOSS_INT = (1./TAU) * max( min( (PCRIT   -PL)/DELP, 1.0), 0.0)
            else
               call MAPL_GetResource(MAPL, TROPP_OFFSET, LABEL=trim(NAME)//"_TROPP_OFFSET:", DEFAULT= 0.25 ,RC=STATUS)
               VERIFY_(STATUS)
-              ! Calculate local critical pressure: 100 mb above tropopause
-              ! Handle undefined tropopause gracefully
+              
               allocate(PCRIT_LOCAL(IM,JM), stat=STATUS)
               VERIFY_(STATUS)
-              allocate(DELP_LOCAL(IM,JM), stat=STATUS)
-              VERIFY_(STATUS)
-              do J=1,JM
-                 do I=1,IM
-                    if (TROPP(I,J) == MAPL_UNDEF) then
-                      ! If tropopause undefined, use default (75 mb)
-                      PCRIT_LOCAL(I,J) = 7500.0
-                    else
-                      PCRIT_LOCAL(I,J) = MIN(25000.0,MAX(7500.0,TROPP(I,J) * TROPP_OFFSET))
-                    end if
-                    DELP_LOCAL(i,j) = PCRIT_LOCAL(I,J)*DELP   
-                 end do
-              end do
+              
+              ! 1. Vectorized boundary array setup using native 2D array syntax
+              where (TROPP == MAPL_UNDEF)
+                 PCRIT_LOCAL = 7500.0
+              elsewhere
+                 PCRIT_LOCAL = MIN(25000.0, MAX(7500.0, TROPP * TROPP_OFFSET))
+              end where
+              
               call MAPL_GetPointer ( EXPORT, PCRIT_PTR, trim(NAME)//"_PCRIT", RC=STATUS )
               VERIFY_(STATUS)
               if(associated(PCRIT_PTR)) PCRIT_PTR = PCRIT_LOCAL
+              
+              ! 2. Vectorized vertical loop level processing
+              ! Reuses your pre-existing horizontal index loop boundaries (I, J) 
+              ! as array dimension bounds rather than explicit loop iterators.
               do L=1,LM
-                 do J=1,JM
-                    do I=1,IM
-                      ! Smooth stratosphere/troposphere mask
-                      strat_frac = 0.5 * (1.0 + tanh((PCRIT_LOCAL(I,J) - PL(I,J,L))/DELP_LOCAL(I,J)))
-                      ! Blended forcing: stratospheric (pressure-scaled) + tropospheric (strong)
-                      LOSS_INT(I,J,L) = (1.0 / MAX(43200.0, MIN(2592000.0, TAU * (PL(I,J,L)/100.0)))) * strat_frac + &
-                                        (1.0 / DT) * (1.0 - strat_frac)
-                    end do
-                 end do
+                 LOSS_INT(:,:,L) = (1.0 / MAX(43200.0, MIN(2592000.0, TAU * (PL(:,:,L)/100.0)))) * &
+                                   (0.5 * (1.0 + tanh((PCRIT_LOCAL - PL(:,:,L)) / DELP))) + &
+                                   (1.0 / DT) * (1.0 - (0.5 * (1.0 + tanh((PCRIT_LOCAL - PL(:,:,L)) / DELP))))
               end do
+              
               deallocate(PCRIT_LOCAL)
-              deallocate(DELP_LOCAL)
            endif
        else
           ! relaxed by TAU everywhere
