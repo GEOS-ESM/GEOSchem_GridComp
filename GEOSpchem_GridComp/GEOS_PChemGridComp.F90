@@ -1821,7 +1821,6 @@ contains
               ! Enforce a hard physical upper pressure limit at 100 mb (10000.0 Pa)
               WRK = min(WRK, PCRIT, 10000.0)
               do L=1,LM
-                 ! Emulates Branch 1 functionality using array operations
                  LOSS_INT(:,:,L) = (1./TAU) * max( min( (WRK-PL(:,:,L))/DELP, 1.0), 0.0)
               end do
               deallocate(WRK)
@@ -1944,44 +1943,40 @@ contains
        enddo
     end do
 
-    call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT= 0.75 ,RC=STATUS)
+    call MAPL_GetResource(MAPL, DELP, LABEL=trim(NAME)//"_DELP:", DEFAULT=2000., RC=STATUS)
     VERIFY_(STATUS)
     DELP = max(DELP, 1.e-16) ! avoid division by zero
-    call MAPL_GetResource(MAPL, TROPP_OFFSET, LABEL=trim(NAME)//"_TROPP_OFFSET:", DEFAULT= 0.25 ,RC=STATUS)
+    call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=10000., RC=STATUS)
     VERIFY_(STATUS)
-    ! Allocate local critical pressure array
-    allocate(PCRIT_LOCAL(IM,JM), stat=STATUS)
+    ! Allocate working array for tropopause pressure
+    allocate(WRK(IM,JM), stat=STATUS)
     VERIFY_(STATUS)
-    allocate(DELP_LOCAL(IM,JM), stat=STATUS)
+    ! Set tropopause pressure, using PCRIT where undefined
+    where (TROPP == MAPL_UNDEF)
+       WRK = PCRIT
+    elsewhere
+       WRK = TROPP
+    end where
+    ! Enforce hard physical upper pressure limit at 100 mb (10000.0 Pa)
+    WRK = min(WRK, PCRIT, 10000.0)
+    ! Optional: Export the effective critical pressure for diagnostics
+    call MAPL_GetPointer(EXPORT, PCRIT_PTR, trim(NAME)//"_PCRIT", RC=STATUS)
     VERIFY_(STATUS)
-    ! Calculate critical pressure for each grid point
-    do J=1,JM
-      do I=1,IM
-        if (TROPP(I,J) == MAPL_UNDEF) then
-          ! If tropopause undefined, use default (75 mb)
-          PCRIT_LOCAL(I,J) = 7500.0
-        else
-          ! Critical pressure is TROPP_OFFSET above tropopause
-          PCRIT_LOCAL(I,J) = MIN(25000.0,MAX(7500.0,TROPP(I,J) * TROPP_OFFSET))
-        end if
-        DELP_LOCAL(i,j) = PCRIT_LOCAL(I,J)*DELP 
-      end do
-    end do
-    call MAPL_GetPointer ( EXPORT, PCRIT_PTR, trim(NAME)//"_PCRIT", RC=STATUS )
-    VERIFY_(STATUS)
-    if(associated(PCRIT_PTR)) PCRIT_PTR = PCRIT_LOCAL
+    if (associated(PCRIT_PTR)) PCRIT_PTR = WRK
     ! ============================================================
-    ! Create stratosphere/troposphere mask
-    ! LOSS_SWV = 1 in stratosphere, 0 in troposphere
+    ! Create smooth vertical transition factor
+    ! 0 = above tropopause (stratosphere)
+    ! 1 = below tropopause (troposphere)
     ! ============================================================
     do L=1,LM
-      LOSS_SWV(:,:,L) = 0.5 * (1.0 + tanh((PCRIT_LOCAL(:,:) - PL(:,:,L))/DELP_LOCAL(:,:)))
+       LOSS_SWV(:,:,L) = max(min((WRK - PL(:,:,L)) / DELP, 1.0), 0.0)
     end do
-
-    ! Apply mask to production and loss rates
-    PROD_INT = LOSS_SWV*PROD_INT
-    LOSS_INT = LOSS_SWV*LOSS_INT
+    ! Apply transition to production and loss rates
+    PROD_INT = LOSS_SWV * PROD_INT
+    LOSS_INT = LOSS_SWV * LOSS_INT
+    ! Time integration
     XX = (XX + DT*PROD_INT) / (1.0 + LOSS_INT*DT)
+    deallocate(WRK)
 
     if(associated(XX_PROD)) XX_PROD =  PROD_INT
     if(associated(XX_LOSS)) XX_LOSS = -LOSS_INT*XX
