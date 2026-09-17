@@ -1785,8 +1785,13 @@ contains
        end do
 
        if(trim(NAME)=="H2O") then
-           call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=2000. ,RC=STATUS)
-           VERIFY_(STATUS)
+           if (LM == 72) then
+              call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
+              VERIFY_(STATUS)
+           else
+              call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=2000. ,RC=STATUS)
+              VERIFY_(STATUS)
+           endif
            DELP = max(DELP, 1.e-16) ! avoid division by zero
            if (DELP .eq. 5000.0) then
               ! Legacy Jason Configuration
@@ -1826,8 +1831,13 @@ contains
               deallocate(WRK)
            endif
         elseif(trim(NAME)=="OX") then
-           call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT= 2000. ,RC=STATUS)
-           VERIFY_(STATUS)
+           if (LM == 72) then
+              call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
+              VERIFY_(STATUS)
+           else
+              call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=2000. ,RC=STATUS)
+              VERIFY_(STATUS)
+           endif
            DELP = max(DELP, 1.e-16) ! avoid division by zero
            if (DELP .eq. 5000.0) then
               ! Legacy Jason Configuration
@@ -1943,11 +1953,18 @@ contains
        enddo
     end do
 
-    call MAPL_GetResource(MAPL, DELP, LABEL=trim(NAME)//"_DELP:", DEFAULT=2000., RC=STATUS)
-    VERIFY_(STATUS)
+    if (LM == 72) then
+       call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=5000. ,RC=STATUS)
+       VERIFY_(STATUS)
+       call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=20000., RC=STATUS)
+       VERIFY_(STATUS)
+    else
+       call MAPL_GetResource(MAPL, DELP,  LABEL=trim(NAME)//"_DELP:" , DEFAULT=2000. ,RC=STATUS)
+       VERIFY_(STATUS)
+       call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=10000., RC=STATUS)
+       VERIFY_(STATUS)
+    endif
     DELP = max(DELP, 1.e-16) ! avoid division by zero
-    call MAPL_GetResource(MAPL, PCRIT, LABEL=trim(NAME)//"_PCRIT:", DEFAULT=10000., RC=STATUS)
-    VERIFY_(STATUS)
     ! Allocate working array for tropopause pressure
     allocate(WRK(IM,JM), stat=STATUS)
     VERIFY_(STATUS)
@@ -1957,8 +1974,10 @@ contains
     elsewhere
        WRK = TROPP
     end where
-    ! Enforce hard physical upper pressure limit at 100 mb (10000.0 Pa)
-    WRK = min(WRK, PCRIT, 10000.0)
+    if (DELP /= 5000.0) then
+       ! Enforce hard physical upper pressure limit at 100 mb (10000.0 Pa)
+       WRK = min(WRK, PCRIT, 10000.0)
+    endif
     ! Optional: Export the effective critical pressure for diagnostics
     call MAPL_GetPointer(EXPORT, PCRIT_PTR, trim(NAME)//"_PCRIT", RC=STATUS)
     VERIFY_(STATUS)
