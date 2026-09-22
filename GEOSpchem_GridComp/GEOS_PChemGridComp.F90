@@ -1607,14 +1607,12 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
           ! In the mesosphere (P < 100 Pa), Odd Oxygen (OX) partitions into O and O3.
           ! During the day, photolysis reduces the O3 fraction.
           ! 1. We use a smooth ramp based on Zenith angle (ZTH) across the terminator.
-          ! 2. We soften the decay exponent (from 1.5 to 0.8) to prevent over-destruction
-          !    of O3, restoring SW heating to fix the summer mesospheric cold bias.
-          
+
           where(PL(:,:,L) < 100.0)
              ! Smooth daylight weight: 0.0 in dark, ramps to 1.0 shortly after sunrise
              ! (Assuming ZTH is cosine of zenith angle, ZTH/0.1 ramps up by ~84 deg)
              O3VMR = OX(:,:,L) * (1.0 - MAX(0.0, MIN(1.0, ZTH/0.10)) &
-                                      * (1.0 - exp(-0.8*(log10(PL(:,:,L))-2.0)**2)))
+                                      * (1.0 - exp(-1.5*(log10(PL(:,:,L))-2.0)**2)))
           elsewhere
              O3VMR = OX(:,:,L)
           end where
