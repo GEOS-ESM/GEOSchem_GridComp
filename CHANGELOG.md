@@ -7,7 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Added
 ### Changed
+
+- Restores Jason/GCMv10 PCHEM behavior for default L72 configuration while enhancing non-L72 behavior
+- Reworked H2O and OX relaxation constraints
+- Updated mesospheric ozone photolysis behavior
+- Smoothed vertical transition in the water-vapor/plume loss term
+
 ### Removed
 ### Fixed
 ### Deprecated
