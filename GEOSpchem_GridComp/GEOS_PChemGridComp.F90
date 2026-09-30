@@ -130,6 +130,7 @@ module GEOS_PChemGridCompMod
   type T_Pchem_STATE
      private
      integer                             :: NLATS, NLEVS
+     integer                             :: INDX1, INDX2
      real, pointer, dimension(:)         :: LATS => null()
      real, pointer, dimension(:)         :: LEVS => null()
      real, pointer, dimension(:,:,:,:,:) :: MNPL => null() ! Production rates and loss frequencies
@@ -153,7 +154,6 @@ module GEOS_PChemGridCompMod
      INTEGER                             :: endClimYear
 
      INTEGER                             :: dayOfMonth = -1
-     type(ESMF_Time)                     :: lastTimeHere
   end type T_Pchem_STATE
 
   type Pchem_WRAP
@@ -746,9 +746,7 @@ contains
     type (T_Pchem_STATE    ), pointer       :: Pchem_STATE 
     type (Pchem_wrap)                       :: WRAP
     type (ESMF_DELayout)                    :: layout
-    type(ESMF_Time)                         :: PRVMONTH
     type(ESMF_State)                        :: INTERNAL
-    type(ESMF_Alarm)                        :: PCHEM_ALARM
     type(ESMF_VM)                           :: VM
 
     character(len=ESMF_MAXSTR)              :: PCHEMFILE
@@ -1002,26 +1000,14 @@ contains
        VERIFY_(STATUS)
        PCHEM_STATE%H2OlsRate = Z'7FA00000'
     ENDIF
-
-! Setting the alarm to ringing will reinitialize all data during first run
-!-------------------------------------------------------------------------
-
-    call ESMF_TimeSet(PRVMONTH,YY=1869,MM=1,DD=1, H=0, M=0, S=0, RC=STATUS)
-    VERIFY_(STATUS)
-    PCHEM_ALARM = ESMF_AlarmCreate(name='REFRESH_PCHEM_SPECIES', clock=CLOCK,      &
-                                ringTime=PRVMONTH, sticky=.false.,     RC=STATUS)
-    VERIFY_(STATUS)
-    call ESMF_AlarmRingerOn(PCHEM_ALARM, rc=status)
-    VERIFY_(STATUS)
-
     END IF NeedRATsFile
 
 
 
 ! Time
 !-----
-    CALL ESMF_ClockGet(CLOCK, currTime=PCHEM_STATE%lastTimeHere, RC=STATUS)
-    VERIFY_(STATUS)
+    PCHEM_STATE%INDX1 = -999
+    PCHEM_STATE%INDX2 = -999
 
 
 #ifdef PRINT_STATES
@@ -1100,7 +1086,6 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
   type (Pchem_wrap)                 :: WRAP
   type (MAPL_SunOrbit)              :: ORBIT
   type (ESMF_Time)                  :: CurrTime, dummyTIME
-  type(ESMF_Alarm)                  :: PCHEM_ALARM
   type(ESMF_Alarm)                  :: RUN_ALARM
   type(ESMF_TimeInterval)           :: RingInterval
   type(ESMF_VM)                     :: VM
@@ -1113,6 +1098,7 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
   integer                           :: YY, MM, DD
   integer                           :: CCYY
   integer                           :: start(3), cnt(3), UNIT, K, varid, comm, info
+  logical                           :: timeToUpdate
   real                              :: FAC
   real                              :: DT
 
@@ -1200,15 +1186,19 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
 ! Start timer
 !------------
 
-    call MAPL_TimerOn (MAPL,"TOTAL")
-    call MAPL_TimerOn (MAPL,"RUN"  )
- 
 ! Get RUN_ALARM from MAPL
 !------------------------
 
     call MAPL_Get( MAPL, RUNALARM = RUN_ALARM, RC=STATUS )
     VERIFY_(STATUS)
 
+    if (.not. ESMF_AlarmIsRinging(RUN_ALARM)) then
+       _RETURN(ESMF_SUCCESS)
+    end if
+
+    call MAPL_TimerOn (MAPL,"TOTAL")
+    call MAPL_TimerOn (MAPL,"RUN"  )
+ 
 ! Get the time step from the RUN_ALARM
 ! ------------------------------------
 
@@ -1319,21 +1309,13 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
        IF(INDX2 == N+1) INDX2 = N-11
        IF(YY > PCHEM_STATE%endClimYear .AND. INDX1 == N-12) INDX1 = N
 
-       call ESMF_ClockGetAlarm(CLOCK,'REFRESH_PCHEM_SPECIES', PCHEM_ALARM,RC=STATUS)
-       VERIFY_(STATUS)
+       timeToUpdate = .false.
+       if (PCHEM_STATE%INDX1 /= INDX1 .or. PCHEM_STATE%INDX2 /= INDX2) timeToUpdate = .true.
+       
+       if ( timeToUpdate ) then
+          PCHEM_STATE%INDX1 = INDX1
+          PCHEM_STATE%INDX2 = INDX2
 
-       if (currTime < PCHEM_STATE%lastTimeHere) then
-          ! this should have not happen, unless we are doing replay and rewind clock
-          call ESMF_AlarmRingerOn(PCHEM_ALARM, RC=STATUS)
-          VERIFY_(STATUS)
-       end if
-
-       if ( ESMF_AlarmIsRinging( PCHEM_ALARM ) ) then
-
-          call ESMF_AlarmRingerOff(PCHEM_ALARM, RC=STATUS)
-          VERIFY_(STATUS)
-
-          call MAPL_TimerOff(MAPL,"RUN"  )
           call MAPL_TimerOn (MAPL,"-Read Species"  )
           call MAPL_GetResource(MAPL, PCHEMFILE,'pchem_clim:' ,DEFAULT='pchem_clim.dat', RC=STATUS )
           VERIFY_(STATUS)
@@ -1341,7 +1323,7 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
           call ESMF_VMGet(vm, mpiCommunicator=comm, rc=STATUS)
           VERIFY_(STATUS)
 
-          if ( MAPL_am_I_root() ) then
+          if ( MAPL_am_I_root(vm) ) then
              STATUS = NF90_OPEN(trim(PCHEMFILE),NF90_NOWRITE,UNIT)
              if(status /= NF90_NOERR) then
                 print*,'Error opening file ',trim(PCHEMFILE), status
@@ -1498,8 +1480,8 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
           ENDIF
 
           call MAPL_TimerOff (MAPL,"-Read Species"  )
-          call MAPL_TimerOn  (MAPL,"RUN"  )
 
+#ifdef DEBUG
           call ESMF_TimeIntervalSet(oneMonth, MM = 1, RC=STATUS )
           VERIFY_(STATUS)
           call ESMF_TimeGet(currTime, midMonth=midMonth, RC=STATUS )
@@ -1512,11 +1494,8 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
           endif
           call ESMF_TimeGet (dummyTIME, midMonth=midMonth,    RC=STATUS)
           VERIFY_(STATUS)
-          call ESMF_AlarmSet(PCHEM_ALARM, ringtime=midMonth, RC=STATUS)
-          VERIFY_(STATUS)
 
-#ifdef DEBUG
-          if(MAPL_AM_I_ROOT()) then
+          if(MAPL_AM_I_ROOT(vm)) then
              print*,'Next ring time for SPECIES Alarm is'
              call ESMF_TimePrint(midMonth, "string", rc)
           endif
@@ -1660,9 +1639,6 @@ subroutine RUN ( GC, IMPORT, EXPORT, CLOCK, RC )
     AOA         = AOA +  (DT/86400.0) 
     AOA(:,:,LM) = 0.0
 
-    PCHEM_STATE%lastTimeHere = currTime
-
-
 ! Clean-up
 !---------
 
@@ -1713,6 +1689,13 @@ contains
     real                              :: TROPP_OFFSET, strat_frac, FRAC, TAU_LOCAL
     real, allocatable, dimension(:,:) :: PCRIT_LOCAL
     real, pointer, dimension(:,:)     :: PCRIT_PTR
+    
+    ! New local variables for optimization
+    real    :: wrk_val, loss_val, prod_val, xx_val
+    real    :: inv_tau, inv_dt
+    logical :: has_prod, has_loss, has_ox_tend, has_h2o_tend
+
+    call MAPL_TimerOn (MAPL, "-UPDATES_" // trim(NAME))
 
     if (trim(NAME) == "H2O") then
        call MAPL_GetPointer ( IMPORT,   XX,  'Q', RC=STATUS )
@@ -1744,10 +1727,29 @@ contains
      VERIFY_(STATUS)
     END IF
 
+    ! Get EXPORT Pointers up front so we can populate them in the fused loops
     call MAPL_GetPointer ( EXPORT, XX_PROD, trim(NAME)//'_PROD', RC=STATUS )
     VERIFY_(STATUS)
     call MAPL_GetPointer ( EXPORT, XX_LOSS, trim(NAME)//'_LOSS', RC=STATUS )
     VERIFY_(STATUS)
+    
+    has_prod = associated(XX_PROD)
+    has_loss = associated(XX_LOSS)
+    
+    has_ox_tend = .false.
+    if(trim(NAME) == 'OX') then
+       call MAPL_GetPointer ( EXPORT, OX_TEND, 'OX_TEND', RC=STATUS )
+       VERIFY_(STATUS)
+       has_ox_tend = associated(OX_TEND)
+    end if
+
+    has_h2o_tend = .false.
+    if(trim(NAME) == 'H2O') then
+       call MAPL_GetPointer ( EXPORT, H2O_TEND, 'H2O_TEND', RC=STATUS )
+       VERIFY_(STATUS)
+       has_h2o_tend = associated(H2O_TEND)
+    end if
+
 
     if (TAU<=0.0) then  ! By convention this is the prod(index 1) and loss(index 2) case
 
@@ -1767,16 +1769,41 @@ contains
           enddo
        end do
 
-       XX = (XX + DT*PROD_INT) / (1.0 + DT*LOSS_INT)
+       ! Fused array update and export assignment
+       !$OMP parallel do default(none) &
+       !$OMP shared(IM, JM, LM, XX, PROD_INT, LOSS_INT, DT, has_prod, has_loss, XX_PROD, XX_LOSS) &
+       !$OMP private(I, J, L, prod_val, loss_val, xx_val)
+       do L=1,LM
+          do J=1,JM
+             do I=1,IM
+                prod_val = PROD_INT(I,J,L)
+                loss_val = LOSS_INT(I,J,L)
+                xx_val   = XX(I,J,L)
+                
+                xx_val   = (xx_val + DT*prod_val) / (1.0 + DT*loss_val)
+                XX(I,J,L) = xx_val
+                
+                if(has_prod) XX_PROD(I,J,L) = prod_val
+                if(has_loss) XX_LOSS(I,J,L) = -loss_val * xx_val
+             enddo
+          enddo
+       enddo
 
     else ! If the relaxation time is positive, relax to climatology.
 
+       ! 1. Time-interpolate the climatology
        PROD1 = PCHEM_STATE%MNCV(:,:,NN,1)*FAC + PCHEM_STATE%MNCV(:,:,NN,2)*(1.-FAC)
-
+       
+       ! 2. Spatial interpolation (Threaded over J)
+       !$OMP parallel do default(none) &
+       !$OMP shared(jm, nlevs, im, LATS, PCHEM_STATE, Prod1, PL, PROD_INT) &
+       !$OMP private(j, l, i, PROD)
        do j=1,jm
+          ! A. Interpolate in Latitude (Fills the private 2D IM x NLEVS slice for this J)
           do l=1,nlevs
              call INTERP_NO_EXTRAP( PROD(:,L), LATS(:,J), Prod1(:,L), PCHEM_STATE%LATS)
           enddo
+          ! B. Interpolate in Vertical (Maps the 2D slice onto the 3D model pressure levels)
           do i=1,im
              call INTERP_NO_EXTRAP( PROD_INT(i,j,:), PL(i,j,:), PROD(i,:), PCHEM_STATE%LEVS)
           enddo
@@ -1880,16 +1907,57 @@ contains
           VERIFY_(STATUS)
           LOSS_INT = (1./TAU) * max( min( (PCRIT   -PL)/DELP, 1.0), 0.0)
        endif
+       VERIFY_(STATUS)
 
-       PROD_INT = LOSS_INT*PROD_INT
+       inv_tau = 1.0 / TAU
+       inv_dt  = 1.0 / DT
 
-       XX = (XX + DT*PROD_INT) / (1.0 + DT*LOSS_INT)
+       ! Fused scalar math, array update, and export assignments
+       !$OMP parallel do default(none) &
+       !$OMP shared(IM, JM, LM, NAME, PCRIT, DELP, TROPP, PL, &
+       !$OMP        LOSS_INT, PROD_INT, XX, DT, inv_tau, inv_dt, &
+       !$OMP        has_prod, has_loss, has_ox_tend, has_h2o_tend, &
+       !$OMP        XX_PROD, XX_LOSS, OX_TEND, H2O_TEND) &
+       !$OMP private(I, J, L, wrk_val, loss_val, prod_val, xx_val)
+       do L=1,LM
+          do J=1,JM
+             do I=1,IM
+                
+                ! Calculate LOSS_INT scalar
+                if (trim(NAME) == "H2O") then
+                   wrk_val = TROPP(I,J)
+                   if (wrk_val == MAPL_UNDEF) wrk_val = PCRIT
+                   wrk_val = min(wrk_val, PCRIT)
+                   loss_val = inv_tau * max(min((wrk_val - PL(I,J,L)) / DELP, 1.0), 0.0)
+                elseif (trim(NAME) == "OX") then
+                   loss_val = inv_tau * max(min((PCRIT - PL(I,J,L)) / DELP, 1.0), 0.0) + &
+                              inv_dt  * (1.0 - max(min((PCRIT - PL(I,J,L)) / DELP, 1.0), 0.0))
+                else
+                   loss_val = inv_tau * max(min((PCRIT - PL(I,J,L)) / DELP, 1.0), 0.0)
+                endif
+                
+                LOSS_INT(I,J,L) = loss_val
+
+                ! Scale PROD_INT
+                prod_val = loss_val * PROD_INT(I,J,L)
+                PROD_INT(I,J,L) = prod_val
+
+                ! Update XX
+                xx_val = XX(I,J,L)
+                xx_val = (xx_val + DT * prod_val) / (1.0 + DT * loss_val)
+                XX(I,J,L) = xx_val
+
+                ! Assign to exports
+                if (has_prod)     XX_PROD(I,J,L)  = prod_val
+                if (has_loss)     XX_LOSS(I,J,L)  = -loss_val * xx_val
+                if (has_ox_tend)  OX_TEND(I,J,L)  = prod_val - (loss_val * xx_val)
+                if (has_h2o_tend) H2O_TEND(I,J,L) = prod_val - (loss_val * xx_val)
+
+             enddo
+          enddo
+       enddo
 
     end if
-
-
-    if(associated(XX_PROD)) XX_PROD =  PROD_INT
-    if(associated(XX_LOSS)) XX_LOSS = -LOSS_INT*XX
 
     if(trim(NAME)=='OX') then
        call MAPL_GetPointer ( EXPORT, OX_TEND, 'OX_TEND', RC=STATUS )
@@ -1902,6 +1970,7 @@ contains
        VERIFY_(STATUS)
        if(associated(H2O_TEND)) H2O_TEND = (PROD_INT - LOSS_INT*XX)
     end if
+    call MAPL_TimerOff (MAPL, "-UPDATES_" // trim(NAME))
 
     return
   end subroutine UPDATE
@@ -1925,6 +1994,12 @@ contains
     real, allocatable, dimension(:,:) :: PCRIT_LOCAL, DELP_LOCAL
     real, pointer, dimension(:,:)     :: PCRIT_PTR
 
+    ! New local variables for optimization
+    real    :: wrk_val, loss_swv_val, prod_val, loss_val, xx_val
+    logical :: has_prod, has_loss, has_h2o_tend
+
+    call MAPL_TimerOn (MAPL, "-UPDATE_PL_" // trim(NAME))
+
     call MAPL_GetPointer ( IMPORT,   XX,  'Q', RC=STATUS )
     VERIFY_(STATUS)
     ASSERT_(associated(XX))
@@ -1937,18 +2012,28 @@ contains
     call MAPL_GetPointer ( EXPORT, XX_LOSS, trim(NAME)//'_LOSS', RC=STATUS )
     VERIFY_(STATUS)
 
+    ! 1. Time-interpolate the climatology (Usually small arrays, safe to leave as-is)
     PROD1 = PCHEM_STATE%H2OprRate(:,:,1)*FAC + PCHEM_STATE%H2OprRate(:,:,2)*(1.-FAC)
     LOSS1 = PCHEM_STATE%H2OlsRate(:,:,1)*FAC + PCHEM_STATE%H2OlsRate(:,:,2)*(1.-FAC)
 
+    ! 2. Spatial interpolation (Threaded over J)
+    !$OMP parallel do default(none) &
+    !$OMP shared(jm, nlevs, im, LATS, PCHEM_STATE, Prod1, Loss1, PL, PROD_INT, LOSS_INT) &
+    !$OMP private(j, l, i, PROD, LOSS)
     do j=1,jm
+       
+       ! A. Interpolate in Latitude (Fills the private 2D IM x NLEVS slice for this J)
        do l=1,nlevs
           call INTERP_NO_EXTRAP( PROD(:,L), LATS(:,J), Prod1(:,L), PCHEM_STATE%LATS)
           call INTERP_NO_EXTRAP( LOSS(:,L), LATS(:,J), Loss1(:,L), PCHEM_STATE%LATS)
        enddo
+       
+       ! B. Interpolate in Vertical (Maps the 2D slice onto the 3D model pressure levels)
        do i=1,im
           call INTERP_NO_EXTRAP( PROD_INT(i,j,:), PL(i,j,:), PROD(i,:), PCHEM_STATE%LEVS)
           call INTERP_NO_EXTRAP( LOSS_INT(i,j,:), PL(i,j,:), LOSS(i,:), PCHEM_STATE%LEVS)
        enddo
+       
     end do
 
     if (LM == 72) then
@@ -1995,14 +2080,59 @@ contains
     XX = (XX + DT*PROD_INT) / (1.0 + LOSS_INT*DT)
     deallocate(WRK)
 
-    if(associated(XX_PROD)) XX_PROD =  PROD_INT
-    if(associated(XX_LOSS)) XX_LOSS = -LOSS_INT*XX
 
+    ! Setup export pointers/flags outside the OpenMP loop
+    has_prod = associated(XX_PROD)
+    has_loss = associated(XX_LOSS)
+    
+    has_h2o_tend = .false.
     if(trim(NAME)=='H2O') then
        call MAPL_GetPointer ( EXPORT, H2O_TEND, 'H2O_TEND', RC=STATUS )
        VERIFY_(STATUS)
-       if(associated(H2O_TEND)) H2O_TEND = (PROD_INT - LOSS_INT*XX)
+       has_h2o_tend = associated(H2O_TEND)
     end if
+
+    ! Fused OpenMP Loop: Calc WRK, LOSS_SWV, Scale PROD/LOSS, Update XX & Exports
+    !$OMP parallel do default(none) &
+    !$OMP shared(IM, JM, LM, TROPP, PCRIT, PL, DELP, LOSS_SWV, &
+    !$OMP        PROD_INT, LOSS_INT, XX, DT, has_prod, has_loss, has_h2o_tend, &
+    !$OMP        XX_PROD, XX_LOSS, H2O_TEND) &
+    !$OMP private(I, J, L, wrk_val, loss_swv_val, prod_val, loss_val, xx_val)
+    do L=1,LM
+       do J=1,JM
+          do I=1,IM
+             
+             ! 1. Replaces the expensive ALLOCATE(WRK) and WHERE construct
+             wrk_val = TROPP(I,J)
+             if (wrk_val == MAPL_UNDEF) wrk_val = PCRIT
+             wrk_val = min(wrk_val, PCRIT)
+
+             ! 2. loss_swv is 1 for stratosphere and 0 for troposphere
+             loss_swv_val = max( min( (wrk_val - PL(I,J,L))/DELP, 1.0), 0.0)
+             LOSS_SWV(I,J,L) = loss_swv_val
+
+             ! 3. Scale PROD_INT and LOSS_INT
+             prod_val = loss_swv_val * PROD_INT(I,J,L)
+             loss_val = loss_swv_val * LOSS_INT(I,J,L)
+             
+             PROD_INT(I,J,L) = prod_val
+             LOSS_INT(I,J,L) = loss_val
+
+             ! 4. Update the state XX
+             xx_val = XX(I,J,L)
+             xx_val = (xx_val + DT * prod_val) / (1.0 + loss_val * DT)
+             XX(I,J,L) = xx_val
+
+             ! 5. Assign to optional Exports (Fused from bottom of routine)
+             if (has_prod)     XX_PROD(I,J,L)  = prod_val
+             if (has_loss)     XX_LOSS(I,J,L)  = -loss_val * xx_val
+             if (has_h2o_tend) H2O_TEND(I,J,L) = prod_val - (loss_val * xx_val)
+
+          end do
+       end do
+    end do
+
+    call MAPL_TimerOff (MAPL, "-UPDATE_PL_" // trim(NAME))
 
     return
   end subroutine UPDATE_H2O_PL
