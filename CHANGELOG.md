@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- Added agent-oriented architecture documentation (`AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/decisions.md`)
+
 ### Changed
 
 - Restores Jason/GCMv10 PCHEM behavior for default L72 configuration while enhancing non-L72 behavior
