@@ -27,19 +27,19 @@ chemistry and aerosol children are separate nested repositories
 |---|---|
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Module map, the Chemistry parent (children and `ENABLE_*` keys, run phases, providers of radiatively active gases and aerosols, sibling connections, tracer and increment bundles), `CHEMENV`, build, traps, observations. Read first. |
 | [`docs/decisions.md`](docs/decisions.md) | Previous architectural decisions (pattern, likely reason) |
-| [`@GOCART/docs/ARCHITECTURE.md`](@GOCART/docs/ARCHITECTURE.md) | The GOCART repository (aerosol model) |
-| [`@ACHEM/docs/ARCHITECTURE.md`](@ACHEM/docs/ARCHITECTURE.md) | The ACHEM repository (gas and aqueous phase chemistry) |
-| [`@CARMA/docs/ARCHITECTURE.md`](@CARMA/docs/ARCHITECTURE.md) | The CARMA repository (aerosol and cloud microphysics) |
-| [`@GAAS/docs/ARCHITECTURE.md`](@GAAS/docs/ARCHITECTURE.md) | The GAAS repository (aerosol analysis system) |
-| [`@GMI/docs/ARCHITECTURE.md`](@GMI/docs/ARCHITECTURE.md) | The GMI repository (combined troposphere/stratosphere chemistry) |
-| [`@MAM/docs/ARCHITECTURE.md`](@MAM/docs/ARCHITECTURE.md) | The MAM repository (modal aerosol microphysics) |
-| [`@MATRIX/docs/ARCHITECTURE.md`](@MATRIX/docs/ARCHITECTURE.md) | The MATRIX repository (aerosol microphysics) |
-| [`@QuickChem/docs/ARCHITECTURE.md`](@QuickChem/docs/ARCHITECTURE.md) | The QuickChem repository (quick chemistry (not wired in)) |
-| [`@RRG/docs/ARCHITECTURE.md`](@RRG/docs/ARCHITECTURE.md) | The RRG repository (carbon gases production and loss) |
-| [`@StratChem/docs/ARCHITECTURE.md`](@StratChem/docs/ARCHITECTURE.md) | The StratChem repository (stratospheric chemistry) |
-| [`@TR/docs/ARCHITECTURE.md`](@TR/docs/ARCHITECTURE.md) | The TR repository (passive tracers) |
-| [`../ARCHITECTURE.md`](../ARCHITECTURE.md) | The Physics composite that runs Chemistry |
-| [`../../../docs/ARCHITECTURE.md`](../../../docs/ARCHITECTURE.md) | The `GEOSgcm_GridComp` repository |
+| `@GOCART/docs/ARCHITECTURE.md` | The GOCART repository (aerosol model) |
+| `@ACHEM/docs/ARCHITECTURE.md` | The ACHEM repository (gas and aqueous phase chemistry) |
+| `@CARMA/docs/ARCHITECTURE.md` | The CARMA repository (aerosol and cloud microphysics) |
+| `@GAAS/docs/ARCHITECTURE.md` | The GAAS repository (aerosol analysis system) |
+| `@GMI/docs/ARCHITECTURE.md` | The GMI repository (combined troposphere/stratosphere chemistry) |
+| `@MAM/docs/ARCHITECTURE.md` | The MAM repository (modal aerosol microphysics) |
+| `@MATRIX/docs/ARCHITECTURE.md` | The MATRIX repository (aerosol microphysics) |
+| `@QuickChem/docs/ARCHITECTURE.md` | The QuickChem repository (quick chemistry (not wired in)) |
+| `@RRG/docs/ARCHITECTURE.md` | The RRG repository (carbon gases production and loss) |
+| `@StratChem/docs/ARCHITECTURE.md` | The StratChem repository (stratospheric chemistry) |
+| `@TR/docs/ARCHITECTURE.md` | The TR repository (passive tracers) |
+| `../ARCHITECTURE.md` | The Physics composite that runs Chemistry |
+| `../../../docs/ARCHITECTURE.md` | The `GEOSgcm_GridComp` repository |
 
 ## Rules
 
@@ -63,7 +63,7 @@ chemistry and aerosol children are separate nested repositories
 - Builds only inside the GEOSgcm fixture (it calls the fixture's `@cmake` macros,
   `CMakeLists.txt`): `source @env/g5_modules.sh`, then `cmake -B build -S .`,
   `cmake --build build -j N` in the fixture root. See the fixture
-  [`AGENTS.md`](../../../../../../AGENTS.md).
+  `AGENTS.md` (`../../../../../../AGENTS.md` in the fixture).
 - No tests are registered in this repository's own `CMakeLists.txt` files.
   CI builds the fixture with several compilers
   (`.github/workflows/workflow.yml`) and runs short GCM runs
