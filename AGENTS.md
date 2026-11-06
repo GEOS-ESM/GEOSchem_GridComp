@@ -1,11 +1,28 @@
 # AGENTS.md
 
 **Audience:** coding agents and developers working in the `GEOSchem_GridComp` repository.
-**Describes:** the MAPL2 line, branch `develop`.
-**Verified against:** `GEOSchem_GridComp` @ `d6ad829` (2026-11-05).
-**Placement:** as in the GEOSgcm fixture (`components.yaml` @ `0f2e0fb`; key `GEOSchem_GridComp`): `src/Components/@GEOSgcm_GridComp/GEOSagcm_GridComp/GEOSphysics_GridComp/@GEOSchem_GridComp`.
+**Describes:** the MAPL3 line, branch `release/MAPL-v3`.
+**Verified against:** `GEOSchem_GridComp` @ `3c925f2` (2026-11-06).
+**Placement:** as in the GEOSgcm fixture (`components.yaml` @ `f50622d`; key `GEOSchem_GridComp`): `src/Components/@GEOSgcm_GridComp/GEOSagcm_GridComp/GEOSphysics_GridComp/@GEOSchem_GridComp`.
 Other fixtures (for example GEOSadas, GEOSldas) may place this repository
 elsewhere; paths inside this repository do not change.
+
+> **Build status on this line:** only `GOCART` is built; the Chemistry
+> gridded component is present but not compiled. On `release/MAPL-v3`,
+> `CMakeLists.txt` calls `esma_add_subdirectories(GOCART)` ("Only GOCART is needed
+> on release/MAPL-v3 (for GOCART2G_GridComp)"; "Restore subdirs as components are
+> ported to MAPL3."); the line adding `Shared GOCART TR GMI StratChem MAM MATRIX
+> CARMA GAAS ACHEM` is commented out. The `esma_add_library` block that builds
+> `GEOS_ChemGridComp.F90` and `GEOS_ChemEnvGridComp.F90` is commented out too
+> ("GEOS_ChemGridComp.F90 USE-s non-ported components"), with the in-repository
+> children `GEOSpchem_GridComp`, `GEOSCHEMchem_GridComp`, `H2O_GridComp`,
+> `DNA_GridComp`, `HEMCO_GridComp` and `RRG` ("not yet ported to MAPL3"). Not
+> built; not yet ported to MAPL3: the Chemistry parent and `CHEMENV`, the
+> in-repository children, and `Shared` (`Chem_Base`, `Chem_Shared`, `HEMCO`). The
+> code of these is the MAPL2 code, kept for a later port; statements about
+> `GEOS_ChemGridComp.F90` describe the file as it is. Of the nested child
+> repositories only `@GOCART` is added to the build here; the others are listed in
+> the commented-out line.
 
 ## What this is
 
@@ -60,10 +77,12 @@ chemistry and aerosol children are separate nested repositories
 
 ## Build and test
 
-- Builds only inside the GEOSgcm fixture (it calls the fixture's `@cmake` macros,
-  `CMakeLists.txt`): `source @env/g5_modules.sh`, then `cmake -B build -S .`,
-  `cmake --build build -j N` in the fixture root. See the fixture
-  `AGENTS.md` (`../../../../../../AGENTS.md` in the fixture).
+- Build status on this line: see the note at the top. Only `GOCART` is built
+  (`CMakeLists.txt`); `GEOS_ChemGridComp.F90` is not compiled, so the Chemistry
+  component is not part of any executable built from this line. The block that
+  builds it, when restored, calls the fixture's `@cmake` macros
+  (`esma_set_this`, `esma_add_library`) and so builds only inside the GEOSgcm
+  fixture. See the fixture `AGENTS.md` (`../../../../../../AGENTS.md` in the fixture).
 - No tests are registered in this repository's own `CMakeLists.txt` files.
   CI builds the fixture with several compilers
   (`.github/workflows/workflow.yml`) and runs short GCM runs
